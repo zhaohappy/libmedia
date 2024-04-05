@@ -1,0 +1,14 @@
+prefix=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg-atomic
+exec_prefix=${prefix}
+libdir=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg-atomic/lib
+includedir=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg-atomic/include
+
+Name: libavformat
+Description: FFmpeg container format library
+Version: 60.21.101
+Requires: libavcodec >= 60.40.100, libavutil >= 58.39.100
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavformat -lm
+Libs.private: 
+Cflags: -I${includedir}

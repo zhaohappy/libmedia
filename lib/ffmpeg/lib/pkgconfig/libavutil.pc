@@ -1,0 +1,14 @@
+prefix=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg
+exec_prefix=${prefix}
+libdir=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg/lib
+includedir=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg/include
+
+Name: libavutil
+Description: FFmpeg utility library
+Version: 58.39.100
+Requires: 
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavutil -lpthread -lm -lX11
+Libs.private: 
+Cflags: -I${includedir}

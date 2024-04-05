@@ -1,0 +1,114 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "sourceMap": true,
+    "noImplicitAny": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "moduleResolution": "node",
+    "declaration": true,
+    "downlevelIteration": true,
+    "declarationMap": false,
+    "module": "esnext",
+    "target": "esnext",
+    "esModuleInterop": true,
+    "baseUrl": "./",
+    "paths": {
+      "avcodec/*": ["./src/avcodec/*"],
+      "avformat/*": ["./src/avformat/*"],
+      "avnetwork/*": ["./src/avnetwork/*"],
+      "avplayer/*": ["./src/avplayer/*"],
+      "avprotocol/*": ["./src/avprotocol/*"],
+      "avrender/*": ["./src/avrender/*"],
+      "audiostretchpitch/*": ["./src/audiostretchpitch/*"],
+      "audioresample/*": ["./src/audioresample/*"],
+      "avpipeline/*": ["./src/avpipeline/*"],
+      "avtranscode/*": ["./src/avtranscode/*"],
+      "avutil/*": ["./src/avutil/*"],
+
+      "cheap/*": ["./src/cheap/*"],
+      "common/*": ["./src/common/*"]
+    },
+    "typeRoots": [
+      "./node_modules/@types",
+    ],
+    "types": [
+      "node",
+      "jest"
+    ],
+    "lib": [
+      "dom",
+      "ESNext"
+    ],
+    "allowJs": false
+  },
+  "include": [
+    "src/**/*.ts",
+    "@types/index.d.ts"
+  ],
+  "exclude": [
+    "*.test.ts",
+    "__test__",
+    "/node_modules/**"
+  ],
+  "cheap": {
+    "defined": {
+      // 开启 debug 编译
+      "DEBUG": false,
+      // 开启 trace log
+      "ENABLE_LOG_TRACE": false,
+
+      // 开启多线程
+      "ENABLE_THREADS": true,
+      // 是否开启多线程代码分割
+      "ENABLE_THREADS_SPLIT": false,
+      // 保留 bigint 字面量
+      "BIGINT_LITERAL": false,
+      // 初始堆大小
+      "CHEAP_HEAP_INITIAL": 265,
+
+      // 将标记为同步接口的函数编译成使用同步方式
+      "ENABLE_SYNCHRONIZE_API": false,
+
+      // 开启支持 hls 协议
+      "ENABLE_PROTOCOL_HLS": true,
+      // 开启支持 dash 协议
+      "ENABLE_PROTOCOL_DASH": true,
+
+      // 开启支持 mpegts 解封装格式
+      "ENABLE_DEMUXER_MPEGTS": true,
+      // 开启支持 mp4 解封装格式
+      "ENABLE_DEMUXER_MP4": true,
+      // 开启支持 flv 解封装格式
+      "ENABLE_DEMUXER_FLV": true,
+      // 开启支持 ivf 解封装格式
+      "ENABLE_DEMUXER_IVF": true,
+      // 开启支持 oggs 解封装格式
+      "ENABLE_DEMUXER_OGGS": true,
+      // 开启支持 mp3 解封装格式
+      "ENABLE_DEMUXER_MP3": true,
+
+      // 开启支持 mse 模式
+      "ENABLE_MSE": true,
+      // webgpu 编译开关
+      "ENABLE_WEBGPU": true,
+      // 高 bitDepth 和 HDR 支持编译开关
+      "ENABLE_RENDER_16": true,
+      // 打印日志是否显示文件名和行号编译开关
+      "ENABLE_LOG_PATH": true,
+
+      // AVFrame 字段可选项，不同版本的 FFmpeg 可能不同
+      "API_OLD_CHANNEL_LAYOUT": true,
+      "API_FRAME_KEY": true,
+      "API_FRAME_PICTURE_NUMBER": true,
+      "API_INTERLACED_FRAME": true,
+      "API_PALETTE_HAS_CHANGED": true,
+      "API_REORDERED_OPAQUE": true,
+      "API_FRAME_PKT": true,
+      "API_PKT_DURATION": true,
+
+      "VERSION": "libmedia.0.0.1"
+    }
+  }
+}

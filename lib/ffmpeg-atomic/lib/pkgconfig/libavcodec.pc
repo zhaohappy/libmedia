@@ -1,0 +1,14 @@
+prefix=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg-atomic
+exec_prefix=${prefix}
+libdir=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg-atomic/lib
+includedir=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg-atomic/include
+
+Name: libavcodec
+Description: FFmpeg codec library
+Version: 60.40.100
+Requires: libavutil >= 58.39.100
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavcodec -pthread -lm
+Libs.private: 
+Cflags: -I${includedir}

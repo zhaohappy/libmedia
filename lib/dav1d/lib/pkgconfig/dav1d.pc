@@ -1,0 +1,9 @@
+prefix=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/dav1d
+includedir=${prefix}/include
+libdir=${prefix}/lib
+
+Name: libdav1d
+Description: AV1 decoding library
+Version: 1.4.0
+Libs: -L${libdir} -ldav1d -ldl
+Cflags: -I${includedir}

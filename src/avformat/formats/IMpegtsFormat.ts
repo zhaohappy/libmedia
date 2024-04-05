@@ -1,0 +1,569 @@
+/*
+ * libmedia mpegts decoder
+ *
+ * 版权所有 (C) 2024 赵高兴
+ * Copyright (C) 2024 Gaoxing Zhao
+ *
+ * 此文件是 libmedia 的一部分
+ * This file is part of libmedia.
+ * 
+ * libmedia 是自由软件；您可以根据 GNU Lesser General Public License（GNU LGPL）3.1
+ * 或任何其更新的版本条款重新分发或修改它
+ * libmedia is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3.1 of the License, or (at your option) any later version.
+ * 
+ * libmedia 希望能够为您提供帮助，但不提供任何明示或暗示的担保，包括但不限于适销性或特定用途的保证
+ * 您应自行承担使用 libmedia 的风险，并且需要遵守 GNU Lesser General Public License 中的条款和条件。
+ * libmedia is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ */
+
+import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
+import { AVIFormatContext } from '../AVformatContext'
+import * as logger from 'common/util/logger'
+
+import { IOError } from 'common/io/error'
+import { MpegtsContext, MpegtsStreamContext } from './mpegts/type'
+import createMpegtsContext from './mpegts/function/createMpegtsContext'
+import * as impegts from './mpegts/impegts'
+import * as mpegts from './mpegts/mpegts'
+import handleSectionSlice from './mpegts/function/handleSectionSlice'
+import * as errorType from 'avutil/error'
+import parsePES from './mpegts/function/parsePES'
+import parsePESSlice from './mpegts/function/parsePESSlice'
+import clearTSSliceQueue from './mpegts/function/clearTSSliceQueue'
+import { TSSliceQueue } from './mpegts/struct'
+import IFormat from './IFormat'
+import initStream from './mpegts/function/initStream'
+import { AVFormat, AVSeekFlags } from '../avformat'
+import { createAVPacket, deleteAVPacketSideData, destroyAVPacket, getAVPacketData, getAVPacketSideData, unrefAVPacket } from 'avutil/util/avpacket'
+import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import AVStream from '../AVStream'
+import seekInBytes from '../function/seekInBytes'
+import { avRescaleQ } from 'avutil/util/rational'
+import * as array from 'common/util/array'
+import * as mp3 from '../codecs/mp3'
+import * as h264 from '../codecs/h264'
+import * as hevc from '../codecs/hevc'
+import * as aac from '../codecs/aac'
+import * as opus from '../codecs/opus'
+import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
+import { avMalloc } from 'avutil/util/mem'
+import { memcpy, mapSafeUint8Array } from 'cheap/std/memory'
+
+export default class IMpegtsFormat extends IFormat {
+
+  public type: AVFormat = AVFormat.MPEGTS
+
+  private context: MpegtsContext
+
+  private firstTSPacketPos: int64
+
+  private cacheAVPacket: pointer<AVPacket>
+
+  constructor() {
+    super()
+    this.context = createMpegtsContext()
+  }
+
+  public init(formatContext: AVIFormatContext): void {
+    if (formatContext.ioReader) {
+      formatContext.ioReader.setEndian(true)
+    }
+    this.cacheAVPacket = nullptr
+  }
+
+  public destroy(formatContext: AVIFormatContext): void {
+    super.destroy(formatContext)
+    if (this.cacheAVPacket) {
+      destroyAVPacket(this.cacheAVPacket)
+      this.cacheAVPacket = nullptr
+    }
+    array.each(formatContext.streams, (stream) => {
+      const streamContext = stream.privData as MpegtsStreamContext
+      if (streamContext.filter) {
+        streamContext.filter.destroy()
+        streamContext.filter = null
+      }
+    })
+  }
+
+  public async readHeader(formatContext: AVIFormatContext): Promise<number> {
+    try {
+
+      let ret = 0
+
+      let packetSize = await impegts.getPacketSize(formatContext.ioReader)
+
+      if (!packetSize) {
+        packetSize = mpegts.TS_PACKET_SIZE
+      }
+
+      this.context.tsPacketSize = packetSize
+
+      while ((!this.context.hasPAT || !this.context.hasPMT)) {
+        const tsPacket = await impegts.parserTSPacket(formatContext.ioReader, this.context)
+
+        if (!tsPacket.payload) {
+          continue
+        }
+
+        if (tsPacket.pid === 0
+          || tsPacket.pid === this.context.currentPmtPid
+          || this.context.pmt.pid2StreamType.get(tsPacket.pid) === mpegts.TSStreamType.kSCTE35
+        ) {
+          handleSectionSlice(tsPacket, this.context)
+        }
+      }
+
+      if (!this.context.hasPAT || !this.context.hasPMT) {
+        return errorType.DATA_INVALID
+      }
+      else {
+        this.firstTSPacketPos = formatContext.ioReader.getPos()
+      }
+
+      return ret
+    }
+    catch (error) {
+      logger.error(error.message)
+      return formatContext.ioReader.error
+    }
+
+  }
+
+  private checkExtradata(avpacket: pointer<AVPacket>, stream: AVStream) {
+    if (!stream.codecpar.extradata) {
+      let element = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+      if (!element) {
+        return
+      }
+      stream.codecpar.extradata = avMalloc(element.size)
+      memcpy(stream.codecpar.extradata, element.data, element.size)
+      stream.codecpar.extradataSize = element.size
+      deleteAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+
+      if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
+      ) {
+        h264.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+      }
+      else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+        hevc.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+      }
+      else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
+        aac.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+      }
+      else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_OPUS) {
+        opus.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+      }
+    }
+  }
+
+  private parsePESSlice(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>, queue: TSSliceQueue, stream: AVStream) {
+    const pes = parsePESSlice(queue)
+    parsePES(pes, avpacket, stream)
+    clearTSSliceQueue(queue)
+
+    const streamContext = stream.privData as MpegtsStreamContext
+    if (streamContext.filter) {
+      let ret = 0
+      ret = streamContext.filter.sendAVPacket(avpacket)
+
+      if (ret < 0) {
+        logger.error('send avpacket to bsf failed')
+        return errorType.DATA_INVALID
+      }
+
+      ret = streamContext.filter.receiveAVPacket(avpacket)
+
+      if (ret < 0) {
+        logger.error('receive avpacket from bsf failed')
+        return errorType.DATA_INVALID
+      }
+
+      avpacket.timeBase.den = 90000
+      avpacket.timeBase.num = 1
+      avpacket.streamIndex = stream.index
+
+      this.checkExtradata(avpacket, stream)
+
+      while (true) {
+        const avpacket = this.cacheAVPacket || createAVPacket()
+        ret = streamContext.filter.receiveAVPacket(avpacket)
+        if (ret === 0) {
+          avpacket.timeBase.den = 90000
+          avpacket.timeBase.num = 1
+          avpacket.streamIndex = stream.index
+          this.checkExtradata(avpacket, stream)
+          formatContext.interval.packetBuffer.push(avpacket)
+          this.cacheAVPacket = nullptr
+        }
+        else {
+          this.cacheAVPacket = avpacket
+          break
+        }
+      }
+    }
+    else {
+      const streamType = this.context.pmt.pid2StreamType.get(streamContext.pid)
+      if (streamType === mpegts.TSStreamType.AUDIO_MPEG1
+        || streamType === mpegts.TSStreamType.AUDIO_MPEG2
+      ) {
+        avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+
+        const buffer = getAVPacketData(avpacket)
+
+        const ver = (buffer[1] >>> 3) & 0x03
+        const layer = (buffer[1] & 0x06) >> 1
+        // const bitrateIndex = (buffer[2] & 0xF0) >>> 4
+        const samplingFreqIndex = (buffer[2] & 0x0C) >>> 2
+
+        const channelMode = (buffer[3] >>> 6) & 0x03
+
+        const channelCount = channelMode !== 3 ? 2 : 1
+        const profile = mp3.getProfileByLayer(layer)
+        const sampleRate = mp3.getSampleRateByVersionIndex(ver, samplingFreqIndex)
+
+        const hasNewExtraData = stream.codecpar.profile !== profile
+          || stream.codecpar.sampleRate !== sampleRate
+          || stream.codecpar.chLayout.nbChannels !== channelCount
+
+        if (hasNewExtraData) {
+          stream.codecpar.profile = profile
+          stream.codecpar.sampleRate = sampleRate
+          stream.codecpar.chLayout.nbChannels = channelCount
+          if (defined(API_OLD_CHANNEL_LAYOUT)) {
+            stream.codecpar.channels = channelCount
+          }
+        }
+      }
+      else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
+        if (!stream.codecpar.extradata) {
+          h264.parseAnnexbExtraData(avpacket)
+          this.checkExtradata(avpacket, stream)
+          stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+        }
+      }
+      else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+        if (!stream.codecpar.extradata) {
+          hevc.parseAnnexbExtraData(avpacket)
+          this.checkExtradata(avpacket, stream)
+          stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+        }
+      }
+    }
+    return 0
+  }
+
+  // @ts-ignore
+  @synchronize
+  private async readAVPacket_(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
+    if (this.context.ioEnd) {
+      if (!this.context.tsSliceQueueMap.size) {
+        return IOError.END
+      }
+
+      const it = this.context.tsSliceQueueMap.values()
+
+      let queue: TSSliceQueue
+
+      while (true) {
+        const next = it.next()
+
+        if (next.value && next.value.slices.length) {
+          queue = next.value
+          break
+        }
+
+        if (next.done) {
+          break
+        }
+      }
+
+      if (!queue) {
+        return IOError.END
+      }
+
+      const stream = formatContext.streams.find((stream) => {
+        return (stream.privData as MpegtsStreamContext).pid === queue.pid
+      })
+
+      if (stream) {
+        return this.parsePESSlice(formatContext, avpacket, queue, stream)
+      }
+      else {
+        clearTSSliceQueue(queue)
+        return this.readAVPacket_(formatContext, avpacket)
+      }
+    }
+    else {
+      try {
+        while (true) {
+          const tsPacket = await impegts.parserTSPacket(formatContext.ioReader, this.context)
+          if (!tsPacket.payload) {
+            continue
+          }
+
+          if (tsPacket.pid === 0
+            || tsPacket.pid === this.context.currentPmtPid
+            || this.context.pmt.pid2StreamType.get(tsPacket.pid) === mpegts.TSStreamType.kSCTE35
+          ) {
+            handleSectionSlice(tsPacket, this.context)
+            continue
+          }
+
+          const streamType = this.context.pmt.pid2StreamType.get(tsPacket.pid)
+
+          if (!streamType) {
+            continue
+          }
+
+          let stream = formatContext.streams.find((stream) => {
+            return (stream.privData as MpegtsStreamContext).pid === tsPacket.pid
+          })
+
+          if (!stream) {
+            stream = formatContext.createStream()
+            initStream(tsPacket.pid, stream, this.context)
+          }
+
+          let pesPacketLength = (tsPacket.payload[4] << 8) | tsPacket.payload[5]
+
+          let pesSliceQueue = this.context.tsSliceQueueMap.get(tsPacket.pid)
+
+          let packetGot = false
+
+          if (pesSliceQueue) {
+            if (pesSliceQueue.totalLength > 0 && tsPacket.payloadUnitStartIndicator) {
+              const ret = this.parsePESSlice(formatContext, avpacket, pesSliceQueue, stream)
+              if (ret < 0) {
+                return ret
+              }
+              packetGot = true
+            }
+          }
+          else {
+            if (!tsPacket.payloadUnitStartIndicator) {
+              if (defined(ENABLE_LOG_TRACE)) {
+                logger.trace('got ts packet before payload unit start indicator, ignore it')
+              }
+              continue
+            }
+            pesSliceQueue = new TSSliceQueue()
+            this.context.tsSliceQueueMap.set(tsPacket.pid, pesSliceQueue)
+          }
+
+          if (tsPacket.payloadUnitStartIndicator) {
+            pesSliceQueue.randomAccessIndicator = tsPacket.adaptationFieldInfo?.randomAccessIndicator ?? 0
+            pesSliceQueue.pos = tsPacket.pos
+            pesSliceQueue.pid = tsPacket.pid
+            pesSliceQueue.streamType = streamType
+            pesSliceQueue.expectedLength = pesPacketLength === 0 ? 0 : pesPacketLength + 6
+          }
+
+          pesSliceQueue.slices.push(tsPacket.payload)
+          pesSliceQueue.totalLength += tsPacket.payload.length
+
+          if (pesSliceQueue.expectedLength > 0 && pesSliceQueue.expectedLength === pesSliceQueue.totalLength) {
+            const ret = this.parsePESSlice(formatContext, avpacket, pesSliceQueue, stream)
+            if (ret < 0) {
+              return ret
+            }
+            packetGot = true
+          }
+
+          if (packetGot) {
+            return 0
+          }
+        }
+      }
+      catch (error) {
+        if (formatContext.ioReader.error === IOError.END && !this.context.ioEnd) {
+          this.context.ioEnd = true
+          return this.readAVPacket_(formatContext, avpacket)
+        }
+        else if (formatContext.ioReader.error === IOError.END) {
+          return IOError.END
+        }
+        else {
+          throw error
+        }
+      }
+    }
+  }
+
+  public async readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
+    try {
+      return this.readAVPacket_(formatContext, avpacket)
+    }
+    catch (error) {
+      if (formatContext.ioReader.error !== IOError.END) {
+        logger.error(error.message)
+      }
+      return formatContext.ioReader.error
+    }
+  }
+
+  // @ts-ignore
+  @synchronize
+  private async syncTSPacket(formatContext: AVIFormatContext) {
+    let pos: int64 = NOPTS_VALUE_BIGINT
+
+    const analyzeCount = 10
+
+    while (true) {
+      try {
+        const byte = await formatContext.ioReader.readUint8()
+        if (byte === 0x47) {
+          if (this.context.tsPacketSize === mpegts.TS_DVHS_PACKET_SIZE) {
+            pos = formatContext.ioReader.getPos() - 5n
+          }
+          else {
+            pos = formatContext.ioReader.getPos() - 1n
+          }
+          let count = 0
+          let now = formatContext.ioReader.getPos()
+          while (count <= analyzeCount) {
+            await formatContext.ioReader.skip(this.context.tsPacketSize - 1)
+
+            const byte = await formatContext.ioReader.readUint8()
+
+            if (byte === 0x47) {
+              count++
+            }
+            else {
+              break
+            }
+          }
+          if (count < analyzeCount) {
+            pos = NOPTS_VALUE_BIGINT
+            await formatContext.ioReader.seek(now)
+            continue
+          }
+          else {
+            break
+          }
+        }
+      }
+      catch (error) {
+        pos = NOPTS_VALUE_BIGINT
+        break
+      }
+    }
+
+    if (pos !== NOPTS_VALUE_BIGINT) {
+      // 移动到 ts packet 的开始
+      await formatContext.ioReader.seek(pos)
+      while (true) {
+        const tsPacket = await impegts.parserTSPacket(formatContext.ioReader, this.context)
+        // 移动到下一个 pes 的开始
+        if (tsPacket.payloadUnitStartIndicator) {
+          // 返回到上一个 ts packet 的开始
+          await formatContext.ioReader.seek(pos)
+          formatContext.streams.forEach((stream) => {
+            let pesSliceQueue = this.context.tsSliceQueueMap.get((stream.privData as MpegtsStreamContext).pid)
+            if (pesSliceQueue) {
+              clearTSSliceQueue(pesSliceQueue)
+            }
+          })
+          break
+        }
+        pos = formatContext.ioReader.getPos()
+      }
+    }
+  }
+
+  public async seek(
+    formatContext: AVIFormatContext,
+    stream: AVStream,
+    timestamp: int64,
+    flags: int32
+  ): Promise<int64> {
+
+    let now = formatContext.ioReader.getPos()
+
+    this.context.tsSliceQueueMap.forEach((queue) => {
+      if (queue.slices.length && queue.pos < now) {
+        now = queue.pos
+      }
+      clearTSSliceQueue(queue)
+    })
+
+    this.context.pmt.pid2StreamType.forEach((streamType, pid) => {
+      this.context.tsSliceQueueMap.delete(pid)
+    })
+
+    // m3u8 使用时间戳去 seek
+    if (flags & AVSeekFlags.TIMESTAMP) {
+      const seekTime = avRescaleQ(timestamp, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+      await formatContext.ioReader.seek(seekTime, true)
+      this.context.ioEnd = false
+      return 0n
+    }
+
+    if (stream && stream.sampleIndexes.length) {
+      let index = array.binarySearch(stream.sampleIndexes, (item) => {
+        if (item.pts > timestamp) {
+          return -1
+        }
+        return 1
+      })
+      if (index > 0 && avRescaleQ(timestamp - stream.sampleIndexes[index - 1].pts, stream.timeBase, AV_MILLI_TIME_BASE_Q) < 10000n) {
+        logger.debug(`seek in sampleIndexes, found index: ${index}, pts: ${stream.sampleIndexes[index - 1].pts}, pos: ${stream.sampleIndexes[index - 1].pos}`)
+        await formatContext.ioReader.seek(stream.sampleIndexes[index - 1].pos)
+        this.context.ioEnd = false
+        return now
+      }
+    }
+
+    if (flags & AVSeekFlags.BYTE) {
+
+      const size = await formatContext.ioReader.fileSize()
+
+      if (size <= 0n) {
+        return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
+      }
+
+      if (timestamp < 0n) {
+        timestamp = 0n
+      }
+      else if (timestamp > size) {
+        timestamp = size
+      }
+      await formatContext.ioReader.seek(timestamp)
+
+      if (!(flags & AVSeekFlags.ANY)) {
+        await this.syncTSPacket(formatContext)
+      }
+
+      this.context.ioEnd = false
+
+      return now
+    }
+    else {
+      logger.debug('not found any keyframe index, try to seek in bytes')
+      let ret = await seekInBytes(
+        formatContext,
+        stream,
+        timestamp,
+        this.firstTSPacketPos,
+        this.readAVPacket.bind(this),
+        this.syncTSPacket.bind(this)
+      )
+      if (ret >= 0) {
+        this.context.ioEnd = false
+      }
+      return ret
+    }
+  }
+
+  public getAnalyzeStreamsCount(): number {
+    return this.context.pmt?.pid2StreamType.size ?? 0
+  }
+}

@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="origin-trial" content="AheZwBCB1lx3qnoeQdo7/8bz61E1R/QNV50F2ZLfizhZkbPwCMz79lS1OCHr4KvT44vTLcqLbCU/ig9cgdaixgwAAABJeyJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0OjkwMDAiLCJmZWF0dXJlIjoiV2ViR1BVIiwiZXhwaXJ5IjoxNjkxNzExOTk5fQ==">
+    <meta http-equiv="origin-trial" content="Amx+Gaw5jpWZxBreDkks25p4YQx1B4acssreTrgx3e9jbma6tz27jQm0j3u7FEjWvl/wAHwLNCvkiEF29xiw3g0AAABOeyJvcmlnaW4iOiJodHRwczovLzE3Mi4zMS4xMDAuNjQ6OTAwMCIsImZlYXR1cmUiOiJXZWJHUFUiLCJleHBpcnkiOjE2OTE3MTE5OTl9">
+    <title>demo</title>
+    <link rel="stylesheet" href="./element-ui.css" crossorigin>
+    <style>
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+
+      #video,
+      #canvas {
+        width: 480px;
+        height: 360px;
+      }
+
+      #video {
+        background-color: #000;
+      }
+
+      #mask {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.6);
+        text-align: center;
+        top: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .button {
+        display: inline-block;
+        background-color: #1795FF;
+        padding: 8px 10px;
+        color: #fff;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .stats {
+        margin-left: 10px;
+      }
+      .stats-text {
+        color: #1795FF;
+      }
+
+      .player {
+        position: relative;
+        /* width: 480px; */
+        /* height: 360px; */
+        overflow: hidden;
+        position: relative;
+        margin-left: 10px;
+      }
+      #slider {
+        width: 450px;
+        left: 15px;
+        position: absolute;
+        bottom: 0;
+      }
+
+      #url {
+        margin-left: 10px;
+        width: 480px;
+        margin-top: 20px;
+      }
+      .options {
+        margin-left: 10px;
+        margin-top: 10px;
+      }
+      .load {
+        margin-left: 10px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      .button-group {
+        margin-left: 10px;
+      }
+      .button-group button + button {
+        margin-left: 4px;
+      }
+      #video-change,
+      #audio-change,
+      #play-rate {
+        display: none;
+        width: 70px;
+        margin-top: 10px;
+        position: absolute;
+        bottom: 0;
+        left: 500px;
+      }
+
+      #video-change {
+        bottom: 70px;
+      }
+      #audio-change {
+        bottom: 140px;
+      }
+
+      .label {
+        color: #606266;
+        font-weight: 500;
+        user-select: none;
+        display: inline-block;
+        line-height: 19px;
+        font-size: 15px;
+      }
+      .support {
+        margin-left: 10px;
+      }
+
+      #canvas-background-2,
+      #canvas-background {
+        background-color: #000;
+        width: 480px;
+        height: 360px;
+        display: inline-block;
+        position: relative;
+      }
+
+      #canvas-background {
+        overflow: hidden;
+      }
+
+      .renderMode {
+        margin-top: 10px;
+        margin-left: 10px;
+      }
+
+      .renderRotate {
+        margin-top: 10px;
+        margin-left: 10px;
+      }
+
+      .flip {
+        margin-top: 10px;
+        margin-left: 10px;
+      }
+
+      .subtitle {
+        color: #fff;
+        font-size: 14px;
+        position: absolute;
+        bottom: 12px;
+        text-align: center;
+        width: 100%;
+        /* padding: 0 50px; */
+        /* margin: 0 50px; */
+      }
+
+    </style>
+</head>
+<body>
+
+    <div style="margin-left: 10px;">
+      支持 mp4、mpegts、flv、mp3 封装格式 <br>
+      支持 hls、dash 协议 <br>
+      支持 h264、hevc、av1、mpeg4、aac、mp3、opus、speex、flac、vorbis 编码 <br>
+      支持直播（LIVE）和点播（VOD） <br>
+      支持本地文件播放和网络 url 地址播放
+    </div>
+
+    <div id="url">
+      <el-input v-model="url" placeholder="请输入 url 地址">
+        <template slot="prepend">url</template>
+      </el-input>
+      
+    </div>
+
+    <div style="margin-left: 10px; margin-top: 10px;">
+      <input id="file" type="file" onchange="onFileOpen(this)" />
+    </div>
+
+    <div class="options">
+      <div id="isLive">
+        <el-checkbox v-model="isLive">isLive</el-checkbox>
+      </div>
+      <div id="enableSimd">
+        <el-checkbox v-model="enableSimd">enable simd</el-checkbox>
+      </div>
+      <div id="enableWebcodec">
+        <el-checkbox v-model="enableHardwareAcceleration">enable hardwareAcceleration</el-checkbox>
+      </div>
+      <div id="useThreads">
+        <el-checkbox v-model="useThreads">enable threads</el-checkbox>
+      </div>
+      <div id="useMse">
+        <el-checkbox v-model="useMse">enable MSE</el-checkbox>
+      </div>
+      <div id="enableWebGPU">
+        <el-checkbox v-model="enableWebGPU">enable WebGPU</el-checkbox>
+      </div>
+      <div id="loop">
+        <el-checkbox v-model="loop">loop</el-checkbox>
+      </div>
+
+      <br>
+
+      <!-- <div class="loader">
+        <span class="label">loader: </span>
+        <div id="loader" style="display: inline-block;">
+          <el-radio v-model="radio" label="1">Url</el-radio>
+          <el-radio v-model="radio" label="2">File</el-radio>
+        </div>
+      </div> -->
+
+    </div>
+
+    <br>
+
+    <div class="player">
+      <div id="canvas-background">
+      </div>
+      <div id="canvas-background-2" style="display: none;">
+      </div>
+      <div id="slider">
+        <el-slider v-model="currentTime" :max="duration" :disabled="disabled" @change="seek"></el-slider>
+      </div>
+
+      <div id="play-rate">
+        倍速:
+        <el-select v-model="value" @change="changeRate">
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.value"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </div>
+
+      <div id="video-change">
+        视频:
+        <el-select v-model="value" @change="change">
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.name"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </div>
+
+      <div id="audio-change">
+        音频:
+        <el-select v-model="value" @change="change">
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.name"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </div>
+    </div>
+
+    <div class="flip">
+      <span class="label">翻转: </span>
+      <div id="flipHorizontal" style="display: inline-block;">
+        <el-checkbox v-model="flipHorizontal">水平翻转</el-checkbox>
+      </div>
+      <div id="flipVertical" style="display: inline-block; margin-left: 10px;">
+        <el-checkbox v-model="flipVertical">垂直翻转</el-checkbox>
+      </div>
+    </div>
+
+    <div class="renderMode">
+      <span class="label">renderMode: </span>
+      <div id="renderMode" style="display: inline-block;">
+        <el-radio v-model="radio" label="0">适应</el-radio>
+        <el-radio v-model="radio" label="1">填充</el-radio>
+      </div>
+    </div>
+
+    <div class="renderRotate">
+      <span class="label">renderRotate: </span>
+      <div id="renderRotate" style="display: inline-block;">
+        <el-radio v-model="radio" label="0">0</el-radio>
+        <el-radio v-model="radio" label="90">90</el-radio>
+        <el-radio v-model="radio" label="180">180</el-radio>
+        <el-radio v-model="radio" label="270">270</el-radio>
+      </div>
+    </div>
+
+    <button id="load" class="load" onclick="loadPlayer('#canvas-background')" disabled>Load</button>
+    <button class="play" onclick="playPlayer()" >play</button>
+    <button class="play" onclick="pausePlayer()" >pause</button>
+    <button class="play" onclick="stopPlayer()" >stop</button>
+    <!-- <button onclick="openWriteFile()" >write file</button> -->
+
+    <div class="button-group">
+      <button onclick="addVolume()">音量 +</button>
+      <button onclick="subVolume()">音量 -</button>
+      <button onclick="enterFullscreen()">全屏</button>
+      <button onclick="resume()">resume</button>
+    </div>
+
+    <br>
+
+    <div class="stats">
+      <div class="stats-item">
+        audiocodec: <span id="audiocodec" class="stats-text"></span>
+      </div>
+      <div class="stats-item">
+        videocodec: <span id="videocodec" class="stats-text"></span>
+      </div>
+      <div class="stats-item">
+        width: <span id="width" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        height: <span id="height" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        channels: <span id="channels" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        sampleRate: <span id="sampleRate" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        audioStutter: <span id="audioStutter" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        videoStutter: <span id="videoStutter" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        bandwidth: <span id="bandwidth" class="stats-text">0</span> kbps
+      </div>
+      <div class="stats-item">
+        audioBitrate: <span id="audioBitrate" class="stats-text">0</span> kbps
+      </div>
+      <div class="stats-item">
+        videoBitrate: <span id="videoBitrate" class="stats-text">0</span> kbps
+      </div>
+      <div class="stats-item">
+        audioPacketQueueLength: <span id="audioPacketQueueLength" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        videoPacketQueueLength: <span id="videoPacketQueueLength" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        videoEncodeFramerate: <span id="videoEncodeFramerate" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        videoDecodeFramerate: <span id="videoDecodeFramerate" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        videoRenderFramerate: <span id="videoRenderFramerate" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        keyFrameInterval: <span id="keyFrameInterval" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        audioEncodeFramerate: <span id="audioEncodeFramerate" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        audioDecodeFramerate: <span id="audioDecodeFramerate" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        audioRenderFramerate: <span id="audioRenderFramerate" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        audioFrameDecodeIntervalMax: <span id="audioFrameDecodeIntervalMax" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        audioFrameRenderIntervalMax: <span id="audioFrameRenderIntervalMax" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        videoFrameDecodeIntervalMax: <span id="videoFrameDecodeIntervalMax" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        videoFrameRenderIntervalMax: <span id="videoFrameRenderIntervalMax" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        jitter: <span id="jitter" class="stats-text">0</span>
+      </div>
+    </div>
+
+    <script>
+      window.CHEAP_DISABLE_PTHREAD = false
+    </script>
+    <script src="../dist/cheap-polyfill.js"></script>
+    <script src="../dist/avplayer.js"></script>
+    <script src="./vue.js" crossorigin></script>
+    <script src="./element-ui.js" crossorigin></script>
+    <script>
+
+      let player;
+      let slider;
+      let urlComponent;
+      let isLiveComponent;
+      let useThreadsComponent;
+      let enableSimdComponent;
+      let enableWebcodecComponent;
+      let useMseComponent;
+      let loopComponent;
+      let enableWebGPUComponent;
+      let renderModeComponent;
+      let renderRotateComponent;
+      let loaderComponent;
+      let playRateComponent;
+      let videoChangeComponent;
+      let audioChangeComponent;
+      let isSeeking;
+      const sliderRatio = 1000;
+
+      const sliderDom = document.querySelector('#slider')
+      const playRateDom = document.querySelector('#play-rate')
+      const videoChangeDom = document.querySelector('#video-change')
+      const audioChangeDom = document.querySelector('#audio-change')
+      const canvasBg = document.querySelector('#canvas-background')
+      const video = document.querySelector('#video')
+      const audio = document.querySelector('#audio')
+
+      let statsTimer;
+
+      let url = ''
+
+      function onFileOpen(target) {
+
+      }
+
+      function openWriteFile() {
+        window.showSaveFilePicker({
+          suggestedName: 'test_log.mp4'
+        }).then((handle) => {
+          window.SafeFileIO = new AVPlayer.SafeFileIO(handle)
+          window.SafeFileIO.ready().then(() => {
+            console.log('test log ready')
+          })
+        })
+      }
+
+      function loadPlayer(id) {
+        player = new AVPlayer({
+          container: document.querySelector(id),
+          isLive: isLiveComponent.isLive,
+          getWasm: (type, codecId) => {
+            switch (type) {
+              case 'decoder': {
+                switch (codecId) {
+                  // H264
+                  case 27:
+                    return `../dist/decode/h264${enableSimdComponent.enableSimd ? '-simd' : '-atomic'}.wasm`
+                  // AAC
+                  case 86018:
+                    return '../dist/decode/aac-atomic.wasm'
+                  // MP3
+                  case 86017:
+                    return '../dist/decode/mp3-atomic.wasm'
+                  // HEVC
+                  case 173:
+                    return '../dist/decode/hevc-atomic.wasm'
+                  // Mpeg4
+                  case 12:
+                    return '../dist/decode/mpeg4-atomic.wasm'
+                  // AV1
+                  case 226:
+                    return '../dist/decode/av1-atomic.wasm'
+                  // Speex
+                  case 86051:
+                    return '../dist/decode/speex-atomic.wasm'
+                  // Opus
+                  case 86076:
+                    return '../dist/decode/opus-atomic.wasm'
+                  // flac
+                  case 86028:
+                    return '../dist/decode/flac-atomic.wasm'
+                  // vorbis
+                  case 86021:
+                    return '../dist/decode/vorbis-atomic.wasm'
+                  default:
+                    throw new Error('not found decoder')
+                }
+                break
+              }
+              case 'resampler':
+                return '../dist/resample/resample-atomic.wasm'
+              case 'stretchpitcher':
+                return '../dist/stretchpitch/stretchpitch-atomic.wasm'
+            }
+          },
+          checkUseMES: (streams) => {
+            return useMseComponent.useMse
+          },
+          enableHardware: enableWebcodecComponent.enableHardwareAcceleration,
+          enableWebGPU: enableWebGPUComponent.enableWebGPU,
+          loop: loopComponent.loop,
+          jitterBufferMax: 4,
+          jitterBufferMin: 1,
+          lowLatency: true
+        })
+
+        if (!isLiveComponent.isLive && !slider) {
+          slider = new Vue({
+            el: '#slider',
+            data: function() {
+              return { 
+                currentTime: 0,
+                duration: 0
+              }
+            },
+            computed: {
+              disabled: function () {
+                return this.currentTime <= 0
+              }
+            },
+            methods: {
+              seek() {
+                isSeeking = true
+                player.seek(this.currentTime).then(() => {
+                  isSeeking = false
+                })
+              }
+            }
+          })
+        }
+        else if (isLiveComponent.isLive) {
+          sliderDom.style.display = 'none'
+        }
+
+        if (!isLiveComponent.isLive && !playRateComponent) {
+          playRateComponent = new Vue({
+            el: '#play-rate',
+            data: function() {
+              return { 
+                options: [
+                  {
+                    value: 0.5
+                  },
+                  {
+                    value: 0.75
+                  },
+                  {
+                    value: 1.0
+                  },
+                  {
+                    value: 1.2
+                  },
+                  {
+                    value: 1.5
+                  },
+                  {
+                    value: 2.0
+                  }
+                ],
+                value: 1.0
+              }
+            },
+            methods: {
+              changeRate() {
+                if (player) {
+                  player.setPlaybackRate(this.value)
+                }
+              }
+            },
+            mounted: function () {
+              this.$el.style.display = 'inline-block'
+            }
+          })
+        }
+        else if (isLiveComponent.isLive) {
+          playRateDom.style.display = 'none'
+        }
+
+        player.load(document.querySelector('#file').files[0] ? document.querySelector('#file').files[0] : urlComponent.url).then(() => {
+          if (slider) {
+            slider.duration = Number(player.getDuration())
+          }
+
+          Promise.all([
+            player.getVideoList(),
+            player.getAudioList()
+          ]).then((data) => {
+
+            const videoList = data[0]
+            const audioList = data[1]
+
+            if (videoList.list.length > 1) {
+              videoChangeComponent = new Vue({
+                el: '#video-change',
+                data: function() {
+                  return { 
+                    options: videoList.list.map((item, index) => {
+                      return {
+                        value: index,
+                        name: `${item.width}*${item.height}@${item.frameRate}`
+                      }
+                    }),
+                    value: videoList.selectedIndex
+                  }
+                },
+                methods: {
+                  change() {
+                    if (player) {
+                      player.selectVideo(this.value)
+                    }
+                  }
+                },
+                mounted: function () {
+                  this.$el.style.display = 'inline-block'
+                }
+              })
+            }
+            else {
+              videoChangeDom.style.display = 'none'
+            }
+
+            if (audioList.list.length > 1) {
+              audioChangeComponent = new Vue({
+                el: '#audio-change',
+                data: function() {
+                  return { 
+                    options: audioList.list.map((item, index) => {
+                      return {
+                        value: index,
+                        name: item.lang
+                      }
+                    }),
+                    value: audioList.selectedIndex
+                  }
+                },
+                methods: {
+                  change() {
+                    if (player) {
+                      player.selectAudio(this.value)
+                    }
+                  }
+                },
+                mounted: function () {
+                  this.$el.style.display = 'inline-block'
+                }
+              })
+            }
+            else {
+              audioChangeDom.style.display = 'none'
+            }
+
+            // player.seek(400000).then(() => {
+              player.play({
+                audio: true,
+                video: true
+              })
+            // })
+          })
+        })
+
+        player.on('ended', () => {
+          if (statsTimer) {
+            clearTimeout(statsTimer)
+            statsTimer = null
+          }
+          if (slider) {
+            slider.currentTime = slider.duration
+          }
+          player.destroy().then(() => {
+            AVPlayer.stopPipelines().then(() => {
+              console.log(CHeap.Allocator.inspect())
+            })
+          })
+
+        })
+
+        player.on('time', (pts) => {
+          if (slider && !isSeeking) {
+            slider.currentTime = Number(pts)
+          }
+        })
+
+        if (statsTimer) {
+          clearTimeout(statsTimer)
+        }
+        statsTimer = setInterval(() => {
+          handleStats(player.getStats())
+        }, 1000)
+      }
+
+      function addVolume() {
+        player.setVolume(player.getVolume() + 0.3)
+      }
+      function subVolume() {
+        player.setVolume(player.getVolume() - 0.3)
+      }
+
+      function enterFullscreen() {
+        player.enterFullscreen()
+      }
+      function resume() {
+        player.resume()
+      }
+      function replay() {
+        player.replay()
+      }
+
+      function playPlayer() {
+        if (player) {
+          player.play()
+        }
+      }
+
+      function pausePlayer() {
+        if (player) {
+          player.pause()
+        }
+      }
+
+      function stopPlayer() {
+        if (player) {
+          player.stop().then(() => {
+            if (statsTimer) {
+            clearTimeout(statsTimer)
+            statsTimer = null
+            }
+            if (slider) {
+              slider.currentTime = 0
+            }
+            player.destroy().then(() => {
+              AVPlayer.stopPipelines().then(() => {
+                console.log(CHeap.Allocator.inspect())
+              })
+            })
+          })
+        }
+      }
+
+      const statsKeys = [
+        'audiocodec',
+        'videocodec',
+        'width',
+        'height',
+        'channels',
+        'sampleRate',
+        'bandwidth',
+        'audioBitrate',
+        'videoBitrate',
+        'audioPacketQueueLength',
+        'videoPacketQueueLength',
+        'videoEncodeFramerate',
+        'videoDecodeFramerate',
+        'videoRenderFramerate',
+        'keyFrameInterval',
+        'audioEncodeFramerate',
+        'audioDecodeFramerate',
+        'audioRenderFramerate',
+        'audioFrameDecodeIntervalMax',
+        'audioFrameRenderIntervalMax',
+        'videoFrameDecodeIntervalMax',
+        'videoFrameRenderIntervalMax',
+        'jitter',
+        'audioStutter',
+        'videoStutter'
+      ]
+
+      function handleStats(stats) {
+        statsKeys.forEach((key) => {
+          const span = document.querySelector('#' + key)
+          if (!span) {
+            return
+          }
+          let value = stats[key]
+
+          if (key === 'audioBitrate' || key === 'videoBitrate' || key === 'bandwidth') {
+            value = value * 8 / 1000
+          }
+
+          span.textContent = value
+        })
+      }
+      
+      urlComponent = new Vue({
+        el: '#url',
+        data: function () {
+          return {
+            url: url
+          }
+        }
+      })
+
+      isLiveComponent = new Vue({
+        el: '#isLive',
+        data: function () {
+          return {
+            isLive: false
+          }
+        }
+      })
+
+      useThreadsComponent = new Vue({
+        el: '#useThreads',
+        data: function () {
+          return {
+            useThreads: true
+          }
+        }
+      })
+
+      useMseComponent = new Vue({
+        el: '#useMse',
+        data: function () {
+          return {
+            useMse: false
+          }
+        }
+      })
+
+      enableWebGPUComponent = new Vue({
+        el: '#enableWebGPU',
+        data: function () {
+          return {
+            enableWebGPU: true
+          }
+        }
+      })
+
+      loopComponent = new Vue({
+        el: '#loop',
+        data: function () {
+          return {
+            loop: false
+          }
+        },
+        watch: {
+          loop: function(enable) {
+            if (player) {
+              player.setLoop(enable)
+            }
+          }
+        }
+      })
+
+      enableSimdComponent = new Vue({
+        el: '#enableSimd',
+        data: function () {
+          return {
+            enableSimd: false
+          }
+        }
+      })
+
+      enableWebcodecComponent = new Vue({
+        el: '#enableWebcodec',
+        data: function () {
+          return {
+            enableHardwareAcceleration: true
+          }
+        }
+      })
+
+      // loaderComponent = new Vue({
+      //   el: '#loader',
+      //   data: function () {
+      //     return {
+      //       radio: '1',
+      //     }
+      //   },
+      // })
+
+      renderModeComponent = new Vue({
+        el: '#renderMode',
+        data: function () {
+          return {
+            radio: '0',
+          }
+        },
+        watch: {
+          radio: function (value) {
+            player.setRenderMode(+value)
+          }
+        }
+      })
+
+      renderRotateComponent = new Vue({
+        el: '#renderRotate',
+        data: function () {
+          return {
+            radio: '0',
+          }
+        },
+        watch: {
+          radio: function (value) {
+            player.setRotate(+value)
+          }
+        }
+      })
+
+      new Vue({
+        el: '#flipHorizontal',
+        data: function () {
+          return {
+            flipHorizontal: false
+          }
+        },
+        watch: {
+          flipHorizontal: function (enable) {
+            if (player) {
+              player.enableHorizontalFlip(enable)
+            }
+          }
+        }
+      })
+
+      new Vue({
+        el: '#flipVertical',
+        data: function () {
+          return {
+            flipVertical: false
+          }
+        },
+        watch: {
+          flipVertical: function (enable) {
+            if (player) {
+              player.enableVerticalFlip(enable)
+            }
+          }
+        }
+      })
+
+      document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement == null) {
+          player.resize(480, 360)
+        }
+        else {
+          player.resize(screen.width, screen.height)
+        }
+      });
+    
+      // AVPlayer.startPipelines().then(() => {
+        document.querySelector('#load').disabled = false
+        // loadPlayer('#canvas-background')
+      // })
+
+      AVPlayer.setLogLevel(1)
+    </script>
+</body>
+</html>
