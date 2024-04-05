@@ -26,9 +26,9 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 
  ### 工具
 
-- AVPlayer libmedia 的音视频播放器实现，支持软解、硬解、MSE；支持多种封装协议、多种编码格式
+- AVPlayer 是 libmedia 的音视频播放器实现，支持软解、硬解、MSE；支持多种封装协议、多种编码格式
 
-- AVTranscode libmedia 的转码工具实现，目前还未实现
+- AVTranscode 是 libmedia 的转码工具实现，目前还未实现
 
  ### 文档
 
@@ -82,4 +82,5 @@ test/avtranscode.html 是一个转码示例，涉及到解封装和封装的用�
 
  libmedia 使用 LGPL 开源协议，你需要遵守协议要求，详情查看 [LGPL](https://github.com/zhaohappy/libmedia/blob/master/COPYING.LGPLv3)
 
-版权所有 (C) 2024 赵高兴
+版权所有 (C) 2024-现在 赵高兴
+Copyright (C) 2024-present, Gaoxing Zhao
