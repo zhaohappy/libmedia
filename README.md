@@ -83,4 +83,5 @@ test/avtranscode.html 是一个转码示例，涉及到解封装和封装的用�
  libmedia 使用 LGPL 开源协议，你需要遵守协议要求，详情查看 [LGPL](https://github.com/zhaohappy/libmedia/blob/master/COPYING.LGPLv3)
 
 版权所有 (C) 2024-现在 赵高兴
+
 Copyright (C) 2024-present, Gaoxing Zhao
