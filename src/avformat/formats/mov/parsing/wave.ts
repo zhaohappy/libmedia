@@ -32,7 +32,7 @@ import { BoxType } from '../boxType'
 import esds from './esds'
 
 // @ts-ignore
-@synchronize
+@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()

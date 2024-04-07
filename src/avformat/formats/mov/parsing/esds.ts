@@ -36,7 +36,7 @@ import * as aac from '../../../codecs/aac'
 import * as opus from '../../../codecs/opus'
 
 // @ts-ignore
-@synchronize
+@deasync
 async function readDescriptorLength(ioReader: IOReader) {
   let len = 0
   for (let i = 0; i < 4; i++) {
@@ -50,7 +50,7 @@ async function readDescriptorLength(ioReader: IOReader) {
 }
 
 // @ts-ignore
-@synchronize
+@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()

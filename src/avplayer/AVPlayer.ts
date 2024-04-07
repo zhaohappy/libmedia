@@ -705,7 +705,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     video: true
   }) {
 
-    logger.info(`call play, options: ${JSON.stringify(options)}, taskId: ${this.taskId}`)
+    logger.info(`call play, options: ${JSON.stringify(options)}, status: ${this.status} taskId: ${this.taskId}`)
+
+    if (this.status === AVPlayerStatus.PLAYED) {
+      return
+    }
 
     if (!options.audio && !options.video) {
       logger.warn(`video and audio must play one, ignore options, we will try to play video and audio, taskId: ${this.taskId}`)
@@ -1178,6 +1182,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * 暂停播放
    */
   public async pause() {
+
+    logger.info(`call pause, taskId: ${this.taskId}`)
+
     if (!this.options.isLive) {
       const promises = []
       if (defined(ENABLE_MSE) && this.useMSE) {
@@ -1202,7 +1209,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
       }
       return Promise.all(promises).then(() => {
-        this.status = AVPlayerStatus.PAUSED
+        if (this.status === AVPlayerStatus.SEEKING) {
+          this.lastStatus = AVPlayerStatus.PAUSED
+        }
+        else {
+          this.status = AVPlayerStatus.PAUSED
+        }
         this.fire(eventType.PAUSED)
         if (this.jitterBufferController) {
           this.jitterBufferController.stop()

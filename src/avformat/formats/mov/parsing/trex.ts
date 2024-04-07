@@ -29,7 +29,7 @@ import { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 
 // @ts-ignore
-@synchronize
+@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()

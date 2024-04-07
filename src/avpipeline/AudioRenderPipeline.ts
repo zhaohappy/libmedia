@@ -647,10 +647,20 @@ export default class AudioRenderPipeline extends Pipeline {
   public async syncSeekTime(taskId: string, timestamp: int64, maxQueueLength?: number) {
     const task = this.tasks.get(taskId)
     if (task) {
+
+      let videoEnded = false
+
       while (true) {
 
-        while (maxQueueLength && task.stats.videoPacketQueueLength > maxQueueLength) {
+        const now = getTimestamp()
+        const videoPacketQueueLength = task.stats.videoPacketQueueLength
+        while (!videoEnded && maxQueueLength && task.stats.videoPacketQueueLength > maxQueueLength) {
           await new Sleep(0)
+          // 检查 videoPacketQueueLength 200ms 内没有变化说明 video 已经 sync 完成
+          // 否则某些条件下会卡主
+          if (getTimestamp() - now > 200 && videoPacketQueueLength === task.stats.videoPacketQueueLength) {
+            videoEnded = true
+          }
         }
 
         let audioFrame = await task.leftIPCPort.request<pointer<AVFrameRef>>('pull')
@@ -698,12 +708,16 @@ export default class AudioRenderPipeline extends Pipeline {
         task.receivePCMSync()
         task.receivePCMSync = null
       }
-      if (task.fakePlay) {
-        task.fakePlayStartTimestamp = getTimestamp()
-        task.fakePlaySamples = 0n
-        this.fakePlayNext(task)
+
+      if (!task.pausing) {
+        if (task.fakePlay) {
+          task.fakePlayStartTimestamp = getTimestamp()
+          task.fakePlaySamples = 0n
+          this.fakePlayNext(task)
+        }
+        task.lastRenderTimestamp = getTimestamp()
       }
-      task.lastRenderTimestamp = getTimestamp()
+
       logger.debug(`after seek end, taskId: ${task.taskId}`)
     }
   }

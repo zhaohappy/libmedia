@@ -1159,7 +1159,13 @@ export default class MSEPipeline extends Pipeline {
             AV_MILLI_TIME_BASE_Q
           )
           ) * 100n / task.playRate
-          task.audio.loop.start()
+
+          if (task.pausing) {
+            task.pauseTimestamp = getTimestamp()
+          }
+          else {
+            task.audio.loop.start()
+          }
         }
       }
 
@@ -1188,7 +1194,13 @@ export default class MSEPipeline extends Pipeline {
             AV_MILLI_TIME_BASE_Q
           )
           ) * 100n / task.playRate
-          task.video.loop.start()
+
+          if (task.pausing) {
+            task.pauseTimestamp = getTimestamp()
+          }
+          else {
+            task.video.loop.start()
+          }
         }
       }
 
@@ -1222,6 +1234,7 @@ export default class MSEPipeline extends Pipeline {
 
       task.currentTimeNTP = getTimestamp()
       task.currentTime = seekTime
+      task.seeking = false
       return seekTime
     }
   }

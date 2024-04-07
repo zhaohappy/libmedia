@@ -125,7 +125,7 @@ export default class IFlvFormat extends IFormat {
     }
   }
 
-  @synchronize
+  @deasync
   private async readCodecConfigurationRecord(formatContext: AVIFormatContext, stream: AVStream, len: int32) {
     const data = avMalloc(len)
     stream.codecpar.extradata = data
@@ -148,7 +148,7 @@ export default class IFlvFormat extends IFormat {
     }
   }
 
-  @synchronize
+  @deasync
   private async readAVPacketData(formatContext: AVIFormatContext, stream: AVStream, avpacket: pointer<AVPacket>, len: int32) {
     const data = avMalloc(len)
     addAVPacketData(avpacket, data, len)
@@ -164,7 +164,7 @@ export default class IFlvFormat extends IFormat {
     }
   }
 
-  @synchronize
+  @deasync
   private async readAVPacket_(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
 
     const now = formatContext.ioReader.getPos()
@@ -454,7 +454,7 @@ export default class IFlvFormat extends IFormat {
     }
   }
 
-  @synchronize
+  @deasync
   public async syncTag(formatContext: AVIFormatContext) {
     let pos: int64 = NOPTS_VALUE_BIGINT
 

@@ -33,7 +33,7 @@ import { avFree, avMalloc } from 'avutil/util/mem'
 import * as av1 from '../../../codecs/av1'
 
 // @ts-ignore
-@synchronize
+@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()

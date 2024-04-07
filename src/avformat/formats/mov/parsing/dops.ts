@@ -35,7 +35,7 @@ import StreamReader from 'common/io/StreamReader'
 import StreamWriter from 'common/io/StreamWriter'
 
 // @ts-ignore
-@synchronize
+@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()

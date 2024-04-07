@@ -119,6 +119,7 @@
         "cunion",
         "datagrams",
         "datasize",
+        "deasync",
         "Demux",
         "demuxer",
         "demuxing",

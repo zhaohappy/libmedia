@@ -53,7 +53,7 @@ export const DefaultDemuxOptions = {
 }
 
 // @ts-ignore
-@synchronize
+@deasync
 export async function open(formatContext: AVIFormatContext, options: DemuxOptions = {}) {
   const opts = object.extend({}, DefaultDemuxOptions, options)
   if (!formatContext.ioReader) {
@@ -73,7 +73,7 @@ export async function open(formatContext: AVIFormatContext, options: DemuxOption
 
 
 // @ts-ignore
-@synchronize
+@deasync
 async function estimateDurationFromPts(formatContext: AVIFormatContext) {
   const fileSize = await formatContext.ioReader.fileSize()
   if (fileSize <= 0n) {
@@ -152,7 +152,7 @@ async function estimateDurationFromPts(formatContext: AVIFormatContext) {
 }
 
 // @ts-ignore
-@synchronize
+@deasync
 export async function analyzeStreams(formatContext: AVIFormatContext) {
   const needStreams = formatContext.iformat.getAnalyzeStreamsCount()
   const streamFirstGotMap = {}
@@ -318,7 +318,7 @@ function addSample(stream: AVStream, avpacket: pointer<AVPacket>) {
 }
 
 // @ts-ignore
-@synchronize
+@deasync
 async function packetNeedRead(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>) {
   const stream = formatContext.getStreamById(avpacket.streamIndex)
   let ret = 0
@@ -417,7 +417,7 @@ async function packetNeedRead(formatContext: AVIFormatContext, avpacket: pointer
 }
 
 // @ts-ignore
-@synchronize
+@deasync
 export async function readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>) {
   let ret = 0
   unrefAVPacket(avpacket)
@@ -438,7 +438,7 @@ export async function readAVPacket(formatContext: AVIFormatContext, avpacket: po
 }
 
 // @ts-ignore
-@synchronize
+@deasync
 export async function seek(formatContext: AVIFormatContext, streamIndex: number, timestamp: int64, flags: int32): Promise<int64> {
 
   let stream = formatContext.streams[streamIndex]

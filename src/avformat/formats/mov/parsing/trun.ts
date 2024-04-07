@@ -30,7 +30,7 @@ import * as logger from 'common/util/logger'
 import { TRUNFlags } from '../boxType'
 
 // @ts-ignore
-@synchronize
+@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()

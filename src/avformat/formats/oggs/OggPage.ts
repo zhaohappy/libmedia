@@ -113,7 +113,7 @@ export class OggPage {
   }
 
 
-  @synchronize
+  @deasync
   public async read(ioReader: IOReader) {
     await this.readPageHeader(ioReader)
 
@@ -126,7 +126,7 @@ export class OggPage {
     }
   }
 
-  @synchronize
+  @deasync
   public async readPageHeader(ioReader: IOReader) {
     this.capturePattern = await ioReader.readString(4)
     this.streamStructureVersion = await ioReader.readUint8()

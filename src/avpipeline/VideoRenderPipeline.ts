@@ -480,9 +480,15 @@ export default class VideoRenderPipeline extends Pipeline {
         )
 
         if (pts < task.currentPTS) {
-          logger.warn(`dropping frame with pts ${pts}, which is earlier then the last rendered frame(${task.currentPTS}), taskId: ${task.taskId}`)
-          swap()
-          return
+          // 差值大于 1000s 认为从头开始了
+          if (task.currentPTS - pts > 1000000n) {
+            task.startTimestamp = static_cast<int64>(getTimestamp()) - (pts * 100n / task.targetRate)
+          }
+          else {
+            logger.warn(`dropping frame with pts ${pts}, which is earlier then the last rendered frame(${task.currentPTS}), taskId: ${task.taskId}`)
+            swap()
+            return
+          }
         }
 
         if (task.adjust === AdjustStatus.Accelerate) {

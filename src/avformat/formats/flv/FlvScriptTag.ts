@@ -52,7 +52,7 @@ export default class FlvScriptTag {
     }
   }
 
-  @synchronize
+  @deasync
   private async parseObject(ioReader: IOReader, endPos: bigint) {
     const key = await ioReader.readString(await ioReader.readUint16())
     const value = await this.parseValue(ioReader, endPos)
@@ -62,7 +62,7 @@ export default class FlvScriptTag {
     }
   }
 
-  @synchronize
+  @deasync
   private async parseValue(ioReader: IOReader, endPos: bigint) {
     const type = await ioReader.readUint8()
     let value: any
@@ -135,7 +135,7 @@ export default class FlvScriptTag {
     return value
   }
 
-  @synchronize
+  @deasync
   public async read(ioReader: IOReader, size: number) {
     const now = ioReader.getPos()
     const endPos = now + static_cast<int64>(size)

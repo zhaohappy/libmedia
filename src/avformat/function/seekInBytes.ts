@@ -34,7 +34,7 @@ import AVPacket from 'avutil/struct/avpacket'
 import * as logger from 'common/util/logger'
 
 // @ts-ignore
-@synchronize
+@deasync
 export default async function seekInBytes(
   context: AVIFormatContext,
   stream: AVStream,
