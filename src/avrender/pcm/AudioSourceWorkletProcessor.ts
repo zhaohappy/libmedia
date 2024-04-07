@@ -114,7 +114,7 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
         }
 
         case 'stop': {
-
+          this.ended = true
           this.pullIPC.destroy()
 
           this.ipcPort.reply(request)

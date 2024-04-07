@@ -658,12 +658,7 @@
           if (slider) {
             slider.currentTime = slider.duration
           }
-          player.destroy().then(() => {
-            AVPlayer.stopPipelines().then(() => {
-              console.log(CHeap.Allocator.inspect())
-            })
-          })
-
+          player.destroy()
         })
 
         player.on('time', (pts) => {
@@ -719,11 +714,7 @@
             if (slider) {
               slider.currentTime = 0
             }
-            player.destroy().then(() => {
-              AVPlayer.stopPipelines().then(() => {
-                console.log(CHeap.Allocator.inspect())
-              })
-            })
+            player.destroy()
           })
         }
       }
