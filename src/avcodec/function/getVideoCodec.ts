@@ -50,7 +50,7 @@ export default function getVideoCodec(codecId: AVCodecID, profile: number, level
       '%s.%02x%02x%02x',
       entry,
       profile & 0xff,
-      extradata[2],
+      extradata ? extradata[2] : 0,
       level & 0xff
     )
   }
@@ -177,7 +177,7 @@ export default function getVideoCodec(codecId: AVCodecID, profile: number, level
     }
   }
   else {
-    return entry || 'unknown'
+    code = entry || 'unknown'
   }
 
   return code
