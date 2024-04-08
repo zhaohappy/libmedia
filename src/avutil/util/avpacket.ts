@@ -79,8 +79,7 @@ export function addAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPacketS
 
   if (avpacket.sideDataElems) {
     for (let i = 0; i < avpacket.sideDataElems; i++) {
-      // @ts-ignore
-      sideData[i] <- avpacket.sideData[i]
+      sideData[i] = avpacket.sideData[i]
     }
   }
 
@@ -117,8 +116,7 @@ export function deleteAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPack
       const sideData = avMallocz(len) as pointer<AVPacketSideData>
       for (let i = 0; i < avpacket.sideDataElems; i++) {
         if (i !== index) {
-          // @ts-ignore
-          sideData[i] <- avpacket.sideData[i]
+          sideData[i] = avpacket.sideData[i]
         }
         else {
           avFree(avpacket.sideData[i].data)

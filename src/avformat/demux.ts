@@ -32,7 +32,9 @@ import { AVPacketSideDataType, AVCodecID, AVMediaType } from 'avutil/codec'
 import { AVFormat, AVSeekFlags } from './avformat'
 import { checkStreamParameters } from './function/checkStreamParameters'
 import { avRescaleQ } from 'avutil/util/rational'
-import { copyAVPacketData, createAVPacket, destroyAVPacket, hasAVPacketSideData, refAVPacket, unrefAVPacket } from 'avutil/util/avpacket'
+import { copyAVPacketData, createAVPacket, destroyAVPacket,
+  hasAVPacketSideData, refAVPacket, unrefAVPacket
+} from 'avutil/util/avpacket'
 import { IOFlags } from 'common/io/flags'
 import { DURATION_MAX_READ_SIZE, SAMPLE_INDEX_STEP } from './config'
 import * as errorType from 'avutil/error'

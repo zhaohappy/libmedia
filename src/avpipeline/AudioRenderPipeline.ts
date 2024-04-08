@@ -524,7 +524,7 @@ export default class AudioRenderPipeline extends Pipeline {
             task.outPCMBuffer.data = reinterpret_cast<pointer<pointer<uint8>>>(avMalloc(sizeof(pointer) * task.playChannels))
             const data = avMallocz(nbSamples * sizeof(float) * task.playChannels)
             for (let i = 0; i < task.playChannels; i++) {
-              task.outPCMBuffer.data[i] <- reinterpret_cast<pointer<uint8>>(data + nbSamples * sizeof(float) * i)
+              task.outPCMBuffer.data[i] = reinterpret_cast<pointer<uint8>>(data + nbSamples * sizeof(float) * i)
             }
             task.outPCMBuffer.maxnbSamples = nbSamples
           }

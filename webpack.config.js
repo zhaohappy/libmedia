@@ -182,6 +182,7 @@ module.exports = (env) => {
     const configFile = ts.readConfigFile(path.resolve(__dirname, './tsconfig.json'), ts.sys.readFile);
     config.plugins.push(
       new CheapPlugin({
+        env: 'browser',
         projectPath: __dirname,
         exclude: /__test__/,
         threadFiles: [

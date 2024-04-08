@@ -172,7 +172,7 @@ export function refAVFrame(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
     dst.nbExtendedBuf = src.nbExtendedBuf
 
     for (let i = 0; i < src.nbExtendedBuf; i++) {
-      dst.extendedBuf[i] <- avbufferRef(src.extendedBuf[i])
+      dst.extendedBuf[i] = avbufferRef(src.extendedBuf[i])
       if (!dst.extendedBuf[i]) {
         unrefAVFrame(dst)
         return NO_MEMORY
