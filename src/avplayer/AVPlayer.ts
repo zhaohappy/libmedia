@@ -418,8 +418,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
         else {
           if (this.audioDecoder2AudioRenderChannel) {
-            await AVPlayer.AudioDecoderThread?.resetTask(this.taskId)
-            await AVPlayer.AudioRenderThread?.restart(this.taskId)
+            await AVPlayer.AudioDecoderThread.resetTask(this.taskId)
+            await AVPlayer.AudioRenderThread.restart(this.taskId)
           }
 
           if (this.audioSourceNode) {
@@ -431,8 +431,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           }
 
           if (this.videoDecoder2VideoRenderChannel) {
-            await this.VideoDecoderThread?.resetTask(this.taskId)
-            await AVPlayer.VideoRenderThread?.restart(this.taskId)
+            await this.VideoDecoderThread.resetTask(this.taskId)
+            await AVPlayer.VideoRenderThread.restart(this.taskId)
             this.videoEnded = false
           }
         }
@@ -480,7 +480,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       ext = urlUtils.parse(source).file.split('.').pop()
       // 注册一个 url io 任务
       ret = await AVPlayer.IOThread.registerTask
-        .transfer([this.ioloader2DemuxerChannel.port1])
+        .transfer(this.ioloader2DemuxerChannel.port1)
         .invoke({
           type: Ext2IOLoader[ext] ?? IOType.Fetch,
           info: {
@@ -503,7 +503,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       ext = source.name.split('.').pop()
       // 注册一个文件 io 任务
       ret = await AVPlayer.IOThread.registerTask
-        .transfer([this.ioloader2DemuxerChannel.port1])
+        .transfer(this.ioloader2DemuxerChannel.port1)
         .invoke({
           type: IOType.File,
           info: {
@@ -534,7 +534,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         // dash 因为音视频各自独立，因此这里注册两个解封装任务
         this.subTaskId = generateUUID()
         await AVPlayer.DemuxerThread.registerTask
-          .transfer([this.ioloader2DemuxerChannel.port2])
+          .transfer(this.ioloader2DemuxerChannel.port2)
           .invoke({
             taskId: this.taskId,
             leftPort: this.ioloader2DemuxerChannel.port2,
@@ -563,7 +563,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       else {
         // dash 只有一个媒体类型
         await AVPlayer.DemuxerThread.registerTask
-          .transfer([this.ioloader2DemuxerChannel.port2])
+          .transfer(this.ioloader2DemuxerChannel.port2)
           .invoke({
             taskId: this.taskId,
             leftPort: this.ioloader2DemuxerChannel.port2,
@@ -580,7 +580,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
     else {
       await AVPlayer.DemuxerThread.registerTask
-        .transfer([this.ioloader2DemuxerChannel.port2])
+        .transfer(this.ioloader2DemuxerChannel.port2)
         .invoke({
           taskId: this.taskId,
           leftPort: this.ioloader2DemuxerChannel.port2,
@@ -760,7 +760,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (defined(ENABLE_MSE) && this.useMSE) {
       await AVPlayer.startMSEPipeline()
       // 注册一个 mse 处理任务
-      await AVPlayer.MSEThread.registerTask.transfer([this.controller.getMuxerRenderControlPort()])
+      await AVPlayer.MSEThread.registerTask.transfer(this.controller.getMuxerRenderControlPort())
         .invoke({
           taskId: this.taskId,
           stats: addressof(this.stats),
@@ -782,9 +782,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           this.videoEnded = false
           this.demuxer2VideoDecoderChannel = createMessageChannel()
           await AVPlayer.DemuxerThread.connectStreamTask
-            .transfer([this.demuxer2VideoDecoderChannel.port1])
+            .transfer(this.demuxer2VideoDecoderChannel.port1)
             .invoke(this.subTaskId || this.taskId, stream.index, this.demuxer2VideoDecoderChannel.port1)
-          await AVPlayer.MSEThread.addStream.transfer([this.demuxer2VideoDecoderChannel.port2])
+          await AVPlayer.MSEThread.addStream.transfer(this.demuxer2VideoDecoderChannel.port2)
             .invoke(
               this.taskId,
               stream.index,
@@ -798,9 +798,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           this.audioEnded = false
           this.demuxer2AudioDecoderChannel = createMessageChannel()
           await AVPlayer.DemuxerThread.connectStreamTask
-            .transfer([this.demuxer2AudioDecoderChannel.port1])
+            .transfer(this.demuxer2AudioDecoderChannel.port1)
             .invoke(this.taskId, stream.index, this.demuxer2AudioDecoderChannel.port1)
-          await AVPlayer.MSEThread.addStream.transfer([this.demuxer2AudioDecoderChannel.port2])
+          await AVPlayer.MSEThread.addStream.transfer(this.demuxer2AudioDecoderChannel.port2)
             .invoke(
               this.taskId,
               stream.index,
@@ -876,7 +876,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
           // 注册一个视频解码任务
           await this.VideoDecoderThread.registerTask
-            .transfer([this.demuxer2VideoDecoderChannel.port2, this.videoDecoder2VideoRenderChannel.port1])
+            .transfer(this.demuxer2VideoDecoderChannel.port2, this.videoDecoder2VideoRenderChannel.port1)
             .invoke({
               taskId: this.taskId,
               resource,
@@ -891,7 +891,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             })
           await this.VideoDecoderThread.open(this.taskId, stream.codecpar, stream.timeBase)
           await AVPlayer.DemuxerThread.connectStreamTask
-            .transfer([this.demuxer2VideoDecoderChannel.port1])
+            .transfer(this.demuxer2VideoDecoderChannel.port1)
             .invoke(this.subTaskId || this.taskId, stream.index, this.demuxer2VideoDecoderChannel.port1)
         }
         else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO && options.audio) {
@@ -912,7 +912,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
           // 注册一个音频解码任务
           await AVPlayer.AudioDecoderThread.registerTask
-            .transfer([this.demuxer2AudioDecoderChannel.port2, this.audioDecoder2AudioRenderChannel.port1])
+            .transfer(this.demuxer2AudioDecoderChannel.port2, this.audioDecoder2AudioRenderChannel.port1)
             .invoke({
               taskId: this.taskId,
               resource: await compile(
@@ -934,7 +934,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             })
           await AVPlayer.AudioDecoderThread.open(this.taskId, stream.codecpar, stream.timeBase)
           await AVPlayer.DemuxerThread.connectStreamTask
-            .transfer([this.demuxer2AudioDecoderChannel.port1])
+            .transfer(this.demuxer2AudioDecoderChannel.port1)
             .invoke(this.taskId, stream.index, this.demuxer2AudioDecoderChannel.port1)
         }
       }
@@ -951,11 +951,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         // 注册一个视频渲染任务
         await AVPlayer.VideoRenderThread.registerTask
-          .transfer([
+          .transfer(
             this.videoDecoder2VideoRenderChannel.port2,
             this.controller.getVideoRenderControlPort(),
             canvas as OffscreenCanvas
-          ])
+          )
           .invoke({
             taskId: this.taskId,
             leftPort: this.videoDecoder2VideoRenderChannel.port2,
@@ -996,11 +996,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         // 注册一个音频渲染任务
         await AVPlayer.AudioRenderThread.registerTask
-          .transfer([
+          .transfer(
             this.audioDecoder2AudioRenderChannel.port2,
             this.audioRender2AudioWorkletChannel.port1,
             this.controller.getAudioRenderControlPort()
-          ])
+          )
           .invoke({
             taskId: this.taskId,
             leftPort: this.audioDecoder2AudioRenderChannel.port2,
@@ -1477,8 +1477,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
       }
       else {
-        AVPlayer?.AudioRenderThread.setPlayTempo(this.taskId, this.playRate)
-        AVPlayer?.VideoRenderThread.setPlayRate(this.taskId, this.playRate)
+        AVPlayer.AudioRenderThread?.setPlayTempo(this.taskId, this.playRate)
+        AVPlayer.VideoRenderThread?.setPlayRate(this.taskId, this.playRate)
         this.VideoDecoderThread?.setPlayRate(this.taskId, this.playRate)
       }
       logger.info(`player call setPlaybackRate, set ${this.playRate}, taskId: ${this.taskId}`)
@@ -1811,7 +1811,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       ? this.updateCanvas.transferControlToOffscreen()
       : this.updateCanvas
     AVPlayer.VideoRenderThread.updateCanvas
-      .transfer([canvas as OffscreenCanvas])
+      .transfer(canvas as OffscreenCanvas)
       .invoke(this.taskId, canvas)
   }
 

@@ -67,8 +67,6 @@ export default class AudioDecodePipeline extends Pipeline {
 
   declare tasks: Map<string, SelfTask>
 
-
-
   constructor() {
     super()
   }
