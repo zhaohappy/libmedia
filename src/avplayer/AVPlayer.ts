@@ -146,6 +146,11 @@ export const enum AVPlayerStatus {
 export default class AVPlayer extends Emitter implements ControllerObserver {
   static level: number = logger.INFO
 
+  static DemuxThreadReady: Promise<void>
+  static AudioThreadReady: Promise<void>
+  static VideoThreadReady: Promise<void>
+  static MSEThreadReady: Promise<void>
+
   // 下面的线程所有 AVPlayer 实例共享
   static IOThread: Thread<IOPipeline>
   static DemuxerThread: Thread<DemuxPipeline>
@@ -1869,76 +1874,83 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   static async startDemuxPipelines() {
-    if (AVPlayer.IOThread) {
-      return
+    if (AVPlayer.DemuxThreadReady) {
+      return AVPlayer.DemuxThreadReady
     }
 
-    AVPlayer.IOThread = await createThreadFromClass(IOPipeline, {
-      name: 'IOThread'
-    }).run()
-    AVPlayer.IOThread.setLogLevel(AVPlayer.level)
+    return AVPlayer.DemuxThreadReady = new Promise(async (resolve) => {
+      AVPlayer.IOThread = await createThreadFromClass(IOPipeline, {
+        name: 'IOThread'
+      }).run()
+      AVPlayer.IOThread.setLogLevel(AVPlayer.level)
 
-    AVPlayer.DemuxerThread = await createThreadFromClass(DemuxPipeline, {
-      name: 'DemuxerThread'
-    }).run()
-    AVPlayer.DemuxerThread.setLogLevel(AVPlayer.level)
+      AVPlayer.DemuxerThread = await createThreadFromClass(DemuxPipeline, {
+        name: 'DemuxerThread'
+      }).run()
+      AVPlayer.DemuxerThread.setLogLevel(AVPlayer.level)
+      resolve()
+    })
   }
 
   static async startAudioPipelines() {
-
-    if (AVPlayer.audioContext) {
-      return
+    if (AVPlayer.AudioThreadReady) {
+      return AVPlayer.AudioThreadReady
     }
 
-    AVPlayer.audioContext = new (AudioContext || webkitAudioContext)()
+    return AVPlayer.AudioThreadReady = new Promise(async (resolve) => {
+      AVPlayer.audioContext = new (AudioContext || webkitAudioContext)()
+      if (support.audioWorklet) {
+        await registerProcessor(
+          AVPlayer.audioContext,
+          defined(ENABLE_THREADS) && cheapConfig.USE_THREADS && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
+            ? require.resolve('avrender/pcm/AudioSourceWorkletProcessor2')
+            : require.resolve('avrender/pcm/AudioSourceWorkletProcessor')
+        )
+      }
+      AVPlayer.AudioDecoderThread = await createThreadFromClass(AudioDecodePipeline, {
+        name: 'AudioDecoderThread',
+        disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
+      }).run()
+      AVPlayer.AudioDecoderThread.setLogLevel(AVPlayer.level)
 
-    if (support.audioWorklet) {
-      await registerProcessor(
-        AVPlayer.audioContext,
-        defined(ENABLE_THREADS) && cheapConfig.USE_THREADS && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
-          ? require.resolve('avrender/pcm/AudioSourceWorkletProcessor2')
-          : require.resolve('avrender/pcm/AudioSourceWorkletProcessor')
-      )
-    }
-
-    AVPlayer.AudioDecoderThread = await createThreadFromClass(AudioDecodePipeline, {
-      name: 'AudioDecoderThread',
-      disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
-    }).run()
-    AVPlayer.AudioDecoderThread.setLogLevel(AVPlayer.level)
-
-    AVPlayer.AudioRenderThread = await createThreadFromClass(AudioRenderPipeline, {
-      name: 'AudioRenderThread',
-      disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
-    }).run()
-    AVPlayer.AudioRenderThread.setLogLevel(AVPlayer.level)
+      AVPlayer.AudioRenderThread = await createThreadFromClass(AudioRenderPipeline, {
+        name: 'AudioRenderThread',
+        disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
+      }).run()
+      AVPlayer.AudioRenderThread.setLogLevel(AVPlayer.level)
+      resolve()
+    })
   }
 
   static async startVideoRenderPipeline() {
-
-    if (AVPlayer.VideoRenderThread) {
-      return
+    if (AVPlayer.VideoThreadReady) {
+      return AVPlayer.VideoThreadReady
     }
 
-    AVPlayer.VideoRenderThread = await createThreadFromClass(VideoRenderPipeline, {
-      name: 'VideoRenderThread',
-      disableWorker: !supportOffscreenCanvas()
-    }).run()
-    AVPlayer.VideoRenderThread.setLogLevel(AVPlayer.level)
+    return AVPlayer.VideoThreadReady = new Promise(async (resolve) => {
+      AVPlayer.VideoRenderThread = await createThreadFromClass(VideoRenderPipeline, {
+        name: 'VideoRenderThread',
+        disableWorker: !supportOffscreenCanvas()
+      }).run()
+      AVPlayer.VideoRenderThread.setLogLevel(AVPlayer.level)
+      resolve()
+    })
   }
 
   static async startMSEPipeline() {
-
-    if (AVPlayer.MSEThread) {
-      return
-    }
-
     if (defined(ENABLE_MSE)) {
-      AVPlayer.MSEThread = await createThreadFromClass(MSEPipeline, {
-        name: 'MSEThread',
-        disableWorker: !support.workerMSE
-      }).run()
-      AVPlayer.MSEThread.setLogLevel(AVPlayer.level)
+      if (AVPlayer.MSEThreadReady) {
+        return AVPlayer.MSEThreadReady
+      }
+
+      return AVPlayer.MSEThreadReady = new Promise(async (resolve) => {
+        AVPlayer.MSEThread = await createThreadFromClass(MSEPipeline, {
+          name: 'MSEThread',
+          disableWorker: !support.workerMSE
+        }).run()
+        AVPlayer.MSEThread.setLogLevel(AVPlayer.level)
+        resolve()
+      })
     }
   }
 
@@ -1971,9 +1983,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await AVPlayer.IOThread.clear()
       closeThread(AVPlayer.IOThread)
     }
-    if (AVPlayer.MSEThread) {
-      await AVPlayer.MSEThread.clear()
-      closeThread(AVPlayer.MSEThread)
+    if (defined(ENABLE_MSE)) {
+      if (AVPlayer.MSEThread) {
+        await AVPlayer.MSEThread.clear()
+        closeThread(AVPlayer.MSEThread)
+      }
     }
 
     AVPlayer.AudioDecoderThread = null

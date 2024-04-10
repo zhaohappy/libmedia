@@ -1,7 +1,9 @@
 
 libmedia
 ======
-[English](README_en.md)
+中文 | [English](README_en.md)
+
+![](https://img.shields.io/badge/language-typescript-blue.svg) [![](https://img.shields.io/badge/base-cheap-green.svg)](https://github.com/zhaohappy/cheap) ![](https://img.shields.io/badge/feature-thread-red.svg) ![license](https://img.shields.io/github/license/zhaohappy/libmedia)
 
 ### 介绍
  

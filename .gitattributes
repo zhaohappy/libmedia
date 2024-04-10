@@ -1,1 +1,2 @@
-lib/** linguist-vendored
+lib/* linguist-vendored
+dist/* linguist-vendored
