@@ -48,11 +48,11 @@ export default class WasmAudioEncoder {
 
   public async open(parameters: AVCodecParameters, timeBase: Rational) {
     await this.encoder.run()
-    this.encoder.call('encoder_open', [addressof(parameters), addressof(timeBase)])
+    this.encoder.call('encoder_open', addressof(parameters), addressof(timeBase))
   }
 
   public encode(frame: pointer<AVFrame>) {
-    let ret = this.encoder.call('encoder_encode', [frame])
+    let ret = this.encoder.call('encoder_encode', frame)
     return ret
   }
 

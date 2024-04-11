@@ -50,44 +50,44 @@ export default class StretchPitcher {
   public async open(parameters: StretchPitchParameters) {
     await this.processor.run()
     this.processor.call('stretchpitch_init')
-    this.processor.call('stretchpitch_set_channels', [parameters.channels])
-    this.processor.call('stretchpitch_set_samplerate', [parameters.sampleRate])
+    this.processor.call('stretchpitch_set_channels', parameters.channels)
+    this.processor.call('stretchpitch_set_samplerate', parameters.sampleRate)
   }
 
   public setRate(rate: double) {
-    this.processor.call('stretchpitch_set_rate', [rate])
+    this.processor.call('stretchpitch_set_rate', rate)
   }
 
   public setRateChange(change: double) {
-    this.processor.call('stretchpitch_set_rate_change', [change])
+    this.processor.call('stretchpitch_set_rate_change', change)
   }
 
   public setTempo(tempo: double) {
-    this.processor.call('stretchpitch_set_tempo', [tempo])
+    this.processor.call('stretchpitch_set_tempo', tempo)
   }
 
   public setTempoChange(change: double) {
-    this.processor.call('stretchpitch_set_tempo_change', [change])
+    this.processor.call('stretchpitch_set_tempo_change', change)
   }
 
   public setPitch(pitch: double) {
-    this.processor.call('stretchpitch_set_pitch', [pitch])
+    this.processor.call('stretchpitch_set_pitch', pitch)
   }
 
   public setPitchOctaves(pitch: double) {
-    this.processor.call('stretchpitch_set_pitch_octaves', [pitch])
+    this.processor.call('stretchpitch_set_pitch_octaves', pitch)
   }
 
   public setPitchSemiTones(pitch: double) {
-    this.processor.call('stretchpitch_set_pitch_semi_tones', [pitch])
+    this.processor.call('stretchpitch_set_pitch_semi_tones', pitch)
   }
 
   public sendSamples(input: pointer<float>, nbSamples: int32) {
-    this.processor.call('stretchpitch_send_samples', [input, nbSamples])
+    this.processor.call('stretchpitch_send_samples', input, nbSamples)
   }
 
   public receiveSamples(output: pointer<float>, maxSamples: int32) {
-    return this.processor.call<int32>('stretchpitch_receive_samples', [output, maxSamples])
+    return this.processor.call<int32>('stretchpitch_receive_samples', output, maxSamples)
   }
 
   public flush() {

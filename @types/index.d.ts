@@ -1,12 +1,3 @@
-
-declare interface LibraryManagerInterface {
-  library: Object
-}
-
-declare const LibraryManager: LibraryManagerInterface
-
-declare function mergeInto(library: LibraryManagerInterface['library'], lib: Object): void
-
 declare module '*.wgsl' {
   const content: string
   export default content

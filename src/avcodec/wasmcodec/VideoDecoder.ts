@@ -109,12 +109,12 @@ export default class WasmVideoDecoder {
   }
 
   private receiveAVFrame() {
-    return this.decoder.call<int32>('decoder_receive', [this.getAVFrame()])
+    return this.decoder.call<int32>('decoder_receive', this.getAVFrame())
   }
 
   public async open(parameters: pointer<AVCodecParameters>, threadCount: number = 1) {
     await this.decoder.run()
-    let ret = this.decoder.call<int32>('decoder_open', [parameters, nullptr, threadCount])
+    let ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, threadCount)
     if (ret < 0) {
       logger.fatal(`open video decoder failed, ret: ${ret}`)
     }
@@ -123,7 +123,7 @@ export default class WasmVideoDecoder {
   }
 
   public decode(avpacket: pointer<AVPacket>) {
-    let ret = this.decoder.call<int32>('decoder_decode', [avpacket])
+    let ret = this.decoder.call<int32>('decoder_decode', avpacket)
 
     if (ret) {
       return ret
@@ -169,6 +169,6 @@ export default class WasmVideoDecoder {
   }
 
   public setSkipFrameDiscard(discard: AVDiscard) {
-    this.decoder.call('decoder_discard', [discard])
+    this.decoder.call('decoder_discard', discard)
   }
 }

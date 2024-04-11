@@ -66,19 +66,19 @@ export default class Resampler {
 
     const layout = stack.malloc(sizeof(uint64)) as pointer<uint64>
     accessof(layout) <- static_cast<uint64>(input.layout ?? 0n)
-    this.resampler.call('resample_set_input_parameters', [
+    this.resampler.call('resample_set_input_parameters',
       input.sampleRate,
       input.channels,
       input.format,
       layout
-    ])
+    )
     accessof(layout) <- static_cast<uint64>(output.layout ?? 0n)
-    this.resampler.call('resample_set_output_parameters', [
+    this.resampler.call('resample_set_output_parameters',
       output.sampleRate,
       output.channels,
       output.format,
       layout
-    ])
+    )
     stack.free(sizeof(uint64))
 
     let ret = this.resampler.call<int32>('resample_init')
@@ -88,7 +88,7 @@ export default class Resampler {
   }
 
   public resample(input: pointer<pointer<uint8>>, output: pointer<AVPCMBuffer>, numberOfFrames: int32) {
-    return this.resampler.call<int32>('resample_process', [input, output, numberOfFrames])
+    return this.resampler.call<int32>('resample_process', input, output, numberOfFrames)
   }
 
   public close() {

@@ -72,19 +72,19 @@ export default class WasmAudioDecoder {
   }
 
   private receiveAVFrame() {
-    return this.decoder.call<int32>('decoder_receive', [this.getAVFrame()])
+    return this.decoder.call<int32>('decoder_receive', this.getAVFrame())
   }
 
   public async open(parameters: pointer<AVCodecParameters>) {
     await this.decoder.run()
-    let ret = this.decoder.call<int32>('decoder_open', [parameters, nullptr, 1])
+    let ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, 1)
     if (ret < 0) {
       logger.fatal(`open audio decoder failed, ret: ${ret}`)
     }
   }
 
   public decode(avpacket: pointer<AVPacket>) {
-    let ret = this.decoder.call<int32>('decoder_decode', [avpacket])
+    let ret = this.decoder.call<int32>('decoder_decode', avpacket)
 
     if (ret) {
       return ret
