@@ -856,10 +856,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           const resource = await compile(
             {
               source: this.options.getWasm('decoder', stream.codecpar.codecId)
-            },
-            {
-              enableThread: cheapConfig.USE_THREADS && defined(ENABLE_THREADS),
-              initFuncs: ['__wasm_apply_data_relocs', '_initialize']
             }
           )
 
@@ -870,7 +866,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
                 source: browser.firefox ? this.options.getWasm('decoder', stream.codecpar.codecId) : resource.buffer
               },
               {
-                enableThread: true,
                 child: true,
                 initFuncs: ['_initialize']
               }
@@ -923,10 +918,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
               resource: await compile(
                 {
                   source: this.options.getWasm('decoder', stream.codecpar.codecId)
-                },
-                {
-                  enableThread: cheapConfig.USE_THREADS && defined(ENABLE_THREADS),
-                  initFuncs: ['__wasm_apply_data_relocs', '_initialize']
                 }
               ),
               leftPort: this.demuxer2AudioDecoderChannel.port2,
@@ -1017,19 +1008,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             resamplerResource: await compile(
               {
                 source: this.options.getWasm('resampler')
-              },
-              {
-                enableThread: cheapConfig.USE_THREADS && defined(ENABLE_THREADS),
-                initFuncs: ['__wasm_apply_data_relocs', '_initialize']
               }
             ),
             stretchpitcherResource: await compile(
               {
                 source: this.options.getWasm('stretchpitcher')
-              },
-              {
-                enableThread: cheapConfig.USE_THREADS && defined(ENABLE_THREADS),
-                initFuncs: ['__wasm_apply_data_relocs', '_initialize']
               }
             ),
             stats: addressof(this.stats),
