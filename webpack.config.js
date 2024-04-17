@@ -81,7 +81,9 @@ module.exports = (env) => {
       }
     },
     externals: {
-      typescript: 'typescript'
+      typescript: 'typescript',
+      'child_process': 'child_process',
+      'fs': 'fs'
     },
     devtool: +env.release ? false : 'source-map',
     mode: +env.release ? 'production' : 'development',

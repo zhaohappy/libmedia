@@ -597,7 +597,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         })
     }
 
-    ret = await AVPlayer.DemuxerThread.openStream(this.taskId)
+    ret = await AVPlayer.DemuxerThread.openStreams(this.taskId)
     if (ret < 0) {
       logger.fatal(`open stream failed, ret: ${ret}, taskId: ${this.taskId}`)
     }
@@ -607,7 +607,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
-      ret = await AVPlayer.DemuxerThread.openStream(this.subTaskId)
+      ret = await AVPlayer.DemuxerThread.openStreams(this.subTaskId)
       if (ret < 0) {
         logger.fatal(`open stream failed, ret: ${ret}, taskId: ${this.taskId}`)
       }
@@ -866,8 +866,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
                 source: browser.firefox ? this.options.getWasm('decoder', stream.codecpar.codecId) : resource.buffer
               },
               {
-                child: true,
-                initFuncs: ['_initialize']
+                child: true
               }
             )
           }
@@ -1251,31 +1250,31 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         ])
       }
 
-      let seekTimestamp = 0n
+      let seekedTimestamp = -1n
 
       if (defined(ENABLE_PROTOCOL_HLS) && (this.ext === 'm3u8' || this.ext === 'm3u')) {
-        seekTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBitInt, AVSeekFlags.TIMESTAMP)
+        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBitInt, AVSeekFlags.TIMESTAMP)
       }
       else if (defined(ENABLE_PROTOCOL_DASH) && this.ext === 'mpd') {
-        seekTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBitInt, AVSeekFlags.TIMESTAMP)
+        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBitInt, AVSeekFlags.TIMESTAMP)
         if (this.subTaskId) {
           await AVPlayer.DemuxerThread.seek(this.subTaskId, timestampBitInt, AVSeekFlags.TIMESTAMP)
         }
       }
       else {
-        seekTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBitInt, AVSeekFlags.FRAME)
+        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBitInt, AVSeekFlags.FRAME)
       }
 
-      if (seekTimestamp >= 0n) {
-        logger.debug(`seeked to packet timestamp: ${seekTimestamp}, taskId: ${this.taskId}`)
+      if (seekedTimestamp >= 0n) {
+        logger.debug(`seeked to packet timestamp: ${seekedTimestamp}, taskId: ${this.taskId}`)
       }
       else {
-        logger.error(`demuxer seek failed, code: ${seekTimestamp}, taskId: ${this.taskId}`)
+        logger.error(`demuxer seek failed, code: ${seekedTimestamp}, taskId: ${this.taskId}`)
       }
 
       if (defined(ENABLE_MSE) && this.useMSE) {
-        if (seekTimestamp >= 0n) {
-          const time = await AVPlayer.MSEThread.afterSeek(this.taskId, seekTimestamp > timestampBitInt ? seekTimestamp : timestampBitInt)
+        if (seekedTimestamp >= 0n) {
+          const time = await AVPlayer.MSEThread.afterSeek(this.taskId, seekedTimestamp > timestampBitInt ? seekedTimestamp : timestampBitInt)
           if (this.video) {
             this.video.currentTime = time
           }
@@ -1297,7 +1296,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             maxQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate)), maxQueueLength)
           }
         })
-        if (seekTimestamp >= 0n) {
+        if (seekedTimestamp >= 0n) {
           await Promise.all([
             AVPlayer.AudioDecoderThread?.resetTask(this.taskId),
             this.VideoDecoderThread?.resetTask(this.taskId)
@@ -1305,18 +1304,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           await Promise.all([
             AVPlayer.AudioRenderThread?.syncSeekTime(
               this.taskId,
-              seekTimestamp > timestampBitInt ? seekTimestamp : timestampBitInt,
+              seekedTimestamp > timestampBitInt ? seekedTimestamp : timestampBitInt,
               maxQueueLength
             ),
             AVPlayer.VideoRenderThread?.syncSeekTime(
               this.taskId,
-              seekTimestamp > timestampBitInt ? seekTimestamp : timestampBitInt,
+              seekedTimestamp > timestampBitInt ? seekedTimestamp : timestampBitInt,
               maxQueueLength
             ),
           ])
           await Promise.all([
-            AVPlayer.AudioRenderThread?.afterSeek(this.taskId, seekTimestamp > timestampBitInt ? seekTimestamp : timestampBitInt),
-            AVPlayer.VideoRenderThread?.afterSeek(this.taskId, seekTimestamp > timestampBitInt ? seekTimestamp : timestampBitInt),
+            AVPlayer.AudioRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestampBitInt ? seekedTimestamp : timestampBitInt),
+            AVPlayer.VideoRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestampBitInt ? seekedTimestamp : timestampBitInt),
           ])
         }
         else {
