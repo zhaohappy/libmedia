@@ -467,7 +467,7 @@ export default class IFlvFormat extends IFormat {
           pos = formatContext.ioReader.getPos() - 1n
           const size = await formatContext.ioReader.readUint24()
 
-          if (size > 2 * 1024 * 1024) {
+          if (size > 10 * 1024 * 1024) {
             await formatContext.ioReader.seek(pos + 1n)
             continue
           }

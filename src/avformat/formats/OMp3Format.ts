@@ -37,7 +37,7 @@ import * as bigint from 'common/util/bigint'
 import { FrameHeader } from './mp3/frameHeader'
 import * as frameHeader from './mp3/frameHeader'
 import { ID3V1_SIZE, XING_SIZE, XING_TOC_COUNT } from './mp3/mp3'
-import StreamWriter from 'common/io/StreamWriter'
+import BufferWriter from 'common/io/BufferWriter'
 import * as id3v2 from './mp3/id3v2'
 import { mapUint8Array } from 'cheap/std/memory'
 import * as text from 'common/util/text'
@@ -82,7 +82,7 @@ export default class OMp3Format extends OFormat {
 
   private context: Mp3Context
 
-  private xingWriter: StreamWriter
+  private xingWriter: BufferWriter
 
   constructor(options: Mp3FormatOptions = {}) {
     super()
@@ -115,7 +115,7 @@ export default class OMp3Format extends OFormat {
       id3SizePos: 0n
     }
 
-    this.xingWriter = new StreamWriter(new Uint8Array(5000))
+    this.xingWriter = new BufferWriter(new Uint8Array(5000))
 
     const stream = formatContext.streams.find((stream) => {
       return stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3
@@ -411,7 +411,7 @@ export default class OMp3Format extends OFormat {
       const metadata = stream.metadata as Mp3MetaData
 
       const id1Buffer = new Uint8Array(ID3V1_SIZE)
-      const id1Writer = new StreamWriter(id1Buffer)
+      const id1Writer = new BufferWriter(id1Buffer)
       id1Writer.writeString('TAG')
 
       function writeText(str: string) {

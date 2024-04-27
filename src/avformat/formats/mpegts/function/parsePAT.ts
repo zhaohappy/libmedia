@@ -23,7 +23,7 @@
  *
  */
 
-import StreamReader from 'common/io/StreamReader'
+import BufferReader from 'common/io/BufferReader'
 import { PAT, TSSliceQueue } from '../struct'
 import { MpegtsContext } from '../type'
 import concatTypeArray from 'common/function/concatTypeArray'
@@ -33,23 +33,23 @@ export default function parsePAT(queue: TSSliceQueue, mpegtsContext: MpegtsConte
 
   let byte = 0
 
-  const streamReader = new StreamReader(concatTypeArray(Uint8Array, queue.slices), true)
+  const bufferReader = new BufferReader(concatTypeArray(Uint8Array, queue.slices), true)
 
-  const tableId = streamReader.readUint8()
+  const tableId = bufferReader.readUint8()
   if (tableId !== 0x00) {
     logger.error(`parsePAT: table_id ${tableId} is not corresponded to PAT!`)
   }
 
-  const sectionLength = streamReader.readUint16() & 0x0fff
+  const sectionLength = bufferReader.readUint16() & 0x0fff
 
-  const transportStreamId = streamReader.readUint16()
+  const transportStreamId = bufferReader.readUint16()
 
-  byte = streamReader.readUint8()
+  byte = bufferReader.readUint8()
 
   const versionNumber = (byte >> 1) & 0x1f
   const currentNextIndicator = byte & 0x01
-  const sectionNumber = streamReader.readUint8()
-  const lastSectionNumber = streamReader.readUint8()
+  const sectionNumber = bufferReader.readUint8()
+  const lastSectionNumber = bufferReader.readUint8()
 
   let pat: PAT
 
@@ -68,15 +68,15 @@ export default function parsePAT(queue: TSSliceQueue, mpegtsContext: MpegtsConte
 
   const programBytes = sectionLength - 5 - 4
 
-  const endPos = streamReader.getPos() + programBytes
+  const endPos = static_cast<int32>(bufferReader.getPos()) + programBytes
 
   let firstProgramNumber = -1
   let firstPmtPid = -1
 
   // program_number + program_map_PID + crc
-  while (streamReader.getPos() < endPos) {
-    const programNumber = streamReader.readUint16()
-    const pid = streamReader.readUint16() & 0x1fff
+  while (bufferReader.getPos() < endPos) {
+    const programNumber = bufferReader.readUint16()
+    const pid = bufferReader.readUint16() & 0x1fff
 
     // network_PID
     if (programNumber === 0) {

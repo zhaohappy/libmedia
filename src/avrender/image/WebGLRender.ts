@@ -30,6 +30,7 @@ import AVFrame from 'avutil/struct/avframe'
 import { RenderMode } from './ImageRender'
 import VideoProgram from './webgl/program/VideoProgram'
 import flipVertex from './function/flipVertex'
+import { Timeout } from 'common/types/type'
 
 export interface WebGLRenderOptions extends ImageRenderOptions {
 }
@@ -47,7 +48,7 @@ export default abstract class WebGLRender extends ImageRender {
 
   protected vertex: number[]
 
-  protected webglContextLostTimer: NodeJS.Timeout
+  protected webglContextLostTimer: Timeout
 
   protected onWebglContextLost: ((event: Event) => void) | void
 

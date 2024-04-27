@@ -25,8 +25,8 @@
 
 import * as array from 'common/util/array'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
-import StreamWriter from 'common/io/StreamWriter'
-import StreamReader from 'common/io/StreamReader'
+import BufferWriter from 'common/io/BufferWriter'
+import BufferReader from 'common/io/BufferReader'
 import { AVPacketSideDataType } from 'avutil/codec'
 import BitReader from 'common/io/BitReader'
 import AVStream from '../AVStream'
@@ -116,32 +116,32 @@ export const enum H264Profile {
  * 
  */
 export function extradata2SpsPps(extradata: Uint8ArrayInterface) {
-  const streamReader = new StreamReader(extradata)
-  streamReader.skip(5)
+  const bufferReader = new BufferReader(extradata)
+  bufferReader.skip(5)
 
   const spss = []
   const ppss = []
   const spsExts = []
 
-  const spsLength = streamReader.readUint8() & 0x1f
+  const spsLength = bufferReader.readUint8() & 0x1f
   for (let i = 0; i < spsLength; i++) {
-    const length = streamReader.readUint16()
-    spss.push(streamReader.readBuffer(length))
+    const length = bufferReader.readUint16()
+    spss.push(bufferReader.readBuffer(length))
   }
 
-  const ppsLength = streamReader.readUint8()
+  const ppsLength = bufferReader.readUint8()
   for (let i = 0; i < ppsLength; i++) {
-    const length = streamReader.readUint16()
-    ppss.push(streamReader.readBuffer(length))
+    const length = bufferReader.readUint16()
+    ppss.push(bufferReader.readBuffer(length))
   }
 
-  if (streamReader.remainingSize() > 4) {
-    streamReader.skip(3)
-    const spsExtLength = streamReader.readUint8()
+  if (bufferReader.remainingSize() > 4) {
+    bufferReader.skip(3)
+    const spsExtLength = bufferReader.readUint8()
     if (spsExtLength > 0) {
       for (let i = 0; i < spsExtLength; i++) {
-        const length = streamReader.readUint16()
-        spsExts.push(streamReader.readBuffer(length))
+        const length = bufferReader.readUint16()
+        spsExts.push(bufferReader.readBuffer(length))
       }
     }
   }
@@ -187,37 +187,37 @@ export function spsPps2Extradata(spss: Uint8ArrayInterface[], ppss: Uint8ArrayIn
   }
 
   const buffer = new Uint8Array(length)
-  const streamWriter = new StreamWriter(buffer)
+  const bufferWriter = new BufferWriter(buffer)
 
-  streamWriter.writeUint8(0x01)
-  streamWriter.writeUint8(sps[1])
-  streamWriter.writeUint8(sps[2])
-  streamWriter.writeUint8(sps[3])
-  streamWriter.writeUint8(0xfc | NALULengthSizeMinusOne)
+  bufferWriter.writeUint8(0x01)
+  bufferWriter.writeUint8(sps[1])
+  bufferWriter.writeUint8(sps[2])
+  bufferWriter.writeUint8(sps[3])
+  bufferWriter.writeUint8(0xfc | NALULengthSizeMinusOne)
 
   // sps
-  streamWriter.writeUint8(0xe0 | (spss.length & 0x1f))
+  bufferWriter.writeUint8(0xe0 | (spss.length & 0x1f))
   array.each(spss, (sps) => {
-    streamWriter.writeUint16(sps.length)
-    streamWriter.writeBuffer(sps)
+    bufferWriter.writeUint16(sps.length)
+    bufferWriter.writeBuffer(sps)
   })
 
   // pps
-  streamWriter.writeUint8(ppss.length)
+  bufferWriter.writeUint8(ppss.length)
   array.each(ppss, (pps) => {
-    streamWriter.writeUint16(pps.length)
-    streamWriter.writeBuffer(pps)
+    bufferWriter.writeUint16(pps.length)
+    bufferWriter.writeBuffer(pps)
   })
 
   if (params.profile !== 66 && params.profile !== 77 && params.profile !== 88) {
-    streamWriter.writeUint8(0xfc | params.chromaFormatIdc)
-    streamWriter.writeUint8(0xf8 | params.bitDepthLumaMinus8)
-    streamWriter.writeUint8(0xf8 | params.bitDepthChromaMinus8)
+    bufferWriter.writeUint8(0xfc | params.chromaFormatIdc)
+    bufferWriter.writeUint8(0xf8 | params.bitDepthLumaMinus8)
+    bufferWriter.writeUint8(0xf8 | params.bitDepthChromaMinus8)
 
     if (spsExts.length) {
       array.each(spsExts, (ext) => {
-        streamWriter.writeUint16(ext.length)
-        streamWriter.writeBuffer(ext)
+        bufferWriter.writeUint16(ext.length)
+        bufferWriter.writeBuffer(ext)
       })
     }
   }
@@ -274,22 +274,22 @@ export function annexb2Avcc(data: Uint8ArrayInterface) {
   const bufferPointer = avMalloc(length)
   const buffer = mapUint8Array(bufferPointer, length)
 
-  const streamWriter = new StreamWriter(buffer)
+  const bufferWriter = new BufferWriter(buffer)
 
   array.each(nalus, (nalu) => {
     if (NALULengthSizeMinusOne === 3) {
-      streamWriter.writeUint32(nalu.length)
+      bufferWriter.writeUint32(nalu.length)
     }
     else if (NALULengthSizeMinusOne === 2) {
-      streamWriter.writeUint24(nalu.length)
+      bufferWriter.writeUint24(nalu.length)
     }
     else if (NALULengthSizeMinusOne === 1) {
-      streamWriter.writeUint16(nalu.length)
+      bufferWriter.writeUint16(nalu.length)
     }
     else {
-      streamWriter.writeUint8(nalu.length)
+      bufferWriter.writeUint8(nalu.length)
     }
-    streamWriter.writeBuffer(nalu.subarray(0))
+    bufferWriter.writeBuffer(nalu.subarray(0))
 
     const type = nalu[0] & 0x1f
     if (type === H264NaluType.kSliceIDR) {
@@ -328,24 +328,24 @@ export function avcc2Annexb(data: Uint8ArrayInterface, extradata?: Uint8ArrayInt
   const nalus = []
   const seis = []
 
-  const streamReader = new StreamReader(data)
-  while (streamReader.remainingSize() > 0) {
+  const bufferReader = new BufferReader(data)
+  while (bufferReader.remainingSize() > 0) {
     let length = 0
     if (naluLengthSizeMinusOne === 3) {
-      length = streamReader.readUint32()
+      length = bufferReader.readUint32()
     }
     else if (naluLengthSizeMinusOne === 2) {
-      length = streamReader.readUint24()
+      length = bufferReader.readUint24()
     }
     else if (naluLengthSizeMinusOne === 1) {
-      length = streamReader.readUint16()
+      length = bufferReader.readUint16()
     }
     else {
-      length = streamReader.readUint8()
+      length = bufferReader.readUint8()
     }
 
-    const nalu = data.subarray(streamReader.getPos(), streamReader.getPos() + length)
-    streamReader.skip(length)
+    const nalu = data.subarray(static_cast<int32>(bufferReader.getPos()), static_cast<int32>(bufferReader.getPos()) + length)
+    bufferReader.skip(length)
 
     const naluType = nalu[0] & 0x1f
 
@@ -374,55 +374,55 @@ export function avcc2Annexb(data: Uint8ArrayInterface, extradata?: Uint8ArrayInt
   }, length)
 
   const bufferPointer = avMalloc(length + 6)
-  const streamWriter = new StreamWriter(mapUint8Array(bufferPointer, length + 6))
+  const bufferWriter = new BufferWriter(mapUint8Array(bufferPointer, length + 6))
 
   // AUD
-  streamWriter.writeUint8(0x00)
-  streamWriter.writeUint8(0x00)
-  streamWriter.writeUint8(0x00)
-  streamWriter.writeUint8(0x01)
-  streamWriter.writeUint8(0x09)
-  streamWriter.writeUint8(0xf0)
+  bufferWriter.writeUint8(0x00)
+  bufferWriter.writeUint8(0x00)
+  bufferWriter.writeUint8(0x00)
+  bufferWriter.writeUint8(0x01)
+  bufferWriter.writeUint8(0x09)
+  bufferWriter.writeUint8(0xf0)
 
   array.each(seis, (sei) => {
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x01)
-    streamWriter.writeBuffer(sei)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x01)
+    bufferWriter.writeBuffer(sei)
   })
 
   array.each(spss, (sps) => {
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x01)
-    streamWriter.writeBuffer(sps)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x01)
+    bufferWriter.writeBuffer(sps)
   })
 
   array.each(ppss, (pps) => {
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x01)
-    streamWriter.writeBuffer(pps)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x01)
+    bufferWriter.writeBuffer(pps)
   })
   array.each(spsExts, (ext) => {
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x01)
-    streamWriter.writeBuffer(ext)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x01)
+    bufferWriter.writeBuffer(ext)
   })
 
   array.each(nalus, (nalu, index) => {
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x00)
     if (!index) {
-      streamWriter.writeUint8(0x00)
+      bufferWriter.writeUint8(0x00)
     }
-    streamWriter.writeUint8(0x01)
-    streamWriter.writeBuffer(nalu)
+    bufferWriter.writeUint8(0x01)
+    bufferWriter.writeBuffer(nalu)
 
     const type = nalu[0] & 0x1f
     if (type === H264NaluType.kSliceIDR) {
@@ -455,24 +455,24 @@ export function parseAvccExtraData(avpacket: pointer<AVPacket>, stream: AVStream
   let spsExts = []
   let others = []
 
-  const streamReader = new StreamReader(data)
-  while (streamReader.remainingSize() > 0) {
+  const bufferReader = new BufferReader(data)
+  while (bufferReader.remainingSize() > 0) {
     let length = 0
     if (naluLengthSizeMinusOne === 3) {
-      length = streamReader.readUint32()
+      length = bufferReader.readUint32()
     }
     else if (naluLengthSizeMinusOne === 2) {
-      length = streamReader.readUint24()
+      length = bufferReader.readUint24()
     }
     else if (naluLengthSizeMinusOne === 1) {
-      length = streamReader.readUint16()
+      length = bufferReader.readUint16()
     }
     else {
-      length = streamReader.readUint8()
+      length = bufferReader.readUint8()
     }
 
-    const nalu = data.subarray(streamReader.getPos(), streamReader.getPos() + length)
-    streamReader.skip(length)
+    const nalu = data.subarray(static_cast<int32>(bufferReader.getPos()), static_cast<int32>(bufferReader.getPos()) + length)
+    bufferReader.skip(length)
 
     const naluType = nalu[0] & 0x1f
 

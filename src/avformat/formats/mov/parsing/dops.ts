@@ -31,8 +31,8 @@ import { avFree, avMalloc } from 'avutil/util/mem'
 import { mapSafeUint8Array } from 'cheap/std/memory'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import * as opus from '../../../codecs/opus'
-import StreamReader from 'common/io/StreamReader'
-import StreamWriter from 'common/io/StreamWriter'
+import BufferReader from 'common/io/BufferReader'
+import BufferWriter from 'common/io/BufferWriter'
 
 // @ts-ignore
 @deasync
@@ -48,8 +48,8 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   const data = avMalloc(atom.size + 8)
   const extradata = mapSafeUint8Array(data, atom.size + 8)
 
-  const reader = new StreamReader(extradata)
-  const writer = new StreamWriter(extradata, false)
+  const reader = new BufferReader(extradata)
+  const writer = new BufferWriter(extradata, false)
 
   writer.writeString('OpusHead')
   writer.writeUint8(1)

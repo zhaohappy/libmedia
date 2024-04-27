@@ -29,7 +29,7 @@ import IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
 import { AVPacketSideDataType } from 'avutil/codec'
 import { mapUint8Array } from 'cheap/std/memory'
-import StreamReader from 'common/io/StreamReader'
+import BufferReader from 'common/io/BufferReader'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
 
@@ -63,7 +63,7 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
     ioWriter.writeUint8(0)
   }
   else {
-    const reader = new StreamReader(extradata, false)
+    const reader = new BufferReader(extradata, false)
     // size
     ioWriter.writeUint32(extradata.length)
     // tag

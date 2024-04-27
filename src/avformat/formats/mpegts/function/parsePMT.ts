@@ -23,7 +23,7 @@
  *
  */
 
-import StreamReader from 'common/io/StreamReader'
+import BufferReader from 'common/io/BufferReader'
 import { ESDescriptor, PMT, TSSliceQueue } from '../struct'
 import { MpegtsContext } from '../type'
 import concatTypeArray from 'common/function/concatTypeArray'
@@ -33,23 +33,23 @@ export default function parsePMT(queue: TSSliceQueue, mpegtsContext: MpegtsConte
 
   let byte = 0
 
-  const streamReader = new StreamReader(concatTypeArray(Uint8Array, queue.slices), true)
+  const bufferReader = new BufferReader(concatTypeArray(Uint8Array, queue.slices), true)
 
-  const tableId = streamReader.readUint8()
+  const tableId = bufferReader.readUint8()
   if (tableId !== 0x02) {
     logger.error(`parse PMT: table_id ${tableId} is not corresponded to PAT!`)
   }
 
-  const sectionLength = streamReader.readUint16() & 0x0fff
-  const programNumber = streamReader.readUint16()
+  const sectionLength = bufferReader.readUint16() & 0x0fff
+  const programNumber = bufferReader.readUint16()
 
-  byte = streamReader.readUint8()
+  byte = bufferReader.readUint8()
 
   const versionNumber = (byte >> 1) & 0x1f
   const currentNextIndicator = byte & 0x01
 
-  const sectionNumber = streamReader.readUint8()
-  const lastSectionNumber = streamReader.readUint8()
+  const sectionNumber = bufferReader.readUint8()
+  const lastSectionNumber = bufferReader.readUint8()
 
   let pmt: PMT
 
@@ -70,17 +70,17 @@ export default function parsePMT(queue: TSSliceQueue, mpegtsContext: MpegtsConte
     }
   }
 
-  pmt.pcrPid = streamReader.readUint16() & 0x1fff
-  const programInfoLength = streamReader.readUint16() & 0x0fff
+  pmt.pcrPid = bufferReader.readUint16() & 0x1fff
+  const programInfoLength = bufferReader.readUint16() & 0x0fff
 
-  streamReader.skip(programInfoLength)
+  bufferReader.skip(programInfoLength)
 
-  let endPos = streamReader.getPos() + (sectionLength - 9 - programInfoLength - 4)
+  let endPos = static_cast<int32>(bufferReader.getPos()) + (sectionLength - 9 - programInfoLength - 4)
 
-  while (streamReader.getPos() < endPos) {
-    const streamType = streamReader.readUint8()
-    const elementaryPid = streamReader.readUint16() & 0x1fff
-    const esInfoLength = streamReader.readUint16() & 0x0fff
+  while (bufferReader.getPos() < endPos) {
+    const streamType = bufferReader.readUint8()
+    const elementaryPid = bufferReader.readUint16() & 0x1fff
+    const esInfoLength = bufferReader.readUint16() & 0x0fff
 
     pmt.pid2StreamType.set(elementaryPid, streamType)
 
@@ -92,13 +92,13 @@ export default function parsePMT(queue: TSSliceQueue, mpegtsContext: MpegtsConte
 
       const esDescriptorList = []
 
-      const subEndPos = streamReader.getPos() + esInfoLength
-      while (streamReader.getPos() < subEndPos) {
+      const subEndPos = static_cast<int32>(bufferReader.getPos()) + esInfoLength
+      while (bufferReader.getPos() < subEndPos) {
         const esDescriptor = new ESDescriptor()
-        esDescriptor.tag = streamReader.readUint8()
-        const length = streamReader.readUint8()
+        esDescriptor.tag = bufferReader.readUint8()
+        const length = bufferReader.readUint8()
         if (length > 0) {
-          esDescriptor.buffer = streamReader.readBuffer(length)
+          esDescriptor.buffer = bufferReader.readBuffer(length)
         }
         esDescriptorList.push(esDescriptor)
       }

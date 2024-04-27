@@ -24,7 +24,7 @@
  */
 
 import { Uint8ArrayInterface } from 'common/io/interface'
-import { Data } from 'common/types/type'
+import { Data, Timeout } from 'common/types/type'
 import * as object from 'common/util/object'
 
 export interface Range {
@@ -62,7 +62,7 @@ export default abstract class IOLoader {
 
   protected retryCount: number
 
-  protected retryTimeout: NodeJS.Timeout | number
+  protected retryTimeout: Timeout
 
   constructor(options: IOLoaderOptions = {}) {
     this.options = options

@@ -26,8 +26,8 @@
 import { AVPacketSideDataType } from 'avutil/codec'
 import AVStream from '../AVStream'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import StreamReader from 'common/io/StreamReader'
-import StreamWriter from 'common/io/StreamWriter'
+import BufferReader from 'common/io/BufferReader'
+import BufferWriter from 'common/io/BufferWriter'
 import { avRescaleQ } from 'avutil/util/rational'
 import { Uint8ArrayInterface } from 'common/io/interface'
 
@@ -105,7 +105,7 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
     extradata = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
   }
   if (extradata && extradata.length >= 19) {
-    const reader = new StreamReader(extradata, false)
+    const reader = new BufferReader(extradata, false)
     reader.skip(9)
     stream.codecpar.chLayout.nbChannels = reader.readUint8()
     if (defined(API_OLD_CHANNEL_LAYOUT)) {
@@ -131,7 +131,7 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
 export function avCodecParameters2Extradata(codecpar: AVCodecParameters) {
   const extradata = new Uint8Array(19)
 
-  const writer = new StreamWriter(extradata, false)
+  const writer = new BufferWriter(extradata, false)
 
   writer.writeString('OpusHead')
   writer.writeUint8(0x01)

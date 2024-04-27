@@ -23,8 +23,8 @@
  *
  */
 
-import StreamReader from 'common/io/StreamReader'
-import StreamWriter from 'common/io/StreamWriter'
+import BufferReader from 'common/io/BufferReader'
+import BufferWriter from 'common/io/BufferWriter'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import * as array from 'common/util/array'
 
@@ -83,23 +83,23 @@ export function splitNaluByStartCode<T extends Uint8ArrayInterface>(buffer: T): 
 
 export function splitNaluByLength<T extends Uint8ArrayInterface>(buffer: T, naluLengthSizeMinusOne: int32): T[] {
   const list = []
-  const streamReader = new StreamReader(buffer)
-  while (streamReader.remainingSize() > 0) {
+  const bufferReader = new BufferReader(buffer)
+  while (bufferReader.remainingSize() > 0) {
     let length = 0
     if (naluLengthSizeMinusOne === 3) {
-      length = streamReader.readUint32()
+      length = bufferReader.readUint32()
     }
     else if (naluLengthSizeMinusOne === 2) {
-      length = streamReader.readUint24()
+      length = bufferReader.readUint24()
     }
     else if (naluLengthSizeMinusOne === 1) {
-      length = streamReader.readUint16()
+      length = bufferReader.readUint16()
     }
     else {
-      length = streamReader.readUint8()
+      length = bufferReader.readUint8()
     }
-    const nalu = buffer.subarray(streamReader.getPos(), streamReader.getPos() + length, true)
-    streamReader.skip(length)
+    const nalu = buffer.subarray(static_cast<int32>(bufferReader.getPos()), static_cast<int32>(bufferReader.getPos()) + length, true)
+    bufferReader.skip(length)
     list.push(nalu)
   }
   return list
@@ -113,16 +113,16 @@ export function joinNaluByStartCode(nalus: Uint8ArrayInterface[], output?: Uint8
     output = new Uint8Array(length)
   }
 
-  const streamWriter = new StreamWriter(output)
+  const bufferWriter = new BufferWriter(output)
 
   array.each(nalus, (nalu, index) => {
-    streamWriter.writeUint8(0x00)
-    streamWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x00)
+    bufferWriter.writeUint8(0x00)
     if (!index && slice) {
-      streamWriter.writeUint8(0x00)
+      bufferWriter.writeUint8(0x00)
     }
-    streamWriter.writeUint8(0x01)
-    streamWriter.writeBuffer(nalu)
+    bufferWriter.writeUint8(0x01)
+    bufferWriter.writeBuffer(nalu)
   })
 
   return output
@@ -135,22 +135,22 @@ export function joinNaluByLength(nalus: Uint8Array[], naluLengthSizeMinusOne: in
     }, 0)
     output = new Uint8Array(length)
   }
-  const streamWriter = new StreamWriter(output)
+  const bufferWriter = new BufferWriter(output)
 
   array.each(nalus, (nalu) => {
     if (naluLengthSizeMinusOne === 3) {
-      streamWriter.writeUint32(nalu.length)
+      bufferWriter.writeUint32(nalu.length)
     }
     else if (naluLengthSizeMinusOne === 2) {
-      streamWriter.writeUint24(nalu.length)
+      bufferWriter.writeUint24(nalu.length)
     }
     else if (naluLengthSizeMinusOne === 1) {
-      streamWriter.writeUint16(nalu.length)
+      bufferWriter.writeUint16(nalu.length)
     }
     else {
-      streamWriter.writeUint8(nalu.length)
+      bufferWriter.writeUint8(nalu.length)
     }
-    streamWriter.writeBuffer(nalu)
+    bufferWriter.writeBuffer(nalu)
   })
   return output
 }
