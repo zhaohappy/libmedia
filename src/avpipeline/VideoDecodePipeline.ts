@@ -48,6 +48,7 @@ import { AVCodecID } from 'avutil/codec'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import getTimestamp from 'common/function/getTimestamp'
 import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
+import support from 'common/util/support'
 
 export interface VideoDecodeTaskOptions extends TaskOptions {
   resource: WebAssemblyResource
@@ -62,7 +63,7 @@ type SelfTask = VideoDecodeTaskOptions & {
   leftIPCPort: IPCPort
   rightIPCPort: IPCPort
 
-  softwareDecoder: WasmVideoDecoder
+  softwareDecoder: WasmVideoDecoder | WebVideoDecoder
   softwareDecoderOpened: boolean
   hardwareDecoder?: WebVideoDecoder
   targetDecoder: WasmVideoDecoder | WebVideoDecoder
@@ -104,7 +105,7 @@ export default class VideoDecodePipeline extends Pipeline {
     super()
   }
 
-  private createHardwareDecoder(task: SelfTask) {
+  private createWebcodecDecoder(task: SelfTask, enableHardwareAcceleration: boolean = true) {
     return new WebVideoDecoder({
       onError: (error) => {
         if (task.hardwareRetryCount > 3 || !task.firstDecoded) {
@@ -139,7 +140,7 @@ export default class VideoDecodePipeline extends Pipeline {
         }
         task.lastDecodeTimestamp = getTimestamp()
       },
-      enableHardwareAcceleration: true
+      enableHardwareAcceleration
     })
   }
 
@@ -154,36 +155,11 @@ export default class VideoDecodePipeline extends Pipeline {
 
     const avframePool = new AVFramePoolImpl(accessof(options.avframeList), options.avframeListMutex)
 
-    const softwareDecoder = new WasmVideoDecoder({
-      resource: options.resource,
-      onError: (error) => {
-        logger.error(`video decode error, taskId: ${options.taskId}, error: ${error}`)
-        const task = this.tasks.get(options.taskId)
-        if (task.openReject) {
-          task.openReject(error)
-          task.openReject = null
-        }
-      },
-      onReceiveFrame(frame) {
-        task.firstDecoded = true
-        frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
-        task.stats.videoFrameDecodeCount++
-        if (task.lastDecodeTimestamp) {
-          task.stats.videoFrameDecodeIntervalMax = Math.max(
-            getTimestamp() - task.lastDecodeTimestamp,
-            task.stats.videoFrameDecodeIntervalMax
-          )
-        }
-        task.lastDecodeTimestamp = getTimestamp()
-      },
-      avframePool: avframePool
-    })
-
     const task: SelfTask = {
       ...options,
       leftIPCPort,
       rightIPCPort,
-      softwareDecoder,
+      softwareDecoder: null,
       hardwareDecoder: null,
       frameCaches,
       inputEnd: false,
@@ -199,9 +175,36 @@ export default class VideoDecodePipeline extends Pipeline {
       avframePool,
       avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex)
     }
+    
+    task.softwareDecoder = options.resource
+      ? new WasmVideoDecoder({
+          resource: options.resource,
+          onError: (error) => {
+            logger.error(`video decode error, taskId: ${options.taskId}, error: ${error}`)
+            const task = this.tasks.get(options.taskId)
+            if (task.openReject) {
+              task.openReject(error)
+              task.openReject = null
+            }
+          },
+          onReceiveFrame(frame) {
+            task.firstDecoded = true
+            frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
+            task.stats.videoFrameDecodeCount++
+            if (task.lastDecodeTimestamp) {
+              task.stats.videoFrameDecodeIntervalMax = Math.max(
+                getTimestamp() - task.lastDecodeTimestamp,
+                task.stats.videoFrameDecodeIntervalMax
+              )
+            }
+            task.lastDecodeTimestamp = getTimestamp()
+          },
+          avframePool: avframePool
+        })
+      : this.createWebcodecDecoder(task, false)
 
-    if (typeof VideoDecoder === 'function' && options.enableHardware) {
-      task.hardwareDecoder = this.createHardwareDecoder(task)
+    if (support.videoDecoder && options.enableHardware) {
+      task.hardwareDecoder = this.createWebcodecDecoder(task)
     }
 
     task.targetDecoder = task.hardwareDecoder || task.softwareDecoder
@@ -470,7 +473,7 @@ export default class VideoDecodePipeline extends Pipeline {
       // webcodec flush 有可能会卡主，这里重新创建解码器
       else if (task.targetDecoder === task.hardwareDecoder) {
         task.hardwareDecoder.close()
-        task.hardwareDecoder = this.createHardwareDecoder(task)
+        task.hardwareDecoder = this.createWebcodecDecoder(task)
         await task.hardwareDecoder.open(task.parameters)
         task.targetDecoder = task.hardwareDecoder
       }

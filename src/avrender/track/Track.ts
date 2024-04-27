@@ -343,6 +343,14 @@ export default class Track {
     return this.sourceBuffer
   }
 
+  public setMediaBufferMax(max: number) {
+    this.options.mediaBufferMax = max
+  }
+
+  public getMediaBufferMax() {
+    return this.options.mediaBufferMax
+  }
+
   public destroy() {
     this.stop()
     this.operatorQueue = null

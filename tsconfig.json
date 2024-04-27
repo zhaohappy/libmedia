@@ -88,6 +88,8 @@
       "ENABLE_DEMUXER_OGGS": true,
       // 开启支持 mp3 解封装格式
       "ENABLE_DEMUXER_MP3": true,
+      // 开启支持 matroska 解封装格式
+      "ENABLE_DEMUXER_MATROSKA": true,
 
       // 开启支持 mse 模式
       "ENABLE_MSE": true,

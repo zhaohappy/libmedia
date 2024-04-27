@@ -37,7 +37,7 @@ import { AVPacketRef } from 'avutil/struct/avpacket'
 import List from 'cheap/std/collection/List'
 import { AVFrameRef } from 'avutil/struct/avframe'
 import { Mutex } from 'cheap/thread/mutex'
-import compile from 'cheap/webassembly/compiler'
+import compile, { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import { unrefAVFrame } from 'avutil/util/avframe'
 import { unrefAVPacket } from 'avutil/util/avpacket'
 import AudioRenderPipeline from 'avpipeline/AudioRenderPipeline'
@@ -75,6 +75,7 @@ import * as bigint from 'common/util/bigint'
 import getMediaSource from './function/getMediaSource'
 import JitterBufferController from './JitterBufferController'
 import { JitterBuffer } from 'avpipeline/struct/jitter'
+import getAudioCodec from 'avcodec/function/getAudioCodec'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -122,8 +123,11 @@ const Ext2Format: Record<string, AVFormat> = {
   'ogg': AVFormat.OGGS,
   'm3u8': AVFormat.MPEGTS,
   'm3u': AVFormat.MPEGTS,
-  'mpd': AVFormat.MPEGTS,
-  'mp3': AVFormat.MP3
+  'mpd': AVFormat.MOV,
+  'mp3': AVFormat.MP3,
+  'mkv': AVFormat.MATROSKA,
+  'mka': AVFormat.MATROSKA,
+  'webm': AVFormat.WEBM
 }
 
 const Ext2IOLoader: Record<string, IOType> = {
@@ -278,7 +282,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           }
           // 检查视频格式是否支持硬解，不支持使用 mse
           const isWebcodecSupport = await VideoDecoder.isConfigSupported({
-            codec: getVideoCodec(videoStream.codecpar.codecId, videoStream.codecpar.profile, videoStream.codecpar.level, extradata),
+            codec: getVideoCodec(videoStream.codecpar),
             codedWidth: videoStream.codecpar.width,
             codedHeight: videoStream.codecpar.height,
             description: extradata,
@@ -629,10 +633,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     `
     this.streams.forEach((stream) => {
       if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-        this.stats.audiocodec = getAudioMimeType(stream.codecpar)
+        this.stats.audiocodec = getAudioCodec(stream.codecpar)
       }
       else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-        this.stats.videocodec = getVideoMimeType(stream.codecpar)
+        this.stats.videocodec = getVideoCodec(stream.codecpar)
       }
       info += `
         #${stream.index}(und): ${stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO ? 'Audio' : 'Video'}: ${stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO ? this.stats.audiocodec : this.stats.videocodec}
@@ -853,25 +857,43 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           this.demuxer2VideoDecoderChannel = createMessageChannel()
           this.videoDecoder2VideoRenderChannel = createMessageChannel()
 
-          const resource = await compile(
-            {
-              source: this.options.getWasm('decoder', stream.codecpar.codecId)
-            }
-          )
+          const wasmUrl = this.options.getWasm('decoder', stream.codecpar.codecId)
+          let resource: WebAssemblyResource
 
-          if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS)) {
-            resource.threadModule = await compile(
+          if (wasmUrl) {
+            resource = await compile(
               {
-                // firefox 使用 arraybuffer 会卡主
-                source: browser.firefox ? this.options.getWasm('decoder', stream.codecpar.codecId) : resource.buffer
-              },
-              {
-                child: true
+                source: wasmUrl
               }
             )
-          }
 
-          delete resource.buffer
+            if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS)) {
+              resource.threadModule = await compile(
+                {
+                  // firefox 使用 arraybuffer 会卡主
+                  source: browser.firefox ? wasmUrl : resource.buffer
+                },
+                {
+                  child: true
+                }
+              )
+            }
+
+            delete resource.buffer
+          }
+          else {
+            if (support.videoDecoder) {
+              const isSupport = await VideoDecoder.isConfigSupported({
+                codec: getVideoCodec(stream.codecpar)
+              })
+              if (!isSupport.supported) {
+                logger.fatal(`codecId ${stream.codecpar.codecId} not support`)
+              }
+            }
+            else {
+              logger.fatal(`codecId ${stream.codecpar.codecId} not support`)
+            }
+          }
 
           // 注册一个视频解码任务
           await this.VideoDecoderThread.registerTask

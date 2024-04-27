@@ -158,9 +158,9 @@
 <body>
 
     <div style="margin-left: 10px;">
-      支持 mp4、mpegts、flv、mp3 封装格式 <br>
+      支持 mp4、mpegts、flv、matroska、webm、mp3 封装格式 <br>
       支持 hls、dash 协议 <br>
-      支持 h264、hevc、av1、mpeg4、aac、mp3、opus、speex、flac、vorbis 编码 <br>
+      支持 h264、hevc、av1、mpeg4、vp8、vp9、aac、mp3、opus、speex、flac、vorbis 编码 <br>
       支持直播（LIVE）和点播（VOD） <br>
       支持本地文件播放和网络 url 地址播放
     </div>
@@ -474,8 +474,12 @@
                   // vorbis
                   case 86021:
                     return '../dist/decode/vorbis-atomic.wasm'
+                  case 139:
+                    return '../dist/decode/vp8-atomic.wasm'
+                  case 167:
+                    return '../dist/decode/vp9-atomic.wasm'
                   default:
-                    throw new Error('not found decoder')
+                    return null
                 }
                 break
               }

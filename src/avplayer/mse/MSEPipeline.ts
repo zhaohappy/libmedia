@@ -1295,7 +1295,16 @@ export default class MSEPipeline extends Pipeline {
         task.audio.track.removeBuffer(time)
       }
       if (task.video) {
-        task.video.track.removeBuffer(time)
+        if (task.stats.keyFrameInterval > 0) {
+          task.video.track.setMediaBufferMax(
+            Math.max(
+              task.video.track.getMediaBufferMax(),
+              Math.ceil(task.stats.keyFrameInterval / 1000 * 1.5),
+              10
+            )
+          )
+          task.video.track.removeBuffer(time)
+        }
       }
       task.currentTime = time
       task.currentTimeNTP = getTimestamp()

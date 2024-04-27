@@ -396,6 +396,7 @@ export default class VideoRenderPipeline extends Pipeline {
           return
         }
         task.frontBuffered = false
+        const now = getTimestamp()
         task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull').then((frame) => {
           if (is.number(frame) && frame < 0) {
             task.ended = true
@@ -404,6 +405,12 @@ export default class VideoRenderPipeline extends Pipeline {
           }
 
           assert(!is.number(frame) || frame.data[0], 'got empty video frame')
+
+          const cost = getTimestamp() - now
+          // 超过 1 秒认为是网卡了(断点暂停)，对齐一下时间
+          if (cost > 1000) {
+            task.startTimestamp += static_cast<int64>(cost)
+          }
 
           task.frontFrame = frame
           task.frontBuffered = true
