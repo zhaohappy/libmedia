@@ -35,7 +35,7 @@ export default function getAudioMimeType(codecpar: pointer<AVCodecParameters>) {
     mimeType = 'audio/mpeg'
   }
   else {
-    mimeType = `audio/mp4; codecs="${getAudioCodec(codecpar.codecId, codecpar.profile)}"`
+    mimeType = `audio/mp4; codecs="${getAudioCodec(codecpar)}"`
   }
   return mimeType
 }

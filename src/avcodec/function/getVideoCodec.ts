@@ -28,10 +28,20 @@ import { CodecId2String } from '../codec/codec'
 import { H264Profile } from 'avformat/codecs/h264'
 import * as av1 from 'avformat/codecs/av1'
 import * as vp8 from 'avformat/codecs/vp8'
+import * as vp9 from 'avformat/codecs/vp9'
 import * as string from 'common/util/string'
 import { NOPTS_VALUE } from 'avutil/constant'
+import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import { mapUint8Array } from 'cheap/std/memory'
 
-export default function getVideoCodec(codecId: AVCodecID, profile: number, level: number, extradata?: Uint8Array) {
+export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extradata?: Uint8Array) {
+  const codecId = codecpar.codecId
+  let profile = codecpar.profile
+  let level = codecpar.level
+  if (!extradata && codecpar.extradata !== nullptr) {
+    extradata = mapUint8Array(codecpar.extradata, codecpar.extradataSize)
+  }
+  
   let entry = CodecId2String[codecId]
   let code = ''
 
@@ -155,7 +165,7 @@ export default function getVideoCodec(codecId: AVCodecID, profile: number, level
      * url: https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter#webm
      */
     if (extradata) {
-      const params = vp8.parseExtraData(extradata)
+      const params = vp9.parseExtraData(extradata)
       code = string.format(
         '%s.%02d.%02d.%02d.%02d.%02d.%02d.%02d.%02d',
         entry,
@@ -173,7 +183,7 @@ export default function getVideoCodec(codecId: AVCodecID, profile: number, level
       code = string.format('%s.%02d.%02d.08.00', entry, profile, level)
     }
     else {
-      code = entry
+      code = string.format('%s.%02d.%02d.08.00', entry, 0, 40)
     }
   }
   else {

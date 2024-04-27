@@ -40,16 +40,9 @@ export default class WebAudioDecoder {
   private options: WebAudioDecoderOptions
 
   private decoder: AudioDecoder
-
-  private codecId: number
-
-  private profile: number
+  private parameters: pointer<AVCodecParameters>
 
   private extradata: Uint8Array
-
-  private sampleRate: number
-
-  private channels: number
 
   constructor(options: WebAudioDecoderOptions) {
     this.options = options
@@ -74,10 +67,7 @@ export default class WebAudioDecoder {
 
 
   public async open(parameters: pointer<AVCodecParameters>) {
-    this.codecId = parameters.codecId
-    this.profile = parameters.profile
-    this.sampleRate = parameters.sampleRate
-    this.channels = parameters.chLayout.nbChannels
+    this.parameters = parameters
     this.extradata = null
     if (parameters.extradata !== nullptr) {
       this.extradata = mapUint8Array(parameters.extradata, parameters.extradataSize).slice()
@@ -85,22 +75,34 @@ export default class WebAudioDecoder {
 
     this.decoder.reset()
     this.decoder.configure({
-      codec: getAudioCodec(this.codecId, this.profile),
-      sampleRate: this.sampleRate,
-      numberOfChannels: this.channels,
+      codec: getAudioCodec(this.parameters),
+      sampleRate: parameters.sampleRate,
+      numberOfChannels: parameters.chLayout.nbChannels,
       description: this.extradata
     })
   }
 
   public changeExtraData(buffer: Uint8Array) {
+    if (buffer.length === this.extradata.length) {
+      let same = true
+      for (let i = 0; i < buffer.length; i++) {
+        if (buffer[i] !== this.extradata[i]) {
+          same = false
+          break
+        }
+      }
+      if (same) {
+        return
+      }
+    }
 
     this.extradata = buffer.slice()
 
     this.decoder.reset()
     this.decoder.configure({
-      codec: getAudioCodec(this.codecId, this.profile),
-      sampleRate: this.sampleRate,
-      numberOfChannels: this.channels,
+      codec: getAudioCodec(this.parameters),
+      sampleRate: this.parameters.sampleRate,
+      numberOfChannels: this.parameters.chLayout.nbChannels,
       description: this.extradata
     })
   }

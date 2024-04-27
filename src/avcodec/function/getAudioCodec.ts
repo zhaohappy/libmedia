@@ -25,8 +25,13 @@
 
 import { AVCodecID } from 'avutil/codec'
 import { CodecId2String } from '../codec/codec'
+import AVCodecParameters from 'avutil/struct/avcodecparameters'
 
-export default function getAudioCodec(codecId: AVCodecID, profile: number) {
+export default function getAudioCodec(codecpar: pointer<AVCodecParameters>) {
+
+  const codecId = codecpar.codecId
+  let profile = codecpar.profile
+
   let code = CodecId2String[codecId]
 
   if (codecId === AVCodecID.AV_CODEC_ID_AAC) {

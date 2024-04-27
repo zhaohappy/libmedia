@@ -23,7 +23,7 @@
  *
  */
 
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
+import { AVPacketSideDataType } from 'avutil/codec'
 import browser from 'common/util/browser'
 import getVideoCodec from '../function/getVideoCodec'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
@@ -44,12 +44,7 @@ export default class WebVideoDecoder {
   private decoder: VideoDecoder
 
   private options: WebVideoDecoderOptions
-
-  private codecId: AVCodecID
-
-  private profile: number
-
-  private level: number
+  private parameters: pointer<AVCodecParameters>
 
   private extradata: Uint8Array
 
@@ -57,7 +52,7 @@ export default class WebVideoDecoder {
 
   private inputQueue: number[]
   private outputQueue: VideoFrame[]
-
+  
   private sort: boolean
 
   private keyframeRequire: boolean
@@ -113,14 +108,7 @@ export default class WebVideoDecoder {
   }
 
   private changeExtraData(buffer: Uint8Array) {
-    /**
-     * 硬解时如果 sps pps 设置过于频繁会导致解码帧率不稳定（某些流每一关键帧都带有相同的 sps pps，这种情况如果相同就不设置了）
-     */
-    if ((this.codecId === AVCodecID.AV_CODEC_ID_H264
-      || this.codecId === AVCodecID.AV_CODEC_ID_HEVC
-    )
-      && buffer.length === this.extradata.length
-    ) {
+    if (buffer.length === this.extradata.length) {
       let same = true
       for (let i = 0; i < buffer.length; i++) {
         if (buffer[i] !== this.extradata[i]) {
@@ -138,7 +126,7 @@ export default class WebVideoDecoder {
     this.decoder.reset()
 
     this.decoder.configure({
-      codec: getVideoCodec(this.codecId, this.profile, this.level, buffer),
+      codec: getVideoCodec(this.parameters, buffer),
       description: this.extradata,
       hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true) as HardwareAcceleration
     })
@@ -148,20 +136,23 @@ export default class WebVideoDecoder {
 
   public async open(parameters: pointer<AVCodecParameters>) {
     this.currentError = null
-    this.codecId = parameters.codecId
-    this.profile = parameters.profile
-    this.level = parameters.level
     this.extradata = null
     if (parameters.extradata !== nullptr) {
       this.extradata = mapUint8Array(parameters.extradata, parameters.extradataSize).slice()
     }
+    this.parameters = parameters
 
     const config = {
-      codec: getVideoCodec(this.codecId, this.profile, this.level, this.extradata),
+      codec: getVideoCodec(parameters),
       codedWidth: parameters.width,
       codedHeight: parameters.height,
       description: (parameters.bitFormat !== BitFormat.ANNEXB) ? this.extradata : undefined,
       hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true) as HardwareAcceleration
+    }
+
+    if (!config.description) {
+      // description 不是 arraybuffer 会抛错
+      delete config.description
     }
 
     const support = await VideoDecoder.isConfigSupported(config)
@@ -275,5 +266,9 @@ export default class WebVideoDecoder {
 
   public getQueueLength() {
     return this.decoder.decodeQueueSize
+  }
+
+  public setSkipFrameDiscard(discard: number) {
+    
   }
 }

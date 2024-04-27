@@ -25,12 +25,7 @@
 
 import getVideoCodec from 'avcodec/function/getVideoCodec'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { mapUint8Array } from 'cheap/std/memory'
 
 export default function getVideoMimeType(codecpar: pointer<AVCodecParameters>) {
-  let extradata = null
-  if (codecpar.extradata !== nullptr) {
-    extradata = mapUint8Array(codecpar.extradata, codecpar.extradataSize)
-  }
-  return `video/mp4; codecs="${getVideoCodec(codecpar.codecId, codecpar.profile, codecpar.level, extradata)}"`
+  return `video/mp4; codecs="${getVideoCodec(codecpar)}"`
 }
