@@ -31,6 +31,8 @@ declare const ENABLE_DEMUXER_OGGS: boolean
 
 declare const ENABLE_DEMUXER_IVF: boolean
 
+declare const ENABLE_DEMUXER_MATROSKA: boolean
+
 declare const ENABLE_MSE: boolean
 
 declare const ENABLE_WEBGPU: boolean

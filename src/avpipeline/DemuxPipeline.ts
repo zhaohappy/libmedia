@@ -123,6 +123,9 @@ export default class DemuxPipeline extends Pipeline {
     else if (/^ID3/.test(signature)) {
       return AVFormat.MP3
     }
+    else if ((await ioReader.peekUint32()) === 0x1A45DFA3) {
+      return AVFormat.MATROSKA
+    }
     return defaultFormat
   }
 
@@ -308,6 +311,15 @@ export default class DemuxPipeline extends Pipeline {
           }
           else {
             logger.error('mp3 format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.MATROSKA:
+          if (defined(ENABLE_DEMUXER_MATROSKA)) {
+            iformat = new (((await import ('avformat/formats/IMatroskaFormat')).default))
+          }
+          else {
+            logger.error('matroska format not support, maybe you can rebuild avmedia')
             return errorType.FORMAT_NOT_SUPPORT
           }
           break
