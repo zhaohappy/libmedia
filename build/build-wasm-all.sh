@@ -3,6 +3,8 @@ NOW_PATH=$(cd $(dirname $0); pwd)
 sh $NOW_PATH/build-decoder.sh h264 0 0
 sh $NOW_PATH/build-decoder.sh hevc 0 0
 sh $NOW_PATH/build-decoder.sh mpeg4 0 0
+sh $NOW_PATH/build-decoder.sh vp8 0 0
+sh $NOW_PATH/build-decoder.sh vp9 0 0
 sh $NOW_PATH/build-decoder-av1.sh 0 0
 
 sh $NOW_PATH/build-decoder.sh aac 0 0
@@ -18,6 +20,8 @@ sh $NOW_PATH/build-decoder.sh hevc 0 1
 sh $NOW_PATH/build-decoder.sh av1 0 1
 sh $NOW_PATH/build-decoder.sh mpeg4 0 1
 sh $NOW_PATH/build-decoder-av1.sh 0 1
+sh $NOW_PATH/build-decoder.sh vp8 0 1
+sh $NOW_PATH/build-decoder.sh vp9 0 1
 
 sh $NOW_PATH/build-decoder.sh aac 0 1
 sh $NOW_PATH/build-decoder.sh mp3 0 1

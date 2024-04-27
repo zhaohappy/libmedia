@@ -75,16 +75,6 @@ if [[ $decode == "av1" ]]; then
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/dav1d/lib -ldav1d"
 fi
 
-if [[ $decode == "vp8" ]]; then
-  realDecoder="libvpx"
-  EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libvpx"
-fi
-
-if [[ $decode == "vp9" ]]; then
-  realDecoder="libvpx-vp9"
-  EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libvpx"
-fi
-
 emmake make clean
 
 emconfigure ./configure \

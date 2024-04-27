@@ -42,8 +42,8 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
 /**
  * - 1 byte profile
  * - 1 byte level
- * - 5 bit bitdepth
- * - 2 bit chroma_subsampling
+ * - 4 bit bitdepth
+ * - 3 bit chroma_subsampling
  * - 1 bit full_range_flag
  * - 1 byte color_primaries
  * - 1 byte color_trc
@@ -53,11 +53,11 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
  */
 export function parseExtraData(extradata: Uint8ArrayInterface) {
   const bitReader = new BitReader(extradata.length)
-  bitReader.appendBuffer(extradata)
+  bitReader.appendBuffer(extradata.subarray(4))
   const profile = bitReader.readU(8)
   const level = bitReader.readU(8)
-  let bitDepth = bitReader.readU(5)
-  const chromaSubsampling = bitReader.readU(2)
+  let bitDepth = bitReader.readU(4)
+  const chromaSubsampling = bitReader.readU(3)
   const fullRangeFlag = bitReader.readU1()
   const colorPrimaries = bitReader.readU(8)
   const colorTrc = bitReader.readU(8)

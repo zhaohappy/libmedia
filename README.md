@@ -11,7 +11,7 @@ libmedia 是一个用于在 Web 平台上处理多媒体内容（如音频、视
 
 ### 库
 
-- ```avformat``` 音视频封装解封装库
+- ```avformat``` 音视频封装解封装库（flv、mp4、mpegts、matroska、mp3）
 - ```avcodec``` 音视频编解码库，主要是 C/C++(FFmpeg 和其他编解码项目) 编译的 Wasm 和 Web 平台标准 Webcodec
 - ```audioresample``` 音频重采样（FFmpeg 音频重采样模块编译）
 - ```audiostretchpitch``` 音频变速、变调处理（soundtouch 编译）
