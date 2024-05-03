@@ -54,6 +54,7 @@ import * as opus from '../codecs/opus'
 import * as aac from '../codecs/aac'
 import { avRescaleQ } from 'avutil/util/rational'
 import BufferReader from 'common/io/BufferReader'
+import findStreamByTrackUid from './matroska/function/findStreamByTrackUid'
 
 export default class IMatroskaFormat extends IFormat {
 
@@ -259,6 +260,26 @@ export default class IMatroskaFormat extends IFormat {
           stream.codecpar.extradataSize = static_cast<int32>(attachment.data.size)
           stream.codecpar.extradata = avMalloc(stream.codecpar.extradataSize)
           memcpyFromUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize, attachment.data.data)
+        }
+      })
+    }
+
+    if (this.context.tags) {
+      array.each(this.context.tags.entry, (tag) => {
+        if (tag.tag?.name === 'DURATION') {
+          let time = tag.tag.string.replaceAll('\x00', '').split('.')
+          let f = time[0].split(':')
+
+          let duration = BigInt(+f[0]) * BigInt(1000000 * 60 * 60)
+            + BigInt(+f[1]) * BigInt(1000000 * 60)
+            + BigInt(+f[2]) * 1000000n
+            + (BigInt(+time[1]) / 1000n)
+
+          const stream = findStreamByTrackUid(formatContext.streams, tag.target.trackUid)
+
+          if (stream) {
+            stream.duration = avRescaleQ(duration, AV_TIME_BASE_Q, stream.timeBase)
+          }
         }
       })
     }

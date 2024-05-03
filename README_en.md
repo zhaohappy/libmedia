@@ -14,7 +14,7 @@ libmedia is a tool library for processing multimedia content (such as audio, vid
 - avcodec Audio and video codec library, mainly Wasm compiled by C/C++ (FFmpeg and other codec projects) and Web platform standard Webcodec
 - ```audioresample``` Audio resampling (compiled by FFmpeg audio resampling module)
 - ```audiostretchpitch``` Audio speed change and pitch change processing (compiled by soundtouch)
-- ```avnetwork``` Web Platform network file IO related (Fetch, WebSocket, Webtransport, File)
+- ```avnetwork``` Web Platform network file IO related (Fetch, WebSocket, WebTransport, File)
 - ```avprotocol``` Audio and video protocols (dash, m3u8)
 - ```avrender``` Audio and video rendering (8bit, 10bit, HDR, audioWorklet, WebGL, WebGPU)
 - ```avpipeline``` Media task processing pipeline for multi-threaded parallel processing tasks

@@ -50,7 +50,7 @@ export function open(formatContext: AVOFormatContext, options: MuxOptions = {}) 
   }
   formatContext.options = opts
 
-  formatContext.privateData = {
+  formatContext.processPrivateData = {
     first: new Map()
   }
 
@@ -62,7 +62,7 @@ export function writeHeader(formatContext: AVOFormatContext): void {
 }
 
 export function writeAVPacket(formatContext: AVOFormatContext, avpacket: pointer<AVPacket>): number {
-  const privateData = formatContext.privateData as MuxPrivateData
+  const privateData = formatContext.processPrivateData as MuxPrivateData
   if (!privateData.first.has(avpacket.streamIndex)) {
     if (avpacket.dts > 0n) {
       privateData.first.set(avpacket.streamIndex, avpacket.dts)

@@ -89,6 +89,7 @@ export interface AVOFormatContext {
   options: Record<string, any>
 
   privateData: Record<string, any>
+  processPrivateData: Record<string, any>
 
   oformat: OFormat
 
@@ -128,6 +129,7 @@ class AVFormatContext implements AVIFormatContext, AVOFormatContext {
   public options: Record<string, any>
 
   public privateData: Record<string, any>
+  public processPrivateData: Record<string, any>
 
   public iformat: IFormat
 
@@ -159,7 +161,7 @@ class AVFormatContext implements AVIFormatContext, AVOFormatContext {
   }
 
   public getStreamByIndex(index: number) {
-    return this.streams[index]
+    return this.streams.find((stream) => stream.index === index)
   }
 
   public getStreamByMediaType(mediaType: AVMediaType) {

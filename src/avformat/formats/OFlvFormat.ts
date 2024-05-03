@@ -117,7 +117,7 @@ export default class OFlvFormat extends OFormat {
         }
       }
 
-      if (object.has(AVCodecID2FlvCodecType, audioStream.codecpar.codecId)) {
+      if (object.has(AVCodecID2FlvCodecType, audioStream.codecpar.codecId as number)) {
         this.script.onMetaData.audiocodecid = AVCodecID2FlvCodecType[audioStream.codecpar.codecId]
         this.script.onMetaData.stereo = audioStream.codecpar.chLayout.nbChannels > 1 ? true : false
         this.script.onMetaData.audiosamplerate = audioStream.codecpar.sampleRate || 0
@@ -130,7 +130,7 @@ export default class OFlvFormat extends OFormat {
     if (videoStream) {
       this.header.hasVideo = true
       this.script.onMetaData.hasVideo = true
-      if (object.has(AVCodecID2FlvCodecType, videoStream.codecpar.codecId)) {
+      if (object.has(AVCodecID2FlvCodecType, videoStream.codecpar.codecId as number)) {
         this.script.onMetaData.videocodecid = AVCodecID2FlvCodecType[videoStream.codecpar.codecId]
         this.script.onMetaData.width = videoStream.codecpar.width || 0
         this.script.onMetaData.height = videoStream.codecpar.height || 0

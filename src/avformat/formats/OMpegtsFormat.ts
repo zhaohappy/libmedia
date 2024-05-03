@@ -205,16 +205,14 @@ export default class OMpegtsFormat extends OFormat {
     return 0
   }
 
-  public writeAVPacket(context: AVOFormatContext, avpacket: pointer<AVPacket>): number {
+  public writeAVPacket(formatContext: AVOFormatContext, avpacket: pointer<AVPacket>): number {
 
     if (!avpacket.size) {
       logger.warn(`packet\'s size is 0: ${avpacket.streamIndex}, ignore it`)
       return
     }
 
-    const stream = context.streams.find((stream) => {
-      return avpacket.streamIndex === stream.index
-    })
+    const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
 
     if (!stream) {
       logger.warn(`can not found the stream width the packet\'s streamIndex: ${avpacket.streamIndex}, ignore it`)
@@ -235,9 +233,9 @@ export default class OMpegtsFormat extends OFormat {
     if (this.patPeriod > 0n
       && avRescaleQ(avpacket.dts, avpacket.timeBase, AV_TIME_BASE_Q) - this.lastPatDst > this.patPeriod
     ) {
-      ompegts.writeSection(context.ioWriter, this.sdtPacket, this.context)
-      ompegts.writeSection(context.ioWriter, this.patPacket, this.context)
-      ompegts.writeSection(context.ioWriter, this.pmtPacket, this.context)
+      ompegts.writeSection(formatContext.ioWriter, this.sdtPacket, this.context)
+      ompegts.writeSection(formatContext.ioWriter, this.patPacket, this.context)
+      ompegts.writeSection(formatContext.ioWriter, this.pmtPacket, this.context)
       this.lastPatDst = avRescaleQ(avpacket.dts, avpacket.timeBase, AV_TIME_BASE_Q)
     }
 
@@ -292,7 +290,7 @@ export default class OMpegtsFormat extends OFormat {
         streamContext.pes.randomAccessIndicator = 1
       }
 
-      ompegts.writePES(context.ioWriter, streamContext.pes, streamContext.pesSlices, stream, this.context)
+      ompegts.writePES(formatContext.ioWriter, streamContext.pes, streamContext.pesSlices, stream, this.context)
 
       streamContext.pesSlices.total = 0
       streamContext.pesSlices.buffers = []

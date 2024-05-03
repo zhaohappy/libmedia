@@ -108,7 +108,7 @@ export interface VideoTrack {
   displayWidth?: int32
   displayHeight?: int32
   aspectRatio?: int32
-  color?: VideoColor,
+  color?: VideoColor
   projection?: VideoProjection
   framerate?: float
   colorSpace?: EbmlBin
@@ -158,7 +158,7 @@ export interface TrackEncodings {
 
 export interface TrackEntry {
   number?: uint32
-  uid?: uint32
+  uid?: uint64
   type?: uint32
   name?: string
   language?: string
@@ -189,7 +189,7 @@ export interface Tracks {
 }
 
 export interface Attachment {
-  uid?: int32
+  uid?: uint64
   name?: string
   mime?: string
   data?: EbmlBin
@@ -208,13 +208,13 @@ export interface ChapterDisplay {
 export interface ChapterAtom {
   start?: int64
   end?: int64
-  uid?: int32
+  uid?: uint64
   stringUid?: string
   display?: ChapterDisplay
 }
 
 export interface Chapter {
-  atoms: ChapterAtom[]
+  atom: ChapterAtom
 }
 
 export interface Chapters {
@@ -238,9 +238,9 @@ export interface Cues {
 export interface TagTargets {
   type?: string
   typeValue?: int32
-  trackUid?: int32
-  chapterUid?: int32
-  attachUid?: int32
+  trackUid?: uint64
+  chapterUid?: uint64
+  attachUid?: uint64
 }
 
 export interface SimpleTag {
@@ -248,7 +248,7 @@ export interface SimpleTag {
   string?: string
   language?: string
   default?: int32
-  sub?: Tag
+  sub?: SimpleTag
 }
 
 export interface Tag {
@@ -320,6 +320,7 @@ export interface MatroskaContext {
 export interface OMatroskaContext {
   isLive: boolean
   segmentStart: int64
+  seekHeadEnd: int64
 
   header: Header
   seekHead: SeekHead
@@ -333,4 +334,7 @@ export interface OMatroskaContext {
   elePositionInfos: ElePositionInfo[]
   eleWriter: IOWriterSync
   eleCaches: Uint8Array[]
+
+  currentCluster: Cluster
+  hasVideo: boolean
 }

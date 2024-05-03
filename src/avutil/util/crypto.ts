@@ -1,7 +1,4 @@
-import { mapUint8Array } from 'cheap/std/memory'
-
-export function random(pointer: pointer<uint8>, size: size) {
-  const buffer = mapUint8Array(pointer, size)
+export function random(buffer: Uint8Array) {
   if (defined(ENV_NODE)) {
     const crypto = require('crypto')
     crypto.randomFillSync(buffer)

@@ -466,9 +466,7 @@ export default class OMovFormat extends OFormat {
       return 0
     }
 
-    const stream = formatContext.streams.find((stream) => {
-      return stream.index === avpacket.streamIndex
-    })
+    const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
 
     if (!stream) {
       logger.warn(`can not found the stream width the avpacket\'s streamIndex: ${avpacket.streamIndex}, ignore it`)

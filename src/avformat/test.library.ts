@@ -5,6 +5,7 @@ import IFlvFormat from './formats/IFlvFormat'
 import IMovFormat from './formats/IMovFormat'
 import IMpegtsFormat from './formats/IMpegtsFormat'
 import IMp3Format from './formats/IMp3Format'
+import IMatroskaFormat from './formats/IMatroskaFormat'
 
 import OOggsFormat from './formats/OOggsFormat'
 import OIvfFormat from './formats/OIvfFormat'
@@ -12,6 +13,7 @@ import OFlvFormat from './formats/OFlvFormat'
 import OMovFormat from './formats/OMovFormat'
 import OMpegtsFormat from './formats/OMpegtsFormat'
 import OMp3Format from './formats/OMp3Format'
+import OMatroskaFormat from './formats/OMatroskaFormat'
 
 import * as mux_ from './mux'
 import * as demux_ from './demux'
@@ -36,6 +38,7 @@ export const Format = {
   IMovFormat,
   IMpegtsFormat,
   IMp3Format,
+  IMatroskaFormat,
 
   OOggsFormat,
   OIvfFormat,
@@ -43,6 +46,7 @@ export const Format = {
   OMovFormat,
   OMpegtsFormat,
   OMp3Format,
+  OMatroskaFormat,
 
   OpusOggsIdPage,
   OpusOggsCommentPage

@@ -13,6 +13,7 @@
       <el-radio v-model="radio" label="flv">flv</el-radio>
       <el-radio v-model="radio" label="mp4">mp4</el-radio>
       <el-radio v-model="radio" label="ts">mpegts</el-radio>
+      <el-radio v-model="radio" label="mkv">matroska</el-radio>
       <el-radio v-model="radio" label="oggs">oggs</el-radio>
       <el-radio v-model="radio" label="ivf">ivf</el-radio>
       <el-radio v-model="radio" label="mp3">mp3</el-radio>
@@ -25,6 +26,7 @@
       <el-radio v-model="radio" label="flv">flv</el-radio>
       <el-radio v-model="radio" label="mp4">mp4</el-radio>
       <el-radio v-model="radio" label="ts">mpegts</el-radio>
+      <el-radio v-model="radio" label="mkv">matroska</el-radio>
       <el-radio v-model="radio" label="oggs">oggs</el-radio>
       <el-radio v-model="radio" label="ivf">ivf</el-radio>
       <el-radio v-model="radio" label="mp3">mp3</el-radio>
@@ -75,6 +77,8 @@
           return new Format.Format.IOggsFormat()
         case 'mp3':
           return new Format.Format.IMp3Format()
+        case 'mkv':
+          return new Format.Format.IMatroskaFormat()
       }
     }
 
@@ -105,6 +109,8 @@
           return new Format.Format.OOggsFormat()
         case 'mp3':
           return new Format.Format.OMp3Format()
+        case 'mkv':
+         return new Format.Format.OMatroskaFormat()
       }
     }
 
