@@ -122,7 +122,7 @@ export default class IOPipeline extends Pipeline {
         case 'read': {
           const pointer = request.params.pointer
           const length = request.params.length
-          const options = request.params.ioloaderOptions
+          const ioloaderOptions = request.params.ioloaderOptions
 
           assert(pointer)
           assert(length)
@@ -130,7 +130,7 @@ export default class IOPipeline extends Pipeline {
           const buffer = mapSafeUint8Array(pointer, length)
 
           try {
-            const len = await ioLoader.read(buffer, options)
+            const len = await ioLoader.read(buffer, ioloaderOptions)
             task.stats.bufferReceiveBytes += static_cast<int64>(len)
             ipcPort.reply(request, len)
           }
@@ -144,12 +144,12 @@ export default class IOPipeline extends Pipeline {
 
         case 'seek': {
           const pos = request.params.pos
-          const options = request.params.ioloaderOptions
+          const ioloaderOptions = request.params.ioloaderOptions
 
           assert(pos >= 0)
 
           try {
-            await ioLoader.seek(pos, options)
+            await ioLoader.seek(pos, ioloaderOptions)
             ipcPort.reply(request)
           }
           catch (error) {
@@ -229,9 +229,12 @@ export default class IOPipeline extends Pipeline {
   public async getVideoList(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
-      if (defined(ENABLE_PROTOCOL_DASH)) {
+      if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
         if (task.type === IOType.DASH) {
           return (task.ioLoader as DashIOLoader).getVideoList()
+        }
+        else if (task.type === IOType.HLS) {
+          return (task.ioLoader as HlsIOLoader).getVideoList()
         }
       }
       return {
@@ -274,9 +277,12 @@ export default class IOPipeline extends Pipeline {
   public async selectVideo(taskId: string, index: number) {
     const task = this.tasks.get(taskId)
     if (task) {
-      if (defined(ENABLE_PROTOCOL_DASH)) {
+      if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
         if (task.type === IOType.DASH) {
           (task.ioLoader as DashIOLoader).selectVideo(index)
+        }
+        else if (task.type === IOType.HLS) {
+          return (task.ioLoader as HlsIOLoader).selectVideo(index)
         }
       }
     }

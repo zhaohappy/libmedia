@@ -498,8 +498,8 @@ export function parseAvccExtraData(avpacket: pointer<AVPacket>, stream: AVStream
   }
 }
 
-export function parseAnnexbExtraData(avpacket: pointer<AVPacket>) {
-  if (!(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)) {
+export function parseAnnexbExtraData(avpacket: pointer<AVPacket>, force: boolean = false) {
+  if (!(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) && !force) {
     return
   }
 
@@ -534,6 +534,7 @@ export function parseAnnexbExtraData(avpacket: pointer<AVPacket>) {
       const extradataPointer = avMalloc(extradata.length)
       memcpyFromUint8Array(extradataPointer, extradata.length, extradata)
       addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, extradataPointer, extradata.length)
+      avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
     }
   }
 }

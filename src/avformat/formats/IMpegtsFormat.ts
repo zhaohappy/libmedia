@@ -245,14 +245,14 @@ export default class IMpegtsFormat extends IFormat {
       }
       else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
         if (!stream.codecpar.extradata) {
-          h264.parseAnnexbExtraData(avpacket)
+          h264.parseAnnexbExtraData(avpacket, true)
           this.checkExtradata(avpacket, stream)
           stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
         }
       }
       else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
         if (!stream.codecpar.extradata) {
-          hevc.parseAnnexbExtraData(avpacket)
+          hevc.parseAnnexbExtraData(avpacket, true)
           this.checkExtradata(avpacket, stream)
           stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
         }

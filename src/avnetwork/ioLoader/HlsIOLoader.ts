@@ -36,6 +36,7 @@ import { MasterPlaylist, MediaPlaylist, Playlist } from 'avprotocol/m3u8/types'
 import FetchIOLoader from './FetchIOLoader'
 import getTimestamp from 'common/function/getTimestamp'
 import * as logger from 'common/util/logger'
+import * as urlUtil from 'common/util/url'
 
 const FETCHED_HISTORY_LIST_MAX = 10
 
@@ -152,6 +153,12 @@ export default class HlsIOLoader extends IOLoader {
     else {
       url = this.mediaListUrl
     }
+
+    if (!/^https?/.test(url)) {
+      url = urlUtil.buildAbsoluteURL(this.info.url, url)
+    }
+
+    this.mediaListUrl = url
 
     const params: Partial<any> = {
       method: 'GET',
@@ -304,7 +311,7 @@ export default class HlsIOLoader extends IOLoader {
 
       await this.loader.open(
         {
-          url: buildAbsoluteURL(this.info.url, this.currentUri)
+          url: buildAbsoluteURL(this.mediaListUrl, this.currentUri)
         },
         {
           from: 0,
@@ -317,7 +324,7 @@ export default class HlsIOLoader extends IOLoader {
       this.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
       await this.loader.open(
         {
-          url: buildAbsoluteURL(this.info.url, this.mediaPlayList.segments[this.segmentIndex].uri)
+          url: buildAbsoluteURL(this.mediaListUrl, this.mediaPlayList.segments[this.segmentIndex].uri)
         },
         {
           from: 0,
@@ -370,6 +377,24 @@ export default class HlsIOLoader extends IOLoader {
 
   public getDuration() {
     return this.mediaPlayList.duration
+  }
+
+  public getVideoList() {
+    return {
+      list: this.masterPlaylist.variants.map((variant) => {
+        return {
+          width: variant.resolution?.width ?? 0,
+          height: variant.resolution?.height ?? 0,
+          frameRate: variant.frameRate ?? 0
+        }
+      }),
+      selectedIndex: 0
+    }
+  }
+
+  public selectVideo(index: number) {
+    this.mediaPlayListIndex = index
+    this.fetchMediaPlayList()
   }
 
   public getMinBuffer() {
