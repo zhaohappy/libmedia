@@ -83,6 +83,8 @@ edp webserver start --port=9000
 
  ### 示例
 
+```test/avplayer.html``` 是 AVPlayer 的使用示例，也是在线 demo 的实现
+
 ```test/avtranscode.html``` 是一个转码示例，涉及到解封装和封装的用法
 
  ### 开源协议

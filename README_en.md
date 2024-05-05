@@ -82,6 +82,8 @@ To debug the code in multi-threaded Worker from source, set the ```ENABLE_THREAD
 
 ### Example
 
+```test/avplayer.html``` is an example of using AVPlayer and also the implementation of online demo.
+
 ```test/avtranscode.html``` is a transcoding example involving the usage of decapsulation and encapsulation
 
 ### License
