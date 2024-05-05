@@ -446,7 +446,7 @@
                 switch (codecId) {
                   // H264
                   case 27:
-                    return `../dist/decode/h264${enableSimdComponent.enableSimd ? '-simd' : '-atomic'}.wasm`
+                    return `../dist/decode/h264-atomic.wasm`
                   // AAC
                   case 86018:
                     return '../dist/decode/aac-atomic.wasm'
