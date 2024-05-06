@@ -241,6 +241,13 @@ export default class AudioRenderPipeline extends Pipeline {
         let releaseAudioFrame = true
 
         if (audioFrame.sampleRate !== task.playSampleRate || audioFrame.format !== task.playFormat) {
+          if (task.resampler) {
+            const current = task.resampler.getInputPCMParameters()
+            if (current.format !== audioFrame.format || current.sampleRate !== audioFrame.sampleRate) {
+              task.resampler.close()
+              task.resampler = null
+            }
+          }
           if (!task.resampler) {
             task.resampler = new Resampler({
               resource: task.resamplerResource
@@ -258,27 +265,7 @@ export default class AudioRenderPipeline extends Pipeline {
               }
             )
           }
-          else {
-            const current = task.resampler.getInputPCMParameters()
-            if (current.format !== audioFrame.format || current.sampleRate !== audioFrame.sampleRate) {
-              task.resampler.close()
-              task.resampler = new Resampler({
-                resource: task.resamplerResource
-              })
-              await task.resampler.open(
-                {
-                  sampleRate: audioFrame.sampleRate,
-                  format: audioFrame.format,
-                  channels: audioFrame.chLayout.nbChannels
-                },
-                {
-                  sampleRate: task.playSampleRate,
-                  format: task.playFormat,
-                  channels: audioFrame.chLayout.nbChannels
-                }
-              )
-            }
-          }
+         
           let pcmBuffer = me.avPCMBufferPool.alloc()
           let ret = task.resampler.resample(audioFrame.extendedData, pcmBuffer, audioFrame.nbSamples)
           if (ret < 0) {
@@ -541,7 +528,7 @@ export default class AudioRenderPipeline extends Pipeline {
             task.outPCMBuffer.nbSamples * sizeof(float) * task.playChannels
           ).slice()
 
-          rightIPCPort.reply(request, pcm.buffer, [pcm.buffer])
+          rightIPCPort.reply(request, pcm.buffer, null, [pcm.buffer])
 
           break
         }
