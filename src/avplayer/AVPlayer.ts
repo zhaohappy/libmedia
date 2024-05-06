@@ -243,7 +243,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
 
       // 不支持 wasm
-      if (!support.baseSupported) {
+      if (!support.wasmBaseSupported) {
         return true
       }
 
@@ -481,7 +481,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     memset(addressof(this.stats), 0, sizeof(Stats))
 
-    await AVPlayer.startDemuxPipelines()
+    await AVPlayer.startDemuxPipeline()
 
     let ext = ''
     let ret = 0
@@ -917,7 +917,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
         else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO && options.audio) {
 
-          await AVPlayer.startAudioPipelines()
+          await AVPlayer.startAudioPipeline()
 
           if (AVPlayer.audioContext.state === 'suspended') {
             await Promise.race([
@@ -1877,7 +1877,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.VideoDecoderThread.setLogLevel(AVPlayer.level)
   }
 
-  static async startDemuxPipelines() {
+  static async startDemuxPipeline() {
     if (AVPlayer.DemuxThreadReady) {
       return AVPlayer.DemuxThreadReady
     }
@@ -1896,7 +1896,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     })
   }
 
-  static async startAudioPipelines() {
+  static async startAudioPipeline() {
     if (AVPlayer.AudioThreadReady) {
       return AVPlayer.AudioThreadReady
     }
@@ -1959,8 +1959,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   static async startPipelines() {
-    await AVPlayer.startDemuxPipelines()
-    await AVPlayer.startAudioPipelines()
+    await AVPlayer.startDemuxPipeline()
+    await AVPlayer.startAudioPipeline()
     await AVPlayer.startVideoRenderPipeline()
     await AVPlayer.startMSEPipeline()
     logger.info('AVPlayer pipelines started')
