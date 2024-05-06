@@ -84,7 +84,7 @@ else
 fi
 
 emcc $CFLAG --no-entry -Wl,--no-check-features $CLIB_PATH/decode.c $CLIB_PATH/logger/log.c \
-  $FFMPEG_AVUTIL_PATH/libavutil.a $FFMPEG_RESAMPLE_PATH/libswresample.a $FFMPEG_DECODE_PATH/$decode$DIR_SUBFIX/libavcodec.a --js-library $PROJECT_ROOT_PATH/dist/jsLib.js \
+  $FFMPEG_AVUTIL_PATH/libavutil.a $FFMPEG_RESAMPLE_PATH/libswresample.a $FFMPEG_DECODE_PATH/$decode$DIR_SUBFIX/libavcodec.a \
   $SPEEX_PATH/libspeex/bits.c \
   $SPEEX_PATH/libspeex/speex.c \
   $SPEEX_PATH/libspeex/speex_header.c \
