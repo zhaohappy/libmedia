@@ -25,7 +25,7 @@
 
 import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from '../constant'
 import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from '../pixfmt'
-import { AVBufferRef } from '../struct/avbuffer'
+import { AVBufferRef } from './avbuffer'
 import { unrefAVFrame } from '../util/avframe'
 import { AVDictionary } from './avdict'
 import { Rational } from './rational'

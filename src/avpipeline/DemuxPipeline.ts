@@ -175,7 +175,7 @@ export default class DemuxPipeline extends Pipeline {
         params.ioloaderOptions = options.ioloaderOptions
       }
       try {
-        const len = await leftIPCPort.request<number>('read', params)
+        const len = await leftIPCPort.request<int32>('read', params)
         return len
       }
       catch (error) {

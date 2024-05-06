@@ -527,7 +527,6 @@ export default class VideoRenderPipeline extends Pipeline {
           }
           else {
             if (static_cast<int64>(getTimestamp()) - task.lastAdjustTimestamp >= 300n) {
-
               const add = task.adjustDiff < 50n
                 ? task.adjustDiff
                 : bigint.min(task.adjustDiff, 50n) * 100n / task.targetRate

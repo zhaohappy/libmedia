@@ -201,7 +201,12 @@ export default class VideoDecodePipeline extends Pipeline {
           },
           avframePool: avframePool
         })
-      : this.createWebcodecDecoder(task, false)
+      : (support.videoDecoder ? this.createWebcodecDecoder(task, false) : null)
+
+    if (!task.softwareDecoder) {
+      logger.error('software decoder not support')
+      return errorType.INVALID_OPERATE
+    }
 
     if (support.videoDecoder && options.enableHardware) {
       task.hardwareDecoder = this.createWebcodecDecoder(task)
@@ -341,7 +346,6 @@ export default class VideoDecodePipeline extends Pipeline {
       let threadCount = 1
 
       if (isWorker()) {
-        // 不能设置 3 线程，会出现 bug
         let pixels = parameters.width * parameters.height
         let framerate = avQ2D(parameters.framerate)
         if (pixels >= 1920 * 1080 && pixels <= 2048 * 1080) {
@@ -390,7 +394,7 @@ export default class VideoDecodePipeline extends Pipeline {
     }
   }
 
-  public async open(taskId: string, parameters: pointer<AVCodecParameters>, timeBase: pointer<Rational>) {
+  public async open(taskId: string, parameters: pointer<AVCodecParameters>) {
     const task = this.tasks.get(taskId)
     if (task) {
       return new Promise<void>(async (resolve, reject) => {

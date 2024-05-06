@@ -111,7 +111,6 @@
     "glslify-loader": "^2.0.0",
     "loader-utils": "^2.0.0",
     "node-media-server": "^2.6.2",
-    "path-browserify": "^1.0.1",
     "raw-loader": "^4.0.0",
     "schema-utils": "^3.1.0",
     "ts-jest": "^23.10.5",

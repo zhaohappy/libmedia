@@ -25,7 +25,7 @@
 
 import AVCodecParameters from '../struct/avcodecparameters'
 import { memcpy, memset } from 'cheap/std/memory'
-import { avFree, avFreep, avMalloc, avMallocz } from '../util/mem'
+import { avFree, avFreep, avMalloc, avMallocz } from './mem'
 import { unInitChannelLayout } from './channel'
 import { freeAVPacketSideData } from './avpacket'
 import { AVCodecID, AVMediaType } from '../codec'

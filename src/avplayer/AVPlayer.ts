@@ -910,7 +910,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
               avframeList: addressof(this.GlobalData.avframeList),
               avframeListMutex: addressof(this.GlobalData.avframeListMutex)
             })
-          await this.VideoDecoderThread.open(this.taskId, stream.codecpar, stream.timeBase)
+          await this.VideoDecoderThread.open(this.taskId, stream.codecpar)
           await AVPlayer.DemuxerThread.connectStreamTask
             .transfer(this.demuxer2VideoDecoderChannel.port1)
             .invoke(this.subTaskId || this.taskId, stream.index, this.demuxer2VideoDecoderChannel.port1)

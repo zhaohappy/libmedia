@@ -12,14 +12,14 @@ module.exports = (env) => {
   let outputPath = path.resolve(__dirname, './dist');
 
   if (env.transformer) {
-    entry = './src/cheap/transformer/index.ts';
+    entry = path.resolve(__dirname, './src/cheap/transformer/index.ts');
     output = 'transformer.js';
     libraryTarget = 'commonjs2';
     library = undefined;
     outputPath = path.resolve(__dirname, './src/cheap/build');
   }
   else if (env.avplayer) {
-    entry = './src/avplayer/AVPlayer.ts';
+    entry = path.resolve(__dirname, './src/avplayer/AVPlayer.ts');
     output = `avplayer${env.legacy ? '-legacy' : ''}.js`;
     library = 'AVPlayer';
     libraryExport = 'default';
@@ -29,13 +29,13 @@ module.exports = (env) => {
     }
   }
   else if (env.polyfill) {
-    entry = './src/cheap/polyfill/index.ts';
+    entry = path.resolve(__dirname, './src/cheap/polyfill/index.ts');
     output = 'cheap-polyfill.js';
     library = 'CheapPolyfill';
     libraryTarget = 'var';
   }
   else if (env.format) {
-    entry = './src/avformat/test.library.ts';
+    entry = path.resolve(__dirname, './src/avformat/test.library.ts');
     output = 'format.js';
     library = 'Format';
   }
@@ -83,7 +83,9 @@ module.exports = (env) => {
     externals: {
       typescript: 'typescript',
       'child_process': 'child_process',
-      'fs': 'fs'
+      'fs': 'fs',
+      'path': 'path',
+      'os': 'os'
     },
     devtool: +env.release ? false : 'source-map',
     mode: +env.release ? 'production' : 'development',

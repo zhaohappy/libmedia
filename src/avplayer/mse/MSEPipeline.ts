@@ -24,7 +24,7 @@
  */
 
 import { createAVOFormatContext, AVOFormatContext } from 'avformat/AVformatContext'
-import Pipeline, { TaskOptions } from '../../avpipeline/Pipeline'
+import Pipeline, { TaskOptions } from 'avpipeline/Pipeline'
 import * as errorType from 'avutil/error'
 import IPCPort from 'common/network/IPCPort'
 import * as logger from 'common/util/logger'
@@ -37,7 +37,7 @@ import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { Rational } from 'avutil/struct/rational'
 import { copyCodecParameters } from 'avutil/util/codecparameters'
 import LoopTask from 'common/timer/LoopTask'
-import Track from '../../avrender/track/Track'
+import Track from 'avrender/track/Track'
 import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import AVPacket, { AVPacketFlags, AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
 import List from 'cheap/std/collection/List'

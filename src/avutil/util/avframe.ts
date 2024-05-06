@@ -24,12 +24,12 @@
  */
 
 import AVFrame, { AVFrameSideData, AVFrameSideDataType } from '../struct/avframe'
-import { avFree, avFreep, avMalloc, avMallocz } from '../util/mem'
+import { avFree, avFreep, avMalloc, avMallocz } from './mem'
 import { memcpy, memset } from 'cheap/std/memory'
 import { NOPTS_VALUE_BIGINT } from '../constant'
 import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from '../pixfmt'
-import { avbufferRef, avbufferReplace, avbufferUnref } from '../util/avbuffer'
-import { freeAVDict } from '../util/avdict'
+import { avbufferRef, avbufferReplace, avbufferUnref } from './avbuffer'
+import { freeAVDict } from './avdict'
 import { INVALID_ARGUMENT, NO_MEMORY } from '../error'
 import { getChannelLayoutNBChannels } from './channel'
 
