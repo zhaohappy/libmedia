@@ -61,6 +61,7 @@ npm install
 npm run build-avplayer-dev
 
 # 启动本地 http 服务
+# 任何一个 http 服务都行，若报 edp 找不到，可以全局安装: npm install edp -g
 edp webserver start --port=9000
 
 # 浏览器访问 http://localhost:9000/test/avplayer.html

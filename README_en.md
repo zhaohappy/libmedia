@@ -60,6 +60,7 @@ npm install
 npm run build-avplayer-dev
 
 # Start local http service
+# Any http service will do. If it reports that edp cannot be found, you can install it globally use: npm install edp -g
 edp webserver start --port=9000
 
 # use browser access http://localhost:9000/test/avplayer.html
