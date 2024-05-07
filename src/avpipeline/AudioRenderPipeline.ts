@@ -265,7 +265,7 @@ export default class AudioRenderPipeline extends Pipeline {
               }
             )
           }
-         
+
           let pcmBuffer = me.avPCMBufferPool.alloc()
           let ret = task.resampler.resample(audioFrame.extendedData, pcmBuffer, audioFrame.nbSamples)
           if (ret < 0) {
@@ -639,14 +639,18 @@ export default class AudioRenderPipeline extends Pipeline {
 
       while (true) {
 
-        const now = getTimestamp()
-        const videoPacketQueueLength = task.stats.videoPacketQueueLength
+        let now = getTimestamp()
+        let videoPacketQueueLength = task.stats.videoPacketQueueLength
         while (!videoEnded && maxQueueLength && task.stats.videoPacketQueueLength > maxQueueLength) {
           await new Sleep(0)
           // 检查 videoPacketQueueLength 200ms 内没有变化说明 video 已经 sync 完成
           // 否则某些条件下会卡主
           if (getTimestamp() - now > 200 && videoPacketQueueLength === task.stats.videoPacketQueueLength) {
             videoEnded = true
+          }
+          if (videoPacketQueueLength !== task.stats.videoPacketQueueLength) {
+            videoPacketQueueLength = task.stats.videoPacketQueueLength
+            now = getTimestamp()
           }
         }
 
