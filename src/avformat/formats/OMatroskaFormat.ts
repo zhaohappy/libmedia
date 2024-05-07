@@ -277,7 +277,7 @@ export default class OMatroskaFormat extends OFormat {
     omatroska.writeHeader(formatContext.ioWriter, this.context, this.context.header)
 
     omatroska.writeEbmlId(formatContext.ioWriter, EBMLId.SEGMENT)
-    
+
     const now = formatContext.ioWriter.getPos()
     omatroska.writeEbmlLengthUnknown(formatContext.ioWriter, 8)
     this.context.elePositionInfos.push({
@@ -335,7 +335,7 @@ export default class OMatroskaFormat extends OFormat {
     omatroska.writeEbmlId(formatContext.ioWriter, EBMLId.CLUSTER)
     omatroska.writeEbmlLength(formatContext.ioWriter, block.length)
     formatContext.ioWriter.writeBuffer(block)
-    
+
     formatContext.ioWriter.flush()
     this.context.eleCaches.length = 0
   }
@@ -408,7 +408,7 @@ export default class OMatroskaFormat extends OFormat {
         })
       }
     })
-    
+
     formatContext.ioWriter.flush()
     this.context.eleWriter.flush()
     this.context.eleCaches.length = 0

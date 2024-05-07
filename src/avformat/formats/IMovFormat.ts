@@ -307,10 +307,10 @@ export default class IMovFormat extends IFormat {
     }
 
     let index = array.binarySearch(streamContext.samplesIndex, (item) => {
-      if (item.dts > pts) {
+      if (item.pts > pts) {
         return -1
       }
-      else if (item.dts === pts) {
+      else if (item.pts === pts) {
         return 0
       }
       return 1

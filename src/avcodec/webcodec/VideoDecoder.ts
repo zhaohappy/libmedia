@@ -52,7 +52,7 @@ export default class WebVideoDecoder {
 
   private inputQueue: number[]
   private outputQueue: VideoFrame[]
-  
+
   private sort: boolean
 
   private keyframeRequire: boolean
@@ -269,6 +269,6 @@ export default class WebVideoDecoder {
   }
 
   public setSkipFrameDiscard(discard: number) {
-    
+
   }
 }

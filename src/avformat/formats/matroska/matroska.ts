@@ -23,7 +23,7 @@
  *
  */
 
-import { AVCodecID } from "avutil/codec";
+import { AVCodecID } from 'avutil/codec'
 
 export const enum EbmlType {
   NONE,
@@ -217,7 +217,7 @@ export const enum EBMLId {
   /* IDs in the seek head master */
   SEEK_ENTRY = 0x4DBB,
 
-/* IDs in the seek point master */
+  /* IDs in the seek point master */
   SEEK_ID = 0x53AB,
   SEEK_POSITION = 0x53AC,
 
@@ -239,7 +239,7 @@ export const enum EBMLId {
   CODEC_STATE = 0xA4,
   DISCARD_PADDING = 0x75A2,
 
-/* IDs in the attachments master */
+  /* IDs in the attachments master */
   ATTACHED_FILE = 0x61A7,
   FILE_DESC = 0x467E,
   FILE_NAME = 0x466E,

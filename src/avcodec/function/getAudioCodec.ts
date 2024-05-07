@@ -32,14 +32,14 @@ export default function getAudioCodec(codecpar: pointer<AVCodecParameters>) {
   const codecId = codecpar.codecId
   let profile = codecpar.profile
 
-  let code = CodecId2String[codecId]
+  let codec = CodecId2String[codecId]
 
   if (codecId === AVCodecID.AV_CODEC_ID_AAC) {
     /*
      * mp4a.40.profile
      * url: https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter#iso_base_media_file_format_mp4_quicktime_and_3gp
      */
-    code = `${code}.${profile}`
+    codec = `${codec}.${profile}`
   }
-  return code || 'unknown'
+  return codec || 'unknown'
 }

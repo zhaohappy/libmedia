@@ -861,11 +861,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           let resource: WebAssemblyResource
 
           if (wasmUrl) {
-            resource = await compile(
-              {
-                source: wasmUrl
-              }
-            )
+            resource = await compile({
+              source: wasmUrl
+            })
 
             if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS)) {
               resource.threadModule = await compile(
@@ -936,11 +934,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             .transfer(this.demuxer2AudioDecoderChannel.port2, this.audioDecoder2AudioRenderChannel.port1)
             .invoke({
               taskId: this.taskId,
-              resource: await compile(
-                {
-                  source: this.options.getWasm('decoder', stream.codecpar.codecId)
-                }
-              ),
+              resource: await compile({
+                source: this.options.getWasm('decoder', stream.codecpar.codecId)
+              }),
               leftPort: this.demuxer2AudioDecoderChannel.port2,
               rightPort: this.audioDecoder2AudioRenderChannel.port1,
               stats: addressof(this.stats),
@@ -1026,16 +1022,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             playFormat: AVSampleFormat.AV_SAMPLE_FMT_FLTP,
             playSampleRate: AVPlayer.audioContext.sampleRate,
             playChannels: stream.codecpar.chLayout.nbChannels,
-            resamplerResource: await compile(
-              {
-                source: this.options.getWasm('resampler')
-              }
-            ),
-            stretchpitcherResource: await compile(
-              {
-                source: this.options.getWasm('stretchpitcher')
-              }
-            ),
+            resamplerResource: await compile({
+              source: this.options.getWasm('resampler')
+            }),
+            stretchpitcherResource: await compile({
+              source: this.options.getWasm('stretchpitcher')
+            }),
             stats: addressof(this.stats),
             timeBase: {
               num: stream.timeBase.num,

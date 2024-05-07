@@ -38,7 +38,7 @@ import AVStream from '../AVStream'
 import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { EBMLId, MATROSKALacingMode, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
 import { IOFlags } from 'common/io/flags'
-import { ClusterIndex, MatroskaContext, TrackEntry, Tracks } from './matroska/type'
+import { ClusterIndex, MatroskaContext, TrackEntry } from './matroska/type'
 import { EbmlSyntaxAttachments, EbmlSyntaxBlockGroup, EbmlSyntaxChapters, EbmlSyntaxCluster, EbmlSyntaxCues, EbmlSyntaxHeadSeek,
   EbmlSyntaxHeader, EbmlSyntaxInfo, EbmlSyntaxTags, EbmlSyntaxTracks, parseEbmlSyntax, readEbmlId, readVInt, readVInt64
 } from './matroska/imatroska'
@@ -250,7 +250,7 @@ export default class IMatroskaFormat extends IFormat {
         }
       })
     }
-   
+
     if (this.context.attachments) {
       array.each(this.context.attachments.entry, (attachment) => {
         const stream = formatContext.createStream()
@@ -289,7 +289,7 @@ export default class IMatroskaFormat extends IFormat {
 
     const magic = await readEbmlId(formatContext, this.context.header.maxIdLength)
     if (magic !== EBMLId.HEADER) {
-      logger.error(`not matroska format`)
+      logger.error('not matroska format')
       return errorType.DATA_INVALID
     }
 
@@ -298,7 +298,7 @@ export default class IMatroskaFormat extends IFormat {
 
     const segmentId = await readEbmlId(formatContext, this.context.header.maxIdLength)
     if (segmentId !== EBMLId.SEGMENT) {
-      logger.error(`not matroska format`)
+      logger.error('not matroska format')
       return errorType.DATA_INVALID
     }
 
@@ -462,7 +462,7 @@ export default class IMatroskaFormat extends IFormat {
 
         break
       }
-        
+
       case MATROSKALacingMode.FIXED_SIZE:
         frameCount = this.blockReader.readUint8() + 1
         frameSize.fill((buffer.length - static_cast<int32>(this.blockReader.getPos() - now) / frameCount), 0, frameCount)

@@ -316,7 +316,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.MATROSKA:
           if (defined(ENABLE_DEMUXER_MATROSKA)) {
-            iformat = new (((await import ('avformat/formats/IMatroskaFormat')).default))
+            iformat = new (((await import('avformat/formats/IMatroskaFormat')).default))
           }
           else {
             logger.error('matroska format not support, maybe you can rebuild avmedia')

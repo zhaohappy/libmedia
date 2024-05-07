@@ -384,7 +384,11 @@ export default class OMp3Format extends OFormat {
     if (avpacket.data && avpacket.size > 4) {
       frameHeader.parse(this.context.frameHeader, accessof(reinterpret_cast<pointer<uint32>>(avpacket.data)))
 
-      const bitRate = mp3.getBitRateByVersionLayerIndex(this.context.frameHeader.version, this.context.frameHeader.layer, this.context.frameHeader.bitrateIndex)
+      const bitRate = mp3.getBitRateByVersionLayerIndex(
+        this.context.frameHeader.version,
+        this.context.frameHeader.layer,
+        this.context.frameHeader.bitrateIndex
+      )
       if (!this.context.initialBitrate) {
         this.context.initialBitrate = bitRate
       }

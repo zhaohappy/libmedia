@@ -66,14 +66,16 @@ export default class Resampler {
 
     const layout = stack.malloc(sizeof(uint64)) as pointer<uint64>
     accessof(layout) <- static_cast<uint64>(input.layout ?? 0n)
-    this.resampler.call('resample_set_input_parameters',
+    this.resampler.call(
+      'resample_set_input_parameters',
       input.sampleRate,
       input.channels,
       input.format,
       layout
     )
     accessof(layout) <- static_cast<uint64>(output.layout ?? 0n)
-    this.resampler.call('resample_set_output_parameters',
+    this.resampler.call(
+      'resample_set_output_parameters',
       output.sampleRate,
       output.channels,
       output.format,

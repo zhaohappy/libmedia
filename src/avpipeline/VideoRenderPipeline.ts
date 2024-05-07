@@ -407,7 +407,7 @@ export default class VideoRenderPipeline extends Pipeline {
           assert(!is.number(frame) || frame.data[0], 'got empty video frame')
 
           const cost = getTimestamp() - now
-          // 超过 1 秒认为是网卡了(断点暂停)，对齐一下时间
+          // 超过 1 秒认为是网卡了（断点暂停），对齐一下时间
           if (cost > 1000) {
             task.startTimestamp += static_cast<int64>(cost)
           }

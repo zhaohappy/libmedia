@@ -175,32 +175,32 @@ export default class VideoDecodePipeline extends Pipeline {
       avframePool,
       avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex)
     }
-    
+
     task.softwareDecoder = options.resource
       ? new WasmVideoDecoder({
-          resource: options.resource,
-          onError: (error) => {
-            logger.error(`video decode error, taskId: ${options.taskId}, error: ${error}`)
-            const task = this.tasks.get(options.taskId)
-            if (task.openReject) {
-              task.openReject(error)
-              task.openReject = null
-            }
-          },
-          onReceiveFrame(frame) {
-            task.firstDecoded = true
-            frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
-            task.stats.videoFrameDecodeCount++
-            if (task.lastDecodeTimestamp) {
-              task.stats.videoFrameDecodeIntervalMax = Math.max(
-                getTimestamp() - task.lastDecodeTimestamp,
-                task.stats.videoFrameDecodeIntervalMax
-              )
-            }
-            task.lastDecodeTimestamp = getTimestamp()
-          },
-          avframePool: avframePool
-        })
+        resource: options.resource,
+        onError: (error) => {
+          logger.error(`video decode error, taskId: ${options.taskId}, error: ${error}`)
+          const task = this.tasks.get(options.taskId)
+          if (task.openReject) {
+            task.openReject(error)
+            task.openReject = null
+          }
+        },
+        onReceiveFrame(frame) {
+          task.firstDecoded = true
+          frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
+          task.stats.videoFrameDecodeCount++
+          if (task.lastDecodeTimestamp) {
+            task.stats.videoFrameDecodeIntervalMax = Math.max(
+              getTimestamp() - task.lastDecodeTimestamp,
+              task.stats.videoFrameDecodeIntervalMax
+            )
+          }
+          task.lastDecodeTimestamp = getTimestamp()
+        },
+        avframePool: avframePool
+      })
       : (support.videoDecoder ? this.createWebcodecDecoder(task, false) : null)
 
     if (!task.softwareDecoder) {

@@ -389,7 +389,7 @@ export default class AVFrame {
    * @deprecated Use AV_FRAME_FLAG_KEY instead
    */
   @ignore(!defined(API_FRAME_KEY))
-  keyFrame: int32 = 0
+    keyFrame: int32 = 0
 
   /**
    * Picture type of the frame.
@@ -426,14 +426,14 @@ export default class AVFrame {
    * @deprecated
    */
   @ignore(!defined(API_FRAME_PICTURE_NUMBER))
-  codedPictureNumber: int32 = NOPTS_VALUE
+    codedPictureNumber: int32 = NOPTS_VALUE
 
   /**
    * picture number in display order
    * @deprecated
    */
   @ignore(!defined(API_FRAME_PICTURE_NUMBER))
-  displayPictureNumber: int32 = NOPTS_VALUE
+    displayPictureNumber: int32 = NOPTS_VALUE
 
   /**
    * quality (between 1 (good) and FF_LAMBDA_MAX (bad))
@@ -482,7 +482,7 @@ export default class AVFrame {
    * @deprecated Use AV_FRAME_FLAG_INTERLACED instead
    */
   @ignore(!defined(API_INTERLACED_FRAME))
-  interlacedFrame: int32 = NOPTS_VALUE
+    interlacedFrame: int32 = NOPTS_VALUE
 
   /**
    * If the content is interlaced, is top field displayed first.
@@ -490,14 +490,14 @@ export default class AVFrame {
    * @deprecated Use AV_FRAME_FLAG_TOP_FIELD_FIRST instead
    */
   @ignore(!defined(API_INTERLACED_FRAME))
-  topFieldFirst: int32 = NOPTS_VALUE
+    topFieldFirst: int32 = NOPTS_VALUE
 
   /**
    * Tell user application that palette has changed from previous frame.
    *  @deprecated
    */
   @ignore(!defined(API_PALETTE_HAS_CHANGED))
-  paletteHasChanged: int32 = NOPTS_VALUE
+    paletteHasChanged: int32 = NOPTS_VALUE
 
   /**
    * reordered opaque 64 bits (generally an integer or a double precision float
@@ -510,7 +510,7 @@ export default class AVFrame {
    * @deprecated Use AV_CODEC_FLAG_COPY_OPAQUE instead
    */
   @ignore(!defined(API_REORDERED_OPAQUE))
-  reorderedOpaque: int64 = NOPTS_VALUE_BIGINT
+    reorderedOpaque: int64 = NOPTS_VALUE_BIGINT
 
   /**
    * Sample rate of the audio data.
@@ -522,7 +522,7 @@ export default class AVFrame {
    * @deprecated use ch_layout instead
    */
   @ignore(!defined(API_OLD_CHANNEL_LAYOUT))
-  channelLayout: uint64 = 0n
+    channelLayout: uint64 = 0n
 
   /**
    * AVBuffer references backing the data for this frame. If all elements of
@@ -598,7 +598,7 @@ export default class AVFrame {
    *             data from packets to frames
    */
   @ignore(!defined(API_FRAME_PKT))
-  pktPos: int64 = NOPTS_VALUE_BIGINT
+    pktPos: int64 = NOPTS_VALUE_BIGINT
 
   /**
    * duration of the corresponding packet, expressed in
@@ -609,7 +609,7 @@ export default class AVFrame {
    * @deprecated use duration instead
    */
   @ignore(!defined(API_PKT_DURATION))
-  pktDuration: int64 = NOPTS_VALUE_BIGINT
+    pktDuration: int64 = NOPTS_VALUE_BIGINT
 
   /**
    * metadata.
@@ -634,7 +634,7 @@ export default class AVFrame {
    * @deprecated use ch_layout instead
    */
   @ignore(!defined(API_OLD_CHANNEL_LAYOUT))
-  channels: int32 = NOPTS_VALUE
+    channels: int32 = NOPTS_VALUE
 
   /**
    * size of the corresponding packet containing the compressed
@@ -646,7 +646,7 @@ export default class AVFrame {
    *             data from packets to frames
    */
   @ignore(!defined(API_FRAME_PKT))
-  pktSize: int32 = NOPTS_VALUE
+    pktSize: int32 = NOPTS_VALUE
 
   /**
    * For hwaccel-format frames, this should be a reference to the

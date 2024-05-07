@@ -793,8 +793,8 @@ export default class MSEPipeline extends Pipeline {
         && avQ2D2(timeBase) > avQ2D({ num: 1, den: codecpar.sampleRate })
 
       // 点播 frameSize 有并且时间基精度小于采样率精度则使用 sampleRate 作为时间基
-      // 避免一些 mp4 ts 转为 flv 因为时间基精度损失导致的 dts 抖动
-      // 当 dts 抖动时 mse 播放会有颤音
+      // 避免一些 mp4 ts 转为 flv 因为时间基精度损失导致的 pts 抖动
+      // 当 pts 抖动时 mse 播放会有颤音
       if (useSampleRateTimeBase) {
         stream.timeBase.den = codecpar.sampleRate
         stream.timeBase.num = 1
@@ -1296,13 +1296,11 @@ export default class MSEPipeline extends Pipeline {
       }
       if (task.video) {
         if (task.stats.keyFrameInterval > 0) {
-          task.video.track.setMediaBufferMax(
-            Math.max(
-              task.video.track.getMediaBufferMax(),
-              Math.ceil(task.stats.keyFrameInterval / 1000 * 1.5),
-              10
-            )
-          )
+          task.video.track.setMediaBufferMax(Math.max(
+            task.video.track.getMediaBufferMax(),
+            Math.ceil(task.stats.keyFrameInterval / 1000 * 1.5),
+            10
+          ))
           task.video.track.removeBuffer(time)
         }
       }

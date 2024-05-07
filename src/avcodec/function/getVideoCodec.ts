@@ -41,9 +41,9 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
   if (!extradata && codecpar.extradata !== nullptr) {
     extradata = mapUint8Array(codecpar.extradata, codecpar.extradataSize)
   }
-  
+
   let entry = CodecId2String[codecId]
-  let code = ''
+  let codec = ''
 
   if (codecId === AVCodecID.AV_CODEC_ID_H264) {
     /*
@@ -56,7 +56,7 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
     if (profile === H264Profile.kHigh10) {
       profile = H264Profile.kHigh
     }
-    code = string.format(
+    codec = string.format(
       '%s.%02x%02x%02x',
       entry,
       profile & 0xff,
@@ -100,7 +100,7 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
       3: 'C'
     }
 
-    code = string.format(
+    codec = string.format(
       '%s.%s%d.%x.%s%d.%x',
       entry,
       generalProfileSpaceMap[generalProfileSpace],
@@ -120,7 +120,7 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
 
     if (extradata) {
       const params = av1.parseExtraData(extradata)
-      code = string.format(
+      codec = string.format(
         '%s.%d.%02d%s.%02d.%d.%d%d%d',
         entry,
         params.profile,
@@ -134,7 +134,7 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
       )
     }
     else {
-      code = string.format('%s.%d.%02dM.08', entry, profile, level)
+      codec = string.format('%s.%d.%02dM.08', entry, profile, level)
     }
   }
   else if (codecId === AVCodecID.AV_CODEC_ID_VP8) {
@@ -143,7 +143,7 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
      */
     if (extradata) {
       const params = vp8.parseExtraData(extradata)
-      code = string.format(
+      codec = string.format(
         '%s.%02d.%02d.%02d',
         entry,
         params.profile,
@@ -152,10 +152,10 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
       )
     }
     else if (profile !== NOPTS_VALUE && level !== NOPTS_VALUE) {
-      code = string.format('%s.%02d.%02d.08', entry, profile, level)
+      codec = string.format('%s.%02d.%02d.08', entry, profile, level)
     }
     else {
-      code = entry
+      codec = entry
     }
   }
   else if (codecId === AVCodecID.AV_CODEC_ID_VP9) {
@@ -166,7 +166,7 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
      */
     if (extradata) {
       const params = vp9.parseExtraData(extradata)
-      code = string.format(
+      codec = string.format(
         '%s.%02d.%02d.%02d.%02d.%02d.%02d.%02d.%02d',
         entry,
         params.profile,
@@ -180,15 +180,15 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
       )
     }
     else if (profile !== NOPTS_VALUE && level !== NOPTS_VALUE) {
-      code = string.format('%s.%02d.%02d.08.00', entry, profile, level)
+      codec = string.format('%s.%02d.%02d.08.00', entry, profile, level)
     }
     else {
-      code = string.format('%s.%02d.%02d.08.00', entry, 0, 40)
+      codec = string.format('%s.%02d.%02d.08.00', entry, 0, 40)
     }
   }
   else {
-    code = entry || 'unknown'
+    codec = entry || 'unknown'
   }
 
-  return code
+  return codec
 }
