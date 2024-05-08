@@ -25,264 +25,293 @@
 
 import { AVMediaType } from 'avutil/codec'
 import { BoxType } from './boxType'
+import { MOVContext } from './type'
 
 export interface BoxLayout {
   type: BoxType,
   children?: BoxLayout[]
 }
 
-const TrackBoxAudioLayout: BoxLayout[] = [
-  {
-    type: BoxType.TKHD
-  },
-  {
-    type: BoxType.EDTS
-  },
-  {
-    type: BoxType.MDIA,
-    children: [
-      {
-        type: BoxType.MDHD
-      },
-      {
-        type: BoxType.HDLR
-      },
-      {
-        type: BoxType.MINF,
-        children: [
-          {
-            type: BoxType.SMHD
-          },
-          {
-            type: BoxType.DINF,
-            children: [
-              {
-                type: BoxType.DREF,
-                children: [
-                  {
-                    type: BoxType.URL
-                  }
-                ]
+function getTrackBoxAudioLayout(context: MOVContext) {
+  return [
+    {
+      type: BoxType.TKHD
+    },
+    {
+      type: BoxType.EDTS
+    },
+    {
+      type: BoxType.MDIA,
+      children: [
+        {
+          type: BoxType.MDHD
+        },
+        {
+          type: BoxType.HDLR
+        },
+        {
+          type: BoxType.MINF,
+          children: [
+            {
+              type: BoxType.SMHD
+            },
+            context.isom
+              ? {
+                type: BoxType.MINF_HDLR
               }
-            ]
-          },
-          {
-            type: BoxType.STBL,
-            children: [
-              {
-                type: BoxType.STSD
-              },
-              {
-                type: BoxType.STTS
-              },
-              {
-                type: BoxType.STSC
-              },
-              {
-                type: BoxType.STSZ
-              },
-              {
-                type: BoxType.STCO
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-]
-
-const TrackBoxVideoLayout: BoxLayout[] = [
-  {
-    type: BoxType.TKHD
-  },
-  {
-    type: BoxType.EDTS
-  },
-  {
-    type: BoxType.MDIA,
-    children: [
-      {
-        type: BoxType.MDHD
-      },
-      {
-        type: BoxType.HDLR
-      },
-      {
-        type: BoxType.MINF,
-        children: [
-          {
-            type: BoxType.VMHD
-          },
-          {
-            type: BoxType.DINF,
-            children: [
-              {
-                type: BoxType.DREF,
-                children: [
-                  {
-                    type: BoxType.URL
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            type: BoxType.STBL,
-            children: [
-              {
-                type: BoxType.STSD
-              },
-              {
-                type: BoxType.STTS
-              },
-              {
-                type: BoxType.STSS
-              },
-              {
-                type: BoxType.CTTS
-              },
-              {
-                type: BoxType.STSC
-              },
-              {
-                type: BoxType.STSZ
-              },
-              {
-                type: BoxType.STCO
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-]
-
-const FragmentTrackAudioBoxLayout: BoxLayout[] = [
-  {
-    type: BoxType.TKHD
-  },
-  {
-    type: BoxType.MDIA,
-    children: [
-      {
-        type: BoxType.MDHD
-      },
-      {
-        type: BoxType.HDLR
-      },
-      {
-        type: BoxType.MINF,
-        children: [
-          {
-            type: BoxType.SMHD
-          },
-          {
-            type: BoxType.DINF,
-            children: [
-              {
-                type: BoxType.DREF,
-                children: [
-                  {
-                    type: BoxType.URL
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            type: BoxType.STBL,
-            children: [
-              {
-                type: BoxType.STSD
-              },
-              {
-                type: BoxType.STTS
-              },
-              {
-                type: BoxType.STSC
-              },
-              {
-                type: BoxType.STSZ
-              },
-              {
-                type: BoxType.STCO
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-]
-
-const FragmentTrackVideoBoxLayout: BoxLayout[] = [
-  {
-    type: BoxType.TKHD
-  },
-  {
-    type: BoxType.MDIA,
-    children: [
-      {
-        type: BoxType.MDHD
-      },
-      {
-        type: BoxType.HDLR
-      },
-      {
-        type: BoxType.MINF,
-        children: [
-          {
-            type: BoxType.VMHD
-          },
-          {
-            type: BoxType.DINF,
-            children: [
-              {
-                type: BoxType.DREF,
-                children: [
-                  {
-                    type: BoxType.URL
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            type: BoxType.STBL,
-            children: [
-              {
-                type: BoxType.STSD
-              },
-              {
-                type: BoxType.STTS
-              },
-              {
-                type: BoxType.STSC
-              },
-              {
-                type: BoxType.STSZ
-              },
-              {
-                type: BoxType.STCO
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-]
-
-export const FragmentTrackBoxLayoutMap = {
-  [AVMediaType.AVMEDIA_TYPE_AUDIO]: FragmentTrackAudioBoxLayout,
-  [AVMediaType.AVMEDIA_TYPE_VIDEO]: FragmentTrackVideoBoxLayout
+              : null,
+            {
+              type: BoxType.DINF,
+              children: [
+                {
+                  type: BoxType.DREF,
+                  children: [
+                    {
+                      type: BoxType.URL
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              type: BoxType.STBL,
+              children: [
+                {
+                  type: BoxType.STSD
+                },
+                {
+                  type: BoxType.STTS
+                },
+                {
+                  type: BoxType.STSC
+                },
+                {
+                  type: BoxType.STSZ
+                },
+                {
+                  type: BoxType.STCO
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ] as BoxLayout[]
 }
 
-export const TrackBoxLayoutMap = {
-  [AVMediaType.AVMEDIA_TYPE_AUDIO]: TrackBoxAudioLayout,
-  [AVMediaType.AVMEDIA_TYPE_VIDEO]: TrackBoxVideoLayout
+function getTrackBoxVideoLayout(context: MOVContext) {
+  return [
+    {
+      type: BoxType.TKHD
+    },
+    {
+      type: BoxType.EDTS
+    },
+    {
+      type: BoxType.MDIA,
+      children: [
+        {
+          type: BoxType.MDHD
+        },
+        {
+          type: BoxType.HDLR
+        },
+        {
+          type: BoxType.MINF,
+          children: [
+            {
+              type: BoxType.VMHD
+            },
+            context.isom
+              ? {
+                type: BoxType.MINF_HDLR
+              }
+              : null,
+            {
+              type: BoxType.DINF,
+              children: [
+                {
+                  type: BoxType.DREF,
+                  children: [
+                    {
+                      type: BoxType.URL
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              type: BoxType.STBL,
+              children: [
+                {
+                  type: BoxType.STSD
+                },
+                {
+                  type: BoxType.STTS
+                },
+                {
+                  type: BoxType.STSS
+                },
+                {
+                  type: BoxType.CTTS
+                },
+                {
+                  type: BoxType.STSC
+                },
+                {
+                  type: BoxType.STSZ
+                },
+                {
+                  type: BoxType.STCO
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ] as BoxLayout[]
+}
+
+function getFragmentTrackAudioBoxLayout(context: MOVContext) {
+  return [
+    {
+      type: BoxType.TKHD
+    },
+    {
+      type: BoxType.MDIA,
+      children: [
+        {
+          type: BoxType.MDHD
+        },
+        {
+          type: BoxType.HDLR
+        },
+        {
+          type: BoxType.MINF,
+          children: [
+            {
+              type: BoxType.SMHD
+            },
+            context.isom
+              ? {
+                type: BoxType.MINF_HDLR
+              }
+              : null,
+            {
+              type: BoxType.DINF,
+              children: [
+                {
+                  type: BoxType.DREF,
+                  children: [
+                    {
+                      type: BoxType.URL
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              type: BoxType.STBL,
+              children: [
+                {
+                  type: BoxType.STSD
+                },
+                {
+                  type: BoxType.STTS
+                },
+                {
+                  type: BoxType.STSC
+                },
+                {
+                  type: BoxType.STSZ
+                },
+                {
+                  type: BoxType.STCO
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ] as BoxLayout[]
+}
+
+function getFragmentTrackVideoBoxLayout(context: MOVContext) {
+  return [
+    {
+      type: BoxType.TKHD
+    },
+    {
+      type: BoxType.MDIA,
+      children: [
+        {
+          type: BoxType.MDHD
+        },
+        {
+          type: BoxType.HDLR
+        },
+        {
+          type: BoxType.MINF,
+          children: [
+            {
+              type: BoxType.VMHD
+            },
+            context.isom
+              ? {
+                type: BoxType.MINF_HDLR
+              }
+              : null,
+            {
+              type: BoxType.DINF,
+              children: [
+                {
+                  type: BoxType.DREF,
+                  children: [
+                    {
+                      type: BoxType.URL
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              type: BoxType.STBL,
+              children: [
+                {
+                  type: BoxType.STSD
+                },
+                {
+                  type: BoxType.STTS
+                },
+                {
+                  type: BoxType.STSC
+                },
+                {
+                  type: BoxType.STSZ
+                },
+                {
+                  type: BoxType.STCO
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ] as BoxLayout[]
+}
+
+export const FragmentTrackBoxLayoutMap: Record<number, (context: MOVContext) => BoxLayout[]> = {
+  [AVMediaType.AVMEDIA_TYPE_AUDIO]: getFragmentTrackAudioBoxLayout,
+  [AVMediaType.AVMEDIA_TYPE_VIDEO]: getFragmentTrackVideoBoxLayout
+}
+
+export const TrackBoxLayoutMap: Record<number, (context: MOVContext) => BoxLayout[]> = {
+  [AVMediaType.AVMEDIA_TYPE_AUDIO]: getTrackBoxAudioLayout,
+  [AVMediaType.AVMEDIA_TYPE_VIDEO]: getTrackBoxVideoLayout
 }
 
 export const MoofTrafBoxLayout: BoxLayout[] = [

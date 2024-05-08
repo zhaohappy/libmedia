@@ -50,6 +50,7 @@ import mfhd from './mfhd'
 import tfhd from './tfhd'
 import tfdt from './tfdt'
 import trun from './trun'
+import minfHdlr from './minfHdlr'
 
 
 const writers: Partial<Record<BoxType, (ioWriter: IOWriter, stream: Stream, movContext: MOVContext) => void>> = {
@@ -74,7 +75,9 @@ const writers: Partial<Record<BoxType, (ioWriter: IOWriter, stream: Stream, movC
   [BoxType.MFHD]: mfhd,
   [BoxType.TFHD]: tfhd,
   [BoxType.TFDT]: tfdt,
-  [BoxType.TRUN]: trun
+  [BoxType.TRUN]: trun,
+
+  [BoxType.MINF_HDLR]: minfHdlr
 }
 
 export default writers

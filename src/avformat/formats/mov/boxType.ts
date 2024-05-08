@@ -115,7 +115,9 @@ export const enum BoxType {
   TX3G = 'tx3g',
   C608 = 'c608',
   MFRO = 'mfro',
-  TFRA = 'tfra'
+  TFRA = 'tfra',
+  MINF_HDLR = 'minf_hdlr',
+  FRMA = 'frma'
 }
 
 export const BasicBoxs = [

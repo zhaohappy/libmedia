@@ -43,7 +43,7 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
   ioWriter.writeUint24(0)
 
   let hdlr = 'dhlr'
-  let hdlrType = 'url'
+  let hdlrType = 'url '
   let descr = 'DataHandler'
 
   if (stream) {
@@ -60,10 +60,14 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
       hdlrType = 'text'
       descr = 'SubtitleHandler'
     }
-    if (stream.metadata['handlerName']) {
-      descr = stream.metadata['handlerName']
+    else {
+      if (stream.metadata['handlerName']) {
+        descr = stream.metadata['handlerName']
+      }
+      if (stream.metadata['hdlrType']) {
+        hdlrType = stream.metadata['hdlrType']
+      }
     }
-
   }
 
   // handler
@@ -76,9 +80,16 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
   ioWriter.writeUint32(0)
   ioWriter.writeUint32(0)
 
+  if (!stream || movContext.isom) {
+    ioWriter.writeUint8(descr.length)
+  }
+
   ioWriter.writeString(descr)
-  // c string
-  ioWriter.writeUint8(0)
+
+  if (stream && !movContext.isom) {
+    // c string
+    ioWriter.writeUint8(0)
+  }
 
   movContext.boxsPositionInfo.push({
     pos,

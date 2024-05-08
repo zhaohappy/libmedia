@@ -39,6 +39,12 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
   // tag
   ioWriter.writeString(BoxType.WAVE)
 
+  if (stream.codecpar.codecId !== AVCodecID.AV_CODEC_ID_QDM2) {
+    ioWriter.writeUint32(12)
+    ioWriter.writeString(BoxType.FRMA)
+    ioWriter.writeUint32(stream.codecpar.codecTag)
+  }
+
   if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
     // seless atom needed by mplayer, ipod, not needed by quicktime
     ioWriter.writeUint32(12)

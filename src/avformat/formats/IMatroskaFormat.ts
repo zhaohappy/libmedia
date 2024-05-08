@@ -55,6 +55,7 @@ import * as aac from '../codecs/aac'
 import { avRescaleQ } from 'avutil/util/rational'
 import BufferReader from 'common/io/BufferReader'
 import findStreamByTrackUid from './matroska/function/findStreamByTrackUid'
+import findStreamByTrackNumber from './matroska/function/findStreamByTrackNumber'
 
 export default class IMatroskaFormat extends IFormat {
 
@@ -367,16 +368,6 @@ export default class IMatroskaFormat extends IFormat {
     return 0
   }
 
-  private findStreamByTrackId(formatContext: AVIFormatContext, trackNumber: uint32) {
-    for (let i = 0; i < formatContext.streams.length; i++) {
-      const stream = formatContext.streams[i]
-      const track = stream.privData as TrackEntry
-      if (track.number === trackNumber) {
-        return stream
-      }
-    }
-  }
-
   @deasync
   private async parseBlock(formatContext: AVIFormatContext, packet: pointer<AVPacket>) {
 
@@ -400,7 +391,7 @@ export default class IMatroskaFormat extends IFormat {
 
     const trackNumber = await readVInt(this.blockReader, 4)
 
-    const stream = this.findStreamByTrackId(formatContext, trackNumber)
+    const stream = findStreamByTrackNumber(formatContext.streams, trackNumber)
 
     if (!stream) {
       return

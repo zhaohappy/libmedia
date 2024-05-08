@@ -49,7 +49,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
       continue
     }
 
-    if (type === mktag(BoxType.MP4A)) {
+    if (type === mktag(BoxType.ESDS)) {
       await esds(
         ioReader,
         stream,

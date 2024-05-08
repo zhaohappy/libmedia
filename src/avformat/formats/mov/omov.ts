@@ -79,8 +79,11 @@ function writeEmptyBox(ioWriter: IOWriter, tag: BoxType) {
   }
 }
 
-function writeLayout(ioWriter: IOWriter, layout: BoxLayout[], stream: Stream, movContext: MOVContext) {
-  array.each(layout, (layout) => {
+function writeLayout(ioWriter: IOWriter, layouts: BoxLayout[], stream: Stream, movContext: MOVContext) {
+  array.each(layouts, (layout) => {
+    if (!layout) {
+      return true
+    }
     if (writers[layout.type]) {
       writers[layout.type](ioWriter, stream, movContext)
     }
@@ -116,8 +119,8 @@ export function writeMoov(ioWriter: IOWriter, formatContext: AVOFormatContext, m
     writeLayout(
       ioWriter,
       movContext.fragment
-        ? FragmentTrackBoxLayoutMap[stream.codecpar.codecType]
-        : TrackBoxLayoutMap[stream.codecpar.codecType],
+        ? FragmentTrackBoxLayoutMap[stream.codecpar.codecType](movContext)
+        : TrackBoxLayoutMap[stream.codecpar.codecType](movContext),
       stream,
       movContext
     )

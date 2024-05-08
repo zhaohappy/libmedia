@@ -41,6 +41,10 @@ import wave from './wave'
 import dfla from './dfla'
 import dops from './dops'
 import colr from './colr'
+import { NOPTS_VALUE } from 'avutil/constant'
+import { MPEG4AudioObjectTypes, avCodecParameters2Extradata } from '../../../codecs/aac'
+import { avMalloc } from 'avutil/util/mem'
+import { memcpyFromUint8Array } from 'cheap/std/memory'
 
 // @ts-ignore
 @deasync
@@ -238,7 +242,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
       stream.codecpar.sampleRate = (await ioReader.readUint32()) >>> 16
 
       if (!movContext.isom || (version === 0 && subVersion > 0)) {
-        if (version === 1) {
+        if (subVersion === 1) {
           streamContext.samplesPerFrame = await ioReader.readUint32()
           // bytes per packet
           await ioReader.skip(4)
@@ -247,7 +251,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
           // bytes per sample
           await ioReader.skip(4)
         }
-        else if (version === 2) {
+        else if (subVersion === 2) {
           // sizeof struct only
           await ioReader.skip(4)
           stream.codecpar.sampleRate = Number(await ioReader.readUint64())
@@ -299,6 +303,17 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
         }
         else if (type === mktag(BoxType.DOPS)) {
           await dops(
+            ioReader,
+            stream,
+            {
+              type,
+              size: size - 8
+            },
+            movContext
+          )
+        }
+        else if (type === mktag(BoxType.WAVE)) {
+          await wave(
             ioReader,
             stream,
             {

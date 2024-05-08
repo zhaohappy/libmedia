@@ -44,6 +44,7 @@ import btrt from './btrt'
 import wave from './wave'
 import { mapUint8Array } from 'cheap/std/memory'
 import digital2Tag from '../../../function/digital2Tag'
+import { MPEG4AudioObjectTypes } from '../../../codecs/aac'
 
 const AVCodecID2Tag = {
   [AVCodecID.AV_CODEC_ID_H264]: BoxType.AVC1,
@@ -86,6 +87,8 @@ function writeAudioTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
   const pos = ioWriter.getPos()
   const tag = getTag(stream.codecpar)
 
+  const version = movContext.isom ? 1 : 0
+
   // size
   ioWriter.writeUint32(0)
   ioWriter.writeString(tag)
@@ -98,7 +101,7 @@ function writeAudioTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
   ioWriter.writeUint16(1)
 
   // SoundDescription Version
-  ioWriter.writeUint16(0)
+  ioWriter.writeUint16(version)
   // SoundDescription Revision level
   ioWriter.writeUint16(0)
   // Reserved
@@ -118,7 +121,7 @@ function writeAudioTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
     else {
       ioWriter.writeUint16(16)
     }
-    ioWriter.writeUint16(0)
+    ioWriter.writeUint16(-2)
   }
   else {
     if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_FLAC
@@ -160,6 +163,18 @@ function writeAudioTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
     ioWriter.writeUint16(0)
   }
 
+  // SoundDescription V1 extended info
+  if (version === 1) {
+    // Samples per packet
+    ioWriter.writeUint32(stream.codecpar.frameSize)
+    // Bytes per packet
+    ioWriter.writeUint32(0)
+    // Bytes per frame
+    ioWriter.writeUint32(0)
+    // Bytes per sample
+    ioWriter.writeUint32(2)
+  }
+
   if (movContext.isom
     && (
       stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC
@@ -184,7 +199,9 @@ function writeAudioTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
     esds(ioWriter, stream, movContext)
   }
 
-  btrt(ioWriter, stream, movContext)
+  if (!movContext.isom) {
+    btrt(ioWriter, stream, movContext)
+  }
 
   movContext.boxsPositionInfo.push({
     pos,
@@ -198,15 +215,15 @@ function writeVideoTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
   const tag = getTag(stream.codecpar)
 
   const uncompressedYcbcr = ((stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_RAWVIDEO
-            && stream.codecpar.format == AVPixelFormat.AV_PIX_FMT_UYVY422
-  )
-        || (stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_RAWVIDEO
-            && stream.codecpar.format == AVPixelFormat.AV_PIX_FMT_YUYV422
-        )
-        ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V308
-        ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V408
-        ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V410
-        ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V210)
+      && stream.codecpar.format == AVPixelFormat.AV_PIX_FMT_UYVY422
+    )
+    || (stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_RAWVIDEO
+      && stream.codecpar.format == AVPixelFormat.AV_PIX_FMT_YUYV422
+    )
+    ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V308
+    ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V408
+    ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V410
+    ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V210)
 
   // size
   ioWriter.writeUint32(0)
@@ -226,9 +243,26 @@ function writeVideoTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
   ioWriter.writeUint16(0)
 
   // Reserved
-  ioWriter.writeUint32(0)
-  ioWriter.writeUint32(0)
-  ioWriter.writeUint32(0)
+  if (movContext.isom) {
+    ioWriter.writeString('FFMP')
+    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_RAWVIDEO || uncompressedYcbcr) {
+      /* Temporal Quality */
+      ioWriter.writeUint32(0)
+      /* Spatial Quality = lossless*/
+      ioWriter.writeUint32(0x400)
+    }
+    else {
+      /* Temporal Quality = normal */
+      ioWriter.writeUint32(0x200)
+      /* Spatial Quality = normal */
+      ioWriter.writeUint32(0x200)
+    }
+  }
+  else {
+    ioWriter.writeUint32(0)
+    ioWriter.writeUint32(0)
+    ioWriter.writeUint32(0)
+  }
 
   ioWriter.writeUint16(stream.codecpar.width)
   ioWriter.writeUint16(stream.codecpar.height)
@@ -254,7 +288,13 @@ function writeVideoTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
   }
 
   // Reserved
-  ioWriter.writeUint16(0x18)
+  if (movContext.isom && stream.codecpar.bitsPerCodedSample) {
+    ioWriter.writeUint16(stream.codecpar.bitsPerCodedSample)
+  }
+  else {
+    ioWriter.writeUint16(0x18)
+  }
+  
   ioWriter.writeUint16(0xffff)
 
   if (tag === BoxType.MP4V) {
@@ -275,7 +315,10 @@ function writeVideoTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
 
   colr(ioWriter, stream, movContext)
   pasp(ioWriter, stream, movContext)
-  btrt(ioWriter, stream, movContext)
+
+  if (!movContext.isom) {
+    btrt(ioWriter, stream, movContext)
+  }
 
   movContext.boxsPositionInfo.push({
     pos,
@@ -306,7 +349,9 @@ function writeSubtitleTag(ioWriter: IOWriter, stream: Stream, movContext: MOVCon
     ioWriter.writeBuffer(mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
   }
 
-  btrt(ioWriter, stream, movContext)
+  if (!movContext.isom) {
+    btrt(ioWriter, stream, movContext)
+  }
 
   movContext.boxsPositionInfo.push({
     pos,

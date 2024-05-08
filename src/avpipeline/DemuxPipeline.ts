@@ -36,7 +36,7 @@ import { AVFormat } from 'avformat/avformat'
 import { avFree, avMalloc } from 'avutil/util/mem'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { Rational } from 'avutil/struct/rational'
-import SafeBuffer from 'cheap/std/buffer/SafeUint8Array'
+import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
 import List from 'cheap/std/collection/List'
 import AVPacket, { AVPacketFlags, AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
 import { Mutex } from 'cheap/thread/mutex'
@@ -106,7 +106,7 @@ export default class DemuxPipeline extends Pipeline {
     super()
   }
 
-  private async judgeFormat(ioReader: IOReader, defaultFormat: AVFormat = AVFormat.FLV) {
+  private async judgeFormat(ioReader: IOReader, defaultFormat: AVFormat = AVFormat.UNKNOWN) {
     let signature = await ioReader.peekString(8)
     if ( /^FLV/.test(signature)) {
       return AVFormat.FLV
@@ -152,7 +152,7 @@ export default class DemuxPipeline extends Pipeline {
       return errorType.NO_MEMORY
     }
 
-    const buffer = new SafeBuffer(buf, bufferLength)
+    const buffer = new SafeUint8Array(buf, bufferLength)
     const ioReader = new IOReader(bufferLength, true, buffer)
 
     if (!options.isLive) {
