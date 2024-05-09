@@ -75,11 +75,11 @@ export default abstract class IOLoader {
 
   public abstract open(info: Data, range: Range): Promise<any>
 
-  public abstract read(buffer: Uint8ArrayInterface, options?: Data): Promise<number>
+  public abstract read(buffer: Uint8ArrayInterface, options?: Data): Promise<int32>
 
   public abstract seek(pos: int64, options?: Data): Promise<any>
 
-  public abstract size(): Promise<bigint>
+  public abstract size(): Promise<int64>
 
   public abstract abort(): Promise<any>
 

@@ -216,7 +216,7 @@ function writeVideoTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
 
   const uncompressedYcbcr = ((stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_RAWVIDEO
       && stream.codecpar.format == AVPixelFormat.AV_PIX_FMT_UYVY422
-    )
+  )
     || (stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_RAWVIDEO
       && stream.codecpar.format == AVPixelFormat.AV_PIX_FMT_YUYV422
     )
@@ -294,7 +294,7 @@ function writeVideoTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
   else {
     ioWriter.writeUint16(0x18)
   }
-  
+
   ioWriter.writeUint16(0xffff)
 
   if (tag === BoxType.MP4V) {

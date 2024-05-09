@@ -54,6 +54,9 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 # 克隆项目以及所有子模块
 git clone https://github.com/zhaohappy/libmedia.git --recursive
 
+# 进入 libmedia 目录
+cd libmedia
+
 # 安装依赖
 npm install
 

@@ -113,7 +113,7 @@ function parseAllowedCpc(str: string) {
   return allowedCpcList
 }
 
-function parseIV(str: string): Buffer {
+function parseIV(str: string): Uint8Array {
   const iv = utils.hexToByteSequence(str)
   if (iv.length !== 16) {
     logger.error('IV must be a 128-bit unsigned integer')

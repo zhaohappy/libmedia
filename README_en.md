@@ -53,6 +53,9 @@ Here's how to compile the AVPlayer tool
 # Clone the project and all submodules
 git clone git@github.com:zhaohappy/libmedia.git --recursive
 
+# enter libmedia directory
+cd libmedia
+
 # Install dependencies
 npm install
 

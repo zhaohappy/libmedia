@@ -139,6 +139,7 @@ const Ext2IOLoader: Record<string, IOType> = {
 export const enum AVPlayerStatus {
   STOPPED,
   LOADING,
+  LOADED,
   PLAYING,
   PLAYED,
   PAUSED,
@@ -702,6 +703,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
       })
     }
+
+    this.status = AVPlayerStatus.LOADED
 
     this.fire(eventType.LOADED)
   }

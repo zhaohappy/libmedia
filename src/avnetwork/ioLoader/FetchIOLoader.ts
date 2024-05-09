@@ -29,6 +29,7 @@ import * as object from 'common/util/object'
 import { IOError } from 'common/io/error'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import * as logger from 'common/util/logger'
+import { Data } from 'common/types/type'
 
 export interface FetchInfo {
   url: string
@@ -96,7 +97,7 @@ export default class FetchIOLoader extends IOLoader {
     this.status = IOLoaderStatus.CONNECTING
 
     if (!this.options.isLive && !this.options.disableSegment) {
-      const params: Partial<any> = {
+      const params: Data = {
         method: 'HEAD',
         headers: {},
         mode: 'cors',
@@ -145,7 +146,7 @@ export default class FetchIOLoader extends IOLoader {
   }
 
   private async openReader() {
-    const params: Partial<any> = {
+    const params: Data = {
       method: 'GET',
       headers: {},
       mode: 'cors',
@@ -173,7 +174,7 @@ export default class FetchIOLoader extends IOLoader {
       this.abortController.abort()
     }
 
-    if (AbortController) {
+    if (typeof AbortController === 'function') {
       this.abortController = new AbortController()
       params.signal = this.abortController.signal
     }
@@ -203,7 +204,7 @@ export default class FetchIOLoader extends IOLoader {
     }
   }
 
-  public async read(buffer: Uint8ArrayInterface, len: int32 = 0): Promise<number> {
+  private async readInterval(buffer: Uint8ArrayInterface, preLen: int32 = 0): Promise<number> {
 
     let pos = 0
 
@@ -221,11 +222,11 @@ export default class FetchIOLoader extends IOLoader {
     }
 
     if (pos >= buffer.length) {
-      return buffer.length + len
+      return buffer.length + preLen
     }
 
     if (this.status === IOLoaderStatus.COMPLETE) {
-      return pos > 0 ? (pos + len) : (len > 0 ? len : IOError.END)
+      return pos > 0 ? (pos + preLen) : (preLen > 0 ? preLen : IOError.END)
     }
 
     if (!this.reader) {
@@ -242,7 +243,7 @@ export default class FetchIOLoader extends IOLoader {
       else if (this.options.isLive || this.options.disableSegment || (this.receivedLength + this.range.from) >= this.eofIndex) {
         this.status = IOLoaderStatus.COMPLETE
         this.startBytes = 0
-        return pos > 0 ? (pos + len) : (len > 0 ? len : IOError.END)
+        return pos > 0 ? (pos + preLen) : (preLen > 0 ? preLen : IOError.END)
       }
       else {
 
@@ -257,7 +258,7 @@ export default class FetchIOLoader extends IOLoader {
         this.startBytes = this.endBytes + 1
         this.endBytes = Math.min(this.startBytes + this.options.preload - 1, this.eofIndex)
 
-        return this.read(buffer.subarray(pos), pos)
+        return this.readInterval(buffer.subarray(pos), pos)
       }
     }
     else {
@@ -267,14 +268,18 @@ export default class FetchIOLoader extends IOLoader {
       if (value.length > buffer.length - pos) {
         buffer.set(value.subarray(0, buffer.length - pos), pos)
         this.buffers.push(value.subarray(buffer.length - pos))
-        return buffer.length + len
+        return buffer.length + preLen
       }
       else {
         buffer.set(value, pos)
         pos += value.length
-        return pos + len
+        return pos + preLen
       }
     }
+  }
+
+  public async read(buffer: Uint8ArrayInterface): Promise<int32> {
+    return this.readInterval(buffer)
   }
 
   public async seek(pos: int64) {
@@ -287,7 +292,7 @@ export default class FetchIOLoader extends IOLoader {
     this.buffers.length = 0
     if (this.status === IOLoaderStatus.COMPLETE) {
       this.status = IOLoaderStatus.BUFFERING
-    }
+    }0
   }
 
   public async size() {

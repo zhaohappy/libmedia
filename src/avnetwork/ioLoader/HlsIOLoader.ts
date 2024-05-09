@@ -32,11 +32,12 @@ import * as errorType from 'avutil/error'
 import { buildAbsoluteURL } from 'common/util/url'
 
 import hlsParser from 'avprotocol/m3u8/parser'
-import { MasterPlaylist, MediaPlaylist, Playlist } from 'avprotocol/m3u8/types'
+import { MasterPlaylist, MediaPlaylist, Playlist, Segment } from 'avprotocol/m3u8/types'
 import FetchIOLoader from './FetchIOLoader'
 import getTimestamp from 'common/function/getTimestamp'
 import * as logger from 'common/util/logger'
 import * as urlUtil from 'common/util/url'
+import AESDecryptPipe from '../bsp/aes/AESDecryptPipe'
 
 const FETCHED_HISTORY_LIST_MAX = 10
 
@@ -48,7 +49,6 @@ export interface FetchInfo {
 }
 
 export default class HlsIOLoader extends IOLoader {
-
 
   private info: FetchInfo
 
@@ -71,6 +71,12 @@ export default class HlsIOLoader extends IOLoader {
 
   private loader: FetchIOLoader
   private minBuffer: number
+
+  private keyMap: Map<string, ArrayBuffer>
+
+  private currentIV: ArrayBuffer
+  private currentKey: ArrayBuffer
+  private aesDecryptPipe: AESDecryptPipe
 
   private async fetchMasterPlayList() {
     const params: Partial<any> = {
@@ -221,7 +227,6 @@ export default class HlsIOLoader extends IOLoader {
     }
   }
 
-
   public async open(info: FetchInfo, range: Range) {
 
     this.info = info
@@ -242,6 +247,8 @@ export default class HlsIOLoader extends IOLoader {
     this.status = IOLoaderStatus.CONNECTING
     this.retryCount = 0
 
+    this.keyMap = new Map()
+
     await this.fetchMasterPlayList()
 
     if (!this.mediaPlayList && this.masterPlaylist) {
@@ -250,12 +257,44 @@ export default class HlsIOLoader extends IOLoader {
 
   }
 
+  private async checkNeedDecrypt(segment: Segment, sequence: number) {
+
+    if (!segment.key) {
+      return
+    }
+
+    const keyUrl = segment.key.uri
+
+    if (this.keyMap.has(keyUrl)) {
+      this.currentKey = this.keyMap.get(keyUrl)
+    }
+    else {
+      this.currentKey = await (await fetch(buildAbsoluteURL(this.mediaListUrl, keyUrl))).arrayBuffer()
+      this.keyMap.set(keyUrl, this.currentKey)
+    }
+
+    if (segment.key.iv) {
+      this.currentIV = segment.key.iv.buffer
+    }
+    else {
+      const iv = new Uint8Array(16)
+      const dataView = new DataView(iv.buffer)
+      dataView.setUint32(12, sequence, false)
+      this.currentIV = iv.buffer
+    }
+    this.aesDecryptPipe = new AESDecryptPipe()
+    this.aesDecryptPipe.onFlush = async (buffer) => {
+      return this.loader.read(buffer)
+    }
+    await this.aesDecryptPipe.expandKey(this.currentKey, this.currentIV)
+  }
+
   public async read(buffer: Uint8ArrayInterface): Promise<number> {
 
     let ret = 0
 
     if (this.loader) {
-      ret = await this.loader.read(buffer)
+      ret = this.aesDecryptPipe ? (await this.aesDecryptPipe.read(buffer)) : (await this.loader.read(buffer))
       if (ret !== IOError.END) {
         return ret
       }
@@ -266,6 +305,7 @@ export default class HlsIOLoader extends IOLoader {
             this.fetchedMap.delete(this.fetchedHistoryList.shift())
           }
           this.fetchedHistoryList.push(this.currentUri)
+          this.segmentIndex++
         }
         else {
           this.segmentIndex++
@@ -307,6 +347,8 @@ export default class HlsIOLoader extends IOLoader {
 
       this.currentUri = segments[0].uri
 
+      await this.checkNeedDecrypt(segments[0], this.segmentIndex)
+
       this.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
 
       await this.loader.open(
@@ -318,20 +360,25 @@ export default class HlsIOLoader extends IOLoader {
           to: -1
         }
       )
-      return this.loader.read(buffer)
+      return this.aesDecryptPipe ? this.aesDecryptPipe.read(buffer) : this.loader.read(buffer)
     }
     else {
       this.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
+
+      const segment = this.mediaPlayList.segments[this.segmentIndex]
+
+      await this.checkNeedDecrypt(segment, this.segmentIndex)
+
       await this.loader.open(
         {
-          url: buildAbsoluteURL(this.mediaListUrl, this.mediaPlayList.segments[this.segmentIndex].uri)
+          url: buildAbsoluteURL(this.mediaListUrl, segment.uri)
         },
         {
           from: 0,
           to: -1
         }
       )
-      return this.loader.read(buffer)
+      return this.aesDecryptPipe ? this.aesDecryptPipe.read(buffer) : this.loader.read(buffer)
     }
   }
 
@@ -381,13 +428,13 @@ export default class HlsIOLoader extends IOLoader {
 
   public getVideoList() {
     return {
-      list: this.masterPlaylist.variants.map((variant) => {
+      list: this.masterPlaylist?.variants.map((variant) => {
         return {
           width: variant.resolution?.width ?? 0,
           height: variant.resolution?.height ?? 0,
           frameRate: variant.frameRate ?? 0
         }
-      }),
+      }) ?? [],
       selectedIndex: 0
     }
   }

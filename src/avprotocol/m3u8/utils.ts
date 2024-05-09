@@ -14,7 +14,7 @@ function toNumber(str: string, radix = 10) {
   return num
 }
 
-function hexToByteSequence(str: string): Buffer {
+function hexToByteSequence(str: string): Uint8Array {
   if (str.startsWith('0x') || str.startsWith('0X')) {
     str = str.slice(2)
   }
@@ -22,7 +22,7 @@ function hexToByteSequence(str: string): Buffer {
   for (let i = 0; i < str.length; i += 2) {
     numArray.push(toNumber(str.slice(i, i + 2), 16))
   }
-  return Buffer.from(numArray)
+  return new Uint8Array(numArray)
 }
 
 function splitAt(str: string, delimiter: string, index = 0): [string] | [string, string] {

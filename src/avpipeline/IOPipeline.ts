@@ -115,6 +115,7 @@ export default class IOPipeline extends Pipeline {
             ipcPort.reply(request, {})
           }
           catch (error) {
+            logger.error(`loader open error, ${error}, taskId: ${options.taskId}`)
             ipcPort.reply(request, null, error)
           }
           break
@@ -135,7 +136,7 @@ export default class IOPipeline extends Pipeline {
             ipcPort.reply(request, len)
           }
           catch (error) {
-            logger.error(`load data error, ${error}, taskId: ${options.taskId}`)
+            logger.error(`loader read error, ${error}, taskId: ${options.taskId}`)
             ipcPort.reply(request, errorType.DATA_INVALID)
           }
 
@@ -153,6 +154,7 @@ export default class IOPipeline extends Pipeline {
             ipcPort.reply(request)
           }
           catch (error) {
+            logger.error(`loader seek error, ${error}, taskId: ${options.taskId}`)
             ipcPort.reply(request, null, error)
           }
           break

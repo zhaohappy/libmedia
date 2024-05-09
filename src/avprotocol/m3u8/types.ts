@@ -142,7 +142,7 @@ class SessionData {
 class Key {
   method: string
   uri?: string
-  iv?: Buffer
+  iv?: Uint8Array
   format?: string
   formatVersion?: string
 

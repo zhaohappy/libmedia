@@ -122,6 +122,7 @@
         "datagrams",
         "datasize",
         "deasync",
+        "Decryptor",
         "Demux",
         "demuxer",
         "demuxing",
