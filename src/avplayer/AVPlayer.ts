@@ -602,7 +602,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         })
     }
 
-    ret = await AVPlayer.DemuxerThread.openStreams(this.taskId)
+    ret = await AVPlayer.DemuxerThread.openStream(this.taskId)
     if (ret < 0) {
       logger.fatal(`open stream failed, ret: ${ret}, taskId: ${this.taskId}`)
     }
@@ -612,7 +612,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
-      ret = await AVPlayer.DemuxerThread.openStreams(this.subTaskId)
+      ret = await AVPlayer.DemuxerThread.openStream(this.subTaskId)
       if (ret < 0) {
         logger.fatal(`open stream failed, ret: ${ret}, taskId: ${this.taskId}`)
       }

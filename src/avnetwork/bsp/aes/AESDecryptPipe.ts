@@ -117,7 +117,7 @@ export default class AESDecryptPipe extends AVBSPipe {
         return
       }
       else {
-        throw new Error(`AESPipe error, flush ${len === IOError.END ? 'ended' : 'failed'}, ret: ${len}`)
+        logger.fatal(`AESPipe error, flush failed, ret: ${len}`)
       }
     }
     this.endPointer += len

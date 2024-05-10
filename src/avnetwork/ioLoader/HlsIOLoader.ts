@@ -320,12 +320,6 @@ export default class HlsIOLoader extends IOLoader {
     }
 
     if (this.options.isLive) {
-      if (this.mediaPlayList.segments.filter((segment) => {
-        return segment.key
-      }).length) {
-        return errorType.FORMAT_NOT_SUPPORT
-      }
-
       const segments = this.mediaPlayList.segments.filter((segment) => {
         return !this.fetchedMap.get(segment.uri)
       })
