@@ -721,6 +721,8 @@
               player.play({
                 audio: true,
                 video: true
+              }).then(() => {
+                document.querySelector('#loading-mask').style.display = 'none'
               })
             // })
           })
