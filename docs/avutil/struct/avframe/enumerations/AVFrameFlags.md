@@ -16,7 +16,7 @@ The frame data may be corrupted, e.g. due to decoding errors.
 
 #### Source
 
-[avutil/struct/avframe.ts:42](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L42)
+[avutil/struct/avframe.ts:42](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L42)
 
 ***
 
@@ -28,7 +28,7 @@ A flag to mark the frames which need to be decoded, but shouldn't be output.
 
 #### Source
 
-[avutil/struct/avframe.ts:50](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L50)
+[avutil/struct/avframe.ts:50](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L50)
 
 ***
 
@@ -40,7 +40,7 @@ A flag to mark frames whose content is interlaced.
 
 #### Source
 
-[avutil/struct/avframe.ts:54](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L54)
+[avutil/struct/avframe.ts:54](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L54)
 
 ***
 
@@ -52,7 +52,7 @@ A flag to mark frames that are keyframes.
 
 #### Source
 
-[avutil/struct/avframe.ts:46](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L46)
+[avutil/struct/avframe.ts:46](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L46)
 
 ***
 
@@ -62,7 +62,7 @@ A flag to mark frames that are keyframes.
 
 #### Source
 
-[avutil/struct/avframe.ts:38](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L38)
+[avutil/struct/avframe.ts:38](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L38)
 
 ***
 
@@ -75,4 +75,4 @@ is interlaced.
 
 #### Source
 
-[avutil/struct/avframe.ts:59](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L59)
+[avutil/struct/avframe.ts:59](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L59)

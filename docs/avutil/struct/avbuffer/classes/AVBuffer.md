@@ -26,7 +26,7 @@ data described by this buffer
 
 #### Source
 
-[avutil/struct/avbuffer.ts:39](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avbuffer.ts#L39)
+[avutil/struct/avbuffer.ts:39](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avbuffer.ts#L39)
 
 ***
 
@@ -38,7 +38,7 @@ A combination of AV_BUFFER_FLAG_*
 
 #### Source
 
-[avutil/struct/avbuffer.ts:64](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avbuffer.ts#L64)
+[avutil/struct/avbuffer.ts:64](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avbuffer.ts#L64)
 
 ***
 
@@ -50,7 +50,7 @@ A combination of BUFFER_FLAG_*
 
 #### Source
 
-[avutil/struct/avbuffer.ts:69](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avbuffer.ts#L69)
+[avutil/struct/avbuffer.ts:69](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avbuffer.ts#L69)
 
 ***
 
@@ -62,7 +62,7 @@ a callback for freeing the data
 
 #### Source
 
-[avutil/struct/avbuffer.ts:54](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avbuffer.ts#L54)
+[avutil/struct/avbuffer.ts:54](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avbuffer.ts#L54)
 
 ***
 
@@ -74,7 +74,7 @@ an opaque pointer, to be used by the freeing callback
 
 #### Source
 
-[avutil/struct/avbuffer.ts:59](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avbuffer.ts#L59)
+[avutil/struct/avbuffer.ts:59](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avbuffer.ts#L59)
 
 ***
 
@@ -86,7 +86,7 @@ number of existing AVBufferRef instances referring to this buffer
 
 #### Source
 
-[avutil/struct/avbuffer.ts:49](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avbuffer.ts#L49)
+[avutil/struct/avbuffer.ts:49](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avbuffer.ts#L49)
 
 ***
 
@@ -98,4 +98,4 @@ size of data in bytes
 
 #### Source
 
-[avutil/struct/avbuffer.ts:44](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avbuffer.ts#L44)
+[avutil/struct/avbuffer.ts:44](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avbuffer.ts#L44)

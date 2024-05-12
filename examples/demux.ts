@@ -3,7 +3,7 @@ import { IOError } from 'common/io/error'
 import * as demux from 'avformat/demux'
 import { AVPacketFlags } from 'avutil/struct/avpacket'
 import IFlvFormat from 'avformat/formats/IFlvFormat'
-import { createAVIFormatContext } from 'avformat/AVformatContext'
+import { createAVIFormatContext } from 'avformat/AVFormatContext'
 import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
 
 export async function demuxFile(readFile: File) {

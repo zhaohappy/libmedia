@@ -30,7 +30,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:75](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/OMovFormat.ts#L75)
+[avformat/formats/OMovFormat.ts:75](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/OMovFormat.ts#L75)
 
 ## Properties
 
@@ -40,7 +40,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:71](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/OMovFormat.ts#L71)
+[avformat/formats/OMovFormat.ts:71](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/OMovFormat.ts#L71)
 
 ***
 
@@ -54,7 +54,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:67](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/OMovFormat.ts#L67)
+[avformat/formats/OMovFormat.ts:67](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/OMovFormat.ts#L67)
 
 ## Methods
 
@@ -64,7 +64,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVOFormatContext`](../../../AVformatContext/interfaces/AVOFormatContext.md)
+• **formatContext**: [`AVOFormatContext`](../../../AVFormatContext/interfaces/AVOFormatContext.md)
 
 #### Returns
 
@@ -76,7 +76,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:94](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/OMovFormat.ts#L94)
+[avformat/formats/OMovFormat.ts:94](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/OMovFormat.ts#L94)
 
 ***
 
@@ -86,7 +86,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVOFormatContext`](../../../AVformatContext/interfaces/AVOFormatContext.md)
+• **formatContext**: [`AVOFormatContext`](../../../AVFormatContext/interfaces/AVOFormatContext.md)
 
 #### Returns
 
@@ -98,7 +98,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:741](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/OMovFormat.ts#L741)
+[avformat/formats/OMovFormat.ts:741](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/OMovFormat.ts#L741)
 
 ***
 
@@ -108,7 +108,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVOFormatContext`](../../../AVformatContext/interfaces/AVOFormatContext.md)
+• **formatContext**: [`AVOFormatContext`](../../../AVFormatContext/interfaces/AVOFormatContext.md)
 
 #### Returns
 
@@ -120,7 +120,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:83](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/OMovFormat.ts#L83)
+[avformat/formats/OMovFormat.ts:83](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/OMovFormat.ts#L83)
 
 ***
 
@@ -130,7 +130,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVOFormatContext`](../../../AVformatContext/interfaces/AVOFormatContext.md)
+• **formatContext**: [`AVOFormatContext`](../../../AVFormatContext/interfaces/AVOFormatContext.md)
 
 • **avpacket**: `pointer`\<[`AVPacket`](../../../../avutil/struct/avpacket/classes/AVPacket.md)\>
 
@@ -144,7 +144,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:462](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/OMovFormat.ts#L462)
+[avformat/formats/OMovFormat.ts:462](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/OMovFormat.ts#L462)
 
 ***
 
@@ -154,7 +154,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVOFormatContext`](../../../AVformatContext/interfaces/AVOFormatContext.md)
+• **formatContext**: [`AVOFormatContext`](../../../AVFormatContext/interfaces/AVOFormatContext.md)
 
 #### Returns
 
@@ -166,7 +166,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:154](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/OMovFormat.ts#L154)
+[avformat/formats/OMovFormat.ts:154](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/OMovFormat.ts#L154)
 
 ***
 
@@ -176,7 +176,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVOFormatContext`](../../../AVformatContext/interfaces/AVOFormatContext.md)
+• **formatContext**: [`AVOFormatContext`](../../../AVFormatContext/interfaces/AVOFormatContext.md)
 
 #### Returns
 
@@ -188,4 +188,4 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:636](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/OMovFormat.ts#L636)
+[avformat/formats/OMovFormat.ts:636](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/OMovFormat.ts#L636)

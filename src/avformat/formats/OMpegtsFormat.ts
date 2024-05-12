@@ -23,7 +23,7 @@
  *
  */
 
-import { AVOFormatContext } from '../AVformatContext'
+import { AVOFormatContext } from '../AVFormatContext'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import createMpegtsContext from './mpegts/function/createMpegtsContext'
 import { PAT, PES, PMT, SectionPacket, TSPacket } from './mpegts/struct'

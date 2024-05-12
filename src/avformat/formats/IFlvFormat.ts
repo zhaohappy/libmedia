@@ -26,7 +26,7 @@
 import FlvHeader from './flv/FlvHeader'
 import FlvScriptTag from './flv/FlvScriptTag'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVIFormatContext } from '../AVformatContext'
+import { AVIFormatContext } from '../AVFormatContext'
 import * as logger from 'common/util/logger'
 import { AVPacketSideDataType, AVCodecID, AVMediaType } from 'avutil/codec'
 import { FlvAudioCodecType2AVCodecID,

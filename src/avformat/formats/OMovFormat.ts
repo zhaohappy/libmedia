@@ -25,7 +25,7 @@
 
 import OFormat from './OFormat'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVOFormatContext } from '../AVformatContext'
+import { AVOFormatContext } from '../AVFormatContext'
 
 import { MOVContext, MovFormatOptions, MOVStreamContext } from './mov/type'
 import createMovContext from './mov/function/createMovContext'

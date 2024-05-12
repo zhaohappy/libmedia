@@ -23,7 +23,7 @@
  *
  */
 
-import { AVIFormatContext, AVOFormatContext } from '../AVformatContext'
+import { AVIFormatContext, AVOFormatContext } from '../AVFormatContext'
 import {  NOPTS_VALUE } from 'avutil/constant'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as array from 'common/util/array'

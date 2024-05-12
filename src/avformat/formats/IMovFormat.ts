@@ -24,7 +24,7 @@
  */
 
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVIFormatContext } from '../AVformatContext'
+import { AVIFormatContext } from '../AVFormatContext'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
 

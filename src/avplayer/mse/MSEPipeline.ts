@@ -23,7 +23,7 @@
  *
  */
 
-import { createAVOFormatContext, AVOFormatContext } from 'avformat/AVformatContext'
+import { createAVOFormatContext, AVOFormatContext } from 'avformat/AVFormatContext'
 import Pipeline, { TaskOptions } from 'avpipeline/Pipeline'
 import * as errorType from 'avutil/error'
 import IPCPort from 'common/network/IPCPort'

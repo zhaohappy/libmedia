@@ -30,7 +30,7 @@
 
 #### Source
 
-[avformat/formats/IFlvFormat.ts:78](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFlvFormat.ts#L78)
+[avformat/formats/IFlvFormat.ts:78](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFlvFormat.ts#L78)
 
 ## Properties
 
@@ -40,7 +40,7 @@
 
 #### Source
 
-[avformat/formats/IFlvFormat.ts:70](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFlvFormat.ts#L70)
+[avformat/formats/IFlvFormat.ts:70](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFlvFormat.ts#L70)
 
 ***
 
@@ -62,7 +62,7 @@
 
 #### Source
 
-[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFormat.ts#L35)
+[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFormat.ts#L35)
 
 ***
 
@@ -72,7 +72,7 @@
 
 #### Source
 
-[avformat/formats/IFlvFormat.ts:74](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFlvFormat.ts#L74)
+[avformat/formats/IFlvFormat.ts:74](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFlvFormat.ts#L74)
 
 ***
 
@@ -82,7 +82,7 @@
 
 #### Source
 
-[avformat/formats/IFlvFormat.ts:72](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFlvFormat.ts#L72)
+[avformat/formats/IFlvFormat.ts:72](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFlvFormat.ts#L72)
 
 ***
 
@@ -96,7 +96,7 @@
 
 #### Source
 
-[avformat/formats/IFlvFormat.ts:68](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFlvFormat.ts#L68)
+[avformat/formats/IFlvFormat.ts:68](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFlvFormat.ts#L68)
 
 ## Methods
 
@@ -106,7 +106,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVIFormatContext`](../../../AVformatContext/interfaces/AVIFormatContext.md)
+• **formatContext**: [`AVIFormatContext`](../../../AVFormatContext/interfaces/AVIFormatContext.md)
 
 #### Returns
 
@@ -118,7 +118,7 @@
 
 #### Source
 
-[avformat/formats/IFormat.ts:39](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFormat.ts#L39)
+[avformat/formats/IFormat.ts:39](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFormat.ts#L39)
 
 ***
 
@@ -136,7 +136,7 @@
 
 #### Source
 
-[avformat/formats/IFlvFormat.ts:575](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFlvFormat.ts#L575)
+[avformat/formats/IFlvFormat.ts:575](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFlvFormat.ts#L575)
 
 ***
 
@@ -146,7 +146,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVIFormatContext`](../../../AVformatContext/interfaces/AVIFormatContext.md)
+• **formatContext**: [`AVIFormatContext`](../../../AVFormatContext/interfaces/AVIFormatContext.md)
 
 #### Returns
 
@@ -158,7 +158,7 @@
 
 #### Source
 
-[avformat/formats/IFlvFormat.ts:87](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFlvFormat.ts#L87)
+[avformat/formats/IFlvFormat.ts:87](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFlvFormat.ts#L87)
 
 ***
 
@@ -168,7 +168,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVIFormatContext`](../../../AVformatContext/interfaces/AVIFormatContext.md)
+• **formatContext**: [`AVIFormatContext`](../../../AVFormatContext/interfaces/AVIFormatContext.md)
 
 • **avpacket**: `pointer`\<[`AVPacket`](../../../../avutil/struct/avpacket/classes/AVPacket.md)\>
 
@@ -182,7 +182,7 @@
 
 #### Source
 
-[avformat/formats/IFlvFormat.ts:443](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFlvFormat.ts#L443)
+[avformat/formats/IFlvFormat.ts:443](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFlvFormat.ts#L443)
 
 ***
 
@@ -192,7 +192,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVIFormatContext`](../../../AVformatContext/interfaces/AVIFormatContext.md)
+• **formatContext**: [`AVIFormatContext`](../../../AVFormatContext/interfaces/AVIFormatContext.md)
 
 #### Returns
 
@@ -204,7 +204,7 @@
 
 #### Source
 
-[avformat/formats/IFlvFormat.ts:93](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFlvFormat.ts#L93)
+[avformat/formats/IFlvFormat.ts:93](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFlvFormat.ts#L93)
 
 ***
 
@@ -214,7 +214,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVIFormatContext`](../../../AVformatContext/interfaces/AVIFormatContext.md)
+• **formatContext**: [`AVIFormatContext`](../../../AVFormatContext/interfaces/AVIFormatContext.md)
 
 • **stream**: [`AVStream`](../../../AVStream/classes/AVStream.md)
 
@@ -232,7 +232,7 @@
 
 #### Source
 
-[avformat/formats/IFlvFormat.ts:526](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFlvFormat.ts#L526)
+[avformat/formats/IFlvFormat.ts:526](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFlvFormat.ts#L526)
 
 ***
 
@@ -242,7 +242,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVIFormatContext`](../../../AVformatContext/interfaces/AVIFormatContext.md)
+• **formatContext**: [`AVIFormatContext`](../../../AVFormatContext/interfaces/AVIFormatContext.md)
 
 #### Returns
 
@@ -250,4 +250,4 @@
 
 #### Source
 
-[avformat/formats/IFlvFormat.ts:458](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFlvFormat.ts#L458)
+[avformat/formats/IFlvFormat.ts:458](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFlvFormat.ts#L458)

@@ -30,6 +30,7 @@ import { AudioWorkletNodeObserver } from './audioWorklet/base/AudioWorkletNodeBa
 import IPCPort from 'common/network/IPCPort'
 import { Data } from 'common/types/type'
 import * as logger from 'common/util/logger'
+import * as cheapConfig from 'cheap/config'
 
 const BUFFER_LENGTH = 10
 
@@ -204,7 +205,7 @@ export default class AudioSourceBufferNode {
     for (let i = 0; i < this.channels; i++) {
       if (this.buffer.data[i]) {
         let pos = this.buffer.data[i] >>> 2
-        if (audioBuffer.copyToChannel) {
+        if (audioBuffer.copyToChannel && !cheapConfig.USE_THREADS) {
           audioBuffer.copyToChannel(
             this.float32.subarray(pos, pos + BUFFER_LENGTH * 128),
             i,

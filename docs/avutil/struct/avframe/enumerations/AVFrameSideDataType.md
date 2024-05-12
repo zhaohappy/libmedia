@@ -29,7 +29,7 @@ The number of bytes of CC data is AVFrameSideData.size.
 
 #### Source
 
-[avutil/struct/avframe.ts:123](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L123)
+[avutil/struct/avframe.ts:123](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L123)
 
 ***
 
@@ -42,7 +42,7 @@ in ETSI TS 101 154 using AVActiveFormatDescription enum.
 
 #### Source
 
-[avutil/struct/avframe.ts:154](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L154)
+[avutil/struct/avframe.ts:154](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L154)
 
 ***
 
@@ -55,7 +55,7 @@ enum AVAudioServiceType defined in avcodec.h.
 
 #### Source
 
-[avutil/struct/avframe.ts:178](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L178)
+[avutil/struct/avframe.ts:178](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L178)
 
 ***
 
@@ -68,7 +68,7 @@ the form of the AVContentLightMetadata struct.
 
 #### Source
 
-[avutil/struct/avframe.ts:201](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L201)
+[avutil/struct/avframe.ts:201](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L201)
 
 ***
 
@@ -81,7 +81,7 @@ as described by AVDetectionBBoxHeader.
 
 #### Source
 
-[avutil/struct/avframe.ts:254](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L254)
+[avutil/struct/avframe.ts:254](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L254)
 
 ***
 
@@ -97,7 +97,7 @@ See libcommon/display.h for a detailed description of the data.
 
 #### Source
 
-[avutil/struct/avframe.ts:149](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L149)
+[avutil/struct/avframe.ts:149](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L149)
 
 ***
 
@@ -110,7 +110,7 @@ The data is the AVDownmixInfo struct defined in libcommon/downmix_info.h.
 
 #### Source
 
-[avutil/struct/avframe.ts:137](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L137)
+[avutil/struct/avframe.ts:137](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L137)
 
 ***
 
@@ -124,7 +124,7 @@ volume transform - application 4 of SMPTE 2094-40:2016 standard.
 
 #### Source
 
-[avutil/struct/avframe.ts:223](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L223)
+[avutil/struct/avframe.ts:223](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L223)
 
 ***
 
@@ -137,7 +137,7 @@ Must be present for every frame which should have film grain applied.
 
 #### Source
 
-[avutil/struct/avframe.ts:248](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L248)
+[avutil/struct/avframe.ts:248](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L248)
 
 ***
 
@@ -150,7 +150,7 @@ This is set on the first frame of a GOP that has a temporal reference of 0.
 
 #### Source
 
-[avutil/struct/avframe.ts:189](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L189)
+[avutil/struct/avframe.ts:189](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L189)
 
 ***
 
@@ -164,7 +164,7 @@ metadata key entry "name".
 
 #### Source
 
-[avutil/struct/avframe.ts:208](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L208)
+[avutil/struct/avframe.ts:208](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L208)
 
 ***
 
@@ -178,7 +178,7 @@ mastering display color volume.
 
 #### Source
 
-[avutil/struct/avframe.ts:184](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L184)
+[avutil/struct/avframe.ts:184](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L184)
 
 ***
 
@@ -190,7 +190,7 @@ The data is the AVMatrixEncoding enum defined in libcommon/channel_layout.h.
 
 #### Source
 
-[avutil/struct/avframe.ts:132](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L132)
+[avutil/struct/avframe.ts:132](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L132)
 
 ***
 
@@ -205,7 +205,7 @@ libcommon/motion_vector.h.
 
 #### Source
 
-[avutil/struct/avframe.ts:161](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L161)
+[avutil/struct/avframe.ts:161](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L161)
 
 ***
 
@@ -217,7 +217,7 @@ The data is the AVPanScan struct defined in libavcodec.
 
 #### Source
 
-[avutil/struct/avframe.ts:117](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L117)
+[avutil/struct/avframe.ts:117](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L117)
 
 ***
 
@@ -230,7 +230,7 @@ array element is implied by AVFrameSideData.size / AVRegionOfInterest.self_size.
 
 #### Source
 
-[avutil/struct/avframe.ts:229](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L229)
+[avutil/struct/avframe.ts:229](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L229)
 
 ***
 
@@ -242,7 +242,7 @@ ReplayGain information in the form of the AVReplayGain struct.
 
 #### Source
 
-[avutil/struct/avframe.ts:141](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L141)
+[avutil/struct/avframe.ts:141](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L141)
 
 ***
 
@@ -257,7 +257,7 @@ function in libcommon/timecode.h.
 
 #### Source
 
-[avutil/struct/avframe.ts:216](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L216)
+[avutil/struct/avframe.ts:216](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L216)
 
 ***
 
@@ -272,7 +272,7 @@ uuid_iso_iec_11578 followed by AVFrameSideData.size - 16 bytes of user_data_payl
 
 #### Source
 
-[avutil/struct/avframe.ts:242](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L242)
+[avutil/struct/avframe.ts:242](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L242)
 
 ***
 
@@ -295,7 +295,7 @@ u8    reason for end   skip (0=padding silence, 1=convergence)
 
 #### Source
 
-[avutil/struct/avframe.ts:173](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L173)
+[avutil/struct/avframe.ts:173](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L173)
 
 ***
 
@@ -308,7 +308,7 @@ libcommon/spherical.h.
 
 #### Source
 
-[avutil/struct/avframe.ts:195](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L195)
+[avutil/struct/avframe.ts:195](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L195)
 
 ***
 
@@ -321,7 +321,7 @@ The data is the AVStereo3D struct defined in libcommon/stereo3d.h.
 
 #### Source
 
-[avutil/struct/avframe.ts:128](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L128)
+[avutil/struct/avframe.ts:128](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L128)
 
 ***
 
@@ -333,4 +333,4 @@ Encoding parameters for a video frame, as described by AVVideoEncParams.
 
 #### Source
 
-[avutil/struct/avframe.ts:234](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L234)
+[avutil/struct/avframe.ts:234](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L234)

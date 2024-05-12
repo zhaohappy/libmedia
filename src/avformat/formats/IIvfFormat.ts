@@ -23,7 +23,7 @@
  *
  */
 
-import { AVIFormatContext } from '../AVformatContext'
+import { AVIFormatContext } from '../AVFormatContext'
 import AVPacket from 'avutil/struct/avpacket'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'

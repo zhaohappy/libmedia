@@ -26,7 +26,7 @@ CIE 1931 xy chromaticity coords of color primaries (r, g, b order).
 
 #### Source
 
-[avutil/struct/avframe.ts:275](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L275)
+[avutil/struct/avframe.ts:275](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L275)
 
 ***
 
@@ -38,7 +38,7 @@ Flag indicating whether the luminance (min_ and max_) have been set.
 
 #### Source
 
-[avutil/struct/avframe.ts:295](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L295)
+[avutil/struct/avframe.ts:295](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L295)
 
 ***
 
@@ -50,7 +50,7 @@ Flag indicating whether the display primaries (and white point) are set.
 
 #### Source
 
-[avutil/struct/avframe.ts:291](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L291)
+[avutil/struct/avframe.ts:291](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L291)
 
 ***
 
@@ -62,7 +62,7 @@ Max luminance of mastering display (cd/m^2).
 
 #### Source
 
-[avutil/struct/avframe.ts:287](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L287)
+[avutil/struct/avframe.ts:287](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L287)
 
 ***
 
@@ -74,7 +74,7 @@ Min luminance of mastering display (cd/m^2).
 
 #### Source
 
-[avutil/struct/avframe.ts:283](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L283)
+[avutil/struct/avframe.ts:283](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L283)
 
 ***
 
@@ -86,4 +86,4 @@ CIE 1931 xy chromaticity coords of white point.
 
 #### Source
 
-[avutil/struct/avframe.ts:279](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avframe.ts#L279)
+[avutil/struct/avframe.ts:279](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L279)

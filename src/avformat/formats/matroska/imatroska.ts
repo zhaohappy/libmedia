@@ -23,7 +23,7 @@
  *
  */
 
-import { AVIFormatContext } from '../../AVformatContext'
+import { AVIFormatContext } from '../../AVFormatContext'
 import { EBMLId, EbmlType } from './matroska'
 import { Addition, Additions, Attachment, Attachments, AudioTrack,
   BlockGroup, Chapter, ChapterAtom, ChapterDisplay, Chapters, Cluster,

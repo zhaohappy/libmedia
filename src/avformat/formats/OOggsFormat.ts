@@ -25,7 +25,7 @@
 
 import IOWriter from 'common/io/IOWriterSync'
 import Stream from '../AVStream'
-import { AVOFormatContext } from '../AVformatContext'
+import { AVOFormatContext } from '../AVFormatContext'
 import AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
 import { OggPage, PagePayload } from './oggs/OggPage'

@@ -26,7 +26,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:69](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IMpegtsFormat.ts#L69)
+[avformat/formats/IMpegtsFormat.ts:69](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IMpegtsFormat.ts#L69)
 
 ## Properties
 
@@ -48,7 +48,7 @@
 
 #### Source
 
-[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IFormat.ts#L35)
+[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IFormat.ts#L35)
 
 ***
 
@@ -62,7 +62,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:61](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IMpegtsFormat.ts#L61)
+[avformat/formats/IMpegtsFormat.ts:61](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IMpegtsFormat.ts#L61)
 
 ## Methods
 
@@ -72,7 +72,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVIFormatContext`](../../../AVformatContext/interfaces/AVIFormatContext.md)
+• **formatContext**: [`AVIFormatContext`](../../../AVFormatContext/interfaces/AVIFormatContext.md)
 
 #### Returns
 
@@ -84,7 +84,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:81](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IMpegtsFormat.ts#L81)
+[avformat/formats/IMpegtsFormat.ts:81](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IMpegtsFormat.ts#L81)
 
 ***
 
@@ -102,7 +102,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:564](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IMpegtsFormat.ts#L564)
+[avformat/formats/IMpegtsFormat.ts:564](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IMpegtsFormat.ts#L564)
 
 ***
 
@@ -112,7 +112,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVIFormatContext`](../../../AVformatContext/interfaces/AVIFormatContext.md)
+• **formatContext**: [`AVIFormatContext`](../../../AVFormatContext/interfaces/AVIFormatContext.md)
 
 #### Returns
 
@@ -124,7 +124,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:74](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IMpegtsFormat.ts#L74)
+[avformat/formats/IMpegtsFormat.ts:74](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IMpegtsFormat.ts#L74)
 
 ***
 
@@ -134,7 +134,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVIFormatContext`](../../../AVformatContext/interfaces/AVIFormatContext.md)
+• **formatContext**: [`AVIFormatContext`](../../../AVFormatContext/interfaces/AVIFormatContext.md)
 
 • **avpacket**: `pointer`\<[`AVPacket`](../../../../avutil/struct/avpacket/classes/AVPacket.md)\>
 
@@ -148,7 +148,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:400](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IMpegtsFormat.ts#L400)
+[avformat/formats/IMpegtsFormat.ts:400](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IMpegtsFormat.ts#L400)
 
 ***
 
@@ -158,7 +158,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVIFormatContext`](../../../AVformatContext/interfaces/AVIFormatContext.md)
+• **formatContext**: [`AVIFormatContext`](../../../AVFormatContext/interfaces/AVIFormatContext.md)
 
 #### Returns
 
@@ -170,7 +170,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:96](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IMpegtsFormat.ts#L96)
+[avformat/formats/IMpegtsFormat.ts:96](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IMpegtsFormat.ts#L96)
 
 ***
 
@@ -180,7 +180,7 @@
 
 #### Parameters
 
-• **formatContext**: [`AVIFormatContext`](../../../AVformatContext/interfaces/AVIFormatContext.md)
+• **formatContext**: [`AVIFormatContext`](../../../AVFormatContext/interfaces/AVIFormatContext.md)
 
 • **stream**: [`AVStream`](../../../AVStream/classes/AVStream.md)
 
@@ -198,4 +198,4 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:480](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/formats/IMpegtsFormat.ts#L480)
+[avformat/formats/IMpegtsFormat.ts:480](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avformat/formats/IMpegtsFormat.ts#L480)

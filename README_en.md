@@ -64,7 +64,7 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 #### avformat
 
 - [AVStream ](./docs/avformat/AVStream/README.md)
-- [AVformatContext](./docs/avformat/AVformatContext/README.md)
+- [AVFormatContext](./docs/avformat/AVFormatContext/README.md)
 - [demux](./docs/avformat/demux/README.md)
 - [mux](./docs/avformat/mux/README.md)
 
@@ -95,9 +95,10 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 
 #### avpipeline
 
+- [IOPipeline](./docs/avpipeline/IOPipeline/README.md)
+- [DemuxPipeline](./docs/avpipeline/DemuxPipeline/README.md)
 - [AudioDecodePipeline](./docs/avpipeline/AudioDecodePipeline/README.md)
 - [AudioRenderPipeline](./docs/avpipeline/AudioRenderPipeline/README.md)
-- [IOPipeline](./docs/avpipeline/IOPipeline/README.md)
 - [VideoDecodePipeline](./docs/avpipeline/VideoDecodePipeline/README.md)
 - [VideoRenderPipeline](./docs/avpipeline/VideoRenderPipeline/README.md)
 

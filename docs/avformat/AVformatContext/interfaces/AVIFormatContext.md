@@ -2,7 +2,7 @@
 
 ***
 
-[libmedia](../../../README.md) / [avformat/AVformatContext](../README.md) / AVIFormatContext
+[libmedia](../../../README.md) / [avformat/AVFormatContext](../README.md) / AVIFormatContext
 
 # Interface: AVIFormatContext
 
@@ -14,7 +14,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:58](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L58)
+avformat/AVFormatContext.ts:58
 
 ***
 
@@ -24,7 +24,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:54](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L54)
+avformat/AVFormatContext.ts:54
 
 ***
 
@@ -34,7 +34,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:60](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L60)
+avformat/AVFormatContext.ts:60
 
 ***
 
@@ -44,7 +44,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:56](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L56)
+avformat/AVFormatContext.ts:56
 
 ***
 
@@ -54,7 +54,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:50](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L50)
+avformat/AVFormatContext.ts:50
 
 ***
 
@@ -64,7 +64,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:52](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L52)
+avformat/AVFormatContext.ts:52
 
 ***
 
@@ -74,7 +74,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:62](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L62)
+avformat/AVFormatContext.ts:62
 
 ***
 
@@ -84,7 +84,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:48](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L48)
+avformat/AVFormatContext.ts:48
 
 ## Methods
 
@@ -102,7 +102,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:72](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L72)
+avformat/AVFormatContext.ts:72
 
 ***
 
@@ -116,7 +116,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:70](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L70)
+avformat/AVFormatContext.ts:70
 
 ***
 
@@ -130,7 +130,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:80](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L80)
+avformat/AVFormatContext.ts:80
 
 ***
 
@@ -148,7 +148,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:64](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L64)
+avformat/AVFormatContext.ts:64
 
 ***
 
@@ -166,7 +166,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:66](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L66)
+avformat/AVFormatContext.ts:66
 
 ***
 
@@ -184,7 +184,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:68](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L68)
+avformat/AVFormatContext.ts:68
 
 ***
 
@@ -202,7 +202,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:74](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L74)
+avformat/AVFormatContext.ts:74
 
 ***
 
@@ -220,7 +220,7 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:76](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L76)
+avformat/AVFormatContext.ts:76
 
 ***
 
@@ -238,4 +238,4 @@
 
 #### Source
 
-[avformat/AVformatContext.ts:78](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avformat/AVformatContext.ts#L78)
+avformat/AVFormatContext.ts:78

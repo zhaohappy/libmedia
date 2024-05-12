@@ -24,7 +24,7 @@
  */
 
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVIFormatContext } from './AVformatContext'
+import { AVIFormatContext } from './AVFormatContext'
 import * as object from 'common/util/object'
 import * as array from 'common/util/array'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'

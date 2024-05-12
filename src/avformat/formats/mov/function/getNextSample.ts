@@ -24,7 +24,7 @@
  */
 
 import Stream from '../../../AVStream'
-import { AVIFormatContext } from '../../../AVformatContext'
+import { AVIFormatContext } from '../../../AVFormatContext'
 import { MOVContext, MOVStreamContext, Sample } from '../type'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'

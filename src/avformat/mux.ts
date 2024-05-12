@@ -24,7 +24,7 @@
  */
 
 import AVPacket from 'avutil/struct/avpacket'
-import { AVOFormatContext } from './AVformatContext'
+import { AVOFormatContext } from './AVFormatContext'
 import * as object from 'common/util/object'
 import * as logger from 'common/util/logger'
 

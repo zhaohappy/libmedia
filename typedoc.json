@@ -4,7 +4,7 @@
   "entryPoints": [
     "src/avplayer/AVPlayer.ts",
 
-    "src/avformat/AVformatContext.ts",
+    "src/avformat/AVFormatContext.ts",
     "src/avformat/AVStream.ts",
     "src/avformat/demux.ts",
     "src/avformat/mux.ts",
@@ -39,6 +39,7 @@
     "src/avpipeline/VideoDecodePipeline.ts",
     "src/avpipeline/VideoRenderPipeline.ts",
     "src/avpipeline/IOPipeline.ts",
+    "src/avpipeline/DemuxPipeline.ts",
 
     "src/avutil/struct/avpacket.ts",
     "src/avutil/struct/avframe.ts",

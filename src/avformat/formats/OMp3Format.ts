@@ -23,7 +23,7 @@
  *
  */
 
-import { AVOFormatContext } from '../AVformatContext'
+import { AVOFormatContext } from '../AVFormatContext'
 import AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
 import { AVCodecID } from 'avutil/codec'

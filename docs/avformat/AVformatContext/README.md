@@ -2,9 +2,9 @@
 
 ***
 
-[libmedia](../../README.md) / avformat/AVformatContext
+[libmedia](../../README.md) / avformat/AVFormatContext
 
-# avformat/AVformatContext
+# avformat/AVFormatContext
 
 ## Index
 

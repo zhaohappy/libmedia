@@ -38,7 +38,7 @@
 
 #### Source
 
-[avutil/struct/avpcmbuffer.ts:44](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avpcmbuffer.ts#L44)
+[avutil/struct/avpcmbuffer.ts:44](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avpcmbuffer.ts#L44)
 
 ***
 
@@ -55,7 +55,7 @@ pcm 数据
 
 #### Source
 
-[avutil/struct/avpcmbuffer.ts:32](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avpcmbuffer.ts#L32)
+[avutil/struct/avpcmbuffer.ts:32](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avpcmbuffer.ts#L32)
 
 ***
 
@@ -71,7 +71,7 @@ pcm 数据
 
 #### Source
 
-[avutil/struct/avpcmbuffer.ts:56](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avpcmbuffer.ts#L56)
+[avutil/struct/avpcmbuffer.ts:56](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avpcmbuffer.ts#L56)
 
 ***
 
@@ -87,7 +87,7 @@ pcm 数据
 
 #### Source
 
-[avutil/struct/avpcmbuffer.ts:40](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avpcmbuffer.ts#L40)
+[avutil/struct/avpcmbuffer.ts:40](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avpcmbuffer.ts#L40)
 
 ***
 
@@ -103,7 +103,7 @@ pcm 数据
 
 #### Source
 
-[avutil/struct/avpcmbuffer.ts:36](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avpcmbuffer.ts#L36)
+[avutil/struct/avpcmbuffer.ts:36](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avpcmbuffer.ts#L36)
 
 ***
 
@@ -113,7 +113,7 @@ pcm 数据
 
 #### Source
 
-[avutil/struct/avpcmbuffer.ts:61](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avpcmbuffer.ts#L61)
+[avutil/struct/avpcmbuffer.ts:61](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avpcmbuffer.ts#L61)
 
 ***
 
@@ -129,7 +129,7 @@ pcm 数据
 
 #### Source
 
-[avutil/struct/avpcmbuffer.ts:48](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avpcmbuffer.ts#L48)
+[avutil/struct/avpcmbuffer.ts:48](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avpcmbuffer.ts#L48)
 
 ***
 
@@ -145,4 +145,4 @@ pts
 
 #### Source
 
-[avutil/struct/avpcmbuffer.ts:52](https://github.com/zhaohappy/libmedia/blob/b4bb608d2b1c00d036d73fc8d222b1a97be53694/src/avutil/struct/avpcmbuffer.ts#L52)
+[avutil/struct/avpcmbuffer.ts:52](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avpcmbuffer.ts#L52)

@@ -229,10 +229,20 @@ class AVFormatContext implements AVIFormatContext, AVOFormatContext {
   }
 }
 
+/**
+ * 创建 AVIFormatContext
+ * 
+ * @returns 
+ */
 export function createAVIFormatContext() {
   return new AVFormatContext() as AVIFormatContext
 }
 
+/**
+ * 创建 AVOFormatContext
+ * 
+ * @returns 
+ */
 export function createAVOFormatContext() {
   return new AVFormatContext() as AVOFormatContext
 }

@@ -30,7 +30,7 @@ libmedia 有 TypeScript 模块和 WebAssembly 模块，并且设计理念上以 
 
 libmedia 的 API 设计上参照 ffmpeg 设计，很多数据结构概念都是一致的，所以你能看见诸如 ```AVStream```、```AVCodecParameters```、```AVFormatContext```、```AVPacket```、```AVFrame``` 等数据结构。ffmpeg 作为音视频行业事实上的标准，其设计是非常优秀的；照着设计直接得到优秀的设计模式，还减少开发者学习理解的难度，毕竟做音视频开发的多少都对 ffmpeg 学习过；当然最主要的原因是我们需要让这些数据可以在 TypeScript 模块和 WebAssembly 模块中都可以进行读写操作，其在内存上的布局和 ffmpeg 保持一致是前提。
 
-libmedia 是设计在多线程上的，只是可以回退上单线程上运行；所以对多线程开发比较亲和；开发者可以很优雅的基于此做多线程的开发，毕竟在音视频领域使用多线程带来的体验绝对要高出很多。
+libmedia 是设计在多线程上的，只是可以回退到单线程上运行；所以对多线程开发比较亲和；开发者可以很优雅的基于此做多线程的开发，毕竟在音视频领域使用多线程带来的体验绝对要高出很多。
 
 
 ### 库
@@ -66,7 +66,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 #### avformat
 
 - [AVStream ](./docs/avformat/AVStream/README.md)
-- [AVformatContext](./docs/avformat/AVformatContext/README.md)
+- [AVFormatContext](./docs/avformat/AVFormatContext/README.md)
 - [demux](./docs/avformat/demux/README.md)
 - [mux](./docs/avformat/mux/README.md)
 
@@ -97,9 +97,10 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 
 #### avpipeline
 
+- [IOPipeline](./docs/avpipeline/IOPipeline/README.md)
+- [DemuxPipeline](./docs/avpipeline/DemuxPipeline/README.md)
 - [AudioDecodePipeline](./docs/avpipeline/AudioDecodePipeline/README.md)
 - [AudioRenderPipeline](./docs/avpipeline/AudioRenderPipeline/README.md)
-- [IOPipeline](./docs/avpipeline/IOPipeline/README.md)
 - [VideoDecodePipeline](./docs/avpipeline/VideoDecodePipeline/README.md)
 - [VideoRenderPipeline](./docs/avpipeline/VideoRenderPipeline/README.md)
 

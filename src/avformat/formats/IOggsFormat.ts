@@ -24,7 +24,7 @@
  */
 
 import AVStream from '../AVStream'
-import { AVIFormatContext } from '../AVformatContext'
+import { AVIFormatContext } from '../AVFormatContext'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import { OggPage, PagePayload } from './oggs/OggPage'
 import { AVCodecID, AVMediaType } from 'avutil/codec'

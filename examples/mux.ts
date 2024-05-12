@@ -1,7 +1,7 @@
 import IOWriterSync from 'common/io/IOWriterSync'
 import * as mux from 'avformat/mux'
 import AVPacket from 'avutil/struct/avpacket'
-import { createAVOFormatContext } from 'avformat/AVformatContext'
+import { createAVOFormatContext } from 'avformat/AVFormatContext'
 import OMovFormat from 'avformat/formats/OMovFormat'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 
