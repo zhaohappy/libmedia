@@ -643,8 +643,6 @@
 
         player.load(document.querySelector('#file').files[0] ? document.querySelector('#file').files[0] : urlComponent.url).then(() => {
           
-          document.querySelector('#loading-mask').style.display = 'none'
-
           if (slider) {
             slider.duration = Number(player.getDuration())
           }
