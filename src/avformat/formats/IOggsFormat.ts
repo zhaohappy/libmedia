@@ -30,15 +30,19 @@ import { OggPage, PagePayload } from './oggs/OggPage'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import { OpusOggsIdPage, OpusOggsCommentPage } from './oggs/opus'
+import { VorbisOggsIdPage, VorbisOggsCommentPage } from './oggs/vorbis'
 import * as errorType from 'avutil/error'
 import concatTypeArray from 'common/function/concatTypeArray'
 import IFormat from './IFormat'
 import { AVFormat } from '../avformat'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
+import { mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avFree, avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, getAVPacketData } from 'avutil/util/avpacket'
+import { addAVPacketData, createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import IOReaderSync from 'common/io/IOReaderSync'
+import IOWriterSync from 'common/io/IOWriterSync'
+import { avRescaleQ } from 'avutil/util/rational'
+import { AV_MILLI_TIME_BASE, AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 
 interface IOggFormatPrivateData {
   serialNumber: number
@@ -85,7 +89,6 @@ export default class IOggFormat extends IFormat {
       signature = ioReader.peekString(8)
 
       if (signature === 'OpusHead') {
-
         const idPage = new OpusOggsIdPage()
         idPage.read(ioReader)
 
@@ -106,16 +109,95 @@ export default class IOggFormat extends IFormat {
         const stream = formatContext.createStream()
         stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
         stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_OPUS
-        stream.codecpar.sampleRate = (this.headerPagesPayload[0] as OpusOggsIdPage).sampleRate
-        stream.codecpar.chLayout.nbChannels = (this.headerPagesPayload[0] as OpusOggsIdPage).channels
+        
+        stream.codecpar.sampleRate = idPage.sampleRate
+        stream.codecpar.chLayout.nbChannels = idPage.channels
         if (defined(API_OLD_CHANNEL_LAYOUT)) {
-          stream.codecpar.channels = (this.headerPagesPayload[0] as OpusOggsIdPage).channels
+          stream.codecpar.channels = idPage.channels
         }
         stream.timeBase.den = stream.codecpar.sampleRate
         stream.timeBase.num = 1
         stream.privData = {
           serialNumber: this.page.serialNumber
         }
+
+        if (this.onStreamAdd) {
+          this.onStreamAdd(stream)
+        }
+      }
+      else if (signature.slice(1, 7) === 'vorbis') {
+
+        const buffers: Uint8Array[] = [this.page.payload]
+
+        const idPage = new VorbisOggsIdPage()
+        idPage.read(ioReader)
+
+        const commentPage = new VorbisOggsCommentPage()
+
+        this.page.reset()
+        await this.page.read(formatContext.ioReader)
+
+        ioReader = new IOReaderSync(this.page.payload.length, false)
+        ioReader.appendBuffer(this.page.payload)
+        commentPage.read(ioReader)
+
+        buffers.push(this.page.payload.subarray(0, ioReader.getPointer()))
+
+        this.headerPagesPayload = [
+          idPage,
+          commentPage
+        ]
+
+        const stream = formatContext.createStream()
+        stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
+        stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_VORBIS
+        
+        stream.codecpar.sampleRate = idPage.sampleRate
+        stream.codecpar.chLayout.nbChannels = idPage.channels
+        if (defined(API_OLD_CHANNEL_LAYOUT)) {
+          stream.codecpar.channels = idPage.channels
+        }
+        stream.timeBase.den = stream.codecpar.sampleRate
+        stream.timeBase.num = 1
+        stream.privData = {
+          serialNumber: this.page.serialNumber
+        }
+
+        if (ioReader.remainingLength() && ioReader.peekUint8() === 5) {
+          const setup = this.page.payload.subarray(ioReader.getPointer())
+          buffers.push(setup)
+          // const avpacket = createAVPacket()
+          // avpacket.streamIndex = stream.index
+          // avpacket.timeBase.den = stream.timeBase.den
+          // avpacket.timeBase.num = stream.timeBase.num
+          // avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+          // avpacket.dts = avpacket.pts = 0n
+
+          // const data = avMalloc(setup.length)
+          // memcpyFromUint8Array(data, setup.length, setup)
+          // addAVPacketData(avpacket, data, setup.length)
+          // formatContext.interval.packetBuffer.push(avpacket)
+        }
+        else {
+          this.page.reset()
+          await this.page.read(formatContext.ioReader)
+          buffers.push(this.page.payload)
+        }
+
+        const extradataSize = buffers.reduce((pre, buffer) => {
+          return pre + 2 + buffer.length
+        }, 0)
+
+        const data = avMalloc(extradataSize)
+
+        const ioWriter = new IOWriterSync(extradataSize, true, mapSafeUint8Array(data, extradataSize))
+        buffers.forEach((buffer) => {
+          ioWriter.writeUint16(buffer.length)
+          ioWriter.writeBuffer(buffer)
+        })
+
+        stream.codecpar.extradata = data
+        stream.codecpar.extradataSize = extradataSize
 
         if (this.onStreamAdd) {
           this.onStreamAdd(stream)
@@ -132,7 +214,7 @@ export default class IOggFormat extends IFormat {
 
   public async readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
 
-    if (!this.headerPagesPayload.length || this.headerPagesPayload[0].signature !== 'OpusHead') {
+    if (!this.headerPagesPayload.length) {
       return errorType.FORMAT_NOT_SUPPORT
     }
 
@@ -146,11 +228,6 @@ export default class IOggFormat extends IFormat {
 
       avpacket.dts = avpacket.pts = this.page.granulePosition
 
-      const len = this.page.payload.length
-      const data = avMalloc(len)
-      memcpyFromUint8Array(data, len, this.page.payload)
-      addAVPacketData(avpacket, data, len)
-
       let stream: AVStream = formatContext.streams.find((stream) => {
         return (stream.privData as IOggFormatPrivateData).serialNumber === this.page.serialNumber
       })
@@ -159,31 +236,30 @@ export default class IOggFormat extends IFormat {
         avpacket.streamIndex = stream.index
         avpacket.timeBase.den = stream.timeBase.den
         avpacket.timeBase.num = stream.timeBase.num
-
-        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_OPUS) {
+        if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
           avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
         }
       }
 
       isProcessNext = true
 
+      const buffers: Uint8Array[] = [this.page.payload]
+
       let next = await formatContext.ioReader.peekBuffer(6)
       // 下一页是同一个 packet
       while (next[5] & 0x01) {
         this.page.reset()
         await this.page.read(formatContext.ioReader)
-        avpacket.dts = avpacket.pts = this.page.granulePosition
-
-        const buffer = concatTypeArray(Uint8Array, [getAVPacketData(avpacket), this.page.payload])
-
-        avFree(avpacket.data)
-        const data = avMalloc(buffer.length)
-        memcpyFromUint8Array(data, buffer.length, buffer)
-        avpacket.data = data
-        avpacket.size = buffer.length
-
+        buffers.push(this.page.payload)
         next = await formatContext.ioReader.peekBuffer(6)
       }
+
+      const buffer = concatTypeArray(Uint8Array, buffers)
+
+      const len = buffer.length
+      const data = avMalloc(len)
+      memcpyFromUint8Array(data, len, buffer)
+      addAVPacketData(avpacket, data, len)
 
       return 0
     }

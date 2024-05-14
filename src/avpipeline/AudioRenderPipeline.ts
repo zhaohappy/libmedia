@@ -445,7 +445,7 @@ export default class AudioRenderPipeline extends Pipeline {
         task.lastNotifyPTS = task.currentPTS
 
         const latency = (((task.useStretchpitcher ? task.stretchpitcher.get(0).getLatency() : 0)
-          // 双缓冲，假定前缓冲播放到中间
+          // 双缓冲，假定后缓冲播放到中间
           + (pcmBuffer.maxnbSamples * 3 >>> 1)) / task.playSampleRate * 1000) >>> 0
 
         task.controlIPCPort.notify('syncPts', {

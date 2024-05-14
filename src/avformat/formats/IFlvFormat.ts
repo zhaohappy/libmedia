@@ -549,6 +549,11 @@ export default class IFlvFormat extends IFormat {
       if (pos > 0) {
         logger.debug(`seek in filepositions, found pts: ${dts}, pos: ${pos}`)
         await formatContext.ioReader.seek(static_cast<int64>(pos))
+
+        const nextTag = await formatContext.ioReader.peekUint8()
+        if (nextTag !== FlvTag.AUDIO && nextTag !== FlvTag.VIDEO && nextTag !== FlvTag.SCRIPT) {
+          await this.syncTag(formatContext)
+        }
         return now
       }
     }
