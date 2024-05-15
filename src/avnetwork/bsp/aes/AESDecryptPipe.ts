@@ -36,7 +36,7 @@ const REMAINING_LENGTH = BLOCK_SIZE * 2
 
 let AESWebDecryptorSupport = true
 
-const Padding16 = new Uint8Array(16).fill(16)
+const PaddingBlock = new Uint8Array(BLOCK_SIZE).fill(BLOCK_SIZE)
 
 export default class AESDecryptPipe extends AVBSPipe {
 
@@ -134,18 +134,18 @@ export default class AESDecryptPipe extends AVBSPipe {
   }
 
   private async decrypt(length: number): Promise<Uint8Array> {
-    let next16: Uint8Array
+    let nextBlock: Uint8Array
     let padding: number = 0
     if (this.aesTargetDecryptor === this.aesWebDecryptor && !this.ended) {
-      next16 = this.buffer.subarray(this.pointer + length, this.pointer + length + 16).slice()
+      nextBlock = this.buffer.subarray(this.pointer + length, this.pointer + length + BLOCK_SIZE).slice()
       this.buffer.set(
         (await this.aesWebDecryptor.encryptPadding(
-          Padding16,
-          this.buffer.subarray(this.pointer + length - 16, this.pointer + length)
+          PaddingBlock,
+          this.buffer.subarray(this.pointer + length - BLOCK_SIZE, this.pointer + length)
         )).subarray(0, BLOCK_SIZE),
         this.pointer + length
       )
-      padding = 16
+      padding = BLOCK_SIZE
     }
 
     try {
@@ -153,10 +153,10 @@ export default class AESDecryptPipe extends AVBSPipe {
 
       const buffer = await this.aesTargetDecryptor.decrypt(encryptData, this.iv)
 
-      this.iv = encryptData.slice(encryptData.length - 16 - padding, encryptData.length - padding).buffer
+      this.iv = encryptData.slice(encryptData.length - BLOCK_SIZE - padding, encryptData.length - padding).buffer
 
-      if (next16) {
-        this.buffer.set(next16, this.pointer + length)
+      if (nextBlock) {
+        this.buffer.set(nextBlock, this.pointer + length)
       }
 
       this.pointer += length
@@ -166,8 +166,8 @@ export default class AESDecryptPipe extends AVBSPipe {
       if (this.aesTargetDecryptor = this.aesWebDecryptor) {
         logger.warn('web aes decrypt failed, try to use soft decryptor')
 
-        if (next16) {
-          this.buffer.set(next16, this.pointer + length)
+        if (nextBlock) {
+          this.buffer.set(nextBlock, this.pointer + length)
         }
         this.aesTargetDecryptor = this.aesSoftDecryptor
         AESWebDecryptorSupport = false
