@@ -284,7 +284,7 @@ export default class LATM2RawFilter extends AVBSFilter {
       return 0
     }
     else {
-      return errorType.DATA_INVALID
+      return errorType.EOF
     }
   }
 }

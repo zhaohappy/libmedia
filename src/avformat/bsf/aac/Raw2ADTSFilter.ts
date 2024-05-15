@@ -113,7 +113,7 @@ export default class Raw2ADTSFilter extends AVBSFilter {
       return 0
     }
     else {
-      return errorType.DATA_INVALID
+      return errorType.EOF
     }
   }
 }

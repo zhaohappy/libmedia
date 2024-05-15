@@ -202,7 +202,7 @@ export default class Raw2LATMFilter extends AVBSFilter {
       return 0
     }
     else {
-      return errorType.DATA_INVALID
+      return errorType.EOF
     }
   }
 }

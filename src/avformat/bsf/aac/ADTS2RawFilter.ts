@@ -118,7 +118,7 @@ export default class ADTS2RawFilter extends AVBSFilter {
         | (buffer[i + 4] << 3)
         | ((buffer[i + 5] & 0xE0) >>> 5)
 
-      const numberOfRawDataBlocksInFrame = buffer[6] & 0x03
+      const numberOfRawDataBlocksInFrame = buffer[i + 6] & 0x03
 
       let adtsHeaderLength = protectionAbsent === 1 ? 7 : 9
       let adtsFramePayloadLength = aacFrameLength - adtsHeaderLength
@@ -197,7 +197,7 @@ export default class ADTS2RawFilter extends AVBSFilter {
       return 0
     }
     else {
-      return errorType.DATA_INVALID
+      return errorType.EOF
     }
   }
 }
