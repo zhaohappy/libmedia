@@ -36,13 +36,11 @@ import concatTypeArray from 'common/function/concatTypeArray'
 import IFormat from './IFormat'
 import { AVFormat } from '../avformat'
 import { mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { avFree, avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
+import { avMalloc } from 'avutil/util/mem'
+import { addAVPacketData } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import IOReaderSync from 'common/io/IOReaderSync'
 import IOWriterSync from 'common/io/IOWriterSync'
-import { avRescaleQ } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE, AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 
 interface IOggFormatPrivateData {
   serialNumber: number
@@ -55,6 +53,12 @@ export default class IOggFormat extends IFormat {
   public headerPagesPayload: PagePayload[]
 
   private page: OggPage
+
+  private curSegIndex: number
+  private curSegStart: number
+  private currentPts: int64
+  private segCount: number
+  private lastGranulePosition: int64
 
   constructor() {
     super()
@@ -70,6 +74,46 @@ export default class IOggFormat extends IFormat {
     if (formatContext.ioReader) {
       formatContext.ioReader.setEndian(false)
     }
+
+    this.curSegIndex = -1
+    this.curSegStart = 0
+    this.currentPts = 0n
+    this.segCount = 0
+    this.lastGranulePosition = 0n
+  }
+
+  private async getNextSegment(formatContext: AVIFormatContext) {
+    if (this.curSegIndex < 0) {
+      if (this.page.granulePosition > 0n) {
+        this.lastGranulePosition = this.page.granulePosition
+      }
+      this.page.reset()
+      await this.page.read(formatContext.ioReader)
+      this.curSegIndex = 0
+      this.curSegStart = 0
+
+      this.segCount = 0
+      for (let i = 0; i < this.page.segmentTable.length; i++) {
+        if (this.page.segmentTable[i] !== 255) {
+          this.segCount++
+        }
+      }
+    }
+
+    let len = 0
+    while (true) {
+      const next = this.page.segmentTable[this.curSegIndex++]
+      len += next
+      if (next !== 255) {
+        break
+      }
+    }
+    const start = this.curSegStart
+    this.curSegStart += len
+    if (this.curSegIndex === this.page.segmentTable.length) {
+      this.curSegIndex = -1
+    }
+    return this.page.payload.subarray(start, start + len)
   }
 
   public async readHeader(formatContext: AVIFormatContext): Promise<number> {
@@ -81,10 +125,10 @@ export default class IOggFormat extends IFormat {
         return errorType.DATA_INVALID
       }
 
-      await this.page.read(formatContext.ioReader)
+      let payload = await this.getNextSegment(formatContext)
 
-      let ioReader = new IOReaderSync(this.page.payload.length, false)
-      ioReader.appendBuffer(this.page.payload)
+      let ioReader = new IOReaderSync(payload.length, false)
+      ioReader.appendBuffer(payload)
 
       signature = ioReader.peekString(8)
 
@@ -94,11 +138,10 @@ export default class IOggFormat extends IFormat {
 
         const commentPage = new OpusOggsCommentPage()
 
-        this.page.reset()
-        await this.page.read(formatContext.ioReader)
+        payload = await this.getNextSegment(formatContext)
 
-        ioReader = new IOReaderSync(this.page.payload.length, false)
-        ioReader.appendBuffer(this.page.payload)
+        ioReader = new IOReaderSync(payload.length, false)
+        ioReader.appendBuffer(payload)
         commentPage.read(ioReader)
 
         this.headerPagesPayload = [
@@ -127,21 +170,20 @@ export default class IOggFormat extends IFormat {
       }
       else if (signature.slice(1, 7) === 'vorbis') {
 
-        const buffers: Uint8Array[] = [this.page.payload]
+        const buffers: Uint8Array[] = [payload]
 
         const idPage = new VorbisOggsIdPage()
         idPage.read(ioReader)
 
         const commentPage = new VorbisOggsCommentPage()
 
-        this.page.reset()
-        await this.page.read(formatContext.ioReader)
+        payload = await this.getNextSegment(formatContext)
 
-        ioReader = new IOReaderSync(this.page.payload.length, false)
-        ioReader.appendBuffer(this.page.payload)
+        ioReader = new IOReaderSync(payload.length, false)
+        ioReader.appendBuffer(payload)
         commentPage.read(ioReader)
 
-        buffers.push(this.page.payload.subarray(0, ioReader.getPointer()))
+        buffers.push(payload)
 
         this.headerPagesPayload = [
           idPage,
@@ -163,26 +205,8 @@ export default class IOggFormat extends IFormat {
           serialNumber: this.page.serialNumber
         }
 
-        if (ioReader.remainingLength() && ioReader.peekUint8() === 5) {
-          const setup = this.page.payload.subarray(ioReader.getPointer())
-          buffers.push(setup)
-          // const avpacket = createAVPacket()
-          // avpacket.streamIndex = stream.index
-          // avpacket.timeBase.den = stream.timeBase.den
-          // avpacket.timeBase.num = stream.timeBase.num
-          // avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
-          // avpacket.dts = avpacket.pts = 0n
-
-          // const data = avMalloc(setup.length)
-          // memcpyFromUint8Array(data, setup.length, setup)
-          // addAVPacketData(avpacket, data, setup.length)
-          // formatContext.interval.packetBuffer.push(avpacket)
-        }
-        else {
-          this.page.reset()
-          await this.page.read(formatContext.ioReader)
-          buffers.push(this.page.payload)
-        }
+        // setup header
+        buffers.push(await this.getNextSegment(formatContext))
 
         const extradataSize = buffers.reduce((pre, buffer) => {
           return pre + 2 + buffer.length
@@ -220,15 +244,15 @@ export default class IOggFormat extends IFormat {
 
     avpacket.pos = formatContext.ioReader.getPos()
 
-    let isProcessNext = false
-
     try {
-      this.page.reset()
-      await this.page.read(formatContext.ioReader)
+      const payload = await this.getNextSegment(formatContext)
 
-      avpacket.dts = avpacket.pts = this.page.granulePosition
+      let pts = this.currentPts + (this.page.granulePosition - this.lastGranulePosition) / static_cast<int64>(this.segCount)
 
-      let stream: AVStream = formatContext.streams.find((stream) => {
+      avpacket.dts = avpacket.pts = this.currentPts
+      this.currentPts = pts
+
+      const stream: AVStream = formatContext.streams.find((stream) => {
         return (stream.privData as IOggFormatPrivateData).serialNumber === this.page.serialNumber
       })
 
@@ -241,17 +265,22 @@ export default class IOggFormat extends IFormat {
         }
       }
 
-      isProcessNext = true
+      const buffers: Uint8Array[] = [payload]
 
-      const buffers: Uint8Array[] = [this.page.payload]
-
-      let next = await formatContext.ioReader.peekBuffer(6)
-      // 下一页是同一个 packet
-      while (next[5] & 0x01) {
-        this.page.reset()
-        await this.page.read(formatContext.ioReader)
-        buffers.push(this.page.payload)
-        next = await formatContext.ioReader.peekBuffer(6)
+      while (this.curSegIndex < 0) {
+        try {
+          let next = await formatContext.ioReader.peekBuffer(6)
+          // 下一页是同一个 packet
+          if (next[5] & 0x01) {
+            buffers.push(await this.getNextSegment(formatContext))
+          }
+          else {
+            break
+          }
+        }
+        catch (error) {
+          break
+        }
       }
 
       const buffer = concatTypeArray(Uint8Array, buffers)
@@ -267,7 +296,7 @@ export default class IOggFormat extends IFormat {
       if (formatContext.ioReader.error !== IOError.END) {
         logger.error(error.message)
       }
-      return isProcessNext ? 0 : formatContext.ioReader.error
+      return formatContext.ioReader.error
     }
   }
 
