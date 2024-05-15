@@ -35,3 +35,5 @@ export const NO_MEMORY = -4
 export const INVALID_OPERATE = -5
 
 export const EAGAIN = -6
+
+export const EOF = -7
