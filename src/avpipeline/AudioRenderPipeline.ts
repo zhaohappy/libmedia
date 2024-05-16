@@ -292,6 +292,7 @@ export default class AudioRenderPipeline extends Pipeline {
             let pcmBuffer = me.avPCMBufferPool.alloc()
 
             pcmBuffer.nbSamples = audioFrame.nbSamples
+            pcmBuffer.maxnbSamples = audioFrame.nbSamples
             pcmBuffer.sampleRate = audioFrame.sampleRate
             pcmBuffer.channels = audioFrame.chLayout.nbChannels
             pcmBuffer.data = audioFrame.extendedData
@@ -386,6 +387,7 @@ export default class AudioRenderPipeline extends Pipeline {
               if (task.waitAVFrame) {
                 // data 是 avframe 的引用，这里需要置空，防止 waitPCMBuffer 释放的时候将 avframe 的内存释放了
                 task.waitPCMBuffer.data = nullptr
+                task.waitPCMBuffer.maxnbSamples = 0
                 task.avframePool.release(task.waitAVFrame)
                 task.waitAVFrame = nullptr
               }
@@ -620,6 +622,7 @@ export default class AudioRenderPipeline extends Pipeline {
         if (task.waitAVFrame) {
           // data 是 avframe 的引用，这里需要置空，防止 waitPCMBuffer 释放的时候将 avframe 的内存释放了
           task.waitPCMBuffer.data = nullptr
+          task.waitPCMBuffer.maxnbSamples = 0
           task.avframePool.release(task.waitAVFrame)
           task.waitAVFrame = nullptr
         }
@@ -839,11 +842,16 @@ export default class AudioRenderPipeline extends Pipeline {
         avFreep(reinterpret_cast<pointer<pointer<void>>>(addressof(task.outPCMBuffer.data)))
         unmake(task.outPCMBuffer)
       }
+
       if (task.waitPCMBuffer) {
+        if (task.waitAVFrame) {
+          // data 是 avframe 的引用，这里需要置空，防止 waitPCMBuffer 释放的时候将 avframe 的内存释放了
+          task.waitPCMBuffer.data = nullptr
+          task.waitPCMBuffer.maxnbSamples = 0
+          task.avframePool.release(task.waitAVFrame)
+        }
         this.avPCMBufferPool.release(task.waitPCMBuffer)
-      }
-      if (task.waitAVFrame) {
-        task.avframePool.release(task.waitAVFrame)
+        task.waitPCMBuffer = nullptr
       }
       if (task.paddingAVFrame) {
         task.avframePool.release(task.paddingAVFrame)
