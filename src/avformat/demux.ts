@@ -231,7 +231,10 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
         stream.codecpar.framerate.den = value >>> 0
       }
       const duration = Number(avpacket.dts - stream.firstDTS) * stream.timeBase.num / stream.timeBase.den
-      stream.codecpar.bitRate = static_cast<int64>(streamBitMap[stream.index] * 8 / duration)
+
+      if (duration) {
+        stream.codecpar.bitRate = static_cast<int64>(streamBitMap[stream.index] * 8 / duration)
+      }
     }
 
     if ((avpacket.dts - stream.startTime) > avRescaleQ(
@@ -259,7 +262,9 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
             stream.codecpar.framerate.den = value >>> 0
           }
           const duration = Number(avpacket.dts - stream.firstDTS) * stream.timeBase.num / stream.timeBase.den
-          stream.codecpar.bitRate = static_cast<int64>(streamBitMap[stream.index] * 8 / duration)
+          if (duration) {
+            stream.codecpar.bitRate = static_cast<int64>(streamBitMap[stream.index] * 8 / duration)
+          }
         }
       })
       if (packetCached) {
@@ -286,7 +291,9 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
     return ret
   }
 
-  if (formatContext.iformat.type === AVFormat.MPEGTS && (formatContext.ioReader.flags & IOFlags.SEEKABLE)) {
+  if ((formatContext.iformat.type === AVFormat.MPEGTS)
+    && (formatContext.ioReader.flags & IOFlags.SEEKABLE)
+  ) {
     await estimateDurationFromPts(formatContext)
   }
   return 0

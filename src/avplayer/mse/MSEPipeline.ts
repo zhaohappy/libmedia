@@ -387,7 +387,7 @@ export default class MSEPipeline extends Pipeline {
     }
 
     // 音频直接让 pts 等于 dts，dts 是递增的可以保证 mse 不会卡主（但声音可能会出现嗒嗒声）
-    if (resource.type === 'audio') {
+    if (resource.type === 'audio' && avpacket.dts > 0) {
       avpacket.pts = avpacket.dts
     }
     // 某些视频关键帧的 pts 会倒退，这里纠正一下（特别是 m3u8 和 dash 切片转 mp4 flv 格式的视频容易出现）
