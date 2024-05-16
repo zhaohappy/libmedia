@@ -52,13 +52,26 @@ export const AVCodecID2FlvCodecType = {
 export const FlvAudioCodecType2AVCodecID = {
   10: AVCodecID.AV_CODEC_ID_AAC,
   2: AVCodecID.AV_CODEC_ID_MP3,
-  11: AVCodecID.AV_CODEC_ID_SPEEX
+  11: AVCodecID.AV_CODEC_ID_SPEEX,
+
+  1: AVCodecID.AV_CODEC_ID_ADPCM_SWF,
+  4: AVCodecID.AV_CODEC_ID_NELLYMOSER,
+  5: AVCodecID.AV_CODEC_ID_NELLYMOSER,
+  6: AVCodecID.AV_CODEC_ID_NELLYMOSER,
+  7: AVCodecID.AV_CODEC_ID_PCM_ALAW,
+  8: AVCodecID.AV_CODEC_ID_PCM_MULAW
 }
 
 export const FlvVideoCodecType2AVCodecID = {
   7: AVCodecID.AV_CODEC_ID_H264,
   12: AVCodecID.AV_CODEC_ID_HEVC,
-  9: AVCodecID.AV_CODEC_ID_MPEG4
+  9: AVCodecID.AV_CODEC_ID_MPEG4,
+
+  2: AVCodecID.AV_CODEC_ID_H263,
+  3: AVCodecID.AV_CODEC_ID_FLASHSV,
+  4: AVCodecID.AV_CODEC_ID_VP6F,
+  5: AVCodecID.AV_CODEC_ID_VP6A,
+  6: AVCodecID.AV_CODEC_ID_FLASHSV2
 }
 
 export const FlvCodecHeaderLength = {

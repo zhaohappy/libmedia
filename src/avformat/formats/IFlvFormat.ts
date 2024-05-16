@@ -227,7 +227,19 @@ export default class IFlvFormat extends IFormat {
         stream.codecpar.sampleRate = 44100 << ((audioHeader & 0x0c) >>> 2) >> 3
         stream.codecpar.bitsPerCodedSample = (audioHeader & 0x02) ? 16 : 8
 
-        stream.codecpar.codecId = FlvAudioCodecType2AVCodecID[(audioHeader & 0xf0) >> 4]
+        const flvAudioCodecId = (audioHeader & 0xf0) >> 4
+
+        // FLV_CODECID_PCM
+        if (flvAudioCodecId === 0) {
+          stream.codecpar.codecId = stream.codecpar.bitsPerCodedSample === 8 ? AVCodecID.AV_CODEC_ID_PCM_U8 : AVCodecID.AV_CODEC_ID_PCM_S16LE
+        }
+        // FLV_CODECID_PCM_LE
+        else if (flvAudioCodecId === 3) {
+          stream.codecpar.codecId = stream.codecpar.bitsPerCodedSample === 8 ? AVCodecID.AV_CODEC_ID_PCM_U8 : AVCodecID.AV_CODEC_ID_PCM_S16LE
+        }
+        else {
+          stream.codecpar.codecId = FlvAudioCodecType2AVCodecID[flvAudioCodecId]
+        }
 
         if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
           const packetType = await formatContext.ioReader.readUint8()
