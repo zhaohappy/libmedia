@@ -143,6 +143,7 @@ type SelfTask = VideoRenderTaskOptions & {
 
   seeking: boolean
   seekSync: () => void
+  afterPullResolver: () => void
   pausing: boolean
 
   lastRenderTimestamp: number
@@ -205,6 +206,7 @@ export default class VideoRenderPipeline extends Pipeline {
       ended: false,
       seeking: false,
       seekSync: null,
+      afterPullResolver: null,
       pausing: false,
 
       lastRenderTimestamp: 0,
@@ -398,6 +400,11 @@ export default class VideoRenderPipeline extends Pipeline {
         task.frontBuffered = false
         const now = getTimestamp()
         task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull').then((frame) => {
+
+          if (task.afterPullResolver) {
+            task.afterPullResolver()
+          }
+
           if (is.number(frame) && frame < 0) {
             task.ended = true
             task.frontFrame = null
@@ -945,6 +952,12 @@ export default class VideoRenderPipeline extends Pipeline {
         await task.loop.stopBeforeNextTick()
         task.loop.destroy()
         task.loop = null
+      }
+
+      if (!task.ended && !task.frontFrame) {
+        await new Promise<void>((resolve) => {
+          task.afterPullResolver = resolve
+        })
       }
       if (task.render) {
         task.render.destroy()

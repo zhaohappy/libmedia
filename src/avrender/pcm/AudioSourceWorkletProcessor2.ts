@@ -47,6 +47,8 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
 
   private float32: Float32Array
   private pause: boolean
+  private stopped: boolean
+  private afterPullResolve: () => void
 
   constructor() {
     super()
@@ -87,6 +89,7 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
           this.pause = false
           this.frontBuffered = true
           this.firstRendered = false
+          this.stopped = false
 
           this.float32 = new Float32Array(getHeapU8().buffer)
           this.ipcPort.reply(request)
@@ -118,6 +121,7 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
           this.pause = false
           this.frontBuffered = true
           this.firstRendered = false
+          this.stopped = false
           this.float32 = new Float32Array(getHeapU8().buffer)
 
           this.ipcPort.reply(request)
@@ -126,11 +130,18 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
         }
 
         case 'stop': {
+
+          if (!this.ended) {
+            await new Promise<void>((resolve) => {
+              this.afterPullResolve = resolve
+            })
+          }
+
           this.freeBuffer(this.backBuffer)
           this.freeBuffer(this.frontBuffer)
           this.backBuffer = nullptr
           this.frontBuffer = nullptr
-          this.ended = true
+          this.stopped = true
           this.pullIPC.destroy()
 
           this.ipcPort.reply(request)
@@ -186,6 +197,9 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
     if (ret < 0) {
       this.ended = true
     }
+    if (this.afterPullResolve) {
+      this.afterPullResolve()
+    }
   }
 
   private swapBuffer() {
@@ -206,6 +220,11 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
   }
 
   public process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: { averaging: Float32Array; output: Float32Array }): boolean {
+    
+    if (this.stopped) {
+      return false
+    }
+    
     if (this.backBuffer && !this.pause) {
       if (this.backBufferOffset === BUFFER_LENGTH) {
         if (this.ended) {

@@ -44,6 +44,8 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
   private frontBuffered: boolean
   private pause: boolean
   private firstRendered: boolean
+  private stopped: boolean
+  private afterPullResolve: () => void
 
   constructor() {
     super()
@@ -74,6 +76,7 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
           this.frontBuffered = true
           this.pause = false
           this.firstRendered = false
+          this.stopped = false
 
           this.ipcPort.reply(request)
 
@@ -101,6 +104,7 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
           this.frontBuffered = true
           this.pause = false
           this.firstRendered = false
+          this.stopped = false
 
           this.ipcPort.reply(request)
 
@@ -114,7 +118,14 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
         }
 
         case 'stop': {
-          this.ended = true
+
+          if (!this.ended) {
+            await new Promise<void>((resolve) => {
+              this.afterPullResolve = resolve
+            })
+          }
+
+          this.stopped = true
           this.pullIPC.destroy()
 
           this.ipcPort.reply(request)
@@ -150,6 +161,9 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
         data[i] = float.subarray(i * BUFFER_LENGTH * 128, (i + 1) * BUFFER_LENGTH * 128)
       }
     }
+    if (this.afterPullResolve) {
+      this.afterPullResolve()
+    }
   }
 
   private swapBuffer() {
@@ -170,6 +184,10 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
   }
 
   public process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: { averaging: Float32Array; output: Float32Array }): boolean {
+    if (this.stopped) {
+      return false
+    }
+    
     if (this.backBuffer && !this.pause) {
       if (this.backBufferOffset === BUFFER_LENGTH) {
         if (this.ended) {
