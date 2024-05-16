@@ -34,13 +34,19 @@ import { VorbisOggsIdPage, VorbisOggsCommentPage } from './oggs/vorbis'
 import * as errorType from 'avutil/error'
 import concatTypeArray from 'common/function/concatTypeArray'
 import IFormat from './IFormat'
-import { AVFormat } from '../avformat'
-import { mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
+import { AVFormat, AVSeekFlags } from '../avformat'
+import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import IOReaderSync from 'common/io/IOReaderSync'
 import IOWriterSync from 'common/io/IOWriterSync'
+import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import seekInBytes from '../function/seekInBytes'
+import { avRescaleQ } from 'avutil/util/rational'
+import * as array from 'common/util/array'
+import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
+import * as bigint from 'common/util/bigint'
 
 interface IOggFormatPrivateData {
   serialNumber: number
@@ -56,9 +62,14 @@ export default class IOggFormat extends IFormat {
 
   private curSegIndex: number
   private curSegStart: number
-  private currentPts: int64
+
   private segCount: number
-  private lastGranulePosition: int64
+  private segIndex: number
+
+  private currentPts: int64
+  private firstPos: int64
+
+  private firstGranulePosition: int64
 
   constructor() {
     super()
@@ -79,18 +90,49 @@ export default class IOggFormat extends IFormat {
     this.curSegStart = 0
     this.currentPts = 0n
     this.segCount = 0
-    this.lastGranulePosition = 0n
+    this.segIndex = 0
+
+    this.firstGranulePosition = 0n
+  }
+
+  private async estimateTotalBlock(formatContext: AVIFormatContext) {
+    let duration = 0n
+    const now = formatContext.ioReader.getPos()
+
+    const pts = this.currentPts
+
+    const fileSize = await formatContext.ioReader.fileSize()
+    await formatContext.ioReader.seek(bigint.max(fileSize - 195072n, 0n))
+    await this.syncPage(formatContext)
+
+    while (true) {
+      try {
+        this.page.reset()
+        await this.page.read(formatContext.ioReader)
+        duration = this.page.granulePosition
+      }
+      catch (error) {
+        break
+      }
+    }
+
+    await formatContext.ioReader.seek(now)
+
+    this.currentPts = pts
+
+    return duration
   }
 
   private async getNextSegment(formatContext: AVIFormatContext) {
     if (this.curSegIndex < 0) {
       if (this.page.granulePosition > 0n) {
-        this.lastGranulePosition = this.page.granulePosition
+        this.currentPts = this.page.granulePosition
       }
       this.page.reset()
       await this.page.read(formatContext.ioReader)
       this.curSegIndex = 0
       this.curSegStart = 0
+      this.segIndex = -1
 
       this.segCount = 0
       for (let i = 0; i < this.page.segmentTable.length; i++) {
@@ -110,6 +152,7 @@ export default class IOggFormat extends IFormat {
     }
     const start = this.curSegStart
     this.curSegStart += len
+    this.segIndex++
     if (this.curSegIndex === this.page.segmentTable.length) {
       this.curSegIndex = -1
     }
@@ -167,6 +210,8 @@ export default class IOggFormat extends IFormat {
         if (this.onStreamAdd) {
           this.onStreamAdd(stream)
         }
+
+        stream.duration = await this.estimateTotalBlock(formatContext)
       }
       else if (signature.slice(1, 7) === 'vorbis') {
 
@@ -214,7 +259,7 @@ export default class IOggFormat extends IFormat {
 
         const data = avMalloc(extradataSize)
 
-        const ioWriter = new IOWriterSync(extradataSize, true, mapSafeUint8Array(data, extradataSize))
+        const ioWriter = new IOWriterSync(extradataSize, true, new SafeUint8Array(data, extradataSize))
         buffers.forEach((buffer) => {
           ioWriter.writeUint16(buffer.length)
           ioWriter.writeBuffer(buffer)
@@ -226,7 +271,11 @@ export default class IOggFormat extends IFormat {
         if (this.onStreamAdd) {
           this.onStreamAdd(stream)
         }
+
+        stream.duration = await this.estimateTotalBlock(formatContext)
       }
+
+      this.firstPos = formatContext.ioReader.getPos()
 
       return 0
     }
@@ -247,10 +296,13 @@ export default class IOggFormat extends IFormat {
     try {
       const payload = await this.getNextSegment(formatContext)
 
-      let pts = this.currentPts + (this.page.granulePosition - this.lastGranulePosition) / static_cast<int64>(this.segCount)
+      let pts = this.currentPts + ((this.page.granulePosition - this.currentPts) / static_cast<int64>(this.segCount) * static_cast<int64>(this.segIndex))
 
-      avpacket.dts = avpacket.pts = this.currentPts
-      this.currentPts = pts
+      avpacket.dts = avpacket.pts = pts
+
+      if (!this.firstGranulePosition) {
+        this.firstGranulePosition = this.page.granulePosition
+      }
 
       const stream: AVStream = formatContext.streams.find((stream) => {
         return (stream.privData as IOggFormatPrivateData).serialNumber === this.page.serialNumber
@@ -300,8 +352,101 @@ export default class IOggFormat extends IFormat {
     }
   }
 
+  @deasync
+  private async syncPage(formatContext: AVIFormatContext) {
+    let pos: int64 = NOPTS_VALUE_BIGINT
+
+    const analyzeCount = 3
+    let lastGranulePosition = 0n
+
+    while (true) {
+      try {
+        const word = await formatContext.ioReader.peekString(4)
+        if (word === 'OggS') {
+          pos = formatContext.ioReader.getPos()
+          
+          this.page.reset()
+          await this.page.read(formatContext.ioReader)
+          lastGranulePosition = this.page.granulePosition
+          let count = 0
+
+          while (true) {
+            if (count === analyzeCount) {
+              break
+            }
+            const word = await formatContext.ioReader.peekString(4)
+            if (word === 'OggS') {
+              count++
+              this.page.reset()
+              await this.page.read(formatContext.ioReader)
+            }
+            else {
+              break
+            }
+          }
+          if (count === analyzeCount) {
+            break
+          }
+        }
+        await formatContext.ioReader.skip(1)
+      }
+      catch (error) {
+        break
+      }
+    }
+
+    if (pos !== NOPTS_VALUE_BIGINT) {
+      await formatContext.ioReader.seek(pos)
+      while (true) {
+        let next = await formatContext.ioReader.peekBuffer(6)
+        // 找 packet 的开始 page
+        if (!(next[5] & 0x01)) {
+          break
+        }
+        this.page.reset()
+        await this.page.read(formatContext.ioReader)
+        lastGranulePosition = this.page.granulePosition
+      }
+      this.currentPts = lastGranulePosition - this.firstGranulePosition
+      this.curSegIndex = -1
+    }
+  }
+
   public async seek(formatContext: AVIFormatContext, stream: AVStream, timestamp: int64, flags: int32): Promise<int64> {
-    return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
+    const now = formatContext.ioReader.getPos()
+    if (flags & AVSeekFlags.BYTE) {
+      const size = await formatContext.ioReader.fileSize()
+
+      if (size <= 0n) {
+        return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
+      }
+
+      if (timestamp < 0n) {
+        timestamp = 0n
+      }
+      else if (timestamp > size) {
+        timestamp = size
+      }
+      await formatContext.ioReader.seek(timestamp)
+
+      if (!(flags & AVSeekFlags.ANY)) {
+        await this.syncPage(formatContext)
+      }
+      return now
+    }
+    else {
+
+      logger.debug('not found any keyframe index, try to seek in bytes')
+
+      return seekInBytes(
+        formatContext,
+        stream,
+        timestamp,
+        this.firstPos,
+        this.readAVPacket.bind(this),
+        this.syncPage.bind(this)
+      )
+    }
   }
 
   public getAnalyzeStreamsCount(): number {
