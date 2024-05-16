@@ -33,6 +33,10 @@ declare const ENABLE_DEMUXER_IVF: boolean
 
 declare const ENABLE_DEMUXER_MATROSKA: boolean
 
+declare const ENABLE_DEMUXER_AAC: boolean
+
+declare const ENABLE_DEMUXER_FLAC: boolean
+
 declare const ENABLE_MSE: boolean
 
 declare const ENABLE_WEBGPU: boolean

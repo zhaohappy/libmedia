@@ -194,7 +194,8 @@ module.exports = (env) => {
             file: path.resolve(__dirname, 'src/avpipeline/DemuxPipeline.ts'),
             include: [
               configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/function/concatTypeArray.ts') : null,
-              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/io/StreamReader.ts') : null
+              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/io/StreamReader.ts') : null,
+              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/io/BufferReader.ts') : null
             ]
           },
           {

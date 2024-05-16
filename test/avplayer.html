@@ -213,7 +213,7 @@
 <body>
 
     <div style="margin-left: 10px;">
-      支持 mp4、mov、mpegts、flv、matroska、webm、mp3 封装格式 <br>
+      支持 mp4、mov、mpegts、flv、matroska、webm、mp3、oggs、flac、aac 封装格式 <br>
       支持 hls、dash 协议 （只支持 url 播放）<br>
       支持 h264、hevc、av1、mpeg4、vp8、vp9、aac、mp3、opus、speex、flac、vorbis 编码 <br>
       支持直播（LIVE）和点播（VOD） <br>
@@ -504,69 +504,70 @@
       }
 
       function loadPlayer(id) {
-        player = new AVPlayer({
-          container: document.querySelector(id),
-          isLive: isLiveComponent.isLive,
-          getWasm: (type, codecId) => {
-            switch (type) {
-              case 'decoder': {
-                switch (codecId) {
-                  // H264
-                  case 27:
-                    return `../dist/decode/h264-atomic.wasm`
-                  // AAC
-                  case 86018:
-                    return '../dist/decode/aac-atomic.wasm'
-                  // MP3
-                  case 86017:
-                    return '../dist/decode/mp3-atomic.wasm'
-                  // HEVC
-                  case 173:
-                    return '../dist/decode/hevc-atomic.wasm'
-                  // Mpeg4
-                  case 12:
-                    return '../dist/decode/mpeg4-atomic.wasm'
-                  // AV1
-                  case 226:
-                    return '../dist/decode/av1-atomic.wasm'
-                  // Speex
-                  case 86051:
-                    return '../dist/decode/speex-atomic.wasm'
-                  // Opus
-                  case 86076:
-                    return '../dist/decode/opus-atomic.wasm'
-                  // flac
-                  case 86028:
-                    return '../dist/decode/flac-atomic.wasm'
-                  // vorbis
-                  case 86021:
-                    return '../dist/decode/vorbis-atomic.wasm'
-                  case 139:
-                    return '../dist/decode/vp8-atomic.wasm'
-                  case 167:
-                    return '../dist/decode/vp9-atomic.wasm'
-                  default:
-                    return null
+        if (!player) {
+          player = new AVPlayer({
+            container: document.querySelector(id),
+            isLive: isLiveComponent.isLive,
+            getWasm: (type, codecId) => {
+              switch (type) {
+                case 'decoder': {
+                  switch (codecId) {
+                    // H264
+                    case 27:
+                      return `../dist/decode/h264-atomic.wasm`
+                    // AAC
+                    case 86018:
+                      return '../dist/decode/aac-atomic.wasm'
+                    // MP3
+                    case 86017:
+                      return '../dist/decode/mp3-atomic.wasm'
+                    // HEVC
+                    case 173:
+                      return '../dist/decode/hevc-atomic.wasm'
+                    // Mpeg4
+                    case 12:
+                      return '../dist/decode/mpeg4-atomic.wasm'
+                    // AV1
+                    case 226:
+                      return '../dist/decode/av1-atomic.wasm'
+                    // Speex
+                    case 86051:
+                      return '../dist/decode/speex-atomic.wasm'
+                    // Opus
+                    case 86076:
+                      return '../dist/decode/opus-atomic.wasm'
+                    // flac
+                    case 86028:
+                      return '../dist/decode/flac-atomic.wasm'
+                    // vorbis
+                    case 86021:
+                      return '../dist/decode/vorbis-atomic.wasm'
+                    case 139:
+                      return '../dist/decode/vp8-atomic.wasm'
+                    case 167:
+                      return '../dist/decode/vp9-atomic.wasm'
+                    default:
+                      return null
+                  }
+                  break
                 }
-                break
+                case 'resampler':
+                  return '../dist/resample/resample-atomic.wasm'
+                case 'stretchpitcher':
+                  return '../dist/stretchpitch/stretchpitch-atomic.wasm'
               }
-              case 'resampler':
-                return '../dist/resample/resample-atomic.wasm'
-              case 'stretchpitcher':
-                return '../dist/stretchpitch/stretchpitch-atomic.wasm'
-            }
-          },
-          checkUseMES: (streams) => {
-            return useMseComponent.useMse
-          },
-          enableHardware: enableWebcodecComponent.enableHardwareAcceleration,
-          enableWebGPU: enableWebGPUComponent.enableWebGPU,
-          loop: loopComponent.loop,
-          jitterBufferMax: 4,
-          jitterBufferMin: 1,
-          lowLatency: true
-        })
-
+            },
+            checkUseMES: (streams) => {
+              return useMseComponent.useMse
+            },
+            enableHardware: enableWebcodecComponent.enableHardwareAcceleration,
+            enableWebGPU: enableWebGPUComponent.enableWebGPU,
+            loop: loopComponent.loop,
+            jitterBufferMax: 4,
+            jitterBufferMin: 1,
+            lowLatency: true
+          })
+        }
         if (!isLiveComponent.isLive && !slider) {
           slider = new Vue({
             el: '#slider',
@@ -734,7 +735,10 @@
           if (slider) {
             slider.currentTime = slider.duration
           }
-          player.destroy()
+          player.destroy().then(() => {
+            player = null
+            console.log('player destroy')
+          })
         })
 
         player.on('time', (pts) => {
@@ -790,7 +794,10 @@
             if (slider) {
               slider.currentTime = 0
             }
-            player.destroy()
+            player.destroy().then(() => {
+              player = null
+              console.log('player destroy')
+            })
           })
         }
       }

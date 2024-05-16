@@ -123,6 +123,9 @@ export default class DemuxPipeline extends Pipeline {
     else if (/^ID3/.test(signature)) {
       return AVFormat.MP3
     }
+    else if (/^fLaC/.test(signature)) {
+      return AVFormat.FLAC
+    }
     else if ((await ioReader.peekUint32()) === 0x1A45DFA3) {
       return AVFormat.MATROSKA
     }
@@ -320,6 +323,24 @@ export default class DemuxPipeline extends Pipeline {
           }
           else {
             logger.error('matroska format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.AAC:
+          if (defined(ENABLE_DEMUXER_AAC)) {
+            iformat = new (((await import('avformat/formats/IAacFormat')).default))
+          }
+          else {
+            logger.error('aac format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.FLAC:
+          if (defined(ENABLE_DEMUXER_FLAC)) {
+            iformat = new (((await import('avformat/formats/IFlacFormat')).default))
+          }
+          else {
+            logger.error('flac format not support, maybe you can rebuild avmedia')
             return errorType.FORMAT_NOT_SUPPORT
           }
           break

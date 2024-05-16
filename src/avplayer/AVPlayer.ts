@@ -127,7 +127,9 @@ const Ext2Format: Record<string, AVFormat> = {
   'mp3': AVFormat.MP3,
   'mkv': AVFormat.MATROSKA,
   'mka': AVFormat.MATROSKA,
-  'webm': AVFormat.WEBM
+  'webm': AVFormat.WEBM,
+  'aac': AVFormat.AAC,
+  'flac': AVFormat.FLAC
 }
 
 const Ext2IOLoader: Record<string, IOType> = {
@@ -1453,14 +1455,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.videoDecoder2VideoRenderChannel = null
     this.audioDecoder2AudioRenderChannel = null
     this.audioRender2AudioWorkletChannel = null
-
-    this.status = AVPlayerStatus.STOPPED
+    
     this.statsController.stop()
     if (this.jitterBufferController) {
       this.jitterBufferController.stop()
     }
 
     this.fire(eventType.STOPPED)
+
+    this.status = AVPlayerStatus.STOPPED
   }
 
   /*
@@ -1773,6 +1776,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   public async destroy() {
+
+    logger.info(`call destroy, taskId: ${this.taskId}`)
+
+    if (this.status === AVPlayerStatus.DESTROYED) {
+      return
+    }
+
     await this.stop()
     unmake(this.stats)
     this.stats = null
@@ -1797,6 +1807,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       unmake(this.GlobalData)
       this.GlobalData = null
     }
+
+    this.status = AVPlayerStatus.DESTROYED
   }
 
   public onVideoEnded(): void {
@@ -1867,8 +1879,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       name: 'VideoDecoderThread',
       disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
     }).run()
-    this.VideoDecoderThread.setLogLevel(AVPlayer.level)
-
     this.VideoDecoderThread.setLogLevel(AVPlayer.level)
   }
 
