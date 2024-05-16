@@ -535,14 +535,17 @@ function parseSegment(
       if (segment.parts.length > 0) {
         logger.fatal('EXT-X-KEY must appear before the first EXT-X-PART tag of the Parent Segment.')
       }
-      setCompatibleVersionOfKey(params, attributes)
-      segment.key = new Key({
-        method: attributes['METHOD'],
-        uri: attributes['URI'],
-        iv: attributes['IV'],
-        format: attributes['KEYFORMAT'],
-        formatVersion: attributes['KEYFORMATVERSIONS']
-      })
+
+      if (attributes['METHOD'] !== 'NONE') {
+        setCompatibleVersionOfKey(params, attributes)
+        segment.key = new Key({
+          method: attributes['METHOD'],
+          uri: attributes['URI'],
+          iv: attributes['IV'],
+          format: attributes['KEYFORMAT'],
+          formatVersion: attributes['KEYFORMATVERSIONS']
+        })
+      }
     }
     else if (name === 'EXT-X-MAP') {
       if (segment.parts.length > 0) {
@@ -666,14 +669,16 @@ function parsePrefetchSegment(
       segment.discontinuity = true
     }
     else if (name === 'EXT-X-KEY') {
-      setCompatibleVersionOfKey(params, attributes)
-      segment.key = new Key({
-        method: attributes['METHOD'],
-        uri: attributes['URI'],
-        iv: attributes['IV'],
-        format: attributes['KEYFORMAT'],
-        formatVersion: attributes['KEYFORMATVERSIONS']
-      })
+      if (attributes['METHOD'] !== 'NONE') {
+        setCompatibleVersionOfKey(params, attributes)
+        segment.key = new Key({
+          method: attributes['METHOD'],
+          uri: attributes['URI'],
+          iv: attributes['IV'],
+          format: attributes['KEYFORMAT'],
+          formatVersion: attributes['KEYFORMATVERSIONS']
+        })
+      }
     }
     else if (name === 'EXT-X-MAP') {
       logger.fatal('Prefetch segments must not be advertised with an EXT-X-MAP tag.')
