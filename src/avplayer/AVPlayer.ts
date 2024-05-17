@@ -467,6 +467,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           this.options.container.removeChild(this.canvas)
           this.canvas = null
         }
+
+        await this.stop()
+
         this.fire(eventType.ENDED)
       }
     }
@@ -1393,6 +1396,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     logger.info(`call stop, taskId: ${this.taskId}`)
 
     if (this.status === AVPlayerStatus.STOPPED) {
+      logger.warn(`player has already stopped, taskId: ${this.taskId}`)
       return
     }
 
@@ -1780,6 +1784,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     logger.info(`call destroy, taskId: ${this.taskId}`)
 
     if (this.status === AVPlayerStatus.DESTROYED) {
+      logger.warn(`player has already destroyed, taskId: ${this.taskId}`)
       return
     }
 
