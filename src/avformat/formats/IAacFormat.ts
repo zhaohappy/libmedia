@@ -37,7 +37,6 @@ import { addAVPacketData } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import ADTS2RawFilter from '../bsf/aac/ADTS2RawFilter'
 import * as array from 'common/util/array'
 import { MPEG4Channels, MPEG4SamplingFrequencies, avCodecParameters2Extradata } from '../codecs/aac'
 
@@ -52,10 +51,7 @@ export default class IAacFormat extends IFormat {
 
   public type: AVFormat = AVFormat.AAC
 
-  private parser: ADTS2RawFilter
-
   private frameType: FrameType
-  private currentBuffer: Uint8Array
   private fileSize: int64
   private currentPts: int64
 
