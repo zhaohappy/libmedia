@@ -13,20 +13,22 @@ libmedia 是一个用于在 Web 平台上处理多媒体内容（如音频、视
 
 目前想在 Web 平台上处理音视频使用 ffmpeg.wasm 项目是一个不错的选择；但其还是有很多缺陷：
 
-1. 首当其冲的是其效率问题，我曾经试过使用 ffmpeg.wasm 将一个 200M 的文件从 flv 格式转成 mp4 格式使用了 10 分钟（同样的文件使用 libmedia 只需要 1 秒），这还不涉及编码层的转换，若是重新解码编码那更慢了。这完全无法基于其做出一个体验很好的项目；
+1. 首当其冲的是内存占用问题，ffmpeg.wasm 会将需要处理的文件数据先整个写入内存，处理一个大一点的文件通常会 OOM。这完全无法基于其做出一个体验很好的项目；
 
 2. ffmpeg.wasm 提供的 API 基于 native ffmpeg 命令行，没有 ffmpeg API 级别的接口，大大限制了灵活性；
 
 3. 编译输出文件太大，影响加载速度并且你很难去优化它；
 
-4. 只能在开启 SharedArrayBuffer 的页面上使用，目前绝大多数网站都是没有支持 SharedArrayBuffer 环境的；
+4. 只能在开启 SharedArrayBuffer 的页面上使用，目前绝大多数网站都是没有支持 SharedArrayBuffer 环境的；提供的单线程版性能又降低一大截；
+
+5. 无法和 Web 生态进行有效的结合，比如无法使用 WebCodecs，无法处理流式来源的数据；Web 上基本都是异步 IO；
 
 
 libmedia 就是为了尝试解决上面的问题而设计的。
 
 libmedia 有 TypeScript 模块和 WebAssembly 模块，并且设计理念上以 TypeScript 模块为主导；我们将音视频的封装解封装层放在 TypeScript 模块实现，这样就能使用异步 IO 来处理各种来源的流，规避 ffmpeg 中的同步 IO 所带来的问题。这样可以让整个系统在非 SharedArrayBuffer 环境上运行；
 
-解码编码模块放入 WebAssembly 模块中，这些模块可以从 ffmpeg 的 libavcodec 模块中编译而来，并且将每种解码器和编码器编译成单独的 wasm 模块，解决编译产物太大的问题，使用的时候只需要去加载要使用的模块。
+解码编码模块放入 WebAssembly 模块中，这些模块可以从 ffmpeg 的 libavcodec 模块中编译而来，并且将每种解码器和编码器编译成单独的 wasm 模块，解决编译产物太大的问题，使用的时候只需要去加载要使用的模块。同时编解码模块可以使用 WebCodecs。
 
 libmedia 的 API 设计上参照 ffmpeg 设计，很多数据结构概念都是一致的，所以你能看见诸如 ```AVStream```、```AVCodecParameters```、```AVFormatContext```、```AVPacket```、```AVFrame``` 等数据结构。ffmpeg 作为音视频行业事实上的标准，其设计是非常优秀的；照着设计直接得到优秀的设计模式，还减少开发者学习理解的难度，毕竟做音视频开发的多少都对 ffmpeg 学习过；当然最主要的原因是我们需要让这些数据可以在 TypeScript 模块和 WebAssembly 模块中都可以进行读写操作，其在内存上的布局和 ffmpeg 保持一致是前提。
 
