@@ -48,5 +48,7 @@ export const enum AVFormat {
   AAC,
   WAV,
   FLAC,
-  M4A = MOV
+  M4A = MOV,
+
+  WEBVTT
 }
