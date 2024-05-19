@@ -128,7 +128,7 @@ export default class WebVideoDecoder {
     this.decoder.configure({
       codec: getVideoCodec(this.parameters, buffer),
       description: this.extradata,
-      hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true) as HardwareAcceleration
+      hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true)
     })
 
     this.keyframeRequire = true
@@ -147,7 +147,7 @@ export default class WebVideoDecoder {
       codedWidth: parameters.width,
       codedHeight: parameters.height,
       description: (parameters.bitFormat !== BitFormat.ANNEXB) ? this.extradata : undefined,
-      hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true) as HardwareAcceleration
+      hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true)
     }
 
     if (!config.description) {

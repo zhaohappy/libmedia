@@ -25,7 +25,7 @@
 
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import AVPacket from 'avutil/struct/avpacket'
-import AVFrame, { AVFramePool } from 'avutil/struct/avframe'
+import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import { createAVFrame, destroyAVFrame } from 'avutil/util/avframe'
@@ -44,7 +44,7 @@ export default class WasmAudioDecoder {
 
   private decoder: WebAssemblyRunner
 
-  private frame: pointer<AVFrame>
+  private frame: pointer<AVFrameRef> | pointer<AVFrame>
 
   constructor(options: WasmAudioDecoderOptions) {
     this.options = options
@@ -64,7 +64,7 @@ export default class WasmAudioDecoder {
         this.options.onReceiveFrame(this.frame)
       }
       else {
-        this.options.avframePool ? this.options.avframePool.release(this.frame) : destroyAVFrame(this.frame)
+        this.options.avframePool ? this.options.avframePool.release(this.frame as pointer<AVFrameRef>) : destroyAVFrame(this.frame)
       }
 
       this.frame = nullptr
@@ -123,7 +123,7 @@ export default class WasmAudioDecoder {
     this.decoder = null
 
     if (this.frame) {
-      this.options.avframePool ? this.options.avframePool.release(this.frame) : destroyAVFrame(this.frame)
+      this.options.avframePool ? this.options.avframePool.release(this.frame as pointer<AVFrameRef>) : destroyAVFrame(this.frame)
       this.frame = nullptr
     }
   }

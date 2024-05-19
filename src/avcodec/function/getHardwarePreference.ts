@@ -25,13 +25,13 @@
 
 import browser from 'common/util/browser'
 
-export function getHardwarePreference(enable: boolean) {
+export function getHardwarePreference(enable: boolean): HardwareAcceleration {
   if (enable) {
     if (!browser.chrome || browser.checkVersion(browser.majorVersion, '94', true)) {
       return 'prefer-hardware'
     }
     else {
-      return 'allow'
+      return 'allow' as HardwareAcceleration
     }
   }
   else {
@@ -39,7 +39,7 @@ export function getHardwarePreference(enable: boolean) {
       return 'prefer-software'
     }
     else {
-      return 'deny'
+      return 'deny' as HardwareAcceleration
     }
   }
 }

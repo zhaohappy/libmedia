@@ -24,7 +24,7 @@
  */
 
 import AVPacket from 'avutil/struct/avpacket'
-import AVFrame, { AVFramePool } from 'avutil/struct/avframe'
+import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
@@ -79,7 +79,7 @@ export default class WasmVideoDecoder {
 
   private decoder: WebAssemblyRunner
 
-  private frame: pointer<AVFrame>
+  private frame: pointer<AVFrame> | pointer<AVFrameRef>
 
   private parameters: pointer<AVCodecParameters>
 
@@ -101,7 +101,7 @@ export default class WasmVideoDecoder {
         this.options.onReceiveFrame(this.frame)
       }
       else {
-        this.options.avframePool ? this.options.avframePool.release(this.frame) : destroyAVFrame(this.frame)
+        this.options.avframePool ? this.options.avframePool.release(this.frame as pointer<AVFrameRef>) : destroyAVFrame(this.frame)
       }
 
       this.frame = nullptr
@@ -161,7 +161,7 @@ export default class WasmVideoDecoder {
     this.decoder = null
 
     if (this.frame) {
-      this.options.avframePool ? this.options.avframePool.release(this.frame) : destroyAVFrame(this.frame)
+      this.options.avframePool ? this.options.avframePool.release(this.frame as pointer<AVFrameRef>) : destroyAVFrame(this.frame)
       this.frame = nullptr
     }
 

@@ -52,13 +52,14 @@ export default class AVPacketPoolImpl implements AVPacketPool {
 
       avpacket.refCount = 1
 
-      if (defined(ENABLE_THREADS) && this.mutex) {
+      if (defined(ENABLE_THREADS)) {
+        assert(this.mutex)
         mutex.lock(this.mutex)
       }
 
       this.list.push(avpacket)
 
-      if (defined(ENABLE_THREADS) && this.mutex) {
+      if (defined(ENABLE_THREADS)) {
         mutex.unlock(this.mutex)
       }
     }

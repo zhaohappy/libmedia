@@ -169,6 +169,6 @@ export class AVPacketRef extends AVPacket {
 }
 
 export interface AVPacketPool {
-  alloc: () => pointer<AVPacket>
-  release: (avpacket: pointer<AVPacket>) => void
+  alloc: () => pointer<AVPacketRef>
+  release: (avpacket: pointer<AVPacketRef>) => void
 }

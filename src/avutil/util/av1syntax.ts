@@ -43,7 +43,7 @@ export function uvlc(bitReader: BitReader) {
     leadingZeros++
   }
   if (leadingZeros >= 32) {
-    return ( 1 << 32 ) - 1
+    return (1 << 32) - 1
   }
   const value =	f(bitReader, leadingZeros)
   return value + (1 << leadingZeros) - 1

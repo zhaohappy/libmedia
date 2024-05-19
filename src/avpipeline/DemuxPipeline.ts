@@ -82,7 +82,7 @@ type SelfTask = DemuxTaskOptions & {
   ioReader: IOReader
   buffer: pointer<uint8>
 
-  cacheAVPackets: Map<number, pointer<AVPacket>[]>
+  cacheAVPackets: Map<number, pointer<AVPacketRef>[]>
   cacheRequests: Map<number, RpcMessage>
 
   realFormat: AVFormat

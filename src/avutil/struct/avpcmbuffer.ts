@@ -62,6 +62,6 @@ export class AVPCMBufferRef extends AVPCMBuffer {
 }
 
 export interface AVPCMBufferPool {
-  alloc: () => pointer<AVPCMBuffer>
-  release: (buffer: pointer<AVPCMBuffer>) => void
+  alloc: () => pointer<AVPCMBufferRef>
+  release: (buffer: pointer<AVPCMBufferRef>) => void
 }

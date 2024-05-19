@@ -715,6 +715,6 @@ export class AVFrameRef extends AVFrame {
 }
 
 export interface AVFramePool {
-  alloc: () => pointer<AVFrame>
-  release: (avframe: pointer<AVFrame>) => void
+  alloc: () => pointer<AVFrameRef>
+  release: (avframe: pointer<AVFrameRef>) => void
 }

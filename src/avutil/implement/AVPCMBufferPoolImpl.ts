@@ -50,13 +50,14 @@ export default class AVPCMBufferPoolImpl implements AVPCMBufferPool {
 
       buffer.refCount = 1
 
-      if (defined(ENABLE_THREADS) && this.mutex) {
+      if (defined(ENABLE_THREADS)) {
+        assert(this.mutex)
         mutex.lock(this.mutex)
       }
 
       this.list.push(buffer)
 
-      if (defined(ENABLE_THREADS) && this.mutex) {
+      if (defined(ENABLE_THREADS)) {
         mutex.unlock(this.mutex)
       }
     }

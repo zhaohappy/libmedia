@@ -72,7 +72,7 @@ type SelfTask = AudioRenderTaskOptions & {
   stretchpitcher: Map<int32, StretchPitcher>
   outPCMBuffer: AVPCMBuffer
 
-  waitPCMBuffer: pointer<AVPCMBuffer>
+  waitPCMBuffer: pointer<AVPCMBufferRef>
   waitPCMBufferPos: int32
   waitAVFrame: pointer<AVFrameRef>
 

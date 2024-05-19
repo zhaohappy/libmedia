@@ -61,25 +61,6 @@ export default class WebVideoEncoder {
     this.options.onError(error)
   }
 
-  private getHardwarePreference(enable: boolean) {
-    if (enable) {
-      if (browser.checkVersion(browser.majorVersion, '94', true)) {
-        return 'prefer-hardware'
-      }
-      else {
-        return 'allow'
-      }
-    }
-    else {
-      if (browser.checkVersion(browser.majorVersion, '94', true)) {
-        return 'prefer-software'
-      }
-      else {
-        return 'deny'
-      }
-    }
-  }
-
   public open(parameters: AVCodecParameters) {
 
   }

@@ -23,15 +23,10 @@
  *
  */
 
-import { ImageRenderOptions } from './ImageRender'
 import vertexSource from './webgpu/wgsl/vertex.wgsl'
 import externalFragmentSource from './webgpu/wgsl/fragment/external.wgsl'
-import WebGPURender from './WebGPURender'
+import WebGPURender, { WebGPURenderOptions } from './WebGPURender'
 import AVFrame from 'avutil/struct/avframe'
-
-export interface WebGPURenderOptions extends ImageRenderOptions {
-  powerPreference?: GPUPowerPreference
-}
 
 export default class WebGPUExternalRender extends WebGPURender {
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions) {

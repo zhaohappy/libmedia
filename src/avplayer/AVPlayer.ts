@@ -289,7 +289,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             codedWidth: videoStream.codecpar.width,
             codedHeight: videoStream.codecpar.height,
             description: extradata,
-            hardwareAcceleration: getHardwarePreference(true) as HardwareAcceleration
+            hardwareAcceleration: getHardwarePreference(true)
           })
 
           if (!isWebcodecSupport.supported) {
@@ -1261,7 +1261,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.lastStatus = this.status
       this.status = AVPlayerStatus.SEEKING
 
-      const timestampBitInt = static_cast<int64>(timestamp)
+      const timestampBigInt = static_cast<int64>(timestamp)
       if (defined(ENABLE_MSE) && this.useMSE) {
         await AVPlayer.MSEThread.beforeSeek(this.taskId)
       }
@@ -1275,16 +1275,16 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       let seekedTimestamp = -1n
 
       if (defined(ENABLE_PROTOCOL_HLS) && (this.ext === 'm3u8' || this.ext === 'm3u')) {
-        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBitInt, AVSeekFlags.TIMESTAMP)
+        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBigInt, AVSeekFlags.TIMESTAMP)
       }
       else if (defined(ENABLE_PROTOCOL_DASH) && this.ext === 'mpd') {
-        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBitInt, AVSeekFlags.TIMESTAMP)
+        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBigInt, AVSeekFlags.TIMESTAMP)
         if (this.subTaskId) {
-          await AVPlayer.DemuxerThread.seek(this.subTaskId, timestampBitInt, AVSeekFlags.TIMESTAMP)
+          await AVPlayer.DemuxerThread.seek(this.subTaskId, timestampBigInt, AVSeekFlags.TIMESTAMP)
         }
       }
       else {
-        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBitInt, AVSeekFlags.FRAME)
+        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBigInt, AVSeekFlags.FRAME)
       }
 
       if (seekedTimestamp >= 0n) {
@@ -1296,7 +1296,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       if (defined(ENABLE_MSE) && this.useMSE) {
         if (seekedTimestamp >= 0n) {
-          const time = await AVPlayer.MSEThread.afterSeek(this.taskId, seekedTimestamp > timestampBitInt ? seekedTimestamp : timestampBitInt)
+          const time = await AVPlayer.MSEThread.afterSeek(this.taskId, seekedTimestamp > timestampBigInt ? seekedTimestamp : timestampBigInt)
           if (this.video) {
             this.video.currentTime = time
           }
@@ -1326,18 +1326,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           await Promise.all([
             AVPlayer.AudioRenderThread?.syncSeekTime(
               this.taskId,
-              seekedTimestamp > timestampBitInt ? seekedTimestamp : timestampBitInt,
+              seekedTimestamp > timestampBigInt ? seekedTimestamp : timestampBigInt,
               maxQueueLength
             ),
             AVPlayer.VideoRenderThread?.syncSeekTime(
               this.taskId,
-              seekedTimestamp > timestampBitInt ? seekedTimestamp : timestampBitInt,
+              seekedTimestamp > timestampBigInt ? seekedTimestamp : timestampBigInt,
               maxQueueLength
             ),
           ])
           await Promise.all([
-            AVPlayer.AudioRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestampBitInt ? seekedTimestamp : timestampBitInt),
-            AVPlayer.VideoRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestampBitInt ? seekedTimestamp : timestampBitInt),
+            AVPlayer.AudioRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestampBigInt ? seekedTimestamp : timestampBigInt),
+            AVPlayer.VideoRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestampBigInt ? seekedTimestamp : timestampBigInt),
           ])
         }
         else {
@@ -1577,8 +1577,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
       }
     }
-    if (this.video) {
+    else if (this.video) {
       this.video.volume = this.volume
+    }
+    else if (this.audio) {
+      this.audio.volume = this.volume
     }
 
     logger.info(`player call setVolume, set ${volume}, used ${this.volume}, taskId: ${this.taskId}`)

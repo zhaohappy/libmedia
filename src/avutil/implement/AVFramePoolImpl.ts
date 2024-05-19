@@ -53,13 +53,14 @@ export default class AVFramePoolImpl implements AVFramePool {
 
       avframe.refCount = 1
 
-      if (defined(ENABLE_THREADS) && this.mutex) {
+      if (defined(ENABLE_THREADS)) {
+        assert(this.mutex)
         mutex.lock(this.mutex)
       }
 
       this.list.push(avframe)
 
-      if (defined(ENABLE_THREADS) && this.mutex) {
+      if (defined(ENABLE_THREADS)) {
         mutex.unlock(this.mutex)
       }
     }
