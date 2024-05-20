@@ -128,7 +128,7 @@ int decode_packet(const AVPacket* packet) {
 
 EM_PORT_API(int) decoder_open(AVCodecParameters* codecpar, AVRational* time_base, int thread_count) {
   // setLogLevel(DEBUG);
-  return open_codec_context(&dec_ctx, CODEC_ID, codecpar, time_base, thread_count);
+  return open_codec_context(&dec_ctx, codecpar->codec_id, codecpar, time_base, thread_count);
 }
 
 EM_PORT_API(int) decoder_decode(AVPacket* packet) {

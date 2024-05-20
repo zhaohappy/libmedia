@@ -13,6 +13,7 @@ sh $NOW_PATH/build-decoder.sh opus 0 0
 sh $NOW_PATH/build-decoder.sh flac 0 0
 sh $NOW_PATH/build-decoder.sh vorbis 0 0
 sh $NOW_PATH/build-decoder-speex.sh 0 0
+sh $NOW_PATH/build-decoder-pcm.sh pcm 0 0
 
 sh $NOW_PATH/build-decoder.sh h264 0 1
 sh $NOW_PATH/build-decoder.sh hevc 0 1
@@ -28,6 +29,7 @@ sh $NOW_PATH/build-decoder.sh opus 0 1
 sh $NOW_PATH/build-decoder.sh flac 0 1
 sh $NOW_PATH/build-decoder.sh vorbis 0 1
 sh $NOW_PATH/build-decoder-speex.sh 0 1
+sh $NOW_PATH/build-decoder-pcm.sh pcm 0 1
 
 # sh $NOW_PATH/build-decoder.sh h264 1 0
 

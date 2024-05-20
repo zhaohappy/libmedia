@@ -43,6 +43,11 @@
     "build-encode-mpeg4": "sh ./build/build-encoder.sh mpeg4",
     "build-encode-aac": "sh ./build/build-encoder.sh aac",
     "build-encode-mp3": "sh ./build/build-encoder.sh mp3",
+    "build-decode-pcm": "sh ./build/build-decoder-pcm.sh",
+
+    "build-ffmpeg-pcm": "sh ./build/build-ffmpeg-decoder-pcm.sh",
+    "build-ffmpeg-pcm-atomic": "sh ./build/build-ffmpeg-decoder-pcm.sh 0 1",
+
     "build-ffmpeg-util": "sh ./build/build-ffmpeg-util.sh",
     "build-ffmpeg-util-atomic": "sh ./build/build-ffmpeg-util.sh 0 1",
     "build-ffmpeg-util-simd": "sh ./build/build-ffmpeg-util.sh 1 1",
