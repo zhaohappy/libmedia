@@ -44,7 +44,7 @@ export default class WasmAudioDecoder {
 
   private decoder: WebAssemblyRunner
 
-  private frame: pointer<AVFrameRef> | pointer<AVFrame>
+  private frame: pointer<AVFrame>
 
   constructor(options: WasmAudioDecoderOptions) {
     this.options = options

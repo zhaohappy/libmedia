@@ -78,10 +78,18 @@ export function getAVFrameDefault(frame: pointer<AVFrame>) {
   frame.pts = NOPTS_VALUE_BIGINT
   frame.pktDts = NOPTS_VALUE_BIGINT
   frame.bestEffortTimestamp = NOPTS_VALUE_BIGINT
-  frame.pktDuration = 0n
-  frame.pktPos = NOPTS_VALUE_BIGINT
-  frame.pktSize = -1
-  frame.keyFrame = 1
+
+  if (defined(API_PKT_DURATION)) {
+    frame.pktDuration = 0n
+  }
+  if (defined(API_FRAME_PKT)) {
+    frame.pktPos = NOPTS_VALUE_BIGINT
+    frame.pktSize = -1
+  }
+  if (defined(API_FRAME_KEY)) {
+    frame.keyFrame = 1
+  }
+  
   frame.sampleAspectRatio.num = 0
   frame.sampleAspectRatio.den = 1
   frame.format = -1
@@ -228,7 +236,9 @@ export function unrefAVFrame(frame: pointer<AVFrame>) {
 }
 
 export function copyAVFrameProps(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
-  dst.keyFrame = src.keyFrame
+  if (defined(API_FRAME_KEY)) {
+    dst.keyFrame = src.keyFrame
+  }
   dst.pictType = src.pictType
   dst.sampleAspectRatio = src.sampleAspectRatio
   dst.cropTop = src.cropTop
@@ -237,20 +247,33 @@ export function copyAVFrameProps(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
   dst.cropRight = src.cropRight
   dst.pts = src.pts
   dst.repeatPict = src.repeatPict
-  dst.interlacedFrame = src.interlacedFrame
-  dst.topFieldFirst = src.topFieldFirst
-  dst.paletteHasChanged = src.paletteHasChanged
+  if (defined(API_INTERLACED_FRAME)) {
+    dst.interlacedFrame = src.interlacedFrame
+    dst.topFieldFirst = src.topFieldFirst
+  }
+  if (defined(API_PALETTE_HAS_CHANGED)) {
+    dst.paletteHasChanged = src.paletteHasChanged
+  }
   dst.sampleRate = src.sampleRate
   dst.opaque = src.opaque
   dst.pktDts = src.pktDts
-  dst.pktPos = src.pktPos
-  dst.pktSize = src.pktSize
-  dst.pktDuration = src.pktDuration
-  dst.reorderedOpaque = src.reorderedOpaque
+  if (defined(API_FRAME_PKT)) {
+    dst.pktPos = src.pktPos
+    dst.pktSize = src.pktSize
+  }
+  if (defined(API_PKT_DURATION)) {
+    dst.pktDuration = src.pktDuration
+  }
+  if (defined(API_REORDERED_OPAQUE)) {
+    dst.reorderedOpaque = src.reorderedOpaque
+  }
   dst.quality = src.quality
   dst.bestEffortTimestamp = src.bestEffortTimestamp
-  dst.codedPictureNumber = src.codedPictureNumber
-  dst.displayPictureNumber = src.displayPictureNumber
+  if (defined(API_FRAME_PICTURE_NUMBER)) {
+    dst.codedPictureNumber = src.codedPictureNumber
+    dst.displayPictureNumber = src.displayPictureNumber
+  }
+  
   dst.flags = src.flags
   dst.decodeErrorFlags = src.decodeErrorFlags
   dst.colorPrimaries = src.colorPrimaries

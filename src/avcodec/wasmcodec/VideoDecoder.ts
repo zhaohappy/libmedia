@@ -79,7 +79,7 @@ export default class WasmVideoDecoder {
 
   private decoder: WebAssemblyRunner
 
-  private frame: pointer<AVFrame> | pointer<AVFrameRef>
+  private frame: pointer<AVFrame>
 
   private parameters: pointer<AVCodecParameters>
 
