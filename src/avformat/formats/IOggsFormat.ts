@@ -195,7 +195,7 @@ export default class IOggFormat extends IFormat {
         const stream = formatContext.createStream()
         stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
         stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_OPUS
-        
+
         stream.codecpar.sampleRate = idPage.sampleRate
         stream.codecpar.chLayout.nbChannels = idPage.channels
         if (defined(API_OLD_CHANNEL_LAYOUT)) {
@@ -238,7 +238,7 @@ export default class IOggFormat extends IFormat {
         const stream = formatContext.createStream()
         stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
         stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_VORBIS
-        
+
         stream.codecpar.sampleRate = idPage.sampleRate
         stream.codecpar.chLayout.nbChannels = idPage.channels
         if (defined(API_OLD_CHANNEL_LAYOUT)) {
@@ -364,7 +364,7 @@ export default class IOggFormat extends IFormat {
         const word = await formatContext.ioReader.peekString(4)
         if (word === 'OggS') {
           pos = formatContext.ioReader.getPos()
-          
+
           this.page.reset()
           await this.page.read(formatContext.ioReader)
           lastGranulePosition = this.page.granulePosition

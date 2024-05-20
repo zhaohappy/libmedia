@@ -219,7 +219,7 @@ export default class IAacFormat extends IFormat {
             await formatContext.ioReader.skip(1)
             continue
           }
-         
+
           await formatContext.ioReader.skip(aacFrameLength)
           let count = 0
 
@@ -265,11 +265,11 @@ export default class IAacFormat extends IFormat {
       if (flags & AVSeekFlags.BYTE) {
 
         const size = await formatContext.ioReader.fileSize()
-  
+
         if (size <= 0n) {
           return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
         }
-  
+
         if (timestamp < 0n) {
           timestamp = 0n
         }
@@ -277,7 +277,7 @@ export default class IAacFormat extends IFormat {
           timestamp = size
         }
         await formatContext.ioReader.seek(timestamp)
-  
+
         if (!(flags & AVSeekFlags.ANY)) {
           await this.syncFrame(formatContext)
 

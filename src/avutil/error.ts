@@ -37,3 +37,5 @@ export const INVALID_OPERATE = -5
 export const EAGAIN = -6
 
 export const EOF = -7
+
+export const CODEC_NOT_SUPPORT = -8

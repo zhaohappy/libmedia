@@ -147,14 +147,14 @@ export default class AVCodecParameters {
    * @deprecated use ch_layout
    */
   @ignore(!defined(API_OLD_CHANNEL_LAYOUT))
-    channelLayout: uint64 = 0n
+  channelLayout: uint64 = 0n
 
   /**
    * Audio only. The number of audio channels.
    * @deprecated use ch_layout.nb_channels
    */
   @ignore(!defined(API_OLD_CHANNEL_LAYOUT))
-    channels: int32 = NOPTS_VALUE
+  channels: int32 = NOPTS_VALUE
 
   /**
    * Audio only. The number of audio samples per second.

@@ -173,7 +173,7 @@ export default class IWebVttFormat extends IFormat {
     catch (error) {
       return 0
     }
-    
+
   }
 
   public async readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {

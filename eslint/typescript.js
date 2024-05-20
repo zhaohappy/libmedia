@@ -55,7 +55,12 @@ const eslintConfig = {
             MemberExpression: 1,
             ArrayExpression: 1,
             ObjectExpression: 1,
-            ImportDeclaration: 1
+            ImportDeclaration: 1,
+            ignoredNodes: [
+                'FunctionExpression > .params[decorators.length > 0]',
+                'FunctionExpression > .params > :matches(Decorator, :not(:first-child))',
+                'ClassBody.body > PropertyDefinition[decorators.length > 0] > .key'
+            ],
         }],
         /**
          * 二元运算符左右两侧必须有空格

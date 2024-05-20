@@ -275,18 +275,14 @@ export default class IFlacFormat extends IFormat {
 
       if (!this.context.cacheBuffer) {
         this.context.cachePos = formatContext.ioReader.getPos()
-        this.context.cacheBuffer = await formatContext.ioReader.readBuffer(
-          Math.min(PACKET_SIZE, static_cast<int32>(this.context.fileSize - formatContext.ioReader.getPos()))
-        )
+        this.context.cacheBuffer = await formatContext.ioReader.readBuffer(Math.min(PACKET_SIZE, static_cast<int32>(this.context.fileSize - formatContext.ioReader.getPos())))
       }
       else if (this.context.cacheBuffer.length < 17) {
         this.context.cacheBuffer = concatTypeArray(
           Uint8Array,
           [
             this.context.cacheBuffer,
-            await formatContext.ioReader.readBuffer(
-              Math.min(PACKET_SIZE, static_cast<int32>(this.context.fileSize - formatContext.ioReader.getPos()))
-            )
+            await formatContext.ioReader.readBuffer(Math.min(PACKET_SIZE, static_cast<int32>(this.context.fileSize - formatContext.ioReader.getPos())))
           ]
         )
       }
@@ -323,9 +319,7 @@ export default class IFlacFormat extends IFormat {
           Uint8Array,
           [
             this.context.cacheBuffer,
-            await formatContext.ioReader.readBuffer(
-              Math.min(PACKET_SIZE, static_cast<int32>(this.context.fileSize - formatContext.ioReader.getPos()))
-            )
+            await formatContext.ioReader.readBuffer(Math.min(PACKET_SIZE, static_cast<int32>(this.context.fileSize - formatContext.ioReader.getPos())))
           ]
         )
       }
@@ -371,9 +365,7 @@ export default class IFlacFormat extends IFormat {
             Uint8Array,
             [
               this.context.cacheBuffer,
-              await formatContext.ioReader.readBuffer(
-                Math.min(PACKET_SIZE, static_cast<int32>(this.context.fileSize - formatContext.ioReader.getPos()))
-              )
+              await formatContext.ioReader.readBuffer(Math.min(PACKET_SIZE, static_cast<int32>(this.context.fileSize - formatContext.ioReader.getPos())))
             ]
           )
         }
@@ -400,7 +392,7 @@ export default class IFlacFormat extends IFormat {
       avpacket.dts = avpacket.pts = this.context.frameInfo.isVarSize
         ? this.context.frameInfo.frameOrSampleNum
         : this.context.frameInfo.frameOrSampleNum * static_cast<int64>(this.context.frameInfo.blocksize)
-      
+
       return 0
     }
     catch (error) {

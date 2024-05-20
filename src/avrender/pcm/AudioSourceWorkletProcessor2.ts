@@ -220,11 +220,11 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
   }
 
   public process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: { averaging: Float32Array; output: Float32Array }): boolean {
-    
+
     if (this.stopped) {
       return false
     }
-    
+
     if (this.backBuffer && !this.pause) {
       if (this.backBufferOffset === BUFFER_LENGTH) {
         if (this.ended) {

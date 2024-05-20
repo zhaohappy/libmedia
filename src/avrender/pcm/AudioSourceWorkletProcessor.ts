@@ -187,7 +187,7 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
     if (this.stopped) {
       return false
     }
-    
+
     if (this.backBuffer && !this.pause) {
       if (this.backBufferOffset === BUFFER_LENGTH) {
         if (this.ended) {

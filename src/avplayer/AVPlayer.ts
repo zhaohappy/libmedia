@@ -1459,7 +1459,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.videoDecoder2VideoRenderChannel = null
     this.audioDecoder2AudioRenderChannel = null
     this.audioRender2AudioWorkletChannel = null
-    
+
     this.statsController.stop()
     if (this.jitterBufferController) {
       this.jitterBufferController.stop()
