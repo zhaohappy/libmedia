@@ -37,6 +37,8 @@ declare const ENABLE_DEMUXER_AAC: boolean
 
 declare const ENABLE_DEMUXER_FLAC: boolean
 
+declare const ENABLE_DEMUXER_WAV: boolean
+
 declare const ENABLE_MSE: boolean
 
 declare const ENABLE_WEBGPU: boolean

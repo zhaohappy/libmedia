@@ -511,6 +511,11 @@
             getWasm: (type, codecId) => {
               switch (type) {
                 case 'decoder': {
+
+                  if (codecId >= 65536 && codecId <= 65572) {
+                    return '../dist/decode/pcm-atomic.wasm'
+                  }
+
                   switch (codecId) {
                     // H264
                     case 27:
@@ -542,8 +547,10 @@
                     // vorbis
                     case 86021:
                       return '../dist/decode/vorbis-atomic.wasm'
+                    // vp8
                     case 139:
                       return '../dist/decode/vp8-atomic.wasm'
+                    // vp9
                     case 167:
                       return '../dist/decode/vp9-atomic.wasm'
                     default:
@@ -642,6 +649,10 @@
 
         document.querySelector('#loading-mask').style.display = 'block'
 
+        if (slider) {
+          slider.currentTime = 0
+        }
+
         player.load(document.querySelector('#file').files[0] ? document.querySelector('#file').files[0] : urlComponent.url).then(() => {
           
           if (slider) {
@@ -735,10 +746,10 @@
           if (slider) {
             slider.currentTime = slider.duration
           }
-          player.destroy().then(() => {
-            player = null
-            console.log('player destroy')
-          })
+          // player.destroy().then(() => {
+          //   player = null
+          //   console.log('player destroy')
+          // })
         })
 
         player.on('time', (pts) => {
@@ -794,10 +805,10 @@
             if (slider) {
               slider.currentTime = 0
             }
-            player.destroy().then(() => {
-              player = null
-              console.log('player destroy')
-            })
+            // player.destroy().then(() => {
+            //   player = null
+            //   console.log('player destroy')
+            // })
           })
         }
       }

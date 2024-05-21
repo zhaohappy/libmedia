@@ -129,7 +129,8 @@ const Ext2Format: Record<string, AVFormat> = {
   'mka': AVFormat.MATROSKA,
   'webm': AVFormat.WEBM,
   'aac': AVFormat.AAC,
-  'flac': AVFormat.FLAC
+  'flac': AVFormat.FLAC,
+  'wav': AVFormat.WAV
 }
 
 const Ext2IOLoader: Record<string, IOType> = {

@@ -97,6 +97,9 @@
       // 开启支持 flac 解封装格式
       "ENABLE_DEMUXER_FLAC": true,
 
+      // 开启支持 wav 解封装格式
+      "ENABLE_DEMUXER_WAV": true,
+
       // 开启支持 mse 模式
       "ENABLE_MSE": true,
       // webgpu 编译开关
