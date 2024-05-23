@@ -366,7 +366,7 @@ export default class AVFrame {
    *
    * @note The part of the frame intended for display/presentation is further
    * restricted by the @ref cropping "Cropping rectangle".
-   * @{
+   * 
    */
   width: int32 = NOPTS_VALUE
   height: int32 = NOPTS_VALUE

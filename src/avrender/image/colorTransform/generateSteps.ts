@@ -169,7 +169,7 @@ export default function generateSteps(src: ColorSpace, dst: ColorSpace, options:
     /**
      * 下面的步骤是把 RGB 转到目标颜色空间，判断是否需要
      * 片段着色器输出的颜色应该是 RGB 非线性空间？（此处存疑，未找到相关资料，但找到的其他类似项目均未转换为线性空间，显示器会根据输出做相应的电光转换？） 全色域颜色
-     * 但如果后续需要处理颜色（如混合、差值），需要将非线性空间转换为线性空间，在线性空间中处理
+     * 但如果后续需要处理颜色（如混合、插值），需要将非线性空间转换为线性空间，在线性空间中处理
      */
     if (!options.outputRGB) {
       const dstMatrixIsIdentityOrYcgco = dst.getMatrixId() === AVColorSpace.AVCOL_SPC_YCOCG
