@@ -355,6 +355,14 @@ export const enum MATROSKALacingMode {
   FIXED_SIZE = 3
 }
 
+export const enum MATROSKABlockAddIdType {
+  DEFAULT = 0,
+  OPAQUE = 1,
+  ITU_T_T35 = 4,
+  DVCC = 0x64766343,
+  DVVC = 0x64767643
+}
+
 export const MkvTag2CodecId: Record<string, AVCodecID> = {
   'A_AAC': AVCodecID.AV_CODEC_ID_AAC,
   'A_AC3': AVCodecID.AV_CODEC_ID_AC3,

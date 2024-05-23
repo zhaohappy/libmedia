@@ -25,7 +25,7 @@
 
 import { AVIFormatContext } from '../AVFormatContext'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
+import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import { IOError } from 'common/io/error'
 import * as errorType from 'avutil/error'
@@ -33,12 +33,12 @@ import IFormat from './IFormat'
 import { AVFormat } from '../avformat'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, createAVPacket } from 'avutil/util/avpacket'
+import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/util/avpacket'
 import AVStream from '../AVStream'
 import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { EBMLId, MATROSKALacingMode, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
+import { EBMLId, MATROSKABlockAddIdType, MATROSKALacingMode, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
 import { IOFlags } from 'common/io/flags'
-import { ClusterIndex, MatroskaContext, TrackEntry } from './matroska/type'
+import { Additions, ClusterIndex, MatroskaContext, TrackEntry } from './matroska/type'
 import { EbmlSyntaxAttachments, EbmlSyntaxBlockGroup, EbmlSyntaxChapters, EbmlSyntaxCluster, EbmlSyntaxCues, EbmlSyntaxHeadSeek,
   EbmlSyntaxHeader, EbmlSyntaxInfo, EbmlSyntaxTags, EbmlSyntaxTracks, parseEbmlSyntax, readEbmlId, readVInt, readVInt64
 } from './matroska/imatroska'
@@ -56,6 +56,7 @@ import { avRescaleQ } from 'avutil/util/rational'
 import BufferReader from 'common/io/BufferReader'
 import findStreamByTrackUid from './matroska/function/findStreamByTrackUid'
 import findStreamByTrackNumber from './matroska/function/findStreamByTrackNumber'
+import * as intwrite from 'avutil/util/intwrite'
 
 export default class IMatroskaFormat extends IFormat {
 
@@ -368,16 +369,43 @@ export default class IMatroskaFormat extends IFormat {
     return 0
   }
 
+  private parseAdditions(avpacket: pointer<AVPacket>, additions: Additions) {
+    for (let i = 0; i < additions.entry.length; i++) {
+      const addition = additions.entry[i]
+      if (addition.additional?.size) {
+        if (addition.additionalId === MATROSKABlockAddIdType.ITU_T_T35) {
+          // TODO handle ITU_T_T35
+          logger.warn('ITU_T_T35 not support now')
+        }
+
+        const data = avMalloc(addition.additional.data.length + 8)
+        intwrite.wb64(data, static_cast<uint64>(addition.additionalId))
+        memcpyFromUint8Array(data + 8, addition.additional.data.length, addition.additional.data)
+        addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_MATROSKA_BLOCKADDITIONAL, data, addition.additional.data.length + 8)
+      }
+    }
+  }
+
   @deasync
   private async parseBlock(formatContext: AVIFormatContext, packet: pointer<AVPacket>) {
 
     const buffer = this.context.currentCluster.block?.data || this.context.currentCluster.blockGroup.block.data
-    const basePos = this.context.currentCluster.block?.pos || this.context.currentCluster.blockGroup.block.pos
+    let basePos = this.context.currentCluster.block?.pos
+    if (basePos < 0) {
+      basePos = this.context.currentCluster.blockGroup.block.pos
+    }
 
     let isKey = false
+    let additions: Additions
 
     if (this.context.currentCluster.blockGroup) {
-      isKey = this.context.currentCluster.blockGroup.reference?.length === 0
+      additions = this.context.currentCluster.blockGroup.additions
+      if (!this.context.currentCluster.blockGroup.reference) {
+        isKey = true
+      }
+      else {
+        isKey = this.context.currentCluster.blockGroup.reference.length === 0
+      }
     }
 
     if (!this.blockReader) {
@@ -522,6 +550,10 @@ export default class IMatroskaFormat extends IFormat {
       }
       track.currentDts =  avpacket.dts
 
+      if (additions) {
+        this.parseAdditions(avpacket, additions)
+      }
+
       if (i !== 0) {
         formatContext.interval.packetBuffer.push(avpacket)
       }
@@ -591,6 +623,9 @@ export default class IMatroskaFormat extends IFormat {
         this.context.currentCluster.blockGroup
       )
       await this.parseBlock(formatContext, avpacket)
+      this.context.currentCluster.blockGroup = {
+        block: null
+      }
     }
     else if (id === EBMLId.CUES
       || id === EBMLId.TAGS

@@ -680,7 +680,7 @@ export const EbmlSyntaxBlockGroup: Partial<Record<EBMLId, EbmlSyntax<BlockGroup>
     filedName: 'discardPadding'
   },
   [EBMLId.BLOCK_REFERENCE]: {
-    type: EbmlType.OBJECT,
+    type: EbmlType.SINT64,
     isArray: true,
     filedName: 'reference'
   },
