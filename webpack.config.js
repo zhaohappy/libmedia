@@ -43,6 +43,8 @@ module.exports = (env) => {
     return;
   }
 
+  const configFile = ts.readConfigFile(path.resolve(__dirname, './tsconfig.json'), ts.sys.readFile);
+
   const config = {
     stats: {
       assets: false,
@@ -94,7 +96,7 @@ module.exports = (env) => {
       usedExports: true,
       // minimize: true,
       // legacy release 下编译会报错，关掉这个优化
-      concatenateModules: (env.legacy && env.release) ? false : undefined
+      concatenateModules: ((env.legacy || configFile.config.cheap.defined.ENABLE_THREADS_SPLIT) && env.release) ? false : undefined
     },
     entry: entry,
     output: {
@@ -183,7 +185,6 @@ module.exports = (env) => {
   };
 
   if (!env.transformer) {
-    const configFile = ts.readConfigFile(path.resolve(__dirname, './tsconfig.json'), ts.sys.readFile);
     config.plugins.push(
       new CheapPlugin({
         env: 'browser',
