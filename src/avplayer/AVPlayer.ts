@@ -1050,48 +1050,32 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           })
 
         // 创建一个音频源节点
+        let AudioSource: typeof AudioSourceWorkletNode | typeof AudioSourceBufferNode
         if (support.audioWorklet) {
-          this.audioSourceNode = new AudioSourceWorkletNode(
-            AVPlayer.audioContext,
-            {
-              onEnded: () => {
-                this.onAudioEnded()
-              },
-              onFirstRendered: () => {
-                this.onFirstAudioRendered()
-              },
-              onStutter: () => {
-                this.onStutter()
-              }
-            },
-            {
-              numberOfInputs: 1,
-              numberOfOutputs: 1,
-              outputChannelCount: [stream.codecpar.chLayout.nbChannels]
-            }
-          )
+          AudioSource = AudioSourceWorkletNode
         }
         else {
-          this.audioSourceNode = new AudioSourceBufferNode(
-            AVPlayer.audioContext,
-            {
-              onEnded: () => {
-                this.onAudioEnded()
-              },
-              onFirstRendered: () => {
-                this.onFirstAudioRendered()
-              },
-              onStutter: () => {
-                this.onStutter()
-              }
-            },
-            {
-              numberOfInputs: 1,
-              numberOfOutputs: 1,
-              outputChannelCount: [stream.codecpar.chLayout.nbChannels]
-            }
-          )
+          AudioSource = AudioSourceBufferNode
         }
+        this.audioSourceNode = new AudioSource(
+          AVPlayer.audioContext,
+          {
+            onEnded: () => {
+              this.onAudioEnded()
+            },
+            onFirstRendered: () => {
+              this.onFirstAudioRendered()
+            },
+            onStutter: () => {
+              this.onStutter()
+            }
+          },
+          {
+            numberOfInputs: 1,
+            numberOfOutputs: 1,
+            outputChannelCount: [stream.codecpar.chLayout.nbChannels]
+          }
+        )
 
         if (cheapConfig.USE_THREADS
           && defined(ENABLE_THREADS)
