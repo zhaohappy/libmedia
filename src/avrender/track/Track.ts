@@ -79,7 +79,7 @@ export default class Track {
 
   public setSourceBuffer(sourceBuffer: SourceBuffer) {
     this.sourceBuffer = sourceBuffer
-    this.sourceBuffer.addEventListener('updateend', () => {
+    this.sourceBuffer.onupdateend = () => {
 
       if (this.paddingCallback) {
         this.paddingCallback()
@@ -97,93 +97,16 @@ export default class Track {
           }
         }
       }
-    })
-    this.sourceBuffer.addEventListener('error', (error) => {
-      logger.error('track update buffer error')
-    })
+    }
+    this.sourceBuffer.onerror = (error) => {
+      logger.error(`track update buffer error: ${error}`)
+    }
   }
 
   public changeMimeType(type: string) {
     if (this.sourceBuffer) {
       this.sourceBuffer.changeType(type)
     }
-  }
-
-  public addBuffer(buffer: Uint8Array, callback?: (...args: any[]) => void) {
-
-    if (!buffer) {
-      if (callback) {
-        callback()
-      }
-      return
-    }
-
-    if (!this.updating && !this.operatorQueue.length) {
-      try {
-        this.sourceBuffer.appendBuffer(buffer)
-        this.updating = true
-        if (callback) {
-          this.paddingCallback = callback
-        }
-      }
-      catch (error) {
-        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-          // buffer 满了，返回队列重新操作
-          this.operatorQueue.push({
-            operator: Operator.ADD,
-            buffer,
-            callback
-          })
-          if (this.onQuotaExceededError) {
-            this.onQuotaExceededError()
-          }
-        }
-        else {
-          throw error
-        }
-      }
-    }
-    else {
-      this.operatorQueue.push({
-        operator: Operator.ADD,
-        buffer,
-        callback
-      })
-    }
-  }
-
-  public updateTimestampOffset(timestampOffset: number, callback?: (...args: any[]) => void) {
-    if (!this.updating && !this.operatorQueue.length) {
-      this.sourceBuffer.timestampOffset = timestampOffset
-      if (callback) {
-        callback()
-      }
-      this.enqueue()
-    }
-    else {
-      this.operatorQueue.push({
-        operator: Operator.UPDATE_TIMESTAMP_OFFSET,
-        timestampOffset,
-        callback
-      })
-    }
-  }
-
-  public end() {
-    this.ending = true
-    if (!this.updating && !this.operatorQueue.length) {
-      if (this.onEnded) {
-        this.onEnded()
-      }
-    }
-  }
-
-  public isPaused() {
-    return !this.updating && this.operatorQueue.length
-  }
-
-  public getQueueLength() {
-    return this.operatorQueue.length
   }
 
   public enqueue() {
@@ -228,6 +151,39 @@ export default class Track {
     }
   }
 
+  public addBuffer(buffer: Uint8Array, callback?: (...args: any[]) => void) {
+
+    if (!buffer) {
+      if (callback) {
+        callback()
+      }
+      return
+    }
+
+    this.operatorQueue.push({
+      operator: Operator.ADD,
+      buffer,
+      callback
+    })
+
+    if (!this.updating) {
+      this.enqueue()
+    }
+  }
+
+  public updateTimestampOffset(timestampOffset: number, callback?: (...args: any[]) => void) {
+
+    this.operatorQueue.push({
+      operator: Operator.UPDATE_TIMESTAMP_OFFSET,
+      timestampOffset,
+      callback
+    })
+
+    if (!this.updating) {
+      this.enqueue()
+    }
+  }
+
   public removeBuffer(time: number, callback?: (...args: any[]) => void) {
 
     if (this.ending) {
@@ -240,23 +196,45 @@ export default class Track {
       return
     }
 
-    if (!this.updating && !this.operatorQueue.length) {
-      this.sourceBuffer.remove(this.lastRemoveTime, time - this.options.mediaBufferMax)
-      this.updating = true
-      if (callback) {
-        this.paddingCallback = callback
-      }
-    }
-    else {
-      this.operatorQueue.push({
-        operator: Operator.REMOVE,
-        start: this.lastRemoveTime,
-        end: time - this.options.mediaBufferMax,
-        callback
-      })
+    this.operatorQueue.push({
+      operator: Operator.REMOVE,
+      start: this.lastRemoveTime,
+      end: time - this.options.mediaBufferMax,
+      callback
+    })
+
+    if (!this.updating) {
+      this.enqueue()
     }
 
     this.lastRemoveTime = time - this.options.mediaBufferMax
+  }
+
+  public removeAllBuffer(callback?: (...args: any[]) => void) {
+    if (this.sourceBuffer.buffered.length) {
+      this.operatorQueue.push({
+        operator: Operator.REMOVE,
+        start: this.sourceBuffer.buffered.start(0),
+        end: this.sourceBuffer.buffered.end(this.sourceBuffer.buffered.length - 1),
+        callback
+      })
+
+      if (!this.updating) {
+        this.enqueue()
+      }
+    }
+    else if (callback) {
+      callback()
+    }
+  }
+
+  public end() {
+    this.ending = true
+    if (!this.updating && !this.operatorQueue.length) {
+      if (this.onEnded) {
+        this.onEnded()
+      }
+    }
   }
 
   public stop() {
@@ -289,33 +267,18 @@ export default class Track {
     }
   }
 
-  public removeAllBuffer(callback?: (...args: any[]) => void) {
-    if (this.sourceBuffer.buffered.length) {
-      if (!this.updating) {
-        this.sourceBuffer.remove(this.sourceBuffer.buffered.start(0), this.sourceBuffer.buffered.end(this.sourceBuffer.buffered.length - 1))
-        this.updating = true
-        if (callback) {
-          this.paddingCallback = callback
-        }
-      }
-      else {
-        this.operatorQueue.push({
-          operator: Operator.REMOVE,
-          start: this.sourceBuffer.buffered.start(0),
-          end: this.sourceBuffer.buffered.end(this.sourceBuffer.buffered.length - 1),
-          callback
-        })
-      }
-    }
-    else if (callback) {
-      callback()
-    }
-  }
-
   public reset() {
     this.stop()
     this.operatorQueue.length = 0
     this.ending = false
+  }
+
+  public isPaused() {
+    return !this.updating && this.operatorQueue.length
+  }
+
+  public getQueueLength() {
+    return this.operatorQueue.length
   }
 
   public getBufferedTime() {
@@ -354,6 +317,9 @@ export default class Track {
   public destroy() {
     this.stop()
     this.operatorQueue = null
-    this.sourceBuffer = null
+    if (this.sourceBuffer) {
+      this.sourceBuffer.onupdateend = this.sourceBuffer.onerror = null
+      this.sourceBuffer = null
+    }
   }
 }
