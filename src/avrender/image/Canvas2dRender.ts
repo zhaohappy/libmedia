@@ -35,11 +35,16 @@ export default class CanvasImageRender extends ImageRender {
 
   private paddingTop: number
 
+  private flipX: number
+  private flipY: number
+
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: ImageRenderOptions) {
     super(canvas, options)
 
     this.paddingLeft = 0
     this.paddingTop = 0
+    this.flipX = 1
+    this.flipY = 1
   }
 
   public async init() {
@@ -157,7 +162,23 @@ export default class CanvasImageRender extends ImageRender {
       if (this.flipVertical) {
         flipY = -1
       }
-      this.context.scale(flipX, flipY)
+
+      const w = this.canvas.width >> 1
+      const h = this.canvas.height >> 1
+
+      this.context.translate(w, h)
+
+      if (flipX !== this.flipX) {
+        this.context.scale(-1, 1)
+      }
+      if (flipY !== this.flipY) {
+        this.context.scale(1, -1)
+      }
+
+      this.context.translate(-w, -h)
+
+      this.flipX = flipX
+      this.flipY = flipY
     }
   }
 

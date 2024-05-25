@@ -56,6 +56,7 @@ import WebGPUYUV8Render from 'avrender/image/WebGPUYUV8Render'
 import WebGPUYUV16Render from 'avrender/image/WebGPUYUV16Render'
 import isWorker from 'common/function/isWorker'
 import { JitterBuffer } from './struct/jitter'
+import nextTick from 'common/function/nextTick'
 
 type WebGPURenderFactory = {
   new(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions): WebGPURender,
@@ -747,6 +748,11 @@ export default class VideoRenderPipeline extends Pipeline {
       if (task.render) {
         task.renderMode = mode
         task.render.setRenderMode(mode)
+        nextTick(() => {
+          if (task.pausing && task.backFrame && task.render) {
+            task.render.render(task.backFrame)
+          }
+        })
       }
     }
     else {
@@ -760,6 +766,11 @@ export default class VideoRenderPipeline extends Pipeline {
       if (task.render) {
         task.renderRotate = rotate
         task.render.setRotate(rotate)
+        nextTick(() => {
+          if (task.pausing && task.backFrame && task.render) {
+            task.render.render(task.backFrame)
+          }
+        })
       }
     }
     else {
@@ -773,6 +784,11 @@ export default class VideoRenderPipeline extends Pipeline {
       if (task.render) {
         task.flipHorizontal = enable
         task.render.enableHorizontalFlip(enable)
+        nextTick(() => {
+          if (task.pausing && task.backFrame && task.render) {
+            task.render.render(task.backFrame)
+          }
+        })
       }
     }
     else {
@@ -786,6 +802,11 @@ export default class VideoRenderPipeline extends Pipeline {
       if (task.render) {
         task.flipVertical = enable
         task.render.enableVerticalFlip(enable)
+        nextTick(() => {
+          if (task.pausing && task.backFrame && task.render) {
+            task.render.render(task.backFrame)
+          }
+        })
       }
     }
     else {
@@ -798,6 +819,11 @@ export default class VideoRenderPipeline extends Pipeline {
     if (task) {
       if (task.render) {
         task.render.viewport(width, height)
+        nextTick(() => {
+          if (task.pausing && task.backFrame && task.render) {
+            task.render.render(task.backFrame)
+          }
+        })
       }
     }
     else {
