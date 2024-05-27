@@ -262,7 +262,9 @@ export default class VideoRenderPipeline extends Pipeline {
         && support.webgpu
         && (
           // chrome116+ webgpu 可以导入 VideoFrame 作为纹理
-          browser.chrome && browser.checkVersion(browser.majorVersion, '116', true)
+          (browser.chrome || browser.newEdge) && browser.checkVersion(browser.majorVersion, '116', true)
+          || browser.safari && browser.checkVersion(browser.majorVersion, '17.4', true)
+          || browser.firefox && browser.checkVersion(browser.majorVersion, '129', true)
         )
         && !isHDR(frame.colorSpace.primaries)
       ) {
