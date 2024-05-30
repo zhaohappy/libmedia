@@ -38,7 +38,7 @@ import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { Rational } from 'avutil/struct/rational'
 import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
 import List from 'cheap/std/collection/List'
-import AVPacket, { AVPacketFlags, AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
+import { AVPacketFlags, AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
 import { Mutex } from 'cheap/thread/mutex'
 import * as logger from 'common/util/logger'
 import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
@@ -127,7 +127,10 @@ export default class DemuxPipeline extends Pipeline {
       return AVFormat.FLAC
     }
     else if (/^RIFF/.test(signature)) {
-      return AVFormat.WAV
+      const dataType = (await ioReader.peekString(12)).slice(8)
+      if (/^WAVE/.test(dataType)) {
+        return AVFormat.WAV
+      }
     }
     else if ((await ioReader.peekUint32()) === 0x1A45DFA3) {
       return AVFormat.MATROSKA
