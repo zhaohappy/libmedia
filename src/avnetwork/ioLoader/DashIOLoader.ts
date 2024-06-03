@@ -427,9 +427,9 @@ export default class DashIOLoader extends IOLoader {
   }
 
   public async read(buffer: Uint8ArrayInterface, options: {
-    type: 'audio' | 'video'
+    mediaType: 'audio' | 'video'
   }): Promise<number> {
-    if (options.type === 'audio') {
+    if (options.mediaType === 'audio') {
       return this.readAudio(buffer)
     }
     else {
@@ -438,21 +438,21 @@ export default class DashIOLoader extends IOLoader {
   }
 
   public async seek(timestamp: int64, options: {
-    type: 'audio' | 'video'
+    mediaType: 'audio' | 'video'
   }) {
 
-    if (this.audioLoader && options.type === 'audio') {
+    if (this.audioLoader && options.mediaType === 'audio') {
       await this.audioLoader.abort()
       this.audioLoader = null
     }
-    if (this.videoLoader && options.type === 'video') {
+    if (this.videoLoader && options.mediaType === 'video') {
       await this.videoLoader.abort()
       this.videoLoader = null
     }
 
     let seekTime = Number(timestamp)
 
-    if (this.audioSegments && options.type === 'audio') {
+    if (this.audioSegments && options.mediaType === 'audio') {
       let index = 0
       const segmentList = this.mediaPlayList.mediaList.audio[this.audioSelectedIndex].mediaSegments
       if (segmentList?.length) {
@@ -466,7 +466,7 @@ export default class DashIOLoader extends IOLoader {
       this.audioSegmentIndex = index + (this.mediaPlayList.mediaList.audio[this.audioSelectedIndex].initSegment ? 1 : 0)
     }
 
-    if (this.videoSegments && options.type === 'video') {
+    if (this.videoSegments && options.mediaType === 'video') {
       let index = 0
       const segmentList = this.mediaPlayList.mediaList.video[this.videoSelectedIndex].mediaSegments
       if (segmentList?.length) {

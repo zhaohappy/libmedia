@@ -558,7 +558,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             stats: addressof(this.stats),
             isLive: this.options.isLive,
             ioloaderOptions: {
-              type: 'audio'
+              mediaType: 'audio'
             },
             avpacketList: addressof(this.GlobalData.avpacketList),
             avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
@@ -570,7 +570,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           stats: addressof(this.stats),
           isLive: this.options.isLive,
           ioloaderOptions: {
-            type: 'video'
+            mediaType: 'video'
           },
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
@@ -587,7 +587,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             stats: addressof(this.stats),
             isLive: this.options.isLive,
             ioloaderOptions: {
-              type: hasAudio ? 'audio' : 'video'
+              mediaType: hasAudio ? 'audio' : 'video'
             },
             avpacketList: addressof(this.GlobalData.avpacketList),
             avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
