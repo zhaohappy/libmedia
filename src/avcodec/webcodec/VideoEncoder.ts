@@ -25,14 +25,19 @@
 
 import * as logger from 'common/util/logger'
 import browser from 'common/util/browser'
-import AVPacket from 'avutil/struct/avpacket'
+import AVPacket, { AVPacketPool } from 'avutil/struct/avpacket'
 import { AVCodecID } from 'avutil/codec'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import AVFrame from 'avutil/struct/avframe'
+import getVideoCodec from '../function/getVideoCodec'
+import { getHardwarePreference } from '../function/getHardwarePreference'
+import { avQ2D } from 'avutil/util/rational'
 
 export type WebVideoEncoderOptions = {
-  onReceivePacket: (avpacket: AVPacket) => void
+  onReceivePacket?: (avpacket: pointer<AVPacket>, avframe: pointer<AVFrame>) => void
   onError: (error?: Error) => void
   enableHardwareAcceleration?: boolean
+  avpacketPool?: AVPacketPool
 }
 
 export default class WebVideoEncoder {
@@ -40,6 +45,10 @@ export default class WebVideoEncoder {
   private encoder: VideoEncoder
 
   private options: WebVideoEncoderOptions
+
+  private currentError: Error
+
+  private parameters: pointer<AVCodecParameters>
 
   constructor(options: WebVideoEncoderOptions) {
 
@@ -61,11 +70,44 @@ export default class WebVideoEncoder {
     this.options.onError(error)
   }
 
-  public open(parameters: AVCodecParameters) {
+  public async open(parameters: pointer<AVCodecParameters>) {
+    this.currentError = null
+    this.parameters = parameters
+
+    const config: VideoEncoderConfig = {
+      codec: getVideoCodec(parameters),
+      width: parameters.width,
+      height: parameters.height,
+      bitrate: Number(parameters.bitRate),
+      framerate: avQ2D(parameters.framerate),
+      hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true)
+    }
+
+    const support = await VideoEncoder.isConfigSupported(config)
+
+    if (!support.supported) {
+      throw new Error('not support')
+    }
+
+    if (this.encoder && this.encoder.state !== 'closed') {
+      this.encoder.close()
+    }
+
+    this.encoder = new VideoEncoder({
+      output: this.output.bind(this),
+      error: this.error.bind(this)
+    })
+
+    this.encoder.reset()
+    this.encoder.configure(config)
+
+    if (this.currentError) {
+      throw this.currentError
+    }
 
   }
 
-  public encode(frame: VideoFrame, key: boolean) {
+  public encode(frame: VideoFrame | pointer<AVFrame>, key: boolean) {
 
   }
 
