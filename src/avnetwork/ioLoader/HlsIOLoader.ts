@@ -78,6 +78,8 @@ export default class HlsIOLoader extends IOLoader {
   private currentKey: ArrayBuffer
   private aesDecryptPipe: AESDecryptPipe
 
+  private initLoaded: boolean
+
   private async fetchMasterPlayList() {
     const params: Partial<any> = {
       method: 'GET',
@@ -255,6 +257,11 @@ export default class HlsIOLoader extends IOLoader {
       await this.fetchMediaPlayList()
     }
 
+    this.initLoaded = true
+
+    if (this.mediaPlayList.segments.length && this.mediaPlayList.segments[0].map) {
+      this.initLoaded = false
+    }
   }
 
   private async checkNeedDecrypt(segment: Segment, sequence: number) {
@@ -299,21 +306,26 @@ export default class HlsIOLoader extends IOLoader {
         return ret
       }
       else {
-        if (this.options.isLive) {
-          this.fetchedMap.set(this.currentUri, true)
-          if (this.fetchedHistoryList.length === FETCHED_HISTORY_LIST_MAX) {
-            this.fetchedMap.delete(this.fetchedHistoryList.shift())
+        if (this.initLoaded) {
+          if (this.options.isLive) {
+            this.fetchedMap.set(this.currentUri, true)
+            if (this.fetchedHistoryList.length === FETCHED_HISTORY_LIST_MAX) {
+              this.fetchedMap.delete(this.fetchedHistoryList.shift())
+            }
+            this.fetchedHistoryList.push(this.currentUri)
+            this.segmentIndex++
           }
-          this.fetchedHistoryList.push(this.currentUri)
-          this.segmentIndex++
+          else {
+            this.segmentIndex++
+            if (this.segmentIndex >= this.mediaPlayList.segments.length) {
+              logger.info('hls segments ended')
+              this.status = IOLoaderStatus.COMPLETE
+              return IOError.END
+            }
+          }
         }
         else {
-          this.segmentIndex++
-          if (this.segmentIndex >= this.mediaPlayList.segments.length) {
-            logger.info('hls segments ended')
-            this.status = IOLoaderStatus.COMPLETE
-            return IOError.END
-          }
+          this.initLoaded = true
         }
         this.loader = null
       }
@@ -341,18 +353,28 @@ export default class HlsIOLoader extends IOLoader {
 
       this.currentUri = segments[0].uri
 
-      await this.checkNeedDecrypt(segments[0], this.segmentIndex)
+      if (this.initLoaded) {
+        await this.checkNeedDecrypt(segments[0], this.segmentIndex)
+      }
 
       this.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
 
+      const url = buildAbsoluteURL(this.mediaListUrl, this.initLoaded ? this.currentUri : segments[0].map.uri)
+      const range = {
+        from: 0,
+        to: -1
+      }
+      const byteRange = this.initLoaded ? segments[0].byterange : segments[0].map.byterange
+      if (byteRange) {
+        range.from = byteRange.offset
+        range.to = byteRange.offset + byteRange.length
+      }
+
       await this.loader.open(
         {
-          url: buildAbsoluteURL(this.mediaListUrl, this.currentUri)
+          url
         },
-        {
-          from: 0,
-          to: -1
-        }
+        range
       )
       return this.aesDecryptPipe ? this.aesDecryptPipe.read(buffer) : this.loader.read(buffer)
     }
@@ -361,16 +383,26 @@ export default class HlsIOLoader extends IOLoader {
 
       const segment = this.mediaPlayList.segments[this.segmentIndex]
 
-      await this.checkNeedDecrypt(segment, this.segmentIndex)
+      if (this.initLoaded) {
+        await this.checkNeedDecrypt(segment, this.segmentIndex)
+      }
+
+      const url = buildAbsoluteURL(this.mediaListUrl, this.initLoaded ? segment.uri : segment.map.uri)
+      const range = {
+        from: 0,
+        to: -1
+      }
+      const byteRange = this.initLoaded ? segment.byterange : segment.map.byterange
+      if (byteRange) {
+        range.from = byteRange.offset
+        range.to = byteRange.offset + byteRange.length
+      }
 
       await this.loader.open(
         {
-          url: buildAbsoluteURL(this.mediaListUrl, segment.uri)
+          url
         },
-        {
-          from: 0,
-          to: -1
-        }
+        range
       )
       return this.aesDecryptPipe ? this.aesDecryptPipe.read(buffer) : this.loader.read(buffer)
     }
