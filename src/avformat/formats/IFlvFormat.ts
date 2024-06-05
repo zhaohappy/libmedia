@@ -439,6 +439,11 @@ export default class IFlvFormat extends IFormat {
       }
       return await this.readAVPacket_(formatContext, avpacket)
     }
+    else {
+      logger.warn(`invalid tag type: ${type}, try to sync to next tag`)
+      await this.syncTag(formatContext)
+      return this.readAVPacket_(formatContext, avpacket)
+    }
 
     const tagSize = formatContext.ioReader.getPos() - now
     const prev = static_cast<int64>(await formatContext.ioReader.readUint32())
