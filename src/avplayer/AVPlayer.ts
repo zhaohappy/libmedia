@@ -1130,15 +1130,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
     }
 
-    let maxQueueLength = 10
+    let minQueueLength = 10
     if (is.string(this.source) && !this.options.isLive) {
       this.streams.forEach((stream) => {
-        maxQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate) * 4), maxQueueLength)
+        minQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate) * 4), minQueueLength)
       })
     }
-    promises.push(AVPlayer.DemuxerThread.startDemux(this.taskId, this.options.isLive, maxQueueLength))
+    promises.push(AVPlayer.DemuxerThread.startDemux(this.taskId, this.options.isLive, minQueueLength))
     if (this.subTaskId) {
-      promises.push(AVPlayer.DemuxerThread.startDemux(this.subTaskId, this.options.isLive, maxQueueLength))
+      promises.push(AVPlayer.DemuxerThread.startDemux(this.subTaskId, this.options.isLive, minQueueLength))
     }
 
     return Promise.all(promises).then(async () => {

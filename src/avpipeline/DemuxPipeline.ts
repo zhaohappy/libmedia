@@ -466,30 +466,25 @@ export default class DemuxPipeline extends Pipeline {
     }
   }
 
-  public async startDemux(taskId: string, isLive: boolean, maxQueueLength: int32) {
+  public async startDemux(taskId: string, isLive: boolean, minQueueLength: int32) {
     const task = this.tasks.get(taskId)
     if (task) {
-      if (task.format === AVFormat.MPEGTS) {
-        // mpegts 最小 20
-        maxQueueLength = Math.max(maxQueueLength, 20)
-      }
+      // mpegts 最小 20
+      minQueueLength = Math.max(minQueueLength, task.format === AVFormat.MPEGTS ? 20 : 10)
+
       if (task.loop) {
         task.loop.destroy()
       }
       task.loop = new LoopTask(async () => {
         if (!isLive) {
-          let full = false
-          let hasZero = false
+          let canDo = false
           task.cacheAVPackets.forEach((list) => {
-            if (list.length > maxQueueLength) {
-              full = true
-            }
-            if (list.length === 0) {
-              hasZero = true
+            if (list.length < minQueueLength) {
+              canDo = true
             }
           })
 
-          if (full && !hasZero) {
+          if (!canDo) {
             task.loop.emptyTask()
             return
           }
