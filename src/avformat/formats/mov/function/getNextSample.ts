@@ -28,8 +28,9 @@ import { AVIFormatContext } from '../../../AVFormatContext'
 import { MOVContext, MOVStreamContext, Sample } from '../type'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'
+import { IOFlags } from 'common/io/flags'
 
-export function getNextSample(context: AVIFormatContext | AVIFormatContext, movContext: MOVContext) {
+export function getNextSample(context: AVIFormatContext, movContext: MOVContext) {
   let sample: Sample
   let stream: Stream
 
@@ -75,7 +76,7 @@ export function getNextSample(context: AVIFormatContext | AVIFormatContext, movC
     const dtsDts = avRescaleQ(dtsSample.dts, dtsStream.timeBase, AV_TIME_BASE_Q)
     const diff = Math.abs(Number(posDts - dtsDts))
     // 两者时间差值在 1s 内优先 pos，避免来回 seek
-    if (diff < 1000000) {
+    if ((diff < 1000000) || (context.ioReader.flags & IOFlags.SLICE)) {
       sample = posSample
       stream = posStream
     }

@@ -71,7 +71,8 @@ export interface DemuxTaskOptions extends TaskOptions {
   ioloaderOptions?: Data
   mainTaskId?: string
   avpacketList: pointer<List<pointer<AVPacketRef>>>
-  avpacketListMutex: pointer<Mutex>
+  avpacketListMutex: pointer<Mutex>,
+  flags?: int32
 }
 
 type SelfTask = DemuxTaskOptions & {
@@ -166,6 +167,9 @@ export default class DemuxPipeline extends Pipeline {
 
     if (!options.isLive) {
       ioReader.flags |= IOFlags.SEEKABLE
+    }
+    if (options.flags) {
+      ioReader.flags |= options.flags
     }
 
     ioReader.onFlush = async (buffer) => {

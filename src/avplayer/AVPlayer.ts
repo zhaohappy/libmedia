@@ -76,6 +76,7 @@ import getMediaSource from './function/getMediaSource'
 import JitterBufferController from './JitterBufferController'
 import { JitterBuffer } from 'avpipeline/struct/jitter'
 import getAudioCodec from 'avcodec/function/getAudioCodec'
+import { IOFlags } from 'common/io/flags'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -387,10 +388,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         logger.info(`loop play, taskId: ${this.taskId}`)
 
-        if (defined(ENABLE_PROTOCOL_HLS) && (this.ext === 'm3u8' || this.ext === 'm3u')) {
+        if (defined(ENABLE_PROTOCOL_HLS) && this.isHls()) {
           await AVPlayer.DemuxerThread.seek(this.taskId, 0n, AVSeekFlags.TIMESTAMP)
         }
-        else if (defined(ENABLE_PROTOCOL_DASH) && this.ext === 'mpd') {
+        else if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
           await AVPlayer.DemuxerThread.seek(this.taskId, 0n, AVSeekFlags.TIMESTAMP)
           if (this.subTaskId) {
             await AVPlayer.DemuxerThread.seek(this.subTaskId, 0n, AVSeekFlags.TIMESTAMP)
@@ -476,6 +477,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  private isHls() {
+    return this.ext === 'm3u8' || this.ext === 'm3u'
+  }
+
+  private isDash() {
+    return this.ext === 'mpd'
+  }
+
   public async load(source: string | File) {
 
     logger.info(`call load, taskId: ${this.taskId}`)
@@ -490,15 +499,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     await AVPlayer.startDemuxPipeline()
 
-    let ext = ''
     let ret = 0
     if (is.string(source)) {
-      ext = urlUtils.parse(source).file.split('.').pop()
+      this.ext = urlUtils.parse(source).file.split('.').pop()
       // 注册一个 url io 任务
       ret = await AVPlayer.IOThread.registerTask
         .transfer(this.ioloader2DemuxerChannel.port1)
         .invoke({
-          type: Ext2IOLoader[ext] ?? IOType.Fetch,
+          type: Ext2IOLoader[this.ext] ?? IOType.Fetch,
           info: {
             url: source
           },
@@ -516,7 +524,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
     else {
       this.options.isLive = false
-      ext = source.name.split('.').pop()
+      this.ext = source.name.split('.').pop()
       // 注册一个文件 io 任务
       ret = await AVPlayer.IOThread.registerTask
         .transfer(this.ioloader2DemuxerChannel.port1)
@@ -542,7 +550,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       logger.fatal(`register io task failed, ret: ${ret}, taskId: ${this.taskId}`)
     }
 
-    if (defined(ENABLE_PROTOCOL_DASH) && ext === 'mpd') {
+    if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
       await AVPlayer.IOThread.open(this.taskId)
       const hasAudio = await AVPlayer.IOThread.hasAudio(this.taskId)
       const hasVideo = await AVPlayer.IOThread.hasVideo(this.taskId)
@@ -554,9 +562,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           .invoke({
             taskId: this.taskId,
             leftPort: this.ioloader2DemuxerChannel.port2,
-            format: Ext2Format[ext],
+            format: Ext2Format[this.ext],
             stats: addressof(this.stats),
             isLive: this.options.isLive,
+            flags: IOFlags.SLICE,
             ioloaderOptions: {
               mediaType: 'audio'
             },
@@ -566,7 +575,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         await AVPlayer.DemuxerThread.registerTask({
           taskId: this.subTaskId,
           mainTaskId: this.taskId,
-          format: Ext2Format[ext],
+          flags: IOFlags.SLICE,
+          format: Ext2Format[this.ext],
           stats: addressof(this.stats),
           isLive: this.options.isLive,
           ioloaderOptions: {
@@ -583,9 +593,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           .invoke({
             taskId: this.taskId,
             leftPort: this.ioloader2DemuxerChannel.port2,
-            format: Ext2Format[ext],
+            format: Ext2Format[this.ext],
             stats: addressof(this.stats),
             isLive: this.options.isLive,
+            flags: IOFlags.SLICE,
             ioloaderOptions: {
               mediaType: hasAudio ? 'audio' : 'video'
             },
@@ -600,9 +611,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         .invoke({
           taskId: this.taskId,
           leftPort: this.ioloader2DemuxerChannel.port2,
-          format: Ext2Format[ext],
+          format: Ext2Format[this.ext],
           stats: addressof(this.stats),
           isLive: this.options.isLive,
+          flags: this.isHls() ? IOFlags.SLICE : 0,
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
         })
@@ -630,7 +642,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     this.streams = streams
-    this.ext = ext
     this.source = source
 
     let info = `
@@ -654,7 +665,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
       // m3u8 和 dash 的 duration 来自于协议本身
-      if (ext === 'm3u8' || ext === 'm3u' || ext === 'mpd') {
+      if (this.isHls() || this.isDash()) {
         const duration: double = (await AVPlayer.IOThread.getDuration(this.taskId)) * 1000
         if (duration > 0) {
           for (let i = 0; i < this.streams.length; i++) {
@@ -672,12 +683,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       const min = Math.max(await AVPlayer.IOThread.getMinBuffer(this.taskId), this.options.jitterBufferMin)
       let max = this.options.jitterBufferMax
       if (max <= min) {
-        max = min + ((ext === 'm3u8' || ext === 'm3u' || ext === 'mpd') ? min : 1)
+        max = min + ((this.isHls() || this.isDash()) ? min : 1)
       }
       this.jitterBufferController = new JitterBufferController({
         stats: addressof(this.stats),
         jitterBuffer: addressof(this.GlobalData.jitterBuffer),
-        lowLatencyStart: !(ext === 'm3u8' || ext === 'm3u' || ext === 'mpd'),
+        lowLatencyStart: !(this.isHls() || this.isDash()),
         useMse: this.useMSE,
         max,
         min,
@@ -1259,10 +1270,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       let seekedTimestamp = -1n
 
-      if (defined(ENABLE_PROTOCOL_HLS) && (this.ext === 'm3u8' || this.ext === 'm3u')) {
+      if (defined(ENABLE_PROTOCOL_HLS) && this.isHls()) {
         seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBigInt, AVSeekFlags.TIMESTAMP)
       }
-      else if (defined(ENABLE_PROTOCOL_DASH) && this.ext === 'mpd') {
+      else if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
         seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBigInt, AVSeekFlags.TIMESTAMP)
         if (this.subTaskId) {
           await AVPlayer.DemuxerThread.seek(this.subTaskId, timestampBigInt, AVSeekFlags.TIMESTAMP)
