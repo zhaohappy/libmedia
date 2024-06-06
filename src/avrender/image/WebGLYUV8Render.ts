@@ -114,7 +114,7 @@ export default class WebGLYUV8Render extends WebGLYUVRender {
     if (is.number(frame)) {
       const info = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
       if (info) {
-        return ((info.depth + 7) >>> 3) === 1
+        return ((info.comp[0].depth + 7) >>> 3) === 1
       }
     }
     return false

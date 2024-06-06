@@ -416,7 +416,7 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
         format: 'r16uint'
       })
 
-      const yBuffer = new Uint32Array([descriptor.max, this.inputYTexture.width, this.inputYTexture.height])
+      const yBuffer = new Uint32Array([(1 << descriptor.comp[0].depth) - 1, this.inputYTexture.width, this.inputYTexture.height])
       this.device.queue.writeBuffer(
         this.metaYBuffer,
         0,
@@ -425,7 +425,7 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
         yBuffer.byteLength
       )
 
-      const uBuffer = new Uint32Array([descriptor.max, this.inputUTexture.width, this.inputUTexture.height])
+      const uBuffer = new Uint32Array([(1 << descriptor.comp[1].depth) - 1, this.inputUTexture.width, this.inputUTexture.height])
       this.device.queue.writeBuffer(
         this.metaUBuffer,
         0,
@@ -433,7 +433,7 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
         uBuffer.byteOffset,
         uBuffer.byteLength
       )
-      const vBuffer = new Uint32Array([descriptor.max, this.inputVTexture.width, this.inputVTexture.height])
+      const vBuffer = new Uint32Array([(1 << descriptor.comp[2].depth) - 1, this.inputVTexture.width, this.inputVTexture.height])
       this.device.queue.writeBuffer(
         this.metaVBuffer,
         0,
@@ -456,7 +456,7 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
 
       const colorTransformOptions: ColorTransformOptions = {
         type: GLType.kWebGPU,
-        bitDepth: descriptor.depth,
+        bitDepth: descriptor.comp[0].depth,
         toneMapPQAndHlgToDst: true,
         metadata: this.hdrMetadata,
         dstSdrMaxLuminanceNits: DefaultSDRWhiteLevel,
@@ -633,7 +633,7 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
     if (is.number(frame)) {
       const info = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
       if (info) {
-        return ((info.depth + 7) >>> 3) === 2
+        return ((info.comp[0].depth + 7) >>> 3) === 2
       }
     }
     return false

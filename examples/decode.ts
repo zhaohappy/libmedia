@@ -26,7 +26,7 @@ export async function decodeVideo(stream: AVStream) {
   while (true) {
     // 不停的拿到 avpacket 送入解码器解码
     let avpacket: pointer<AVPacket>
-    // 注意送入发第一帧必须为 IDR 帧
+    // 注意送入的第一帧必须为 IDR 帧
     let ret = decoder.decode(avpacket)
     if (ret < 0) {
       break

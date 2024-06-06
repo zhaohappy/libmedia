@@ -147,7 +147,7 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
       return
     }
 
-    const bytesPerPix = (descriptor.depth + 7) >>> 3
+    const bytesPerPix = (descriptor.comp[0].depth + 7) >>> 3
 
     if ((frame.linesize[0] / bytesPerPix) !== this.textureWidth
       || frame.height !== this.videoHeight
@@ -164,7 +164,7 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
 
       const colorTransformOptions: ColorTransformOptions = {
         type: GLType.kWebGL,
-        bitDepth: descriptor.depth,
+        bitDepth: descriptor.comp[0].depth,
         toneMapPQAndHlgToDst: true,
         metadata: this.hdrMetadata,
         dstSdrMaxLuminanceNits: DefaultSDRWhiteLevel,
@@ -200,7 +200,7 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
       this.uTexture.setSize(frame.linesize[1] >>> 1, frame.height >>> PixelFormatDescriptorsMap[frame.format as AVPixelFormat].log2ChromaH)
       this.vTexture.setSize(frame.linesize[2] >>> 1, frame.height >>> PixelFormatDescriptorsMap[frame.format as AVPixelFormat].log2ChromaH)
 
-      this.program.setMax(descriptor.max)
+      this.program.setMax((1 << descriptor.comp[0].depth) - 1)
 
       this.videoWidth = frame.width
       this.videoHeight = frame.height
@@ -247,7 +247,7 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
     if (is.number(frame)) {
       const info = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
       if (info) {
-        return ((info.depth + 7) >>> 3) === 2
+        return ((info.comp[0].depth + 7) >>> 3) === 2
       }
     }
     return false
