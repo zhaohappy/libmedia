@@ -23,15 +23,22 @@
  *
  */
 
-import * as logger from 'common/util/logger'
-import isAudioData from '../function/isAudioData'
-import { AVCodecID } from 'avutil/codec'
+import { AVPacketSideDataType } from 'avutil/codec'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import AVPacket from 'avutil/struct/avpacket'
+import AVPacket, { AVPacketFlags, AVPacketPool } from 'avutil/struct/avpacket'
+import getAudioCodec from 'avcodec/function/getAudioCodec'
+import AVFrame from 'avutil/struct/avframe'
+import * as is from 'common/util/is'
+import { avframe2AudioData } from 'avutil/function/avframe2AudioData'
+import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/util/avpacket'
+import { avMalloc } from 'avutil/util/mem'
+import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
+import { AV_TIME_BASE } from 'avutil/constant'
 
 export type WebAudioEncoderOptions = {
-  onReceivePacket: (avpacket: AVPacket) => void
+  onReceivePacket: (avpacket: pointer<AVPacket>, avframe?: pointer<AVFrame>) => void
   onError: (error?: Error) => void
+  avpacketPool?: AVPacketPool
 }
 
 export default class WebAudioEncoder {
@@ -40,14 +47,16 @@ export default class WebAudioEncoder {
 
   private options: WebAudioEncoderOptions
 
+  private currentError: Error
+
+  private pts: int64
+
+  private avframeCache: pointer<AVFrame>[]
+
   constructor(options: WebAudioEncoderOptions) {
 
     this.options = options
-
-    this.encoder = new AudioEncoder({
-      output: this.output.bind(this),
-      error: this.error.bind(this)
-    })
+    this.avframeCache = []
   }
 
   private async output(chunk: EncodedAudioChunk, metadata?: {
@@ -58,22 +67,88 @@ export default class WebAudioEncoder {
       description?: WebCodecBufferSource
     }
   }) {
-    if (this.options.onReceivePacket) {
+    const avpacket = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
+    avpacket.pts = this.pts
+    avpacket.timeBase.den = AV_TIME_BASE
+    avpacket.timeBase.num = 1
+    avpacket.duration = static_cast<int64>(chunk.duration)
+    avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+    const data = avMalloc(chunk.byteLength)
+    chunk.copyTo(mapUint8Array(data, chunk.byteLength))
+    addAVPacketData(avpacket, data, chunk.byteLength)
 
+    this.pts += avpacket.duration
+
+    if (metadata) {
+      if (metadata.decoderConfig?.description) {
+        const extradata = avMalloc(metadata.decoderConfig.description.byteLength)
+        let buffer: Uint8Array
+        if (metadata.decoderConfig.description instanceof ArrayBuffer) {
+          buffer = new Uint8Array(metadata.decoderConfig.description)
+        }
+        else {
+          buffer = new Uint8Array(metadata.decoderConfig.description.buffer)
+        }
+        memcpyFromUint8Array(extradata, metadata.decoderConfig.description.byteLength, buffer)
+        addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, extradata, metadata.decoderConfig.description.byteLength)
+      }
     }
+    const avframe = this.avframeCache.shift()
+    this.options.onReceivePacket(avpacket, avframe)
   }
 
   private error(error: Error) {
     this.options.onError(error)
   }
 
-  public open(parameters: AVCodecParameters) {
+  public async open(parameters: pointer<AVCodecParameters>) {
 
+    this.currentError = null
+
+    const config: AudioEncoderConfig = {
+      codec: getAudioCodec(parameters),
+      sampleRate: parameters.sampleRate,
+      numberOfChannels: parameters.chLayout.nbChannels,
+      bitrate: static_cast<double>(parameters.bitRate)
+    }
+
+    const support = await AudioEncoder.isConfigSupported(config)
+
+    if (!support.supported) {
+      throw new Error('not support')
+    }
+
+    if (this.encoder && this.encoder.state !== 'closed') {
+      this.encoder.close()
+    }
+
+    this.encoder = new AudioEncoder({
+      output: this.output.bind(this),
+      error: this.error.bind(this)
+    })
+
+    this.encoder.reset()
+    this.encoder.configure(config)
+
+    if (this.currentError) {
+      throw this.currentError
+    }
+
+    this.pts = 0n
   }
 
-  public encode(frame: AudioFrame | AudioData) {
-    this.encoder.encode(frame)
-    frame.close()
+  public encode(frame: AudioData | pointer<AVFrame>) {
+    if (is.number(frame)) {
+      this.avframeCache.push(frame)
+      frame = avframe2AudioData(frame)
+    }
+    try {
+      this.encoder.encode(frame)
+      return 0
+    }
+    catch (error) {
+      return -1
+    }
   }
 
   public async flush() {
