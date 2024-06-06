@@ -35,7 +35,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
 
   const version = await ioReader.readUint8()
   // flags
-  ioReader.skip(3)
+  await ioReader.skip(3)
 
   const sampleSizes: number[] = []
   let sampleSize = 0

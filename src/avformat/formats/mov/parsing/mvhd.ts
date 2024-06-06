@@ -53,13 +53,13 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   movContext.rate = await ioReader.readUint32()
   movContext.volume = await ioReader.readUint16() >>> 8
 
-  ioReader.skip(10)
+  await ioReader.skip(10)
   movContext.matrix = new Uint32Array(9)
   for (let i = 0; i < 9; i++) {
     movContext.matrix[i] = await ioReader.readUint32()
   }
 
-  ioReader.skip(24)
+  await ioReader.skip(24)
   movContext.nextTrackId = await ioReader.readUint32()
 
   const remainingLength = atom.size - Number(ioReader.getPos() - now)

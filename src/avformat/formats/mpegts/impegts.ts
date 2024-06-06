@@ -85,7 +85,7 @@ export async function parserTSPacket(ioReader: IOReader, mpegtsContext: MpegtsCo
 
   if (mpegtsContext.tsPacketSize === mpegts.TS_DVHS_PACKET_SIZE) {
     // skip ATS field (2-bits copy-control + 30-bits timestamp) for m2ts
-    ioReader.skip(4)
+    await ioReader.skip(4)
   }
 
   const syncByte = await ioReader.readUint8()
@@ -113,7 +113,7 @@ export async function parserTSPacket(ioReader: IOReader, mpegtsContext: MpegtsCo
     if (5 + adaptationFieldLength === mpegts.TS_PACKET_SIZE) {
       parseAdaptationField(await ioReader.readBuffer(adaptationFieldLength), tsPacket)
       if (mpegtsContext.tsPacketSize === mpegts.TS_FEC_PACKET_SIZE) {
-        ioReader.skip(16)
+        await ioReader.skip(16)
       }
       return tsPacket
     }
@@ -129,7 +129,7 @@ export async function parserTSPacket(ioReader: IOReader, mpegtsContext: MpegtsCo
   }
 
   if (mpegtsContext.tsPacketSize === mpegts.TS_FEC_PACKET_SIZE) {
-    ioReader.skip(16)
+    await ioReader.skip(16)
   }
 
   return tsPacket

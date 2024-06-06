@@ -43,24 +43,24 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
     stream.metadata['creationTime'] = await ioReader.readUint64()
     stream.metadata['modificationTime'] = await ioReader.readUint64()
     streamContext.trackId = await ioReader.readUint32()
-    ioReader.skip(4)
+    await ioReader.skip(4)
     streamContext.duration = await ioReader.readUint64()
   }
   else {
     stream.metadata['creationTime'] = static_cast<int64>(await ioReader.readUint32())
     stream.metadata['modificationTime'] = static_cast<int64>(await ioReader.readUint32())
     streamContext.trackId = await ioReader.readUint32()
-    ioReader.skip(4)
+    await ioReader.skip(4)
     streamContext.duration = static_cast<int64>(await ioReader.readUint32())
   }
 
-  ioReader.skip(4 * 2)
+  await ioReader.skip(4 * 2)
 
   streamContext.layer = await ioReader.readInt16()
   streamContext.alternateGroup = await ioReader.readInt16()
   streamContext.volume = await ioReader.readInt16() >> 8
 
-  ioReader.skip(2)
+  await ioReader.skip(2)
 
   streamContext.matrix = new Uint32Array(9)
   for (let i = 0; i < 9; i++) {

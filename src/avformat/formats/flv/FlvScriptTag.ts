@@ -96,12 +96,12 @@ export default class FlvScriptTag {
       case 8:
         value = {}
         // skip ECMAArrayLength(UI32)
-        ioReader.skip(4)
+        await ioReader.skip(4)
         while (ioReader.getPos() < endPos) {
           const { key, value: val } = await this.parseObject(ioReader, endPos)
           value[key] = val
           if (((await ioReader.peekUint24()) & 0x00FFFFFF) === 9) {
-            ioReader.skip(3)
+            await ioReader.skip(3)
             break
           }
         }

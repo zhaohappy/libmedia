@@ -60,8 +60,8 @@ export default function parsePESSlice(queue: TSSliceQueue): PES {
     const ptsDtsFlags = (data[7] & 0xC0) >>> 6
     const pesHeaderDataLength = data[8]
 
-    let pts: bigint = NOPTS_VALUE_BIGINT
-    let dts: bigint = NOPTS_VALUE_BIGINT
+    let pts: int64 = NOPTS_VALUE_BIGINT
+    let dts: int64 = NOPTS_VALUE_BIGINT
 
     if (ptsDtsFlags === 0x02 || ptsDtsFlags === 0x03) {
       pts = static_cast<int64>((data[9] & 0x0E) * 536870912
