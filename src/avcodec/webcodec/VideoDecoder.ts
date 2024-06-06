@@ -191,7 +191,7 @@ export default class WebVideoDecoder {
       this.changeExtraData(mapUint8Array(element.data, element.size))
     }
 
-    const timestamp = Number(avpacket.pts)
+    const timestamp = static_cast<double>(avpacket.pts)
     const key = avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
 
     if (this.keyframeRequire && !key) {
