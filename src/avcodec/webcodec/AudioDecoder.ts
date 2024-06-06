@@ -31,7 +31,7 @@ import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
 
 export type WebAudioDecoderOptions = {
-  onReceiveFrame?: (frame: AudioFrame | AudioData) => void
+  onReceiveFrame?: (frame: AudioData) => void
   onError: (error?: Error) => void
 }
 
@@ -44,42 +44,67 @@ export default class WebAudioDecoder {
 
   private extradata: Uint8Array
 
+  private currentError: Error
+
   constructor(options: WebAudioDecoderOptions) {
     this.options = options
-
-    this.decoder = new AudioDecoder({
-      output: this.output.bind(this),
-      error: this.error.bind(this)
-    })
   }
 
-  private output(frame: AudioFrame | AudioData) {
+  private output(frame: AudioData) {
     if (this.options.onReceiveFrame) {
       this.options.onReceiveFrame(frame)
     }
-
-    frame.close()
+    else {
+      frame.close()
+    }
   }
 
   private error(error: Error) {
+    this.currentError = error
     this.options.onError(error)
   }
 
-
   public async open(parameters: pointer<AVCodecParameters>) {
+    this.currentError = null
     this.parameters = parameters
     this.extradata = null
     if (parameters.extradata !== nullptr) {
       this.extradata = mapUint8Array(parameters.extradata, parameters.extradataSize).slice()
     }
 
-    this.decoder.reset()
-    this.decoder.configure({
+    const config: AudioDecoderConfig = {
       codec: getAudioCodec(this.parameters),
       sampleRate: parameters.sampleRate,
       numberOfChannels: parameters.chLayout.nbChannels,
       description: this.extradata
+    }
+
+    if (!config.description) {
+      // description 不是 arraybuffer 会抛错
+      delete config.description
+    }
+
+    const support = await AudioDecoder.isConfigSupported(config)
+
+    if (!support.supported) {
+      throw new Error('not support')
+    }
+
+    if (this.decoder && this.decoder.state !== 'closed') {
+      this.decoder.close()
+    }
+
+    this.decoder = new AudioDecoder({
+      output: this.output.bind(this),
+      error: this.error.bind(this)
     })
+
+    this.decoder.reset()
+    this.decoder.configure(config)
+
+    if (this.currentError) {
+      throw this.currentError
+    }
   }
 
   public changeExtraData(buffer: Uint8Array) {
@@ -105,6 +130,10 @@ export default class WebAudioDecoder {
       numberOfChannels: this.parameters.chLayout.nbChannels,
       description: this.extradata
     })
+
+    if (this.currentError) {
+      throw this.currentError
+    }
   }
 
   public decode(avpacket: pointer<AVPacket>) {
@@ -115,7 +144,7 @@ export default class WebAudioDecoder {
       this.changeExtraData(mapUint8Array(element.data, element.size))
     }
 
-    const timestamp = Number(avpacket.pts)
+    const timestamp = static_cast<double>(avpacket.pts)
     const key = avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
 
     const audioChunk = new EncodedAudioChunk({
@@ -123,8 +152,14 @@ export default class WebAudioDecoder {
       timestamp,
       data: mapUint8Array(avpacket.data, avpacket.size)
     })
-    this.decoder.decode(audioChunk)
 
+    try {
+      this.decoder.decode(audioChunk)
+    }
+    catch (error) {
+      return -1
+    }
+    
     return 0
   }
 
