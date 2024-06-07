@@ -85,7 +85,7 @@ const ObjectFitMap = {
 
 export interface AVPlayerOptions {
   container: HTMLDivElement
-  getWasm: (type: 'decoder' | 'resampler' | 'stretchpitcher', codec?: AVCodecID) => string | ArrayBuffer
+  getWasm: (type: 'decoder' | 'resampler' | 'stretchpitcher', codec?: AVCodecID) => string | ArrayBuffer | WebAssemblyResource
   isLive?: boolean
   checkUseMES?: (streams: AVStreamInterface[]) => boolean
   enableHardware?: boolean
@@ -881,23 +881,27 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           let resource: WebAssemblyResource
 
           if (wasmUrl) {
-            resource = await compile({
-              source: wasmUrl
-            })
+            if (is.string(wasmUrl) || is.arrayBuffer(wasmUrl)) {
+              resource = await compile({
+                source: wasmUrl
+              })
 
-            if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS)) {
-              resource.threadModule = await compile(
-                {
-                  // firefox 使用 arraybuffer 会卡主
-                  source: browser.firefox ? wasmUrl : resource.buffer
-                },
-                {
-                  child: true
-                }
-              )
+              if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS)) {
+                resource.threadModule = await compile(
+                  {
+                    // firefox 使用 arraybuffer 会卡主
+                    source: browser.firefox ? wasmUrl : resource.buffer
+                  },
+                  {
+                    child: true
+                  }
+                )
+              }
+              delete resource.buffer
             }
-
-            delete resource.buffer
+            else {
+              resource = wasmUrl
+            }
           }
           else {
             if (support.videoDecoder) {
@@ -949,23 +953,54 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           this.demuxer2AudioDecoderChannel = createMessageChannel()
           this.audioDecoder2AudioRenderChannel = createMessageChannel()
 
+          const wasmUrl = this.options.getWasm('decoder', stream.codecpar.codecId)
+          let resource: WebAssemblyResource
+
+          if (wasmUrl) {
+            if (is.string(wasmUrl) || is.arrayBuffer(wasmUrl)) {
+              resource = await compile({
+                source: wasmUrl
+              })
+            }
+            else {
+              resource = wasmUrl
+            }
+          }
+          else {
+            if (support.audioDecoder) {
+              const isSupport = await AudioDecoder.isConfigSupported({
+                codec: getAudioCodec(stream.codecpar),
+                sampleRate: stream.codecpar.sampleRate,
+                numberOfChannels: stream.codecpar.chLayout.nbChannels
+              })
+              if (!isSupport.supported) {
+                logger.fatal(`codecId ${stream.codecpar.codecId} not support`)
+              }
+            }
+            else {
+              logger.fatal(`codecId ${stream.codecpar.codecId} not support`)
+            }
+          }
+
           // 注册一个音频解码任务
           await AVPlayer.AudioDecoderThread.registerTask
             .transfer(this.demuxer2AudioDecoderChannel.port2, this.audioDecoder2AudioRenderChannel.port1)
             .invoke({
               taskId: this.taskId,
-              resource: await compile({
-                source: this.options.getWasm('decoder', stream.codecpar.codecId)
-              }),
+              resource,
               leftPort: this.demuxer2AudioDecoderChannel.port2,
               rightPort: this.audioDecoder2AudioRenderChannel.port1,
               stats: addressof(this.stats),
+              timeBase: {
+                num: stream.timeBase.num,
+                den: stream.timeBase.den,
+              },
               avpacketList: addressof(this.GlobalData.avpacketList),
               avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
               avframeList: addressof(this.GlobalData.avframeList),
               avframeListMutex: addressof(this.GlobalData.avframeListMutex)
             })
-          await AVPlayer.AudioDecoderThread.open(this.taskId, stream.codecpar, stream.timeBase)
+          await AVPlayer.AudioDecoderThread.open(this.taskId, stream.codecpar)
           await AVPlayer.DemuxerThread.connectStreamTask
             .transfer(this.demuxer2AudioDecoderChannel.port1)
             .invoke(this.taskId, stream.index, this.demuxer2AudioDecoderChannel.port1)
@@ -1027,6 +1062,40 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         this.audioRender2AudioWorkletChannel = new MessageChannel()
 
+        const resamplerResourceUrl = this.options.getWasm('resampler')
+        const stretchpitcherResourceUrl = this.options.getWasm('stretchpitcher')
+
+        let resamplerResource: WebAssemblyResource
+        let stretchpitcherResource: WebAssemblyResource
+
+        if (resamplerResourceUrl) {
+          if (is.string(resamplerResourceUrl) || is.arrayBuffer(resamplerResourceUrl)) {
+            resamplerResource = await compile({
+              source: resamplerResourceUrl
+            })
+          }
+          else {
+            resamplerResource = resamplerResourceUrl
+          }
+        }
+        else {
+          logger.fatal(`resampler not found`)
+        }
+
+        if (stretchpitcherResourceUrl) {
+          if (is.string(stretchpitcherResourceUrl) || is.arrayBuffer(stretchpitcherResourceUrl)) {
+            stretchpitcherResource = await compile({
+              source: stretchpitcherResourceUrl
+            })
+          }
+          else {
+            stretchpitcherResource = stretchpitcherResourceUrl
+          }
+        }
+        else {
+          logger.fatal(`stretch pitcher not found`)
+        }
+
         // 注册一个音频渲染任务
         await AVPlayer.AudioRenderThread.registerTask
           .transfer(
@@ -1042,12 +1111,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             playFormat: AVSampleFormat.AV_SAMPLE_FMT_FLTP,
             playSampleRate: AVPlayer.audioContext.sampleRate,
             playChannels: stream.codecpar.chLayout.nbChannels,
-            resamplerResource: await compile({
-              source: this.options.getWasm('resampler')
-            }),
-            stretchpitcherResource: await compile({
-              source: this.options.getWasm('stretchpitcher')
-            }),
+            resamplerResource,
+            stretchpitcherResource,
             stats: addressof(this.stats),
             timeBase: {
               num: stream.timeBase.num,

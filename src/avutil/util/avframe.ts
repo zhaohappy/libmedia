@@ -23,15 +23,18 @@
  *
  */
 
-import AVFrame, { AVFrameSideData, AVFrameSideDataType } from '../struct/avframe'
+import AVFrame, { AVFrameSideData, AVFrameSideDataType, AV_NUM_DATA_POINTERS } from '../struct/avframe'
 import { avFree, avFreep, avMalloc, avMallocz } from './mem'
 import { memcpy, memset } from 'cheap/std/memory'
 import { NOPTS_VALUE_BIGINT } from '../constant'
 import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from '../pixfmt'
-import { avbufferRef, avbufferReplace, avbufferUnref } from './avbuffer'
+import { avbufferAlloc, avbufferRef, avbufferReplace, avbufferUnref } from './avbuffer'
 import { freeAVDict } from './avdict'
 import { INVALID_ARGUMENT, NO_MEMORY } from '../error'
 import { getChannelLayoutNBChannels } from './channel'
+import { sampleFormatGetLinesize, sampleFormatIsPlanar } from '../sampleFormatDescriptor'
+import { AVBufferRef } from '../struct/avbuffer'
+import * as errorType from '../error'
 
 export function createAVFrame(): pointer<AVFrame> {
   const frame: pointer<AVFrame> = avMallocz(sizeof(AVFrame))
@@ -102,15 +105,61 @@ export function getAVFrameDefault(frame: pointer<AVFrame>) {
   frame.flags = 0
 }
 
-export function getVideoBuffer(frame: pointer<AVFrame>, algin: boolean) {
+export function getVideoBuffer(frame: pointer<AVFrame>, algin?: int32) {
 
 }
 
-export function getAudioBuffer(frame: pointer<AVFrame>, algin: boolean) {
+export function getAudioBuffer(frame: pointer<AVFrame>, algin?: int32) {
+  const planar = sampleFormatIsPlanar(frame.format)
+  const channels = frame.chLayout.nbChannels
+  const planes = planar ? channels : 1
 
+  let ret = 0
+
+  if (!frame.linesize[0]) {
+    ret = sampleFormatGetLinesize(frame.format, channels, frame.nbSamples, algin)
+
+    if (ret < 0) {
+      return ret
+    }
+    frame.linesize[0] = ret
+  }
+
+  if (planes > AV_NUM_DATA_POINTERS) {
+    frame.extendedData = reinterpret_cast<pointer<pointer<uint8>>>(avMalloc(planes * sizeof(accessof(frame.extendedData))))
+    frame.extendedBuf = reinterpret_cast<pointer<pointer<AVBufferRef>>>(avMalloc(planes * sizeof(accessof(frame.extendedBuf))))
+
+    if (!frame.extendedBuf || !frame.extendedData) {
+      avFreep(reinterpret_cast<pointer<pointer<uint8>>>(addressof(frame.extendedData)))
+      avFreep(reinterpret_cast<pointer<pointer<uint8>>>(addressof(frame.extendedBuf)))
+      return errorType.NO_MEMORY
+    }
+    frame.nbExtendedBuf = planes - AV_NUM_DATA_POINTERS
+  }
+  else {
+    frame.extendedData = addressof(frame.data)
+  }
+
+  for (let i = 0; i < Math.min(planes, AV_NUM_DATA_POINTERS); i++) {
+    frame.buf[i] = avbufferAlloc(frame.linesize[0])
+    if (!frame.buf[i]) {
+      unrefAVFrame(frame)
+      return errorType.NO_MEMORY
+    }
+    frame.extendedData[i] = frame.data[i] = frame.buf[i].data
+  }
+
+  for (let i = 0; i < planes - AV_NUM_DATA_POINTERS; i++) {
+    frame.extendedBuf[i] = avbufferAlloc(frame.linesize[0])
+    if (!frame.extendedBuf[i]) {
+      unrefAVFrame(frame)
+      return errorType.NO_MEMORY
+    }
+    frame.extendedData[i + AV_NUM_DATA_POINTERS] = frame.extendedBuf[i].data
+  }
 }
 
-export function getBuffer(frame: pointer<AVFrame>, algin: boolean) {
+export function getBuffer(frame: pointer<AVFrame>, algin?: int32) {
   if (frame.format < 0) {
     return INVALID_ARGUMENT
   }
