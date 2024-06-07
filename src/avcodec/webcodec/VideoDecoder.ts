@@ -34,7 +34,7 @@ import { getHardwarePreference } from '../function/getHardwarePreference'
 import { BitFormat } from 'avformat/codecs/h264'
 
 export type WebVideoDecoderOptions = {
-  onReceiveFrame?: (frame: VideoFrame) => void
+  onReceiveFrame: (frame: VideoFrame) => void
   enableHardwareAcceleration?: boolean
   onError: (error?: Error) => void
 }

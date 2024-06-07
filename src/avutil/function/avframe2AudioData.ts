@@ -25,7 +25,7 @@
 
 import { mapFloat32Array, mapInt16Array, mapInt32Array, mapUint8Array } from 'cheap/std/memory'
 import AVFrame from '../struct/avframe'
-import { AVSampleFormat } from 'avutil/audiosamplefmt'
+import { AVSampleFormat } from '../audiosamplefmt'
 
 function mapFormat(avframe: pointer<AVFrame>) {
   switch (avframe.format) {

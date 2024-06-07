@@ -33,8 +33,8 @@ import * as logger from 'common/util/logger'
 
 export type WasmAudioDecoderOptions = {
   resource: WebAssemblyResource
-  onReceiveFrame?: (frame: pointer<AVFrame>) => void
-  onError?: (error?: Error) => void
+  onReceiveFrame: (frame: pointer<AVFrame>) => void
+  onError: (error?: Error) => void
   avframePool?: AVFramePool
 }
 

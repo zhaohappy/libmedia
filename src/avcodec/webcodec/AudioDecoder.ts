@@ -31,7 +31,7 @@ import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
 
 export type WebAudioDecoderOptions = {
-  onReceiveFrame?: (frame: AudioData) => void
+  onReceiveFrame: (frame: AudioData) => void
   onError: (error?: Error) => void
 }
 
@@ -136,7 +136,7 @@ export default class WebAudioDecoder {
     }
   }
 
-  public decode(avpacket: pointer<AVPacket>) {
+  public decode(avpacket: pointer<AVPacket>, pts?: int64) {
 
     const element = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
 
@@ -144,7 +144,7 @@ export default class WebAudioDecoder {
       this.changeExtraData(mapUint8Array(element.data, element.size))
     }
 
-    const timestamp = static_cast<double>(avpacket.pts)
+    const timestamp = static_cast<double>(pts ?? avpacket.pts)
     const key = avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
 
     const audioChunk = new EncodedAudioChunk({
