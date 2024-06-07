@@ -6,7 +6,7 @@
 
 static AVCodecContext* enc_ctx;
 
-int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCodecParameters* codecpar) {
+int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCodecParameters* codecpar, AVRational* time_base, int thread_count) {
 
   int ret;
 
@@ -31,6 +31,15 @@ int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCode
   if ((ret = avcodec_parameters_to_context(*enc_ctx, codecpar)) < 0) {
     format_log(ERROR, "Failed to copy %s codec parameters to decoder context\n", avcodec_get_name(codec_id));
     return ret;
+  }
+
+  (*enc_ctx)->pkt_timebase = *time_base;
+
+  if (wasm_pthread_support()) {
+    if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+      // (*dec_ctx)->thread_type = FF_THREAD_SLICE;
+      (*enc_ctx)->thread_count = thread_count;
+    }
   }
 
   /* Init the encoders */
@@ -72,11 +81,11 @@ int encode_frame(const AVFrame* frame) {
   return 0;
 }
 
-EM_PORT_API(int) encoder_open(AVCodecParameters* codecpar) {
-  return open_codec_context(&enc_ctx, CODEC_ID, codecpar);
+EM_PORT_API(int) encoder_open(AVCodecParameters* codecpar, AVRational* time_base, int thread_count) {
+  return open_codec_context(&enc_ctx, codecpar->codec_id, codecpar, time_base, thread_count);
 }
 
-EM_PORT_API(int) encoder_encode(AVFrame* frame, AVPacket* packet) {
+EM_PORT_API(int) encoder_encode(AVFrame* frame) {
   return encode_frame(frame);
 }
 

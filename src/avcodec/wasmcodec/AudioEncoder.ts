@@ -1,5 +1,5 @@
 /*
- * libmedia wasm audio encoder
+ * libmedia wasm video encoder
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -27,42 +27,98 @@ import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import AVFrame from 'avutil/struct/avframe'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
-import { Rational } from 'avutil/struct/rational'
+import AVPacket, { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
+import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
+import * as logger from 'common/util/logger'
 
-export type WasmAudioEncoderOptions = {
+export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
-  onReceiveFrame?: (frame: AVFrame) => void
+  nReceivePacket: (avpacket: pointer<AVPacket>) => void
   onError: (error?: Error) => void
+  avpacketPool?: AVPacketPool
 }
 
 export default class WasmAudioEncoder {
 
-  private options: WasmAudioEncoderOptions
+  private options: WasmVideoEncoderOptions
 
   private encoder: WebAssemblyRunner
 
-  constructor(options: WasmAudioEncoderOptions) {
+  private packet: pointer<AVPacket>
+
+  constructor(options: WasmVideoEncoderOptions) {
     this.options = options
     this.encoder = new WebAssemblyRunner(this.options.resource)
   }
 
-  public async open(parameters: AVCodecParameters, timeBase: Rational) {
+  private getAVPacket() {
+    if (this.packet) {
+      return this.packet
+    }
+    return this.packet = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
+  }
+
+  private outputAVPacket() {
+    if (this.packet) {
+      this.options.nReceivePacket(this.packet)
+      this.packet = nullptr
+    }
+  }
+
+  private receiveAVPacket() {
+    return this.encoder.call<int32>('encoder_receive', this.getAVPacket())
+  }
+
+  public async open(parameters: pointer<AVCodecParameters>) {
     await this.encoder.run()
-    this.encoder.call('encoder_open', addressof(parameters), addressof(timeBase))
+    let ret = this.encoder.call<int32>('encoder_open', parameters, nullptr, 1)
+    if (ret < 0) {
+      logger.fatal(`open video decoder failed, ret: ${ret}`)
+    }
+    await this.encoder.childrenThreadReady()
   }
 
   public encode(frame: pointer<AVFrame>) {
-    let ret = this.encoder.call('encoder_encode', frame)
-    return ret
+    let ret = this.encoder.call<int32>('encoder_encode', frame)
+
+    if (ret) {
+      return ret
+    }
+
+    while (true) {
+      ret = this.receiveAVPacket()
+      if (ret === 1) {
+        this.outputAVPacket()
+      }
+      else if (ret < 0) {
+        return ret
+      }
+      else {
+        break
+      }
+    }
+    return 0
   }
 
   public async flush() {
     this.encoder.call('encoder_flush')
+    while (1) {
+      const ret = this.receiveAVPacket()
+      if (ret < 1) {
+        return
+      }
+      this.outputAVPacket()
+    }
   }
 
   public close() {
     this.encoder.call('encoder_close')
     this.encoder.destroy()
     this.encoder = null
+
+    if (this.packet) {
+      this.options.avpacketPool ? this.options.avpacketPool.release(this.packet as pointer<AVPacketRef>) : destroyAVPacket(this.packet)
+      this.packet = nullptr
+    }
   }
 }
