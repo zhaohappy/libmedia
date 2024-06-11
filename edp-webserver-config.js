@@ -1,5 +1,12 @@
+var fs = require('fs');
+var path = require('path');
+
 exports.port = 9000;
 exports.protocol = 'http';
+exports.tlsOptions = {
+  key: fs.readFileSync(path.join(__dirname, './test/key.pem')),
+  cert: fs.readFileSync(path.join(__dirname, './test/cert.pem'))
+};
 exports.directoryIndexes = true;
 exports.documentRoot = __dirname;
 exports.getLocations = function () {
