@@ -158,7 +158,7 @@ export default class FetchIOLoader extends IOLoader {
         params.headers[key] = value
       })
     }
-    if (!this.options.isLive) {
+    if (!this.options.isLive && !this.options.disableSegment) {
       params.headers['range'] = `bytes=${this.startBytes}-${this.endBytes > 0 ? this.endBytes : ''}`
     }
 
