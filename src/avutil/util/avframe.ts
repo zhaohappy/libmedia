@@ -32,7 +32,7 @@ import { avbufferAlloc, avbufferRef, avbufferReplace, avbufferUnref } from './av
 import { freeAVDict } from './avdict'
 import { INVALID_ARGUMENT, NO_MEMORY } from '../error'
 import { getChannelLayoutNBChannels } from './channel'
-import { sampleFormatGetLinesize, sampleFormatIsPlanar } from '../sampleFormatDescriptor'
+import { sampleFormatGetLinesize, sampleFormatIsPlanar } from './sample'
 import { AVBufferRef } from '../struct/avbuffer'
 import * as errorType from '../error'
 

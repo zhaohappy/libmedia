@@ -39,7 +39,7 @@ import { EBMLId, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './ma
 import * as crypto from 'avutil/util/crypto'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { mapUint8Array } from 'cheap/std/memory'
-import { chromaLocation2Pos } from 'avutil/pixelFormatDescriptor'
+import { chromaLocation2Pos } from 'avutil/util/pixel'
 import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 import * as string from 'common/util/string'
 import AVStream from '../AVStream'

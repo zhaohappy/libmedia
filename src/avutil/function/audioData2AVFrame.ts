@@ -1,7 +1,7 @@
 import { createAVFrame, getAudioBuffer } from '../util/avframe'
 import { AVSampleFormat } from '../audiosamplefmt'
 import AVFrame from '../struct/avframe'
-import { sampleFormatIsPlanar } from '../sampleFormatDescriptor'
+import { sampleFormatIsPlanar } from '../util/sample'
 import { mapUint8Array } from 'cheap/std/memory'
 
 function mapFormat(format: AudioDataFormat) {

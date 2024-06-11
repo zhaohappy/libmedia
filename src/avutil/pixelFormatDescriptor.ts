@@ -23,7 +23,7 @@
  *
  */
 
-import { AVChromaLocation, AVPixelFormat } from './pixfmt'
+import { AVPixelFormat } from './pixfmt'
 
 export const enum PixelFormatFlags {
   /**
@@ -1081,12 +1081,3 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
   }
 }
 
-export function chromaLocation2Pos(pos: AVChromaLocation) {
-  if (pos <= AVChromaLocation.AVCHROMA_LOC_UNSPECIFIED || pos >= AVChromaLocation.AVCHROMA_LOC_NB) {
-    return
-  }
-  return {
-    x: (pos & 1) * 128,
-    y: ((pos >>> 1) ^ (pos < 4 ? 1 : 0)) * 128
-  }
-}
