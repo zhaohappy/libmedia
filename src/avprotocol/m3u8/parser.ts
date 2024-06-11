@@ -852,7 +852,7 @@ function parseMediaPlaylist(lines: Line[], params: Record<string, any>) {
     const segment = parseSegment(lines, '', segmentStart, lines.length - 1, mediaSequence++, discontinuitySequence, params)
     if (segment) {
       const {parts} = segment
-      if (parts.length > 0 && !playlist.endlist && !parts.at(-1)?.hint) {
+      if (parts.length > 0 && !playlist.endlist && !parts[parts.length - 1]?.hint) {
         logger.fatal('If the Playlist contains EXT-X-PART tags and does not contain an EXT-X-ENDLIST tag, the Playlist must contain an EXT-X-PRELOAD-HINT tag with a TYPE=PART attribute')
       }
       // @ts-expect-error TODO check if this is not a bug the third argument should be a discontinuitySequence
@@ -892,7 +892,7 @@ function addSegment(
   if (byterange && byterange.offset === -1) {
     const {segments} = playlist
     if (segments.length > 0) {
-      const prevSegment = segments.at(-1)!
+      const prevSegment = segments[segments.length - 1]!
       if (prevSegment.byterange && prevSegment.uri === uri) {
         byterange.offset = prevSegment.byterange.offset + prevSegment.byterange.length
       }
@@ -991,7 +991,7 @@ function checkLowLatencyCompatibility({lowLatencyCompatibility, targetDuration, 
     }
   }
   for (const report of renditionReports) {
-    const lastSegment = segments.at(-1)
+    const lastSegment = segments[segments.length - 1]
     if (report.lastMSN === null || report.lastMSN === undefined) {
       report.lastMSN = lastSegment.mediaSequenceNumber
     }
