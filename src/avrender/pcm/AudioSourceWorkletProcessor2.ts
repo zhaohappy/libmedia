@@ -29,8 +29,9 @@ import { initThread, getHeapU8 } from 'cheap/heap'
 import AVPCMBuffer from 'avutil/struct/avpcmbuffer'
 import { avFree, avFreep, avMallocz } from 'avutil/util/mem'
 import * as logger from 'common/util/logger'
+import os from 'common/util/os'
 
-const BUFFER_LENGTH = 10
+const BUFFER_LENGTH = (os.windows || os.mac || os.linux) ? 10 : 20
 
 export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorBase {
 

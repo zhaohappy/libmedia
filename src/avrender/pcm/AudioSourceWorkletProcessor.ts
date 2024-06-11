@@ -27,8 +27,9 @@ import IPCPort, { REQUEST, RpcMessage } from 'common/network/IPCPort'
 import AudioWorkletProcessorBase from './audioWorklet/base/AudioWorkletProcessorBase'
 import * as is from 'common/util/is'
 import * as logger from 'common/util/logger'
+import os from 'common/util/os'
 
-const BUFFER_LENGTH = 10
+const BUFFER_LENGTH = (os.windows || os.mac || os.linux) ? 10 : 20
 
 export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBase {
 
