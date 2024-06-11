@@ -446,6 +446,7 @@
         jitter: <span id="jitter" class="stats-text">0</span>
       </div>
     </div>
+    <div id="ua"></div>
 
     <script>
       window.CHEAP_DISABLE_THREAD = false
@@ -455,6 +456,12 @@
     <script src="../dist/avplayer.js"></script>
     <script src="./vue.js" crossorigin></script>
     <script src="./element-ui.js" crossorigin></script>
+
+    <!-- <script src="./vconsole.min.js"></script> -->
+    <!-- <script>
+      var vConsole = new window.VConsole();
+    </script> -->
+
     <script>
 
       let player;
@@ -475,6 +482,7 @@
       let audioChangeComponent;
       let isSeeking;
       const sliderRatio = 1000;
+      let supportAtomic = true
 
       const sliderDom = document.querySelector('#slider')
       const playRateDom = document.querySelector('#play-rate')
@@ -513,55 +521,55 @@
                 case 'decoder': {
 
                   if (codecId >= 65536 && codecId <= 65572) {
-                    return '../dist/decode/pcm-atomic.wasm'
+                    return supportAtomic ? '../dist/decode/pcm-atomic.wasm' : '../dist/decode/pcm.wasm'
                   }
 
                   switch (codecId) {
                     // H264
                     case 27:
-                      return `../dist/decode/h264-atomic.wasm`
+                      return `../dist/decode/h264${(enableSimdComponent.enableSimd && false) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // AAC
                     case 86018:
-                      return '../dist/decode/aac-atomic.wasm'
+                      return supportAtomic ? '../dist/decode/aac-atomic.wasm' : '../dist/decode/aac.wasm'
                     // MP3
                     case 86017:
-                      return '../dist/decode/mp3-atomic.wasm'
+                      return supportAtomic ? '../dist/decode/mp3-atomic.wasm' : '../dist/decode/mp3.wasm'
                     // HEVC
                     case 173:
-                      return '../dist/decode/hevc-atomic.wasm'
+                      return supportAtomic ? '../dist/decode/hevc-atomic.wasm' : '../dist/decode/hevc.wasm'
                     // Mpeg4
                     case 12:
-                      return '../dist/decode/mpeg4-atomic.wasm'
+                      return supportAtomic ? '../dist/decode/mpeg4-atomic.wasm' : '../dist/decode/mpeg4.wasm'
                     // AV1
                     case 226:
-                      return '../dist/decode/av1-atomic.wasm'
+                      return supportAtomic ? '../dist/decode/av1-atomic.wasm' : '../dist/decode/av1.wasm'
                     // Speex
                     case 86051:
-                      return '../dist/decode/speex-atomic.wasm'
+                      return supportAtomic ? '../dist/decode/speex-atomic.wasm' : '../dist/decode/speex.wasm'
                     // Opus
                     case 86076:
-                      return '../dist/decode/opus-atomic.wasm'
+                      return supportAtomic ? '../dist/decode/opus-atomic.wasm' : '../dist/decode/opus.wasm'
                     // flac
                     case 86028:
-                      return '../dist/decode/flac-atomic.wasm'
+                      return supportAtomic ? '../dist/decode/flac-atomic.wasm' : '../dist/decode/flac.wasm'
                     // vorbis
                     case 86021:
-                      return '../dist/decode/vorbis-atomic.wasm'
+                      return supportAtomic ? '../dist/decode/vorbis-atomic.wasm' : '../dist/decode/vorbis.wasm'
                     // vp8
                     case 139:
-                      return '../dist/decode/vp8-atomic.wasm'
+                      return supportAtomic ? '../dist/decode/vp8-atomic.wasm' : '../dist/decode/vp8.wasm'
                     // vp9
                     case 167:
-                      return '../dist/decode/vp9-atomic.wasm'
+                      return supportAtomic ? '../dist/decode/vp9-atomic.wasm' : '../dist/decode/vp9.wasm'
                     default:
                       return null
                   }
                   break
                 }
                 case 'resampler':
-                  return '../dist/resample/resample-atomic.wasm'
+                  return supportAtomic ? '../dist/resample/resample-atomic.wasm' : '../dist/resample/resample.wasm'
                 case 'stretchpitcher':
-                  return '../dist/stretchpitch/stretchpitch-atomic.wasm'
+                  return supportAtomic ? '../dist/stretchpitch/stretchpitch-atomic.wasm' : '../dist/stretchpitch/stretchpitch.wasm'
               }
             },
             checkUseMES: (streams) => {
@@ -1028,6 +1036,26 @@
           }
         })
       }
+
+      function testSupportWasmAtomic() {
+        const asm = 'AGFzbQEAAAABBgFgAX8BfwISAQNlbnYGbWVtb3J5AgMBgIACAwIBAAcJAQVsb2FkOAAACgoBCAAgAP4SAAAL'
+        const binaryData = atob(asm)
+        const uint8Array = new Uint8Array(binaryData.length)
+        for (let i = 0; i < binaryData.length; i++) {
+          uint8Array[i] = binaryData.charCodeAt(i)
+        }
+
+        const instance = WebAssembly.compile(uint8Array).then(() => {
+          console.log('atomic support')
+        }, () => {
+          supportAtomic = false
+          console.log('atomic not support')
+        })
+      }
+
+      document.querySelector('#ua').textContent = navigator.userAgent
+
+      testSupportWasmAtomic()
     </script>
 </body>
 </html>
