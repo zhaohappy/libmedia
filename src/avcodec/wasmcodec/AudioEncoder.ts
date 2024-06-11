@@ -30,10 +30,16 @@ import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import AVPacket, { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
 import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
 import * as logger from 'common/util/logger'
+import * as is from 'common/util/is'
+import { audioData2AVFrame } from 'avutil/function/audioData2AVFrame'
+import * as stack from 'cheap/stack'
+import { createAVFrame, destroyAVFrame, unrefAVFrame } from 'avutil/util/avframe'
+import { Rational } from 'avutil/struct/rational'
+import { AV_TIME_BASE } from 'avutil/constant'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
-  nReceivePacket: (avpacket: pointer<AVPacket>) => void
+  onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
   onError: (error?: Error) => void
   avpacketPool?: AVPacketPool
 }
@@ -44,7 +50,9 @@ export default class WasmAudioEncoder {
 
   private encoder: WebAssemblyRunner
 
-  private packet: pointer<AVPacket>
+  private avpacket: pointer<AVPacket>
+
+  private avframe: pointer<AVFrame>
 
   constructor(options: WasmVideoEncoderOptions) {
     this.options = options
@@ -52,16 +60,16 @@ export default class WasmAudioEncoder {
   }
 
   private getAVPacket() {
-    if (this.packet) {
-      return this.packet
+    if (this.avpacket) {
+      return this.avpacket
     }
-    return this.packet = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
+    return this.avpacket = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
   }
 
   private outputAVPacket() {
-    if (this.packet) {
-      this.options.nReceivePacket(this.packet)
-      this.packet = nullptr
+    if (this.avpacket) {
+      this.options.onReceiveAVPacket(this.avpacket)
+      this.avpacket = nullptr
     }
   }
 
@@ -71,14 +79,34 @@ export default class WasmAudioEncoder {
 
   public async open(parameters: pointer<AVCodecParameters>) {
     await this.encoder.run()
-    let ret = this.encoder.call<int32>('encoder_open', parameters, nullptr, 1)
+
+    const timeBase = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
+
+    timeBase.num = 1
+    timeBase.den = AV_TIME_BASE
+
+    let ret = this.encoder.call<int32>('encoder_open', parameters, timeBase, 1)
+
+    stack.free(sizeof(Rational))
+
     if (ret < 0) {
       logger.fatal(`open video decoder failed, ret: ${ret}`)
     }
     await this.encoder.childrenThreadReady()
   }
 
-  public encode(frame: pointer<AVFrame>) {
+  public encode(frame: pointer<AVFrame> | AudioData) {
+
+    if (!is.number(frame)) {
+      if (this.avframe) {
+        unrefAVFrame(this.avframe)
+      }
+      else {
+        this.avframe = createAVFrame()
+      }
+      frame = audioData2AVFrame(frame, this.avframe)
+    }
+
     let ret = this.encoder.call<int32>('encoder_encode', frame)
 
     if (ret) {
@@ -116,9 +144,14 @@ export default class WasmAudioEncoder {
     this.encoder.destroy()
     this.encoder = null
 
-    if (this.packet) {
-      this.options.avpacketPool ? this.options.avpacketPool.release(this.packet as pointer<AVPacketRef>) : destroyAVPacket(this.packet)
-      this.packet = nullptr
+    if (this.avpacket) {
+      this.options.avpacketPool ? this.options.avpacketPool.release(this.avpacket as pointer<AVPacketRef>) : destroyAVPacket(this.avpacket)
+      this.avpacket = nullptr
+    }
+
+    if (this.avframe) {
+      destroyAVFrame(this.avframe)
+      this.avframe = nullptr
     }
   }
 }

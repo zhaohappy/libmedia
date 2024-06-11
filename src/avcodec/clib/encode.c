@@ -33,7 +33,7 @@ int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCode
     return ret;
   }
 
-  (*enc_ctx)->pkt_timebase = *time_base;
+  (*enc_ctx)->time_base = *time_base;
 
   if (wasm_pthread_support()) {
     if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
@@ -83,6 +83,30 @@ int encode_frame(const AVFrame* frame) {
 
 EM_PORT_API(int) encoder_open(AVCodecParameters* codecpar, AVRational* time_base, int thread_count) {
   return open_codec_context(&enc_ctx, codecpar->codec_id, codecpar, time_base, thread_count);
+}
+
+EM_PORT_API(void) encoder_set_flags(int flags) {
+  if (enc_ctx) {
+    enc_ctx->flags |= flags;
+  }
+}
+
+EM_PORT_API(void) encoder_set_flags2(int flags) {
+  if (enc_ctx) {
+    enc_ctx->flags2 |= flags;
+  }
+}
+
+EM_PORT_API(void) encoder_set_gop_size(int gop) {
+  if (enc_ctx) {
+    enc_ctx->gop_size = gop;
+  }
+}
+
+EM_PORT_API(void) encoder_set_max_b_frame(int max) {
+  if (enc_ctx) {
+    enc_ctx->max_b_frames = max;
+  }
 }
 
 EM_PORT_API(int) encoder_encode(AVFrame* frame) {

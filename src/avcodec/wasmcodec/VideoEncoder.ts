@@ -24,16 +24,23 @@
  */
 
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import AVFrame from 'avutil/struct/avframe'
+import AVFrame, { AVPictureType } from 'avutil/struct/avframe'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import AVPacket, { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
 import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
 import * as logger from 'common/util/logger'
+import * as stack from 'cheap/stack'
+import { Rational } from 'avutil/struct/rational'
+import { AV_TIME_BASE } from 'avutil/constant'
+import * as is from 'common/util/is'
+import { BitFormat } from 'avformat/codecs/h264'
+import { videoFrame2AVFrame } from 'avutil/function/videoFrame2AVFrame'
+import { createAVFrame, destroyAVFrame, unrefAVFrame } from 'avutil/util/avframe'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
-  nReceivePacket: (avpacket: pointer<AVPacket>) => void
+  onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
   onError: (error?: Error) => void
   avpacketPool?: AVPacketPool
 }
@@ -44,7 +51,9 @@ export default class WasmVideoEncoder {
 
   private encoder: WebAssemblyRunner
 
-  private packet: pointer<AVPacket>
+  private avpacket: pointer<AVPacket>
+
+  private avframe: pointer<AVFrame>
 
   constructor(options: WasmVideoEncoderOptions) {
     this.options = options
@@ -52,16 +61,16 @@ export default class WasmVideoEncoder {
   }
 
   private getAVPacket() {
-    if (this.packet) {
-      return this.packet
+    if (this.avpacket) {
+      return this.avpacket
     }
-    return this.packet = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
+    return this.avpacket = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
   }
 
   private outputAVPacket() {
-    if (this.packet) {
-      this.options.nReceivePacket(this.packet)
-      this.packet = nullptr
+    if (this.avpacket) {
+      this.options.onReceiveAVPacket(this.avpacket)
+      this.avpacket = nullptr
     }
   }
 
@@ -71,14 +80,45 @@ export default class WasmVideoEncoder {
 
   public async open(parameters: pointer<AVCodecParameters>, threadCount: number = 1) {
     await this.encoder.run()
-    let ret = this.encoder.call<int32>('encoder_open', parameters, nullptr, threadCount)
+
+    const timeBase = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
+
+    timeBase.num = 1
+    timeBase.den = AV_TIME_BASE
+
+    let ret = this.encoder.call<int32>('encoder_open', parameters, timeBase, threadCount)
+
+    stack.free(sizeof(Rational))
+
+    if (parameters.bitFormat === BitFormat.AVCC) {
+      this.encoder.call('encoder_set_flags', 1 << 22)
+    }
+    if (parameters.videoDelay) {
+      this.encoder.call('encoder_set_max_b_frame', parameters.videoDelay)
+    }
+
     if (ret < 0) {
       logger.fatal(`open video decoder failed, ret: ${ret}`)
     }
     await this.encoder.childrenThreadReady()
   }
 
-  public encode(frame: pointer<AVFrame>) {
+  public encode(frame: pointer<AVFrame> | VideoFrame, key: boolean) {
+
+    if (!is.number(frame)) {
+      if (this.avframe) {
+        unrefAVFrame(this.avframe)
+      }
+      else {
+        this.avframe = createAVFrame()
+      }
+      frame = videoFrame2AVFrame(frame, this.avframe)
+    }
+
+    if (key) {
+      frame.pictType = AVPictureType.AV_PICTURE_TYPE_I
+    }
+
     let ret = this.encoder.call<int32>('encoder_encode', frame)
 
     if (ret) {
@@ -116,9 +156,14 @@ export default class WasmVideoEncoder {
     this.encoder.destroy()
     this.encoder = null
 
-    if (this.packet) {
-      this.options.avpacketPool ? this.options.avpacketPool.release(this.packet as pointer<AVPacketRef>) : destroyAVPacket(this.packet)
-      this.packet = nullptr
+    if (this.avpacket) {
+      this.options.avpacketPool ? this.options.avpacketPool.release(this.avpacket as pointer<AVPacketRef>) : destroyAVPacket(this.avpacket)
+      this.avpacket = nullptr
+    }
+
+    if (this.avframe) {
+      destroyAVFrame(this.avframe)
+      this.avframe = nullptr
     }
   }
 }

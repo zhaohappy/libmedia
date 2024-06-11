@@ -69,6 +69,7 @@ export default class WebAudioEncoder {
   }) {
     const avpacket = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
     avpacket.pts = this.pts
+    avpacket.dts = this.pts
     avpacket.timeBase.den = AV_TIME_BASE
     avpacket.timeBase.num = 1
     avpacket.duration = static_cast<int64>(chunk.duration)
