@@ -37,7 +37,7 @@ import { createAVFrame, destroyAVFrame, unrefAVFrame } from 'avutil/util/avframe
 import { Rational } from 'avutil/struct/rational'
 import { AV_TIME_BASE } from 'avutil/constant'
 
-export type WasmVideoEncoderOptions = {
+export type WasmAudioEncoderOptions = {
   resource: WebAssemblyResource
   onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
   onError: (error?: Error) => void
@@ -46,7 +46,7 @@ export type WasmVideoEncoderOptions = {
 
 export default class WasmAudioEncoder {
 
-  private options: WasmVideoEncoderOptions
+  private options: WasmAudioEncoderOptions
 
   private encoder: WebAssemblyRunner
 
@@ -54,7 +54,7 @@ export default class WasmAudioEncoder {
 
   private avframe: pointer<AVFrame>
 
-  constructor(options: WasmVideoEncoderOptions) {
+  constructor(options: WasmAudioEncoderOptions) {
     this.options = options
     this.encoder = new WebAssemblyRunner(this.options.resource)
   }
@@ -104,7 +104,9 @@ export default class WasmAudioEncoder {
       else {
         this.avframe = createAVFrame()
       }
+      const audioData = frame
       frame = audioData2AVFrame(frame, this.avframe)
+      audioData.close()
     }
 
     let ret = this.encoder.call<int32>('encoder_encode', frame)
@@ -145,7 +147,9 @@ export default class WasmAudioEncoder {
     this.encoder = null
 
     if (this.avpacket) {
-      this.options.avpacketPool ? this.options.avpacketPool.release(this.avpacket as pointer<AVPacketRef>) : destroyAVPacket(this.avpacket)
+      this.options.avpacketPool
+        ? this.options.avpacketPool.release(this.avpacket as pointer<AVPacketRef>)
+        : destroyAVPacket(this.avpacket)
       this.avpacket = nullptr
     }
 

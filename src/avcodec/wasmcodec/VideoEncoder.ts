@@ -112,7 +112,9 @@ export default class WasmVideoEncoder {
       else {
         this.avframe = createAVFrame()
       }
+      const videoFrame = frame
       frame = videoFrame2AVFrame(frame, this.avframe)
+      videoFrame.close()
     }
 
     if (key) {
@@ -157,7 +159,9 @@ export default class WasmVideoEncoder {
     this.encoder = null
 
     if (this.avpacket) {
-      this.options.avpacketPool ? this.options.avpacketPool.release(this.avpacket as pointer<AVPacketRef>) : destroyAVPacket(this.avpacket)
+      this.options.avpacketPool
+        ? this.options.avpacketPool.release(this.avpacket as pointer<AVPacketRef>)
+        : destroyAVPacket(this.avpacket)
       this.avpacket = nullptr
     }
 

@@ -100,7 +100,7 @@ export default class IWavFormat extends IFormat {
       this.sampleCount = await formatContext.ioReader.readUint64()
 
       if (this.dataSize < 0 || this.sampleCount < 0) {
-        logger.error(`negative data_size and/or sample_count in ds64`)
+        logger.error('negative data_size and/or sample_count in ds64')
         return errorType.DATA_INVALID
       }
       await formatContext.ioReader.skip(size - 24)
@@ -125,7 +125,7 @@ export default class IWavFormat extends IFormat {
           }
         }
         else {
-          logger.warn(`found more than one 'fmt ' tag, ignore it`)
+          logger.warn('found more than one \'fmt \' tag, ignore it')
         }
       }
       else if (tag === 'data') {
@@ -199,22 +199,22 @@ export default class IWavFormat extends IFormat {
     if (flags & AVSeekFlags.BYTE) {
       const size = await formatContext.ioReader.fileSize()
 
-        if (size <= 0n) {
-          return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
-        }
+      if (size <= 0n) {
+        return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
+      }
 
-        if (timestamp < 0n) {
-          timestamp = 0n
-        }
-        else if (timestamp > size) {
-          timestamp = size
-        }
-        await formatContext.ioReader.seek(timestamp)
+      if (timestamp < 0n) {
+        timestamp = 0n
+      }
+      else if (timestamp > size) {
+        timestamp = size
+      }
+      await formatContext.ioReader.seek(timestamp)
 
-        if (!(flags & AVSeekFlags.ANY)) {
-          this.currentPts = ((timestamp - this.pcmStartPos) << 3n)/ BigInt( stream.codecpar.chLayout.nbChannels * getBitsPerSample(stream.codecpar.codecId))
-        }
-        return now
+      if (!(flags & AVSeekFlags.ANY)) {
+        this.currentPts = ((timestamp - this.pcmStartPos) << 3n) / BigInt( stream.codecpar.chLayout.nbChannels * getBitsPerSample(stream.codecpar.codecId))
+      }
+      return now
     }
     else {
       const pos = this.pcmStartPos + (timestamp * BigInt(stream.codecpar.chLayout.nbChannels * getBitsPerSample(stream.codecpar.codecId)) >> 3n)

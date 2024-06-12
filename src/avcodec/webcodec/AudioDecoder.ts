@@ -159,7 +159,7 @@ export default class WebAudioDecoder {
     catch (error) {
       return -1
     }
-    
+
     return 0
   }
 

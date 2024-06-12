@@ -1,4 +1,4 @@
-import AVFrame from 'avutil/struct/avframe';
+import AVFrame from 'avutil/struct/avframe'
 import AVPacket from 'avutil/struct/avpacket'
 
 export default abstract class Decoder {
