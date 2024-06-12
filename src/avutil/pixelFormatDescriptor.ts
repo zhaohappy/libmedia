@@ -103,6 +103,10 @@ export type PixelFormatDescriptor = {
    */
   comp: {
     /**
+     * Which of the 4 planes contains the component.
+     */
+    plane: number
+    /**
      * Number of elements between 2 horizontally consecutive pixels.
      * Elements are bits for bitstream formats, bytes otherwise.
      */
@@ -138,18 +142,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 8
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 8
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -164,18 +171,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 8
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 8
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -190,18 +200,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 8
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 8
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -216,18 +229,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 8
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 8
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -242,18 +258,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 8
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 8
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -268,20 +287,53 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 8
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 8
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
+        shift: 0,
+        depth: 8
+      }
+    ]
+  },
+
+  [AVPixelFormat.AV_PIX_FMT_NV12]: {
+    nbComponents: 3,
+    log2ChromaW: 1,
+    log2ChromaH: 1,
+    flags: PixelFormatFlags.PLANER,
+    comp: [
+      {
+        plane: 0,
+        step: 1,
+        offset: 0,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 1,
+        step: 2,
+        offset: 0,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 1,
+        step: 2,
+        offset: 1,
         shift: 0,
         depth: 8
       }
@@ -298,18 +350,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 9
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 9
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -324,18 +379,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 9
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 9
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -350,18 +408,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 10
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 10
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -376,18 +437,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 10
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 10
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -402,18 +466,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 12
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 12
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -428,18 +495,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 12
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 12
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -454,18 +524,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 14
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 14
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -480,18 +553,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 14
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 14
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -506,18 +582,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 16
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 16
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -532,18 +611,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 16
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 16
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -562,18 +644,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 9
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 9
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -588,18 +673,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 9
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 9
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -614,18 +702,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 10
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 10
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -640,18 +731,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 10
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 10
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -666,18 +760,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 12
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 12
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -692,18 +789,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 12
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 12
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -718,18 +818,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 14
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 14
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -744,18 +847,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 14
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 14
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -770,18 +876,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 16
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 16
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -796,18 +905,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 16
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 16
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -826,18 +938,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 9
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 9
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -852,18 +967,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 9
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 9
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -878,18 +996,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 10
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 10
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -904,18 +1025,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 10
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 10
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -930,18 +1054,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 12
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 12
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -956,18 +1083,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 12
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 12
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -982,18 +1112,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 14
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 14
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -1008,18 +1141,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 14
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 14
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -1034,18 +1170,21 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 16
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 16
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
@@ -1060,22 +1199,196 @@ export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelForma
     flags: PixelFormatFlags.PLANER,
     comp: [
       {
+        plane: 0,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 16
       },
       {
+        plane: 1,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 16
       },
       {
+        plane: 2,
         step: 1,
         offset: 0,
         shift: 0,
         depth: 16
+      }
+    ]
+  },
+
+  [AVPixelFormat.AV_PIX_FMT_RGBA]: {
+    nbComponents: 4,
+    log2ChromaW: 0,
+    log2ChromaH: 0,
+    flags: PixelFormatFlags.RGB | PixelFormatFlags.ALPHA,
+    comp: [
+      {
+        plane: 0,
+        step: 4,
+        offset: 0,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 0,
+        step: 4,
+        offset: 1,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 0,
+        step: 4,
+        offset: 2,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 0,
+        step: 4,
+        offset: 3,
+        shift: 0,
+        depth: 8
+      }
+    ]
+  },
+
+  [AVPixelFormat.AV_PIX_FMT_RGB0]: {
+    nbComponents: 3,
+    log2ChromaW: 0,
+    log2ChromaH: 0,
+    flags: PixelFormatFlags.RGB,
+    comp: [
+      {
+        plane: 0,
+        step: 4,
+        offset: 0,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 0,
+        step: 4,
+        offset: 1,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 0,
+        step: 4,
+        offset: 2,
+        shift: 0,
+        depth: 8
+      }
+    ]
+  },
+
+  [AVPixelFormat.AV_PIX_FMT_BGRA]: {
+    nbComponents: 4,
+    log2ChromaW: 0,
+    log2ChromaH: 0,
+    flags: PixelFormatFlags.RGB | PixelFormatFlags.ALPHA,
+    comp: [
+      {
+        plane: 0,
+        step: 4,
+        offset: 2,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 0,
+        step: 4,
+        offset: 1,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 0,
+        step: 4,
+        offset: 0,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 0,
+        step: 4,
+        offset: 3,
+        shift: 0,
+        depth: 8
+      }
+    ]
+  },
+
+  [AVPixelFormat.AV_PIX_FMT_BGR0]: {
+    nbComponents: 3,
+    log2ChromaW: 0,
+    log2ChromaH: 0,
+    flags: PixelFormatFlags.RGB,
+    comp: [
+      {
+        plane: 0,
+        step: 4,
+        offset: 2,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 0,
+        step: 4,
+        offset: 1,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 0,
+        step: 4,
+        offset: 0,
+        shift: 0,
+        depth: 8
+      }
+    ]
+  },
+
+  [AVPixelFormat.AV_PIX_FMT_YUVA420P]: {
+    nbComponents: 4,
+    log2ChromaW: 1,
+    log2ChromaH: 1,
+    flags: PixelFormatFlags.PLANER | PixelFormatFlags.ALPHA,
+    comp: [
+      {
+        plane: 0,
+        step: 1,
+        offset: 0,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 1,
+        step: 1,
+        offset: 0,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 2,
+        step: 1,
+        offset: 0,
+        shift: 0,
+        depth: 8
+      },
+      {
+        plane: 3,
+        step: 1,
+        offset: 0,
+        shift: 0,
+        depth: 8
       }
     ]
   }

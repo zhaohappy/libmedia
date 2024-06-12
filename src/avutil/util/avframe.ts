@@ -26,7 +26,7 @@
 import AVFrame, { AVFrameSideData, AVFrameSideDataType, AV_NUM_DATA_POINTERS } from '../struct/avframe'
 import { avFree, avFreep, avMalloc, avMallocz } from './mem'
 import { memcpy, memset } from 'cheap/std/memory'
-import { NOPTS_VALUE_BIGINT } from '../constant'
+import { INT32_MAX, NOPTS_VALUE_BIGINT } from '../constant'
 import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from '../pixfmt'
 import { avbufferAlloc, avbufferRef, avbufferReplace, avbufferUnref } from './avbuffer'
 import { freeAVDict } from './avdict'
@@ -35,6 +35,10 @@ import { getChannelLayoutNBChannels } from './channel'
 import { sampleFormatGetLinesize, sampleFormatIsPlanar } from './sample'
 import { AVBufferRef } from '../struct/avbuffer'
 import * as errorType from '../error'
+import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
+import * as stack from 'cheap/stack'
+import { alignFunc } from '../util/common'
+import { pixelFillLinesizes, pixelFillPlaneSizes, pixelFillPointer } from './pixel'
 
 export function createAVFrame(): pointer<AVFrame> {
   const frame: pointer<AVFrame> = avMallocz(sizeof(AVFrame))
@@ -92,7 +96,7 @@ export function getAVFrameDefault(frame: pointer<AVFrame>) {
   if (defined(API_FRAME_KEY)) {
     frame.keyFrame = 1
   }
-  
+
   frame.sampleAspectRatio.num = 0
   frame.sampleAspectRatio.den = 1
   frame.format = -1
@@ -105,8 +109,91 @@ export function getAVFrameDefault(frame: pointer<AVFrame>) {
   frame.flags = 0
 }
 
-export function getVideoBuffer(frame: pointer<AVFrame>, algin?: int32) {
+export function getVideoBuffer(frame: pointer<AVFrame>, algin: int32 = 0) {
+  const desc = PixelFormatDescriptorsMap[frame.format]
 
+  if (!desc) {
+    return errorType.INVALID_ARGUMENT
+  }
+
+  const linesizes = reinterpret_cast<pointer<int32>>(stack.malloc(sizeof(int32) * 4))
+  const sizes = reinterpret_cast<pointer<size>>(stack.malloc(sizeof(size) * 4))
+
+  const planePadding = Math.max(16 + 16, algin)
+  let ret = 0
+
+  if (!frame.linesize[0]) {
+    if (algin <= 0) {
+      algin = 32
+    }
+
+    for (let i = 0; i < algin; i += i) {
+      ret = pixelFillLinesizes(addressof(frame.linesize), frame.format, alignFunc(frame.width, i))
+
+      if (ret < 0) {
+        defer()
+        return ret
+      }
+
+      if (!(frame.linesize[0] & (algin - 1))) {
+        break
+      }
+    }
+
+    for (let i = 0; i < 4 && frame.linesize[i]; i++) {
+      frame.linesize[i] = alignFunc(frame.linesize[i], algin)
+    }
+  }
+
+  for (let i = 0; i < 4; i++) {
+    linesizes[i] = frame.linesize[i]
+  }
+
+  const paddingHeight = alignFunc(frame.height, 32)
+
+  if ((ret = pixelFillPlaneSizes(sizes, frame.format, paddingHeight, linesizes)) < 0) {
+    defer()
+    return ret
+  }
+
+  let totalSize = 4 * planePadding
+
+  for (let i = 0; i < 4; i++) {
+    if (sizes[i] > INT32_MAX - totalSize) {
+      errorType.INVALID_ARGUMENT
+    }
+    totalSize += sizes[i]
+  }
+
+  frame.buf[0] = avbufferAlloc(totalSize)
+
+  if (!frame.buf[0]) {
+    unrefAVFrame(frame)
+    defer()
+    return errorType.NO_MEMORY
+  }
+
+  if ((ret = pixelFillPointer(addressof(frame.data), frame.format, paddingHeight, frame.buf[0].data, linesizes)) < 0) {
+    unrefAVFrame(frame)
+    defer()
+    return ret
+  }
+
+  for (let i = 1; i < 4; i++) {
+    if (frame.data[i]) {
+      frame.data[i] = reinterpret_cast<pointer<uint8>>(frame.data[i] + i * planePadding)
+    }
+  }
+
+  frame.extendedData = addressof(frame.data)
+
+  defer()
+  return 0
+
+  function defer() {
+    stack.free(stack.malloc(sizeof(int32) * 4))
+    stack.free(stack.malloc(stack.malloc(sizeof(size) * 4)))
+  }
 }
 
 export function getAudioBuffer(frame: pointer<AVFrame>, algin?: int32) {
@@ -322,7 +409,7 @@ export function copyAVFrameProps(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
     dst.codedPictureNumber = src.codedPictureNumber
     dst.displayPictureNumber = src.displayPictureNumber
   }
-  
+
   dst.flags = src.flags
   dst.decodeErrorFlags = src.decodeErrorFlags
   dst.colorPrimaries = src.colorPrimaries

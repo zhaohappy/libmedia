@@ -114,31 +114,20 @@ export function getVideoColorSpaceInit(avframe: pointer<AVFrame>) {
 
 export function avframe2VideoFrame(avframe: pointer<AVFrame>) {
 
-  let size = 0
   let height = avframe.height
 
   const des = PixelFormatDescriptorsMap[avframe.format as AVPixelFormat]
 
   const layout: PlaneLayout[] = []
 
-  for (let i = 0; i < des.nbComponents; i++) {
+  for (let i = 1; i < des.nbComponents; i++) {
     layout.push({
-      offset: size,
+      offset: avframe.data[i] - avframe.buf[0].data,
       stride: avframe.linesize[i]
     })
-
-    const bits = des.comp[i].depth <= 8 ? 1 : 2
-
-    // rgb luma alpha
-    if (des.flags & PixelFormatFlags.RGB || i === 0 || i === 3) {
-      size += avframe.linesize[i] * height * bits
-    }
-    else {
-      size += avframe.linesize[i] * (height >>> des.log2ChromaH)
-    }
   }
 
-  const videoFrame = new VideoFrame(mapUint8Array(accessof(avframe.extendedData), size), {
+  const videoFrame = new VideoFrame(mapUint8Array(avframe.buf[0].data, avframe.buf[0].size), {
     codedWidth: avframe.width,
     codedHeight: height,
     timestamp: static_cast<double>(avframe.pts),
