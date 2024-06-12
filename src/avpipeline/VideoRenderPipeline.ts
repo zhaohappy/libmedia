@@ -51,8 +51,10 @@ import WebGLRender, { WebGLRenderOptions } from 'avrender/image/WebGLRender'
 import CanvasImageRender from 'avrender/image/Canvas2dRender'
 import WebGPUExternalRender from 'avrender/image/WebGPUExternalRender'
 import WebGLYUV8Render from 'avrender/image/WebGLYUV8Render'
+import WebGLRGB8Render from 'avrender/image/WebGLRGB8Render'
 import WebGLYUV16Render from 'avrender/image/WebGLYUV16Render'
 import WebGPUYUV8Render from 'avrender/image/WebGPUYUV8Render'
+import WebGPURGB8Render from 'avrender/image/WebGPURGB8Render'
 import WebGPUYUV16Render from 'avrender/image/WebGPUYUV16Render'
 import isWorker from 'common/function/isWorker'
 import { JitterBuffer } from './struct/jitter'
@@ -68,14 +70,16 @@ type WebGLRenderFactory = {
 }
 
 const WebGPURenderList: WebGPURenderFactory[] = defined(ENABLE_WEBGPU) ? [
-  WebGPUYUV8Render
+  WebGPUYUV8Render,
+  WebGPURGB8Render
 ] : []
 if (defined(ENABLE_WEBGPU) && defined(ENABLE_RENDER_16)) {
   WebGPURenderList.push(WebGPUYUV16Render)
 }
 
 const WebGLRenderList: WebGLRenderFactory[] = [
-  WebGLYUV8Render
+  WebGLYUV8Render,
+  WebGLRGB8Render
 ]
 if (defined(ENABLE_RENDER_16)) {
   WebGLRenderList.push(WebGLYUV16Render)
