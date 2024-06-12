@@ -29,7 +29,7 @@ import * as is from 'common/util/is'
 
 import { WebGPURenderOptions } from './WebGPURender'
 import WebGPUYUVRender from './WebGPUYUVRender'
-import { PixelFormatDescriptorsMap } from 'avutil/pixelFormatDescriptor'
+import { PixelFormatDescriptor, PixelFormatDescriptorsMap, PixelFormatFlags } from 'avutil/pixelFormatDescriptor'
 import { mapUint8Array } from 'cheap/std/memory'
 import ColorSpace from './colorSpace/ColorSpace'
 import generateSteps from './colorTransform/generateSteps'
@@ -41,7 +41,7 @@ export default class WebGPUYUV8Render extends WebGPUYUVRender {
     super(canvas, options)
   }
 
-  private generateFragmentSource() {
+  private generateFragmentSource(format: AVPixelFormat, descriptor: PixelFormatDescriptor) {
 
     const steps = generateSteps(this.srcColorSpace, this.dstColorSpace, {
       bitDepth: 8,
@@ -49,15 +49,33 @@ export default class WebGPUYUV8Render extends WebGPUYUVRender {
       outputRGB: true
     })
 
+    let u = 'textureSample(uTexture, s, in_texcoord.xy).x'
+    let v = 'textureSample(vTexture, s, in_texcoord.xy).x'
+    let alpha = '1.0'
+
+    if (format === AVPixelFormat.AV_PIX_FMT_NV12) {
+      u = 'textureSample(uTexture, s, in_texcoord.xy).x'
+      v = 'textureSample(uTexture, s, in_texcoord.xy).y'
+    }
+
+    if ((descriptor.flags & PixelFormatFlags.ALPHA) && descriptor.nbComponents === 4) {
+      alpha = 'textureSample(aTexture, s, in_texcoord.xy).x'
+    }
+
     this.fragmentSource = `
-      @group(0) @binding(1) var yTexture: texture_2d<f32>;
-      @group(0) @binding(2) var uTexture: texture_2d<f32>;
-      @group(0) @binding(3) var vTexture: texture_2d<f32>;
-      @group(0) @binding(4) var s: sampler;
+      @group(0) @binding(1) var s: sampler;
+      @group(0) @binding(2) var yTexture: texture_2d<f32>;
+      @group(0) @binding(3) var uTexture: texture_2d<f32>;
+      ${this.vTexture ? '@group(0) @binding(4) var vTexture: texture_2d<f32>;' : ''}
+      ${this.aTexture ? '@group(0) @binding(5) var aTexture: texture_2d<f32>;' : ''}
       
       @fragment
       fn main(@location(0) in_texcoord: vec4<f32>) -> @location(0) vec4<f32> {
-        var color = vec4(textureSample(yTexture, s, in_texcoord.xy).x, textureSample(uTexture, s, in_texcoord.xy).x, textureSample(vTexture, s, in_texcoord.xy).x, 1.0);
+        let y = textureSample(yTexture, s, in_texcoord.xy).x;
+        let u = ${u};
+        let v = ${v};
+        let alpha = ${alpha};
+        var color = vec4(y, u, v, alpha);
         ${steps.reduce((pre, current) => pre + current, '')}
         return color;
       }
@@ -65,6 +83,13 @@ export default class WebGPUYUV8Render extends WebGPUYUVRender {
   }
 
   protected checkFrame(frame: pointer<AVFrame>): void {
+
+    const descriptor =  PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
+
+    if (!descriptor) {
+      return
+    }
+
     if (frame.linesize[0] !== this.textureWidth
       || frame.height !== this.videoHeight
       || frame.width !== this.videoWidth
@@ -78,6 +103,9 @@ export default class WebGPUYUV8Render extends WebGPUYUVRender {
       if (this.vTexture) {
         this.vTexture.destroy()
       }
+      if (this.aTexture) {
+        this.aTexture.destroy()
+      }
 
       this.yTexture = this.device.createTexture({
         size: [frame.linesize[0], frame.height],
@@ -90,11 +118,21 @@ export default class WebGPUYUV8Render extends WebGPUYUVRender {
         usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
         format: 'r8unorm'
       })
-      this.vTexture = this.device.createTexture({
-        size: [frame.linesize[2], frame.height >>> PixelFormatDescriptorsMap[frame.format as AVPixelFormat].log2ChromaH],
-        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-        format: 'r8unorm'
-      })
+      if (descriptor.comp[1].plane !== descriptor.comp[2].plane) {
+        this.vTexture = this.device.createTexture({
+          size: [frame.linesize[2], frame.height >>> PixelFormatDescriptorsMap[frame.format as AVPixelFormat].log2ChromaH],
+          usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+          format: 'r8unorm'
+        })
+      }
+
+      if (descriptor.nbComponents === 4) {
+        this.aTexture = this.device.createTexture({
+          size: [frame.linesize[3], frame.height],
+          usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+          format: 'r8unorm'
+        })
+      }
 
       this.srcColorSpace = new ColorSpace(
         frame.colorSpace,
@@ -103,7 +141,7 @@ export default class WebGPUYUV8Render extends WebGPUYUVRender {
         frame.colorRange
       )
 
-      this.generateFragmentSource()
+      this.generateFragmentSource(frame.format as AVPixelFormat, descriptor)
 
       this.videoWidth = frame.width
       this.videoHeight = frame.height
@@ -157,22 +195,44 @@ export default class WebGPUYUV8Render extends WebGPUYUVRender {
         depthOrArrayLayers: 1
       }
     )
-    this.device.queue.writeTexture(
-      {
-        texture: this.vTexture
-      },
-      mapUint8Array(frame.data[2], this.vTexture.width * this.vTexture.height),
-      {
-        offset: 0,
-        bytesPerRow: this.vTexture.width,
-        rowsPerImage: this.vTexture.height
-      },
-      {
-        width: this.vTexture.width,
-        height: this.vTexture.height,
-        depthOrArrayLayers: 1
-      }
-    )
+
+    if (this.vTexture) {
+      this.device.queue.writeTexture(
+        {
+          texture: this.vTexture
+        },
+        mapUint8Array(frame.data[2], this.vTexture.width * this.vTexture.height),
+        {
+          offset: 0,
+          bytesPerRow: this.vTexture.width,
+          rowsPerImage: this.vTexture.height
+        },
+        {
+          width: this.vTexture.width,
+          height: this.vTexture.height,
+          depthOrArrayLayers: 1
+        }
+      )
+    }
+
+    if (this.aTexture) {
+      this.device.queue.writeTexture(
+        {
+          texture: this.aTexture
+        },
+        mapUint8Array(frame.data[3], this.aTexture.width * this.aTexture.height),
+        {
+          offset: 0,
+          bytesPerRow: this.aTexture.width,
+          rowsPerImage: this.aTexture.height
+        },
+        {
+          width: this.aTexture.width,
+          height: this.aTexture.height,
+          depthOrArrayLayers: 1
+        }
+      )
+    }
 
     const commandEncoder = this.device.createCommandEncoder()
     const renderPass = commandEncoder.beginRenderPass({
@@ -202,7 +262,10 @@ export default class WebGPUYUV8Render extends WebGPUYUVRender {
     if (is.number(frame)) {
       const info = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
       if (info) {
-        return ((info.comp[0].depth + 7) >>> 3) === 1
+        if (info.flags & PixelFormatFlags.RGB) {
+          return false
+        }
+        return (info.flags & PixelFormatFlags.PLANER) && ((info.comp[0].depth + 7) >>> 3) === 1
       }
     }
     return false

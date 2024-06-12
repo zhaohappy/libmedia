@@ -27,8 +27,6 @@ import Texture from './Texture'
 
 export default class YUVTexture extends Texture {
 
-  private data: Uint8Array
-
   private filter: number
 
   private format: number
@@ -39,10 +37,9 @@ export default class YUVTexture extends Texture {
 
   constructor(
     gl: WebGLRenderingContext | WebGL2RenderingContext,
-    data?: Uint8Array, width?: number, height?: number
+    width?: number, height?: number
   ) {
     super(gl, width, height)
-    this.data = data
     this.format = this.gl.LUMINANCE
     this.filter = this.gl.LINEAR
     this.internalformat = this.gl.LUMINANCE

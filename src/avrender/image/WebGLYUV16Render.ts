@@ -62,11 +62,24 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
     }
   }
 
-  private generateFragmentSource(descriptor: PixelFormatDescriptor, colorTransformOptions: ColorTransformOptions) {
+  private generateFragmentSource(format: AVPixelFormat, descriptor: PixelFormatDescriptor, colorTransformOptions: ColorTransformOptions) {
 
     colorTransformOptions.outputRGB = true
 
     const steps = generateSteps(this.srcColorSpace, this.dstColorSpace, colorTransformOptions)
+
+    let u = 'texture2D(u_Sampler, v_color.xy).x'
+    let v = 'texture2D(v_Sampler, v_color.xy).x'
+    let alpha = '1.0'
+
+    if (format === AVPixelFormat.AV_PIX_FMT_NV12) {
+      u = 'texture2D(u_Sampler, v_color.xy).x'
+      v = 'texture2D(u_Sampler, v_color.xy).y'
+    }
+
+    if ((descriptor.flags & PixelFormatFlags.ALPHA) && descriptor.nbComponents === 4) {
+      alpha = 'texture2D(a_Sampler, v_color.xy).x'
+    }
 
     this.fragmentSource = `
       precision highp float;
@@ -100,8 +113,9 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
       void main () {
       
         float y = texture2D(y_Sampler, v_color.xy).x;
-        float u = texture2D(u_Sampler, v_color.xy).x;
-        float v = texture2D(v_Sampler, v_color.xy).x;
+        float u = ${u};
+        float v = ${v};
+        float alpha = ${alpha};
         
         ${(descriptor.flags & PixelFormatFlags.BIG_ENDIAN) ? `
           y = swap(y);
@@ -113,7 +127,7 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
           v = v * 65535.0 / v_max;
         `}
         
-        vec4 color = vec4(y, u, v, 1.0);
+        vec4 color = vec4(y, u, v, alpha);
 
         if (color.a > 0.0) {
           color.r /= color.a;
@@ -179,7 +193,7 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
         }
       }
 
-      this.generateFragmentSource(descriptor, colorTransformOptions)
+      this.generateFragmentSource(frame.format as AVPixelFormat, descriptor, colorTransformOptions)
       this.program = new YUV16Program(this.fragmentSource)
       this.useProgram()
       this.program.setMetaData(this.hdrMetadata)
@@ -196,9 +210,18 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
       this.vTexture.setInternalformat(this.ext.R16_EXT)
       this.vTexture.setDataType(this.gl.UNSIGNED_SHORT)
 
+      this.aTexture.setFormat(this.gl.RED)
+      this.aTexture.setInternalformat(this.ext.R16_EXT)
+      this.aTexture.setDataType(this.gl.UNSIGNED_SHORT)
+
       this.yTexture.setSize(frame.linesize[0] >>> 1, frame.height)
       this.uTexture.setSize(frame.linesize[1] >>> 1, frame.height >>> PixelFormatDescriptorsMap[frame.format as AVPixelFormat].log2ChromaH)
-      this.vTexture.setSize(frame.linesize[2] >>> 1, frame.height >>> PixelFormatDescriptorsMap[frame.format as AVPixelFormat].log2ChromaH)
+      if (descriptor.comp[1].plane !== descriptor.comp[2].plane) {
+        this.vTexture.setSize(frame.linesize[2] >>> 1, frame.height >>> PixelFormatDescriptorsMap[frame.format as AVPixelFormat].log2ChromaH)
+      }
+      if (descriptor.nbComponents === 4) {
+        this.aTexture.setSize(frame.linesize[3] >>> 1, frame.height)
+      }
 
       this.program.setMax((1 << descriptor.comp[0].depth) - 1)
 
@@ -219,6 +242,12 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
 
     this.checkFrame(frame)
 
+    const descriptor =  PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
+
+    if (!descriptor) {
+      return
+    }
+
     this.yTexture.fill(mapUint16Array(
       reinterpret_cast<pointer<uint16>>(frame.data[0]),
       this.yTexture.width * this.yTexture.height
@@ -227,10 +256,19 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
       reinterpret_cast<pointer<uint16>>(frame.data[1]),
       this.uTexture.width * this.uTexture.height
     ))
-    this.vTexture.fill(mapUint16Array(
-      reinterpret_cast<pointer<uint16>>(frame.data[2]),
-      this.vTexture.width * this.vTexture.height
-    ))
+
+    if (descriptor.comp[1].plane !== descriptor.comp[2].plane) {
+      this.vTexture.fill(mapUint16Array(
+        reinterpret_cast<pointer<uint16>>(frame.data[2]),
+        this.vTexture.width * this.vTexture.height
+      ))
+    }
+    if (descriptor.nbComponents === 4) {
+      this.aTexture.fill(mapUint16Array(
+        reinterpret_cast<pointer<uint16>>(frame.data[3]),
+        this.aTexture.width * this.aTexture.height
+      ))
+    }
 
     this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4)
   }
@@ -247,7 +285,10 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
     if (is.number(frame)) {
       const info = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
       if (info) {
-        return ((info.comp[0].depth + 7) >>> 3) === 2
+        if (info.flags & PixelFormatFlags.RGB) {
+          return false
+        }
+        return (info.flags & PixelFormatFlags.PLANER) && ((info.comp[0].depth + 7) >>> 3) === 2
       }
     }
     return false

@@ -53,7 +53,7 @@ function mapColorPrimaries(colorPrimaries: string) {
     case 'smpte170m':
       return AVColorPrimaries.AVCOL_PRI_SMPTE170M
     default:
-     return AVColorPrimaries.AVCOL_PRI_BT709
+      return AVColorPrimaries.AVCOL_PRI_BT709
   }
 }
 

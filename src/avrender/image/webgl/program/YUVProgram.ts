@@ -33,6 +33,8 @@ export default abstract class YUVProgram extends VideoProgram {
 
   private vSamplerLocation: WebGLUniformLocation
 
+  private aSamplerLocation: WebGLUniformLocation
+
   constructor(yuvFragmentSource: string) {
     super(yuvFragmentSource)
   }
@@ -42,6 +44,7 @@ export default abstract class YUVProgram extends VideoProgram {
     this.ySamplerLocation = this.gl.getUniformLocation(this.program, 'y_Sampler')
     this.uSamplerLocation = this.gl.getUniformLocation(this.program, 'u_Sampler')
     this.vSamplerLocation = this.gl.getUniformLocation(this.program, 'v_Sampler')
+    this.aSamplerLocation = this.gl.getUniformLocation(this.program, 'a_Sampler')
   }
 
   bindYTexture(unit: number = 0) {
@@ -54,5 +57,9 @@ export default abstract class YUVProgram extends VideoProgram {
 
   bindVTexture(unit: number = 0) {
     this.gl.uniform1i(this.vSamplerLocation, unit)
+  }
+
+  bindATexture(unit: number = 0) {
+    this.gl.uniform1i(this.aSamplerLocation, unit)
   }
 }

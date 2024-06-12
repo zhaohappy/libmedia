@@ -29,7 +29,7 @@ import * as is from 'common/util/is'
 
 import { WebGPURenderOptions } from './WebGPURender'
 import WebGPUYUVRender from './WebGPUYUVRender'
-import { PixelFormatDescriptorsMap, PixelFormatFlags } from 'avutil/pixelFormatDescriptor'
+import { PixelFormatDescriptor, PixelFormatDescriptorsMap, PixelFormatFlags } from 'avutil/pixelFormatDescriptor'
 import { mapUint8Array } from 'cheap/std/memory'
 import ColorSpace from './colorSpace/ColorSpace'
 
@@ -45,12 +45,14 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
   private metaYBuffer: GPUBuffer
   private metaUBuffer: GPUBuffer
   private metaVBuffer: GPUBuffer
+  private metaABuffer: GPUBuffer
 
   private computeBindGroupLayout: GPUBindGroupLayout
 
   private computeBindGroupY: GPUBindGroup
   private computeBindGroupU: GPUBindGroup
   private computeBindGroupV: GPUBindGroup
+  private computeBindGroupA: GPUBindGroup
 
   private computePipelineLayout: GPUPipelineLayout
 
@@ -59,6 +61,7 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
   private inputYTexture: GPUTexture
   private inputUTexture: GPUTexture
   private inputVTexture: GPUTexture
+  private inputATexture: GPUTexture
 
   private computeModule: GPUShaderModule
 
@@ -74,11 +77,24 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
     this.hdrMetadata.multiplier = 1.0
   }
 
-  private generateFragmentSource(colorTransformOptions: ColorTransformOptions) {
+  private generateFragmentSource(format: AVPixelFormat, descriptor: PixelFormatDescriptor, colorTransformOptions: ColorTransformOptions) {
 
     colorTransformOptions.outputRGB = true
 
     const steps = generateSteps(this.srcColorSpace, this.dstColorSpace, colorTransformOptions)
+
+    let u = 'textureSample(uTexture, s, in_texcoord.xy).x'
+    let v = 'textureSample(vTexture, s, in_texcoord.xy).x'
+    let alpha = '1.0'
+
+    if (format === AVPixelFormat.AV_PIX_FMT_NV12) {
+      u = 'textureSample(uTexture, s, in_texcoord.xy).x'
+      v = 'textureSample(uTexture, s, in_texcoord.xy).y'
+    }
+
+    if ((descriptor.flags & PixelFormatFlags.ALPHA) && descriptor.nbComponents === 4) {
+      alpha = 'textureSample(aTexture, s, in_texcoord.xy).x'
+    }
 
     this.fragmentSource = `
       struct HdrMetadata {
@@ -92,11 +108,13 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
         sdrRelativeToNitsFactor: f32
       };
 
-      @group(0) @binding(1) var yTexture: texture_2d<f32>;
-      @group(0) @binding(2) var uTexture: texture_2d<f32>;
-      @group(0) @binding(3) var vTexture: texture_2d<f32>;
-      @group(0) @binding(4) var s: sampler;
-      @group(0) @binding(5) var<uniform> hdrMetadata: HdrMetadata;
+      @group(0) @binding(1) var s: sampler;
+      @group(0) @binding(2) var<uniform> hdrMetadata: HdrMetadata;
+      @group(0) @binding(3) var yTexture: texture_2d<f32>;
+      @group(0) @binding(4) var uTexture: texture_2d<f32>;
+
+      ${this.vTexture ? '@group(0) @binding(5) var vTexture: texture_2d<f32>;' : ''}
+      ${this.aTexture ? '@group(0) @binding(6) var aTexture: texture_2d<f32>;' : ''}
 
       @fragment
       fn main(@location(0) in_texcoord: vec4<f32>) -> @location(0) vec4<f32> {
@@ -110,7 +128,11 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
         let nits_to_sdr_relative_factor = hdrMetadata.nitsToSdrRelativeFactor;
         let sdr_relative_to_nits_factor = hdrMetadata.sdrRelativeToNitsFactor;
 
-        var color = vec4(textureSample(yTexture, s, in_texcoord.xy).x, textureSample(uTexture, s, in_texcoord.xy).x, textureSample(vTexture, s, in_texcoord.xy).x, 1.0);
+        let y = textureSample(yTexture, s, in_texcoord.xy).x;
+        let u = ${u};
+        let v = ${v};
+        let alpha = ${alpha};
+        var color = vec4(y, u, v, alpha);
 
         if (color.a > 0) {
           color.r /= color.a;
@@ -147,6 +169,10 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
     this.metaVBuffer = this.device.createBuffer({
+      size: Uint32Array.BYTES_PER_ELEMENT * 4,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    })
+    this.metaABuffer = this.device.createBuffer({
       size: Uint32Array.BYTES_PER_ELEMENT * 4,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
@@ -222,26 +248,50 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
         }
       ]
     })
-    this.computeBindGroupV = this.device.createBindGroup({
-      layout: this.computeBindGroupLayout,
-      entries: [
-        {
-          binding: 0,
-          resource: {
-            buffer: this.metaVBuffer,
-            size: Uint32Array.BYTES_PER_ELEMENT * 4
+    if (this.vTexture) {
+      this.computeBindGroupV = this.device.createBindGroup({
+        layout: this.computeBindGroupLayout,
+        entries: [
+          {
+            binding: 0,
+            resource: {
+              buffer: this.metaVBuffer,
+              size: Uint32Array.BYTES_PER_ELEMENT * 4
+            }
+          },
+          {
+            binding: 1,
+            resource: this.inputVTexture.createView()
+          },
+          {
+            binding: 2,
+            resource: this.vTexture.createView()
           }
-        },
-        {
-          binding: 1,
-          resource: this.inputVTexture.createView()
-        },
-        {
-          binding: 2,
-          resource: this.vTexture.createView()
-        }
-      ]
-    })
+        ]
+      })
+    }
+    if (this.aTexture) {
+      this.computeBindGroupA = this.device.createBindGroup({
+        layout: this.computeBindGroupLayout,
+        entries: [
+          {
+            binding: 0,
+            resource: {
+              buffer: this.metaABuffer,
+              size: Uint32Array.BYTES_PER_ELEMENT * 4
+            }
+          },
+          {
+            binding: 1,
+            resource: this.inputATexture.createView()
+          },
+          {
+            binding: 2,
+            resource: this.aTexture.createView()
+          }
+        ]
+      })
+    }
   }
 
   private generateComputePipeline() {
@@ -268,86 +318,113 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
     if (!this.yTexture) {
       return
     }
-    this.bindGroupLayout = this.device.createBindGroupLayout({
-      entries: [
-        {
-          binding: 0,
-          visibility: GPUShaderStage.VERTEX,
-          buffer: {
-            type: 'uniform'
-          }
-        },
-        {
-          binding: 1,
-          visibility: GPUShaderStage.FRAGMENT,
-          texture: {
-            sampleType: 'float'
-          }
-        },
-        {
-          binding: 2,
-          visibility: GPUShaderStage.FRAGMENT,
-          texture: {
-            sampleType: 'float'
-          }
-        },
-        {
-          binding: 3,
-          visibility: GPUShaderStage.FRAGMENT,
-          texture: {
-            sampleType: 'float'
-          }
-        },
-        {
-          binding: 4,
-          visibility: GPUShaderStage.FRAGMENT,
-          sampler: {
-            type: 'filtering'
-          }
-        },
-        {
-          binding: 5,
-          visibility: GPUShaderStage.FRAGMENT,
-          buffer: {
-            type: 'uniform'
-          }
+
+    const bindGroupLayoutEntry: GPUBindGroupLayoutEntry[] = [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: {
+          type: 'uniform'
         }
-      ]
+      },
+      {
+        binding: 1,
+        visibility: GPUShaderStage.FRAGMENT,
+        sampler: {
+          type: 'filtering'
+        }
+      },
+      {
+        binding: 2,
+        visibility: GPUShaderStage.FRAGMENT,
+        buffer: {
+          type: 'uniform'
+        }
+      },
+      {
+        binding: 3,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: {
+          sampleType: 'float'
+        }
+      },
+      {
+        binding: 4,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: {
+          sampleType: 'float'
+        }
+      },
+    ]
+
+    if (this.vTexture) {
+      bindGroupLayoutEntry.push({
+        binding: 5,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: {
+          sampleType: 'float'
+        }
+      })
+    }
+    if (this.aTexture) {
+      bindGroupLayoutEntry.push({
+        binding: 6,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: {
+          sampleType: 'float'
+        }
+      })
+    }
+
+    this.bindGroupLayout = this.device.createBindGroupLayout({
+      entries: bindGroupLayoutEntry
     })
+
+    const bindGroupEntry: GPUBindGroupEntry[] = [
+      {
+        binding: 0,
+        resource: {
+          buffer: this.rotateMatrixBuffer,
+          size: Float32Array.BYTES_PER_ELEMENT * 16
+        }
+      },
+      {
+        binding: 1,
+        resource: this.sampler
+      },
+      {
+        binding: 2,
+        resource: {
+          buffer: this.hdrMetadataBuffer,
+          size: this.hdrMetadataBuffer.size
+        }
+      },
+      {
+        binding: 3,
+        resource: this.yTexture.createView()
+      },
+      {
+        binding: 4,
+        resource: this.uTexture.createView()
+      }
+    ]
+
+    if (this.vTexture) {
+      bindGroupEntry.push({
+        binding: 5,
+        resource: this.vTexture.createView()
+      })
+    }
+    if (this.aTexture) {
+      bindGroupEntry.push({
+        binding: 6,
+        resource: this.aTexture.createView()
+      })
+    }
+
     this.bindGroup = this.device.createBindGroup({
       layout: this.bindGroupLayout,
-      entries: [
-        {
-          binding: 0,
-          resource: {
-            buffer: this.rotateMatrixBuffer,
-            size: this.rotateMatrixBuffer.size
-          }
-        },
-        {
-          binding: 1,
-          resource: this.yTexture.createView()
-        },
-        {
-          binding: 2,
-          resource: this.uTexture.createView()
-        },
-        {
-          binding: 3,
-          resource: this.vTexture.createView()
-        },
-        {
-          binding: 4,
-          resource: this.sampler
-        },
-        {
-          binding: 5,
-          resource: {
-            buffer: this.hdrMetadataBuffer,
-            size: this.hdrMetadataBuffer.size
-          }
-        }
-      ]
+      entries: bindGroupEntry
     })
   }
 
@@ -373,6 +450,9 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
       if (this.vTexture) {
         this.vTexture.destroy()
       }
+      if (this.aTexture) {
+        this.aTexture.destroy()
+      }
       if (this.inputYTexture) {
         this.inputYTexture.destroy()
       }
@@ -381,6 +461,9 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
       }
       if (this.inputVTexture) {
         this.inputVTexture.destroy()
+      }
+      if (this.inputATexture) {
+        this.inputATexture.destroy()
       }
 
       this.yTexture = this.device.createTexture({
@@ -394,11 +477,21 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
         usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING,
         format: 'r32float'
       })
-      this.vTexture = this.device.createTexture({
-        size: [frame.linesize[2] >>> 1, (frame.height >>> descriptor.log2ChromaH)],
-        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING,
-        format: 'r32float'
-      })
+      if (descriptor.comp[1].plane !== descriptor.comp[2].plane) {
+        this.vTexture = this.device.createTexture({
+          size: [frame.linesize[2] >>> 1, (frame.height >>> descriptor.log2ChromaH)],
+          usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING,
+          format: 'r32float'
+        })
+      }
+
+      if (descriptor.nbComponents === 4) {
+        this.aTexture = this.device.createTexture({
+          size: [frame.linesize[3] >>> 1, frame.height],
+          usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE_BINDING,
+          format: 'r32float'
+        })
+      }
 
       this.inputYTexture = this.device.createTexture({
         size: [this.yTexture.width, this.yTexture.height],
@@ -410,11 +503,20 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
         usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
         format: 'r16uint'
       })
-      this.inputVTexture = this.device.createTexture({
-        size: [this.vTexture.width, this.vTexture.height],
-        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-        format: 'r16uint'
-      })
+      if (descriptor.comp[1].plane !== descriptor.comp[2].plane) {
+        this.inputVTexture = this.device.createTexture({
+          size: [this.vTexture.width, this.vTexture.height],
+          usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+          format: 'r16uint'
+        })
+      }
+      if (descriptor.nbComponents === 4) {
+        this.inputATexture = this.device.createTexture({
+          size: [this.aTexture.width, this.aTexture.height],
+          usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+          format: 'r16uint'
+        })
+      }
 
       const yBuffer = new Uint32Array([(1 << descriptor.comp[0].depth) - 1, this.inputYTexture.width, this.inputYTexture.height])
       this.device.queue.writeBuffer(
@@ -433,14 +535,26 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
         uBuffer.byteOffset,
         uBuffer.byteLength
       )
-      const vBuffer = new Uint32Array([(1 << descriptor.comp[2].depth) - 1, this.inputVTexture.width, this.inputVTexture.height])
-      this.device.queue.writeBuffer(
-        this.metaVBuffer,
-        0,
-        vBuffer.buffer,
-        vBuffer.byteOffset,
-        vBuffer.byteLength
-      )
+      if (descriptor.comp[1].plane !== descriptor.comp[2].plane) {
+        const vBuffer = new Uint32Array([(1 << descriptor.comp[2].depth) - 1, this.inputVTexture.width, this.inputVTexture.height])
+        this.device.queue.writeBuffer(
+          this.metaVBuffer,
+          0,
+          vBuffer.buffer,
+          vBuffer.byteOffset,
+          vBuffer.byteLength
+        )
+      }
+      if (descriptor.nbComponents === 4) {
+        const aBuffer = new Uint32Array([(1 << descriptor.comp[3].depth) - 1, this.inputATexture.width, this.inputATexture.height])
+        this.device.queue.writeBuffer(
+          this.metaABuffer,
+          0,
+          aBuffer.buffer,
+          aBuffer.byteOffset,
+          aBuffer.byteLength
+        )
+      }
 
       this.srcColorSpace = new ColorSpace(
         frame.colorSpace,
@@ -471,7 +585,7 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
         }
       }
 
-      this.generateFragmentSource(colorTransformOptions)
+      this.generateFragmentSource(frame.format as AVPixelFormat, descriptor, colorTransformOptions)
       this.uint2Float = (descriptor.flags & PixelFormatFlags.BIG_ENDIAN) ? uint2FloatBE : uint2FloatLE
 
       this.layout()
@@ -542,24 +656,47 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
     )
     computePass.dispatchWorkgroups((this.inputUTexture.width + 7) >>> 3, (this.inputUTexture.height + 7) >>> 3)
 
-    computePass.setBindGroup(0, this.computeBindGroupV)
-    this.device.queue.writeTexture(
-      {
-        texture: this.inputVTexture
-      },
-      mapUint8Array(frame.data[2], (this.inputVTexture.width * this.inputVTexture.height) << 1),
-      {
-        offset: 0,
-        bytesPerRow: this.inputVTexture.width << 1,
-        rowsPerImage: this.inputVTexture.height
-      },
-      {
-        width: this.inputVTexture.width,
-        height: this.inputVTexture.height,
-        depthOrArrayLayers: 1
-      }
-    )
-    computePass.dispatchWorkgroups((this.inputVTexture.width + 7) >>> 3, (this.inputVTexture.height + 7) >>> 3)
+    if (this.inputVTexture) {
+      computePass.setBindGroup(0, this.computeBindGroupV)
+      this.device.queue.writeTexture(
+        {
+          texture: this.inputVTexture
+        },
+        mapUint8Array(frame.data[2], (this.inputVTexture.width * this.inputVTexture.height) << 1),
+        {
+          offset: 0,
+          bytesPerRow: this.inputVTexture.width << 1,
+          rowsPerImage: this.inputVTexture.height
+        },
+        {
+          width: this.inputVTexture.width,
+          height: this.inputVTexture.height,
+          depthOrArrayLayers: 1
+        }
+      )
+      computePass.dispatchWorkgroups((this.inputVTexture.width + 7) >>> 3, (this.inputVTexture.height + 7) >>> 3)
+    }
+
+    if (this.inputATexture) {
+      computePass.setBindGroup(0, this.computeBindGroupA)
+      this.device.queue.writeTexture(
+        {
+          texture: this.inputATexture
+        },
+        mapUint8Array(frame.data[3], (this.inputATexture.width * this.inputATexture.height) << 1),
+        {
+          offset: 0,
+          bytesPerRow: this.inputATexture.width << 1,
+          rowsPerImage: this.inputATexture.height
+        },
+        {
+          width: this.inputATexture.width,
+          height: this.inputATexture.height,
+          depthOrArrayLayers: 1
+        }
+      )
+      computePass.dispatchWorkgroups((this.inputATexture.width + 7) >>> 3, (this.inputATexture.height + 7) >>> 3)
+    }
 
     computePass.end()
 
@@ -633,7 +770,10 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
     if (is.number(frame)) {
       const info = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
       if (info) {
-        return ((info.comp[0].depth + 7) >>> 3) === 2
+        if (info.flags & PixelFormatFlags.RGB) {
+          return false
+        }
+        return (info.flags & PixelFormatFlags.PLANER) && ((info.comp[0].depth + 7) >>> 3) === 2
       }
     }
     return false

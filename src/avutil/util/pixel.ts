@@ -321,7 +321,7 @@ export function pixelAlloc(
   }
 
   defer()
-  return ret 
+  return ret
 
   function defer() {
     stack.free(stack.malloc(sizeof(linesizes[0]) * 4))

@@ -37,6 +37,8 @@ export default abstract class WebGLYUVRender extends WebGLRender {
 
   protected vTexture: YUVTexture
 
+  protected aTexture: YUVTexture
+
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGLRenderOptions) {
     super(canvas, options)
   }
@@ -59,6 +61,11 @@ export default abstract class WebGLYUVRender extends WebGLRender {
     this.vTexture.bind(2)
     this.vTexture.init()
     this.program.bindVTexture(2)
+
+    this.aTexture = new YUVTexture(this.gl)
+    this.aTexture.bind(3)
+    this.aTexture.init()
+    this.program.bindATexture(3)
   }
 
   public destroy(): void {
@@ -73,6 +80,10 @@ export default abstract class WebGLYUVRender extends WebGLRender {
     if (this.vTexture) {
       this.vTexture.destroy()
       this.vTexture = null
+    }
+    if (this.aTexture) {
+      this.aTexture.destroy()
+      this.aTexture = null
     }
     super.destroy()
   }

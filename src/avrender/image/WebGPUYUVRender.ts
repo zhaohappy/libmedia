@@ -35,6 +35,8 @@ export default abstract class WebGPUYUVRender extends WebGPURender {
 
   protected vTexture: GPUTexture
 
+  protected aTexture: GPUTexture
+
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions) {
     super(canvas, options)
     this.vertexSource = vertexSource
@@ -44,72 +46,99 @@ export default abstract class WebGPUYUVRender extends WebGPURender {
     if (!this.yTexture) {
       return
     }
-    this.bindGroupLayout = this.device.createBindGroupLayout({
-      entries: [
-        {
-          binding: 0,
-          visibility: GPUShaderStage.VERTEX,
-          buffer: {
-            type: 'uniform'
-          }
-        },
-        {
-          binding: 1,
-          visibility: GPUShaderStage.FRAGMENT,
-          texture: {
-            sampleType: 'float'
-          }
-        },
-        {
-          binding: 2,
-          visibility: GPUShaderStage.FRAGMENT,
-          texture: {
-            sampleType: 'float'
-          }
-        },
-        {
-          binding: 3,
-          visibility: GPUShaderStage.FRAGMENT,
-          texture: {
-            sampleType: 'float'
-          }
-        },
-        {
-          binding: 4,
-          visibility: GPUShaderStage.FRAGMENT,
-          sampler: {
-            type: 'filtering'
-          }
+
+    const bindGroupLayoutEntry: GPUBindGroupLayoutEntry[] = [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: {
+          type: 'uniform'
         }
-      ]
+      },
+      {
+        binding: 1,
+        visibility: GPUShaderStage.FRAGMENT,
+        sampler: {
+          type: 'filtering'
+        }
+      },
+      {
+        binding: 2,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: {
+          sampleType: 'float'
+        }
+      },
+      {
+        binding: 3,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: {
+          sampleType: 'float'
+        }
+      },
+    ]
+
+    if (this.vTexture) {
+      bindGroupLayoutEntry.push({
+        binding: 4,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: {
+          sampleType: 'float'
+        }
+      })
+    }
+    if (this.aTexture) {
+      bindGroupLayoutEntry.push({
+        binding: 5,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: {
+          sampleType: 'float'
+        }
+      })
+    }
+
+    this.bindGroupLayout = this.device.createBindGroupLayout({
+      entries: bindGroupLayoutEntry
     })
+
+    const bindGroupEntry: GPUBindGroupEntry[] = [
+      {
+        binding: 0,
+        resource: {
+          buffer: this.rotateMatrixBuffer,
+          size: Float32Array.BYTES_PER_ELEMENT * 16
+        }
+      },
+      {
+        binding: 1,
+        resource: this.sampler
+      },
+      {
+        binding: 2,
+        resource: this.yTexture.createView()
+      },
+      {
+        binding: 3,
+        resource: this.uTexture.createView()
+      }
+    ]
+
+    if (this.vTexture) {
+      bindGroupEntry.push({
+        binding: 4,
+        resource: this.vTexture.createView()
+      })
+    }
+    if (this.aTexture) {
+      bindGroupEntry.push({
+        binding: 5,
+        resource: this.aTexture.createView()
+      })
+    }
+
     this.bindGroup = this.device.createBindGroup({
       layout: this.bindGroupLayout,
-      entries: [
-        {
-          binding: 0,
-          resource: {
-            buffer: this.rotateMatrixBuffer,
-            size: Float32Array.BYTES_PER_ELEMENT * 16
-          }
-        },
-        {
-          binding: 1,
-          resource: this.yTexture.createView()
-        },
-        {
-          binding: 2,
-          resource: this.uTexture.createView()
-        },
-        {
-          binding: 3,
-          resource: this.vTexture.createView()
-        },
-        {
-          binding: 4,
-          resource: this.sampler
-        }
-      ]
+      entries: bindGroupEntry
     })
   }
 
@@ -125,6 +154,9 @@ export default abstract class WebGPUYUVRender extends WebGPURender {
     }
     if (this.vTexture) {
       this.vTexture.destroy()
+    }
+    if (this.aTexture) {
+      this.aTexture.destroy()
     }
 
     super.destroy()
