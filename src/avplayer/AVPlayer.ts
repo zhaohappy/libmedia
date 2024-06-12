@@ -1079,7 +1079,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           }
         }
         else {
-          logger.fatal(`resampler not found`)
+          logger.fatal('resampler not found')
         }
 
         if (stretchpitcherResourceUrl) {
@@ -1093,7 +1093,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           }
         }
         else {
-          logger.fatal(`stretch pitcher not found`)
+          logger.fatal('stretch pitcher not found')
         }
 
         // 注册一个音频渲染任务
