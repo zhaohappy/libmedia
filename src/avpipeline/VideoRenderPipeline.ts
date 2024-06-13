@@ -501,8 +501,8 @@ export default class VideoRenderPipeline extends Pipeline {
         )
 
         if (pts < task.currentPTS) {
-          // 差值大于 1000s 认为从头开始了
-          if (task.currentPTS - pts > 1000000n) {
+          // 差值大于 5s 认为从头开始了
+          if (task.currentPTS - pts > 5000n) {
             task.startTimestamp = static_cast<int64>(getTimestamp()) - (pts * 100n / task.targetRate)
           }
           else {
@@ -510,6 +510,10 @@ export default class VideoRenderPipeline extends Pipeline {
             swap()
             return
           }
+        }
+        // 差值大于 5s 认为从某一处开始了
+        else if (pts - task.currentPTS > 5000n) {
+          task.startTimestamp = static_cast<int64>(getTimestamp()) - (pts * 100n / task.targetRate)
         }
 
         if (task.adjust === AdjustStatus.Accelerate) {
