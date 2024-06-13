@@ -67,7 +67,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 
 #### avformat
 
-- [AVStream ](./docs/avformat/AVStream/README.md)
+- [AVStream](./docs/avformat/AVStream/README.md)
 - [AVFormatContext](./docs/avformat/AVFormatContext/README.md)
 - [demux](./docs/avformat/demux/README.md)
 - [mux](./docs/avformat/mux/README.md)
@@ -139,7 +139,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
   - [avpacket](./docs/avutil/util/avpacket/README.md)
   - [avcodecparameters](./docs/avutil/util/codecparameters/README.md)
 
-#### io 组件
+#### io
 
 - [BitReader](./docs/common/io/BitReader/README.md)
 - [BitWriter](./docs/common/io/BitWriter/README.md)

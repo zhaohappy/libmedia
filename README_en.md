@@ -65,7 +65,7 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 
 #### avformat
 
-- [AVStream ](./docs/avformat/AVStream/README.md)
+- [AVStream](./docs/avformat/AVStream/README.md)
 - [AVFormatContext](./docs/avformat/AVFormatContext/README.md)
 - [demux](./docs/avformat/demux/README.md)
 - [mux](./docs/avformat/mux/README.md)
@@ -137,7 +137,7 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
   - [avpacket](./docs/avutil/util/avpacket/README.md)
   - [avcodecparameters](./docs/avutil/util/codecparameters/README.md)
 
-#### io 组件
+#### io
 
 - [BitReader](./docs/common/io/BitReader/README.md)
 - [BitWriter](./docs/common/io/BitWriter/README.md)
