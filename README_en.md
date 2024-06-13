@@ -35,7 +35,7 @@ libmedia is designed to run on multi-threads, but can fall back to running on a 
 
 ### Libraries
 
-- ```avformat``` video and audio format libraries(flv、mp4、mpegts、matroska、mp3)
+- ```avformat``` video and audio format libraries(flv、mp4、mpegts、matroska、oggs、mp3)
 - avcodec Audio and video codec library, mainly Wasm compiled by C/C++ (FFmpeg and other codec projects) and Web platform standard WebCodecs
 - ```audioresample``` Audio resampling (compiled by FFmpeg audio resampling module)
 - ```audiostretchpitch``` Audio speed change and pitch change processing (compiled by soundtouch)
@@ -93,7 +93,13 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 
 - [WasmAudioDecoder](./docs/avcodec/wasmcodec/AudioDecoder/README.md)
 - [WasmVideoDecoder](./docs/avcodec/wasmcodec/VideoDecoder/README.md)
+- [WebAudioDecoder](./docs/avcodec/webcodec/AudioDecoder/README.md)
 - [WebVideoDecoder](./docs/avcodec/webcodec/VideoDecoder/README.md)
+
+- [WasmAudioEncoder](./docs/avcodec/wasmcodec/AudioEncoder/README.md)
+- [WasmVideoEncoder](./docs/avcodec/wasmcodec/VideoEncoder/README.md)
+- [WebAudioEncoder](./docs/avcodec/webcodec/AudioEncoder/README.md)
+- [WebVideoEncoder](./docs/avcodec/webcodec/VideoEncoder/README.md)
 
 #### avpipeline
 

@@ -7,8 +7,13 @@
 ## Modules
 
 - [avcodec/wasmcodec/AudioDecoder](avcodec/wasmcodec/AudioDecoder/README.md)
+- [avcodec/wasmcodec/AudioEncoder](avcodec/wasmcodec/AudioEncoder/README.md)
 - [avcodec/wasmcodec/VideoDecoder](avcodec/wasmcodec/VideoDecoder/README.md)
+- [avcodec/wasmcodec/VideoEncoder](avcodec/wasmcodec/VideoEncoder/README.md)
+- [avcodec/webcodec/AudioDecoder](avcodec/webcodec/AudioDecoder/README.md)
+- [avcodec/webcodec/AudioEncoder](avcodec/webcodec/AudioEncoder/README.md)
 - [avcodec/webcodec/VideoDecoder](avcodec/webcodec/VideoDecoder/README.md)
+- [avcodec/webcodec/VideoEncoder](avcodec/webcodec/VideoEncoder/README.md)
 - [avformat/AVFormatContext](avformat/AVFormatContext/README.md)
 - [avformat/AVStream](avformat/AVStream/README.md)
 - [avformat/demux](avformat/demux/README.md)

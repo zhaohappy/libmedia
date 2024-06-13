@@ -26,7 +26,7 @@ Max content light level (cd/m^2).
 
 #### Source
 
-[avutil/struct/avframe.ts:303](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L303)
+[avutil/struct/avframe.ts:303](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avframe.ts#L303)
 
 ***
 
@@ -38,4 +38,4 @@ Max average light level per frame (cd/m^2).
 
 #### Source
 
-[avutil/struct/avframe.ts:307](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L307)
+[avutil/struct/avframe.ts:307](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avframe.ts#L307)

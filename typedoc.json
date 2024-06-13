@@ -27,7 +27,13 @@
 
     "src/avcodec/wasmcodec/VideoDecoder.ts",
     "src/avcodec/wasmcodec/AudioDecoder.ts",
+    "src/avcodec/webcodec/AudioDecoder.ts",
     "src/avcodec/webcodec/VideoDecoder.ts",
+
+    "src/avcodec/wasmcodec/VideoEncoder.ts",
+    "src/avcodec/wasmcodec/AudioEncoder.ts",
+    "src/avcodec/webcodec/AudioEncoder.ts",
+    "src/avcodec/webcodec/VideoEncoder.ts",
 
     "src/avnetwork/ioLoader/FetchIOLoader.ts",
     "src/avnetwork/ioLoader/FileIOLoader.ts",

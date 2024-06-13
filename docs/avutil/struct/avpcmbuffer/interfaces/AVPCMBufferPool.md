@@ -10,15 +10,15 @@
 
 ### alloc()
 
-> **alloc**: () => `pointer`\<[`AVPCMBuffer`](../classes/AVPCMBuffer.md)\>
+> **alloc**: () => `pointer`\<[`AVPCMBufferRef`](../classes/AVPCMBufferRef.md)\>
 
 #### Returns
 
-`pointer`\<[`AVPCMBuffer`](../classes/AVPCMBuffer.md)\>
+`pointer`\<[`AVPCMBufferRef`](../classes/AVPCMBufferRef.md)\>
 
 #### Source
 
-[avutil/struct/avpcmbuffer.ts:65](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avpcmbuffer.ts#L65)
+[avutil/struct/avpcmbuffer.ts:65](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpcmbuffer.ts#L65)
 
 ***
 
@@ -28,7 +28,7 @@
 
 #### Parameters
 
-• **buffer**: `pointer`\<[`AVPCMBuffer`](../classes/AVPCMBuffer.md)\>
+• **buffer**: `pointer`\<[`AVPCMBufferRef`](../classes/AVPCMBufferRef.md)\>
 
 #### Returns
 
@@ -36,4 +36,4 @@
 
 #### Source
 
-[avutil/struct/avpcmbuffer.ts:66](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avpcmbuffer.ts#L66)
+[avutil/struct/avpcmbuffer.ts:66](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpcmbuffer.ts#L66)

@@ -6,18 +6,18 @@
 
 # Function: getVideoBuffer()
 
-> **getVideoBuffer**(`frame`, `algin`): `void`
+> **getVideoBuffer**(`frame`, `algin`): `number`
 
 ## Parameters
 
 • **frame**: `pointer`\<[`AVFrame`](../../../struct/avframe/classes/AVFrame.md)\>
 
-• **algin**: `boolean`
+• **algin**: `int32`= `0`
 
 ## Returns
 
-`void`
+`number`
 
 ## Source
 
-[avutil/util/avframe.ts:97](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/util/avframe.ts#L97)
+[avutil/util/avframe.ts:112](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/util/avframe.ts#L112)

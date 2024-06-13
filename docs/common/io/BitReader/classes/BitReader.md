@@ -68,7 +68,7 @@ common/io/BitReader.ts:23
 
 #### Source
 
-common/io/BitReader.ts:151
+common/io/BitReader.ts:155
 
 ***
 
@@ -82,7 +82,7 @@ common/io/BitReader.ts:151
 
 #### Source
 
-common/io/BitReader.ts:175
+common/io/BitReader.ts:179
 
 ***
 
@@ -96,7 +96,7 @@ common/io/BitReader.ts:175
 
 #### Source
 
-common/io/BitReader.ts:105
+common/io/BitReader.ts:109
 
 ***
 
@@ -110,7 +110,21 @@ common/io/BitReader.ts:105
 
 #### Source
 
-common/io/BitReader.ts:147
+common/io/BitReader.ts:151
+
+***
+
+### getPos()
+
+> **getPos**(): `number`
+
+#### Returns
+
+`number`
+
+#### Source
+
+common/io/BitReader.ts:105
 
 ***
 
@@ -192,4 +206,4 @@ common/io/BitReader.ts:101
 
 #### Source
 
-common/io/BitReader.ts:181
+common/io/BitReader.ts:185

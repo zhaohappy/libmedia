@@ -10,15 +10,15 @@
 
 ### alloc()
 
-> **alloc**: () => `pointer`\<[`AVPacket`](../classes/AVPacket.md)\>
+> **alloc**: () => `pointer`\<[`AVPacketRef`](../classes/AVPacketRef.md)\>
 
 #### Returns
 
-`pointer`\<[`AVPacket`](../classes/AVPacket.md)\>
+`pointer`\<[`AVPacketRef`](../classes/AVPacketRef.md)\>
 
 #### Source
 
-[avutil/struct/avpacket.ts:172](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avpacket.ts#L172)
+[avutil/struct/avpacket.ts:172](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L172)
 
 ***
 
@@ -28,7 +28,7 @@
 
 #### Parameters
 
-• **avpacket**: `pointer`\<[`AVPacket`](../classes/AVPacket.md)\>
+• **avpacket**: `pointer`\<[`AVPacketRef`](../classes/AVPacketRef.md)\>
 
 #### Returns
 
@@ -36,4 +36,4 @@
 
 #### Source
 
-[avutil/struct/avpacket.ts:173](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avpacket.ts#L173)
+[avutil/struct/avpacket.ts:173](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L173)

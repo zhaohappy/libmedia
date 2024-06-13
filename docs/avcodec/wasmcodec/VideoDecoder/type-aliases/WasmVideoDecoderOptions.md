@@ -14,9 +14,9 @@
 
 > `optional` **avframePool**: [`AVFramePool`](../../../../avutil/struct/avframe/interfaces/AVFramePool.md)
 
-### onError()?
+### onError()
 
-> `optional` **onError**: (`error`?) => `void`
+> **onError**: (`error`?) => `void`
 
 #### Parameters
 
@@ -26,9 +26,9 @@
 
 `void`
 
-### onReceiveFrame()?
+### onReceiveFrame()
 
-> `optional` **onReceiveFrame**: (`frame`) => `void`
+> **onReceiveFrame**: (`frame`) => `void`
 
 #### Parameters
 
@@ -44,4 +44,4 @@
 
 ## Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:34](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avcodec/wasmcodec/VideoDecoder.ts#L34)
+[avcodec/wasmcodec/VideoDecoder.ts:34](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/wasmcodec/VideoDecoder.ts#L34)

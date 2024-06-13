@@ -18,7 +18,7 @@
 
 #### Source
 
-[avpipeline/AudioDecodePipeline.ts:50](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avpipeline/AudioDecodePipeline.ts#L50)
+[avpipeline/AudioDecodePipeline.ts:53](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioDecodePipeline.ts#L53)
 
 ***
 
@@ -28,7 +28,7 @@
 
 #### Source
 
-[avpipeline/AudioDecodePipeline.ts:51](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avpipeline/AudioDecodePipeline.ts#L51)
+[avpipeline/AudioDecodePipeline.ts:54](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioDecodePipeline.ts#L54)
 
 ***
 
@@ -38,7 +38,7 @@
 
 #### Source
 
-[avpipeline/AudioDecodePipeline.ts:48](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avpipeline/AudioDecodePipeline.ts#L48)
+[avpipeline/AudioDecodePipeline.ts:51](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioDecodePipeline.ts#L51)
 
 ***
 
@@ -48,7 +48,7 @@
 
 #### Source
 
-[avpipeline/AudioDecodePipeline.ts:49](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avpipeline/AudioDecodePipeline.ts#L49)
+[avpipeline/AudioDecodePipeline.ts:52](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioDecodePipeline.ts#L52)
 
 ***
 
@@ -62,7 +62,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:32](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avpipeline/Pipeline.ts#L32)
+[avpipeline/Pipeline.ts:32](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/Pipeline.ts#L32)
 
 ***
 
@@ -76,7 +76,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:30](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avpipeline/Pipeline.ts#L30)
+[avpipeline/Pipeline.ts:30](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/Pipeline.ts#L30)
 
 ***
 
@@ -86,7 +86,7 @@
 
 #### Source
 
-[avpipeline/AudioDecodePipeline.ts:47](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avpipeline/AudioDecodePipeline.ts#L47)
+[avpipeline/AudioDecodePipeline.ts:50](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioDecodePipeline.ts#L50)
 
 ***
 
@@ -100,7 +100,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:31](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avpipeline/Pipeline.ts#L31)
+[avpipeline/Pipeline.ts:31](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/Pipeline.ts#L31)
 
 ***
 
@@ -114,7 +114,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:34](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avpipeline/Pipeline.ts#L34)
+[avpipeline/Pipeline.ts:34](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/Pipeline.ts#L34)
 
 ***
 
@@ -128,4 +128,14 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:33](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avpipeline/Pipeline.ts#L33)
+[avpipeline/Pipeline.ts:33](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/Pipeline.ts#L33)
+
+***
+
+### timeBase
+
+> **timeBase**: `Rational`
+
+#### Source
+
+[avpipeline/AudioDecodePipeline.ts:55](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioDecodePipeline.ts#L55)

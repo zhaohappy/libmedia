@@ -10,15 +10,15 @@
 
 ### alloc()
 
-> **alloc**: () => `pointer`\<[`AVFrame`](../classes/AVFrame.md)\>
+> **alloc**: () => `pointer`\<[`AVFrameRef`](../classes/AVFrameRef.md)\>
 
 #### Returns
 
-`pointer`\<[`AVFrame`](../classes/AVFrame.md)\>
+`pointer`\<[`AVFrameRef`](../classes/AVFrameRef.md)\>
 
 #### Source
 
-[avutil/struct/avframe.ts:718](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L718)
+[avutil/struct/avframe.ts:718](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avframe.ts#L718)
 
 ***
 
@@ -28,7 +28,7 @@
 
 #### Parameters
 
-• **avframe**: `pointer`\<[`AVFrame`](../classes/AVFrame.md)\>
+• **avframe**: `pointer`\<[`AVFrameRef`](../classes/AVFrameRef.md)\>
 
 #### Returns
 
@@ -36,4 +36,4 @@
 
 #### Source
 
-[avutil/struct/avframe.ts:719](https://github.com/zhaohappy/libmedia/blob/acbbf6bd75e6ee4c968b9f441fe28c40f42f350d/src/avutil/struct/avframe.ts#L719)
+[avutil/struct/avframe.ts:719](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avframe.ts#L719)

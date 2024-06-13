@@ -120,7 +120,7 @@ common/io/IOReaderSync.ts:35
 
 #### Source
 
-common/io/IOReaderSync.ts:641
+common/io/IOReaderSync.ts:653
 
 ***
 
@@ -134,7 +134,7 @@ common/io/IOReaderSync.ts:641
 
 #### Source
 
-common/io/IOReaderSync.ts:675
+common/io/IOReaderSync.ts:687
 
 ***
 
@@ -152,7 +152,7 @@ common/io/IOReaderSync.ts:675
 
 #### Source
 
-common/io/IOReaderSync.ts:556
+common/io/IOReaderSync.ts:568
 
 ***
 
@@ -166,7 +166,7 @@ common/io/IOReaderSync.ts:556
 
 #### Source
 
-common/io/IOReaderSync.ts:637
+common/io/IOReaderSync.ts:649
 
 ***
 
@@ -180,7 +180,7 @@ common/io/IOReaderSync.ts:637
 
 #### Source
 
-common/io/IOReaderSync.ts:687
+common/io/IOReaderSync.ts:699
 
 ***
 
@@ -196,7 +196,7 @@ common/io/IOReaderSync.ts:687
 
 #### Source
 
-common/io/IOReaderSync.ts:512
+common/io/IOReaderSync.ts:524
 
 ***
 
@@ -216,7 +216,7 @@ common/io/IOReaderSync.ts:512
 
 #### Source
 
-common/io/IOReaderSync.ts:521
+common/io/IOReaderSync.ts:533
 
 ***
 
@@ -236,7 +236,7 @@ common/io/IOReaderSync.ts:521
 
 ##### Source
 
-common/io/IOReaderSync.ts:405
+common/io/IOReaderSync.ts:415
 
 #### peekBuffer(length, buffer)
 
@@ -258,7 +258,7 @@ common/io/IOReaderSync.ts:405
 
 ##### Source
 
-common/io/IOReaderSync.ts:406
+common/io/IOReaderSync.ts:416
 
 ***
 
@@ -272,7 +272,7 @@ common/io/IOReaderSync.ts:406
 
 #### Source
 
-common/io/IOReaderSync.ts:305
+common/io/IOReaderSync.ts:315
 
 ***
 
@@ -286,7 +286,7 @@ common/io/IOReaderSync.ts:305
 
 #### Source
 
-common/io/IOReaderSync.ts:283
+common/io/IOReaderSync.ts:293
 
 ***
 
@@ -304,7 +304,7 @@ common/io/IOReaderSync.ts:283
 
 #### Source
 
-common/io/IOReaderSync.ts:327
+common/io/IOReaderSync.ts:337
 
 ***
 
@@ -318,7 +318,7 @@ common/io/IOReaderSync.ts:327
 
 #### Source
 
-common/io/IOReaderSync.ts:217
+common/io/IOReaderSync.ts:227
 
 ***
 
@@ -332,7 +332,7 @@ common/io/IOReaderSync.ts:217
 
 #### Source
 
-common/io/IOReaderSync.ts:239
+common/io/IOReaderSync.ts:249
 
 ***
 
@@ -346,7 +346,7 @@ common/io/IOReaderSync.ts:239
 
 #### Source
 
-common/io/IOReaderSync.ts:261
+common/io/IOReaderSync.ts:271
 
 ***
 
@@ -360,7 +360,7 @@ common/io/IOReaderSync.ts:261
 
 #### Source
 
-common/io/IOReaderSync.ts:195
+common/io/IOReaderSync.ts:205
 
 ***
 
@@ -374,7 +374,7 @@ common/io/IOReaderSync.ts:195
 
 #### Source
 
-common/io/IOReaderSync.ts:484
+common/io/IOReaderSync.ts:496
 
 ***
 
@@ -392,7 +392,7 @@ common/io/IOReaderSync.ts:484
 
 #### Source
 
-common/io/IOReaderSync.ts:441
+common/io/IOReaderSync.ts:451
 
 ***
 
@@ -406,7 +406,7 @@ common/io/IOReaderSync.ts:441
 
 #### Source
 
-common/io/IOReaderSync.ts:101
+common/io/IOReaderSync.ts:111
 
 ***
 
@@ -420,7 +420,7 @@ common/io/IOReaderSync.ts:101
 
 #### Source
 
-common/io/IOReaderSync.ts:119
+common/io/IOReaderSync.ts:129
 
 ***
 
@@ -434,7 +434,7 @@ common/io/IOReaderSync.ts:119
 
 #### Source
 
-common/io/IOReaderSync.ts:151
+common/io/IOReaderSync.ts:161
 
 ***
 
@@ -448,7 +448,7 @@ common/io/IOReaderSync.ts:151
 
 #### Source
 
-common/io/IOReaderSync.ts:173
+common/io/IOReaderSync.ts:183
 
 ***
 
@@ -462,7 +462,7 @@ common/io/IOReaderSync.ts:173
 
 #### Source
 
-common/io/IOReaderSync.ts:79
+common/io/IOReaderSync.ts:89
 
 ***
 
@@ -482,7 +482,7 @@ common/io/IOReaderSync.ts:79
 
 #### Source
 
-common/io/IOReaderSync.ts:691
+common/io/IOReaderSync.ts:703
 
 ***
 
@@ -504,7 +504,7 @@ common/io/IOReaderSync.ts:691
 
 ##### Source
 
-common/io/IOReaderSync.ts:359
+common/io/IOReaderSync.ts:369
 
 #### readBuffer(length, buffer)
 
@@ -526,7 +526,7 @@ common/io/IOReaderSync.ts:359
 
 ##### Source
 
-common/io/IOReaderSync.ts:360
+common/io/IOReaderSync.ts:370
 
 ***
 
@@ -542,7 +542,7 @@ common/io/IOReaderSync.ts:360
 
 #### Source
 
-common/io/IOReaderSync.ts:295
+common/io/IOReaderSync.ts:305
 
 ***
 
@@ -558,7 +558,7 @@ common/io/IOReaderSync.ts:295
 
 #### Source
 
-common/io/IOReaderSync.ts:273
+common/io/IOReaderSync.ts:283
 
 ***
 
@@ -580,7 +580,7 @@ common/io/IOReaderSync.ts:273
 
 #### Source
 
-common/io/IOReaderSync.ts:318
+common/io/IOReaderSync.ts:328
 
 ***
 
@@ -596,7 +596,7 @@ common/io/IOReaderSync.ts:318
 
 #### Source
 
-common/io/IOReaderSync.ts:207
+common/io/IOReaderSync.ts:217
 
 ***
 
@@ -612,7 +612,7 @@ common/io/IOReaderSync.ts:207
 
 #### Source
 
-common/io/IOReaderSync.ts:229
+common/io/IOReaderSync.ts:239
 
 ***
 
@@ -628,7 +628,7 @@ common/io/IOReaderSync.ts:229
 
 #### Source
 
-common/io/IOReaderSync.ts:251
+common/io/IOReaderSync.ts:261
 
 ***
 
@@ -644,7 +644,7 @@ common/io/IOReaderSync.ts:251
 
 #### Source
 
-common/io/IOReaderSync.ts:185
+common/io/IOReaderSync.ts:195
 
 ***
 
@@ -660,7 +660,7 @@ common/io/IOReaderSync.ts:185
 
 #### Source
 
-common/io/IOReaderSync.ts:449
+common/io/IOReaderSync.ts:459
 
 ***
 
@@ -682,7 +682,7 @@ common/io/IOReaderSync.ts:449
 
 #### Source
 
-common/io/IOReaderSync.ts:437
+common/io/IOReaderSync.ts:447
 
 ***
 
@@ -698,7 +698,7 @@ common/io/IOReaderSync.ts:437
 
 #### Source
 
-common/io/IOReaderSync.ts:91
+common/io/IOReaderSync.ts:101
 
 ***
 
@@ -714,7 +714,7 @@ common/io/IOReaderSync.ts:91
 
 #### Source
 
-common/io/IOReaderSync.ts:113
+common/io/IOReaderSync.ts:123
 
 ***
 
@@ -730,7 +730,7 @@ common/io/IOReaderSync.ts:113
 
 #### Source
 
-common/io/IOReaderSync.ts:141
+common/io/IOReaderSync.ts:151
 
 ***
 
@@ -746,7 +746,7 @@ common/io/IOReaderSync.ts:141
 
 #### Source
 
-common/io/IOReaderSync.ts:163
+common/io/IOReaderSync.ts:173
 
 ***
 
@@ -766,7 +766,7 @@ common/io/IOReaderSync.ts:163
 
 #### Source
 
-common/io/IOReaderSync.ts:69
+common/io/IOReaderSync.ts:79
 
 ***
 
@@ -782,7 +782,7 @@ common/io/IOReaderSync.ts:69
 
 #### Source
 
-common/io/IOReaderSync.ts:552
+common/io/IOReaderSync.ts:564
 
 ***
 
@@ -796,7 +796,7 @@ common/io/IOReaderSync.ts:552
 
 #### Source
 
-common/io/IOReaderSync.ts:665
+common/io/IOReaderSync.ts:677
 
 ***
 
@@ -818,7 +818,7 @@ common/io/IOReaderSync.ts:665
 
 #### Source
 
-common/io/IOReaderSync.ts:598
+common/io/IOReaderSync.ts:610
 
 ***
 
@@ -836,7 +836,7 @@ common/io/IOReaderSync.ts:598
 
 #### Source
 
-common/io/IOReaderSync.ts:671
+common/io/IOReaderSync.ts:683
 
 ***
 
@@ -856,4 +856,4 @@ common/io/IOReaderSync.ts:671
 
 #### Source
 
-common/io/IOReaderSync.ts:530
+common/io/IOReaderSync.ts:542

@@ -120,7 +120,7 @@ common/io/IOReader.ts:36
 
 #### Source
 
-common/io/IOReader.ts:635
+common/io/IOReader.ts:647
 
 ***
 
@@ -134,7 +134,7 @@ common/io/IOReader.ts:635
 
 #### Source
 
-common/io/IOReader.ts:669
+common/io/IOReader.ts:681
 
 ***
 
@@ -152,7 +152,7 @@ common/io/IOReader.ts:669
 
 #### Source
 
-common/io/IOReader.ts:550
+common/io/IOReader.ts:562
 
 ***
 
@@ -166,7 +166,7 @@ common/io/IOReader.ts:550
 
 #### Source
 
-common/io/IOReader.ts:631
+common/io/IOReader.ts:643
 
 ***
 
@@ -180,7 +180,7 @@ common/io/IOReader.ts:631
 
 #### Source
 
-common/io/IOReader.ts:681
+common/io/IOReader.ts:693
 
 ***
 
@@ -196,7 +196,7 @@ common/io/IOReader.ts:681
 
 #### Source
 
-common/io/IOReader.ts:496
+common/io/IOReader.ts:508
 
 ***
 
@@ -216,7 +216,7 @@ common/io/IOReader.ts:496
 
 #### Source
 
-common/io/IOReader.ts:505
+common/io/IOReader.ts:517
 
 ***
 
@@ -236,7 +236,7 @@ common/io/IOReader.ts:505
 
 ##### Source
 
-common/io/IOReader.ts:394
+common/io/IOReader.ts:404
 
 #### peekBuffer(length, buffer)
 
@@ -258,7 +258,7 @@ common/io/IOReader.ts:394
 
 ##### Source
 
-common/io/IOReader.ts:395
+common/io/IOReader.ts:405
 
 ***
 
@@ -272,7 +272,7 @@ common/io/IOReader.ts:395
 
 #### Source
 
-common/io/IOReader.ts:299
+common/io/IOReader.ts:309
 
 ***
 
@@ -286,7 +286,7 @@ common/io/IOReader.ts:299
 
 #### Source
 
-common/io/IOReader.ts:278
+common/io/IOReader.ts:288
 
 ***
 
@@ -304,7 +304,7 @@ common/io/IOReader.ts:278
 
 #### Source
 
-common/io/IOReader.ts:320
+common/io/IOReader.ts:330
 
 ***
 
@@ -318,7 +318,7 @@ common/io/IOReader.ts:320
 
 #### Source
 
-common/io/IOReader.ts:214
+common/io/IOReader.ts:224
 
 ***
 
@@ -332,7 +332,7 @@ common/io/IOReader.ts:214
 
 #### Source
 
-common/io/IOReader.ts:235
+common/io/IOReader.ts:245
 
 ***
 
@@ -346,7 +346,7 @@ common/io/IOReader.ts:235
 
 #### Source
 
-common/io/IOReader.ts:257
+common/io/IOReader.ts:267
 
 ***
 
@@ -360,7 +360,7 @@ common/io/IOReader.ts:257
 
 #### Source
 
-common/io/IOReader.ts:193
+common/io/IOReader.ts:203
 
 ***
 
@@ -374,7 +374,7 @@ common/io/IOReader.ts:193
 
 #### Source
 
-common/io/IOReader.ts:468
+common/io/IOReader.ts:480
 
 ***
 
@@ -392,7 +392,7 @@ common/io/IOReader.ts:468
 
 #### Source
 
-common/io/IOReader.ts:426
+common/io/IOReader.ts:436
 
 ***
 
@@ -406,7 +406,7 @@ common/io/IOReader.ts:426
 
 #### Source
 
-common/io/IOReader.ts:100
+common/io/IOReader.ts:110
 
 ***
 
@@ -420,7 +420,7 @@ common/io/IOReader.ts:100
 
 #### Source
 
-common/io/IOReader.ts:120
+common/io/IOReader.ts:130
 
 ***
 
@@ -434,7 +434,7 @@ common/io/IOReader.ts:120
 
 #### Source
 
-common/io/IOReader.ts:151
+common/io/IOReader.ts:161
 
 ***
 
@@ -448,7 +448,7 @@ common/io/IOReader.ts:151
 
 #### Source
 
-common/io/IOReader.ts:172
+common/io/IOReader.ts:182
 
 ***
 
@@ -462,7 +462,7 @@ common/io/IOReader.ts:172
 
 #### Source
 
-common/io/IOReader.ts:79
+common/io/IOReader.ts:89
 
 ***
 
@@ -482,7 +482,7 @@ common/io/IOReader.ts:79
 
 #### Source
 
-common/io/IOReader.ts:685
+common/io/IOReader.ts:697
 
 ***
 
@@ -504,7 +504,7 @@ common/io/IOReader.ts:685
 
 ##### Source
 
-common/io/IOReader.ts:352
+common/io/IOReader.ts:362
 
 #### readBuffer(length, buffer)
 
@@ -526,7 +526,7 @@ common/io/IOReader.ts:352
 
 ##### Source
 
-common/io/IOReader.ts:353
+common/io/IOReader.ts:363
 
 ***
 
@@ -542,7 +542,7 @@ common/io/IOReader.ts:353
 
 #### Source
 
-common/io/IOReader.ts:290
+common/io/IOReader.ts:300
 
 ***
 
@@ -558,7 +558,7 @@ common/io/IOReader.ts:290
 
 #### Source
 
-common/io/IOReader.ts:269
+common/io/IOReader.ts:279
 
 ***
 
@@ -580,7 +580,7 @@ common/io/IOReader.ts:269
 
 #### Source
 
-common/io/IOReader.ts:312
+common/io/IOReader.ts:322
 
 ***
 
@@ -596,7 +596,7 @@ common/io/IOReader.ts:312
 
 #### Source
 
-common/io/IOReader.ts:205
+common/io/IOReader.ts:215
 
 ***
 
@@ -612,7 +612,7 @@ common/io/IOReader.ts:205
 
 #### Source
 
-common/io/IOReader.ts:226
+common/io/IOReader.ts:236
 
 ***
 
@@ -628,7 +628,7 @@ common/io/IOReader.ts:226
 
 #### Source
 
-common/io/IOReader.ts:247
+common/io/IOReader.ts:257
 
 ***
 
@@ -644,7 +644,7 @@ common/io/IOReader.ts:247
 
 #### Source
 
-common/io/IOReader.ts:184
+common/io/IOReader.ts:194
 
 ***
 
@@ -660,7 +660,7 @@ common/io/IOReader.ts:184
 
 #### Source
 
-common/io/IOReader.ts:434
+common/io/IOReader.ts:444
 
 ***
 
@@ -682,7 +682,7 @@ common/io/IOReader.ts:434
 
 #### Source
 
-common/io/IOReader.ts:422
+common/io/IOReader.ts:432
 
 ***
 
@@ -698,7 +698,7 @@ common/io/IOReader.ts:422
 
 #### Source
 
-common/io/IOReader.ts:91
+common/io/IOReader.ts:101
 
 ***
 
@@ -714,7 +714,7 @@ common/io/IOReader.ts:91
 
 #### Source
 
-common/io/IOReader.ts:112
+common/io/IOReader.ts:122
 
 ***
 
@@ -730,7 +730,7 @@ common/io/IOReader.ts:112
 
 #### Source
 
-common/io/IOReader.ts:142
+common/io/IOReader.ts:152
 
 ***
 
@@ -746,7 +746,7 @@ common/io/IOReader.ts:142
 
 #### Source
 
-common/io/IOReader.ts:163
+common/io/IOReader.ts:173
 
 ***
 
@@ -766,7 +766,7 @@ common/io/IOReader.ts:163
 
 #### Source
 
-common/io/IOReader.ts:70
+common/io/IOReader.ts:80
 
 ***
 
@@ -782,7 +782,7 @@ common/io/IOReader.ts:70
 
 #### Source
 
-common/io/IOReader.ts:536
+common/io/IOReader.ts:548
 
 ***
 
@@ -796,7 +796,7 @@ common/io/IOReader.ts:536
 
 #### Source
 
-common/io/IOReader.ts:659
+common/io/IOReader.ts:671
 
 ***
 
@@ -818,7 +818,7 @@ common/io/IOReader.ts:659
 
 #### Source
 
-common/io/IOReader.ts:593
+common/io/IOReader.ts:605
 
 ***
 
@@ -836,7 +836,7 @@ common/io/IOReader.ts:593
 
 #### Source
 
-common/io/IOReader.ts:665
+common/io/IOReader.ts:677
 
 ***
 
@@ -856,4 +856,4 @@ common/io/IOReader.ts:665
 
 #### Source
 
-common/io/IOReader.ts:514
+common/io/IOReader.ts:526
