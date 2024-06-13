@@ -95,7 +95,6 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 - [WasmVideoDecoder](./docs/avcodec/wasmcodec/VideoDecoder/README.md)
 - [WebAudioDecoder](./docs/avcodec/webcodec/AudioDecoder/README.md)
 - [WebVideoDecoder](./docs/avcodec/webcodec/VideoDecoder/README.md)
-
 - [WasmAudioEncoder](./docs/avcodec/wasmcodec/AudioEncoder/README.md)
 - [WasmVideoEncoder](./docs/avcodec/wasmcodec/VideoEncoder/README.md)
 - [WebAudioEncoder](./docs/avcodec/webcodec/AudioEncoder/README.md)

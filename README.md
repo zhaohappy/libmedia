@@ -97,7 +97,6 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 - [WasmVideoDecoder](./docs/avcodec/wasmcodec/VideoDecoder/README.md)
 - [WebAudioDecoder](./docs/avcodec/webcodec/AudioDecoder/README.md)
 - [WebVideoDecoder](./docs/avcodec/webcodec/VideoDecoder/README.md)
-
 - [WasmAudioEncoder](./docs/avcodec/wasmcodec/AudioEncoder/README.md)
 - [WasmVideoEncoder](./docs/avcodec/wasmcodec/VideoEncoder/README.md)
 - [WebAudioEncoder](./docs/avcodec/webcodec/AudioEncoder/README.md)
