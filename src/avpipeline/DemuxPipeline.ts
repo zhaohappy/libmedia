@@ -49,6 +49,7 @@ import { IOFlags } from 'common/io/flags'
 import * as array from 'common/util/array'
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import * as bigint from 'common/util/bigint'
 
 export const STREAM_INDEX_ALL = -1
 
@@ -665,7 +666,7 @@ export default class DemuxPipeline extends Pipeline {
             else {
               duration -= task.formatContext.streams[streamIndex].firstDTS
             }
-            return avRescaleQ(duration, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+            return avRescaleQ(bigint.max(duration, 0n), avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
           }
           else {
 
