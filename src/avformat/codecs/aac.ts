@@ -146,9 +146,6 @@ export function parseAVCodecParameters(stream: Stream, extradata?: Uint8ArrayInt
     stream.codecpar.profile = profile
     stream.codecpar.sampleRate = sampleRate
     stream.codecpar.chLayout.nbChannels = channels
-    if (defined(API_OLD_CHANNEL_LAYOUT)) {
-      stream.codecpar.channels = channels
-    }
   }
 }
 

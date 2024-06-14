@@ -189,10 +189,6 @@ export default class IMp3Format extends IFormat {
 
     stream.codecpar.chLayout.nbChannels = channels
 
-    if (defined(API_OLD_CHANNEL_LAYOUT)) {
-      stream.codecpar.channels = channels
-    }
-
     const bitRate = static_cast<int64>(mp3.getBitRateByVersionLayerIndex(
       mp3Context.frameHeader.version,
       mp3Context.frameHeader.layer,

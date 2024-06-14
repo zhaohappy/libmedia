@@ -171,9 +171,6 @@ export default class IMatroskaFormat extends IFormat {
           }
 
           stream.codecpar.chLayout.nbChannels = track.audio.channels
-          if (defined(API_OLD_CHANNEL_LAYOUT)) {
-            stream.codecpar.channels = track.audio.channels
-          }
           stream.codecpar.sampleRate = static_cast<int32>(track.audio.sampleRate)
           stream.codecpar.bitsPerCodedSample = track.audio.bitDepth
         }

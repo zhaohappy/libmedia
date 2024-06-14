@@ -24,17 +24,17 @@
  */
 
 import { AVSampleFormat } from 'avutil/audiosamplefmt'
+import { AVChannelLayout } from 'avutil/struct/audiosample'
 import AVPCMBuffer from 'avutil/struct/avpcmbuffer'
-import * as stack from 'cheap/stack'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import * as logger from 'common/util/logger'
 
 export interface PCMParameters {
-  channels?: int32
+  channels: int32
   sampleRate: int32
-  layout?: uint64
   format: AVSampleFormat
+  layout?: pointer<AVChannelLayout>
 }
 
 export type ResamplerOptions = {
@@ -64,24 +64,20 @@ export default class Resampler {
 
     await this.resampler.run()
 
-    const layout = stack.malloc(sizeof(uint64)) as pointer<uint64>
-    accessof(layout) <- static_cast<uint64>(input.layout ?? 0n)
     this.resampler.call(
       'resample_set_input_parameters',
       input.sampleRate,
       input.channels,
       input.format,
-      layout
+      input.layout || nullptr
     )
-    accessof(layout) <- static_cast<uint64>(output.layout ?? 0n)
     this.resampler.call(
       'resample_set_output_parameters',
       output.sampleRate,
       output.channels,
       output.format,
-      layout
+      output.layout || nullptr
     )
-    stack.free(sizeof(uint64))
 
     let ret = this.resampler.call<int32>('resample_init')
     if (ret < 0) {

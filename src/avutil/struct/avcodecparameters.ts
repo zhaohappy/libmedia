@@ -65,6 +65,19 @@ export default class AVCodecParameters {
   extradataSize: int32 = 0
 
   /**
+   * Additional data associated with the entire stream.
+   *
+   * Should be allocated with av_packet_side_data_new() or
+   * av_packet_side_data_add(), and will be freed by avcodec_parameters_free().
+   */
+  codedSideData: pointer<AVPacketSideData> = nullptr
+
+  /**
+   * Amount of entries in @ref coded_side_data.
+   */
+  nbCodedSideData: int32 = 0
+
+  /**
    * - video: the pixel format, the value corresponds to enum AVPixelFormat.
    * - audio: the sample format, the value corresponds to enum AVSampleFormat.
    */
@@ -122,6 +135,18 @@ export default class AVCodecParameters {
   sampleAspectRatio: Rational = new Rational({den: 1, num: 0})
 
   /**
+   * Video only. Number of frames per second, for streams with constant frame
+   * durations. Should be set to { 0, 1 } when some frames have differing
+   * durations or if the value is not known.
+   *
+   * @note This field correponds to values that are stored in codec-level
+   * headers and is typically overridden by container/transport-layer
+   * timestamps, when available. It should thus be used only as a last resort,
+   * when no higher-level timing information is available.
+   */
+  framerate: Rational = new Rational({den: 1, num: 0})
+
+  /**
    * Video only. The order of the fields in interlaced video.
    */
   fieldOrder: AVFieldOrder = AVFieldOrder.AV_FIELD_UNKNOWN
@@ -141,20 +166,9 @@ export default class AVCodecParameters {
   videoDelay: int32 = 0
 
   /**
-   * Audio only. The channel layout bitmask. May be 0 if the channel layout is
-   * unknown or unspecified, otherwise the number of bits set must be equal to
-   * the channels field.
-   * @deprecated use ch_layout
+   * Audio only. The channel layout and number of channels.
    */
-  @ignore(!defined(API_OLD_CHANNEL_LAYOUT))
-  channelLayout: uint64 = 0n
-
-  /**
-   * Audio only. The number of audio channels.
-   * @deprecated use ch_layout.nb_channels
-   */
-  @ignore(!defined(API_OLD_CHANNEL_LAYOUT))
-  channels: int32 = NOPTS_VALUE
+  chLayout: AVChannelLayout
 
   /**
    * Audio only. The number of audio samples per second.
@@ -192,36 +206,6 @@ export default class AVCodecParameters {
    * Audio only. Number of samples to skip after a discontinuity.
    */
   seekPreroll: int32 = 0
-
-  /**
-   * Audio only. The channel layout and number of channels.
-   */
-  chLayout: AVChannelLayout
-
-  /**
-   * Video only. Number of frames per second, for streams with constant frame
-   * durations. Should be set to { 0, 1 } when some frames have differing
-   * durations or if the value is not known.
-   *
-   * @note This field correponds to values that are stored in codec-level
-   * headers and is typically overridden by container/transport-layer
-   * timestamps, when available. It should thus be used only as a last resort,
-   * when no higher-level timing information is available.
-   */
-  framerate: Rational = new Rational({den: 1, num: 0})
-
-  /**
-   * Additional data associated with the entire stream.
-   *
-   * Should be allocated with av_packet_side_data_new() or
-   * av_packet_side_data_add(), and will be freed by avcodec_parameters_free().
-   */
-  codedSideData: pointer<AVPacketSideData> = nullptr
-
-  /**
-   * Amount of entries in @ref coded_side_data.
-   */
-  nbCodedSideData: int32 = 0
 
   /**
    * 码流格式

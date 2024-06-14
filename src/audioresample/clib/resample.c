@@ -30,8 +30,8 @@
 
 #include "wasmenv.h"
 
-int64_t src_ch_layout = 0;
-int64_t dst_ch_layout = 0;
+AVChannelLayout* src_ch_layout;
+AVChannelLayout* dst_ch_layout;
 int src_samplerate = 0;
 int dst_samplerate = 0;
 int src_nb_channels = 0;
@@ -59,17 +59,27 @@ EM_PORT_API(int) resample_init() {
 
   av_opt_set_int(swr_ctx, "in_sample_rate",       src_samplerate, 0);
   av_opt_set_sample_fmt(swr_ctx, "in_sample_fmt", src_sample_fmt, 0);
+
   if (!src_ch_layout && src_nb_channels) {
-    src_ch_layout = av_get_default_channel_layout(src_nb_channels);
+    AVChannelLayout ch_layout;
+    av_channel_layout_default(&ch_layout, src_nb_channels);
+    av_opt_set_chlayout(swr_ctx, "in_chlayout",    &ch_layout, 0);
   }
-  av_opt_set_int(swr_ctx, "in_channel_layout",    src_ch_layout, 0);
+  else {
+    av_opt_set_chlayout(swr_ctx, "in_chlayout",    src_ch_layout, 0);
+  }
 
   av_opt_set_int(swr_ctx, "out_sample_rate",       dst_samplerate, 0);
   av_opt_set_sample_fmt(swr_ctx, "out_sample_fmt", dst_sample_fmt, 0);
+  
   if (!dst_ch_layout && dst_nb_channels) {
-    dst_ch_layout = av_get_default_channel_layout(dst_nb_channels);
+    AVChannelLayout ch_layout;
+    av_channel_layout_default(&ch_layout, dst_nb_channels);
+    av_opt_set_chlayout(swr_ctx, "out_chlayout",    &ch_layout, 0);
   }
-  av_opt_set_int(swr_ctx, "out_channel_layout",    dst_ch_layout, 0);
+  else {
+    av_opt_set_chlayout(swr_ctx, "out_chlayout",    dst_ch_layout, 0);
+  }
 
   if (swr_init(swr_ctx) < 0) {
     return -2;
@@ -80,25 +90,25 @@ EM_PORT_API(int) resample_init() {
   return  0;
 }
 
-EM_PORT_API(int) resample_set_input_parameters(int samplerate, int nb_channels, enum AVSampleFormat format, int64_t* ch_layout) {
+EM_PORT_API(int) resample_set_input_parameters(int samplerate, int nb_channels, enum AVSampleFormat format, AVChannelLayout* ch_layout) {
   src_samplerate = samplerate;
   src_nb_channels = nb_channels;
   src_sample_fmt = format;
 
   if (ch_layout) {
-    src_ch_layout = *ch_layout;
+    src_ch_layout = ch_layout;
   }
 
   return  0;
 }
 
-EM_PORT_API(int) resample_set_output_parameters(int samplerate, int nb_channels, enum AVSampleFormat format, int64_t* ch_layout) {
+EM_PORT_API(int) resample_set_output_parameters(int samplerate, int nb_channels, enum AVSampleFormat format, AVChannelLayout* ch_layout) {
   dst_samplerate = samplerate;
   dst_nb_channels = nb_channels;
   dst_sample_fmt = format;
 
   if (ch_layout) {
-    dst_ch_layout = *ch_layout;
+    dst_ch_layout = ch_layout;
   }
 
   return  0;

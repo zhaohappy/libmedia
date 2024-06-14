@@ -108,9 +108,6 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
     const reader = new BufferReader(extradata, false)
     reader.skip(9)
     stream.codecpar.chLayout.nbChannels = reader.readUint8()
-    if (defined(API_OLD_CHANNEL_LAYOUT)) {
-      stream.codecpar.channels = stream.codecpar.chLayout.nbChannels
-    }
     stream.codecpar.initialPadding = reader.readUint16()
     stream.codecpar.sampleRate = reader.readUint32()
 

@@ -229,9 +229,6 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
       stream.metadata['vendorId'] = await ioReader.readString(4)
 
       stream.codecpar.chLayout.nbChannels = await ioReader.readUint16()
-      if (defined(API_OLD_CHANNEL_LAYOUT)) {
-        stream.codecpar.channels = stream.codecpar.chLayout.nbChannels
-      }
       stream.codecpar.bitsPerCodedSample = await ioReader.readUint16()
 
       streamContext.audioCid = await ioReader.readUint16()
@@ -256,9 +253,6 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
           await ioReader.skip(4)
           stream.codecpar.sampleRate = Number(await ioReader.readUint64())
           stream.codecpar.chLayout.nbChannels = await ioReader.readUint32()
-          if (defined(API_OLD_CHANNEL_LAYOUT)) {
-            stream.codecpar.channels = stream.codecpar.chLayout.nbChannels
-          }
           // always 0x7F000000
           await ioReader.skip(4)
           stream.codecpar.bitsPerCodedSample = await ioReader.readUint32()

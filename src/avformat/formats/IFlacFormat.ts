@@ -141,9 +141,6 @@ export default class IFlacFormat extends IFormat {
         const sampleRate = await formatContext.ioReader.readUint24()
         stream.codecpar.sampleRate = (sampleRate >> 4)
         stream.codecpar.chLayout.nbChannels = ((sampleRate & 0x0f) >>> 1) + 1
-        if (defined(API_OLD_CHANNEL_LAYOUT)) {
-          stream.codecpar.channels = stream.codecpar.chLayout.nbChannels
-        }
 
         this.context.streamInfo.sampleRate = stream.codecpar.sampleRate
         this.context.streamInfo.channels = stream.codecpar.chLayout.nbChannels

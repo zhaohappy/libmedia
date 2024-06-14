@@ -86,9 +86,6 @@ export function getAVFrameDefault(frame: pointer<AVFrame>) {
   frame.pktDts = NOPTS_VALUE_BIGINT
   frame.bestEffortTimestamp = NOPTS_VALUE_BIGINT
 
-  if (defined(API_PKT_DURATION)) {
-    frame.pktDuration = 0n
-  }
   if (defined(API_FRAME_PKT)) {
     frame.pktPos = NOPTS_VALUE_BIGINT
     frame.pktSize = -1
@@ -268,10 +265,6 @@ export function refAVFrame(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
 
   dst.chLayout = src.chLayout
 
-  if (defined(API_OLD_CHANNEL_LAYOUT)) {
-    dst.channels = src.channels
-    dst.channelLayout = src.channelLayout
-  }
   dst.nbSamples = src.nbSamples
 
   let ret = copyAVFrameProps(dst, src)
@@ -397,18 +390,8 @@ export function copyAVFrameProps(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
     dst.pktPos = src.pktPos
     dst.pktSize = src.pktSize
   }
-  if (defined(API_PKT_DURATION)) {
-    dst.pktDuration = src.pktDuration
-  }
-  if (defined(API_REORDERED_OPAQUE)) {
-    dst.reorderedOpaque = src.reorderedOpaque
-  }
   dst.quality = src.quality
   dst.bestEffortTimestamp = src.bestEffortTimestamp
-  if (defined(API_FRAME_PICTURE_NUMBER)) {
-    dst.codedPictureNumber = src.codedPictureNumber
-    dst.displayPictureNumber = src.displayPictureNumber
-  }
 
   dst.flags = src.flags
   dst.decodeErrorFlags = src.decodeErrorFlags

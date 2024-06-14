@@ -238,9 +238,6 @@ export default class IMpegtsFormat extends IFormat {
           stream.codecpar.profile = profile
           stream.codecpar.sampleRate = sampleRate
           stream.codecpar.chLayout.nbChannels = channelCount
-          if (defined(API_OLD_CHANNEL_LAYOUT)) {
-            stream.codecpar.channels = channelCount
-          }
         }
       }
       else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {

@@ -84,10 +84,6 @@ export function copyCodecParameters(dst: pointer<AVCodecParameters>, src: pointe
   dst.chromaLocation = src.chromaLocation
   dst.videoDelay = src.videoDelay
   dst.chLayout = src.chLayout
-  if (defined(API_OLD_CHANNEL_LAYOUT)) {
-    dst.channelLayout = src.channelLayout
-    dst.channels = src.channels
-  }
   dst.sampleRate = src.sampleRate
   dst.blockAlign = src.blockAlign
   dst.frameSize = src.frameSize

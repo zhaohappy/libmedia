@@ -114,9 +114,6 @@ export default class IAacFormat extends IFormat {
       stream.codecpar.profile = profile + 1
       stream.codecpar.sampleRate = MPEG4SamplingFrequencies[samplingFrequencyIndex]
       stream.codecpar.chLayout.nbChannels = MPEG4Channels[channelConfiguration]
-      if (defined(API_OLD_CHANNEL_LAYOUT)) {
-        stream.codecpar.channels = MPEG4Channels[channelConfiguration]
-      }
       const extradata = avCodecParameters2Extradata(stream.codecpar)
       stream.codecpar.extradata = avMalloc(extradata.length)
       memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)

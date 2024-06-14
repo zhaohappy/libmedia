@@ -422,20 +422,6 @@ export default class AVFrame {
   timeBase: Rational
 
   /**
-   * picture number in bitstream order
-   * @deprecated
-   */
-  @ignore(!defined(API_FRAME_PICTURE_NUMBER))
-  codedPictureNumber: int32 = NOPTS_VALUE
-
-  /**
-   * picture number in display order
-   * @deprecated
-   */
-  @ignore(!defined(API_FRAME_PICTURE_NUMBER))
-  displayPictureNumber: int32 = NOPTS_VALUE
-
-  /**
    * quality (between 1 (good) and FF_LAMBDA_MAX (bad))
    */
   quality: int32 = NOPTS_VALUE
@@ -500,29 +486,9 @@ export default class AVFrame {
   paletteHasChanged: int32 = NOPTS_VALUE
 
   /**
-   * reordered opaque 64 bits (generally an integer or a double precision float
-   * PTS but can be anything).
-   * The user sets AVCodecContext.reordered_opaque to represent the input at
-   * that time,
-   * the decoder reorders values as needed and sets AVFrame.reordered_opaque
-   * to exactly one of the values provided by the user through AVCodecContext.reordered_opaque
-   *
-   * @deprecated Use AV_CODEC_FLAG_COPY_OPAQUE instead
-   */
-  @ignore(!defined(API_REORDERED_OPAQUE))
-  reorderedOpaque: int64 = NOPTS_VALUE_BIGINT
-
-  /**
    * Sample rate of the audio data.
    */
   sampleRate: int32 = NOPTS_VALUE
-
-  /**
-   * Channel layout of the audio data.
-   * @deprecated use ch_layout instead
-   */
-  @ignore(!defined(API_OLD_CHANNEL_LAYOUT))
-  channelLayout: uint64 = 0n
 
   /**
    * AVBuffer references backing the data for this frame. If all elements of
@@ -601,17 +567,6 @@ export default class AVFrame {
   pktPos: int64 = NOPTS_VALUE_BIGINT
 
   /**
-   * duration of the corresponding packet, expressed in
-   * AVStream->time_base units, 0 if unknown.
-   * - encoding: unused
-   * - decoding: Read by user.
-   *
-   * @deprecated use duration instead
-   */
-  @ignore(!defined(API_PKT_DURATION))
-  pktDuration: int64 = NOPTS_VALUE_BIGINT
-
-  /**
    * metadata.
    * - encoding: Set by user.
    * - decoding: Set by libavcodec.
@@ -626,15 +581,6 @@ export default class AVFrame {
    * - decoding: set by libavcodec, read by user.
    */
   decodeErrorFlags: FFDecodeError = FFDecodeError.NONE
-
-  /**
-   * number of audio channels, only used for audio.
-   * - encoding: unused
-   * - decoding: Read by user.
-   * @deprecated use ch_layout instead
-   */
-  @ignore(!defined(API_OLD_CHANNEL_LAYOUT))
-  channels: int32 = NOPTS_VALUE
 
   /**
    * size of the corresponding packet containing the compressed

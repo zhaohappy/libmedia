@@ -45,9 +45,6 @@
     "build-encode-mp3": "sh ./build/build-encoder.sh mp3",
     "build-decode-pcm": "sh ./build/build-decoder-pcm.sh",
 
-    "build-ffmpeg-pcm": "sh ./build/build-ffmpeg-decoder-pcm.sh",
-    "build-ffmpeg-pcm-atomic": "sh ./build/build-ffmpeg-decoder-pcm.sh 0 1",
-
     "build-ffmpeg-util": "sh ./build/build-ffmpeg-util.sh",
     "build-ffmpeg-util-atomic": "sh ./build/build-ffmpeg-util.sh 0 1",
     "build-ffmpeg-util-simd": "sh ./build/build-ffmpeg-util.sh 1 1",
@@ -55,6 +52,7 @@
     "build-dav1d-lib": "sh ./build/build-dav1d-lib.sh 0 0",
     "build-dav1d-lib-atomic": "sh ./build/build-dav1d-lib.sh 0 1",
     "build-dav1d-lib-simd": "sh ./build/build-dav1d-lib.sh 1 1",
+
     "build-ffmpeg-decode-hevc": "sh ./build/build-ffmpeg-decoder.sh hevc",
     "build-ffmpeg-decode-mpeg4": "sh ./build/build-ffmpeg-decoder.sh mpeg4",
     "build-ffmpeg-decode-av1": "sh ./build/build-ffmpeg-decoder.sh av1",
@@ -66,6 +64,9 @@
     "build-ffmpeg-decode-speex": "sh ./build/build-ffmpeg-decoder.sh speex",
     "build-ffmpeg-decode-flac": "sh ./build/build-ffmpeg-decoder.sh flac",
     "build-ffmpeg-decode-vorbis": "sh ./build/build-ffmpeg-decoder.sh vorbis",
+    "build-ffmpeg-decode-pcm": "sh ./build/build-ffmpeg-decoder-pcm.sh",
+    "build-ffmpeg-decode-pcm-atomic": "sh ./build/build-ffmpeg-decoder-pcm.sh 0 1",
+
     "build-ffmpeg-decode-h264-atomic": "sh ./build/build-ffmpeg-decoder.sh h264 0 1",
     "build-ffmpeg-decode-hevc-atomic": "sh ./build/build-ffmpeg-decoder.sh hevc 0 1",
     "build-ffmpeg-decode-av1-atomic": "sh ./build/build-ffmpeg-decoder.sh av1 0 1",
@@ -81,6 +82,7 @@
     "build-ffmpeg-decode-h264-simd": "sh ./build/build-ffmpeg-decoder.sh h264 1 1",
     "build-ffmpeg-decode-hevc-simd": "sh ./build/build-ffmpeg-decoder.sh hevc 1 1",
     "build-ffmpeg-decode-mpeg4-simd": "sh ./build/build-ffmpeg-decoder.sh mpeg4 1 1",
+
     "build-ffmpeg-encode-h264": "sh ./build/build-ffmpeg-encoder.sh h264",
     "build-ffmpeg-encode-hevc": "sh ./build/build-ffmpeg-encoder.sh hevc",
     "build-ffmpeg-encode-mpeg4": "sh ./build/build-ffmpeg-encoder.sh mpeg4",

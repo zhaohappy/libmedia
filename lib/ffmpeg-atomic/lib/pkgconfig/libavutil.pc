@@ -1,11 +1,11 @@
-prefix=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg-atomic
+prefix=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg-atomic
 exec_prefix=${prefix}
-libdir=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg-atomic/lib
-includedir=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg-atomic/include
+libdir=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg-atomic/lib
+includedir=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg-atomic/include
 
 Name: libavutil
 Description: FFmpeg utility library
-Version: 58.39.100
+Version: 59.8.100
 Requires: 
 Requires.private: 
 Conflicts:

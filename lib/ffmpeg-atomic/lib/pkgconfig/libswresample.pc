@@ -1,12 +1,12 @@
-prefix=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg-atomic
+prefix=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg-atomic
 exec_prefix=${prefix}
-libdir=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg-atomic/lib
-includedir=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg-atomic/include
+libdir=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg-atomic/lib
+includedir=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg-atomic/include
 
 Name: libswresample
 Description: FFmpeg audio resampling library
-Version: 4.13.100
-Requires: libavutil >= 58.39.100
+Version: 5.1.100
+Requires: libavutil >= 59.8.100
 Requires.private: 
 Conflicts:
 Libs: -L${libdir}  -lswresample -lm

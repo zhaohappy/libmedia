@@ -221,9 +221,6 @@ export default class IFlvFormat extends IFormat {
         }
 
         stream.codecpar.chLayout.nbChannels = (audioHeader & 0x01) === 1 ? 2 : 1
-        if (defined(API_OLD_CHANNEL_LAYOUT)) {
-          stream.codecpar.channels = (audioHeader & 0x01) === 1 ? 2 : 1
-        }
         stream.codecpar.sampleRate = 44100 << ((audioHeader & 0x0c) >>> 2) >> 3
         stream.codecpar.bitsPerCodedSample = (audioHeader & 0x02) ? 16 : 8
 
@@ -261,9 +258,6 @@ export default class IFlvFormat extends IFormat {
         else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_SPEEX) {
           stream.codecpar.sampleRate = 16000
           stream.codecpar.chLayout.nbChannels = 1
-          if (defined(API_OLD_CHANNEL_LAYOUT)) {
-            stream.codecpar.channels = 1
-          }
           await this.readAVPacketData(formatContext, stream, avpacket, size - 1)
         }
         else {

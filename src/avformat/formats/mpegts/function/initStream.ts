@@ -80,9 +80,6 @@ export default function initStream(pid: PID, stream: Stream, mpegtsContext: Mpeg
                 ? 2
                 : (extDescriptor.buffer[1] & 0x0F)
 
-              if (defined(API_OLD_CHANNEL_LAYOUT)) {
-                stream.codecpar.channels = stream.codecpar.chLayout.nbChannels
-              }
 
               const buffer = opus.avCodecParameters2Extradata(stream.codecpar)
               if (buffer) {

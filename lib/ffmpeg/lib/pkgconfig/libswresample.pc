@@ -1,12 +1,12 @@
-prefix=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg
+prefix=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg
 exec_prefix=${prefix}
-libdir=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg/lib
-includedir=/Users/zhaogaoxing/Documents/thirdParty/avmedia/lib/ffmpeg/include
+libdir=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg/lib
+includedir=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg/include
 
 Name: libswresample
 Description: FFmpeg audio resampling library
-Version: 4.13.100
-Requires: libavutil >= 58.39.100
+Version: 5.1.100
+Requires: libavutil >= 59.8.100
 Requires.private: 
 Conflicts:
 Libs: -L${libdir}  -lswresample -lm

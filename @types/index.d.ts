@@ -45,20 +45,12 @@ declare const ENABLE_WEBGPU: boolean
 
 declare const ENABLE_RENDER_16: boolean
 
-declare const API_OLD_CHANNEL_LAYOUT: boolean
-
 declare const API_FRAME_KEY: boolean
-
-declare const API_FRAME_PICTURE_NUMBER: boolean
 
 declare const API_INTERLACED_FRAME: boolean
 
 declare const API_PALETTE_HAS_CHANGED: boolean
 
-declare const API_REORDERED_OPAQUE: boolean
-
 declare const API_FRAME_PKT: boolean
-
-declare const API_PKT_DURATION: boolean
 
 declare const VERSION: string

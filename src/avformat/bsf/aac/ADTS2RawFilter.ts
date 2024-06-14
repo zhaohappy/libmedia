@@ -153,9 +153,6 @@ export default class ADTS2RawFilter extends AVBSFilter {
         this.inCodecpar.profile = this.streamMuxConfig.profile
         this.inCodecpar.sampleRate = this.streamMuxConfig.sampleRate
         this.inCodecpar.chLayout.nbChannels = this.streamMuxConfig.channels
-        if (defined(API_OLD_CHANNEL_LAYOUT)) {
-          this.inCodecpar.channels = this.streamMuxConfig.channels
-        }
 
         const extradata = avCodecParameters2Extradata(accessof(this.inCodecpar))
 

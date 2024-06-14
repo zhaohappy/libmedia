@@ -198,9 +198,6 @@ export default class IOggFormat extends IFormat {
 
         stream.codecpar.sampleRate = idPage.sampleRate
         stream.codecpar.chLayout.nbChannels = idPage.channels
-        if (defined(API_OLD_CHANNEL_LAYOUT)) {
-          stream.codecpar.channels = idPage.channels
-        }
         stream.timeBase.den = stream.codecpar.sampleRate
         stream.timeBase.num = 1
         stream.privData = {
@@ -241,9 +238,6 @@ export default class IOggFormat extends IFormat {
 
         stream.codecpar.sampleRate = idPage.sampleRate
         stream.codecpar.chLayout.nbChannels = idPage.channels
-        if (defined(API_OLD_CHANNEL_LAYOUT)) {
-          stream.codecpar.channels = idPage.channels
-        }
         stream.timeBase.den = stream.codecpar.sampleRate
         stream.timeBase.num = 1
         stream.privData = {

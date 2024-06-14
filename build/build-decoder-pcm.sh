@@ -22,10 +22,10 @@ INCLUDE_PATH=$PROJECT_ROOT_PATH/dist/include
 
 source $PROJECT_ROOT_PATH/../emsdk/emsdk_env.sh
 
-if ! [ -n "$2" ]; then
+if ! [ -n "$1" ]; then
   ENABLE_SIMD=`sed '/^enable_simd=/!d;s/.*=//' $NOW_PATH/config`
 fi
-if ! [ -n "$3" ]; then
+if ! [ -n "$2" ]; then
   ENABLE_ATOMIC=`sed '/^enable_atomic=/!d;s/.*=//' $NOW_PATH/config`
 fi
 ENABLE_DEBUG=`sed '/^enable_debug=/!d;s/.*=//' $NOW_PATH/config` 

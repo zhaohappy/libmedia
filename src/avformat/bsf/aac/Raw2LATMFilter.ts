@@ -140,9 +140,6 @@ export default class Raw2LATMFilter extends AVBSFilter {
       this.inCodecpar.profile = profile
       this.inCodecpar.sampleRate = sampleRate
       this.inCodecpar.chLayout.nbChannels = channels
-      if (defined(API_OLD_CHANNEL_LAYOUT)) {
-        this.inCodecpar.channels = channels
-      }
       this.counter = 0
     }
 

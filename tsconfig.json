@@ -110,14 +110,10 @@
       "ENABLE_LOG_PATH": true,
 
       // AVFrame 字段可选项，不同版本的 FFmpeg 可能不同
-      "API_OLD_CHANNEL_LAYOUT": true,
       "API_FRAME_KEY": true,
-      "API_FRAME_PICTURE_NUMBER": true,
       "API_INTERLACED_FRAME": true,
       "API_PALETTE_HAS_CHANGED": true,
-      "API_REORDERED_OPAQUE": true,
       "API_FRAME_PKT": true,
-      "API_PKT_DURATION": true,
 
       "VERSION": "libmedia.0.0.1"
     }

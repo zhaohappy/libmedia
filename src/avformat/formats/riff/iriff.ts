@@ -128,9 +128,6 @@ export async function readFormatTag(ioReader: IOReader, codecpar: pointer<AVCode
   if (channels != codecpar.chLayout.nbChannels) {
     codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_UNSPEC
     codecpar.chLayout.nbChannels = channels
-    if (defined(API_OLD_CHANNEL_LAYOUT)) {
-      codecpar.channels = channels
-    }
   }
   return 0
 }
