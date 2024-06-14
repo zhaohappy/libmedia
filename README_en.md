@@ -59,7 +59,7 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 - AVPlayer is libmedia's audio and video player implementation, supporting soft decoding, hard decoding, and MSE; it supports multiple encapsulation protocols and multiple encoding formats.[online demo](https://zhaohappy.github.io/libmedia/test/avplayer.html)
 
 
-- AVTranscode is the transcoding tool implementation of libmedia, which is not yet implemented.
+- AVTranscoder is the transcoding tool implementation of libmedia, which is not yet implemented.
 
 ### API
 
