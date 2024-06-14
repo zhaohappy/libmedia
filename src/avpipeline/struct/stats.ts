@@ -58,9 +58,17 @@ export default class Stats {
    */
   audioDecodeErrorPacketCount: int32
   /**
+   * 音频编码错误帧总数
+   */
+  audioEncodeErrorFrameCount: int32
+  /**
    * 音频解码帧总数
    */
   audioFrameDecodeCount: int64
+  /**
+   * 音频编码包总数
+   */
+  audioPacketEncodeCount: int64
   /**
    * 音频渲染帧总数
    */
@@ -106,9 +114,17 @@ export default class Stats {
    */
   videoDecodeErrorPacketCount: int32
   /**
+   * 视频编码错误帧总数
+   */
+  videoEncodeErrorFrameCount: int32
+  /**
    * 视频解码帧总数
    */
   videoFrameDecodeCount: int64
+  /**
+   * 视频编码包总数
+   */
+  videoPacketEncodeCount: int64
   /**
    * 视频渲染帧总数
    */

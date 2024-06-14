@@ -22,3 +22,226 @@
  * Lesser General Public License for more details.
  *
  */
+
+import { WebAssemblyResource } from 'cheap/webassembly/compiler'
+import Pipeline, { TaskOptions } from './Pipeline'
+import List from 'cheap/std/collection/List'
+import { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
+import { Mutex } from 'cheap/thread/mutex'
+import { AVFrameRef } from 'avutil/struct/avframe'
+import WasmAudioEncoder from 'avcodec/wasmcodec/AudioEncoder'
+import WebAudioEncoder from 'avcodec/webcodec/AudioEncoder'
+import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import AVFramePoolImpl from 'avutil/implement/AVFramePoolImpl'
+import IPCPort, { REQUEST, RpcMessage } from 'common/network/IPCPort'
+import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
+import * as logger from 'common/util/logger'
+import { IOError } from 'common/io/error'
+import * as is from 'common/util/is'
+import * as array from 'common/util/array'
+import * as error from 'avutil/error'
+
+export interface AudioEncodeTaskOptions extends TaskOptions {
+  resource: WebAssemblyResource
+  avpacketList: pointer<List<pointer<AVPacketRef>>>
+  avpacketListMutex: pointer<Mutex>
+  avframeList: pointer<List<pointer<AVFrameRef>>>
+  avframeListMutex: pointer<Mutex>
+}
+
+type SelfTask = AudioEncodeTaskOptions & {
+  encoder: WasmAudioEncoder | WebAudioEncoder
+  avpacketCaches: pointer<AVPacketRef>[]
+  parameters: pointer<AVCodecParameters>
+  openReject?: (error: Error) => void
+  inputEnd: boolean
+  avframePool: AVFramePoolImpl
+  avpacketPool: AVPacketPool
+}
+
+export default class AudioEncodePipeline extends Pipeline {
+
+  declare tasks: Map<string, SelfTask>
+
+  constructor() {
+    super()
+  }
+
+  private createWebcodecEncoder(task: SelfTask) {
+    return new WebAudioEncoder({
+      onError: (error) => {
+        logger.error(`audio encode error, taskId: ${task.taskId}, error: ${error}`)
+        if (task.openReject) {
+          task.openReject(error)
+          task.openReject = null
+        }
+      },
+      onReceivePacket(avpacket, avframe) {
+        task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
+        task.stats.audioPacketEncodeCount++
+        if (avframe) {
+          task.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(avframe))
+        }
+      }
+    })
+  }
+
+  private createTask(options: AudioEncodeTaskOptions): number {
+
+    assert(options.leftPort)
+    assert(options.rightPort)
+
+    const leftIPCPort = new IPCPort(options.leftPort)
+    const rightIPCPort = new IPCPort(options.rightPort)
+    const avpacketCaches: pointer<AVPacketRef>[] = []
+
+    const avpacketPool = new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex)
+
+    const task: SelfTask = {
+      ...options,
+      avpacketCaches,
+      encoder: null,
+      inputEnd: false,
+      parameters: nullptr,
+
+      avframePool: new AVFramePoolImpl(accessof(options.avframeList), options.avframeListMutex),
+      avpacketPool
+    }
+
+    if (options.resource) {
+      task.encoder = new WasmAudioEncoder({
+        resource: options.resource,
+        onError: (error) => {
+          logger.error(`audio encode error, taskId: ${options.taskId}, error: ${error}`)
+          const task = this.tasks.get(options.taskId)
+          if (task.openReject) {
+            task.openReject(error)
+            task.openReject = null
+          }
+        },
+        onReceiveAVPacket(avpacket) {
+          task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
+          task.stats.audioPacketEncodeCount++
+        },
+        avpacketPool: avpacketPool
+      })
+    }
+    else {
+      task.encoder = this.createWebcodecEncoder(task)
+    }
+
+    this.tasks.set(options.taskId, task)
+
+    rightIPCPort.on(REQUEST, async (request: RpcMessage) => {
+      switch (request.method) {
+        case 'pull': {
+          if (avpacketCaches.length) {
+            const avpacket = avpacketCaches.shift()
+            rightIPCPort.reply(request, avpacket)
+            break
+          }
+          else if (!task.inputEnd) {
+            while (true) {
+              if (avpacketCaches.length) {
+                const avpacket = avpacketCaches.shift()
+                rightIPCPort.reply(request, avpacket)
+                break
+              }
+
+              const avframe = await leftIPCPort.request<pointer<AVFrameRef> | AudioData>('pull')
+
+              if (!is.number(avframe) || avframe > 0) {
+                const ret = task.encoder.encode(avframe)
+                if (is.number(avframe)) {
+                  task.avframePool.release(avframe)
+                }
+                if (ret < 0) {
+                  task.stats.audioEncodeErrorFrameCount++
+                  logger.error(`audio encode error, taskId: ${options.taskId}, ret: ${ret}`)
+                  rightIPCPort.reply(request, ret)
+                  break
+                }
+                continue
+              }
+              else {
+                if (avframe === IOError.END) {
+                  await task.encoder.flush()
+                  task.inputEnd = true
+                  if (avpacketCaches.length) {
+                    const avpacket = avpacketCaches.shift()
+                    rightIPCPort.reply(request, avpacket)
+                    break
+                  }
+                  else {
+                    logger.info(`audio encode ended, taskId: ${task.taskId}`)
+                    rightIPCPort.reply(request, IOError.END)
+                    break
+                  }
+                }
+                else {
+                  logger.error(`audio encode pull avpacket error, taskId: ${options.taskId}, ret: ${avframe}`)
+                  rightIPCPort.reply(request, avframe)
+                  break
+                }
+              }
+            }
+            break
+          }
+          rightIPCPort.reply(request, IOError.END)
+          break
+        }
+      }
+    })
+
+    return 0
+  }
+
+  public async open(taskId: string, parameters: pointer<AVCodecParameters>) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      return new Promise<void>(async (resolve, reject) => {
+        task.openReject = reject
+        await task.encoder.open(parameters)
+        task.parameters = parameters
+        resolve()
+      })
+    }
+    logger.fatal('task not found')
+  }
+
+  public async resetTask(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      if (task.encoder) {
+        await task.encoder.flush()
+      }
+      array.each(task.avpacketCaches, (avpacket) => {
+        task.avpacketPool.release(avpacket)
+      })
+      task.avpacketCaches.length = 0
+      task.inputEnd = false
+
+      logger.info(`reset audio encoder, taskId: ${task.taskId}`)
+    }
+  }
+
+  public async registerTask(options: AudioEncodeTaskOptions): Promise<number> {
+    if (this.tasks.has(options.taskId)) {
+      return error.INVALID_OPERATE
+    }
+    return this.createTask(options)
+  }
+
+  public async unregisterTask(taskId: string): Promise<void> {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      task.rightPort.close()
+      task.leftPort.close()
+      task.encoder.close()
+      task.avpacketCaches.forEach((avpacket) => {
+        task.avpacketPool.release(avpacket)
+      })
+      this.tasks.delete(taskId)
+    }
+  }
+}
