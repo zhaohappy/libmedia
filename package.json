@@ -28,6 +28,7 @@
     "build-stretchpitch": "sh ./build/build-stretchpitch.sh",
     "build-decode-h264": "sh ./build/build-decoder.sh h264",
     "build-decode-hevc": "sh ./build/build-decoder.sh hevc",
+    "build-decode-vvc": "sh ./build/build-decoder.sh vvc",
     "build-decode-mpeg4": "sh ./build/build-decoder.sh mpeg4",
     "build-decode-av1": "sh ./build/build-decoder-av1.sh",
     "build-decode-vp8": "sh ./build/build-decoder.sh vp8",
@@ -47,6 +48,7 @@
 
     "build-ffmpeg-util": "sh ./build/build-ffmpeg-util.sh",
     "build-ffmpeg-util-atomic": "sh ./build/build-ffmpeg-util.sh 0 1",
+    "build-ffmpeg-util-atomic-single": "sh ./build/build-ffmpeg-util.sh 0 1 1",
     "build-ffmpeg-util-simd": "sh ./build/build-ffmpeg-util.sh 1 1",
     "build-ffmpeg-decode-h264": "sh ./build/build-ffmpeg-decoder.sh h264",
     "build-dav1d-lib": "sh ./build/build-dav1d-lib.sh 0 0",
@@ -54,6 +56,7 @@
     "build-dav1d-lib-simd": "sh ./build/build-dav1d-lib.sh 1 1",
 
     "build-ffmpeg-decode-hevc": "sh ./build/build-ffmpeg-decoder.sh hevc",
+    "build-ffmpeg-decode-vvc": "sh ./build/build-ffmpeg-decoder.sh vvc",
     "build-ffmpeg-decode-mpeg4": "sh ./build/build-ffmpeg-decoder.sh mpeg4",
     "build-ffmpeg-decode-av1": "sh ./build/build-ffmpeg-decoder.sh av1",
     "build-ffmpeg-decode-vp8": "sh ./build/build-ffmpeg-decoder.sh vp8",
@@ -69,6 +72,7 @@
 
     "build-ffmpeg-decode-h264-atomic": "sh ./build/build-ffmpeg-decoder.sh h264 0 1",
     "build-ffmpeg-decode-hevc-atomic": "sh ./build/build-ffmpeg-decoder.sh hevc 0 1",
+    "build-ffmpeg-decode-vvc-atomic": "sh ./build/build-ffmpeg-decoder.sh vvc 0 1",
     "build-ffmpeg-decode-av1-atomic": "sh ./build/build-ffmpeg-decoder.sh av1 0 1",
     "build-ffmpeg-decode-vp8-atomic": "sh ./build/build-ffmpeg-decoder.sh vp8 0 1",
     "build-ffmpeg-decode-vp9-atomic": "sh ./build/build-ffmpeg-decoder.sh vp9 0 1",
@@ -127,7 +131,7 @@
     "typedoc-plugin-markdown": "^4.0.1",
     "typedoc-plugin-rename-defaults": "^0.7.0",
     "typescript": "^5.2.2",
-    "webpack": "^5.91.0",
+    "webpack": "^5.92.0",
     "webpack-cli": "^5.1.4",
     "worker-loader": "^3.0.8",
     "yargs": "^13.3.0"

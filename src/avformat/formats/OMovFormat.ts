@@ -481,6 +481,7 @@ export default class OMovFormat extends OFormat {
     if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
     )
       && avpacket.bitFormat !== BitFormat.AVCC
     ) {

@@ -33,6 +33,7 @@ import { addAVPacketData, addAVPacketSideData, copyAVPacketProps, createAVPacket
 
 import * as h264 from '../../codecs/h264'
 import * as hevc from '../../codecs/hevc'
+import * as vvc from '../../codecs/vvc'
 import { mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import * as errorType from 'avutil/error'
@@ -84,6 +85,9 @@ export default class Annexb2AvccFilter extends AVBSFilter {
       }
       else if (this.inCodecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
         convert = hevc.annexb2Avcc(buffer)
+      }
+      else if (this.inCodecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
+        convert = vvc.annexb2Avcc(buffer)
       }
       else {
         logger.fatal(`not support for codecId: ${this.inCodecpar.codecId}`)

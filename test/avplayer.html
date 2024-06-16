@@ -537,6 +537,9 @@
                     // HEVC
                     case 173:
                       return supportAtomic ? '../dist/decode/hevc-atomic.wasm' : '../dist/decode/hevc.wasm'
+                    // VVC
+                    case 196:
+                      return supportAtomic ? '../dist/decode/vvc-atomic.wasm' : '../dist/decode/vvc.wasm'
                     // Mpeg4
                     case 12:
                       return supportAtomic ? '../dist/decode/mpeg4-atomic.wasm' : '../dist/decode/mpeg4.wasm'

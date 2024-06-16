@@ -34,6 +34,8 @@ export const Mp4Tag2AVCodecID = {
   avc3: AVCodecID.AV_CODEC_ID_H264,
   hev1: AVCodecID.AV_CODEC_ID_HEVC,
   hvc1: AVCodecID.AV_CODEC_ID_HEVC,
+  vvc1: AVCodecID.AV_CODEC_ID_VVC,
+  vvi1: AVCodecID.AV_CODEC_ID_VVC,
   vp09: AVCodecID.AV_CODEC_ID_VP9,
   av01: AVCodecID.AV_CODEC_ID_AV1,
   mp4a: AVCodecID.AV_CODEC_ID_AAC,
@@ -50,6 +52,7 @@ export const AVCodecID2Mp4a = {
   [AVCodecID.AV_CODEC_ID_MPEG4]: 0x20,
   [AVCodecID.AV_CODEC_ID_H264]: 0x21,
   [AVCodecID.AV_CODEC_ID_HEVC]: 0x23,
+  [AVCodecID.AV_CODEC_ID_VVC]: 0x33,
   [AVCodecID.AV_CODEC_ID_VP9]: 0xB1,
   [AVCodecID.AV_CODEC_ID_NONE]: 0
 }
@@ -58,6 +61,7 @@ export const Mp4aObj2AVCodecID = {
   0x20: AVCodecID.AV_CODEC_ID_MPEG4,
   0x21: AVCodecID.AV_CODEC_ID_H264,
   0x23: AVCodecID.AV_CODEC_ID_HEVC,
+  0x33: AVCodecID.AV_CODEC_ID_VVC,
   0xB1: AVCodecID.AV_CODEC_ID_VP9,
 
   0x40: AVCodecID.AV_CODEC_ID_AAC,
@@ -99,6 +103,8 @@ export const tag2CodecId = {
   [mktag('avc1')]: AVCodecID.AV_CODEC_ID_H264,
   [mktag('hev1')]: AVCodecID.AV_CODEC_ID_HEVC,
   [mktag('hvc1')]: AVCodecID.AV_CODEC_ID_HEVC,
+  [mktag('vvc1')]: AVCodecID.AV_CODEC_ID_VVC,
+  [mktag('vvi1')]: AVCodecID.AV_CODEC_ID_VVC,
 
   [mktag('text')]: AVCodecID.AV_CODEC_ID_MOV_TEXT,
   [mktag('tx3g')]: AVCodecID.AV_CODEC_ID_MOV_TEXT

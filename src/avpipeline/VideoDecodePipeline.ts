@@ -349,6 +349,7 @@ export default class VideoDecodePipeline extends Pipeline {
         let framerate = avQ2D(parameters.framerate)
         if (pixels >= 1920 * 1080 && pixels <= 2048 * 1080) {
           if (parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
+            || parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
             || parameters.codecId === AVCodecID.AV_CODEC_ID_AV1
           ) {
             threadCount = 2
@@ -356,6 +357,7 @@ export default class VideoDecodePipeline extends Pipeline {
           if (framerate > 30) {
             threadCount = 2
             if (parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
+              || parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
               || parameters.codecId === AVCodecID.AV_CODEC_ID_AV1
             ) {
               threadCount = 4
@@ -364,6 +366,7 @@ export default class VideoDecodePipeline extends Pipeline {
           else if (framerate > 60) {
             threadCount = 4
             if (parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
+              || parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
               || parameters.codecId === AVCodecID.AV_CODEC_ID_AV1
             ) {
               threadCount = 6
@@ -373,6 +376,7 @@ export default class VideoDecodePipeline extends Pipeline {
         else if (pixels > 2048 * 1080 && pixels <= 3840 * 2160) {
           threadCount = 4
           if (parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
+            || parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
             || parameters.codecId === AVCodecID.AV_CODEC_ID_AV1
           ) {
             threadCount = 6
@@ -381,6 +385,7 @@ export default class VideoDecodePipeline extends Pipeline {
         else if (pixels > 3840 * 2160) {
           threadCount = 6
           if (parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
+            || parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
             || parameters.codecId === AVCodecID.AV_CODEC_ID_AV1
           ) {
             threadCount = 8

@@ -39,6 +39,7 @@ import * as flvH264 from './flv/codecs/h264'
 import * as h264 from '../codecs/h264'
 import * as aac from '../codecs/aac'
 import * as hevc from '../codecs/hevc'
+import * as vvc from '../codecs/vvc'
 import * as av1 from '../codecs/av1'
 import * as vp9 from '../codecs/vp9'
 
@@ -140,6 +141,9 @@ export default class IFlvFormat extends IFormat {
     else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
       hevc.parseAVCodecParameters(stream)
     }
+    else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
+      vvc.parseAVCodecParameters(stream)
+    }
     else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1) {
       av1.parseAVCodecParameters(stream)
     }
@@ -160,6 +164,10 @@ export default class IFlvFormat extends IFormat {
     }
     else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
       hevc.parseAvccExtraData(avpacket, stream)
+      avpacket.bitFormat = BitFormat.AVCC
+    }
+    else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
+      vvc.parseAvccExtraData(avpacket, stream)
       avpacket.bitFormat = BitFormat.AVCC
     }
   }
@@ -288,7 +296,9 @@ export default class IFlvFormat extends IFormat {
 
           const packetType = videoHeader & 0x0f
 
-          if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+          if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+          ) {
             avpacket.bitFormat = BitFormat.AVCC
           }
 
@@ -302,7 +312,7 @@ export default class IFlvFormat extends IFormat {
             avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_END
           }
           else if (packetType === PacketTypeExt.PacketTypeCodedFrames || packetType === PacketTypeExt.PacketTypeCodedFramesX) {
-            if (packetType === PacketTypeExt.PacketTypeCodedFrames && stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+            if (packetType === PacketTypeExt.PacketTypeCodedFrames && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC)) {
               const ct = await formatContext.ioReader.readUint24()
               avpacket.pts = avpacket.dts + static_cast<int64>(ct)
               await this.readAVPacketData(formatContext, stream, avpacket, size - 8)
@@ -368,6 +378,10 @@ export default class IFlvFormat extends IFormat {
             stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_HEVC
             avpacket.bitFormat = BitFormat.AVCC
           }
+          if (tag === mktag('vvc1')) {
+            stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_VVC
+            avpacket.bitFormat = BitFormat.AVCC
+          }
           else if (tag === mktag('av01')) {
             stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_AV1
           }
@@ -384,7 +398,7 @@ export default class IFlvFormat extends IFormat {
             avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_END
           }
           else if (packetType === PacketTypeExt.PacketTypeCodedFrames || packetType === PacketTypeExt.PacketTypeCodedFramesX) {
-            if (packetType === PacketTypeExt.PacketTypeCodedFrames && stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+            if (packetType === PacketTypeExt.PacketTypeCodedFrames && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC)) {
               const ct = await formatContext.ioReader.readUint24()
               avpacket.pts = avpacket.dts + static_cast<int64>(ct)
               await this.readAVPacketData(formatContext, stream, avpacket, size - 8)

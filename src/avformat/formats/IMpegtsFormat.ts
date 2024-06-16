@@ -50,6 +50,7 @@ import * as array from 'common/util/array'
 import * as mp3 from '../codecs/mp3'
 import * as h264 from '../codecs/h264'
 import * as hevc from '../codecs/hevc'
+import * as vvc from '../codecs/vvc'
 import * as aac from '../codecs/aac'
 import * as opus from '../codecs/opus'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
@@ -156,6 +157,9 @@ export default class IMpegtsFormat extends IFormat {
       else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
         hevc.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
       }
+      else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
+        vvc.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+      }
       else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
         aac.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
       }
@@ -250,6 +254,13 @@ export default class IMpegtsFormat extends IFormat {
       else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
         if (!stream.codecpar.extradata) {
           hevc.parseAnnexbExtraData(avpacket, true)
+          this.checkExtradata(avpacket, stream)
+          stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+        }
+      }
+      else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
+        if (!stream.codecpar.extradata) {
+          vvc.parseAnnexbExtraData(avpacket, true)
           this.checkExtradata(avpacket, stream)
           stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
         }

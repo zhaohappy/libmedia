@@ -4,6 +4,7 @@ npm run build-ffmpeg-util-simd
 
 npm run build-ffmpeg-decode-h264
 npm run build-ffmpeg-decode-hevc
+npm run build-ffmpeg-decode-vvc
 npm run build-ffmpeg-decode-av1
 npm run build-ffmpeg-decode-mpeg4
 npm run build-ffmpeg-decode-vp8
@@ -19,6 +20,7 @@ npm run build-ffmpeg-decode-pcm
 
 npm run build-ffmpeg-decode-h264-atomic
 npm run build-ffmpeg-decode-hevc-atomic
+npm run build-ffmpeg-decode-vvc-atomic
 npm run build-ffmpeg-decode-av1-atomic
 npm run build-ffmpeg-decode-mpeg4-atomic
 npm run build-ffmpeg-decode-vp8-atomic

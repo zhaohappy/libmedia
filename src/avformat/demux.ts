@@ -335,6 +335,7 @@ async function packetNeedRead(formatContext: AVIFormatContext, avpacket: pointer
   if (stream
     && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC
     )
   ) {

@@ -32,7 +32,8 @@ import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { AVPixelFormat } from 'avutil/pixfmt'
 
 import avcc from './avcc'
-import hevc from './hvcc'
+import hvcc from './hvcc'
+import vvcc from './vvcc'
 import vpcc from './vpcc'
 import av1c from './av1c'
 import dlfa from './dfla'
@@ -49,6 +50,7 @@ import { MPEG4AudioObjectTypes } from '../../../codecs/aac'
 const AVCodecID2Tag = {
   [AVCodecID.AV_CODEC_ID_H264]: BoxType.AVC1,
   [AVCodecID.AV_CODEC_ID_HEVC]: BoxType.HVC1,
+  [AVCodecID.AV_CODEC_ID_VVC]: BoxType.VVC1,
   [AVCodecID.AV_CODEC_ID_AV1]: BoxType.AV01,
   [AVCodecID.AV_CODEC_ID_VP9]: BoxType.VP09
 }
@@ -304,7 +306,10 @@ function writeVideoTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
     avcc(ioWriter, stream, movContext)
   }
   else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
-    hevc(ioWriter, stream, movContext)
+    hvcc(ioWriter, stream, movContext)
+  }
+  else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
+    vvcc(ioWriter, stream, movContext)
   }
   else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9) {
     vpcc(ioWriter, stream, movContext)

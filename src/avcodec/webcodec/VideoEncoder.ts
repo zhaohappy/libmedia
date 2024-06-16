@@ -148,6 +148,7 @@ export default class WebVideoEncoder {
 
     if (parameters.codecId === AVCodecID.AV_CODEC_ID_H264
       || parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
+      || parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
     ) {
       config.avc = {
         format: parameters.bitFormat === BitFormat.AVCC ? 'avc' : 'annexb'

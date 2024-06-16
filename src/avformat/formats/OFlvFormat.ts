@@ -185,6 +185,7 @@ export default class OFlvFormat extends OFormat {
     if (videoStream && videoStream.codecpar.extradata) {
       if (videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
         || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
         || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
       ) {
 
@@ -266,6 +267,7 @@ export default class OFlvFormat extends OFormat {
       if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
       ) && avpacket.bitFormat !== BitFormat.AVCC
       ) {
         this.annexb2AvccFilter.sendAVPacket(avpacket)
@@ -280,6 +282,7 @@ export default class OFlvFormat extends OFormat {
         const extradata = mapUint8Array(element.data, element.size)
         if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
         ) {
           flvH264.writeExtradata(
@@ -305,6 +308,7 @@ export default class OFlvFormat extends OFormat {
 
         if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
         ) {
           let ct = 0
@@ -348,6 +352,7 @@ export default class OFlvFormat extends OFormat {
     if (videoStream
       && (videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
         || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
         || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
       )
     ) {

@@ -37,6 +37,7 @@ export const CodecId2String = {
   [AVCodecID.AV_CODEC_ID_AV1]: 'av01',
   [AVCodecID.AV_CODEC_ID_H264]: 'avc1',
   [AVCodecID.AV_CODEC_ID_HEVC]: 'hev1',
+  [AVCodecID.AV_CODEC_ID_VVC]: 'vvc1',
   [AVCodecID.AV_CODEC_ID_VP8]: 'vp8',
   [AVCodecID.AV_CODEC_ID_VP9]: 'vp09',
   [AVCodecID.AV_CODEC_ID_MPEG4]: 'mp4v'

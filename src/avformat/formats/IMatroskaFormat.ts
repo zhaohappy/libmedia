@@ -46,6 +46,7 @@ import { EbmlSyntaxAttachments, EbmlSyntaxBlockGroup, EbmlSyntaxChapters, EbmlSy
 import * as array from 'common/util/array'
 import * as h264 from '../codecs/h264'
 import * as hevc from '../codecs/hevc'
+import * as vvc from '../codecs/vvc'
 import * as vp8 from '../codecs/vp8'
 import * as vp9 from '../codecs/vp9'
 import * as av1 from '../codecs/av1'
@@ -197,6 +198,9 @@ export default class IMatroskaFormat extends IFormat {
                 break
               case AVCodecID.AV_CODEC_ID_HEVC:
                 hevc.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+                break
+              case AVCodecID.AV_CODEC_ID_VVC:
+                vvc.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
                 break
               case AVCodecID.AV_CODEC_ID_AV1:
                 av1.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))

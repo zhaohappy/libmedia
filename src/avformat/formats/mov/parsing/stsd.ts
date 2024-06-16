@@ -34,6 +34,7 @@ import { tag2CodecId } from '../mov'
 
 import avcc from './avcc'
 import hvcc from './hvcc'
+import vvcc from './vvcc'
 import vpcc from './vpcc'
 import av1c from './av1c'
 import esds from './esds'
@@ -41,10 +42,6 @@ import wave from './wave'
 import dfla from './dfla'
 import dops from './dops'
 import colr from './colr'
-import { NOPTS_VALUE } from 'avutil/constant'
-import { MPEG4AudioObjectTypes, avCodecParameters2Extradata } from '../../../codecs/aac'
-import { avMalloc } from 'avutil/util/mem'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
 
 // @ts-ignore
 @deasync
@@ -150,6 +147,17 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
         }
         else if (type === mktag(BoxType.HVCC)) {
           await hvcc(
+            ioReader,
+            stream,
+            {
+              type,
+              size: size - 8
+            },
+            movContext
+          )
+        }
+        else if (type === mktag(BoxType.VVCC)) {
+          await vvcc(
             ioReader,
             stream,
             {

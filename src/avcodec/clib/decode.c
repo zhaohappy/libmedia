@@ -78,6 +78,11 @@ int open_codec_context(AVCodecContext** dec_ctx, enum AVCodecID codec_id, AVCode
       (*dec_ctx)->thread_count = thread_count;
     }
   }
+  else {
+    (*dec_ctx)->thread_count = 1;
+  }
+
+  (*dec_ctx)->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 
   /* Init the decoders */
   if ((ret = avcodec_open2(*dec_ctx, dec, &opts)) < 0) {

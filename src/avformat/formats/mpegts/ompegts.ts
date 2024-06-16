@@ -189,6 +189,8 @@ export function getStreamType(stream: Stream) {
       return mpegts.TSStreamType.VIDEO_CAVS
     case AVCodecID.AV_CODEC_ID_HEVC:
       return mpegts.TSStreamType.VIDEO_HEVC
+    case AVCodecID.AV_CODEC_ID_VVC:
+      return mpegts.TSStreamType.VIDEO_VVC
     case AVCodecID.AV_CODEC_ID_DIRAC:
       return mpegts.TSStreamType.VIDEO_DIRAC
     case AVCodecID.AV_CODEC_ID_VC1:

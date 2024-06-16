@@ -328,6 +328,7 @@ export const enum TSStreamType {
   METADATA = 0x15,
   VIDEO_H264 = 0x1b,
   VIDEO_HEVC = 0x24,
+  VIDEO_VVC = 0x33,
   VIDEO_CAVS = 0x42,
   VIDEO_VC1 = 0xea,
   VIDEO_DIRAC = 0xd1,
@@ -379,6 +380,7 @@ export const StreamType2AVCodecId: Partial<Record<TSStreamType, [AVMediaType, AV
   [TSStreamType.AUDIO_MPEG2]: [AVMediaType.AVMEDIA_TYPE_AUDIO, AVCodecID.AV_CODEC_ID_MP3],
   [TSStreamType.VIDEO_H264]: [AVMediaType.AVMEDIA_TYPE_VIDEO, AVCodecID.AV_CODEC_ID_H264],
   [TSStreamType.VIDEO_HEVC]: [AVMediaType.AVMEDIA_TYPE_VIDEO, AVCodecID.AV_CODEC_ID_HEVC],
+  [TSStreamType.VIDEO_VVC]: [AVMediaType.AVMEDIA_TYPE_VIDEO, AVCodecID.AV_CODEC_ID_VVC],
   [TSStreamType.AUDIO_AC3]: [AVMediaType.AVMEDIA_TYPE_AUDIO, AVCodecID.AV_CODEC_ID_AC3],
   [TSStreamType.AUDIO_EAC3]: [AVMediaType.AVMEDIA_TYPE_AUDIO, AVCodecID.AV_CODEC_ID_EAC3]
 }

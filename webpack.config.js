@@ -95,8 +95,8 @@ module.exports = (env) => {
       sideEffects: true,
       usedExports: true,
       // minimize: true,
-      // legacy release 下编译会报错，关掉这个优化
-      concatenateModules: ((env.legacy || configFile.config.cheap.defined.ENABLE_THREADS_SPLIT) && env.release) ? false : undefined
+      // release 下编译会报错，关掉这个优化
+      concatenateModules: false
     },
     entry: entry,
     output: {

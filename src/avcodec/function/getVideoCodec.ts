@@ -29,10 +29,12 @@ import { H264Profile } from 'avformat/codecs/h264'
 import * as av1 from 'avformat/codecs/av1'
 import * as vp8 from 'avformat/codecs/vp8'
 import * as vp9 from 'avformat/codecs/vp9'
+import * as vvc from 'avformat/codecs/vvc'
 import * as string from 'common/util/string'
 import { NOPTS_VALUE } from 'avutil/constant'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { mapUint8Array } from 'cheap/std/memory'
+import * as base32 from 'common/util/base32'
 
 export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extradata?: Uint8Array) {
   const codecId = codecpar.codecId
@@ -110,6 +112,44 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
       level,
       constraintFlags
     )
+  }
+  else if (codecId === AVCodecID.AV_CODEC_ID_VVC) {
+    /**
+     * 
+     * vvc1.<sample entry 4CC>.<general_profile_idc>.[LH]<op_level_idc>{.C<general_constraint_info>}{.S<general_sub_profile_idc>}{.O{<OlsIdx>}{+<MaxTid>}}
+     */
+
+    let generalTierFlag = 0
+
+    if (extradata?.length > 13) {
+      generalTierFlag = extradata[5] & 0x01
+    }
+
+    codec = string.format(
+      '%s.%d.%s%d',
+      entry,
+      profile,
+      generalTierFlag === 0 ? 'L' : 'H',
+      level
+    )
+
+    if (extradata) {
+      const params = vvc.parseExtraData(extradata)
+      if (params.generalConstraintInfo.length) {
+        let index = params.generalConstraintInfo.length - 1
+        while (index > 0 && params.generalConstraintInfo[index] === 0) {
+          index--
+        }
+        const generalConstraintInfo = (params.generalConstraintInfo as number[]).slice(0, index + 1)
+        if (generalConstraintInfo.length) {
+          codec += `.C${base32.encode(new Uint8Array(generalConstraintInfo), false)}`
+        }
+      }
+      if (params.generalSubProfileIdc.length) {
+        codec += `.S${params.generalSubProfileIdc.map((profile: number) => profile.toString(16)).join('+')}`
+      }
+      codec += `.O${params.olsIdx}+${params.numSublayers}`
+    }
   }
   else if (codecId === AVCodecID.AV_CODEC_ID_AV1) {
     /*

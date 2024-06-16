@@ -196,6 +196,7 @@ export default class IMovFormat extends IFormat {
 
       if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
         || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
       ) {
         avpacket.bitFormat = BitFormat.AVCC
       }
