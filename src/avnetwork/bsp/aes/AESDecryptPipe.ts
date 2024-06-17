@@ -138,6 +138,8 @@ export default class AESDecryptPipe extends AVBSPipe {
     let padding: number = 0
     if (this.aesTargetDecryptor === this.aesWebDecryptor && !this.ended) {
       nextBlock = this.buffer.subarray(this.pointer + length, this.pointer + length + BLOCK_SIZE).slice()
+      // Web Decryptor 需要每次送入的数据是 padding 的，但这里是流式的，所以需要在每次解密的 buffer 后面追加 16 的 padding 的数据
+      // 解密完成之后在设置回原来的数据
       this.buffer.set(
         (await this.aesWebDecryptor.encryptPadding(
           PaddingBlock,
