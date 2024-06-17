@@ -8,22 +8,6 @@ English | [中文](README.md)
  
 libmedia is a tool library for processing multimedia content (such as audio, video, subtitles) on the web platform.
 
-### Background
-
-Currently, if you want to process media data on the Web platform, using the ffmpeg.wasm project is a good choice; but it still has many shortcomings:
-
-1. The first thing to bear the brunt is the memory usage problem. ffmpeg.wasm will first write the entire file data that needs to be processed into the memory. When processing a larger file, OOM will usually occur. This is completely impossible to make a project with a good experience based on it;
-
-2. The API provided by ffmpeg.wasm is based on the native ffmpeg command line and does not have an ffmpeg API level interface, which greatly limits flexibility;
-
-3. The compiled output file is too large, which affects the loading speed and makes it difficult for you to optimize it;
-
-4. It can only be used on pages where SharedArrayBuffer is enabled. Currently, most websites do not support the SharedArrayBuffer environment; The performance of the single-threaded version provided is greatly reduced.
-
-5. It cannot be effectively combined with the Web ecosystem. For example, it cannot use WebCodecs and cannot process data from streaming sources; the Web is basically asynchronous IO;
-
-libmedia is designed to try to solve the above problems.
-
 libmedia has typescript module and webAssembly module, and the design concept is dominated by typescript module; we implement the audio and video demux and mux layer in typescript module, so that we can use asynchronous IO to process streams from various sources and avoid ffmpeg's problems caused by synchronous IO. This allows the entire system to run on a non-SharedArrayBuffer environment;
 
 The decoding and encoding modules are put into the webAssembly module. These modules can be compiled from the libavcodec module of ffmpeg, and each decoder and encoder is compiled into a separate wasm module to solve the problem of too large a compiled product. When using it, only You need to load the modules you want to use. At the same time, the codec module can use WebCodecs.

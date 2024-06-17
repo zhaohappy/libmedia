@@ -9,23 +9,6 @@ libmedia
  
 libmedia 是一个用于在 Web 平台上处理多媒体内容（如音频、视频、字幕）的工具库。
 
-### 背景
-
-目前想在 Web 平台上处理音视频使用 ffmpeg.wasm 项目是一个不错的选择；但其还是有很多缺陷：
-
-1. 首当其冲的是内存占用问题，ffmpeg.wasm 会将需要处理的文件数据先整个写入内存，处理一个大一点的文件通常会 OOM。这完全无法基于其做出一个体验很好的项目；
-
-2. ffmpeg.wasm 提供的 API 基于 native ffmpeg 命令行，没有 ffmpeg API 级别的接口，大大限制了灵活性；
-
-3. 编译输出文件太大，影响加载速度并且你很难去优化它；
-
-4. 只能在开启 SharedArrayBuffer 的页面上使用，目前绝大多数网站都是没有支持 SharedArrayBuffer 环境的；提供的单线程版性能又降低一大截；
-
-5. 无法和 Web 生态进行有效的结合，比如无法使用 WebCodecs，无法处理流式来源的数据；Web 上基本都是异步 IO；
-
-
-libmedia 就是为了尝试解决上面的问题而设计的。
-
 libmedia 有 TypeScript 模块和 WebAssembly 模块，并且设计理念上以 TypeScript 模块为主导；我们将音视频的封装解封装层放在 TypeScript 模块实现，这样就能使用异步 IO 来处理各种来源的流，规避 ffmpeg 中的同步 IO 所带来的问题。这样可以让整个系统在非 SharedArrayBuffer 环境上运行；
 
 解码编码模块放入 WebAssembly 模块中，这些模块可以从 ffmpeg 的 libavcodec 模块中编译而来，并且将每种解码器和编码器编译成单独的 wasm 模块，解决编译产物太大的问题，使用的时候只需要去加载要使用的模块。同时编解码模块可以使用 WebCodecs。
