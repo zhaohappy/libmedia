@@ -8,9 +8,9 @@ English | [中文](README.md)
  
 libmedia is a tool library for processing multimedia content (such as audio, video, subtitles) on the web platform.
 
-libmedia has typescript module and webAssembly module, and the design concept is dominated by typescript module; we implement the audio and video demux and mux layer in typescript module, so that we can use asynchronous IO to process streams from various sources and avoid ffmpeg's problems caused by synchronous IO. This allows the entire system to run on a non-SharedArrayBuffer environment;
+libmedia has typescript module and webAssembly module, and the design concept is dominated by typescript module; we implement the audio and video demux and mux layer in typescript module, so that we can process asynchronous IO. This allows the entire system to run on a non-SharedArrayBuffer environment;
 
-The decoding and encoding modules are put into the webAssembly module. These modules can be compiled from the libavcodec module of ffmpeg, and each decoder and encoder is compiled into a separate wasm module to solve the problem of too large a compiled product. When using it, only You need to load the modules you want to use. At the same time, the codec module can use WebCodecs.
+The decoding and encoding modules are put into the webAssembly module. These modules can be compiled from the libavcodec module of FFmpeg, and each decoder and encoder is compiled into a separate wasm module to solve the problem of too large a compiled product. When using it, only You need to load the modules you want to use. At the same time, the codec module can use WebCodecs.
 
 The api design of libmedia refers to the design of ffmpeg. Many data structure concepts are consistent, so you can see data structures such as ```AVStream```, ```AVCodecParameters```, ```AVFormatContext```, ```AVPacket```, ```AVFrame```, etc. As the de facto standard in the audio and video industry, ffmpeg's design is very excellent; following the design, we can directly obtain excellent design patterns, and it also reduces the difficulty for developers to learn and understand. After all, most audio and video developers have learned about ffmpeg; of course, the main reason is that we need to make this data readable and writable in both typescript modules and webAssembly modules. The prerequisite is that its layout in memory is consistent with ffmpeg.
 
