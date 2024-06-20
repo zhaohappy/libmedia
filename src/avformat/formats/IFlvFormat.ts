@@ -413,6 +413,7 @@ export default class IFlvFormat extends IFormat {
 
           if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
             || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
             || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
           ) {
             avpacket.bitFormat = BitFormat.AVCC
@@ -555,33 +556,6 @@ export default class IFlvFormat extends IFormat {
     flags: int32
   ): Promise<int64> {
     const now = formatContext.ioReader.getPos()
-    if (stream && stream.sampleIndexes.length) {
-      let index = array.binarySearch(stream.sampleIndexes, (item) => {
-        if (item.pts > timestamp) {
-          return -1
-        }
-        return 1
-      })
-      if (index > 0 && avRescaleQ(timestamp - stream.sampleIndexes[index - 1].pts, stream.timeBase, AV_MILLI_TIME_BASE_Q) < 10000n) {
-        logger.debug(`seek in sampleIndexes, found index: ${index}, pts: ${stream.sampleIndexes[index - 1].pts}, pos: ${stream.sampleIndexes[index - 1].pos}`)
-        await formatContext.ioReader.seek(stream.sampleIndexes[index - 1].pos)
-        return now
-      }
-    }
-
-    if (this.script.canSeek()) {
-      const { pos, dts } = this.script.dts2Position(Number(avRescaleQ(timestamp, stream.timeBase, AV_MILLI_TIME_BASE_Q) / 1000n))
-      if (pos > 0) {
-        logger.debug(`seek in filepositions, found pts: ${dts}, pos: ${pos}`)
-        await formatContext.ioReader.seek(static_cast<int64>(pos))
-
-        const nextTag = await formatContext.ioReader.peekUint8()
-        if (nextTag !== FlvTag.AUDIO && nextTag !== FlvTag.VIDEO && nextTag !== FlvTag.SCRIPT) {
-          await this.syncTag(formatContext)
-        }
-        return now
-      }
-    }
     if (flags & AVSeekFlags.BYTE) {
       await formatContext.ioReader.seek(timestamp)
       if (!(flags & AVSeekFlags.ANY)) {
@@ -590,6 +564,33 @@ export default class IFlvFormat extends IFormat {
       return now
     }
     else {
+      if (stream && stream.sampleIndexes.length) {
+        let index = array.binarySearch(stream.sampleIndexes, (item) => {
+          if (item.pts > timestamp) {
+            return -1
+          }
+          return 1
+        })
+        if (index > 0 && avRescaleQ(timestamp - stream.sampleIndexes[index - 1].pts, stream.timeBase, AV_MILLI_TIME_BASE_Q) < 10000n) {
+          logger.debug(`seek in sampleIndexes, found index: ${index}, pts: ${stream.sampleIndexes[index - 1].pts}, pos: ${stream.sampleIndexes[index - 1].pos}`)
+          await formatContext.ioReader.seek(stream.sampleIndexes[index - 1].pos)
+          return now
+        }
+      }
+
+      if (this.script.canSeek()) {
+        const { pos, dts } = this.script.dts2Position(Number(avRescaleQ(timestamp, stream.timeBase, AV_MILLI_TIME_BASE_Q) / 1000n))
+        if (pos > 0) {
+          logger.debug(`seek in filepositions, found pts: ${dts}, pos: ${pos}`)
+          await formatContext.ioReader.seek(static_cast<int64>(pos))
+
+          const nextTag = await formatContext.ioReader.peekUint8()
+          if (nextTag !== FlvTag.AUDIO && nextTag !== FlvTag.VIDEO && nextTag !== FlvTag.SCRIPT) {
+            await this.syncTag(formatContext)
+          }
+          return now
+        }
+      }
       logger.debug('not found any keyframe index, try to seek in bytes')
       return seekInBytes(
         formatContext,
