@@ -429,8 +429,14 @@ export default class IOggFormat extends IFormat {
       return now
     }
     else {
-
-      logger.debug('not found any keyframe index, try to seek in bytes')
+      const pointPts = avRescaleQ(timestamp, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+      // 头十秒直接回到开始位置
+      if (pointPts < 10000n) {
+        logger.debug(`seek pts is earlier then 10s, seek to first packet pos(${this.firstPos}) directly`)
+        await formatContext.ioReader.seek(this.firstPos)
+        this.currentPts = 0n
+        return now
+      }
 
       return seekInBytes(
         formatContext,
