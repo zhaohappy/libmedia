@@ -42,7 +42,7 @@ import { unrefAVFrame } from 'avutil/util/avframe'
 import { unrefAVPacket } from 'avutil/util/avpacket'
 import AudioRenderPipeline from 'avpipeline/AudioRenderPipeline'
 import VideoRenderPipeline from 'avpipeline/VideoRenderPipeline'
-import { AVFormat, AVSeekFlags } from 'avformat/avformat'
+import { AVSeekFlags } from 'avformat/avformat'
 import * as urlUtils from 'common/util/url'
 import * as cheapConfig from 'cheap/config'
 import { AVSampleFormat } from 'avutil/audiosamplefmt'
@@ -77,6 +77,7 @@ import JitterBufferController from './JitterBufferController'
 import { JitterBuffer } from 'avpipeline/struct/jitter'
 import getAudioCodec from 'avcodec/function/getAudioCodec'
 import { IOFlags } from 'common/io/flags'
+import { Ext2Format, Ext2IOLoader } from 'avutil/stringEnum'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -112,32 +113,6 @@ class AVPlayerGlobalData {
   avpacketListMutex: Mutex
   avframeListMutex: Mutex
   jitterBuffer: JitterBuffer
-}
-
-const Ext2Format: Record<string, AVFormat> = {
-  'flv': AVFormat.FLV,
-  'mp4': AVFormat.MOV,
-  'mov': AVFormat.MOV,
-  'ts': AVFormat.MPEGTS,
-  'ivf': AVFormat.IVF,
-  'opus': AVFormat.OGGS,
-  'ogg': AVFormat.OGGS,
-  'm3u8': AVFormat.MPEGTS,
-  'm3u': AVFormat.MPEGTS,
-  'mpd': AVFormat.MOV,
-  'mp3': AVFormat.MP3,
-  'mkv': AVFormat.MATROSKA,
-  'mka': AVFormat.MATROSKA,
-  'webm': AVFormat.WEBM,
-  'aac': AVFormat.AAC,
-  'flac': AVFormat.FLAC,
-  'wav': AVFormat.WAV
-}
-
-const Ext2IOLoader: Record<string, IOType> = {
-  'm3u8': IOType.HLS,
-  'm3u': IOType.HLS,
-  'mpd': IOType.DASH
 }
 
 export const enum AVPlayerStatus {
