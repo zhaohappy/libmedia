@@ -39,6 +39,20 @@ declare const ENABLE_DEMUXER_FLAC: boolean
 
 declare const ENABLE_DEMUXER_WAV: boolean
 
+declare const ENABLE_MUXER_FLV: boolean
+
+declare const ENABLE_MUXER_MP4: boolean
+
+declare const ENABLE_MUXER_MP3: boolean
+
+declare const ENABLE_MUXER_MATROSKA: boolean
+
+declare const ENABLE_MUXER_IVF: boolean
+
+declare const ENABLE_MUXER_MPEGTS: boolean
+
+declare const ENABLE_MUXER_OGGS: boolean
+
 declare const ENABLE_MSE: boolean
 
 declare const ENABLE_WEBGPU: boolean

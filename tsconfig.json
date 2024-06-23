@@ -93,12 +93,25 @@
       "ENABLE_DEMUXER_MATROSKA": true,
       // 开启支持 aac 解封装格式
       "ENABLE_DEMUXER_AAC": true,
-
       // 开启支持 flac 解封装格式
       "ENABLE_DEMUXER_FLAC": true,
-
       // 开启支持 wav 解封装格式
       "ENABLE_DEMUXER_WAV": true,
+
+      // 开启支持 flv 封装格式
+      "ENABLE_MUXER_FLV": true,
+      // 开启支持 mp4 封装格式
+      "ENABLE_MUXER_MP4": true,
+      // 开启支持 mp3 封装格式
+      "ENABLE_MUXER_MP3": true,
+      // 开启支持 matroska 封装格式
+      "ENABLE_MUXER_MATROSKA": true,
+      // 开启支持 ivf 封装格式
+      "ENABLE_MUXER_IVF": true,
+      // 开启支持 mpegts 封装格式
+      "ENABLE_MUXER_MPEGTS": true,
+      // 开启支持 oggs 封装格式
+      "ENABLE_MUXER_OGGS": true,
 
       // 开启支持 mse 模式
       "ENABLE_MSE": true,
