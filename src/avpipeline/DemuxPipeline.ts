@@ -34,8 +34,6 @@ import IFormat from 'avformat/formats/IFormat'
 import * as demux from 'avformat/demux'
 import { AVFormat } from 'avformat/avformat'
 import { avFree, avMalloc } from 'avutil/util/mem'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { Rational } from 'avutil/struct/rational'
 import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
 import List from 'cheap/std/collection/List'
 import { AVPacketFlags, AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
@@ -50,20 +48,9 @@ import * as array from 'common/util/array'
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as bigint from 'common/util/bigint'
+import { AVStreamInterface } from './interface'
 
 export const STREAM_INDEX_ALL = -1
-
-export interface AVStreamInterface {
-  index: number
-  id: number,
-  codecpar: pointer<AVCodecParameters>
-  nbFrames: int64
-  metadata: Data
-  duration: int64
-  startTime: int64
-  disposition: int32
-  timeBase: pointer<Rational>
-}
 
 export interface DemuxTaskOptions extends TaskOptions {
   format?: AVFormat
@@ -72,7 +59,7 @@ export interface DemuxTaskOptions extends TaskOptions {
   ioloaderOptions?: Data
   mainTaskId?: string
   avpacketList: pointer<List<pointer<AVPacketRef>>>
-  avpacketListMutex: pointer<Mutex>,
+  avpacketListMutex: pointer<Mutex>
   flags?: int32
 }
 

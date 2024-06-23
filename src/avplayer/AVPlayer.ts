@@ -25,7 +25,7 @@
 
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import IOPipeline, { IOType } from 'avpipeline/IOPipeline'
-import DemuxPipeline, { AVStreamInterface } from 'avpipeline/DemuxPipeline'
+import DemuxPipeline from 'avpipeline/DemuxPipeline'
 import VideoDecodePipeline from 'avpipeline/VideoDecodePipeline'
 import AudioDecodePipeline from 'avpipeline/AudioDecodePipeline'
 import { Thread, closeThread, createThreadFromClass } from 'cheap/thread/thread'
@@ -78,6 +78,7 @@ import { JitterBuffer } from 'avpipeline/struct/jitter'
 import getAudioCodec from 'avcodec/function/getAudioCodec'
 import { IOFlags } from 'common/io/flags'
 import { Ext2Format, Ext2IOLoader } from 'avutil/stringEnum'
+import { AVStreamInterface } from 'avpipeline/interface'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
