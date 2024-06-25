@@ -114,7 +114,7 @@ export default class AVPacket {
   streamIndex: int32 = NOPTS_VALUE
 
   /**
-   * A combination of AV_PKT_FLAG values
+   * A combination of @AVPacketFlags values
    */
   flags: int32 = 0
 
