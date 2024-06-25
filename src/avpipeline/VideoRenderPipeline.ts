@@ -465,6 +465,8 @@ export default class VideoRenderPipeline extends Pipeline {
 
       const inWorker = isWorker()
 
+      const interval = (inWorker && support.shareArrayBuffer) ? 0 : 10
+
       task.loop = new LoopTask(() => {
         if (!task.backFrame) {
           if (!task.ended) {
@@ -618,7 +620,7 @@ export default class VideoRenderPipeline extends Pipeline {
         else {
           task.loop.emptyTask()
         }
-      }, 0, 0)
+      }, 0, interval)
 
       task.loop.start()
     }
