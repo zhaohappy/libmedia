@@ -22,3 +22,310 @@
  * Lesser General Public License for more details.
  *
  */
+
+import Pipeline, { TaskOptions } from './Pipeline'
+import * as errorType from 'avutil/error'
+import IPCPort from 'common/network/IPCPort'
+import { AVOFormatContext, createAVOFormatContext } from 'avformat/AVFormatContext'
+import * as mux from 'avformat/mux'
+import { AVFormat } from 'avformat/avformat'
+import List from 'cheap/std/collection/List'
+import { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
+import { Mutex } from 'cheap/thread/mutex'
+import * as logger from 'common/util/logger'
+import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
+import { IOError } from 'common/io/error'
+import LoopTask from 'common/timer/LoopTask'
+import * as array from 'common/util/array'
+import { avRescaleQ } from 'avutil/util/rational'
+import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import OFormat from 'avformat/formats/OFormat'
+import IOWriterSync from 'common/io/IOWriterSync'
+import { AVStreamInterface } from './interface'
+import { copyCodecParameters } from 'avutil/util/codecparameters'
+
+export interface MuxTaskOptions extends TaskOptions {
+  format: AVFormat
+  avpacketList: pointer<List<pointer<AVPacketRef>>>
+  avpacketListMutex: pointer<Mutex>
+}
+
+type SelfTask = MuxTaskOptions & {
+  rightIPCPort: IPCPort
+  formatContext: AVOFormatContext
+  avpacketPool: AVPacketPool
+  loop: LoopTask
+  streams: {
+    stream: AVStreamInterface
+    pullIPC: IPCPort
+    avpacket: pointer<AVPacketRef>
+    ended: boolean
+  }[]
+}
+
+export default class MuxPipeline extends Pipeline {
+
+  declare tasks: Map<string, SelfTask>
+
+  constructor() {
+    super()
+  }
+
+  private createTask(options: MuxTaskOptions): number {
+
+    assert(options.rightPort)
+    const rightIPCPort = new IPCPort(options.rightPort)
+
+    const formatContext = createAVOFormatContext()
+    const ioWriter = new IOWriterSync(5 * 1024 * 1024)
+
+    ioWriter.onFlush = (data: Uint8Array, pos: int64) => {
+      const buffer = data.slice()
+      rightIPCPort.notify('write', {
+        data: buffer,
+        pos
+      }, [buffer.buffer])
+      return 0
+    }
+    ioWriter.onSeek = (pos) => {
+      rightIPCPort.notify('seek', {
+        pos
+      })
+      return 0
+    }
+
+    formatContext.ioWriter = ioWriter
+
+    this.tasks.set(options.taskId, {
+      ...options,
+      rightIPCPort,
+      formatContext,
+      loop: null,
+      streams: [],
+      avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex)
+    })
+
+    return 0
+  }
+
+  public async open(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+
+      let oformat: OFormat
+
+      switch (task.format) {
+        case AVFormat.FLV:
+          if (defined(ENABLE_MUXER_FLV)) {
+            oformat = new ((await import('avformat/formats/OFlvFormat')).default)
+          }
+          else {
+            logger.error('flv format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.MP4:
+          if (defined(ENABLE_MUXER_MP4) || defined(ENABLE_PROTOCOL_DASH)) {
+            oformat = new ((await import('avformat/formats/OMovFormat')).default)
+          }
+          else {
+            logger.error('mp4 format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.MPEGTS:
+          if (defined(ENABLE_MUXER_MP4) || defined(ENABLE_PROTOCOL_HLS)) {
+            oformat = new ((await import('avformat/formats/OMpegtsFormat')).default)
+          }
+          else {
+            logger.error('mpegts format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.IVF:
+          if (defined(ENABLE_MUXER_IVF)) {
+            oformat = new ((await import('avformat/formats/OIvfFormat')).default)
+          }
+          else {
+            logger.error('ivf format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.OGGS:
+          if (defined(ENABLE_MUXER_OGGS)) {
+            oformat = new ((await import('avformat/formats/OOggsFormat')).default)
+          }
+          else {
+            logger.error('oggs format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.MP3:
+          if (defined(ENABLE_MUXER_MP3)) {
+            oformat = new ((await import('avformat/formats/OMp3Format')).default)
+          }
+          else {
+            logger.error('mp3 format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.MATROSKA:
+          if (defined(ENABLE_MUXER_MATROSKA)) {
+            oformat = new (((await import('avformat/formats/OMatroskaFormat')).default))
+          }
+          else {
+            logger.error('matroska format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        default:
+          logger.error('format not support')
+          return errorType.FORMAT_NOT_SUPPORT
+      }
+
+      assert(oformat)
+
+      task.formatContext.oformat = oformat
+
+      return mux.open(task.formatContext)
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+
+  public async addStream(taskId: string, stream: AVStreamInterface, port: MessagePort) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      task.streams.push({
+        stream,
+        pullIPC: new IPCPort(port),
+        avpacket: nullptr,
+        ended: false
+      })
+      const ostream = task.formatContext.createStream()
+      ostream.id = stream.id
+      ostream.index = stream.index
+      copyCodecParameters(addressof(ostream.codecpar), stream.codecpar)
+      ostream.timeBase.num = stream.timeBase.num
+      ostream.timeBase.den = stream.timeBase.den
+      ostream.metadata = stream.metadata
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+
+  public async start(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      mux.writeHeader(task.formatContext)
+
+      if (task.loop) {
+        task.loop.destroy()
+      }
+
+      if (!task.streams.length) {
+        logger.fatal('task streams not found')
+      }
+
+      task.loop = new LoopTask(async () => {
+
+        for (let i = 0; i < task.streams.length; i++) {
+          if (!task.streams[i].ended && !task.streams[i].avpacket) {
+            const avpacket = await task.streams[i].pullIPC.request<pointer<AVPacketRef>>('pull')
+            if (avpacket === IOError.END) {
+              task.streams[i].ended = true
+            }
+            else if (avpacket < 0) {
+              logger.error(`pull stream ${i} avpacket error, ret: ${avpacket}`)
+              task.streams[i].ended = true
+            }
+            else {
+              task.streams[i].avpacket = avpacket
+            }
+          }
+        }
+
+        let avpacket: pointer<AVPacketRef> = nullptr
+        let dts: int64 = NOPTS_VALUE_BIGINT
+        let index = 0
+
+        for (let i = 0; i < task.streams.length; i++) {
+          if (task.streams[i].avpacket) {
+            const currentDts = avRescaleQ(task.streams[i].avpacket.dts, task.streams[i].avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+            if (dts === NOPTS_VALUE_BIGINT || currentDts < dts) {
+              avpacket = task.streams[i].avpacket
+              dts = currentDts
+              index = i
+            }
+          }
+        }
+        if (avpacket) {
+          mux.writeAVPacket(task.formatContext, avpacket)
+          task.avpacketPool.release(avpacket)
+          task.streams[index].avpacket = nullptr
+        }
+        else {
+          mux.writeTrailer(task.formatContext)
+          mux.flush(task.formatContext)
+          logger.info('mux end')
+        }
+      }, 0, 0, false, true)
+      task.loop.start()
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+
+  public async pause(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      if (task.loop) {
+        await task.loop.stopBeforeNextTick()
+      }
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+  
+  public async unpause(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      if (task.loop && !task.loop.isStarted()) {
+        task.loop.start()
+      }
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+
+  public async registerTask(options: MuxTaskOptions): Promise<number> {
+    if (this.tasks.has(options.taskId)) {
+      return errorType.INVALID_OPERATE
+    }
+    return this.createTask(options)
+  }
+
+  public async unregisterTask(taskId: string): Promise<void> {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      if (task.loop) {
+        await task.loop.stopBeforeNextTick()
+        task.loop.destroy()
+      }
+      array.each(task.streams, (stream) => {
+        if (stream.avpacket) {
+          task.avpacketPool.release(stream.avpacket)
+          stream.avpacket = nullptr
+        }
+        stream.pullIPC.destroy()
+      })
+      task.formatContext.destroy()
+      this.tasks.delete(taskId)
+    }
+  }
+}
