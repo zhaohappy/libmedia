@@ -867,7 +867,7 @@ function parseMediaPlaylist(lines: Line[], params: Record<string, any>) {
     checkLowLatencyCompatibility(playlist, containsParts)
   }
   playlist.duration = playlist.segments.reduce((total, segment) => {
-    return total + segment.duration
+    return typeof segment.duration === 'number' ? total + segment.duration : total
   }, 0)
   return playlist
 }
