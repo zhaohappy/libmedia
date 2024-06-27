@@ -28,7 +28,6 @@ import IOLoader, { IOLoaderStatus, Range } from './IOLoader'
 import * as object from 'common/util/object'
 import { IOError } from 'common/io/error'
 import { Uint8ArrayInterface } from 'common/io/interface'
-import * as errorType from 'avutil/error'
 import { buildAbsoluteURL } from 'common/util/url'
 
 import hlsParser from 'avprotocol/m3u8/parser'
@@ -38,6 +37,7 @@ import getTimestamp from 'common/function/getTimestamp'
 import * as logger from 'common/util/logger'
 import * as urlUtil from 'common/util/url'
 import AESDecryptPipe from '../bsp/aes/AESDecryptPipe'
+import * as is from 'common/util/is'
 
 const FETCHED_HISTORY_LIST_MAX = 10
 
@@ -381,7 +381,10 @@ export default class HlsIOLoader extends IOLoader {
     else {
       this.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
 
-      const segment = this.mediaPlayList.segments[this.segmentIndex]
+      let segment = this.mediaPlayList.segments[this.segmentIndex]
+      while (!segment.uri) {
+        segment = this.mediaPlayList.segments[++this.segmentIndex]
+      }
 
       if (this.initLoaded) {
         await this.checkNeedDecrypt(segment, this.segmentIndex)
@@ -420,10 +423,12 @@ export default class HlsIOLoader extends IOLoader {
     let index = 0
 
     for (let i = 0; i < this.mediaPlayList.segments.length; i++) {
-      duration += this.mediaPlayList.segments[i].duration
-      if (duration * 1000 >= seekTime) {
-        index = i
-        break
+      if (is.number(this.mediaPlayList.segments[i].duration)) {
+        duration += this.mediaPlayList.segments[i].duration
+        if (duration * 1000 >= seekTime) {
+          index = i
+          break
+        }
       }
     }
     this.segmentIndex = index
