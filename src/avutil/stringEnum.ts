@@ -2,6 +2,7 @@ import { AVFormat } from 'avformat/avformat'
 import { AVCodecID } from './codec'
 import { AVPixelFormat } from './pixfmt'
 import { IOType } from 'avpipeline/IOPipeline'
+import { AVSampleFormat } from './audiosamplefmt'
 
 export const Ext2Format: Record<string, AVFormat> = {
   'flv': AVFormat.FLV,
@@ -67,11 +68,27 @@ export const PixfmtString2AVPixelFormat = {
   'yuv444p10be': AVPixelFormat.AV_PIX_FMT_YUV444P10BE,
 }
 
+export const SampleFmtString2SampleFormat = {
+  'u8': AVSampleFormat.AV_SAMPLE_FMT_U8,
+  'u8p': AVSampleFormat.AV_SAMPLE_FMT_U8P,
+  's16': AVSampleFormat.AV_SAMPLE_FMT_S16,
+  's16p': AVSampleFormat.AV_SAMPLE_FMT_S16P,
+  's32': AVSampleFormat.AV_SAMPLE_FMT_S32,
+  's32p': AVSampleFormat.AV_SAMPLE_FMT_S32P,
+  's64': AVSampleFormat.AV_SAMPLE_FMT_S64,
+  's64p': AVSampleFormat.AV_SAMPLE_FMT_S64P,
+  'float': AVSampleFormat.AV_SAMPLE_FMT_FLT,
+  'floatp': AVSampleFormat.AV_SAMPLE_FMT_FLTP,
+  'double': AVSampleFormat.AV_SAMPLE_FMT_DBL,
+  'doublep': AVSampleFormat.AV_SAMPLE_FMT_DBLP,
+}
+
 export const Format2AVFormat: Record<string, AVFormat> = {
   'flv': AVFormat.FLV,
   'mp4': AVFormat.MOV,
   'mov': AVFormat.MOV,
   'ts': AVFormat.MPEGTS,
+  'mpegts': AVFormat.MPEGTS,
   'ivf': AVFormat.IVF,
   'opus': AVFormat.OGGS,
   'ogg': AVFormat.OGGS,
@@ -80,6 +97,7 @@ export const Format2AVFormat: Record<string, AVFormat> = {
   'mpd': AVFormat.MOV,
   'mp3': AVFormat.MP3,
   'mkv': AVFormat.MATROSKA,
+  'matroska': AVFormat.MATROSKA,
   'mka': AVFormat.MATROSKA,
   'webm': AVFormat.WEBM,
   'aac': AVFormat.AAC,
