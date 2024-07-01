@@ -111,11 +111,13 @@ export default class AudioRenderPipeline extends Pipeline {
 
   private avPCMBufferPool: AVPCMBufferPool
   private avPCMBufferList: List<pointer<AVPCMBufferRef>>
+  private avPCMBufferListMutex: Mutex
 
   constructor() {
     super()
     this.avPCMBufferList = make(List<pointer<AVPCMBufferRef>>)
-    this.avPCMBufferPool = new AVPCMBufferPoolImpl(this.avPCMBufferList)
+    this.avPCMBufferListMutex = make(Mutex)
+    this.avPCMBufferPool = new AVPCMBufferPoolImpl(this.avPCMBufferList, addressof(this.avPCMBufferListMutex))
   }
 
   private async createTask(options: AudioRenderTaskOptions): Promise<number> {
@@ -871,5 +873,6 @@ export default class AudioRenderPipeline extends Pipeline {
       }
     })
     unmake(this.avPCMBufferList)
+    unmake(this.avPCMBufferListMutex)
   }
 }

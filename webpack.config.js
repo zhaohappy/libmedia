@@ -28,6 +28,17 @@ module.exports = (env) => {
       outputPath += '/legacy';
     }
   }
+  else if (env.avtranscoder) {
+    outputPath += '/avtranscoder';
+    entry = path.resolve(__dirname, './src/avtranscoder/AVTranscoder.ts');
+    output = `avtranscoder${env.legacy ? '-legacy' : ''}.js`;
+    library = 'AVTranscoder';
+    libraryExport = 'default';
+
+    if (env.legacy && env.release) {
+      outputPath += '/legacy';
+    }
+  }
   else if (env.polyfill) {
     entry = path.resolve(__dirname, './src/cheap/polyfill/index.ts');
     output = 'cheap-polyfill.js';
@@ -197,6 +208,15 @@ module.exports = (env) => {
               configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/function/concatTypeArray.ts') : null,
               configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/io/StreamReader.ts') : null,
               configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/io/BufferReader.ts') : null
+            ]
+          },
+          {
+            file: path.resolve(__dirname, 'src/avpipeline/MuxPipeline.ts'),
+            include: [
+              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/avformat/codecs/h264.ts') : null,
+              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/io/StreamReader.ts') : null,
+              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/io/BufferReader.ts') : null,
+              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/function/concatTypeArray.ts') : null
             ]
           },
           {

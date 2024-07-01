@@ -1,0 +1,1 @@
+export const TASK_ENDED = 'task-ended'

@@ -46,6 +46,7 @@ import { avQ2D } from 'avutil/util/rational'
 import support from 'common/util/support'
 import WasmVideoEncoder from 'avcodec/wasmcodec/VideoEncoder'
 import WebVideoEncoder from 'avcodec/webcodec/VideoEncoder'
+import { Rational } from 'avutil/struct/rational'
 
 export interface VideoEncodeTaskOptions extends TaskOptions {
   resource: WebAssemblyResource
@@ -73,6 +74,7 @@ type SelfTask = VideoEncodeTaskOptions & {
   openReject?: (error: Error) => void
 
   parameters: pointer<AVCodecParameters>
+  timeBase: Rational
 
   encoderReady: Promise<void>
 
@@ -114,7 +116,9 @@ export default class VideoEncodePipeline extends Pipeline {
           task.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(avframe))
         }
       },
-      enableHardwareAcceleration
+      enableHardwareAcceleration,
+      avpacketPool: task.avpacketPool,
+      avframePool: task.avframePool
     })
   }
 
@@ -140,6 +144,7 @@ export default class VideoEncodePipeline extends Pipeline {
       inputEnd: false,
       targetEncoder: null,
       parameters: nullptr,
+      timeBase: null,
       encoderReady: null,
       softwareEncoderOpened: false,
       gopCounter: 0,
@@ -233,6 +238,9 @@ export default class VideoEncodePipeline extends Pipeline {
                 if (is.number(avframe)) {
                   task.avframePool.release(avframe)
                 }
+                else {
+                  avframe.close()
+                }
                 // 硬解队列中的 EncodedVideoChunk 过多会报错， 这里判断做一下延时
                 while (task.targetEncoder === task.hardwareEncoder
                   && task.hardwareEncoder.getQueueLength() > 20
@@ -273,7 +281,7 @@ export default class VideoEncodePipeline extends Pipeline {
                   }
                 }
                 else {
-                  logger.error(`video encode pull avframe error, taskId: ${options.taskId}, ret: ${avframe}`)
+                  logger.error(`video encoder pull avframe error, taskId: ${options.taskId}, ret: ${avframe}`)
                   rightIPCPort.reply(request, avframe)
                   break
                 }
@@ -298,19 +306,19 @@ export default class VideoEncodePipeline extends Pipeline {
       if (isWorker()) {
         threadCount = Math.max(threadCount, navigator.hardwareConcurrency - 2)
       }
-      await task.softwareEncoder.open(parameters, threadCount)
+      await task.softwareEncoder.open(parameters, task.timeBase ,threadCount)
       task.softwareEncoderOpened = true
     }
   }
 
-  public async open(taskId: string, parameters: pointer<AVCodecParameters>) {
+  public async open(taskId: string, parameters: pointer<AVCodecParameters>, timeBase: Rational) {
     const task = this.tasks.get(taskId)
     if (task) {
       return new Promise<void>(async (resolve, reject) => {
         task.openReject = reject
         if (task.hardwareEncoder) {
           try {
-            await task.hardwareEncoder.open(parameters)
+            await task.hardwareEncoder.open(parameters, timeBase)
           }
           catch (error) {
             logger.error(`cannot open hardware encoder, ${error}`)
@@ -321,6 +329,7 @@ export default class VideoEncodePipeline extends Pipeline {
         }
 
         task.parameters = parameters
+        task.timeBase = timeBase
 
         if (task.targetEncoder === task.softwareEncoder) {
           await this.openSoftwareEncoder(task)
@@ -342,7 +351,7 @@ export default class VideoEncodePipeline extends Pipeline {
       else if (task.targetEncoder === task.hardwareEncoder) {
         task.hardwareEncoder.close()
         task.hardwareEncoder = this.createWebcodecEncoder(task)
-        await task.hardwareEncoder.open(task.parameters)
+        await task.hardwareEncoder.open(task.parameters, task.timeBase)
         task.targetEncoder = task.hardwareEncoder
       }
       array.each(task.avpacketCaches, (avpacket) => {
@@ -353,6 +362,14 @@ export default class VideoEncodePipeline extends Pipeline {
 
       logger.info(`reset video encode, taskId: ${task.taskId}`)
     }
+  }
+
+  public async getExtraData(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      return task.targetEncoder.getExtraData()
+    }
+    logger.fatal('task not found')
   }
 
   public async registerTask(options: VideoEncodeTaskOptions): Promise<number> {

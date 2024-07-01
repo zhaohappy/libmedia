@@ -6,6 +6,7 @@
         "*.cjson": "jsonc",
         "*.wxss": "css",
         "*.wxs": "javascript",
+        "*.asm": "wat",
         "stdatomic.h": "c",
         "wasmatomics.h": "c",
         "frame.h": "c",
@@ -41,7 +42,8 @@
         "wasmpthread.h": "c",
         "ios": "c",
         "avcodec.h": "c",
-        "buffer.h": "c"
+        "buffer.h": "c",
+        "imgutils.h": "c"
     },
     "cSpell.words": [
         "AACADTS",
@@ -89,6 +91,7 @@
         "avprotocol",
         "avrender",
         "avtranscode",
+        "avtranscoder",
         "avutil",
         "baiduboxapp",
         "baidubrowser",

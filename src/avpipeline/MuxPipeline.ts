@@ -43,6 +43,7 @@ import OFormat from 'avformat/formats/OFormat'
 import IOWriterSync from 'common/io/IOWriterSync'
 import { AVStreamInterface } from './interface'
 import { copyCodecParameters } from 'avutil/util/codecparameters'
+import AVCodecParameters from 'avutil/struct/avcodecparameters'
 
 export interface MuxTaskOptions extends TaskOptions {
   format: AVFormat
@@ -55,6 +56,7 @@ type SelfTask = MuxTaskOptions & {
   formatContext: AVOFormatContext
   avpacketPool: AVPacketPool
   loop: LoopTask
+  ended: boolean
   streams: {
     stream: AVStreamInterface
     pullIPC: IPCPort
@@ -101,6 +103,7 @@ export default class MuxPipeline extends Pipeline {
       rightIPCPort,
       formatContext,
       loop: null,
+      ended: false,
       streams: [],
       avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex)
     })
@@ -187,6 +190,20 @@ export default class MuxPipeline extends Pipeline {
 
       task.formatContext.oformat = oformat
 
+      for (let i = 0; i < task.streams.length; i++) {
+        const avpacket = await task.streams[i].pullIPC.request<pointer<AVPacketRef>>('pull')
+        if (avpacket === IOError.END) {
+          task.streams[i].ended = true
+        }
+        else if (avpacket < 0) {
+          logger.error(`pull stream ${i} avpacket error, ret: ${avpacket}`)
+          task.streams[i].ended = true
+        }
+        else {
+          avpacket.streamIndex = task.streams[i].stream.index
+          task.streams[i].avpacket = avpacket
+        }
+      }
       return mux.open(task.formatContext)
     }
     else {
@@ -210,6 +227,19 @@ export default class MuxPipeline extends Pipeline {
       ostream.timeBase.num = stream.timeBase.num
       ostream.timeBase.den = stream.timeBase.den
       ostream.metadata = stream.metadata
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+
+  public async updateAVCodecParameters(taskId: string, streamIndex: int32, codecpar: pointer<AVCodecParameters>) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      const stream = task.formatContext.getStreamByIndex(streamIndex)
+      if (stream) {
+        copyCodecParameters(addressof(stream.codecpar), codecpar)
+      }
     }
     else {
       logger.fatal('task not found')
@@ -242,6 +272,7 @@ export default class MuxPipeline extends Pipeline {
               task.streams[i].ended = true
             }
             else {
+              avpacket.streamIndex = task.streams[i].stream.index
               task.streams[i].avpacket = avpacket
             }
           }
@@ -269,9 +300,12 @@ export default class MuxPipeline extends Pipeline {
         else {
           mux.writeTrailer(task.formatContext)
           mux.flush(task.formatContext)
+          task.rightIPCPort.notify('end')
           logger.info('mux end')
+          task.loop.stop()
+          task.ended = true
         }
-      }, 0, 0, false, true)
+      }, 0, 0, false, false)
       task.loop.start()
     }
     else {
@@ -294,7 +328,7 @@ export default class MuxPipeline extends Pipeline {
   public async unpause(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
-      if (task.loop && !task.loop.isStarted()) {
+      if (task.loop && !task.loop.isStarted() && !task.ended) {
         task.loop.start()
       }
     }

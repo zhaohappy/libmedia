@@ -40,6 +40,8 @@ import { IOError } from 'common/io/error'
 import * as is from 'common/util/is'
 import * as array from 'common/util/array'
 import * as error from 'avutil/error'
+import Sleep from 'common/timer/Sleep'
+import { Rational } from 'avutil/struct/rational'
 
 export interface AudioEncodeTaskOptions extends TaskOptions {
   resource: WebAssemblyResource
@@ -82,7 +84,9 @@ export default class AudioEncodePipeline extends Pipeline {
         if (avframe) {
           task.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(avframe))
         }
-      }
+      },
+      avpacketPool: task.avpacketPool,
+      avframePool: task.avframePool
     })
   }
 
@@ -155,11 +159,20 @@ export default class AudioEncodePipeline extends Pipeline {
                 if (is.number(avframe)) {
                   task.avframePool.release(avframe)
                 }
+                else {
+                  avframe.close()
+                }
                 if (ret < 0) {
                   task.stats.audioEncodeErrorFrameCount++
                   logger.error(`audio encode error, taskId: ${options.taskId}, ret: ${ret}`)
                   rightIPCPort.reply(request, ret)
                   break
+                }
+                // 硬解队列中的 EncodedVideoChunk 过多会报错， 这里判断做一下延时
+                while (task.encoder instanceof WebAudioEncoder
+                  && task.encoder.getQueueLength() > 4
+                ) {
+                  await new Sleep(0)
                 }
                 continue
               }
@@ -173,13 +186,13 @@ export default class AudioEncodePipeline extends Pipeline {
                     break
                   }
                   else {
-                    logger.info(`audio encode ended, taskId: ${task.taskId}`)
+                    logger.info(`audio encoder ended, taskId: ${task.taskId}`)
                     rightIPCPort.reply(request, IOError.END)
                     break
                   }
                 }
                 else {
-                  logger.error(`audio encode pull avpacket error, taskId: ${options.taskId}, ret: ${avframe}`)
+                  logger.error(`audio encoder pull avpacket error, taskId: ${options.taskId}, ret: ${avframe}`)
                   rightIPCPort.reply(request, avframe)
                   break
                 }
@@ -187,6 +200,7 @@ export default class AudioEncodePipeline extends Pipeline {
             }
             break
           }
+          logger.info(`audio encoder ended, taskId: ${task.taskId}`)
           rightIPCPort.reply(request, IOError.END)
           break
         }
@@ -196,15 +210,23 @@ export default class AudioEncodePipeline extends Pipeline {
     return 0
   }
 
-  public async open(taskId: string, parameters: pointer<AVCodecParameters>) {
+  public async open(taskId: string, parameters: pointer<AVCodecParameters>, timeBase: Rational) {
     const task = this.tasks.get(taskId)
     if (task) {
       return new Promise<void>(async (resolve, reject) => {
         task.openReject = reject
-        await task.encoder.open(parameters)
+        await task.encoder.open(parameters, timeBase)
         task.parameters = parameters
         resolve()
       })
+    }
+    logger.fatal('task not found')
+  }
+
+  public async getExtraData(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      return task.encoder.getExtraData()
     }
     logger.fatal('task not found')
   }
