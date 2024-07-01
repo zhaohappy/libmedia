@@ -1,0 +1,14 @@
+prefix=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg
+exec_prefix=${prefix}
+libdir=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg/lib
+includedir=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg/include
+
+Name: libswscale
+Description: FFmpeg image rescaling library
+Version: 8.1.100
+Requires: libavutil >= 59.8.100
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lswscale -lm
+Libs.private: 
+Cflags: -I${includedir}

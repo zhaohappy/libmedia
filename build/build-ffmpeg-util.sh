@@ -72,7 +72,6 @@ emconfigure ./configure \
   --disable-filters \
   --enable-asm \
   --disable-debug \
-  --disable-swscale \
   --disable-avdevice \
   --enable-pic \
   --extra-cflags="$EXTRA_CFLAGS" \

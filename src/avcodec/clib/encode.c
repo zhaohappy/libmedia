@@ -121,6 +121,20 @@ EM_PORT_API(int) encoder_receive(AVPacket* packet) {
   return receive_packet(packet);
 }
 
+EM_PORT_API(uint8_t*) encoder_get_extradata() {
+  if (enc_ctx) {
+    return enc_ctx->extradata;
+  }
+  return NULL;
+}
+
+EM_PORT_API(int) encoder_get_extradata_size() {
+  if (enc_ctx) {
+    return enc_ctx->extradata_size;
+  }
+  return 0;
+}
+
 EM_PORT_API(void) encoder_close() {
   if (enc_ctx) {
     avcodec_free_context(&enc_ctx);
