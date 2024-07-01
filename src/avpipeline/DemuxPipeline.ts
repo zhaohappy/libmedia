@@ -362,7 +362,7 @@ export default class DemuxPipeline extends Pipeline {
       task.formatContext.iformat = iformat
 
       return await demux.open(task.formatContext, {
-        maxAnalyzeDuration: 2,
+        maxAnalyzeDuration: 2000,
         fastOpen: task.isLive
       })
     }
