@@ -29,6 +29,7 @@ import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { mapUint8Array } from 'cheap/std/memory'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
+import avpacket2EncodedAudioChunk from 'avutil/function/avpacket2EncodedAudioChunk'
 
 export type WebAudioDecoderOptions = {
   onReceiveFrame: (frame: AudioData) => void
@@ -144,14 +145,7 @@ export default class WebAudioDecoder {
       this.changeExtraData(mapUint8Array(element.data, element.size))
     }
 
-    const timestamp = static_cast<double>(pts ?? avpacket.pts)
-    const key = avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
-
-    const audioChunk = new EncodedAudioChunk({
-      type: key ? 'key' : 'delta',
-      timestamp,
-      data: mapUint8Array(avpacket.data, avpacket.size)
-    })
+    const audioChunk = avpacket2EncodedAudioChunk(avpacket, pts)
 
     try {
       this.decoder.decode(audioChunk)

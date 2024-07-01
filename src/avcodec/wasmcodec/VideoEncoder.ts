@@ -37,6 +37,8 @@ import * as is from 'common/util/is'
 import { BitFormat } from 'avformat/codecs/h264'
 import { videoFrame2AVFrame } from 'avutil/function/videoFrame2AVFrame'
 import { createAVFrame, destroyAVFrame, unrefAVFrame } from 'avutil/util/avframe'
+import { mapUint8Array } from 'cheap/std/memory'
+import { AVCodecID } from 'avutil/codec'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
@@ -50,6 +52,8 @@ export default class WasmVideoEncoder {
   private options: WasmVideoEncoderOptions
 
   private encoder: WebAssemblyRunner
+  private parameters: pointer<AVCodecParameters>
+  private timeBase: Rational
 
   private avpacket: pointer<AVPacket>
 
@@ -69,6 +73,12 @@ export default class WasmVideoEncoder {
 
   private outputAVPacket() {
     if (this.avpacket) {
+      if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_H264
+        || this.parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
+        || this.parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
+      ) {
+        this.avpacket.bitFormat = this.parameters.bitFormat
+      }
       this.options.onReceiveAVPacket(this.avpacket)
       this.avpacket = nullptr
     }
@@ -78,15 +88,15 @@ export default class WasmVideoEncoder {
     return this.encoder.call<int32>('encoder_receive', this.getAVPacket())
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, threadCount: number = 1) {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, threadCount: number = 1) {
     await this.encoder.run()
 
-    const timeBase = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
+    const timeBaseP = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
 
-    timeBase.num = 1
-    timeBase.den = AV_TIME_BASE
+    timeBaseP.num = timeBase.num
+    timeBaseP.den = timeBase.den
 
-    let ret = this.encoder.call<int32>('encoder_open', parameters, timeBase, threadCount)
+    let ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, threadCount)
 
     stack.free(sizeof(Rational))
 
@@ -101,6 +111,9 @@ export default class WasmVideoEncoder {
       logger.fatal(`open video decoder failed, ret: ${ret}`)
     }
     await this.encoder.childrenThreadReady()
+
+    this.parameters = parameters
+    this.timeBase = timeBase
   }
 
   public encode(frame: pointer<AVFrame> | VideoFrame, key: boolean) {
@@ -112,9 +125,7 @@ export default class WasmVideoEncoder {
       else {
         this.avframe = createAVFrame()
       }
-      const videoFrame = frame
       frame = videoFrame2AVFrame(frame, this.avframe)
-      videoFrame.close()
     }
 
     if (key) {
@@ -151,6 +162,16 @@ export default class WasmVideoEncoder {
       }
       this.outputAVPacket()
     }
+  }
+
+  public getExtraData() {
+    const pointer = this.encoder.call<pointer<uint8>>('encoder_get_extradata')
+    const size = this.encoder.call<int32>('encoder_get_extradata_size')
+
+    if (pointer && size) {
+      return mapUint8Array(pointer, size).slice()
+    }
+    return null
   }
 
   public close() {

@@ -36,6 +36,7 @@ import * as stack from 'cheap/stack'
 import { createAVFrame, destroyAVFrame, unrefAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
 import { AV_TIME_BASE } from 'avutil/constant'
+import { mapUint8Array } from 'cheap/std/memory'
 
 export type WasmAudioEncoderOptions = {
   resource: WebAssemblyResource
@@ -49,6 +50,8 @@ export default class WasmAudioEncoder {
   private options: WasmAudioEncoderOptions
 
   private encoder: WebAssemblyRunner
+  private parameters: pointer<AVCodecParameters>
+  private timeBase: Rational
 
   private avpacket: pointer<AVPacket>
 
@@ -77,15 +80,15 @@ export default class WasmAudioEncoder {
     return this.encoder.call<int32>('encoder_receive', this.getAVPacket())
   }
 
-  public async open(parameters: pointer<AVCodecParameters>) {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational) {
     await this.encoder.run()
 
-    const timeBase = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
+    const timeBaseP = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
 
-    timeBase.num = 1
-    timeBase.den = AV_TIME_BASE
+    timeBaseP.num = timeBase.num
+    timeBaseP.den = timeBase.den
 
-    let ret = this.encoder.call<int32>('encoder_open', parameters, timeBase, 1)
+    let ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, 1)
 
     stack.free(sizeof(Rational))
 
@@ -93,9 +96,12 @@ export default class WasmAudioEncoder {
       logger.fatal(`open video decoder failed, ret: ${ret}`)
     }
     await this.encoder.childrenThreadReady()
+
+    this.parameters = parameters
+    this.timeBase = timeBase
   }
 
-  public encode(frame: pointer<AVFrame> | AudioData) {
+  public encode(frame: pointer<AVFrame> | AudioData, ) {
 
     if (!is.number(frame)) {
       if (this.avframe) {
@@ -104,9 +110,7 @@ export default class WasmAudioEncoder {
       else {
         this.avframe = createAVFrame()
       }
-      const audioData = frame
       frame = audioData2AVFrame(frame, this.avframe)
-      audioData.close()
     }
 
     let ret = this.encoder.call<int32>('encoder_encode', frame)
@@ -139,6 +143,16 @@ export default class WasmAudioEncoder {
       }
       this.outputAVPacket()
     }
+  }
+
+  public getExtraData() {
+    const pointer = this.encoder.call<pointer<uint8>>('encoder_get_extradata')
+    const size = this.encoder.call<int32>('encoder_get_extradata_size')
+
+    if (pointer && size) {
+      return mapUint8Array(pointer, size).slice()
+    }
+    return null
   }
 
   public close() {

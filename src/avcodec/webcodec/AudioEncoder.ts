@@ -23,22 +23,22 @@
  *
  */
 
-import { AVPacketSideDataType } from 'avutil/codec'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import AVPacket, { AVPacketFlags, AVPacketPool } from 'avutil/struct/avpacket'
+import AVPacket, { AVPacketPool } from 'avutil/struct/avpacket'
 import getAudioCodec from 'avcodec/function/getAudioCodec'
-import AVFrame from 'avutil/struct/avframe'
+import AVFrame, { AVFramePool } from 'avutil/struct/avframe'
 import * as is from 'common/util/is'
 import { avframe2AudioData } from 'avutil/function/avframe2AudioData'
-import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/util/avpacket'
-import { avMalloc } from 'avutil/util/mem'
-import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { AV_TIME_BASE } from 'avutil/constant'
+import { createAVPacket } from 'avutil/util/avpacket'
+import { createAVFrame, refAVFrame } from 'avutil/util/avframe'
+import { Rational } from 'avutil/struct/rational'
+import encodedAudioChunk2AVPacket from 'avutil/function/encodedAudioChunk2AVPacket'
 
 export type WebAudioEncoderOptions = {
   onReceivePacket: (avpacket: pointer<AVPacket>, avframe?: pointer<AVFrame>) => void
   onError: (error?: Error) => void
   avpacketPool?: AVPacketPool
+  avframePool?: AVFramePool
 }
 
 export default class WebAudioEncoder {
@@ -46,6 +46,8 @@ export default class WebAudioEncoder {
   private encoder: AudioEncoder
 
   private options: WebAudioEncoderOptions
+  private parameters: pointer<AVCodecParameters>
+  private timeBase: Rational
 
   private currentError: Error
 
@@ -53,36 +55,20 @@ export default class WebAudioEncoder {
 
   private avframeCache: pointer<AVFrame>[]
 
+  private extradata: Uint8Array
+
   constructor(options: WebAudioEncoderOptions) {
 
     this.options = options
     this.avframeCache = []
   }
 
-  private async output(chunk: EncodedAudioChunk, metadata?: {
-    decoderConfig: {
-      codec: string
-      sampleRate: number
-      numberOfChannels: number
-      description?: WebCodecBufferSource
-    }
-  }) {
+  private async output(chunk: EncodedAudioChunk, metadata?: EncodedAudioChunkMetadata) {
+
     const avpacket = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
-    avpacket.pts = this.pts
-    avpacket.dts = this.pts
-    avpacket.timeBase.den = AV_TIME_BASE
-    avpacket.timeBase.num = 1
-    avpacket.duration = static_cast<int64>(chunk.duration)
-    avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
-    const data = avMalloc(chunk.byteLength)
-    chunk.copyTo(mapUint8Array(data, chunk.byteLength))
-    addAVPacketData(avpacket, data, chunk.byteLength)
-
-    this.pts += avpacket.duration
-
-    if (metadata) {
-      if (metadata.decoderConfig?.description) {
-        const extradata = avMalloc(metadata.decoderConfig.description.byteLength)
+    
+    if (!this.extradata) {
+      if (metadata?.decoderConfig?.description) {
         let buffer: Uint8Array
         if (metadata.decoderConfig.description instanceof ArrayBuffer) {
           buffer = new Uint8Array(metadata.decoderConfig.description)
@@ -90,10 +76,19 @@ export default class WebAudioEncoder {
         else {
           buffer = new Uint8Array(metadata.decoderConfig.description.buffer)
         }
-        memcpyFromUint8Array(extradata, metadata.decoderConfig.description.byteLength, buffer)
-        addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, extradata, metadata.decoderConfig.description.byteLength)
+        this.extradata = buffer
       }
+      encodedAudioChunk2AVPacket(chunk, avpacket)
     }
+    else {
+      encodedAudioChunk2AVPacket(chunk, avpacket, metadata)
+    }
+
+    avpacket.pts = this.pts
+    avpacket.dts = this.pts
+
+    this.pts += avpacket.duration
+    
     const avframe = this.avframeCache.shift()
     this.options.onReceivePacket(avpacket, avframe)
   }
@@ -102,7 +97,7 @@ export default class WebAudioEncoder {
     this.options.onError(error)
   }
 
-  public async open(parameters: pointer<AVCodecParameters>) {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational) {
 
     this.currentError = null
 
@@ -110,7 +105,8 @@ export default class WebAudioEncoder {
       codec: getAudioCodec(parameters),
       sampleRate: parameters.sampleRate,
       numberOfChannels: parameters.chLayout.nbChannels,
-      bitrate: static_cast<double>(parameters.bitRate)
+      bitrate: static_cast<double>(parameters.bitRate),
+      bitrateMode: 'constant'
     }
 
     const support = await AudioEncoder.isConfigSupported(config)
@@ -136,12 +132,17 @@ export default class WebAudioEncoder {
     }
 
     this.pts = 0n
+    this.parameters = parameters
+    this.timeBase = timeBase
   }
 
   public encode(frame: AudioData | pointer<AVFrame>) {
     if (is.number(frame)) {
-      this.avframeCache.push(frame)
-      frame = avframe2AudioData(frame)
+      const cache = this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame()
+      refAVFrame(cache, frame)
+      this.avframeCache.push(cache)
+      cache.pts = 0n
+      frame = avframe2AudioData(cache)
     }
     try {
       this.encoder.encode(frame)
@@ -157,8 +158,14 @@ export default class WebAudioEncoder {
   }
 
   public close() {
-    this.encoder.close()
+    if (this.encoder?.state !== 'closed') {
+      this.encoder.close()
+    }
     this.encoder = null
+  }
+
+  public getExtraData() {
+    return this.extradata
   }
 
   public getQueueLength() {

@@ -23,27 +23,29 @@
  *
  */
 
-import AVPacket, { AVPacketFlags, AVPacketPool } from 'avutil/struct/avpacket'
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
+import AVPacket, { AVPacketPool } from 'avutil/struct/avpacket'
+import { AVCodecID } from 'avutil/codec'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import AVFrame from 'avutil/struct/avframe'
+import AVFrame, { AVFramePool } from 'avutil/struct/avframe'
 import getVideoCodec from '../function/getVideoCodec'
 import { getHardwarePreference } from '../function/getHardwarePreference'
-import { avQ2D } from 'avutil/util/rational'
+import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import * as is from 'common/util/is'
 import { avframe2VideoFrame } from 'avutil/function/avframe2VideoFrame'
-import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/util/avpacket'
-import { avMalloc } from 'avutil/util/mem'
-import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { AV_TIME_BASE } from 'avutil/constant'
+import { createAVPacket } from 'avutil/util/avpacket'
+import { AV_TIME_BASE_Q } from 'avutil/constant'
 import { BitFormat } from 'avformat/codecs/h264'
 import { PixelFormatDescriptorsMap, PixelFormatFlags } from 'avutil/pixelFormatDescriptor'
+import { createAVFrame, refAVFrame } from 'avutil/util/avframe'
+import { Rational } from 'avutil/struct/rational'
+import encodedVideoChunk2AVPacket from 'avutil/function/encodedVideoChunk2AVPacket'
 
 export type WebVideoEncoderOptions = {
   onReceivePacket: (avpacket: pointer<AVPacket>, avframe?: pointer<AVFrame>) => void
   onError: (error?: Error) => void
   enableHardwareAcceleration?: boolean
   avpacketPool?: AVPacketPool
+  avframePool?: AVFramePool
 }
 
 export default class WebVideoEncoder {
@@ -51,6 +53,8 @@ export default class WebVideoEncoder {
   private encoder: VideoEncoder
 
   private options: WebVideoEncoderOptions
+  private parameters: pointer<AVCodecParameters>
+  private timeBase: Rational
 
   private currentError: Error
 
@@ -60,6 +64,8 @@ export default class WebVideoEncoder {
 
   private inputCounter: int64
   private outputCounter: int64
+
+  private extradata: Uint8Array
 
   constructor(options: WebVideoEncoderOptions) {
 
@@ -80,18 +86,9 @@ export default class WebVideoEncoder {
     const dts = static_cast<int64>(this.outputCounter++) * 1000000n / this.framerate
 
     const avpacket = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
-    avpacket.pts = pts
-    avpacket.dts = dts
-    avpacket.timeBase.den = AV_TIME_BASE
-    avpacket.timeBase.num = 1
-    avpacket.duration = static_cast<int64>(chunk.duration)
-    const data = avMalloc(chunk.byteLength)
-    chunk.copyTo(mapUint8Array(data, chunk.byteLength))
-    addAVPacketData(avpacket, data, chunk.byteLength)
 
-    if (metadata) {
-      if (metadata.decoderConfig?.description) {
-        const extradata = avMalloc(metadata.decoderConfig.description.byteLength)
+    if (!this.extradata) {
+      if (metadata?.decoderConfig?.description) {
         let buffer: Uint8Array
         if (metadata.decoderConfig.description instanceof ArrayBuffer) {
           buffer = new Uint8Array(metadata.decoderConfig.description)
@@ -99,25 +96,22 @@ export default class WebVideoEncoder {
         else {
           buffer = new Uint8Array(metadata.decoderConfig.description.buffer)
         }
-        memcpyFromUint8Array(extradata, metadata.decoderConfig.description.byteLength, buffer)
-        addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, extradata, metadata.decoderConfig.description.byteLength)
+        this.extradata = buffer
       }
-      if (metadata.alphaSideData) {
-        const extradata = avMalloc(metadata.alphaSideData.byteLength)
-        let buffer: Uint8Array
-        if (metadata.alphaSideData instanceof ArrayBuffer) {
-          buffer = new Uint8Array(metadata.alphaSideData)
-        }
-        else {
-          buffer = new Uint8Array(metadata.alphaSideData.buffer)
-        }
-        memcpyFromUint8Array(extradata, metadata.alphaSideData.byteLength, buffer)
-        addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_MATROSKA_BLOCKADDITIONAL, extradata, metadata.alphaSideData.byteLength)
-      }
+      encodedVideoChunk2AVPacket(chunk, avpacket)
+    }
+    else {
+      encodedVideoChunk2AVPacket(chunk, avpacket, metadata)
     }
 
-    if (chunk.type === 'key') {
-      avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+    avpacket.pts = pts
+    avpacket.dts = dts
+
+    if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_H264
+      || this.parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
+      || this.parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
+    ) {
+      avpacket.bitFormat = this.parameters.bitFormat
     }
 
     const avframe = this.avframeMap.get(inputCounter)
@@ -130,7 +124,7 @@ export default class WebVideoEncoder {
     this.options.onError(error)
   }
 
-  public async open(parameters: pointer<AVCodecParameters>) {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational) {
     this.currentError = null
 
     const descriptor = PixelFormatDescriptorsMap[parameters.format]
@@ -143,7 +137,7 @@ export default class WebVideoEncoder {
       framerate: avQ2D(parameters.framerate),
       hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true),
       latencyMode: parameters.videoDelay ? 'quality' : 'realtime',
-      alpha: (descriptor.flags & PixelFormatFlags.ALPHA) ? 'keep' : 'discard'
+      alpha: descriptor && (descriptor.flags & PixelFormatFlags.ALPHA) ? 'keep' : 'discard'
     }
 
     if (parameters.codecId === AVCodecID.AV_CODEC_ID_H264
@@ -177,6 +171,8 @@ export default class WebVideoEncoder {
       throw this.currentError
     }
 
+    this.parameters = parameters
+    this.timeBase = timeBase
     this.inputCounter = 0n
     this.outputCounter = 0n
     this.framerate = static_cast<int64>(avQ2D(parameters.framerate))
@@ -184,9 +180,14 @@ export default class WebVideoEncoder {
 
   public encode(frame: VideoFrame | pointer<AVFrame>, key: boolean) {
     if (is.number(frame)) {
-      frame.pts = this.inputCounter
-      this.avframeMap.set(frame.pts, frame)
-      frame = avframe2VideoFrame(frame)
+      const cache = this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame()
+      refAVFrame(cache, frame)
+      cache.pts = this.inputCounter
+      if (cache.duration) {
+        cache.duration = avRescaleQ(cache.duration, this.timeBase, AV_TIME_BASE_Q)
+      }
+      this.avframeMap.set(cache.pts, cache)
+      frame = avframe2VideoFrame(cache)
     }
     else {
       frame = new VideoFrame(frame, {
@@ -197,6 +198,7 @@ export default class WebVideoEncoder {
       this.encoder.encode(frame, {
         keyFrame: key
       })
+      frame.close()
       this.inputCounter++
       return 0
     }
@@ -210,8 +212,14 @@ export default class WebVideoEncoder {
   }
 
   public close() {
-    this.encoder.close()
+    if (this.encoder?.state !== 'closed') {
+      this.encoder.close()
+    }
     this.encoder = null
+  }
+
+  public getExtraData() {
+    return this.extradata
   }
 
   public getQueueLength() {
