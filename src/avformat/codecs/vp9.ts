@@ -28,6 +28,39 @@ import { AVPacketSideDataType } from 'avutil/codec'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import BitReader from 'common/io/BitReader'
 
+export const enum VP9Profile {
+  Profile0,
+  Profile1,
+  Profile2,
+  Profile3
+}
+
+export const LevelCapabilities = [
+  { level: 10, maxResolution: 512 * 384, maxFrameRate: 30 },
+  { level: 11, maxResolution: 512 * 384, maxFrameRate: 60 },
+  { level: 20, maxResolution: 960 * 540, maxFrameRate: 30 },
+  { level: 21, maxResolution: 960 * 540, maxFrameRate: 60 },
+  { level: 30, maxResolution: 1920 * 1080, maxFrameRate: 30 },
+  { level: 31, maxResolution: 1920 * 1080, maxFrameRate: 60 },
+  { level: 40, maxResolution: 2560 * 1440, maxFrameRate: 30 },
+  { level: 41, maxResolution: 2560 * 1440, maxFrameRate: 60 },
+  { level: 50, maxResolution: 3840 * 2160, maxFrameRate: 30 },
+  { level: 51, maxResolution: 3840 * 2160, maxFrameRate: 60 },
+  { level: 60, maxResolution: 4096 * 2160, maxFrameRate: 30 },
+  { level: 61, maxResolution: 4096 * 2160, maxFrameRate: 60 },
+  { level: 70, maxResolution: 8192 * 4320, maxFrameRate: 30 },
+  { level: 71, maxResolution: 8192 * 4320, maxFrameRate: 60 }
+]
+
+export function getLevelByResolution(width: number, height: number, fps: number) {
+  const resolution = width * height;
+  for (const level of LevelCapabilities) {
+    if (resolution <= level.maxResolution && fps <= level.maxFrameRate) {
+      return level.level
+    }
+  }
+}
+
 export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayInterface) {
   if (!extradata && stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
     extradata = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]

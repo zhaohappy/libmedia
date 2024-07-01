@@ -37,6 +37,39 @@ import { avMalloc } from 'avutil/util/mem'
 import * as expgolomb from 'avutil/util/expgolomb'
 import { Uint8ArrayInterface } from 'common/io/interface'
 
+export const enum HEVCProfile {
+  Main = 1,
+  Main10,
+  MainStillPicture,
+  Main444
+}
+
+export const LevelCapabilities = [
+  { level: 10, maxLumaSamplesPerSecond: 552960, maxLumaPictureSize: 36864, maxBitRate: { main: 128, main10: 150 } },
+  { level: 20, maxLumaSamplesPerSecond: 3686400, maxLumaPictureSize: 122880, maxBitRate: { main: 1500, main10: 1875 } },
+  { level: 21, maxLumaSamplesPerSecond: 7372800, maxLumaPictureSize: 245760, maxBitRate: { main: 3000, main10: 3750 } },
+  { level: 30, maxLumaSamplesPerSecond: 16588800, maxLumaPictureSize: 552960, maxBitRate: { main: 6000, main10: 7500 } },
+  { level: 31, maxLumaSamplesPerSecond: 33177600, maxLumaPictureSize: 983040, maxBitRate: { main: 10000, main10: 12500 } },
+  { level: 40, maxLumaSamplesPerSecond: 66846720, maxLumaPictureSize: 2228224, maxBitRate: { main: 12000, main10: 15000 } },
+  { level: 41, maxLumaSamplesPerSecond: 133693440, maxLumaPictureSize: 2228224, maxBitRate: { main: 20000, main10: 25000 } },
+  { level: 50, maxLumaSamplesPerSecond: 267386880, maxLumaPictureSize: 8912896, maxBitRate: { main: 25000, main10: 40000 } },
+  { level: 51, maxLumaSamplesPerSecond: 534773760, maxLumaPictureSize: 8912896, maxBitRate: { main: 40000, main10: 60000 } },
+  { level: 52, maxLumaSamplesPerSecond: 1069547520, maxLumaPictureSize: 35651584, maxBitRate: { main: 60000, main10: 100000 } },
+  { level: 60, maxLumaSamplesPerSecond: 1069547520, maxLumaPictureSize: 35651584, maxBitRate: { main: 60000, main10: 100000 } },
+  { level: 61, maxLumaSamplesPerSecond: 2139095040, maxLumaPictureSize: 89128960, maxBitRate: { main: 120000, main10: 240000 } },
+  { level: 62, maxLumaSamplesPerSecond: 4278190080, maxLumaPictureSize: 356515840, maxBitRate: { main: 240000, main10: 480000 } }
+]
+
+export function getLevelByResolution(profile: number, width: number, height: number, fps: number, bitrate: number) {
+  const selectedProfile = profile === HEVCProfile.Main ? 'main' : 'main10'
+  const lumaSamplesPerSecond = width * height * fps
+  for (const level of LevelCapabilities) {
+    if (lumaSamplesPerSecond <= level.maxLumaSamplesPerSecond && width * height <= level.maxLumaPictureSize && bitrate <= level.maxBitRate[selectedProfile]) {
+      return level.level
+    }
+  }
+}
+
 const NALULengthSizeMinusOne = 3
 
 export const enum HEVCNaluType {
@@ -69,7 +102,7 @@ export const enum HEVCNaluType {
 
 /**
  * 
- * hvcc 格式的 extradata 转 annexb vps sps pps
+ * avcc 格式的 extradata 转 annexb vps sps pps
  * 
  * bits    
  * - 8   configurationVersion( 固定   1)

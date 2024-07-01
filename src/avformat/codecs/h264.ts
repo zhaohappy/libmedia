@@ -82,6 +82,37 @@ export const enum H264Profile {
   kHigh444 = 244
 }
 
+export const LevelCapabilities = [
+  { level: 10, maxResolution: 25344, maxFrameRate: 15 },
+  { level: 11, maxResolution: 25344, maxFrameRate: 30 },
+  { level: 12, maxResolution: 101376, maxFrameRate: 30 },
+  { level: 13, maxResolution: 101376, maxFrameRate: 30 },
+  { level: 20, maxResolution: 101376, maxFrameRate: 30 },
+  { level: 21, maxResolution: 202752, maxFrameRate: 30 },
+  { level: 22, maxResolution: 414720, maxFrameRate: 30 },
+  { level: 30, maxResolution: 414720, maxFrameRate: 30 },
+  { level: 31, maxResolution: 921600, maxFrameRate: 30 },
+  { level: 32, maxResolution: 1310720, maxFrameRate: 60 },
+  { level: 40, maxResolution: 2097152, maxFrameRate: 30 },
+  { level: 41, maxResolution: 2097152, maxFrameRate: 60 },
+  { level: 42, maxResolution: 2228224, maxFrameRate: 60 },
+  { level: 50, maxResolution: 8912896, maxFrameRate: 30 },
+  { level: 51, maxResolution: 8912896, maxFrameRate: 60 },
+  { level: 52, maxResolution: 8912896, maxFrameRate: 120 },
+  { level: 60, maxResolution: 35651584, maxFrameRate: 30 },
+  { level: 61, maxResolution: 35651584, maxFrameRate: 60 },
+  { level: 62, maxResolution: 35651584, maxFrameRate: 120 }
+]
+
+export function getLevelByResolution(width: number, height: number, fps: number) {
+  const resolution = width * height;
+  for (const level of LevelCapabilities) {
+    if (resolution <= level.maxResolution && fps <= level.maxFrameRate) {
+      return level.level
+    }
+  }
+}
+
 /**
  * 
  * avcc 格式的 extradata 转 annexb sps pps
