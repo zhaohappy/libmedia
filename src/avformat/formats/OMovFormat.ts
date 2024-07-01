@@ -657,8 +657,10 @@ export default class OMovFormat extends OFormat {
           timeBase = stream.timeBase
         }
       })
-
-      this.context.duration = avRescaleQ(lastPts, timeBase, { den: 1000, num: 1 })
+      
+      if (lastPts) {
+        this.context.duration = avRescaleQ(lastPts, timeBase, { den: 1000, num: 1 })
+      }
 
       const mdat = this.context.boxsPositionInfo[this.context.boxsPositionInfo.length - 1]
 
