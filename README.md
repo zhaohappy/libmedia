@@ -24,6 +24,7 @@ libmedia 是设计在多线程上的，只是可以回退到单线程上运行�
 - ```avcodec``` 音视频编解码库，主要是 C/C++(FFmpeg 和其他编解码项目) 编译的 Wasm 和 Web 平台标准 WebCodecs
 - ```audioresample``` 音频重采样（FFmpeg 音频重采样模块编译）
 - ```audiostretchpitch``` 音频变速、变调处理（soundtouch 编译）
+- ```videoscale``` 视频缩放，格式转换（FFmpeg libswscale 模块编译）
 - ```avnetwork``` Web 平台网络文件 IO 相关（Fetch、WebSocket、WebTransport、File）
 - ```avprotocol``` 音视频协议（dash、m3u8）
 - ```avrender``` 音视频渲染（8bit、10bit、HDR、audioWorklet、WebGL、WebGPU）
