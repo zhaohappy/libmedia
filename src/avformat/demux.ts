@@ -227,8 +227,9 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
         stream.codecpar.frameSize = Math.round(value / stream.timeBase.den * stream.timeBase.num * stream.codecpar.sampleRate)
       }
       else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-        stream.codecpar.framerate.num = stream.timeBase.den * stream.timeBase.num
-        stream.codecpar.framerate.den = value >>> 0
+        const framerate = stream.timeBase.den * stream.timeBase.num / value
+        stream.codecpar.framerate.num = Math.round(framerate)
+        stream.codecpar.framerate.den = 1
       }
       const duration = Number(avpacket.dts - stream.firstDTS) * stream.timeBase.num / stream.timeBase.den
 
@@ -258,8 +259,9 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
             stream.codecpar.frameSize = Math.round(value / stream.timeBase.den * stream.timeBase.num * stream.codecpar.sampleRate)
           }
           else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-            stream.codecpar.framerate.num = stream.timeBase.den * stream.timeBase.num
-            stream.codecpar.framerate.den = value >>> 0
+            const framerate = stream.timeBase.den * stream.timeBase.num / value
+            stream.codecpar.framerate.num = Math.round(framerate)
+            stream.codecpar.framerate.den = 1
           }
           const duration = Number(avpacket.dts - stream.firstDTS) * stream.timeBase.num / stream.timeBase.den
           if (duration) {
