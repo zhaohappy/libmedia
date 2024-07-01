@@ -1,5 +1,5 @@
 /*
- * libmedia avframe to AudioData utils
+ * libmedia AVFrame to AudioData utils
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -26,6 +26,10 @@
 import { mapFloat32Array, mapInt16Array, mapInt32Array, mapUint8Array } from 'cheap/std/memory'
 import AVFrame from '../struct/avframe'
 import { AVSampleFormat } from '../audiosamplefmt'
+import { getBytesPerSample, sampleFormatGetLinesize, sampleFormatIsPlanar } from 'avutil/util/sample'
+import { Rational } from 'avutil/struct/rational'
+import { avRescaleQ } from 'avutil/util/rational'
+import { AV_TIME_BASE_Q } from 'avutil/constant'
 
 function mapFormat(avframe: pointer<AVFrame>) {
   switch (avframe.format) {
@@ -50,33 +54,74 @@ function mapFormat(avframe: pointer<AVFrame>) {
   }
 }
 
-function mapBuffer(avframe: pointer<AVFrame>) {
-  switch (avframe.format) {
+function mapBuffer(format: AVSampleFormat, data: Uint8Array) {
+  switch (format) {
     case AVSampleFormat.AV_SAMPLE_FMT_U8:
     case AVSampleFormat.AV_SAMPLE_FMT_U8P:
-      return mapUint8Array(accessof(avframe.extendedData), avframe.chLayout.nbChannels * avframe.nbSamples)
+      return data
     case AVSampleFormat.AV_SAMPLE_FMT_S16:
     case AVSampleFormat.AV_SAMPLE_FMT_S16P:
-      return mapInt16Array(reinterpret_cast<pointer<int16>>(accessof(avframe.extendedData)), avframe.chLayout.nbChannels * avframe.nbSamples)
+      return new Int16Array(data.buffer)
     case AVSampleFormat.AV_SAMPLE_FMT_S32:
     case AVSampleFormat.AV_SAMPLE_FMT_S32P:
-      return mapInt32Array(reinterpret_cast<pointer<int32>>(accessof(avframe.extendedData)), avframe.chLayout.nbChannels * avframe.nbSamples)
+      return new Int32Array(data.buffer)
     case AVSampleFormat.AV_SAMPLE_FMT_FLT:
     case AVSampleFormat.AV_SAMPLE_FMT_FLTP:
-      return mapFloat32Array(reinterpret_cast<pointer<float>>(accessof(avframe.extendedData)), avframe.chLayout.nbChannels * avframe.nbSamples)
+      return new Float32Array(data.buffer)
     default:
       throw new Error('not support')
   }
 }
 
-export function avframe2AudioData(avframe: pointer<AVFrame>) {
+function mapTypeBuffer(format: AVSampleFormat, pointer: pointer<void>, size: int32) {
+  switch (format) {
+    case AVSampleFormat.AV_SAMPLE_FMT_U8:
+    case AVSampleFormat.AV_SAMPLE_FMT_U8P:
+      return mapUint8Array(pointer, size)
+    case AVSampleFormat.AV_SAMPLE_FMT_S16:
+    case AVSampleFormat.AV_SAMPLE_FMT_S16P:
+      return mapInt16Array(reinterpret_cast<pointer<int16>>(pointer), size >>> 1)
+    case AVSampleFormat.AV_SAMPLE_FMT_S32:
+    case AVSampleFormat.AV_SAMPLE_FMT_S32P:
+      return mapInt32Array(reinterpret_cast<pointer<int32>>(pointer), size >>> 2)
+    case AVSampleFormat.AV_SAMPLE_FMT_FLT:
+    case AVSampleFormat.AV_SAMPLE_FMT_FLTP:
+      return mapFloat32Array(reinterpret_cast<pointer<float>>(pointer), size >>> 2)
+    default:
+      throw new Error('not support')
+  }
+}
+
+export function avframe2AudioData(avframe: pointer<AVFrame>, timeBase?: Rational) {
+
+  const planar = sampleFormatIsPlanar(avframe.format)
+  const planes = planar ? avframe.chLayout.nbChannels : 1
+
+  let data: ArrayBufferView
+
+  const sampleSize = getBytesPerSample(avframe.format)
+
+  if (planar) {
+    const linesize = avframe.nbSamples *  sampleSize
+    const buffer = new Uint8Array(planes * linesize)
+    let offset = 0
+    for (let i = 0; i < planes; i++) {
+      buffer.set(mapUint8Array(avframe.data[i], linesize), offset)
+      offset += linesize
+    }
+    data = mapBuffer(avframe.format, buffer)
+  }
+  else {
+    data = mapTypeBuffer(avframe.format, avframe.data[0], sampleSize * avframe.nbSamples * avframe.chLayout.nbChannels)
+  }
+
   const audioData = new AudioData({
-    data: mapBuffer(avframe),
+    data,
     format: mapFormat(avframe),
     sampleRate: avframe.sampleRate,
     numberOfFrames: avframe.nbSamples,
     numberOfChannels: avframe.chLayout.nbChannels,
-    timestamp: static_cast<double>(avframe.pts),
+    timestamp: static_cast<double>(timeBase ? avRescaleQ(avframe.pts, timeBase, AV_TIME_BASE_Q) : avframe.pts)
   })
   return audioData
 }

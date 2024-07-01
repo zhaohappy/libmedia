@@ -1,5 +1,5 @@
 /*
- * libmedia avframe to VideoFrame utils
+ * libmedia AVFrame to VideoFrame utils
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -27,6 +27,10 @@ import { mapUint8Array } from 'cheap/std/memory'
 import AVFrame from '../struct/avframe'
 import { PixelFormatDescriptorsMap, PixelFormatFlags } from '../pixelFormatDescriptor'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
+import { Rational } from 'avutil/struct/rational'
+import { avRescaleQ } from 'avutil/util/rational'
+import { AV_TIME_BASE_Q } from 'avutil/constant'
+import { getHeapU8 } from 'cheap/heap'
 
 export function avPixelFormat2Format(pixfmt: AVPixelFormat) {
   switch (pixfmt) {
@@ -112,7 +116,7 @@ export function getVideoColorSpaceInit(avframe: pointer<AVFrame>) {
   return init
 }
 
-export function avframe2VideoFrame(avframe: pointer<AVFrame>) {
+export function avframe2VideoFrame(avframe: pointer<AVFrame>, timeBase?: Rational) {
 
   let height = avframe.height
 
@@ -120,22 +124,22 @@ export function avframe2VideoFrame(avframe: pointer<AVFrame>) {
 
   const layout: PlaneLayout[] = []
 
-  for (let i = 1; i < des.nbComponents; i++) {
+  for (let i = 0; i < des.nbComponents; i++) {
     layout.push({
-      offset: avframe.data[i] - avframe.buf[0].data,
+      offset: avframe.data[i],
       stride: avframe.linesize[i]
     })
   }
 
-  const videoFrame = new VideoFrame(mapUint8Array(avframe.buf[0].data, avframe.buf[0].size), {
+  const init: VideoFrameBufferInit = {
     codedWidth: avframe.width,
     codedHeight: height,
-    timestamp: static_cast<double>(avframe.pts),
+    timestamp: static_cast<double>(timeBase ? avRescaleQ(avframe.pts, timeBase, AV_TIME_BASE_Q) : avframe.pts),
     format: avPixelFormat2Format(avframe.format),
-    duration: static_cast<double>(avframe.duration),
+    duration: static_cast<double>(timeBase ? avRescaleQ(avframe.duration, timeBase, AV_TIME_BASE_Q) : avframe.duration),
     layout,
     colorSpace: getVideoColorSpaceInit(avframe)
-  })
+  }
 
-  return videoFrame
+  return new VideoFrame(getHeapU8(), init)
 }
