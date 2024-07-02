@@ -45,11 +45,6 @@ module.exports = (env) => {
     library = 'CheapPolyfill';
     libraryTarget = 'var';
   }
-  else if (env.format) {
-    entry = path.resolve(__dirname, './src/avformat/test.library.ts');
-    output = 'format.js';
-    library = 'Format';
-  }
   else {
     return;
   }
@@ -88,6 +83,8 @@ module.exports = (env) => {
         avpipeline: path.resolve(__dirname, 'src/avpipeline/'),
         avtranscode: path.resolve(__dirname, 'src/avtranscode/'),
         avutil: path.resolve(__dirname, 'src/avutil/'),
+        videoscale: path.resolve(__dirname, 'src/videoscale/'),
+        avfilter: path.resolve(__dirname, 'src/avfilter/'),
 
         cheap: path.resolve(__dirname, 'src/cheap/'),
         common: path.resolve(__dirname, 'src/common/')

@@ -22,7 +22,6 @@
     "build-avtranscoder-legacy": "cross-env NODE_ENV=production webpack --progress --env avtranscoder=1 release=1 legacy=1",
     "build-avtranscoder-dev": "cross-env NODE_ENV=development webpack --progress --env avtranscoder=1 release=0",
     "doc": "typedoc --options ./typedoc.json",
-    "build-format-dev": "cross-env NODE_ENV=development webpack --progress --env format=1 release=0",
     "build-debug": "cross-env NODE_ENV=development node --inspect-brk ./node_modules/webpack/bin/webpack.js --progress --env avplayer=1 release=0",
     "eslint": "./node_modules/.bin/eslint -o=report.json -f=json './src/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore",
     "eslint-fix": "./node_modules/.bin/eslint './src/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore --fix",

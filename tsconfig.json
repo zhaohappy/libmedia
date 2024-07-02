@@ -26,6 +26,8 @@
       "avpipeline/*": ["./src/avpipeline/*"],
       "avtranscode/*": ["./src/avtranscode/*"],
       "avutil/*": ["./src/avutil/*"],
+      "videoscale/*": ["./src/videoscale/*"],
+      "avfilter/*": ["./src/avfilter/*"],
 
       "cheap/*": ["./src/cheap/*"],
       "common/*": ["./src/common/*"]
