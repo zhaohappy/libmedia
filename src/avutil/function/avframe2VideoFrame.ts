@@ -23,13 +23,12 @@
  *
  */
 
-import { mapUint8Array } from 'cheap/std/memory'
 import AVFrame from '../struct/avframe'
-import { PixelFormatDescriptorsMap, PixelFormatFlags } from '../pixelFormatDescriptor'
+import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
-import { Rational } from 'avutil/struct/rational'
-import { avRescaleQ } from 'avutil/util/rational'
-import { AV_TIME_BASE_Q } from 'avutil/constant'
+import { Rational } from '../struct/rational'
+import { avRescaleQ } from '../util/rational'
+import { AV_TIME_BASE_Q } from '../constant'
 import { getHeapU8 } from 'cheap/heap'
 
 export function avPixelFormat2Format(pixfmt: AVPixelFormat) {

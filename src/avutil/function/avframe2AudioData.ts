@@ -26,10 +26,10 @@
 import { mapFloat32Array, mapInt16Array, mapInt32Array, mapUint8Array } from 'cheap/std/memory'
 import AVFrame from '../struct/avframe'
 import { AVSampleFormat } from '../audiosamplefmt'
-import { getBytesPerSample, sampleFormatGetLinesize, sampleFormatIsPlanar } from 'avutil/util/sample'
-import { Rational } from 'avutil/struct/rational'
-import { avRescaleQ } from 'avutil/util/rational'
-import { AV_TIME_BASE_Q } from 'avutil/constant'
+import { getBytesPerSample, sampleFormatIsPlanar } from '../util/sample'
+import { Rational } from '../struct/rational'
+import { avRescaleQ } from '../util/rational'
+import { AV_TIME_BASE_Q } from '../constant'
 
 function mapFormat(avframe: pointer<AVFrame>) {
   switch (avframe.format) {
