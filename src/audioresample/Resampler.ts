@@ -89,6 +89,10 @@ export default class Resampler {
     return this.resampler.call<int32>('resample_process', input, output, numberOfFrames)
   }
 
+  public getOutputSampleCount(numberOfFrames: int32) {
+    return this.resampler.call<int32>('resample_nb_sample', numberOfFrames)
+  }
+
   public close() {
     this.resampler.call('resample_destroy')
     this.resampler.destroy()

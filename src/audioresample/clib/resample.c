@@ -43,6 +43,7 @@ int first_input = 1;
 
 struct PCMBuffer {
   uint8_t **data;
+  int linesize;
   int nbSamples;
   int maxnbSamples;
   int channels;
@@ -126,7 +127,7 @@ EM_PORT_API(int) resample_process(uint8_t **input, struct PCMBuffer* output, int
       av_freep(&output->data[0]);
       av_freep(&output->data);
     }
-    ret = av_samples_alloc_array_and_samples(&output->data, NULL, dst_nb_channels,
+    ret = av_samples_alloc_array_and_samples(&output->data, &output->linesize, dst_nb_channels,
                             dst_nb_samples, dst_sample_fmt, 0);
     if (ret < 0) {
       return ret;
@@ -144,6 +145,12 @@ EM_PORT_API(int) resample_process(uint8_t **input, struct PCMBuffer* output, int
   output->nbSamples = ret;
 
   return 0;
+}
+
+EM_PORT_API(int) resample_nb_sample(int nb_samples) {
+  int dst_nb_samples = av_rescale_rnd((first_input ? 0 : swr_get_delay(swr_ctx, src_samplerate)) +
+                                        nb_samples, dst_samplerate, src_samplerate, AV_ROUND_UP);
+  return dst_nb_samples;
 }
 
 EM_PORT_API(int) resample_destroy() {

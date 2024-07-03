@@ -31,6 +31,10 @@ export default class AVPCMBuffer {
    */
   data: pointer<pointer<uint8>>
   /**
+   * data 每一个 channel 的缓冲区大小
+   */
+  linesize: int32
+  /**
    * 当前存放了多少个采样点
    */
   nbSamples: int32
