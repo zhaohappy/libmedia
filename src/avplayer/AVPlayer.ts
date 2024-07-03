@@ -353,6 +353,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         this.stats.videoStutter++
       }
     }
+    element.oncanplay = () => {
+      if (this.status === AVPlayerStatus.PLAYED) {
+        element.play()
+      }
+    }
   }
 
   private async handleEnded() {
