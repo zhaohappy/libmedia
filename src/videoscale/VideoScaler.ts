@@ -98,7 +98,7 @@ export default class VideoScaler {
   }
 
   public close() {
-    this.scaler.call('resample_destroy')
+    this.scaler.call('scale_destroy')
     this.scaler.destroy()
     this.scaler = null
   }

@@ -85,3 +85,7 @@ EM_PORT_API(int) scale_process(AVFrame* src, AVFrame* dst) {
 
   return 0;
 }
+
+EM_PORT_API(int) scale_destroy() {
+  sws_freeContext(sws_ctx);
+}

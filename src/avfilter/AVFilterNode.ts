@@ -30,8 +30,6 @@ import IPCPort, { NOTIFY, REQUEST, RpcMessage } from 'common/network/IPCPort'
 import * as is from 'common/util/is'
 
 export interface AVFilterNodeOptions {
-  inputCount: number
-  outputCount: number
   avframePool?: AVFramePool
 }
 
@@ -94,20 +92,25 @@ class AVFilterNodePort extends IPCPort {
 
 export default abstract class AVFilterNode {
 
-  private options: AVFilterNodeOptions
+  protected options: AVFilterNodeOptions
 
-  private inputAVFilterNodePort: AVFilterNodePort[]
-  private outputAVFilterNodePort: AVFilterNodePort[]
+  protected inputAVFilterNodePort: AVFilterNodePort[]
+  protected outputAVFilterNodePort: AVFilterNodePort[]
 
-  private inputInnerNodePort: IPCPort[]
-  private outputInnerNodePort: IPCPort[]
+  protected inputInnerNodePort: IPCPort[]
+  protected outputInnerNodePort: IPCPort[]
 
   private currentOutput: (pointer<AVFrame> | VideoFrame)[]
   private consumedCount: number
   private pending: { resolve: (data?: any) => void, reject: () => void }[]
 
-  constructor(options: AVFilterNodeOptions) {
+  protected inputCount: number
+  protected outputCount: number
+
+  constructor(options: AVFilterNodeOptions, inputCount: number, outputCount: number) {
     this.options = options
+    this.inputCount = inputCount
+    this.outputCount = outputCount
 
     this.inputAVFilterNodePort = []
     this.outputAVFilterNodePort = []
@@ -115,12 +118,12 @@ export default abstract class AVFilterNode {
     this.inputInnerNodePort = []
     this.outputInnerNodePort = []
 
-    for (let i = 0; i < options.inputCount; i++) {
+    for (let i = 0; i < this.inputCount; i++) {
       const port = new AVFilterNodePort()
       this.inputAVFilterNodePort.push(port)
       this.inputInnerNodePort.push(new IPCPort(port.getInnerPort()))
     }
-    for (let i = 0; i < options.outputCount; i++) {
+    for (let i = 0; i < this.outputCount; i++) {
       const port = new AVFilterNodePort()
       this.outputAVFilterNodePort.push(port)
       this.outputInnerNodePort.push(new IPCPort(port.getInnerPort()))
@@ -129,7 +132,7 @@ export default abstract class AVFilterNode {
     this.consumedCount = 0
     this.pending = []
 
-    for (let i = 0; i < options.outputCount; i++) {
+    for (let i = 0; i < this.outputCount; i++) {
       this.handlePull(this.outputInnerNodePort[i], i)
     }
   }
@@ -141,7 +144,7 @@ export default abstract class AVFilterNode {
           if (this.consumedCount === 0) {
             const input: (pointer<AVFrame> | VideoFrame)[] = []
             this.currentOutput.length = 0
-            for (let i = 0; i < this.options.inputCount; i++) {
+            for (let i = 0; i < this.inputCount; i++) {
               input.push(await this.inputInnerNodePort[i].request('pull'))
             }
 
@@ -166,7 +169,7 @@ export default abstract class AVFilterNode {
               this.pending.length = 0
             }
           }
-          else if (this.consumedCount === this.options.outputCount - 1) {
+          else if (this.consumedCount === this.outputCount - 1) {
             port.reply(request, this.currentOutput[index], null, is.number(this.currentOutput[index]) ? null : [this.currentOutput[index]])
             this.consumedCount = 0
             this.currentOutput.length = 0
@@ -194,5 +197,7 @@ export default abstract class AVFilterNode {
     return this.outputAVFilterNodePort[index]
   }
 
+  public abstract ready(): void | Promise<void>
+  public abstract destroy(): void | Promise<void>
   public abstract process(inputs: (pointer<AVFrame> | VideoFrame)[], outputs: (pointer<AVFrame> | VideoFrame)[]): void | Promise<void>
 }
