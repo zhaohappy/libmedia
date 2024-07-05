@@ -321,7 +321,7 @@ export default class MSEPipeline extends Pipeline {
       }
 
       // safari 播放某些视频会卡主，开始时间不是从 0 开始的 seek 到 min buffer 处
-      if (browser.safari || min > 0.2) {
+      if (browser.safari || min > 0.1) {
         task.controlIPCPort.notify('seek', {
           time: min
         })
