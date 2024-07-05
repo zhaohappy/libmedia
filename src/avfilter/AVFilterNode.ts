@@ -28,19 +28,20 @@ import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
 import { destroyAVFrame } from 'avutil/util/avframe'
 import IPCPort, { NOTIFY, REQUEST, RpcMessage } from 'common/network/IPCPort'
 import * as is from 'common/util/is'
+import * as array from 'common/util/array'
 
 export interface AVFilterNodeOptions {
   avframePool?: AVFramePool
 }
 
-class AVFilterNodePort extends IPCPort {
+export class AVFilterNodePort extends IPCPort {
 
-  private channel: MessageChannel
+  private channel: MessageChannel | MessagePort
 
   private next: AVFilterNodePort
 
-  constructor(channel: MessageChannel = new MessageChannel()) {
-    super(channel.port1)
+  constructor(channel: MessageChannel | MessagePort) {
+    super(channel instanceof MessageChannel ? channel.port1 : channel)
     this.channel = channel
   }
 
@@ -86,7 +87,9 @@ class AVFilterNodePort extends IPCPort {
   }
 
   public getInnerPort() {
-    return this.channel.port2
+    if (this.channel instanceof MessageChannel) {
+      return this.channel.port2
+    }
   }
 }
 
@@ -107,6 +110,9 @@ export default abstract class AVFilterNode {
   protected inputCount: number
   protected outputCount: number
 
+  private inputConnectedMap: Map<any, number>
+  private outputConnectedMap: Map<any, number>
+
   constructor(options: AVFilterNodeOptions, inputCount: number, outputCount: number) {
     this.options = options
     this.inputCount = inputCount
@@ -119,22 +125,26 @@ export default abstract class AVFilterNode {
     this.outputInnerNodePort = []
 
     for (let i = 0; i < this.inputCount; i++) {
-      const port = new AVFilterNodePort()
+      const port = new AVFilterNodePort(new MessageChannel())
       this.inputAVFilterNodePort.push(port)
       this.inputInnerNodePort.push(new IPCPort(port.getInnerPort()))
     }
     for (let i = 0; i < this.outputCount; i++) {
-      const port = new AVFilterNodePort()
+      const port = new AVFilterNodePort(new MessageChannel())
       this.outputAVFilterNodePort.push(port)
       this.outputInnerNodePort.push(new IPCPort(port.getInnerPort()))
     }
 
     this.consumedCount = 0
     this.pending = []
+    this.currentOutput = []
 
     for (let i = 0; i < this.outputCount; i++) {
       this.handlePull(this.outputInnerNodePort[i], i)
     }
+
+    this.inputConnectedMap = new Map()
+    this.outputConnectedMap = new Map()
   }
 
   private handlePull(port: IPCPort, index: number) {
@@ -152,7 +162,9 @@ export default abstract class AVFilterNode {
             
             input.forEach((frame) => {
               if (is.number(frame)) {
-                this.options.avframePool ? this.options.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(frame)) : destroyAVFrame(frame)
+                if (frame > 0) {
+                  this.options.avframePool ? this.options.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(frame)) : destroyAVFrame(frame)
+                }
               }
               else {
                 frame.close()
@@ -167,6 +179,10 @@ export default abstract class AVFilterNode {
                 item.resolve()
               })
               this.pending.length = 0
+            }
+            if (this.consumedCount === this.outputCount) {
+              this.consumedCount = 0
+              this.currentOutput.length = 0
             }
           }
           else if (this.consumedCount === this.outputCount - 1) {
@@ -195,6 +211,105 @@ export default abstract class AVFilterNode {
 
   public getOutputNodePort(index: number) {
     return this.outputAVFilterNodePort[index]
+  }
+
+  public getInputCount() {
+    return this.inputCount
+  }
+
+  public getOutputCount() {
+    return this.outputCount
+  }
+
+  public getFreeInputNodePort() {
+
+    const used: number[] = []
+
+    this.inputConnectedMap.forEach((index, node) => {
+      used.push(index)
+    })
+
+    for (let i = 0; i < this.inputCount; i++) {
+      if (!array.has(used, i)) {
+        return {
+          index: i,
+          port: this.getInputNodePort(i)
+        }
+      }
+    }
+  }
+
+  public getFreeOutputNodePort() {
+
+    const used: number[] = []
+
+    this.outputConnectedMap.forEach((index, node) => {
+      used.push(index)
+    })
+
+    for (let i = 0; i < this.outputCount; i++) {
+      if (!array.has(used, i)) {
+        return {
+          index: i,
+          port: this.getOutputNodePort(i)
+        }
+      }
+    }
+  }
+
+  public addInputPeer(node: any, index: number) {
+    this.inputConnectedMap.set(node, index)
+  }
+
+  public removeInputPeer(node: any) {
+    this.inputConnectedMap.delete(node)
+  }
+
+  public addOutputPeer(node: any, index: number) {
+    this.outputConnectedMap.set(node, index)
+  }
+
+  public removeOutputPeer(node: any) {
+    this.outputConnectedMap.delete(node)
+  }
+
+  public connect(node: AVFilterNode) {
+    if (this.outputConnectedMap.size === this.outputCount) {
+      throw new Error('all output has connected')
+    }
+
+    const output = this.getFreeOutputNodePort()
+    const nextInput = node.getFreeInputNodePort()
+
+    if (!nextInput) {
+      throw new Error('next node all input has connected')
+    }
+    
+    output.port.connect(nextInput.port)
+
+    this.outputConnectedMap.set(node, output.index)
+    node.addInputPeer(this, nextInput.index)
+  }
+
+  private disconnectNode(node: any) {
+    if (!this.outputConnectedMap.has(node)) {
+      return
+    }
+    this.outputAVFilterNodePort[this.outputConnectedMap.get(node)].disconnect()
+    this.outputConnectedMap.delete(node)
+
+    if (node instanceof AVFilterNode) {
+      node.removeInputPeer(this)
+    }
+  }
+
+  public disconnect(node?: any) {
+    if (node) {
+      return this.disconnectNode(node)
+    }
+    this.outputConnectedMap.forEach((index, node) => {
+      this.disconnectNode(node)
+    })
   }
 
   public abstract ready(): void | Promise<void>
