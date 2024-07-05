@@ -158,8 +158,10 @@ export default class WebAudioEncoder {
   }
 
   public close() {
-    if (this.encoder?.state !== 'closed') {
-      this.encoder.close()
+    if (this.encoder) {
+      if (this.encoder.state !== 'closed') {
+        this.encoder.close()
+      }
     }
     this.encoder = null
   }
