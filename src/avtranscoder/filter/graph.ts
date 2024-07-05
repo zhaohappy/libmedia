@@ -9,19 +9,19 @@ type ConstructorParameters<T extends abstract new (...args: any) => any> =
 type FirstConstructorParameter<T extends abstract new (...args: any) => any> =
   ConstructorParameters<T>[0]
 
-export type GraphNodeType = 'resampler' | 'scale'
+export type GraphNodeType = 'resampler' | 'scaler'
 
 type GraphNodeType2AVFilterConstructor<T extends GraphNodeType> = 
   T extends 'resampler'
   ? typeof ResampleFilterNode
-  : T extends 'scale'
+  : T extends 'scaler'
   ? typeof ScaleFilterNode
   : never
 
 type GraphNodeType2AVFilter<T extends GraphNodeType> = 
   T extends 'resampler'
   ? ResampleFilterNode
-  : T extends 'scale'
+  : T extends 'scaler'
   ? ScaleFilterNode
   : never
 
@@ -66,8 +66,8 @@ function createFilter(vertex: AVFilterGraphDesVertex<GraphNodeType>, avframePool
   switch (vertex.type) {
     case 'resampler':
       return new ResampleFilterNode(options as AVFilterGraphFilterOptions<'resampler'>)
-    case 'scale':
-      return new ScaleFilterNode(options as AVFilterGraphFilterOptions<'scale'>)
+    case 'scaler':
+      return new ScaleFilterNode(options as AVFilterGraphFilterOptions<'scaler'>)
     default:
       throw new Error(`invalid GraphNodeType, ${vertex.type}`)
   }

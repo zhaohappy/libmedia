@@ -1228,7 +1228,7 @@ export default class AVTranscoder extends Emitter {
         logger.fatal('scaler not found')
       }
 
-      const scaleNode = createGraphDesVertex('scale', {
+      const scaleNode = createGraphDesVertex('scaler', {
         resource: scalerResource,
         output: {
           width: newStream.codecpar.width,
