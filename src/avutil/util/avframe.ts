@@ -124,7 +124,7 @@ export function getVideoBuffer(frame: pointer<AVFrame>, algin: int32 = 0) {
       algin = 32
     }
 
-    for (let i = 0; i < algin; i += i) {
+    for (let i = 1; i < algin; i += i) {
       ret = pixelFillLinesizes(addressof(frame.linesize), frame.format, alignFunc(frame.width, i))
 
       if (ret < 0) {
@@ -188,8 +188,8 @@ export function getVideoBuffer(frame: pointer<AVFrame>, algin: int32 = 0) {
   return 0
 
   function defer() {
-    stack.free(stack.malloc(sizeof(int32) * 4))
-    stack.free(stack.malloc(stack.malloc(sizeof(size) * 4)))
+    stack.free(sizeof(int32) * 4)
+    stack.free(sizeof(size) * 4)
   }
 }
 

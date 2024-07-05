@@ -27,8 +27,9 @@ import AVFrame from '../struct/avframe'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
 import { mapUint8Array } from 'cheap/std/memory'
 import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
+import { getHeapU8 } from 'cheap/heap'
 
-function mapFormat(format: VideoPixelFormat) {
+export function mapFormat(format: VideoPixelFormat) {
   switch (format) {
     case 'BGRA':
       return AVPixelFormat.AV_PIX_FMT_BGRA
@@ -110,18 +111,27 @@ export function videoFrame2AVFrame(videoFrame: VideoFrame, avframe: pointer<AVFr
   avframe.colorTrc = mapColorTrc(videoFrame.colorSpace.transfer)
   avframe.colorRange = videoFrame.colorSpace.fullRange ? AVColorRange.AVCOL_RANGE_JPEG : AVColorRange.AVCOL_RANGE_MPEG
 
+  if (videoFrame.visibleRect) {
+    avframe.cropLeft = videoFrame.visibleRect.left
+    avframe.cropRight = videoFrame.visibleRect.right
+    avframe.cropTop = videoFrame.visibleRect.top
+    avframe.cropBottom = videoFrame.visibleRect.bottom
+  }
+
   getVideoBuffer(avframe)
 
   const des = PixelFormatDescriptorsMap[avframe.format as AVPixelFormat]
   const layout: PlaneLayout[] = []
-  for (let i = 1; i < des.nbComponents; i++) {
-    layout.push({
-      offset: avframe.data[i] - avframe.buf[0].data,
-      stride: avframe.linesize[i]
-    })
+  for (let i = 0; i < des.nbComponents; i++) {
+    if (des.comp[i].plane >= i) {
+      layout.push({
+        offset: avframe.data[i],
+        stride: avframe.linesize[i]
+      })
+    }
   }
 
-  videoFrame.copyTo(mapUint8Array(avframe.buf[0].data, avframe.buf[0].size), {
+  videoFrame.copyTo(getHeapU8(), {
     layout
   })
 

@@ -47,7 +47,7 @@ function getMaxPixSteps(desc: PixelFormatDescriptor) {
   const maxPixStepsComps: int32[] = [0, 0, 0, 0]
 
   for (let i = 0; i < 4; i++) {
-    if (desc.comp[i].step > maxPixSteps[desc.comp[i].plane]) {
+    if (desc.comp[i] && desc.comp[i].step > maxPixSteps[desc.comp[i].plane]) {
       maxPixSteps[desc.comp[i].plane] = desc.comp[i].step
       maxPixStepsComps[desc.comp[i].plane] = i
     }
@@ -178,7 +178,9 @@ export function pixelFillPlaneSizes(sizes: pointer<int32>, pixfmt: AVPixelFormat
   }
 
   for (let i = 0; i < 4; i++) {
-    hasPlane[desc.comp[i].plane] = 1
+    if (desc.comp[i]) {
+      hasPlane[desc.comp[i].plane] = 1
+    }
   }
 
   for (let i = 0; i < 4 && hasPlane[i]; i++) {
@@ -241,8 +243,8 @@ export function pixelFillPointer(
   return ret
 
   function defer() {
-    stack.free(stack.malloc(sizeof(linesizes[0]) * 4))
-    stack.free(stack.malloc(stack.malloc(sizeof(size) * 4)))
+    stack.free(sizeof(linesizes[0]) * 4)
+    stack.free(sizeof(size) * 4)
   }
 }
 
@@ -324,8 +326,8 @@ export function pixelAlloc(
   return ret
 
   function defer() {
-    stack.free(stack.malloc(sizeof(linesizes[0]) * 4))
-    stack.free(stack.malloc(stack.malloc(sizeof(size) * 4)))
+    stack.free(sizeof(linesizes[0]) * 4)
+    stack.free(sizeof(size) * 4)
   }
 }
 
@@ -371,9 +373,9 @@ export function pixelGetSize(pixfmt: AVPixelFormat, width: int32, height: int32,
   return totalSize
 
   function defer() {
-    stack.free(stack.malloc(sizeof(int32) * 4))
-    stack.free(stack.malloc(stack.malloc(sizeof(int32) * 4)))
-    stack.free(stack.malloc(stack.malloc(sizeof(size) * 4)))
+    stack.free(sizeof(int32) * 4)
+    stack.free(sizeof(int32) * 4)
+    stack.free(sizeof(size) * 4)
   }
 }
 

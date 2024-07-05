@@ -137,7 +137,13 @@ export function avframe2VideoFrame(avframe: pointer<AVFrame>, timeBase?: Rationa
     format: avPixelFormat2Format(avframe.format),
     duration: static_cast<double>(timeBase ? avRescaleQ(avframe.duration, timeBase, AV_TIME_BASE_Q) : avframe.duration),
     layout,
-    colorSpace: getVideoColorSpaceInit(avframe)
+    colorSpace: getVideoColorSpaceInit(avframe),
+    visibleRect: {
+      x: avframe.cropLeft,
+      y: avframe.cropTop,
+      width: avframe.width - (avframe.cropLeft + avframe.cropRight),
+      height: avframe.height - (avframe.cropTop + avframe.cropBottom)
+    }
   }
 
   return new VideoFrame(getHeapU8(), init)
