@@ -116,13 +116,18 @@ EM_PORT_API(int) resample_set_output_parameters(int samplerate, int nb_channels,
 }
 
 EM_PORT_API(int) resample_process(uint8_t **input, struct PCMBuffer* output, int nb_samples) {
+
+  if (!output) {
+    return -1;
+  }
+
   int dst_nb_samples = av_rescale_rnd((first_input ? 0 : swr_get_delay(swr_ctx, src_samplerate)) +
                                         nb_samples, dst_samplerate, src_samplerate, AV_ROUND_UP);
   
   first_input = 0;
 
   int ret;
-  if (!output || output->maxnbSamples < dst_nb_samples) {
+  if (output->maxnbSamples < dst_nb_samples) {
     if (output->data) {
       av_freep(&output->data[0]);
       av_freep(&output->data);
