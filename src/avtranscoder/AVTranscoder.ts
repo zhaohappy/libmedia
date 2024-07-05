@@ -79,9 +79,13 @@ import * as vvc from 'avformat/codecs/vvc'
 import * as av1 from 'avformat/codecs/av1'
 import * as vp9 from 'avformat/codecs/vp9'
 import Sleep from 'common/timer/Sleep'
+import AVFilterPipeline from './filter/AVFilterPipeline'
+import { createGraphDesVertex } from './filter/graph'
+import { AVSampleFormat } from 'avutil/audiosamplefmt'
+import { AVPixelFormat } from 'avutil/pixfmt'
 
 export interface AVTranscoderOptions {
-  getWasm: (type: 'decoder' | 'resampler' | 'encoder', codec?: AVCodecID) => string | ArrayBuffer | WebAssemblyResource
+  getWasm: (type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codec?: AVCodecID) => string | ArrayBuffer | WebAssemblyResource
   enableHardware?: boolean
 }
 
@@ -191,6 +195,8 @@ interface SelfTask {
     output?: AVStreamInterface
     demuxer2DecoderChannel?: MessageChannel
     decoder2EncoderChannel?: MessageChannel
+    decoder2FilterChannel?: MessageChannel
+    filter2EncoderChannel?: MessageChannel
     encoder2MuxerChannel?: MessageChannel
     demuxer2MuxerChannel?: MessageChannel
   }[]
@@ -220,11 +226,14 @@ export default class AVTranscoder extends Emitter {
   // 下面的线程所有 AVPlayer 实例共享
   private IOThread: Thread<IOPipeline>
   private DemuxerThread: Thread<DemuxPipeline>
-  private AudioDecoderThread: Thread<AudioDecodePipeline>
-  private AudioEncoderThread: Thread<AudioEncodePipeline>
   private MuxThread: Thread<MuxPipeline>
 
+  private AudioDecoderThread: Thread<AudioDecodePipeline>
+  private AudioFilterThread: Thread<AVFilterPipeline>
+  private AudioEncoderThread: Thread<AudioEncodePipeline>
+
   private VideoDecoderThread: Thread<VideoDecodePipeline>
+  private VideoFilterThread: Thread<AVFilterPipeline>
   private VideoEncoderThread: Thread<VideoEncodePipeline>
 
   // AVTranscoder 各个线程间共享的数据
@@ -275,6 +284,12 @@ export default class AVTranscoder extends Emitter {
       }).run()
       this.VideoDecoderThread.setLogLevel(this.level)
 
+      this.VideoFilterThread = await createThreadFromClass(AVFilterPipeline, {
+        name: 'VideoFilterThread',
+        disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
+      }).run()
+      this.VideoFilterThread.setLogLevel(this.level)
+
       this.VideoEncoderThread = await createThreadFromClass(VideoEncodePipeline, {
         name: 'VideoEncoderThread',
         disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
@@ -294,6 +309,12 @@ export default class AVTranscoder extends Emitter {
         disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
       }).run()
       this.AudioDecoderThread.setLogLevel(this.level)
+
+      this.AudioFilterThread = await createThreadFromClass(AVFilterPipeline, {
+        name: 'AudioFilterThread',
+        disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
+      }).run()
+      this.AudioFilterThread.setLogLevel(this.level)
 
       this.AudioEncoderThread = await createThreadFromClass(AudioEncodePipeline, {
         name: 'AudioEncoderThread',
@@ -746,8 +767,10 @@ export default class AVTranscoder extends Emitter {
     }
     else {
       const demuxer2DecoderChannel = new MessageChannel()
-      const decoder2EncoderChannel = new MessageChannel()
       const encoder2MuxerChannel = new MessageChannel()
+
+      const decoder2FilterChannel = new MessageChannel()
+      const filter2EncoderChannel = new MessageChannel()
 
       const newStream = this.copyAVStreamInterface(stream)
       const taskId = generateUUID()
@@ -843,12 +866,12 @@ export default class AVTranscoder extends Emitter {
 
       // 注册一个音频解码任务
       await this.AudioDecoderThread.registerTask
-        .transfer(demuxer2DecoderChannel.port2, decoder2EncoderChannel.port1)
+        .transfer(demuxer2DecoderChannel.port2, decoder2FilterChannel.port1)
         .invoke({
           taskId: taskId,
           resource: decoderResource,
           leftPort: demuxer2DecoderChannel.port2,
-          rightPort: decoder2EncoderChannel.port1,
+          rightPort: decoder2FilterChannel.port1,
           stats: addressof(task.stats),
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
@@ -861,6 +884,58 @@ export default class AVTranscoder extends Emitter {
         })
 
       await this.AudioDecoderThread.open(taskId, stream.codecpar)
+
+      const resamplerResourceUrl = this.options.getWasm('resampler')
+
+      let resamplerResource: WebAssemblyResource
+
+      if (resamplerResourceUrl) {
+        if (is.string(resamplerResourceUrl) || is.arrayBuffer(resamplerResourceUrl)) {
+          resamplerResource = await compile({
+            source: resamplerResourceUrl
+          })
+        }
+        else {
+          resamplerResource = resamplerResourceUrl
+        }
+      }
+      else {
+        logger.fatal('resampler not found')
+      }
+
+      const resampleNode = createGraphDesVertex('resampler', {
+        resource: resamplerResource,
+        output: {
+          channels: newStream.codecpar.chLayout.nbChannels,
+          sampleRate: newStream.codecpar.sampleRate,
+          format: newStream.codecpar.format as AVSampleFormat
+        }
+      })
+
+      await this.AudioFilterThread.registerTask
+      .transfer(decoder2FilterChannel.port2, filter2EncoderChannel.port1)
+      .invoke({
+        taskId: taskId,
+        graph: {
+          vertices: [resampleNode],
+          edges: []
+        },
+        inputPorts: [
+          {
+            id: resampleNode.id,
+            port: decoder2FilterChannel.port2
+          }
+        ],
+        outputPorts: [
+          {
+            id: resampleNode.id,
+            port: filter2EncoderChannel.port1
+          }
+        ],
+        stats: addressof(task.stats),
+        avframeList: addressof(this.GlobalData.avframeList),
+        avframeListMutex: addressof(this.GlobalData.avframeListMutex),
+      })
       
       const encoderWasmUrl = this.options.getWasm('encoder', newStream.codecpar.codecId)
       let encoderResource: WebAssemblyResource
@@ -908,11 +983,11 @@ export default class AVTranscoder extends Emitter {
 
       // 注册一个音频编码任务
       await this.AudioEncoderThread.registerTask
-        .transfer(decoder2EncoderChannel.port2, encoder2MuxerChannel.port1)
+        .transfer(filter2EncoderChannel.port2, encoder2MuxerChannel.port1)
         .invoke({
           taskId: taskId,
           resource: encoderResource,
-          leftPort: decoder2EncoderChannel.port2,
+          leftPort: filter2EncoderChannel.port2,
           rightPort: encoder2MuxerChannel.port1,
           stats: addressof(task.stats),
           avpacketList: addressof(this.GlobalData.avpacketList),
@@ -931,7 +1006,8 @@ export default class AVTranscoder extends Emitter {
         input: stream,
         output: newStream,
         demuxer2DecoderChannel,
-        decoder2EncoderChannel,
+        decoder2FilterChannel,
+        filter2EncoderChannel,
         encoder2MuxerChannel
       })
     }
@@ -959,8 +1035,10 @@ export default class AVTranscoder extends Emitter {
     }
     else {
       const demuxer2DecoderChannel = new MessageChannel()
-      const decoder2EncoderChannel = new MessageChannel()
       const encoder2MuxerChannel = new MessageChannel()
+
+      const decoder2FilterChannel = new MessageChannel()
+      const filter2EncoderChannel = new MessageChannel()
 
       const newStream = this.copyAVStreamInterface(stream)
 
@@ -1117,12 +1195,12 @@ export default class AVTranscoder extends Emitter {
 
       // 注册一个视频解码任务
       await this.VideoDecoderThread.registerTask
-        .transfer(demuxer2DecoderChannel.port2, decoder2EncoderChannel.port1)
+        .transfer(demuxer2DecoderChannel.port2, decoder2FilterChannel.port1)
         .invoke({
           taskId: taskId,
           resource: decoderResource,
           leftPort: demuxer2DecoderChannel.port2,
-          rightPort: decoder2EncoderChannel.port1,
+          rightPort: decoder2FilterChannel.port1,
           stats: addressof(task.stats),
           enableHardware: this.options.enableHardware,
           avpacketList: addressof(this.GlobalData.avpacketList),
@@ -1131,6 +1209,58 @@ export default class AVTranscoder extends Emitter {
           avframeListMutex: addressof(this.GlobalData.avframeListMutex)
         })
       await this.VideoDecoderThread.open(taskId, stream.codecpar)
+
+      const scalerResourceUrl = this.options.getWasm('scaler')
+
+      let scalerResource: WebAssemblyResource
+
+      if (scalerResourceUrl) {
+        if (is.string(scalerResourceUrl) || is.arrayBuffer(scalerResourceUrl)) {
+          scalerResource = await compile({
+            source: scalerResourceUrl
+          })
+        }
+        else {
+          scalerResource = scalerResourceUrl
+        }
+      }
+      else {
+        logger.fatal('scaler not found')
+      }
+
+      const scaleNode = createGraphDesVertex('scale', {
+        resource: scalerResource,
+        output: {
+          width: newStream.codecpar.width,
+          height: newStream.codecpar.height,
+          format: newStream.codecpar.format as AVPixelFormat
+        }
+      })
+
+      await this.AudioFilterThread.registerTask
+      .transfer(decoder2FilterChannel.port2, filter2EncoderChannel.port1)
+      .invoke({
+        taskId: taskId,
+        graph: {
+          vertices: [scaleNode],
+          edges: []
+        },
+        inputPorts: [
+          {
+            id: scaleNode.id,
+            port: decoder2FilterChannel.port2
+          }
+        ],
+        outputPorts: [
+          {
+            id: scaleNode.id,
+            port: filter2EncoderChannel.port1
+          }
+        ],
+        stats: addressof(task.stats),
+        avframeList: addressof(this.GlobalData.avframeList),
+        avframeListMutex: addressof(this.GlobalData.avframeListMutex),
+      })
       
       const encoderWasmUrl = this.options.getWasm('encoder', newStream.codecpar.codecId)
       let encoderResource: WebAssemblyResource
@@ -1176,11 +1306,11 @@ export default class AVTranscoder extends Emitter {
 
       // 注册一个视频编码任务
       await this.VideoEncoderThread.registerTask
-        .transfer(decoder2EncoderChannel.port2, encoder2MuxerChannel.port1)
+        .transfer(filter2EncoderChannel.port2, encoder2MuxerChannel.port1)
         .invoke({
           taskId: taskId,
           resource: encoderResource,
-          leftPort: decoder2EncoderChannel.port2,
+          leftPort: filter2EncoderChannel.port2,
           rightPort: encoder2MuxerChannel.port1,
           stats: addressof(task.stats),
           enableHardware: this.options.enableHardware,
@@ -1200,7 +1330,8 @@ export default class AVTranscoder extends Emitter {
         input: stream,
         output: newStream,
         demuxer2DecoderChannel,
-        decoder2EncoderChannel,
+        decoder2FilterChannel,
+        filter2EncoderChannel,
         encoder2MuxerChannel
       })
     }
@@ -1228,10 +1359,12 @@ export default class AVTranscoder extends Emitter {
       if (task.streams[i].taskId) {
         if (task.streams[i].input.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
           await this.AudioEncoderThread.unregisterTask(task.streams[i].taskId)
+          await this.AudioFilterThread.unregisterTask(task.streams[i].taskId)
           await this.AudioDecoderThread.unregisterTask(task.streams[i].taskId)
         }
         else if (task.streams[i].input.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
           await this.VideoEncoderThread.unregisterTask(task.streams[i].taskId)
+          await this.VideoFilterThread.unregisterTask(task.streams[i].taskId)
           await this.VideoDecoderThread.unregisterTask(task.streams[i].taskId)
         }
       }
@@ -1391,6 +1524,10 @@ export default class AVTranscoder extends Emitter {
       await this.AudioEncoderThread.clear()
       closeThread(this.AudioEncoderThread)
     }
+    if (this.AudioFilterThread) {
+      await this.AudioFilterThread.clear()
+      closeThread(this.AudioFilterThread)
+    }
     if (this.AudioDecoderThread) {
       await this.AudioDecoderThread.clear()
       closeThread(this.AudioDecoderThread)
@@ -1398,6 +1535,10 @@ export default class AVTranscoder extends Emitter {
     if (this.VideoEncoderThread) {
       await this.VideoEncoderThread.clear()
       closeThread(this.VideoEncoderThread)
+    }
+    if (this.VideoFilterThread) {
+      await this.VideoFilterThread.clear()
+      closeThread(this.VideoFilterThread)
     }
     if (this.VideoDecoderThread) {
       await this.VideoDecoderThread.clear()
@@ -1413,8 +1554,10 @@ export default class AVTranscoder extends Emitter {
     }
 
     this.VideoEncoderThread = null
+    this.VideoFilterThread = null
     this.VideoDecoderThread = null
     this.AudioEncoderThread = null
+    this.AudioFilterThread = null
     this.AudioDecoderThread = null
     this.DemuxerThread = null
     this.IOThread = null
@@ -1452,11 +1595,17 @@ export default class AVTranscoder extends Emitter {
     if (this.AudioDecoderThread) {
       this.AudioDecoderThread.setLogLevel(level)
     }
+    if (this.AudioFilterThread) {
+      this.AudioFilterThread.setLogLevel(level)
+    }
     if (this.AudioEncoderThread) {
       this.AudioEncoderThread.setLogLevel(level)
     }
     if (this.VideoDecoderThread) {
       this.VideoDecoderThread.setLogLevel(level)
+    }
+    if (this.VideoFilterThread) {
+      this.VideoFilterThread.setLogLevel(level)
     }
     if (this.VideoEncoderThread) {
       this.VideoEncoderThread.setLogLevel(level)
