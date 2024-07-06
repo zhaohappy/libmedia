@@ -14,7 +14,7 @@
 
 #### Source
 
-[avplayer/AVPlayer.ts:152](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avplayer/AVPlayer.ts#L152)
+[avplayer/AVPlayer.ts:128](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L128)
 
 ***
 
@@ -24,7 +24,7 @@
 
 #### Source
 
-[avplayer/AVPlayer.ts:151](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avplayer/AVPlayer.ts#L151)
+[avplayer/AVPlayer.ts:127](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L127)
 
 ***
 
@@ -34,7 +34,7 @@
 
 #### Source
 
-[avplayer/AVPlayer.ts:146](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avplayer/AVPlayer.ts#L146)
+[avplayer/AVPlayer.ts:122](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L122)
 
 ***
 
@@ -44,7 +44,7 @@
 
 #### Source
 
-[avplayer/AVPlayer.ts:145](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avplayer/AVPlayer.ts#L145)
+[avplayer/AVPlayer.ts:121](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L121)
 
 ***
 
@@ -54,7 +54,7 @@
 
 #### Source
 
-[avplayer/AVPlayer.ts:149](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avplayer/AVPlayer.ts#L149)
+[avplayer/AVPlayer.ts:125](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L125)
 
 ***
 
@@ -64,7 +64,7 @@
 
 #### Source
 
-[avplayer/AVPlayer.ts:148](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avplayer/AVPlayer.ts#L148)
+[avplayer/AVPlayer.ts:124](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L124)
 
 ***
 
@@ -74,7 +74,7 @@
 
 #### Source
 
-[avplayer/AVPlayer.ts:147](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avplayer/AVPlayer.ts#L147)
+[avplayer/AVPlayer.ts:123](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L123)
 
 ***
 
@@ -84,7 +84,7 @@
 
 #### Source
 
-[avplayer/AVPlayer.ts:150](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avplayer/AVPlayer.ts#L150)
+[avplayer/AVPlayer.ts:126](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L126)
 
 ***
 
@@ -94,4 +94,4 @@
 
 #### Source
 
-[avplayer/AVPlayer.ts:144](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avplayer/AVPlayer.ts#L144)
+[avplayer/AVPlayer.ts:120](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L120)

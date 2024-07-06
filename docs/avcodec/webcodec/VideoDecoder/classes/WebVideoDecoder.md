@@ -22,7 +22,7 @@
 
 #### Source
 
-[avcodec/webcodec/VideoDecoder.ts:60](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/webcodec/VideoDecoder.ts#L60)
+[avcodec/webcodec/VideoDecoder.ts:61](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoDecoder.ts#L61)
 
 ## Methods
 
@@ -36,7 +36,7 @@
 
 #### Source
 
-[avcodec/webcodec/VideoDecoder.ts:250](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/webcodec/VideoDecoder.ts#L250)
+[avcodec/webcodec/VideoDecoder.ts:248](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoDecoder.ts#L248)
 
 ***
 
@@ -54,7 +54,7 @@
 
 #### Source
 
-[avcodec/webcodec/VideoDecoder.ts:186](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/webcodec/VideoDecoder.ts#L186)
+[avcodec/webcodec/VideoDecoder.ts:187](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoDecoder.ts#L187)
 
 ***
 
@@ -68,7 +68,7 @@
 
 #### Source
 
-[avcodec/webcodec/VideoDecoder.ts:234](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/webcodec/VideoDecoder.ts#L234)
+[avcodec/webcodec/VideoDecoder.ts:232](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoDecoder.ts#L232)
 
 ***
 
@@ -82,7 +82,7 @@
 
 #### Source
 
-[avcodec/webcodec/VideoDecoder.ts:267](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/webcodec/VideoDecoder.ts#L267)
+[avcodec/webcodec/VideoDecoder.ts:265](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoDecoder.ts#L265)
 
 ***
 
@@ -100,7 +100,7 @@
 
 #### Source
 
-[avcodec/webcodec/VideoDecoder.ts:137](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/webcodec/VideoDecoder.ts#L137)
+[avcodec/webcodec/VideoDecoder.ts:138](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoDecoder.ts#L138)
 
 ***
 
@@ -118,4 +118,4 @@
 
 #### Source
 
-[avcodec/webcodec/VideoDecoder.ts:271](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/webcodec/VideoDecoder.ts#L271)
+[avcodec/webcodec/VideoDecoder.ts:269](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoDecoder.ts#L269)

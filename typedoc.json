@@ -3,6 +3,7 @@
   "name": "libmedia",
   "entryPoints": [
     "src/avplayer/AVPlayer.ts",
+    "src/avtranscoder/AVTranscoder.ts",
 
     "src/avformat/AVFormatContext.ts",
     "src/avformat/AVStream.ts",
@@ -41,11 +42,14 @@
     "src/avnetwork/ioLoader/DashIOLoader.ts",
 
     "src/avpipeline/AudioDecodePipeline.ts",
+    "src/avpipeline/AudioEncodePipeline.ts",
     "src/avpipeline/AudioRenderPipeline.ts",
     "src/avpipeline/VideoDecodePipeline.ts",
+    "src/avpipeline/VideoEncodePipeline.ts",
     "src/avpipeline/VideoRenderPipeline.ts",
     "src/avpipeline/IOPipeline.ts",
     "src/avpipeline/DemuxPipeline.ts",
+    "src/avpipeline/MuxPipeline.ts",
 
     "src/avutil/struct/avpacket.ts",
     "src/avutil/struct/avframe.ts",

@@ -41,7 +41,7 @@ FFmpeg AVPacket 定义
 
 #### Source
 
-[avutil/struct/avpacket.ts:163](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L163)
+[avutil/struct/avpacket.ts:163](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L163)
 
 ***
 
@@ -59,7 +59,7 @@ May be NULL, then the packet data is not reference-counted.
 
 #### Source
 
-[avutil/struct/avpacket.ts:90](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L90)
+[avutil/struct/avpacket.ts:90](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L90)
 
 ***
 
@@ -73,7 +73,7 @@ May be NULL, then the packet data is not reference-counted.
 
 #### Source
 
-[avutil/struct/avpacket.ts:110](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L110)
+[avutil/struct/avpacket.ts:110](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L110)
 
 ***
 
@@ -91,7 +91,7 @@ Can be AV_NOPTS_VALUE if it is not stored in the file.
 
 #### Source
 
-[avutil/struct/avpacket.ts:108](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L108)
+[avutil/struct/avpacket.ts:108](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L108)
 
 ***
 
@@ -108,7 +108,7 @@ Equals next_pts - this_pts in presentation order.
 
 #### Source
 
-[avutil/struct/avpacket.ts:132](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L132)
+[avutil/struct/avpacket.ts:132](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L132)
 
 ***
 
@@ -116,7 +116,11 @@ Equals next_pts - this_pts in presentation order.
 
 > **flags**: `int32` = `0`
 
-A combination of AV_PKT_FLAG values
+A combination of
+
+#### AVPacket Flags
+
+values
 
 #### Inherited from
 
@@ -124,7 +128,7 @@ A combination of AV_PKT_FLAG values
 
 #### Source
 
-[avutil/struct/avpacket.ts:119](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L119)
+[avutil/struct/avpacket.ts:119](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L119)
 
 ***
 
@@ -140,7 +144,7 @@ for some private data of the user
 
 #### Source
 
-[avutil/struct/avpacket.ts:139](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L139)
+[avutil/struct/avpacket.ts:139](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L139)
 
 ***
 
@@ -162,7 +166,7 @@ purpose.
 
 #### Source
 
-[avutil/struct/avpacket.ts:150](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L150)
+[avutil/struct/avpacket.ts:150](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L150)
 
 ***
 
@@ -176,7 +180,7 @@ purpose.
 
 #### Source
 
-[avutil/struct/avpacket.ts:134](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L134)
+[avutil/struct/avpacket.ts:134](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L134)
 
 ***
 
@@ -198,7 +202,7 @@ must be converted to true pts/dts before they are stored in AVPacket.
 
 #### Source
 
-[avutil/struct/avpacket.ts:101](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L101)
+[avutil/struct/avpacket.ts:101](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L101)
 
 ***
 
@@ -208,7 +212,7 @@ must be converted to true pts/dts before they are stored in AVPacket.
 
 #### Source
 
-[avutil/struct/avpacket.ts:168](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L168)
+[avutil/struct/avpacket.ts:168](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L168)
 
 ***
 
@@ -225,7 +229,7 @@ Packet can contain several types of side information.
 
 #### Source
 
-[avutil/struct/avpacket.ts:125](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L125)
+[avutil/struct/avpacket.ts:125](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L125)
 
 ***
 
@@ -239,7 +243,7 @@ Packet can contain several types of side information.
 
 #### Source
 
-[avutil/struct/avpacket.ts:126](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L126)
+[avutil/struct/avpacket.ts:126](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L126)
 
 ***
 
@@ -253,7 +257,7 @@ Packet can contain several types of side information.
 
 #### Source
 
-[avutil/struct/avpacket.ts:112](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L112)
+[avutil/struct/avpacket.ts:112](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L112)
 
 ***
 
@@ -267,7 +271,7 @@ Packet can contain several types of side information.
 
 #### Source
 
-[avutil/struct/avpacket.ts:114](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L114)
+[avutil/struct/avpacket.ts:114](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L114)
 
 ***
 
@@ -285,4 +289,4 @@ Packet can contain several types of side information.
 
 #### Source
 
-[avutil/struct/avpacket.ts:157](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avpacket.ts#L157)
+[avutil/struct/avpacket.ts:157](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L157)

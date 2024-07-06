@@ -14,7 +14,6 @@
 
 ### Interfaces
 
-- [AVStreamInterface](interfaces/AVStreamInterface.md)
 - [DemuxTaskOptions](interfaces/DemuxTaskOptions.md)
 
 ### Variables

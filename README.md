@@ -45,7 +45,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 - AVPlayer 是 libmedia 的音视频播放器实现，支持软解、硬解、MSE；支持多种封装协议、多种编码格式。[在线 demo](https://zhaohappy.github.io/libmedia/test/avplayer.html)
 
 
-- AVTranscoder 是 libmedia 的转码工具实现，目前还未实现
+- AVTranscoder 是 libmedia 的转码工具实现
 
 ### API
 
@@ -90,9 +90,12 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 
 - [IOPipeline](./docs/avpipeline/IOPipeline/README.md)
 - [DemuxPipeline](./docs/avpipeline/DemuxPipeline/README.md)
+- [MuxPipeline](./docs/avpipeline/MuxPipeline/README.md)
 - [AudioDecodePipeline](./docs/avpipeline/AudioDecodePipeline/README.md)
+- [AudioEncodePipeline](./docs/avpipeline/AudioEncodePipeline/README.md)
 - [AudioRenderPipeline](./docs/avpipeline/AudioRenderPipeline/README.md)
 - [VideoDecodePipeline](./docs/avpipeline/VideoDecodePipeline/README.md)
+- [VideoEncodePipeline](./docs/avpipeline/VideoEncodePipeline/README.md)
 - [VideoRenderPipeline](./docs/avpipeline/VideoRenderPipeline/README.md)
 
 #### avnetwork
@@ -105,6 +108,10 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 #### avplayer
 
 - [AVPlayer](./docs/avplayer/AVPlayer/README.md)
+
+#### avtranscoder
+
+- [AVTranscoder](./docs/avtranscoder/AVTranscoder/README.md)
 
 #### avutil
 
@@ -141,7 +148,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 
 当前本项目只支持使用 webpack 进行编译打包
 
-下面介绍如何编译 AVPlayer 工具
+下面介绍如何编译 AVPlayer 和 AVTranscoder 工具
 
 ```shell
 
@@ -156,6 +163,9 @@ npm install
 
 # 编译 AVPlayer 开发版
 npm run build-avplayer-dev
+
+# 编译 AVTranscoder 开发版
+npm run build-avtranscoder-dev
 
 # 启动本地 http 服务
 # 任何一个 http 服务都行，若报 edp 找不到，可以全局安装: npm install edp -g

@@ -14,7 +14,7 @@
 
 #### Source
 
-[avutil/struct/avbuffer.ts:30](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avbuffer.ts#L30)
+[avutil/struct/avbuffer.ts:30](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avbuffer.ts#L30)
 
 ***
 
@@ -24,4 +24,4 @@
 
 #### Source
 
-[avutil/struct/avbuffer.ts:31](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avutil/struct/avbuffer.ts#L31)
+[avutil/struct/avbuffer.ts:31](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avbuffer.ts#L31)

@@ -26,7 +26,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:115](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L115)
+[avpipeline/AudioRenderPipeline.ts:116](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L116)
 
 ## Properties
 
@@ -40,7 +40,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:110](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L110)
+[avpipeline/AudioRenderPipeline.ts:110](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L110)
 
 ## Methods
 
@@ -60,7 +60,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:697](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L697)
+[avpipeline/AudioRenderPipeline.ts:699](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L699)
 
 ***
 
@@ -78,7 +78,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:598](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L598)
+[avpipeline/AudioRenderPipeline.ts:600](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L600)
 
 ***
 
@@ -96,7 +96,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:865](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L865)
+[avpipeline/AudioRenderPipeline.ts:867](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L867)
 
 ***
 
@@ -114,7 +114,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:779](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L779)
+[avpipeline/AudioRenderPipeline.ts:781](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L781)
 
 ***
 
@@ -132,7 +132,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/Pipeline.ts#L60)
+[avpipeline/Pipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L60)
 
 ***
 
@@ -150,7 +150,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:791](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L791)
+[avpipeline/AudioRenderPipeline.ts:793](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L793)
 
 ***
 
@@ -172,7 +172,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:821](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L821)
+[avpipeline/AudioRenderPipeline.ts:823](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L823)
 
 ***
 
@@ -190,7 +190,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:719](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L719)
+[avpipeline/AudioRenderPipeline.ts:721](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L721)
 
 ***
 
@@ -212,7 +212,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:56](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/Pipeline.ts#L56)
+[avpipeline/Pipeline.ts:56](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L56)
 
 ***
 
@@ -232,7 +232,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:587](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L587)
+[avpipeline/AudioRenderPipeline.ts:589](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L589)
 
 ***
 
@@ -252,7 +252,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:557](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L557)
+[avpipeline/AudioRenderPipeline.ts:559](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L559)
 
 ***
 
@@ -272,7 +272,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:576](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L576)
+[avpipeline/AudioRenderPipeline.ts:578](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L578)
 
 ***
 
@@ -294,7 +294,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:637](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L637)
+[avpipeline/AudioRenderPipeline.ts:639](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L639)
 
 ***
 
@@ -312,7 +312,7 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:806](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L806)
+[avpipeline/AudioRenderPipeline.ts:808](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L808)
 
 ***
 
@@ -334,4 +334,4 @@
 
 #### Source
 
-[avpipeline/AudioRenderPipeline.ts:828](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avpipeline/AudioRenderPipeline.ts#L828)
+[avpipeline/AudioRenderPipeline.ts:830](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioRenderPipeline.ts#L830)

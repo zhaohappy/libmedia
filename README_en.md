@@ -44,7 +44,7 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 - AVPlayer is libmedia's audio and video player implementation, supporting soft decoding, hard decoding, and MSE; it supports multiple encapsulation protocols and multiple encoding formats.[online demo](https://zhaohappy.github.io/libmedia/test/avplayer.html)
 
 
-- AVTranscoder is the transcoding tool implementation of libmedia, which is not yet implemented.
+- AVTranscoder is the transcoding tool implementation of libmedia
 
 ### API
 
@@ -89,9 +89,12 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 
 - [IOPipeline](./docs/avpipeline/IOPipeline/README.md)
 - [DemuxPipeline](./docs/avpipeline/DemuxPipeline/README.md)
+- [MuxPipeline](./docs/avpipeline/MuxPipeline/README.md)
 - [AudioDecodePipeline](./docs/avpipeline/AudioDecodePipeline/README.md)
+- [AudioEncodePipeline](./docs/avpipeline/AudioEncodePipeline/README.md)
 - [AudioRenderPipeline](./docs/avpipeline/AudioRenderPipeline/README.md)
 - [VideoDecodePipeline](./docs/avpipeline/VideoDecodePipeline/README.md)
+- [VideoEncodePipeline](./docs/avpipeline/VideoEncodePipeline/README.md)
 - [VideoRenderPipeline](./docs/avpipeline/VideoRenderPipeline/README.md)
 
 #### avnetwork
@@ -104,6 +107,10 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 #### avplayer
 
 - [AVPlayer](./docs/avplayer/AVPlayer/README.md)
+
+#### avtranscoder
+
+- [AVTranscoder](./docs/avtranscoder/AVTranscoder/README.md)
 
 #### avutil
 
@@ -140,7 +147,7 @@ If you want to integrate this project for development, it is recommended to use 
 
 Currently, this project only supports using webpack for compilation and packaging.
 
-Here's how to compile the AVPlayer tool
+Here's how to compile the AVPlayer and AVTranscoder tool
 
 ```shell
 
@@ -155,6 +162,9 @@ npm install
 
 # Compile AVPlayer with development mode
 npm run build-avplayer-dev
+
+# Compile AVTranscoder with development mode
+npm run build-avtranscoder-dev
 
 # Start local http service
 # Any http service will do. If it reports that edp cannot be found, you can install it globally use: npm install edp -g

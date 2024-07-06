@@ -34,6 +34,20 @@
 
 common/io/SafeFileIO.ts:8
 
+## Accessors
+
+### writeQueueSize
+
+> `get` **writeQueueSize**(): `number`
+
+#### Returns
+
+`number`
+
+#### Source
+
+common/io/SafeFileIO.ts:61
+
 ## Methods
 
 ### appendBufferByPosition()

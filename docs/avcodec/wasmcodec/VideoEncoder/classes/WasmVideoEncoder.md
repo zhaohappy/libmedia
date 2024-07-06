@@ -22,7 +22,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoEncoder.ts:58](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/wasmcodec/VideoEncoder.ts#L58)
+[avcodec/wasmcodec/VideoEncoder.ts:62](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoEncoder.ts#L62)
 
 ## Methods
 
@@ -36,7 +36,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoEncoder.ts:156](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/wasmcodec/VideoEncoder.ts#L156)
+[avcodec/wasmcodec/VideoEncoder.ts:177](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoEncoder.ts#L177)
 
 ***
 
@@ -56,7 +56,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoEncoder.ts:106](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/wasmcodec/VideoEncoder.ts#L106)
+[avcodec/wasmcodec/VideoEncoder.ts:119](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoEncoder.ts#L119)
 
 ***
 
@@ -70,17 +70,33 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoEncoder.ts:145](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/wasmcodec/VideoEncoder.ts#L145)
+[avcodec/wasmcodec/VideoEncoder.ts:156](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoEncoder.ts#L156)
+
+***
+
+### getExtraData()
+
+> **getExtraData**(): `Uint8Array`
+
+#### Returns
+
+`Uint8Array`
+
+#### Source
+
+[avcodec/wasmcodec/VideoEncoder.ts:167](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoEncoder.ts#L167)
 
 ***
 
 ### open()
 
-> **open**(`parameters`, `threadCount`): `Promise`\<`void`\>
+> **open**(`parameters`, `timeBase`, `threadCount`): `Promise`\<`void`\>
 
 #### Parameters
 
 • **parameters**: `pointer`\<[`AVCodecParameters`](../../../../avutil/struct/avcodecparameters/classes/AVCodecParameters.md)\>
+
+• **timeBase**: `Rational`
 
 • **threadCount**: `number`= `1`
 
@@ -90,4 +106,4 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoEncoder.ts:81](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/wasmcodec/VideoEncoder.ts#L81)
+[avcodec/wasmcodec/VideoEncoder.ts:91](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoEncoder.ts#L91)

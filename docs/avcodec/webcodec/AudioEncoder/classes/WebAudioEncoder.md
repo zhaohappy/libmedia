@@ -22,7 +22,7 @@
 
 #### Source
 
-[avcodec/webcodec/AudioEncoder.ts:56](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/webcodec/AudioEncoder.ts#L56)
+[avcodec/webcodec/AudioEncoder.ts:60](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/AudioEncoder.ts#L60)
 
 ## Methods
 
@@ -36,7 +36,7 @@
 
 #### Source
 
-[avcodec/webcodec/AudioEncoder.ts:159](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/webcodec/AudioEncoder.ts#L159)
+[avcodec/webcodec/AudioEncoder.ts:160](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/AudioEncoder.ts#L160)
 
 ***
 
@@ -54,7 +54,7 @@
 
 #### Source
 
-[avcodec/webcodec/AudioEncoder.ts:141](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/webcodec/AudioEncoder.ts#L141)
+[avcodec/webcodec/AudioEncoder.ts:139](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/AudioEncoder.ts#L139)
 
 ***
 
@@ -68,7 +68,21 @@
 
 #### Source
 
-[avcodec/webcodec/AudioEncoder.ts:155](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/webcodec/AudioEncoder.ts#L155)
+[avcodec/webcodec/AudioEncoder.ts:156](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/AudioEncoder.ts#L156)
+
+***
+
+### getExtraData()
+
+> **getExtraData**(): `Uint8Array`
+
+#### Returns
+
+`Uint8Array`
+
+#### Source
+
+[avcodec/webcodec/AudioEncoder.ts:169](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/AudioEncoder.ts#L169)
 
 ***
 
@@ -82,17 +96,19 @@
 
 #### Source
 
-[avcodec/webcodec/AudioEncoder.ts:164](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/webcodec/AudioEncoder.ts#L164)
+[avcodec/webcodec/AudioEncoder.ts:173](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/AudioEncoder.ts#L173)
 
 ***
 
 ### open()
 
-> **open**(`parameters`): `Promise`\<`void`\>
+> **open**(`parameters`, `timeBase`): `Promise`\<`void`\>
 
 #### Parameters
 
 • **parameters**: `pointer`\<[`AVCodecParameters`](../../../../avutil/struct/avcodecparameters/classes/AVCodecParameters.md)\>
+
+• **timeBase**: `Rational`
 
 #### Returns
 
@@ -100,4 +116,4 @@
 
 #### Source
 
-[avcodec/webcodec/AudioEncoder.ts:105](https://github.com/zhaohappy/libmedia/blob/83708827f1f74f03ced670ca9bc2d9d1e5e5366a/src/avcodec/webcodec/AudioEncoder.ts#L105)
+[avcodec/webcodec/AudioEncoder.ts:100](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/AudioEncoder.ts#L100)
