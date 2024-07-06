@@ -146,7 +146,11 @@ export default class Stats {
    * buffer 接收总字节数
    */
   bufferReceiveBytes: int64
-
+  /**
+   * buffer 总输出字节数
+   * 
+   */
+  bufferOutputBytes: int64
   /**
    * 音频码率
    */
@@ -222,4 +226,22 @@ export default class Stats {
    * 视频 codec string
    */
   videocodec: string
+
+  /**
+   * 首个 audio mux dts
+   */
+  firstAudioMuxDts: int64
+  /**
+   * 上一次 audio mux dts
+   */
+  lastAudioMuxDts: int64
+
+  /**
+   * 首个 audio mux dts
+   */
+  firstVideoMuxDts: int64
+  /**
+   * 上一次 video mux dts
+   */
+  lastVideoMuxDts: int64
 }

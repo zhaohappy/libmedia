@@ -44,6 +44,7 @@ import IOWriterSync from 'common/io/IOWriterSync'
 import { AVStreamInterface } from './interface'
 import { copyCodecParameters } from 'avutil/util/codecparameters'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import { AVMediaType } from 'avutil/codec'
 
 export interface MuxTaskOptions extends TaskOptions {
   format: AVFormat
@@ -202,6 +203,13 @@ export default class MuxPipeline extends Pipeline {
         else {
           avpacket.streamIndex = task.streams[i].stream.index
           task.streams[i].avpacket = avpacket
+          const currentDts = avRescaleQ(task.streams[i].avpacket.dts, task.streams[i].avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+          if (task.streams[i].stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+            task.stats.firstAudioMuxDts = currentDts
+          }
+          else if (task.streams[i].stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+            task.stats.firstVideoMuxDts = currentDts
+          }
         }
       }
       return mux.open(task.formatContext)
@@ -281,6 +289,7 @@ export default class MuxPipeline extends Pipeline {
         let avpacket: pointer<AVPacketRef> = nullptr
         let dts: int64 = NOPTS_VALUE_BIGINT
         let index = 0
+        let type: AVMediaType = AVMediaType.AVMEDIA_TYPE_UNKNOWN
 
         for (let i = 0; i < task.streams.length; i++) {
           if (task.streams[i].avpacket) {
@@ -289,13 +298,23 @@ export default class MuxPipeline extends Pipeline {
               avpacket = task.streams[i].avpacket
               dts = currentDts
               index = i
+              type = task.streams[i].stream.codecpar.codecType
             }
           }
         }
         if (avpacket) {
+          const now = task.formatContext.ioWriter.getPos()
           mux.writeAVPacket(task.formatContext, avpacket)
+          task.stats.bufferOutputBytes += task.formatContext.ioWriter.getPos() - now
           task.avpacketPool.release(avpacket)
           task.streams[index].avpacket = nullptr
+
+          if (type === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+            task.stats.lastAudioMuxDts = dts
+          }
+          else if (type === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+            task.stats.lastVideoMuxDts = dts
+          }
         }
         else {
           mux.writeTrailer(task.formatContext)

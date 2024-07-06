@@ -37,7 +37,7 @@ import List from 'cheap/std/collection/List'
 import { AVFrameRef } from 'avutil/struct/avframe'
 import { Mutex } from 'cheap/thread/mutex'
 import compile, { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import { AVFormat } from 'avformat/avformat'
+import { AVFormat, AVSeekFlags } from 'avformat/avformat'
 import * as urlUtils from 'common/util/url'
 import * as cheapConfig from 'cheap/config'
 import * as logger from 'common/util/logger'
@@ -80,13 +80,17 @@ import * as av1 from 'avformat/codecs/av1'
 import * as vp9 from 'avformat/codecs/vp9'
 import Sleep from 'common/timer/Sleep'
 import AVFilterPipeline from './filter/AVFilterPipeline'
-import { createGraphDesVertex } from './filter/graph'
+import { AVFilterGraphDesVertex, FilterGraphPortDes, GraphNodeType, createGraphDesVertex } from './filter/graph'
 import { AVSampleFormat } from 'avutil/audiosamplefmt'
 import { AVPixelFormat } from 'avutil/pixfmt'
+import getTimestamp from 'common/function/getTimestamp'
+import Timer from 'common/timer/Timer'
+import * as string from 'common/util/string'
 
 export interface AVTranscoderOptions {
   getWasm: (type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codec?: AVCodecID) => string | ArrayBuffer | WebAssemblyResource
   enableHardware?: boolean
+  onprogress?: (taskId: string, progress: number) => void
 }
 
 export interface TaskOptions {
@@ -179,6 +183,7 @@ export interface TaskOptions {
 
 interface SelfTask {
   taskId: string
+  startTime: number
   subTaskId?: string
   ext?: string
   options: TaskOptions
@@ -242,6 +247,8 @@ export default class AVTranscoder extends Emitter {
   private tasks: Map<string, SelfTask>
   private options: AVTranscoderOptions
 
+  private reportTimer: Timer
+
   constructor(options: AVTranscoderOptions) {
     super(true)
     this.options = object.extend({}, defaultAVTranscoderOptions, options)
@@ -252,7 +259,61 @@ export default class AVTranscoder extends Emitter {
     mutex.init(addressof(this.GlobalData.avframeListMutex))
     this.tasks = new Map()
 
+    this.reportTimer = new Timer(() => {
+      this.report()
+    }, 0, 1000)
+
     logger.info(`create transcoder`)
+  }
+
+  private report() {
+    this.tasks.forEach((task) => {
+      if (task.startTime) {
+        const frameCount = task.stats.videoPacketEncodeCount || task.stats.audioPacketEncodeCount
+        const time = (getTimestamp() - task.startTime)
+        let dts: int64 = 0n
+        let duration: int64 = 0n
+        if (task.stats.lastVideoMuxDts) {
+          const stream =  task.streams.find((s) => s.output.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
+          dts = task.stats.lastVideoMuxDts - task.stats.firstVideoMuxDts
+          if (stream.output) {
+            duration = avRescaleQ(stream.output.duration, accessof(stream.output.timeBase), AV_MILLI_TIME_BASE_Q)
+          }
+          else {
+            duration = avRescaleQ(stream.input.duration, accessof(stream.input.timeBase), AV_MILLI_TIME_BASE_Q)
+          }
+        }
+        if (task.stats.lastAudioMuxDts && !dts) {
+          const stream =  task.streams.find((s) => s.output.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO)
+          dts = task.stats.lastAudioMuxDts - task.stats.firstAudioMuxDts
+          if (stream) {
+            duration = avRescaleQ(stream.output.duration, accessof(stream.output.timeBase), AV_MILLI_TIME_BASE_Q)
+          }
+          else {
+            duration = avRescaleQ(stream.input.duration, accessof(stream.input.timeBase), AV_MILLI_TIME_BASE_Q)
+          }
+        }
+
+        const fps = (static_cast<double>(frameCount) / (time / 1000)).toFixed(2)
+        const ms = static_cast<int32>(dts % 1000n)
+        const secs = static_cast<int32>(dts / 1000n % 60n)
+        const mins = static_cast<int32>(dts / 1000n / 60n % 60n)
+        const hours = static_cast<int32>(dts / 1000n / 3600n)
+        const size = static_cast<double>(task.stats.bufferOutputBytes) / 1000
+        const bitrate = (dts ? size * 8 / (static_cast<double>(dts) / 1000) : 0).toFixed(2)
+        const speed = (static_cast<double>(dts) / 1000 / (time / 1000) || -1).toFixed(2)
+        let progress = duration ? ((static_cast<double>(dts) / static_cast<double>(duration) * 100)) : 0
+        if (progress > 100) {
+          progress = 100
+        }
+
+        logger.info(`[${task.taskId}] frame=${frameCount} fps=${fps} size=${size}kB time=${string.format('%02d:%02d:%02d.%03d', hours, mins, secs, ms)} bitrate=${bitrate}kbps speed=${speed}x progress=${progress.toFixed(2)}%`)
+
+        if (this.options.onprogress) {
+          this.options.onprogress(task.taskId, progress)
+        }
+      }
+    })
   }
 
   private async startDemuxPipeline() {
@@ -361,7 +422,7 @@ export default class AVTranscoder extends Emitter {
     logger.info('AVTranscoder pipelines started')
   }
 
-  private copyAVStreamInterface(stream: AVStreamInterface) {
+  private copyAVStreamInterface(task: SelfTask, stream: AVStreamInterface) {
     const newStream = object.extend({}, stream)
     newStream.codecpar = avMallocz(sizeof(AVCodecParameters))
     copyCodecParameters(newStream.codecpar, stream.codecpar)
@@ -373,6 +434,10 @@ export default class AVTranscoder extends Emitter {
       avFree(newStream.codecpar.extradata)
       newStream.codecpar.extradata = nullptr
       newStream.codecpar.extradataSize = 0
+    }
+
+    if (task.options.duration) {
+      newStream.duration = avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, accessof(newStream.timeBase))
     }
 
     return newStream
@@ -750,7 +815,7 @@ export default class AVTranscoder extends Emitter {
     if (audioConfig?.disable) {
       return
     }
-    else if (audioConfig?.codec === 'copy') {
+    else if (audioConfig?.codec === 'copy' && !(task.options.start || task.options.duration)) {
       const demuxer2MuxerChannel = new MessageChannel()
       await this.DemuxerThread.connectStreamTask
         .transfer(demuxer2MuxerChannel.port1)
@@ -772,7 +837,7 @@ export default class AVTranscoder extends Emitter {
       const decoder2FilterChannel = new MessageChannel()
       const filter2EncoderChannel = new MessageChannel()
 
-      const newStream = this.copyAVStreamInterface(stream)
+      const newStream = this.copyAVStreamInterface(task, stream)
       const taskId = generateUUID()
 
       if (audioConfig) {
@@ -903,6 +968,11 @@ export default class AVTranscoder extends Emitter {
         logger.fatal('resampler not found')
       }
 
+      const vertices: AVFilterGraphDesVertex<GraphNodeType>[] = []
+      const edges: { parent: number, child: number }[] = []
+      let input: FilterGraphPortDes
+      let output: FilterGraphPortDes
+
       const resampleNode = createGraphDesVertex('resampler', {
         resource: resamplerResource,
         output: {
@@ -911,27 +981,45 @@ export default class AVTranscoder extends Emitter {
           format: newStream.codecpar.format as AVSampleFormat
         }
       })
+      vertices.push(resampleNode)
+      input = {
+        id: resampleNode.id,
+        port: decoder2FilterChannel.port2
+      }
+      output = {
+        id: resampleNode.id,
+        port: filter2EncoderChannel.port1
+      }
+
+      if (task.options.start || task.options.duration) {
+        const start = avRescaleQ(static_cast<int64>(task.options.start || 0), AV_MILLI_TIME_BASE_Q, accessof(stream.timeBase))
+        const rangeNode = createGraphDesVertex('range', {
+          start: start,
+          end: task.options.duration
+            ? (avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, accessof(stream.timeBase)) + start)
+            : -1n
+        })
+        vertices.push(rangeNode)
+        input = {
+          id: rangeNode.id,
+          port: decoder2FilterChannel.port2
+        }
+        edges.push({
+          parent: rangeNode.id,
+          child: resampleNode.id
+        })
+      }
 
       await this.AudioFilterThread.registerTask
       .transfer(decoder2FilterChannel.port2, filter2EncoderChannel.port1)
       .invoke({
         taskId: taskId,
         graph: {
-          vertices: [resampleNode],
-          edges: []
+          vertices: vertices,
+          edges: edges
         },
-        inputPorts: [
-          {
-            id: resampleNode.id,
-            port: decoder2FilterChannel.port2
-          }
-        ],
-        outputPorts: [
-          {
-            id: resampleNode.id,
-            port: filter2EncoderChannel.port1
-          }
-        ],
+        inputPorts: [input],
+        outputPorts: [output],
         stats: addressof(task.stats),
         avframeList: addressof(this.GlobalData.avframeList),
         avframeListMutex: addressof(this.GlobalData.avframeListMutex),
@@ -1018,7 +1106,7 @@ export default class AVTranscoder extends Emitter {
     if (videoConfig?.disable) {
       return
     }
-    else if (videoConfig?.codec === 'copy') {
+    else if (videoConfig?.codec === 'copy' && !(task.options.start || task.options.duration)) {
       const demuxer2MuxerChannel = new MessageChannel()
       await this.DemuxerThread.connectStreamTask
         .transfer(demuxer2MuxerChannel.port1)
@@ -1040,7 +1128,7 @@ export default class AVTranscoder extends Emitter {
       const decoder2FilterChannel = new MessageChannel()
       const filter2EncoderChannel = new MessageChannel()
 
-      const newStream = this.copyAVStreamInterface(stream)
+      const newStream = this.copyAVStreamInterface(task, stream)
 
       const taskId = generateUUID()
 
@@ -1228,6 +1316,13 @@ export default class AVTranscoder extends Emitter {
         logger.fatal('scaler not found')
       }
 
+      const vertices: AVFilterGraphDesVertex<GraphNodeType>[] = []
+      const edges: { parent: number, child: number }[] = []
+      let input: FilterGraphPortDes
+      let output: FilterGraphPortDes
+
+      let rangeNodeId: number
+
       const scaleNode = createGraphDesVertex('scaler', {
         resource: scalerResource,
         output: {
@@ -1237,26 +1332,82 @@ export default class AVTranscoder extends Emitter {
         }
       })
 
-      await this.AudioFilterThread.registerTask
+      vertices.push(scaleNode)
+      input = {
+        id: scaleNode.id,
+        port: decoder2FilterChannel.port2
+      }
+      output = {
+        id: scaleNode.id,
+        port: filter2EncoderChannel.port1
+      }
+
+      if (task.options.start || task.options.duration) {
+        const start = avRescaleQ(static_cast<int64>(task.options.start || 0), AV_MILLI_TIME_BASE_Q, accessof(stream.timeBase))
+        const rangeNode = createGraphDesVertex('range', {
+          start: start,
+          end: task.options.duration
+            ? (avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, accessof(stream.timeBase)) + start)
+            : -1n
+        })
+        vertices.push(rangeNode)
+        input = {
+          id: rangeNode.id,
+          port: decoder2FilterChannel.port2
+        }
+        edges.push({
+          parent: rangeNode.id,
+          child: scaleNode.id
+        })
+        rangeNodeId = rangeNode.id
+      }
+
+      if (avQ2D(stream.codecpar.framerate) > avQ2D(newStream.codecpar.framerate)) {
+        const framerateNode = createGraphDesVertex('framerate', {
+          framerate: {
+            num: newStream.codecpar.framerate.num,
+            den: newStream.codecpar.framerate.den
+          },
+          timeBase: {
+            num: stream.timeBase.num,
+            den: stream.timeBase.den
+          }
+        })
+        vertices.push(framerateNode)
+
+        edges.length = 0
+        if (rangeNodeId) {
+          edges.push({
+            parent: rangeNodeId,
+            child: framerateNode.id
+          })
+          edges.push({
+            parent: framerateNode.id,
+            child: scaleNode.id
+          })
+        }
+        else {
+          input = {
+            id: framerateNode.id,
+            port: decoder2FilterChannel.port2
+          }
+          edges.push({
+            parent:framerateNode.id,
+            child: scaleNode.id
+          })
+        }
+      }
+
+      await this.VideoFilterThread.registerTask
       .transfer(decoder2FilterChannel.port2, filter2EncoderChannel.port1)
       .invoke({
         taskId: taskId,
         graph: {
-          vertices: [scaleNode],
-          edges: []
+          vertices,
+          edges
         },
-        inputPorts: [
-          {
-            id: scaleNode.id,
-            port: decoder2FilterChannel.port2
-          }
-        ],
-        outputPorts: [
-          {
-            id: scaleNode.id,
-            port: filter2EncoderChannel.port1
-          }
-        ],
+        inputPorts: [input],
+        outputPorts: [output],
         stats: addressof(task.stats),
         avframeList: addressof(this.GlobalData.avframeList),
         avframeListMutex: addressof(this.GlobalData.avframeListMutex),
@@ -1392,6 +1543,12 @@ export default class AVTranscoder extends Emitter {
     if (task.stats) {
       unmake(task.stats)
     }
+
+    this.tasks.delete(task.taskId)
+
+    if (!this.tasks.size) {
+      this.reportTimer.stop()
+    }
   }
 
   public async addTask(taskOptions: TaskOptions) {
@@ -1403,6 +1560,7 @@ export default class AVTranscoder extends Emitter {
     const stats = make(Stats)
     const task: SelfTask = {
       taskId,
+      startTime: 0,
       options: taskOptions,
       ioloader2DemuxerChannel: null,
       muxer2OutputChannel: null,
@@ -1440,6 +1598,9 @@ export default class AVTranscoder extends Emitter {
   public async startTask(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
+      if (task.options.start) {
+        await this.DemuxerThread.seek(task.taskId, static_cast<int64>(task.options.start), AVSeekFlags.TIMESTAMP)
+      }
       await this.DemuxerThread.startDemux(taskId, false, 10)
       await this.MuxThread.open(taskId)
 
@@ -1476,8 +1637,11 @@ export default class AVTranscoder extends Emitter {
           await this.MuxThread.updateAVCodecParameters(task.taskId, streams[i].output.index, streams[i].output.codecpar)
         }
       }
-
       await this.MuxThread.start(taskId)
+      task.startTime = getTimestamp()
+      if (!this.reportTimer.isStarted()) {
+        this.reportTimer.start()
+      }
     }
     else {
       logger.fatal(`task ${taskId} not found`)

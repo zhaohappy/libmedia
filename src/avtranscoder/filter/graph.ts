@@ -1,4 +1,6 @@
+import RangeFilterNode from 'avfilter/RangeFilterNode'
 import ResampleFilterNode from 'avfilter/audio/ResampleFilterNode'
+import FramerateFilterNode from 'avfilter/video/FramerateFilterNode'
 import ScaleFilterNode from 'avfilter/video/ScaleFilterNode'
 import { AVFramePool } from 'avutil/struct/avframe'
 import * as logger from 'common/util/logger'
@@ -9,13 +11,17 @@ type ConstructorParameters<T extends abstract new (...args: any) => any> =
 type FirstConstructorParameter<T extends abstract new (...args: any) => any> =
   ConstructorParameters<T>[0]
 
-export type GraphNodeType = 'resampler' | 'scaler'
+export type GraphNodeType = 'resampler' | 'scaler' | 'range' | 'framerate'
 
 type GraphNodeType2AVFilterConstructor<T extends GraphNodeType> = 
   T extends 'resampler'
   ? typeof ResampleFilterNode
   : T extends 'scaler'
   ? typeof ScaleFilterNode
+  : T extends 'range'
+  ? typeof RangeFilterNode
+  : T extends 'framerate'
+  ? typeof FramerateFilterNode
   : never
 
 type GraphNodeType2AVFilter<T extends GraphNodeType> = 
@@ -23,6 +29,10 @@ type GraphNodeType2AVFilter<T extends GraphNodeType> =
   ? ResampleFilterNode
   : T extends 'scaler'
   ? ScaleFilterNode
+  : T extends 'range'
+  ? RangeFilterNode
+  : T extends 'framerate'
+  ? FramerateFilterNode
   : never
 
 type AVFilterGraphFilterOptions<T extends GraphNodeType> = FirstConstructorParameter<GraphNodeType2AVFilterConstructor<T>>
@@ -68,6 +78,10 @@ function createFilter(vertex: AVFilterGraphDesVertex<GraphNodeType>, avframePool
       return new ResampleFilterNode(options as AVFilterGraphFilterOptions<'resampler'>)
     case 'scaler':
       return new ScaleFilterNode(options as AVFilterGraphFilterOptions<'scaler'>)
+    case 'range':
+      return new RangeFilterNode(options as AVFilterGraphFilterOptions<'range'>)
+    case 'framerate':
+      return new FramerateFilterNode(options as AVFilterGraphFilterOptions<'framerate'>)
     default:
       throw new Error(`invalid GraphNodeType, ${vertex.type}`)
   }

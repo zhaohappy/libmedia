@@ -1,4 +1,4 @@
-import AVFilterNode, { AVFilterNodeOptions } from 'avfilter/AVFilterNode'
+import AVFilterNode, { AVFilterNodeOptions } from '../AVFilterNode'
 import AVFrame, { AVFrameRef } from 'avutil/struct/avframe'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'

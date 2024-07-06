@@ -242,8 +242,8 @@ export default class VideoEncodePipeline extends Pipeline {
                   avframe.close()
                 }
                 // 硬解队列中的 EncodedVideoChunk 过多会报错， 这里判断做一下延时
-                while (task.targetEncoder === task.hardwareEncoder
-                  && task.hardwareEncoder.getQueueLength() > 20
+                while (task.targetEncoder instanceof WebVideoEncoder
+                  && task.targetEncoder.getQueueLength() > 10
                 ) {
                   await new Sleep(0)
                 }

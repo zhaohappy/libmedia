@@ -1,6 +1,5 @@
 import Resampler, { PCMParameters } from 'audioresample/Resampler'
-import AVFilterNode, { AVFilterNodeOptions } from 'avfilter/AVFilterNode'
-import { AVBufferRef } from 'avutil/struct/avbuffer'
+import AVFilterNode, { AVFilterNodeOptions } from '../AVFilterNode'
 import AVFrame, { AV_NUM_DATA_POINTERS } from 'avutil/struct/avframe'
 import AVPCMBuffer from 'avutil/struct/avpcmbuffer'
 import { createAVFrame, refAVFrame, unrefAVFrame } from 'avutil/util/avframe'
