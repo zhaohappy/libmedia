@@ -10,12 +10,17 @@ dist/*
 !dist/resample/
 !dist/stretchpitch/
 !dist/legacy/
+!dist/avtranscoder/
 
 !dist/[0-9]*.avplayer.js
 !dist/avplayer.js
 
 dist/legacy/*.*
 !dist/legacy/*.js
+
+dist/avtranscoder/*.*
+!dist/avtranscoder/[0-9]*.avtranscoder.js
+!dist/avtranscoder/avtranscoder.js
 
 !dist/cheap-polyfill.js
 

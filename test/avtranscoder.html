@@ -110,11 +110,15 @@
               }
               case 'resampler':
                 return supportAtomic ? '../dist/resample/resample-atomic.wasm' : '../dist/resample/resample.wasm'
+              case 'scaler':
+                return supportAtomic ? '../dist/scale/scale-atomic.wasm' : '../dist/scale/scale.wasm'
               case 'stretchpitcher':
                 return supportAtomic ? '../dist/stretchpitch/stretchpitch-atomic.wasm' : '../dist/stretchpitch/stretchpitch.wasm'
             }
           },
         })
+
+        transcoder.setLogLevel(1)
 
         transcoder.on('task-ended', (taskId) => {
           console.log('task', taskId, 'transcode ended')
@@ -127,16 +131,24 @@
             input: {
               file
             },
+            // start: 0,
+            // duration: 10000,
             output: {
               file: writeFileHandler,
               format: outputFormatComp.radio,
               audio: {
-                codec: 'aac',
-                bitrate: 128000
+                disable: false,
+                codec: 'copy',
+                bitrate: 128000,
+                // sampleRate: 44100
               },
               video: {
-                disable: false,
-                codec: 'h264'
+                disable: true,
+                codec: 'copy',
+                // width: 640,
+                // height: 360,
+                // bitrate: 500000,
+                // framerate: 30
               }
             }
           }).then((taskId) => {

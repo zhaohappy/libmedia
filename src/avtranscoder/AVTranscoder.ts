@@ -274,7 +274,7 @@ export default class AVTranscoder extends Emitter {
         let dts: int64 = 0n
         let duration: int64 = 0n
         if (task.stats.lastVideoMuxDts) {
-          const stream =  task.streams.find((s) => s.output.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
+          const stream =  task.streams.find((s) => s.input.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
           dts = task.stats.lastVideoMuxDts - task.stats.firstVideoMuxDts
           if (stream.output) {
             duration = avRescaleQ(stream.output.duration, accessof(stream.output.timeBase), AV_MILLI_TIME_BASE_Q)
@@ -284,9 +284,9 @@ export default class AVTranscoder extends Emitter {
           }
         }
         if (task.stats.lastAudioMuxDts && !dts) {
-          const stream =  task.streams.find((s) => s.output.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO)
+          const stream =  task.streams.find((s) => s.input.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO)
           dts = task.stats.lastAudioMuxDts - task.stats.firstAudioMuxDts
-          if (stream) {
+          if (stream.output) {
             duration = avRescaleQ(stream.output.duration, accessof(stream.output.timeBase), AV_MILLI_TIME_BASE_Q)
           }
           else {
@@ -294,20 +294,20 @@ export default class AVTranscoder extends Emitter {
           }
         }
 
-        const fps = (static_cast<double>(frameCount) / (time / 1000)).toFixed(2)
+        const fps = time ? (static_cast<double>(frameCount) / (time / 1000)) : static_cast<double>(frameCount)
         const ms = static_cast<int32>(dts % 1000n)
         const secs = static_cast<int32>(dts / 1000n % 60n)
         const mins = static_cast<int32>(dts / 1000n / 60n % 60n)
         const hours = static_cast<int32>(dts / 1000n / 3600n)
         const size = static_cast<double>(task.stats.bufferOutputBytes) / 1000
-        const bitrate = (dts ? size * 8 / (static_cast<double>(dts) / 1000) : 0).toFixed(2)
-        const speed = (static_cast<double>(dts) / 1000 / (time / 1000) || -1).toFixed(2)
+        const bitrate = (dts ? size * 8 / (static_cast<double>(dts) / 1000) : 0)
+        const speed = (static_cast<double>(dts) / 1000 / (time / 1000) || -1)
         let progress = duration ? ((static_cast<double>(dts) / static_cast<double>(duration) * 100)) : 0
         if (progress > 100) {
           progress = 100
         }
 
-        logger.info(`[${task.taskId}] frame=${frameCount} fps=${fps} size=${size}kB time=${string.format('%02d:%02d:%02d.%03d', hours, mins, secs, ms)} bitrate=${bitrate}kbps speed=${speed}x progress=${progress.toFixed(2)}%`)
+        logger.info(`[${task.taskId}] frame=${frameCount} fps=${fps.toFixed(2)} size=${size}kB time=${string.format('%02d:%02d:%02d.%03d', hours, mins, secs, ms)} bitrate=${bitrate.toFixed(2)}kbps speed=${speed.toFixed(2)}x progress=${progress.toFixed(2)}%`)
 
         if (this.options.onprogress) {
           this.options.onprogress(task.taskId, progress)
