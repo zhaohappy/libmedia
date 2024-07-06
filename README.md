@@ -175,7 +175,7 @@ edp webserver start --port=9000
 
 ```
 
-若要源码调试多线程 Worker 中的代码，设置 ```tsconfig.json``` 中```ENABLE_THREADS_SPLIT```宏为 ```true```并重新编译 AVPlayer
+若要源码调试多线程 Worker 中的代码，设置 ```tsconfig.json``` 中```ENABLE_THREADS_SPLIT```宏为 ```true```并重新编译
 
 ```json
 {

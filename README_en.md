@@ -174,7 +174,7 @@ edp webserver start --port=9000
 
 ```
 
-To debug the code in multi-threaded Worker from source, set the ```ENABLE_THREADS_SPLIT``` macro in ```tsconfig.json``` to ```true``` and recompile AVPlayer
+To debug the code in multi-threaded Worker from source, set the ```ENABLE_THREADS_SPLIT``` macro in ```tsconfig.json``` to ```true``` and recompile
 
 ```json
 {
