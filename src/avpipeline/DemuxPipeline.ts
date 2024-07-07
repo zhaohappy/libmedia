@@ -66,6 +66,7 @@ export interface DemuxTaskOptions extends TaskOptions {
 type SelfTask = DemuxTaskOptions & {
   leftIPCPort: IPCPort
   rightIPCPorts: Map<number, IPCPort>
+  controlIPCPort: IPCPort
 
   formatContext: AVIFormatContext
   ioReader: IOReader
@@ -128,16 +129,20 @@ export default class DemuxPipeline extends Pipeline {
   }
 
   private createTask(options: DemuxTaskOptions): number {
-
     let leftIPCPort: IPCPort
+    let controlIPCPort: IPCPort
 
     if (options.mainTaskId) {
       const mainTask = this.tasks.get(options.mainTaskId)
       leftIPCPort = mainTask.leftIPCPort
+      controlIPCPort = mainTask.controlIPCPort
     }
     else {
       assert(options.leftPort)
       leftIPCPort = new IPCPort(options.leftPort)
+      if (options.controlPort) {
+        controlIPCPort = new IPCPort(options.controlPort)
+      }
     }
 
     assert(leftIPCPort)
@@ -215,11 +220,22 @@ export default class DemuxPipeline extends Pipeline {
     const formatContext = createAVIFormatContext()
     formatContext.ioReader = ioReader
 
+    formatContext.getDecoderResource = async (mediaType, codecId) => {
+      if (!controlIPCPort) {
+        return
+      }
+      return controlIPCPort.request('getDecoderResource', {
+        codecId,
+        mediaType
+      })
+    }
+
     this.tasks.set(options.taskId, {
       ...options,
 
       leftIPCPort,
       rightIPCPorts: new Map(),
+      controlIPCPort,
 
       formatContext,
       ioReader,

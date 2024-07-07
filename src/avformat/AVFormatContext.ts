@@ -23,7 +23,7 @@
  *
  */
 
-import { AVMediaType } from 'avutil/codec'
+import { AVCodecID, AVMediaType } from 'avutil/codec'
 
 import AVStream from './AVStream'
 import AVPacket from 'avutil/struct/avpacket'
@@ -34,6 +34,7 @@ import IFormat from './formats/IFormat'
 import IOWriter from 'common/io/IOWriterSync'
 import IOReader from 'common/io/IOReader'
 import IOReaderSync from 'common/io/IOReaderSync'
+import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 
 class AVFormatContextInterval {
 
@@ -78,6 +79,8 @@ export interface AVIFormatContext {
   removeStreamByIndex(index: number): void
 
   destroy(): void
+
+  getDecoderResource: (mediaType: AVMediaType, codecId: AVCodecID) => Promise<WebAssemblyResource> | WebAssemblyResource
 }
 
 export interface AVOFormatContext {
@@ -145,6 +148,8 @@ class AVFormatContext implements AVIFormatContext, AVOFormatContext {
   public interval: AVFormatContextInterval
 
   public streamIndex: number
+
+  public getDecoderResource: (mediaType: AVMediaType, codecId: AVCodecID) => Promise<WebAssemblyResource> | WebAssemblyResource = null
 
   constructor() {
     this.streams = []

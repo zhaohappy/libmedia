@@ -86,9 +86,11 @@ import { AVPixelFormat } from 'avutil/pixfmt'
 import getTimestamp from 'common/function/getTimestamp'
 import Timer from 'common/timer/Timer'
 import * as string from 'common/util/string'
+import createMessageChannel from 'avutil/function/createMessageChannel'
+import Controller, { ControllerObserver } from './Controller'
 
 export interface AVTranscoderOptions {
-  getWasm: (type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codec?: AVCodecID) => string | ArrayBuffer | WebAssemblyResource
+  getWasm: (type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codec?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
   enableHardware?: boolean
   onprogress?: (taskId: string, progress: number) => void
 }
@@ -205,6 +207,7 @@ interface SelfTask {
     encoder2MuxerChannel?: MessageChannel
     demuxer2MuxerChannel?: MessageChannel
   }[]
+  controller: Controller
 }
 
 @struct
@@ -219,7 +222,9 @@ const defaultAVTranscoderOptions: Partial<AVTranscoderOptions> = {
   enableHardware: true
 }
 
-export default class AVTranscoder extends Emitter {
+export default class AVTranscoder extends Emitter implements ControllerObserver {
+
+  static Resource: Map<string, WebAssemblyResource> = new Map()
 
   private level: number = logger.INFO
 
@@ -264,6 +269,43 @@ export default class AVTranscoder extends Emitter {
     }, 0, 1000)
 
     logger.info(`create transcoder`)
+  }
+
+  private async getResource(type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codecId?: AVCodecID, mediaType?: AVMediaType) {
+    const key = codecId != null ? `${type}-${codecId}` : type
+
+    if (AVTranscoder.Resource.has(key)) {
+      return AVTranscoder.Resource.get(key)
+    }
+
+    const wasmUrl = this.options.getWasm(type, codecId, mediaType)
+    let resource: WebAssemblyResource
+
+    if (wasmUrl) {
+      if (is.string(wasmUrl) || is.arrayBuffer(wasmUrl)) {
+        resource = await compile({
+          source: wasmUrl
+        })
+        if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS) && mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+          resource.threadModule = await compile(
+            {
+              // firefox 使用 arraybuffer 会卡主
+              source: browser.firefox ? wasmUrl : resource.buffer
+            },
+            {
+              child: true
+            }
+          )
+        }
+        delete resource.buffer
+      }
+      else {
+        resource = wasmUrl
+      }
+
+      AVTranscoder.Resource.set(key, resource)
+      return resource
+    }
   }
 
   private report() {
@@ -446,7 +488,7 @@ export default class AVTranscoder extends Emitter {
   private async setTaskInput(task: SelfTask) {
     const taskId = task.taskId
     const taskOptions = task.options
-    const ioloader2DemuxerChannel = task.ioloader2DemuxerChannel = new MessageChannel()
+    const ioloader2DemuxerChannel = task.ioloader2DemuxerChannel = createMessageChannel()
     const stats = task.stats
 
     let ret = 0
@@ -559,7 +601,7 @@ export default class AVTranscoder extends Emitter {
   }
 
   private async setTaskOutput(task: SelfTask) {
-    const muxer2OutputChannel = task.muxer2OutputChannel = new MessageChannel()
+    const muxer2OutputChannel = task.muxer2OutputChannel = createMessageChannel()
     const ipcPort = task.outputIPCPort = new IPCPort(muxer2OutputChannel.port2)
 
     let format: AVFormat
@@ -686,10 +728,11 @@ export default class AVTranscoder extends Emitter {
         // dash 因为音视频各自独立，因此这里注册两个解封装任务
         subTaskId = generateUUID()
         await this.DemuxerThread.registerTask
-          .transfer(ioloader2DemuxerChannel.port2)
+          .transfer(ioloader2DemuxerChannel.port2, task.controller.getDemuxerRenderControlPort())
           .invoke({
             taskId,
             leftPort: ioloader2DemuxerChannel.port2,
+            controlPort: task.controller.getDemuxerRenderControlPort(),
             format: Ext2Format[ext],
             stats: addressof(stats),
             isLive: false,
@@ -717,10 +760,11 @@ export default class AVTranscoder extends Emitter {
       else {
         // dash 只有一个媒体类型
         await this.DemuxerThread.registerTask
-          .transfer(ioloader2DemuxerChannel.port2)
+          .transfer(ioloader2DemuxerChannel.port2, task.controller.getDemuxerRenderControlPort())
           .invoke({
             taskId,
             leftPort: ioloader2DemuxerChannel.port2,
+            controlPort: task.controller.getDemuxerRenderControlPort(),
             format: Ext2Format[ext],
             stats: addressof(stats),
             isLive: false,
@@ -735,10 +779,11 @@ export default class AVTranscoder extends Emitter {
     }
     else {
       await this.DemuxerThread.registerTask
-        .transfer(ioloader2DemuxerChannel.port2)
+        .transfer(ioloader2DemuxerChannel.port2, task.controller.getDemuxerRenderControlPort())
         .invoke({
           taskId,
           leftPort: ioloader2DemuxerChannel.port2,
+          controlPort: task.controller.getDemuxerRenderControlPort(),
           format: Ext2Format[ext],
           stats: addressof(stats),
           isLive: false,
@@ -816,7 +861,7 @@ export default class AVTranscoder extends Emitter {
       return
     }
     else if (audioConfig?.codec === 'copy' && !(task.options.start || task.options.duration)) {
-      const demuxer2MuxerChannel = new MessageChannel()
+      const demuxer2MuxerChannel = createMessageChannel()
       await this.DemuxerThread.connectStreamTask
         .transfer(demuxer2MuxerChannel.port1)
         .invoke(task.taskId, stream.index, demuxer2MuxerChannel.port1)
@@ -831,11 +876,11 @@ export default class AVTranscoder extends Emitter {
       })
     }
     else {
-      const demuxer2DecoderChannel = new MessageChannel()
-      const encoder2MuxerChannel = new MessageChannel()
+      const demuxer2DecoderChannel = createMessageChannel()
+      const encoder2MuxerChannel = createMessageChannel()
 
-      const decoder2FilterChannel = new MessageChannel()
-      const filter2EncoderChannel = new MessageChannel()
+      const decoder2FilterChannel = createMessageChannel()
+      const filter2EncoderChannel = createMessageChannel()
 
       const newStream = this.copyAVStreamInterface(task, stream)
       const taskId = generateUUID()
@@ -887,33 +932,8 @@ export default class AVTranscoder extends Emitter {
         .transfer(demuxer2DecoderChannel.port1)
         .invoke(task.taskId, stream.index, demuxer2DecoderChannel.port1)
 
-      const decoderWasmUrl = this.options.getWasm('decoder', stream.codecpar.codecId)
-      let decoderResource: WebAssemblyResource
-
-      if (decoderWasmUrl) {
-        if (is.string(decoderWasmUrl) || is.arrayBuffer(decoderWasmUrl)) {
-          decoderResource = await compile({
-            source: decoderWasmUrl
-          })
-
-          if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS)) {
-            decoderResource.threadModule = await compile(
-              {
-                // firefox 使用 arraybuffer 会卡主
-                source: browser.firefox ? decoderWasmUrl : decoderResource.buffer
-              },
-              {
-                child: true
-              }
-            )
-          }
-          delete decoderResource.buffer
-        }
-        else {
-          decoderResource = decoderWasmUrl
-        }
-      }
-      else {
+      let decoderResource: WebAssemblyResource = await this.getResource('decoder', stream.codecpar.codecId, stream.codecpar.codecType)
+      if (!decoderResource) {
         if (support.audioDecoder) {
           const isSupport = await AudioDecoder.isConfigSupported({
             codec: getVideoCodec(stream.codecpar),
@@ -950,21 +970,8 @@ export default class AVTranscoder extends Emitter {
 
       await this.AudioDecoderThread.open(taskId, stream.codecpar)
 
-      const resamplerResourceUrl = this.options.getWasm('resampler')
-
-      let resamplerResource: WebAssemblyResource
-
-      if (resamplerResourceUrl) {
-        if (is.string(resamplerResourceUrl) || is.arrayBuffer(resamplerResourceUrl)) {
-          resamplerResource = await compile({
-            source: resamplerResourceUrl
-          })
-        }
-        else {
-          resamplerResource = resamplerResourceUrl
-        }
-      }
-      else {
+      let resamplerResource: WebAssemblyResource = await this.getResource('resampler')
+      if (!resamplerResource) {
         logger.fatal('resampler not found')
       }
 
@@ -1025,33 +1032,8 @@ export default class AVTranscoder extends Emitter {
         avframeListMutex: addressof(this.GlobalData.avframeListMutex),
       })
       
-      const encoderWasmUrl = this.options.getWasm('encoder', newStream.codecpar.codecId)
-      let encoderResource: WebAssemblyResource
-
-      if (encoderWasmUrl) {
-        if (is.string(encoderWasmUrl) || is.arrayBuffer(encoderWasmUrl)) {
-          encoderResource = await compile({
-            source: encoderWasmUrl
-          })
-
-          if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS)) {
-            encoderResource.threadModule = await compile(
-              {
-                // firefox 使用 arraybuffer 会卡主
-                source: browser.firefox ? encoderWasmUrl : encoderResource.buffer
-              },
-              {
-                child: true
-              }
-            )
-          }
-          delete encoderResource.buffer
-        }
-        else {
-          encoderResource = encoderWasmUrl
-        }
-      }
-      else {
+      let encoderResource: WebAssemblyResource = await this.getResource('encoder', newStream.codecpar.codecId, newStream.codecpar.codecType)
+      if (!encoderResource) {
         if (support.audioEncoder) {
           const isSupport = await AudioEncoder.isConfigSupported({
             codec: getAudioCodec(newStream.codecpar),
@@ -1107,7 +1089,7 @@ export default class AVTranscoder extends Emitter {
       return
     }
     else if (videoConfig?.codec === 'copy' && !(task.options.start || task.options.duration)) {
-      const demuxer2MuxerChannel = new MessageChannel()
+      const demuxer2MuxerChannel = createMessageChannel()
       await this.DemuxerThread.connectStreamTask
         .transfer(demuxer2MuxerChannel.port1)
         .invoke(task.subTaskId || task.taskId, stream.index, demuxer2MuxerChannel.port1)
@@ -1122,11 +1104,11 @@ export default class AVTranscoder extends Emitter {
       })
     }
     else {
-      const demuxer2DecoderChannel = new MessageChannel()
-      const encoder2MuxerChannel = new MessageChannel()
+      const demuxer2DecoderChannel = createMessageChannel()
+      const encoder2MuxerChannel = createMessageChannel()
 
-      const decoder2FilterChannel = new MessageChannel()
-      const filter2EncoderChannel = new MessageChannel()
+      const decoder2FilterChannel = createMessageChannel()
+      const filter2EncoderChannel = createMessageChannel()
 
       const newStream = this.copyAVStreamInterface(task, stream)
 
@@ -1241,33 +1223,8 @@ export default class AVTranscoder extends Emitter {
         .transfer(demuxer2DecoderChannel.port1)
         .invoke(task.subTaskId || task.taskId, stream.index, demuxer2DecoderChannel.port1)
 
-      const decoderWasmUrl = this.options.getWasm('decoder', stream.codecpar.codecId)
-      let decoderResource: WebAssemblyResource
-
-      if (decoderWasmUrl) {
-        if (is.string(decoderWasmUrl) || is.arrayBuffer(decoderWasmUrl)) {
-          decoderResource = await compile({
-            source: decoderWasmUrl
-          })
-
-          if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS)) {
-            decoderResource.threadModule = await compile(
-              {
-                // firefox 使用 arraybuffer 会卡主
-                source: browser.firefox ? decoderWasmUrl : decoderResource.buffer
-              },
-              {
-                child: true
-              }
-            )
-          }
-          delete decoderResource.buffer
-        }
-        else {
-          decoderResource = decoderWasmUrl
-        }
-      }
-      else {
+      let decoderResource: WebAssemblyResource = await this.getResource('decoder', stream.codecpar.codecId, stream.codecpar.codecType)
+      if (!decoderResource) {
         if (support.videoDecoder) {
           const isSupport = await VideoDecoder.isConfigSupported({
             codec: getVideoCodec(stream.codecpar)
@@ -1298,21 +1255,8 @@ export default class AVTranscoder extends Emitter {
         })
       await this.VideoDecoderThread.open(taskId, stream.codecpar)
 
-      const scalerResourceUrl = this.options.getWasm('scaler')
-
-      let scalerResource: WebAssemblyResource
-
-      if (scalerResourceUrl) {
-        if (is.string(scalerResourceUrl) || is.arrayBuffer(scalerResourceUrl)) {
-          scalerResource = await compile({
-            source: scalerResourceUrl
-          })
-        }
-        else {
-          scalerResource = scalerResourceUrl
-        }
-      }
-      else {
+      let scalerResource: WebAssemblyResource = await this.getResource('scaler')
+      if (!scalerResource) {
         logger.fatal('scaler not found')
       }
 
@@ -1413,33 +1357,8 @@ export default class AVTranscoder extends Emitter {
         avframeListMutex: addressof(this.GlobalData.avframeListMutex),
       })
       
-      const encoderWasmUrl = this.options.getWasm('encoder', newStream.codecpar.codecId)
-      let encoderResource: WebAssemblyResource
-
-      if (encoderWasmUrl) {
-        if (is.string(encoderWasmUrl) || is.arrayBuffer(encoderWasmUrl)) {
-          encoderResource = await compile({
-            source: encoderWasmUrl
-          })
-
-          if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS)) {
-            encoderResource.threadModule = await compile(
-              {
-                // firefox 使用 arraybuffer 会卡主
-                source: browser.firefox ? encoderWasmUrl : encoderResource.buffer
-              },
-              {
-                child: true
-              }
-            )
-          }
-          delete encoderResource.buffer
-        }
-        else {
-          encoderResource = encoderWasmUrl
-        }
-      }
-      else {
+      let encoderResource: WebAssemblyResource = await this.getResource('encoder', newStream.codecpar.codecId, newStream.codecpar.codecType)
+      if (!encoderResource) {
         if (support.videoEncoder) {
           const isSupport = await VideoEncoder.isConfigSupported({
             codec: getVideoCodec(newStream.codecpar),
@@ -1489,7 +1408,7 @@ export default class AVTranscoder extends Emitter {
   }
 
   private async handleCopyStream(stream: AVStreamInterface, task: SelfTask) {
-    const demuxer2MuxerChannel = new MessageChannel()
+    const demuxer2MuxerChannel = createMessageChannel()
     await this.DemuxerThread.connectStreamTask
       .transfer(demuxer2MuxerChannel.port1)
       .invoke(task.subTaskId || task.taskId, stream.index, demuxer2MuxerChannel.port1)
@@ -1566,7 +1485,8 @@ export default class AVTranscoder extends Emitter {
       muxer2OutputChannel: null,
       stats,
       format: AVFormat.UNKNOWN,
-      streams: []
+      streams: [],
+      controller: new Controller(this)
     }
     try {
       await this.setTaskInput(task)
@@ -1779,5 +1699,9 @@ export default class AVTranscoder extends Emitter {
     }
 
     logger.info(`set log level: ${level}`)
+  }
+
+  public async onGetDecoderResource(mediaType: AVMediaType, codecId: AVCodecID): Promise<WebAssemblyResource> {
+    return this.getResource('decoder', codecId, mediaType)
   }
 }

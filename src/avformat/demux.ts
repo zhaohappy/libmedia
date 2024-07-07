@@ -41,6 +41,10 @@ import * as errorType from 'avutil/error'
 import AVStream from './AVStream'
 import * as logger from 'common/util/logger'
 import { IOError } from 'common/io/error'
+import { WebAssemblyResource } from 'cheap/webassembly/compiler'
+import WasmVideoDecoder from 'avcodec/wasmcodec/VideoDecoder'
+import WasmAudioDecoder from 'avcodec/wasmcodec/AudioDecoder'
+import { destroyAVFrame } from 'avutil/util/avframe'
 
 export interface DemuxOptions {
   // 只分析流的必要参数（设置 true 将不会分析视频帧率和音频每帧采用点数等参数）
@@ -165,10 +169,26 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
   const caches: pointer<AVPacket>[] = []
   let ret = 0
 
+  const decoderMap: Record<number, WasmVideoDecoder | WasmAudioDecoder> = {}
+  const pictureGot: Record<number, boolean> = {}
+
+  function checkPictureGot() {
+    if (!formatContext.getDecoderResource) {
+      return true
+    }
+    for (let i = 0; i < formatContext.streams.length; i++) {
+      if (decoderMap[formatContext.streams[i].index] && !pictureGot[formatContext.streams[i].index]) {
+        return false
+      }
+    }
+    return true
+  }
+
   while (true) {
     if (formatContext.streams.length >= needStreams
       && checkStreamParameters(formatContext)
       && (formatContext.options as DemuxOptions).fastOpen
+      && checkPictureGot()
     ) {
       break
     }
@@ -211,6 +231,53 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
       }
       else {
         streamBitMap[stream.index] = avpacket.size
+      }
+
+      if (!pictureGot[stream.index] && formatContext.getDecoderResource) {
+        let decoder = decoderMap[stream.index]
+        if (!decoder) {
+          const resource = await formatContext.getDecoderResource(stream.codecpar.codecType, stream.codecpar.codecId)
+          if (resource) {
+            if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+              decoder = new WasmAudioDecoder({
+                resource,
+                onReceiveFrame: (avframe) => {
+                  stream.codecpar.format = avframe.format
+                  destroyAVFrame(avframe)
+                  pictureGot[stream.index] = true
+                },
+                onError: () => {
+                  pictureGot[stream.index] = true
+                }
+              })
+            }
+            else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+              if (resource.threadModule) {
+                delete resource.threadModule
+              }
+              decoder = new WasmVideoDecoder({
+                resource,
+                onReceiveFrame: (avframe) => {
+                  stream.codecpar.format = avframe.format
+                  stream.codecpar.colorSpace = avframe.colorSpace
+                  stream.codecpar.colorPrimaries = avframe.colorPrimaries
+                  stream.codecpar.colorTrc = avframe.colorTrc
+                  stream.codecpar.sampleAspectRatio = avframe.sampleAspectRatio
+                  destroyAVFrame(avframe)
+                  pictureGot[stream.index] = true
+                },
+                onError: () => {
+                  pictureGot[stream.index] = true
+                }
+              })
+            }
+            await decoder.open(addressof(stream.codecpar))
+            decoderMap[stream.index] = decoder
+          }
+        }
+        if (decoder) {
+          decoder.decode(avpacket)
+        }
       }
     }
 
@@ -285,6 +352,12 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
   if (caches.length) {
     formatContext.interval.packetBuffer = caches.concat(formatContext.interval.packetBuffer)
   }
+
+  object.each(decoderMap, (decoder) => {
+    if (decoder) {
+      decoder.close()
+    }
+  })
 
   if (ret === IOError.END) {
     return 0

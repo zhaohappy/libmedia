@@ -23,9 +23,10 @@
  *
  */
 
-import { AVMediaType } from 'avutil/codec'
-import IPCPort, { NOTIFY, RpcMessage } from 'common/network/IPCPort'
-import createMessageChannel from './function/createMessageChannel'
+import { AVCodecID, AVMediaType } from 'avutil/codec'
+import IPCPort, { NOTIFY, REQUEST, RpcMessage } from 'common/network/IPCPort'
+import createMessageChannel from '../avutil/function/createMessageChannel'
+import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 
 export interface ControllerObserver {
   onVideoEnded: () => void
@@ -35,16 +36,19 @@ export interface ControllerObserver {
   onFirstVideoRenderedAfterUpdateCanvas: () => void
   onTimeUpdate: (pts: int64) => void
   onMSESeek: (time: number) => void
+  onGetDecoderResource: (mediaType: AVMediaType, codecId: AVCodecID) => Promise<WebAssemblyResource>
 }
 
 export default class Controller {
   private videoRenderControlChannel: MessageChannel
   private audioRenderControlChannel: MessageChannel
   private muxerControlChannel: MessageChannel
+  private demuxerControlChannel: MessageChannel
 
   private videoRenderControlIPCPort: IPCPort
   private audioRenderControlIPCPort: IPCPort
   private muxerControlIPCPort: IPCPort
+  private demuxerControlIPCPort: IPCPort
 
   private observer: ControllerObserver
 
@@ -58,10 +62,12 @@ export default class Controller {
     this.videoRenderControlChannel = createMessageChannel()
     this.audioRenderControlChannel = createMessageChannel()
     this.muxerControlChannel = createMessageChannel()
+    this.demuxerControlChannel = createMessageChannel()
 
     this.videoRenderControlIPCPort = new IPCPort(this.videoRenderControlChannel.port2)
     this.audioRenderControlIPCPort = new IPCPort(this.audioRenderControlChannel.port2)
     this.muxerControlIPCPort = new IPCPort(this.muxerControlChannel.port2)
+    this.demuxerControlIPCPort = new IPCPort(this.demuxerControlChannel.port2)
     this.enableAudioVideoSync = true
 
     this.videoRenderControlIPCPort.on(NOTIFY, (request: RpcMessage) => {
@@ -110,6 +116,17 @@ export default class Controller {
       }
     })
 
+    this.demuxerControlIPCPort.on(REQUEST, async (request: RpcMessage) => {
+      switch (request.method) {
+        case 'getDecoderResource':
+          this.demuxerControlIPCPort.reply(
+            request,
+            await this.observer.onGetDecoderResource(request.params.mediaType, request.params.codecId)
+          )
+          break
+      }
+    })
+
     this.onVisibilityChange = (event: any) => {
       this.visibilityHidden = document.visibilityState === 'hidden'
       this.videoRenderControlIPCPort.notify('skipRender', {
@@ -132,6 +149,10 @@ export default class Controller {
     return this.muxerControlChannel.port1
   }
 
+  public getDemuxerRenderControlPort() {
+    return this.demuxerControlChannel.port1
+  }
+
   public setTimeUpdateListenType(type: AVMediaType) {
     this.timeUpdateListenType = type
   }
@@ -150,6 +171,9 @@ export default class Controller {
     if (this.muxerControlIPCPort) {
       this.muxerControlIPCPort.destroy()
     }
+    if (this.demuxerControlIPCPort) {
+      this.demuxerControlIPCPort.destroy()
+    }
 
     if (this.onVisibilityChange) {
       document.removeEventListener('visibilitychange', this.onVisibilityChange)
@@ -161,6 +185,7 @@ export default class Controller {
       = this.muxerControlIPCPort
       = this.videoRenderControlChannel
       = this.audioRenderControlChannel
+      = this.demuxerControlChannel
       = this.muxerControlChannel = null
   }
 }

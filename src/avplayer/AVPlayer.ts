@@ -62,7 +62,7 @@ import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import Stats from 'avpipeline/struct/stats'
 import { memset, mapUint8Array } from 'cheap/std/memory'
-import createMessageChannel from './function/createMessageChannel'
+import createMessageChannel from '../avutil/function/createMessageChannel'
 import getVideoCodec from 'avcodec/function/getVideoCodec'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
 import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
@@ -87,7 +87,7 @@ const ObjectFitMap = {
 
 export interface AVPlayerOptions {
   container: HTMLDivElement
-  getWasm: (type: 'decoder' | 'resampler' | 'stretchpitcher', codec?: AVCodecID) => string | ArrayBuffer | WebAssemblyResource
+  getWasm: (type: 'decoder' | 'resampler' | 'stretchpitcher', codecId?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
   isLive?: boolean
   checkUseMES?: (streams: AVStreamInterface[]) => boolean
   enableHardware?: boolean
@@ -145,6 +145,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   static MSEThread: Thread<MSEPipeline>
 
   static audioContext: AudioContext
+  static Resource: Map<string, WebAssemblyResource> = new Map()
 
   // 解码线程每个 player 独占一个
   // TODO 若需要同时播放大量视频，可以考虑实现一个 VideoDecoderThreadPool
@@ -466,6 +467,43 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return this.ext === 'mpd'
   }
 
+  private async getResource(type: 'decoder' | 'resampler' | 'stretchpitcher', codecId?: AVCodecID, mediaType?: AVMediaType) {
+    const key = codecId != null ? `${type}-${codecId}` : type
+
+    if (AVPlayer.Resource.has(key)) {
+      return AVPlayer.Resource.get(key)
+    }
+
+    const wasmUrl = this.options.getWasm(type, codecId, mediaType)
+    let resource: WebAssemblyResource
+
+    if (wasmUrl) {
+      if (is.string(wasmUrl) || is.arrayBuffer(wasmUrl)) {
+        resource = await compile({
+          source: wasmUrl
+        })
+        if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS) && mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+          resource.threadModule = await compile(
+            {
+              // firefox 使用 arraybuffer 会卡主
+              source: browser.firefox ? wasmUrl : resource.buffer
+            },
+            {
+              child: true
+            }
+          )
+        }
+        delete resource.buffer
+      }
+      else {
+        resource = wasmUrl
+      }
+
+      AVPlayer.Resource.set(key, resource)
+      return resource
+    }
+  }
+
   public async load(source: string | File) {
 
     logger.info(`call load, taskId: ${this.taskId}`)
@@ -539,10 +577,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         // dash 因为音视频各自独立，因此这里注册两个解封装任务
         this.subTaskId = generateUUID()
         await AVPlayer.DemuxerThread.registerTask
-          .transfer(this.ioloader2DemuxerChannel.port2)
+          .transfer(this.ioloader2DemuxerChannel.port2, this.controller.getDemuxerRenderControlPort())
           .invoke({
             taskId: this.taskId,
             leftPort: this.ioloader2DemuxerChannel.port2,
+            controlPort: this.controller.getDemuxerRenderControlPort(),
             format: Ext2Format[this.ext],
             stats: addressof(this.stats),
             isLive: this.options.isLive,
@@ -570,10 +609,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       else {
         // dash 只有一个媒体类型
         await AVPlayer.DemuxerThread.registerTask
-          .transfer(this.ioloader2DemuxerChannel.port2)
+          .transfer(this.ioloader2DemuxerChannel.port2, this.controller.getDemuxerRenderControlPort())
           .invoke({
             taskId: this.taskId,
             leftPort: this.ioloader2DemuxerChannel.port2,
+            controlPort: this.controller.getDemuxerRenderControlPort(),
             format: Ext2Format[this.ext],
             stats: addressof(this.stats),
             isLive: this.options.isLive,
@@ -588,10 +628,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
     else {
       await AVPlayer.DemuxerThread.registerTask
-        .transfer(this.ioloader2DemuxerChannel.port2)
+        .transfer(this.ioloader2DemuxerChannel.port2, this.controller.getDemuxerRenderControlPort())
         .invoke({
           taskId: this.taskId,
           leftPort: this.ioloader2DemuxerChannel.port2,
+          controlPort: this.controller.getDemuxerRenderControlPort(),
           format: Ext2Format[this.ext],
           stats: addressof(this.stats),
           isLive: this.options.isLive,
@@ -858,33 +899,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           this.demuxer2VideoDecoderChannel = createMessageChannel()
           this.videoDecoder2VideoRenderChannel = createMessageChannel()
 
-          const wasmUrl = this.options.getWasm('decoder', stream.codecpar.codecId)
-          let resource: WebAssemblyResource
-
-          if (wasmUrl) {
-            if (is.string(wasmUrl) || is.arrayBuffer(wasmUrl)) {
-              resource = await compile({
-                source: wasmUrl
-              })
-
-              if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS)) {
-                resource.threadModule = await compile(
-                  {
-                    // firefox 使用 arraybuffer 会卡主
-                    source: browser.firefox ? wasmUrl : resource.buffer
-                  },
-                  {
-                    child: true
-                  }
-                )
-              }
-              delete resource.buffer
-            }
-            else {
-              resource = wasmUrl
-            }
-          }
-          else {
+          let resource: WebAssemblyResource = await this.getResource('decoder', stream.codecpar.codecId, stream.codecpar.codecType)
+          if (!resource) {
             if (support.videoDecoder) {
               const isSupport = await VideoDecoder.isConfigSupported({
                 codec: getVideoCodec(stream.codecpar)
@@ -934,20 +950,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           this.demuxer2AudioDecoderChannel = createMessageChannel()
           this.audioDecoder2AudioRenderChannel = createMessageChannel()
 
-          const wasmUrl = this.options.getWasm('decoder', stream.codecpar.codecId)
-          let resource: WebAssemblyResource
+          let resource: WebAssemblyResource = await this.getResource('decoder', stream.codecpar.codecId, stream.codecpar.codecType)
 
-          if (wasmUrl) {
-            if (is.string(wasmUrl) || is.arrayBuffer(wasmUrl)) {
-              resource = await compile({
-                source: wasmUrl
-              })
-            }
-            else {
-              resource = wasmUrl
-            }
-          }
-          else {
+          if (!resource) {
             if (support.audioDecoder) {
               const isSupport = await AudioDecoder.isConfigSupported({
                 codec: getAudioCodec(stream.codecpar),
@@ -1043,37 +1048,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         this.audioRender2AudioWorkletChannel = new MessageChannel()
 
-        const resamplerResourceUrl = this.options.getWasm('resampler')
-        const stretchpitcherResourceUrl = this.options.getWasm('stretchpitcher')
+        let resamplerResource: WebAssemblyResource = await this.getResource('resampler')
+        let stretchpitcherResource: WebAssemblyResource = await this.getResource('stretchpitcher')
 
-        let resamplerResource: WebAssemblyResource
-        let stretchpitcherResource: WebAssemblyResource
-
-        if (resamplerResourceUrl) {
-          if (is.string(resamplerResourceUrl) || is.arrayBuffer(resamplerResourceUrl)) {
-            resamplerResource = await compile({
-              source: resamplerResourceUrl
-            })
-          }
-          else {
-            resamplerResource = resamplerResourceUrl
-          }
-        }
-        else {
+        if (!resamplerResource) {
           logger.fatal('resampler not found')
         }
-
-        if (stretchpitcherResourceUrl) {
-          if (is.string(stretchpitcherResourceUrl) || is.arrayBuffer(stretchpitcherResourceUrl)) {
-            stretchpitcherResource = await compile({
-              source: stretchpitcherResourceUrl
-            })
-          }
-          else {
-            stretchpitcherResource = stretchpitcherResourceUrl
-          }
-        }
-        else {
+        if (!stretchpitcherResource) {
           logger.fatal('stretch pitcher not found')
         }
 
@@ -1879,6 +1860,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     AVPlayer.VideoRenderThread.updateCanvas
       .transfer(canvas as OffscreenCanvas)
       .invoke(this.taskId, canvas)
+  }
+
+  public async onGetDecoderResource(mediaType: AVMediaType, codecId: AVCodecID): Promise<WebAssemblyResource> {
+    return this.getResource('decoder', codecId, mediaType)
   }
 
   public onFirstVideoRendered(): void {
