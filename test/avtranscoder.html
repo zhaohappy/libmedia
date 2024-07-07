@@ -23,6 +23,8 @@
   <input id="file" type="file" />
   <button onclick="openWriteFile()">打开写文件</button>
 
+  <textarea name="logcatbox" class="logcatBox" rows="10" readonly style="display: block; margin-top: 20px; width: 800px;"></textarea>
+
   <script>
     window.CHEAP_DISABLE_THREAD = false
   </script>
@@ -138,13 +140,13 @@
               format: outputFormatComp.radio,
               audio: {
                 disable: false,
-                codec: 'copy',
+                codec: 'aac',
                 bitrate: 128000,
                 // sampleRate: 44100
               },
               video: {
-                disable: true,
-                codec: 'copy',
+                disable: false,
+                codec: 'h264',
                 // width: 640,
                 // height: 360,
                 // bitrate: 500000,
@@ -164,6 +166,14 @@
         suggestedName: 'test_muxing.' + outputFormatComp.radio
       })
       process()
+    }
+
+    const logcatbox = document.getElementsByName('logcatbox')[0];
+    const log = console.log
+    console.log = function(tag, msg, style) {
+      log(tag, msg)
+      logcatbox.value = logcatbox.value + msg + '\n';
+      logcatbox.scrollTop = logcatbox.scrollHeight;
     }
   </script>
 </body>
