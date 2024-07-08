@@ -132,7 +132,7 @@ export default class AVCodecParameters {
    * When the aspect ratio is unknown / undefined, the numerator should be
    * set to 0 (the denominator may have any value).
    */
-  sampleAspectRatio: Rational = new Rational({den: 1, num: 0})
+  sampleAspectRatio: Rational = new Rational({den: 1, num: 1})
 
   /**
    * Video only. Number of frames per second, for streams with constant frame
