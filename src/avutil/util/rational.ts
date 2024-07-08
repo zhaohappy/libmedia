@@ -24,6 +24,7 @@
  */
 
 import { Rational } from '../struct/rational'
+import gcd from 'common/math/gcd'
 
 /**
  * 将一个时间戳由一个时间基转换到另一个时间基
@@ -67,4 +68,32 @@ export function avQ2D(a: Rational) {
  */
 export function avQ2D2(a: pointer<Rational>) {
   return a.num / a.den
+}
+
+/**
+ * 化简 Rational
+ * 
+ * @param a 
+ */
+export function avReduce(a: Rational) {
+  const gcdValue = gcd(a.num, a.den)
+  if (gcdValue <= 1) {
+    return
+  }
+  a.den /= gcdValue
+  a.num /= gcdValue
+}
+
+/**
+ * 化简 Rational
+ * 
+ * @param a 
+ */
+export function avReduce2(a: pointer<Rational>) {
+  const gcdValue = gcd(a.num, a.den)
+  if (gcdValue <= 1) {
+    return
+  }
+  a.den /= gcdValue
+  a.num /= gcdValue
 }
