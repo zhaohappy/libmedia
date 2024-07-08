@@ -28,7 +28,7 @@ import Pipeline, { TaskOptions } from './Pipeline'
 import * as errorType from 'avutil/error'
 import IPCPort from 'common/network/IPCPort'
 import { REQUEST, RpcMessage } from 'common/network/IPCPort'
-import { AVIFormatContext, createAVIFormatContext } from 'avformat/AVFormatContext'
+import { AVFormatContextInterface, AVIFormatContext, createAVIFormatContext } from 'avformat/AVFormatContext'
 import IOReader from 'common/io/IOReader'
 import IFormat from 'avformat/formats/IFormat'
 import * as demux from 'avformat/demux'
@@ -48,7 +48,7 @@ import * as array from 'common/util/array'
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as bigint from 'common/util/bigint'
-import { AVStreamInterface } from './interface'
+import { AVStreamInterface } from 'avformat/AVStream'
 
 export const STREAM_INDEX_ALL = -1
 
@@ -377,7 +377,7 @@ export default class DemuxPipeline extends Pipeline {
       task.realFormat = format
       task.formatContext.iformat = iformat
 
-      return await demux.open(task.formatContext, {
+      return demux.open(task.formatContext, {
         maxAnalyzeDuration: 2000,
         fastOpen: task.isLive
       })
@@ -397,7 +397,7 @@ export default class DemuxPipeline extends Pipeline {
     }
   }
 
-  public async analyzeStreams(taskId: string) {
+  public async analyzeStreams(taskId: string): Promise<AVFormatContextInterface> {
     const task = this.tasks.get(taskId)
     if (task) {
 
@@ -418,7 +418,11 @@ export default class DemuxPipeline extends Pipeline {
           timeBase: addressof(stream.timeBase)
         })
       }
-      return streams
+      return {
+        metadata: task.formatContext.metadata,
+        format: task.realFormat,
+        streams
+      }
     }
     else {
       logger.fatal('task not found')

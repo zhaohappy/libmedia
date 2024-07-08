@@ -71,6 +71,7 @@ export async function open(formatContext: AVIFormatContext, options: DemuxOption
     // mpegts 的最小分析时长为 2 秒，mpegts 的 dts 一般从 1.4 秒开始
     opts.maxAnalyzeDuration = Math.max(opts.maxAnalyzeDuration, 2000)
   }
+  formatContext.format = formatContext.iformat.type
   formatContext.iformat.init(formatContext)
   formatContext.options = opts
   return formatContext.iformat.readHeader(formatContext)
@@ -261,6 +262,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
                   stream.codecpar.colorSpace = avframe.colorSpace
                   stream.codecpar.colorPrimaries = avframe.colorPrimaries
                   stream.codecpar.colorTrc = avframe.colorTrc
+                  stream.codecpar.chromaLocation = avframe.chromaLocation
                   stream.codecpar.sampleAspectRatio = avframe.sampleAspectRatio
                   destroyAVFrame(avframe)
                   pictureGot[stream.index] = true

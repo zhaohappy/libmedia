@@ -25,7 +25,7 @@
 
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 
-import AVStream from './AVStream'
+import AVStream, { AVStreamInterface } from './AVStream'
 import AVPacket from 'avutil/struct/avpacket'
 
 import OFormat from './formats/OFormat'
@@ -35,6 +35,7 @@ import IOWriter from 'common/io/IOWriterSync'
 import IOReader from 'common/io/IOReader'
 import IOReaderSync from 'common/io/IOReaderSync'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
+import { AVFormat } from './avformat'
 
 class AVFormatContextInterval {
 
@@ -46,12 +47,14 @@ class AVFormatContextInterval {
 }
 
 export interface AVIFormatContext {
+  metadata: Record<string, any>
   streams: AVStream[]
 
   options: Record<string, any>
 
   privateData: Record<string, any>
 
+  format: AVFormat
   iformat: IFormat
 
   ioReader: IOReader
@@ -87,6 +90,7 @@ export interface AVOFormatContext {
 
   metadataHeaderPadding: int32
 
+  metadata: Record<string, any>
   streams: AVStream[]
 
   options: Record<string, any>
@@ -94,6 +98,7 @@ export interface AVOFormatContext {
   privateData: Record<string, any>
   processPrivateData: Record<string, any>
 
+  format: AVFormat
   oformat: OFormat
 
   ioWriter: IOWriter
@@ -123,19 +128,26 @@ export interface AVOFormatContext {
   destroy(): void
 }
 
+export interface AVFormatContextInterface {
+  metadata: Record<string, any>
+  format: AVFormat
+  streams: AVStreamInterface[]
+}
+
 class AVFormatContext implements AVIFormatContext, AVOFormatContext {
 
   public metadataHeaderPadding = -1
 
+  public metadata: Record<string, any>
   public streams: AVStream[]
 
   public options: Record<string, any>
 
   public privateData: Record<string, any>
   public processPrivateData: Record<string, any>
-
+  
+  public format: AVFormat
   public iformat: IFormat
-
   public oformat: OFormat
 
   // @ts-ignore
@@ -159,6 +171,8 @@ class AVFormatContext implements AVIFormatContext, AVOFormatContext {
 
     this.options = {}
     this.privateData = {}
+    this.metadata = {}
+    this.format = AVFormat.UNKNOWN
   }
 
   public getStreamById(id: number) {

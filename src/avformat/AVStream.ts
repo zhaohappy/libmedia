@@ -207,3 +207,15 @@ export default class AVStream {
     this.sampleIndexesPosMap.clear()
   }
 }
+
+export interface AVStreamInterface {
+  index: number
+  id: number
+  codecpar: pointer<AVCodecParameters>
+  nbFrames: int64
+  metadata: Data
+  duration: int64
+  startTime: int64
+  disposition: int32
+  timeBase: pointer<Rational>
+}

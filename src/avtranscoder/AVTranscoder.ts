@@ -52,10 +52,13 @@ import { IOFlags } from 'common/io/flags'
 import AudioEncodePipeline from 'avpipeline/AudioEncodePipeline'
 import VideoEncodePipeline from 'avpipeline/VideoEncodePipeline'
 import IOReader from 'common/io/IOReader'
-import { AudioCodecString2CodecId, Ext2Format, Ext2IOLoader, Format2AVFormat, PixfmtString2AVPixelFormat, SampleFmtString2SampleFormat, VideoCodecString2CodecId } from 'avutil/stringEnum'
+import { AudioCodecString2CodecId, Ext2Format, Ext2IOLoader,
+  Format2AVFormat, PixfmtString2AVPixelFormat, SampleFmtString2SampleFormat,
+  VideoCodecString2CodecId
+} from 'avutil/stringEnum'
 import MuxPipeline from 'avpipeline/MuxPipeline'
 import IOWriterSync from 'common/io/IOWriterSync'
-import { AVStreamInterface } from 'avpipeline/interface'
+import { AVStreamInterface } from 'avformat/AVStream'
 import Stats from 'avpipeline/struct/stats'
 import IPCPort, { NOTIFY, REQUEST, RpcMessage } from 'common/network/IPCPort'
 import * as errorType from 'avutil/error'
@@ -88,6 +91,8 @@ import Timer from 'common/timer/Timer'
 import * as string from 'common/util/string'
 import createMessageChannel from 'avutil/function/createMessageChannel'
 import Controller, { ControllerObserver } from './Controller'
+import { AVFormatContextInterface } from 'avformat/AVFormatContext'
+import dump, { dumpCodecName } from 'avformat/dump'
 
 export interface AVTranscoderOptions {
   getWasm: (type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codec?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
@@ -196,6 +201,7 @@ interface SelfTask {
   outputIPCPort?: IPCPort
   safeFileIO?: SafeFileIO
   format: AVFormat
+  formatContext: AVFormatContextInterface
   streams: {
     taskId?: string
     input: AVStreamInterface
@@ -797,9 +803,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     if (ret < 0) {
       logger.fatal(`open stream failed, ret: ${ret}, taskId: ${taskId}`)
     }
-    let streams = await this.DemuxerThread.analyzeStreams(taskId)
-    if (!streams.length) {
-      logger.fatal(`analyze stream failed, ret: ${streams}`)
+    let formatContext = await this.DemuxerThread.analyzeStreams(taskId)
+    if (is.number(formatContext) || !formatContext.streams.length) {
+      logger.fatal(`analyze stream failed, ret: ${formatContext}`)
     }
 
     if (defined(ENABLE_PROTOCOL_DASH) && subTaskId) {
@@ -807,52 +813,38 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       if (ret < 0) {
         logger.fatal(`open stream failed, ret: ${ret}, taskId: ${taskId}`)
       }
-      const subStreams = await this.DemuxerThread.analyzeStreams(subTaskId)
-      if (!subStreams.length) {
-        logger.fatal(`analyze stream failed, ret: ${streams}`)
+      const subFormatContext = await this.DemuxerThread.analyzeStreams(subTaskId)
+      if (is.number(subFormatContext) || !subFormatContext.streams.length) {
+        logger.fatal(`analyze stream failed, ret: ${subFormatContext}`)
       }
-      streams = streams.concat(subStreams)
+      formatContext.streams = formatContext.streams.concat(subFormatContext.streams)
     }
 
     if (subTaskId) {
       task.subTaskId = subTaskId
     }
 
-    let info = `
-      taskId: ${taskId}
-      input: ${is.string(task.options.input.file) ? task.options.input.file : (task.options.input.file instanceof File ? task.options.input.file.name : 'ioReader')}
-      stream:
-    `
-    streams.forEach((stream) => {
-      if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-        stats.audiocodec = getAudioCodec(stream.codecpar)
-      }
-      else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-        stats.videocodec = getVideoCodec(stream.codecpar)
-      }
-      info += `
-        #${stream.index}(und): ${stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO ? 'Audio' : 'Video'}: ${stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO ? stats.audiocodec : stats.videocodec}
-      `
-    })
-
-    logger.info(info)
+    logger.info('\n' + dump([formatContext], [{
+      from: is.string(task.options.input.file) ? task.options.input.file : (task.options.input.file instanceof File ? task.options.input.file.name : 'ioReader'),
+      tag: 'Input'
+    }]))
 
     if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
       // m3u8 和 dash 的 duration 来自于协议本身
       if (this.isHls(task) || this.isDash(task)) {
         const duration: double = (await this.IOThread.getDuration(taskId)) * 1000
         if (duration > 0) {
-          for (let i = 0; i < streams.length; i++) {
-            streams[i].duration = avRescaleQ(
+          for (let i = 0; i < formatContext.streams.length; i++) {
+            formatContext.streams[i].duration = avRescaleQ(
               static_cast<int64>(duration),
               AV_MILLI_TIME_BASE_Q,
-              accessof(streams[i].timeBase)
+              accessof(formatContext.streams[i].timeBase)
             )
           }
         }
       }
     }
-    return streams
+    return formatContext
   }
 
   private async handleAudioStream(stream: AVStreamInterface, task: SelfTask) {
@@ -1486,26 +1478,51 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       stats,
       format: AVFormat.UNKNOWN,
       streams: [],
+      formatContext: null,
       controller: new Controller(this)
     }
     try {
       await this.setTaskInput(task)
       await this.setTaskOutput(task)
 
-      const streams = await this.analyzeInputStreams(task)
+      const formatContext = task.formatContext = await this.analyzeInputStreams(task)
 
-      for (let i = 0; i < streams.length; i++) {
-        const mediaType = streams[i].codecpar.codecType
+      for (let i = 0; i < formatContext.streams.length; i++) {
+        const mediaType = formatContext.streams[i].codecpar.codecType
         if (mediaType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-          await this.handleAudioStream(streams[i], task)
+          await this.handleAudioStream(formatContext.streams[i], task)
         }
         else if (mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-          await this.handleVideoStream(streams[i], task)
+          await this.handleVideoStream(formatContext.streams[i], task)
         }
         else {
-          await this.handleCopyStream(streams[i], task)
+          await this.handleCopyStream(formatContext.streams[i], task)
         }
       }
+
+      const oformatContext: AVFormatContextInterface = {
+        streams: [],
+        format: task.format,
+        metadata: {}
+      }
+
+      let mappingDump = '\nStream mapping:\n'
+      task.streams.forEach((stream) => {
+        if (stream.output) {
+          oformatContext.streams.push(stream.output)
+          mappingDump += `  Stream #0:${stream.input.index} -> #0:${stream.output.index} (${dumpCodecName(stream.input)} -> ${dumpCodecName(stream.output)})\n`
+        }
+        else {
+          oformatContext.streams.push(stream.input)
+          mappingDump += `  Stream #0:${stream.input.index} -> #0:${stream.output.index} (${dumpCodecName(stream.input)} -> copy)\n`
+        }
+      })
+      logger.info(mappingDump)
+      logger.info('\n' + dump([oformatContext], [{
+        from: task.options.output.file instanceof FileSystemFileHandle ? task.options.output.file.name : 'IOWriter',
+        tag: 'Output'
+      }]))
+
       this.tasks.set(taskId, task)
       return taskId
     }

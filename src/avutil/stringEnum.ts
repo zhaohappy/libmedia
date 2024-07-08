@@ -1,8 +1,9 @@
 import { AVFormat } from 'avformat/avformat'
-import { AVCodecID } from './codec'
-import { AVPixelFormat } from './pixfmt'
-import { IOType } from 'avpipeline/IOPipeline'
+import { AVCodecID, AVMediaType } from './codec'
+import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from './pixfmt'
 import { AVSampleFormat } from './audiosamplefmt'
+import { AVDisposition } from 'avformat/AVStream'
+import { IOType } from 'avpipeline/IOPipeline'
 
 export const Ext2Format: Record<string, AVFormat> = {
   'flv': AVFormat.FLV,
@@ -103,4 +104,75 @@ export const Format2AVFormat: Record<string, AVFormat> = {
   'aac': AVFormat.AAC,
   'flac': AVFormat.FLAC,
   'wav': AVFormat.WAV
+}
+
+export const colorRange2AVColorRange: Record<string, AVColorRange> = {
+  'tv': AVColorRange.AVCOL_RANGE_MPEG,
+  'pc': AVColorRange.AVCOL_RANGE_JPEG
+}
+
+export const colorSpace2AVColorSpace: Record<string, AVColorSpace> = {
+  'bt709': AVColorSpace.AVCOL_SPC_BT709,
+  'fcc': AVColorSpace.AVCOL_SPC_FCC,
+  'bt470bg': AVColorSpace.AVCOL_SPC_BT470BG,
+  'smpte170m': AVColorSpace.AVCOL_SPC_SMPTE170M,
+  'smpte240m': AVColorSpace.AVCOL_SPC_SMPTE240M,
+  'ycgco': AVColorSpace.AVCOL_SPC_YCGCO,
+  'gbr': AVColorSpace.AVCOL_SPC_RGB,
+  'bt2020ncl': AVColorSpace.AVCOL_SPC_BT2020_NCL
+}
+
+export const colorPrimaries2AVColorPrimaries: Record<string, AVColorPrimaries> = {
+  'bt709': AVColorPrimaries.AVCOL_PRI_BT709,
+  'bt470m': AVColorPrimaries.AVCOL_PRI_BT470M,
+  'bt470bg': AVColorPrimaries.AVCOL_PRI_BT470BG,
+  'smpte170m': AVColorPrimaries.AVCOL_PRI_SMPTE170M,
+  'smpte240m': AVColorPrimaries.AVCOL_PRI_SMPTE240M,
+  'smpte428': AVColorPrimaries.AVCOL_PRI_SMPTE428,
+  'film': AVColorPrimaries.AVCOL_PRI_FILM,
+  'smpte431': AVColorPrimaries.AVCOL_PRI_SMPTE431,
+  'smpte432': AVColorPrimaries.AVCOL_PRI_SMPTE432,
+  'bt2020': AVColorPrimaries.AVCOL_PRI_BT2020,
+  'jedec-p22': AVColorPrimaries.AVCOL_PRI_JEDEC_P22,
+  'ebu3213': AVColorPrimaries.AVCOL_PRI_EBU3213
+}
+
+export const colorTrc2AVColorTransferCharacteristic: Record<string, AVColorTransferCharacteristic> = {
+  'bt709': AVColorTransferCharacteristic.AVCOL_TRC_BT709,
+  'gamma22': AVColorTransferCharacteristic.AVCOL_TRC_GAMMA22,
+  'gamma28': AVColorTransferCharacteristic.AVCOL_TRC_GAMMA28,
+  'smpte170m': AVColorTransferCharacteristic.AVCOL_TRC_SMPTE170M,
+  'smpte240m': AVColorTransferCharacteristic.AVCOL_TRC_SMPTE240M,
+  'srgb': AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_1,
+  'xvycc': AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_4,
+  'bt2020-10': AVColorTransferCharacteristic.AVCOL_TRC_BT2020_10,
+  'bt2020-12': AVColorTransferCharacteristic.AVCOL_TRC_BT2020_12
+}
+
+export const mediaType2AVMediaType: Record<string, AVMediaType> = {
+  'Audio': AVMediaType.AVMEDIA_TYPE_AUDIO,
+  'Video': AVMediaType.AVMEDIA_TYPE_VIDEO,
+  'Subtitle': AVMediaType.AVMEDIA_TYPE_SUBTITLE,
+  'Attachment': AVMediaType.AVMEDIA_TYPE_ATTACHMENT,
+  'Data': AVMediaType.AVMEDIA_TYPE_DATA
+}
+
+export const disposition2AVDisposition: Record<string, AVDisposition> = {
+  'default': AVDisposition.DEFAULT,
+  'dub': AVDisposition.DUB,
+  'original': AVDisposition.ORIGINAL,
+  'comment': AVDisposition.COMMENT,
+  'lyrics': AVDisposition.LYRICS,
+  'karaoke': AVDisposition.KARAOKE,
+  'forced': AVDisposition.FORCED,
+  'hearing impaired': AVDisposition.HEARING_IMPAIRED,
+  'visual impaired': AVDisposition.VISUAL_IMPAIRED,
+  'clean effects': AVDisposition.CLEAN_EFFECTS,
+  'attached pic': AVDisposition.ATTACHED_PIC,
+  'timed thumbnails': AVDisposition.TIMED_THUMBNAILS,
+  'captions': AVDisposition.CAPTIONS,
+  'descriptions': AVDisposition.DESCRIPTIONS,
+  'metadata': AVDisposition.METADATA,
+  'dependent': AVDisposition.DEPENDENT,
+  'still image': AVDisposition.STILL_IMAGE
 }

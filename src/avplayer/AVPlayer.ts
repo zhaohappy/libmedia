@@ -78,7 +78,9 @@ import { JitterBuffer } from 'avpipeline/struct/jitter'
 import getAudioCodec from 'avcodec/function/getAudioCodec'
 import { IOFlags } from 'common/io/flags'
 import { Ext2Format, Ext2IOLoader } from 'avutil/stringEnum'
-import { AVStreamInterface } from 'avpipeline/interface'
+import { AVStreamInterface } from 'avformat/AVStream'
+import { AVFormatContextInterface } from 'avformat/AVFormatContext'
+import dump from 'avformat/dump'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -171,7 +173,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private audioSourceNode: AudioSourceWorkletNode | AudioSourceBufferNode
   private gainNode: GainNode
 
-  private streams: AVStreamInterface[]
+  private formatContext: AVFormatContextInterface
   private canvas: HTMLCanvasElement
   private updateCanvas: HTMLCanvasElement
   private video: HTMLVideoElement
@@ -229,10 +231,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         return true
       }
 
-      const videoStream = this.streams.find((stream) => {
+      const videoStream = this.formatContext.streams.find((stream) => {
         return stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
       })
-      const audioStream = this.streams.find((stream) => {
+      const audioStream = this.formatContext.streams.find((stream) => {
         return stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
       })
 
@@ -247,7 +249,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
 
       if (this.options.checkUseMES) {
-        return this.options.checkUseMES(this.streams)
+        return this.options.checkUseMES(this.formatContext.streams)
       }
 
       if (videoStream) {
@@ -646,9 +648,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (ret < 0) {
       logger.fatal(`open stream failed, ret: ${ret}, taskId: ${this.taskId}`)
     }
-    let streams = await AVPlayer.DemuxerThread.analyzeStreams(this.taskId)
-    if (!streams.length) {
-      logger.fatal(`analyze stream failed, ret: ${streams}`)
+    let formatContext = await AVPlayer.DemuxerThread.analyzeStreams(this.taskId)
+    if (is.number(formatContext) || !formatContext.streams.length) {
+      logger.fatal(`analyze stream failed, ret: ${formatContext}`)
     }
 
     if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
@@ -656,45 +658,40 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (ret < 0) {
         logger.fatal(`open stream failed, ret: ${ret}, taskId: ${this.taskId}`)
       }
-      const subStreams = await AVPlayer.DemuxerThread.analyzeStreams(this.subTaskId)
-      if (!subStreams.length) {
-        logger.fatal(`analyze stream failed, ret: ${streams}`)
+      const subFormatContext = await AVPlayer.DemuxerThread.analyzeStreams(this.subTaskId)
+      if (is.number(subFormatContext) || !subFormatContext.streams.length) {
+        logger.fatal(`analyze stream failed, ret: ${subFormatContext}`)
       }
-      streams = streams.concat(subStreams)
+      formatContext.streams = formatContext.streams.concat(subFormatContext.streams)
     }
 
-    this.streams = streams
+    this.formatContext = formatContext
     this.source = source
 
-    let info = `
-      taskId: ${this.taskId}
-      input: ${is.string(source) ? source : source.name}
-      stream:
-    `
-    this.streams.forEach((stream) => {
+    formatContext.streams.forEach((stream) => {
       if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
         this.stats.audiocodec = getAudioCodec(stream.codecpar)
       }
       else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
         this.stats.videocodec = getVideoCodec(stream.codecpar)
       }
-      info += `
-        #${stream.index}(und): ${stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO ? 'Audio' : 'Video'}: ${stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO ? this.stats.audiocodec : this.stats.videocodec}
-      `
     })
 
-    logger.info(info)
+    logger.info('\n' + dump([formatContext], [{
+      from: is.string(source) ? source : source.name,
+      tag: 'Input'
+    }]))
 
     if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
       // m3u8 和 dash 的 duration 来自于协议本身
       if (this.isHls() || this.isDash()) {
         const duration: double = (await AVPlayer.IOThread.getDuration(this.taskId)) * 1000
         if (duration > 0) {
-          for (let i = 0; i < this.streams.length; i++) {
-            this.streams[i].duration = avRescaleQ(
+          for (let i = 0; i < this.formatContext.streams.length; i++) {
+            this.formatContext.streams[i].duration = avRescaleQ(
               static_cast<int64>(duration),
               AV_MILLI_TIME_BASE_Q,
-              accessof(this.streams[i].timeBase)
+              accessof(this.formatContext.streams[i].timeBase)
             )
           }
         }
@@ -826,8 +823,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       let hasVideo = false
 
-      for (let i = 0; i < this.streams.length; i++) {
-        const stream = this.streams[i]
+      for (let i = 0; i < this.formatContext.streams.length; i++) {
+        const stream = this.formatContext.streams[i]
         if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO && options.video) {
           hasVideo = true
           this.videoEnded = false
@@ -887,8 +884,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       let audioStartTime: int64 = 0n
       let videoStartTime: int64 = 0n
 
-      for (let i = 0; i < this.streams.length; i++) {
-        const stream = this.streams[i]
+      for (let i = 0; i < this.formatContext.streams.length; i++) {
+        const stream = this.formatContext.streams[i]
         if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO && options.video) {
 
           await this.createVideoDecoderThread()
@@ -999,7 +996,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         const canvas = (supportOffscreenCanvas() && cheapConfig.USE_THREADS && defined(ENABLE_THREADS))
           ? this.canvas.transferControlToOffscreen()
           : this.canvas
-        const stream = this.streams.find((stream) => {
+        const stream = this.formatContext.streams.find((stream) => {
           return stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
         })
 
@@ -1042,7 +1039,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
       if (this.audioDecoder2AudioRenderChannel) {
 
-        const stream = this.streams.find((stream) => {
+        const stream = this.formatContext.streams.find((stream) => {
           return stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
         })
 
@@ -1159,7 +1156,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     let minQueueLength = 10
     if (is.string(this.source) && !this.options.isLive) {
-      this.streams.forEach((stream) => {
+      this.formatContext.streams.forEach((stream) => {
         minQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate) * 4), minQueueLength)
       })
     }
@@ -1268,7 +1265,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     logger.info(`call seek, timestamp: ${timestamp}, taskId: ${this.taskId}`)
 
-    if (!this.streams.length) {
+    if (!this.formatContext.streams.length) {
       logger.error(`cannot found any stream to seek, taskId: ${this.taskId}`)
       return
     }
@@ -1336,7 +1333,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
       else {
         let maxQueueLength = 20
-        this.streams.forEach((stream) => {
+        this.formatContext.streams.forEach((stream) => {
           if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
             maxQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate)), maxQueueLength)
           }
@@ -1385,7 +1382,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   public getStreams() {
-    return this.streams
+    return this.formatContext.streams
   }
 
   /**
@@ -1396,7 +1393,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   public getDuration() {
     if (!this.options.isLive) {
       let max = 0n
-      this.streams.forEach((stream) => {
+      this.formatContext.streams.forEach((stream) => {
         const duration =  avRescaleQ(
           stream.duration,
           {
