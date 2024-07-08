@@ -55,6 +55,15 @@ export const enum MPEG4AudioObjectTypes {
   LAYER3
 }
 
+export const AACProfile2Name: Partial<Record<MPEG4AudioObjectTypes, string>> = {
+  [MPEG4AudioObjectTypes.AAC_MAIN]: 'Main',
+  [MPEG4AudioObjectTypes.AAC_LC]: 'LC',
+  [MPEG4AudioObjectTypes.AAC_SSR]: 'LC',
+  [MPEG4AudioObjectTypes.AAC_LTP]: 'LC',
+  [MPEG4AudioObjectTypes.AAC_SBR]: 'HE',
+  [MPEG4AudioObjectTypes.AAC_SCALABLE]: 'HE'
+}
+
 export const MPEG4SamplingFrequencyIndex = {
   96000: 0,
   88200: 1,

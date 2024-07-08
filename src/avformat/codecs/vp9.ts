@@ -35,6 +35,13 @@ export const enum VP9Profile {
   Profile3
 }
 
+export const VP9Profile2Name: Record<VP9Profile, string> = {
+  [VP9Profile.Profile0]: 'Profile0',
+  [VP9Profile.Profile1]: 'Profile1',
+  [VP9Profile.Profile2]: 'Profile2',
+  [VP9Profile.Profile3]: 'Profile3'
+}
+
 export const LevelCapabilities = [
   { level: 10, maxResolution: 512 * 384, maxFrameRate: 30 },
   { level: 11, maxResolution: 512 * 384, maxFrameRate: 60 },

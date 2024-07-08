@@ -35,6 +35,12 @@ export const enum AV1Profile {
   Professional
 }
 
+export const AV1Profile2Name: Record<AV1Profile, string> = {
+  [AV1Profile.Main]: 'Main',
+  [AV1Profile.High]: 'High',
+  [AV1Profile.Professional]: 'Professional'
+}
+
 export const LevelCapabilities = [
   { level: 20, maxResolution: 426 * 240, maxFrameRate: 30 },
   { level: 21, maxResolution: 640 * 360, maxFrameRate: 30 },

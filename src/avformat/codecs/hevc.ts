@@ -44,6 +44,13 @@ export const enum HEVCProfile {
   Main444
 }
 
+export const HEVCProfile2Name: Record<HEVCProfile, string> = {
+  [HEVCProfile.Main]: 'Main',
+  [HEVCProfile.Main10]: 'Main10',
+  [HEVCProfile.MainStillPicture]: 'MainStillPicture',
+  [HEVCProfile.Main444]: 'Main444'
+}
+
 export const LevelCapabilities = [
   { level: 10, maxLumaSamplesPerSecond: 552960, maxLumaPictureSize: 36864, maxBitRate: { main: 128, main10: 150 } },
   { level: 20, maxLumaSamplesPerSecond: 3686400, maxLumaPictureSize: 122880, maxBitRate: { main: 1500, main10: 1875 } },

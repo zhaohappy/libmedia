@@ -82,6 +82,15 @@ export const enum H264Profile {
   kHigh444 = 244
 }
 
+export const H264Profile2Name: Record<H264Profile, string> = {
+  [H264Profile.kBaseline]: 'Constrained Baseline',
+  [H264Profile.kMain]: 'Main',
+  [H264Profile.kHigh]: 'High',
+  [H264Profile.kHigh10]: 'High10',
+  [H264Profile.kHigh422]: 'High422',
+  [H264Profile.kHigh444]: 'High444'
+}
+
 export const LevelCapabilities = [
   { level: 10, maxResolution: 25344, maxFrameRate: 15 },
   { level: 11, maxResolution: 25344, maxFrameRate: 30 },

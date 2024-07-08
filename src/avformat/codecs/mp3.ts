@@ -129,6 +129,18 @@ export function getProfileByLayer(layer: number) {
   return NOPTS_VALUE
 }
 
+export const enum MP3Profile {
+  Layer1 = 32,
+  Layer2 = 33,
+  Layer3 = 34
+}
+
+export const MP3Profile2Name: Record<MP3Profile, string> = {
+  [MP3Profile.Layer1]: 'Layer1',
+  [MP3Profile.Layer2]: 'Layer2',
+  [MP3Profile.Layer3]: 'Layer3'
+}
+
 
 export function parseAVCodecParameters(stream: AVStream, buffer: Uint8ArrayInterface) {
   if (buffer && buffer.length >= 4) {
