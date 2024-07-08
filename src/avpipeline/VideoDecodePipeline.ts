@@ -108,11 +108,13 @@ export default class VideoDecodePipeline extends Pipeline {
     return new WebVideoDecoder({
       onError: (error) => {
         if (task.hardwareRetryCount > 3 || !task.firstDecoded) {
-          task.targetDecoder = task.softwareDecoder
-          task.hardwareDecoder.close()
-          task.hardwareDecoder = null
-          task.decoderReady = this.openSoftwareDecoder(task)
-          logger.warn(`video decode error width hardware(${task.hardwareRetryCount}), taskId: ${task.taskId}, error: ${error}, try to fallback to software decoder`)
+          if (task.targetDecoder === task.hardwareDecoder) {
+            task.targetDecoder = task.softwareDecoder
+            task.hardwareDecoder.close()
+            task.hardwareDecoder = null
+            task.decoderReady = this.openSoftwareDecoder(task)
+            logger.warn(`video decode error width hardware(${task.hardwareRetryCount}), taskId: ${task.taskId}, error: ${error}, try to fallback to software decoder`)
+          }
         }
         else {
           task.hardwareRetryCount++

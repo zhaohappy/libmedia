@@ -103,11 +103,13 @@ export default class VideoEncodePipeline extends Pipeline {
   private createWebcodecEncoder(task: SelfTask, enableHardwareAcceleration: boolean = true) {
     return new WebVideoEncoder({
       onError: (error) => {
-        task.targetEncoder = task.softwareEncoder
-        task.hardwareEncoder.close()
-        task.hardwareEncoder = null
-        task.encoderReady = this.openSoftwareEncoder(task)
-        logger.warn(`video encode error width hardware, taskId: ${task.taskId}, error: ${error}, try to fallback to software encoder`)
+        if (task.targetEncoder === task.hardwareEncoder) {
+          task.targetEncoder = task.softwareEncoder
+          task.hardwareEncoder.close()
+          task.hardwareEncoder = null
+          task.encoderReady = this.openSoftwareEncoder(task)
+          logger.warn(`video encode error width hardware, taskId: ${task.taskId}, error: ${error}, try to fallback to software encoder`)
+        }
       },
       onReceivePacket(avpacket, avframe) {
         task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
