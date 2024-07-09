@@ -59,10 +59,9 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
       profile = H264Profile.kHigh
     }
     codec = string.format(
-      '%s.%02x%02x%02x',
+      '%s.%02x00%02x',
       entry,
       profile & 0xff,
-      extradata ? extradata[2] : 0,
       level & 0xff
     )
   }
