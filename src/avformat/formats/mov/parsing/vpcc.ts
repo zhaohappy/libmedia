@@ -38,10 +38,14 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
 
   const now = ioReader.getPos()
 
+  const version = await ioReader.readUint8()
+  // flags
+  await ioReader.skip(3)
+
   stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_VP9
 
-  const data = avMalloc(atom.size)
-  const extradata = await ioReader.readBuffer(atom.size, mapSafeUint8Array(data, atom.size))
+  const data = avMalloc(atom.size - 4)
+  const extradata = await ioReader.readBuffer(atom.size - 4, mapSafeUint8Array(data, atom.size - 4))
 
   if (movContext.foundMoov) {
     stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = extradata.slice()
@@ -49,7 +53,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   }
   else {
     stream.codecpar.extradata = data
-    stream.codecpar.extradataSize = atom.size
+    stream.codecpar.extradataSize = atom.size - 4
     stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = extradata.slice()
   }
 

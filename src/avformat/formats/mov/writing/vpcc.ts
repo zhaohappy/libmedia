@@ -32,9 +32,14 @@ import { mapUint8Array } from 'cheap/std/memory'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
   // size
-  ioWriter.writeUint32(8 + stream.codecpar.extradataSize ?? 0)
+  ioWriter.writeUint32(12 + stream.codecpar.extradataSize ?? 0)
   // tag
   ioWriter.writeString(BoxType.VPCC)
+  // version
+  ioWriter.writeUint8(1)
+  // flags
+  ioWriter.writeUint24(0)
+
   if (movContext.fragment) {
     if (stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
       ioWriter.writeBuffer(stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA])
