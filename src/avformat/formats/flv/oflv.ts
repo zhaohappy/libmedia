@@ -27,7 +27,7 @@ import Stream from '../../AVStream'
 import { AVCodecID } from 'avutil/codec'
 import { AVPacketFlags } from 'avutil/struct/avpacket'
 import IOWriter from 'common/io/IOWriterSync'
-import { AVCodecID2FlvCodecType, FlvTag } from './flv'
+import { AVCodecID2FlvCodecType, FlvTag, PacketTypeExt } from './flv'
 
 export function writeTagHeader(
   ioWriter: IOWriter,
@@ -120,4 +120,21 @@ export function writeVideoTagDataHeader(ioWriter: IOWriter, stream: Stream, flag
   ioWriter.writeUint8(header)
 }
 
+export function writeVideoTagExtDataHeader(ioWriter: IOWriter, stream: Stream, type: PacketTypeExt, flags: AVPacketFlags) {
+  let header = (type & 0x0f) | 0x80
 
+  if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+    || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+    || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+    || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
+    || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1
+  ) {
+    if (flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
+      header |= (1 << 4)
+    }
+    else {
+      header |= (1 << 5)
+    }
+  }
+  ioWriter.writeUint8(header)
+}

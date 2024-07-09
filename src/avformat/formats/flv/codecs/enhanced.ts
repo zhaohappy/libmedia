@@ -1,5 +1,5 @@
 /*
- * libmedia flv h264 util
+ * libmedia flv enhanced util
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -26,15 +26,30 @@
 import * as flv from '../oflv'
 import Stream from '../../../AVStream'
 import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVCPacketType, FlvTag } from '../flv'
+import { FlvTag, PacketTypeExt } from '../flv'
 import IOWriter from 'common/io/IOWriterSync'
 import { FlvCodecHeaderLength } from '../flv'
 import { AVCodecID } from 'avutil/codec'
+import { writeVideoTagExtDataHeader } from '../oflv'
 
-export function writeDataHeader(ioWriter: IOWriter, type: AVCPacketType, ct: number) {
-  ioWriter.writeUint8(type)
-  ioWriter.writeUint24(ct)
+export function writeCodecTagHeader(ioWriter: IOWriter, codecId: AVCodecID) {
+  switch (codecId) {
+    case AVCodecID.AV_CODEC_ID_HEVC:
+      ioWriter.writeString('hvc1')
+      break
+    case AVCodecID.AV_CODEC_ID_VVC:
+      ioWriter.writeString('vvc1')
+      break
+    case AVCodecID.AV_CODEC_ID_VP9:
+      ioWriter.writeString('vp09')
+      break
+    case AVCodecID.AV_CODEC_ID_AV1:
+      ioWriter.writeString('av01')
+      break
+  }
 }
+
+
 
 /**
  * 写 extradata 数据
@@ -56,12 +71,13 @@ export function writeExtradata(
   flv.writeTagHeader(
     ioWriter,
     FlvTag.VIDEO,
-    metadata.length + 1 + FlvCodecHeaderLength[AVCodecID.AV_CODEC_ID_H264],
+    metadata.length + 1 + FlvCodecHeaderLength[stream.codecpar.codecId],
     0n
   )
-  flv.writeVideoTagDataHeader(ioWriter, stream, flags)
+  writeVideoTagExtDataHeader(ioWriter, stream, PacketTypeExt.PacketTypeSequenceStart, flags)
 
-  writeDataHeader(ioWriter, AVCPacketType.AVC_SEQUENCE_HEADER, 0)
+  writeCodecTagHeader(ioWriter, stream.codecpar.codecId)
+
   ioWriter.writeBuffer(metadata)
 
   const length = Number(ioWriter.getPos() - now)

@@ -30,7 +30,9 @@ import { AVIFormatContext } from '../AVFormatContext'
 import * as logger from 'common/util/logger'
 import { AVPacketSideDataType, AVCodecID, AVMediaType } from 'avutil/codec'
 import { FlvAudioCodecType2AVCodecID,
-  FlvVideoCodecType2AVCodecID, FlvTag, PacketTypeExt
+  FlvVideoCodecType2AVCodecID, FlvTag,
+  AVCPacketType,
+  PacketTypeExt
 } from './flv/flv'
 
 import * as flvAAC from './flv/codecs/aac'
@@ -333,13 +335,13 @@ export default class IFlvFormat extends IFormat {
 
             avpacket.pts = avpacket.dts + static_cast<int64>(ct)
 
-            if (packetType === flvH264.AVCPacketType.AVC_SEQUENCE_HEADER) {
+            if (packetType === AVCPacketType.AVC_SEQUENCE_HEADER) {
               const len = size - 5
               const data = avMalloc(len)
               addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, data, len)
               await formatContext.ioReader.readBuffer(len, mapSafeUint8Array(data, len))
             }
-            else if (packetType === flvH264.AVCPacketType.AVC_END_OF_ENQUENCE) {
+            else if (packetType === AVCPacketType.AVC_END_OF_ENQUENCE) {
               avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_END
             }
             else {
@@ -422,10 +424,10 @@ export default class IFlvFormat extends IFormat {
 
             avpacket.pts = avpacket.dts + static_cast<int64>(ct)
 
-            if (packetType === flvH264.AVCPacketType.AVC_SEQUENCE_HEADER) {
+            if (packetType === AVCPacketType.AVC_SEQUENCE_HEADER) {
               await this.readCodecConfigurationRecord(formatContext, stream, size - 5)
             }
-            else if (packetType === flvH264.AVCPacketType.AVC_END_OF_ENQUENCE) {
+            else if (packetType === AVCPacketType.AVC_END_OF_ENQUENCE) {
               avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_END
             }
             else {

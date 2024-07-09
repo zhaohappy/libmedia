@@ -40,6 +40,12 @@ export const enum PacketTypeExt {
   PacketTypeMPEG2TSSequenceStart = 5
 }
 
+export const enum AVCPacketType {
+  AVC_SEQUENCE_HEADER,
+  AVC_NALU,
+  AVC_END_OF_ENQUENCE
+}
+
 export const AVCodecID2FlvCodecType = {
   [AVCodecID.AV_CODEC_ID_AAC]: 10,
   [AVCodecID.AV_CODEC_ID_MP3]: 2,
@@ -81,7 +87,9 @@ export const FlvCodecHeaderLength = {
   [AVCodecID.AV_CODEC_ID_MP3]: 1,
   [AVCodecID.AV_CODEC_ID_SPEEX]: 1,
   [AVCodecID.AV_CODEC_ID_H264]: 4,
+  [AVCodecID.AV_CODEC_ID_MPEG4]: 4,
   [AVCodecID.AV_CODEC_ID_HEVC]: 4,
   [AVCodecID.AV_CODEC_ID_VVC]: 4,
-  [AVCodecID.AV_CODEC_ID_MPEG4]: 4
+  [AVCodecID.AV_CODEC_ID_VP9]: 4,
+  [AVCodecID.AV_CODEC_ID_AV1]: 4
 }

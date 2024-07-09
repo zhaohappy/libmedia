@@ -31,13 +31,14 @@ import { AVOFormatContext } from '../AVFormatContext'
 import * as array from 'common/util/array'
 import * as object from 'common/util/object'
 import { AVPacketSideDataType, AVCodecID, AVMediaType } from 'avutil/codec'
-import { AVCodecID2FlvCodecType, FlvCodecHeaderLength, FlvTag } from './flv/flv'
+import { AVCPacketType, AVCodecID2FlvCodecType, FlvCodecHeaderLength, FlvTag, PacketTypeExt } from './flv/flv'
 import { FlvContext } from './flv/type'
 
 import * as oflv from './flv/oflv'
 
 import * as flvAAC from './flv/codecs/aac'
 import * as flvH264 from './flv/codecs/h264'
+import * as flvEnhanced from './flv/codecs/enhanced'
 
 import concatTypeArray from 'common/function/concatTypeArray'
 import { AVFormat } from '../avformat'
@@ -186,17 +187,31 @@ export default class OFlvFormat extends OFormat {
       if (videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
         || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
         || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
+        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1
         || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
       ) {
 
         const now = formatContext.ioWriter.getPos()
 
-        const length = flvH264.writeExtradata(
-          formatContext.ioWriter,
-          videoStream,
-          mapUint8Array(videoStream.codecpar.extradata, videoStream.codecpar.extradataSize),
-          AVPacketFlags.AV_PKT_FLAG_KEY
-        )
+        const usdEnhanced = videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+          || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+          || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
+          || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1
+
+        const length = usdEnhanced
+          ? flvEnhanced.writeExtradata(
+            formatContext.ioWriter,
+            videoStream,
+            mapUint8Array(videoStream.codecpar.extradata, videoStream.codecpar.extradataSize),
+            AVPacketFlags.AV_PKT_FLAG_KEY
+          )
+          : flvH264.writeExtradata(
+            formatContext.ioWriter,
+            videoStream,
+            mapUint8Array(videoStream.codecpar.extradata, videoStream.codecpar.extradataSize),
+            AVPacketFlags.AV_PKT_FLAG_KEY
+          )
         this.context.filesize += length + 4
         this.context.videosize += videoStream.codecpar.extradataSize
         this.context.datasize += videoStream.codecpar.extradataSize
@@ -281,8 +296,6 @@ export default class OFlvFormat extends OFormat {
       if (element) {
         const extradata = mapUint8Array(element.data, element.size)
         if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
-          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
         ) {
           flvH264.writeExtradata(
@@ -292,30 +305,70 @@ export default class OFlvFormat extends OFormat {
             AVPacketFlags.AV_PKT_FLAG_KEY
           )
         }
+        else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1
+        ) {
+          flvEnhanced.writeExtradata(
+            formatContext.ioWriter,
+            stream,
+            mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize),
+            AVPacketFlags.AV_PKT_FLAG_KEY
+          )
+        }
       }
 
       if (avpacket.size) {
         const now = formatContext.ioWriter.getPos()
-
-        oflv.writeTagHeader(
-          formatContext.ioWriter,
-          FlvTag.VIDEO,
-          avpacket.size + 1 + FlvCodecHeaderLength[stream.codecpar.codecId],
-          avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase)
-        )
-
-        oflv.writeVideoTagDataHeader(formatContext.ioWriter, stream, avpacket.flags)
-
         if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
-          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
         ) {
+          oflv.writeTagHeader(
+            formatContext.ioWriter,
+            FlvTag.VIDEO,
+            avpacket.size + 1 + FlvCodecHeaderLength[stream.codecpar.codecId],
+            avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase)
+          )
+
+          oflv.writeVideoTagDataHeader(formatContext.ioWriter, stream, avpacket.flags)
+
           let ct = 0
           if (avpacket.pts !== NOPTS_VALUE_BIGINT) {
             ct = static_cast<int32>(avRescaleQ(avpacket.pts - avpacket.dts, avpacket.timeBase, stream.timeBase))
           }
-          flvH264.writeDataHeader(formatContext.ioWriter, flvH264.AVCPacketType.AVC_NALU, ct)
+          flvH264.writeDataHeader(formatContext.ioWriter, AVCPacketType.AVC_NALU, ct)
+        }
+        else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1
+        ) {
+          const packetType = avpacket.dts !== avpacket.pts
+            && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+              || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+            )
+            ? PacketTypeExt.PacketTypeCodedFrames
+            : PacketTypeExt.PacketTypeCodedFramesX
+          
+          oflv.writeTagHeader(
+            formatContext.ioWriter,
+            FlvTag.VIDEO,
+            avpacket.size + 1 + FlvCodecHeaderLength[stream.codecpar.codecId]
+              + (packetType === PacketTypeExt.PacketTypeCodedFrames ? 3 : 0),
+            avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase)
+          )
+          oflv.writeVideoTagExtDataHeader(formatContext.ioWriter, stream, packetType, avpacket.flags)
+        
+          flvEnhanced.writeCodecTagHeader(formatContext.ioWriter, stream.codecpar.codecId)
+
+          if (packetType === PacketTypeExt.PacketTypeCodedFrames) {
+            let ct = 0
+            if (avpacket.pts !== NOPTS_VALUE_BIGINT) {
+              ct = static_cast<int32>(avRescaleQ(avpacket.pts - avpacket.dts, avpacket.timeBase, stream.timeBase))
+            }
+            formatContext.ioWriter.writeUint24(ct)
+          }
         }
 
         formatContext.ioWriter.writeBuffer(mapUint8Array(avpacket.data, avpacket.size))
@@ -353,21 +406,33 @@ export default class OFlvFormat extends OFormat {
       && (videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
         || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
         || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
+        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1
         || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
       )
     ) {
-      // avc end
+      const usdEnhanced = videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
+        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1
+
       oflv.writeTagHeader(
         formatContext.ioWriter,
         FlvTag.VIDEO,
         1 + FlvCodecHeaderLength[videoStream.codecpar.codecId],
         0n
       )
-      oflv.writeVideoTagDataHeader(formatContext.ioWriter, videoStream, AVPacketFlags.AV_PKT_FLAG_KEY)
-      flvH264.writeDataHeader(formatContext.ioWriter, flvH264.AVCPacketType.AVC_END_OF_ENQUENCE, 0)
-      formatContext.ioWriter.writeUint32(11 + 5)
-      this.context.videosize += 11 + 5
-      this.context.filesize += 11 + 5 + 4
+      if (usdEnhanced) {
+        oflv.writeVideoTagExtDataHeader(formatContext.ioWriter, videoStream, PacketTypeExt.PacketTypeSequenceEnd, AVPacketFlags.AV_PKT_FLAG_KEY)
+        flvEnhanced.writeCodecTagHeader(formatContext.ioWriter, videoStream.codecpar.codecId)
+      }
+      else {
+        oflv.writeVideoTagDataHeader(formatContext.ioWriter, videoStream, AVPacketFlags.AV_PKT_FLAG_KEY)
+        flvH264.writeDataHeader(formatContext.ioWriter, AVCPacketType.AVC_END_OF_ENQUENCE, 0)
+      }
+      formatContext.ioWriter.writeUint32(11 + 1 + FlvCodecHeaderLength[videoStream.codecpar.codecId])
+      this.context.videosize += 11 + 1 + FlvCodecHeaderLength[videoStream.codecpar.codecId]
+      this.context.filesize += 11 + 1 + FlvCodecHeaderLength[videoStream.codecpar.codecId] + 4
 
       this.script.onMetaData.canSeekToEnd = true
     }
