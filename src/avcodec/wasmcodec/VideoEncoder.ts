@@ -174,6 +174,14 @@ export default class WasmVideoEncoder {
     return null
   }
 
+  public getColorSpace() {
+    return {
+      colorSpace: this.encoder.call<int32>('encoder_get_color_space'),
+      colorPrimaries: this.encoder.call<int32>('encoder_get_color_primaries'),
+      colorTrc: this.encoder.call<int32>('encoder_get_color_trc')
+    }
+  }
+
   public close() {
     this.encoder.call('encoder_close')
     this.encoder.destroy()

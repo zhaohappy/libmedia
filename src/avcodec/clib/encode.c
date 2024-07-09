@@ -135,6 +135,27 @@ EM_PORT_API(int) encoder_get_extradata_size() {
   return 0;
 }
 
+EM_PORT_API(int) encoder_get_color_space() {
+  if (enc_ctx) {
+    return enc_ctx->colorspace;
+  }
+  return 0;
+}
+
+EM_PORT_API(int) encoder_get_color_primaries() {
+  if (enc_ctx) {
+    return enc_ctx->color_primaries;
+  }
+  return 0;
+}
+
+EM_PORT_API(int) encoder_get_color_trc() {
+  if (enc_ctx) {
+    return enc_ctx->color_trc;
+  }
+  return 0;
+}
+
 EM_PORT_API(void) encoder_close() {
   if (enc_ctx) {
     avcodec_free_context(&enc_ctx);

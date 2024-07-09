@@ -54,7 +54,7 @@ export function mapFormat(format: VideoPixelFormat) {
   }
 }
 
-function mapColorSpace(colorSpace: string) {
+export function mapColorSpace(colorSpace: string) {
   switch (colorSpace) {
     case 'bt709' :
       return AVColorSpace.AVCOL_SPC_BT709
@@ -69,7 +69,7 @@ function mapColorSpace(colorSpace: string) {
   }
 }
 
-function mapColorPrimaries(colorPrimaries: string) {
+export function mapColorPrimaries(colorPrimaries: string) {
   switch (colorPrimaries) {
     case 'bt709':
       return AVColorPrimaries.AVCOL_PRI_BT709
@@ -82,7 +82,7 @@ function mapColorPrimaries(colorPrimaries: string) {
   }
 }
 
-function mapColorTrc(colorTrc: string) {
+export function mapColorTrc(colorTrc: string) {
   switch (colorTrc) {
     case 'bt709':
       return AVColorTransferCharacteristic.AVCOL_TRC_BT709

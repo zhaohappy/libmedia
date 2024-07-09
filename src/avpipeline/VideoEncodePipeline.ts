@@ -374,6 +374,14 @@ export default class VideoEncodePipeline extends Pipeline {
     logger.fatal('task not found')
   }
 
+  public async getColorSpace(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      return task.targetEncoder.getColorSpace()
+    }
+    logger.fatal('task not found')
+  }
+
   public async registerTask(options: VideoEncodeTaskOptions): Promise<number> {
     if (this.tasks.has(options.taskId)) {
       return errorType.INVALID_OPERATE

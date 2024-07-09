@@ -212,7 +212,7 @@ export default class MuxPipeline extends Pipeline {
           }
         }
       }
-      return mux.open(task.formatContext)
+      return 0
     }
     else {
       logger.fatal('task not found')
@@ -257,11 +257,13 @@ export default class MuxPipeline extends Pipeline {
   public async start(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
-      mux.writeHeader(task.formatContext)
 
       if (task.loop) {
-        task.loop.destroy()
+        logger.fatal('task has started')
       }
+
+      mux.open(task.formatContext)
+      mux.writeHeader(task.formatContext)
 
       if (!task.streams.length) {
         logger.fatal('task streams not found')

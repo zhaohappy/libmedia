@@ -32,13 +32,17 @@ import { getHardwarePreference } from '../function/getHardwarePreference'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import * as is from 'common/util/is'
 import { avframe2VideoFrame } from 'avutil/function/avframe2VideoFrame'
-import { createAVPacket } from 'avutil/util/avpacket'
+import { createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
 import { BitFormat } from 'avformat/codecs/h264'
 import { PixelFormatDescriptorsMap, PixelFormatFlags } from 'avutil/pixelFormatDescriptor'
 import { createAVFrame, refAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
 import encodedVideoChunk2AVPacket from 'avutil/function/encodedVideoChunk2AVPacket'
+import { mapColorPrimaries, mapColorSpace, mapColorTrc } from 'avutil/function/videoFrame2AVFrame'
+
+import * as av1 from 'avformat/codecs/av1'
+import * as vp9 from 'avformat/codecs/vp9'
 
 export type WebVideoEncoderOptions = {
   onReceivePacket: (avpacket: pointer<AVPacket>, avframe?: pointer<AVFrame>) => void
@@ -98,7 +102,26 @@ export default class WebVideoEncoder {
         }
         this.extradata = buffer
       }
+      if (metadata?.decoderConfig?.colorSpace) {
+        this.parameters.colorSpace = mapColorSpace(metadata.decoderConfig.colorSpace.matrix)
+        this.parameters.colorPrimaries = mapColorPrimaries(metadata.decoderConfig.colorSpace.primaries)
+        this.parameters.colorTrc = mapColorTrc(metadata.decoderConfig.colorSpace.transfer)
+      }
+
       encodedVideoChunk2AVPacket(chunk, avpacket)
+
+      if (!this.extradata) {
+        let extradata: Uint8Array
+        if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_AV1) {
+          extradata = av1.generateExtradata(this.parameters, getAVPacketData(avpacket))
+        }
+        else if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_VP9) {
+          extradata = vp9.generateExtradata(this.parameters)
+        }
+        if (extradata) {
+          this.extradata = extradata
+        }
+      }
     }
     else {
       encodedVideoChunk2AVPacket(chunk, avpacket, metadata)
@@ -186,12 +209,16 @@ export default class WebVideoEncoder {
       if (cache.duration) {
         cache.duration = avRescaleQ(cache.duration, this.timeBase, AV_TIME_BASE_Q)
       }
+      else {
+        cache.duration = 1000000n / this.framerate
+      }
       this.avframeMap.set(cache.pts, cache)
       frame = avframe2VideoFrame(cache)
     }
     else {
       frame = new VideoFrame(frame, {
-        timestamp: static_cast<double>(this.inputCounter)
+        timestamp: static_cast<double>(this.inputCounter),
+        duration: static_cast<double>(1000000n / this.framerate)
       })
     }
     try {
@@ -222,6 +249,14 @@ export default class WebVideoEncoder {
 
   public getExtraData() {
     return this.extradata
+  }
+
+  public getColorSpace() {
+    return {
+      colorSpace: this.parameters.colorSpace,
+      colorPrimaries: this.parameters.colorPrimaries,
+      colorTrc: this.parameters.colorTrc,
+    }
   }
 
   public getQueueLength() {
