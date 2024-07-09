@@ -28,11 +28,27 @@ import { AVPacketSideDataType } from 'avutil/codec'
 import BitReader from 'common/io/BitReader'
 import * as av1syntax from 'avutil/util/av1syntax'
 import { Uint8ArrayInterface } from 'common/io/interface'
+import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import BitWriter from 'common/io/BitWriter'
+import { PixelFormatDescriptorsMap } from 'avutil/pixelFormatDescriptor'
 
 export const enum AV1Profile {
   Main,
   High,
   Professional
+}
+
+export const enum OBUType {
+  Reserved,
+  SEQUENCE_HEADER,
+  TEMPORAL_DELIMITER,
+  FRAME_HEADER,
+  TILE_GROUP,
+  METADATA,
+  FRAME,
+  REDUNDANT_FRAME_HEADER,
+  TILE_LIST,
+  PADDING = 15
 }
 
 export const AV1Profile2Name: Record<AV1Profile, string> = {
@@ -42,26 +58,28 @@ export const AV1Profile2Name: Record<AV1Profile, string> = {
 }
 
 export const LevelCapabilities = [
-  { level: 20, maxResolution: 426 * 240, maxFrameRate: 30 },
-  { level: 21, maxResolution: 640 * 360, maxFrameRate: 30 },
-  { level: 30, maxResolution: 854 * 480, maxFrameRate: 30 },
-  { level: 31, maxResolution: 1280 * 720, maxFrameRate: 30 },
-  { level: 40, maxResolution: 1920 * 1080, maxFrameRate: 30 },
-  { level: 41, maxResolution: 1920 * 1080, maxFrameRate: 60 },
-  { level: 50, maxResolution: 3840 * 2160, maxFrameRate: 30 },
-  { level: 51, maxResolution: 3840 * 2160, maxFrameRate: 60 },
-  { level: 52, maxResolution: 3840 * 2160, maxFrameRate: 120 },
-  { level: 53, maxResolution: 3840 * 2160, maxFrameRate: 120 },
-  { level: 60, maxResolution: 7680 * 4320, maxFrameRate: 30 },
-  { level: 61, maxResolution: 7680 * 4320, maxFrameRate: 60 },
-  { level: 62, maxResolution: 7680 * 4320, maxFrameRate: 120 },
-  { level: 63, maxResolution: 7680 * 4320, maxFrameRate: 120 }
+  { level: 20, maxResolution: 2048 * 1152 },
+  { level: 21, maxResolution: 2816 * 1584 },
+  { level: 30, maxResolution: 4352 * 2448 },
+  { level: 31, maxResolution: 5504 * 3096 },
+  { level: 40, maxResolution: 6144 * 3456 },
+  { level: 41, maxResolution: 6144 * 3456 },
+  { level: 50, maxResolution: 8192 * 4352 },
+  { level: 51, maxResolution: 8192 * 4352 },
+  { level: 52, maxResolution: 8192 * 4352 },
+  { level: 53, maxResolution: 8192 * 4352 },
+  { level: 60, maxResolution: 16384 * 8704 },
+  { level: 61, maxResolution: 16384 * 8704 },
+  { level: 62, maxResolution: 16384 * 8704 },
+  { level: 63, maxResolution: 16384 * 8704 }
 ]
+
+export const AV1LevelIdx = [20, 21, 22, 23, 30, 31, 32, 33, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63, 70, 71, 72, 73]
 
 export function getLevelByResolution(width: number, height: number, fps: number) {
   const resolution = width * height;
   for (const level of LevelCapabilities) {
-    if (resolution <= level.maxResolution && fps <= level.maxFrameRate) {
+    if (resolution <= level.maxResolution) {
       return level.level
     }
   }
@@ -131,6 +149,19 @@ export function parseExtraData(extradata: Uint8ArrayInterface) {
 export function parseSequenceHeader(header: Uint8ArrayInterface) {
   const bitReader = new BitReader(header.length)
   bitReader.appendBuffer(header)
+
+  bitReader.readU1()
+  bitReader.readU(4)
+  const extensionFlag = bitReader.readU1()
+  const hasSizeFlag = bitReader.readU1()
+  // obu_reserved_1bit
+  bitReader.readU1()
+  if (extensionFlag) {
+    bitReader.readU(8)
+  }
+  if (hasSizeFlag) {
+    av1syntax.leb128(bitReader)
+  }
 
   const seq_profile =	av1syntax.f(bitReader, 3)
   const still_picture =	av1syntax.f(bitReader, 1)
@@ -374,13 +405,89 @@ export function parseSequenceHeader(header: Uint8ArrayInterface) {
     width: max_frame_width_minus_1 + 1,
     height: max_frame_height_minus_1 + 1,
     profile: seq_profile,
-    level: seq_level_idx[0],
+    level: AV1LevelIdx[seq_level_idx[0]],
     tier: seq_tier[0],
     bitDepth: bit_depth,
     monoChrome: mono_chrome,
     colorRange: color_range,
     colorPrimaries: color_primaries,
     transferCharacteristics: transfer_characteristics,
-    matrixCoefficients: matrix_coefficients
+    matrixCoefficients: matrix_coefficients,
+    subsamplingX: subsampling_x,
+    subsamplingY: subsampling_y,
+    chromaSamplePosition: chroma_sample_position
   }
+}
+
+export function splitOBU(buffer: Uint8ArrayInterface) {
+  const bitReader = new BitReader()
+
+  bitReader.appendBuffer(buffer)
+
+  const list: Uint8ArrayInterface[] = []
+
+  while (bitReader.remainingLength()) {
+    const now = bitReader.getPos()
+    // obu_forbidden_bit
+    bitReader.readU1()
+    const type = bitReader.readU(4)
+    const extensionFlag = bitReader.readU1()
+    const hasSizeFlag = bitReader.readU1()
+    // obu_reserved_1bit
+    bitReader.readU1()
+
+    if (extensionFlag) {
+      bitReader.readU(8)
+    }
+
+    const size = hasSizeFlag ? av1syntax.leb128(bitReader) : buffer.length - 1 - extensionFlag
+
+    const headerSize = bitReader.getPos() - now
+
+    list.push(buffer.subarray(now, now + headerSize + size))
+
+    bitReader.skip(size * 8)
+  }
+
+  return list
+}
+
+export function generateExtradata(codecpar: pointer<AVCodecParameters>, buffer: Uint8ArrayInterface) {
+  const bitWriter = new BitWriter(4)
+  // marker
+  bitWriter.writeU1(1)
+  // version
+  bitWriter.writeU(7, 1)
+
+  const header = splitOBU(buffer).find((buffer) => {
+    return ((buffer[0] >>> 3) & 0x0f) === OBUType.SEQUENCE_HEADER
+  }) 
+  
+  if (header) {
+    const params = parseSequenceHeader(header)
+    bitWriter.writeU(3, params.profile)
+    bitWriter.writeU(5, params.level)
+    bitWriter.writeU(1, params.tier)
+    bitWriter.writeU(1, params.bitDepth > 8 ? 1 : 0)
+    bitWriter.writeU(1, params.bitDepth === 12 ? 1 : 0)
+    bitWriter.writeU(1, params.monoChrome)
+    bitWriter.writeU(1, params.subsamplingX)
+    bitWriter.writeU(1, params.subsamplingY)
+    bitWriter.writeU(1, params.chromaSamplePosition)
+  }
+  else {
+    const desc = PixelFormatDescriptorsMap[codecpar.format]
+    bitWriter.writeU(3, codecpar.profile)
+    bitWriter.writeU(5, codecpar.level)
+    bitWriter.writeU(1, 0)
+    bitWriter.writeU(1, desc.comp[0].depth > 8 ? 1 : 0)
+    bitWriter.writeU(1, desc.comp[0].depth === 12 ? 1 : 0)
+    bitWriter.writeU(1, 0)
+    bitWriter.writeU(1, 1)
+    bitWriter.writeU(1, 1)
+    bitWriter.writeU(1, 0)
+  }
+  // padding
+  bitWriter.writeU(8, 0)
+  return bitWriter.getBuffer()
 }
