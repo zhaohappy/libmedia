@@ -1549,13 +1549,20 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         }
 
         let buffer: Uint8Array
+        let updated = false
         if (streams[i].output.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
           buffer = await this.AudioEncoderThread.getExtraData(streams[i].taskId)
         }
         else if (streams[i].output.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
           buffer = await this.VideoEncoderThread.getExtraData(streams[i].taskId)
+          const colorSpace = await this.VideoEncoderThread.getColorSpace(streams[i].taskId)
+          if (colorSpace) {
+            streams[i].output.codecpar.colorSpace = colorSpace.colorSpace
+            streams[i].output.codecpar.colorPrimaries = colorSpace.colorPrimaries
+            streams[i].output.codecpar.colorTrc = colorSpace.colorTrc
+            updated = true
+          }
         }
-
         if (!buffer) {
           const codecId = streams[i].output.codecpar.codecId
           if (codecId === AVCodecID.AV_CODEC_ID_AAC) {
@@ -1565,12 +1572,14 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             buffer = opus.avCodecParameters2Extradata(accessof(streams[i].output.codecpar))
           }
         }
-
         if (buffer) {
           const extradata = avMalloc(buffer.length)
           memcpyFromUint8Array(extradata, buffer.length, buffer)
           streams[i].output.codecpar.extradata = extradata
           streams[i].output.codecpar.extradataSize = buffer.length
+          updated = true
+        }
+        if (updated) {
           await this.MuxThread.updateAVCodecParameters(task.taskId, streams[i].output.index, streams[i].output.codecpar)
         }
       }
