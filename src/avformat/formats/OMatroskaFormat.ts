@@ -221,7 +221,7 @@ export default class OMatroskaFormat extends OFormat {
         track.number = stream.index + 1
         if (stream.codecpar.extradata) {
           track.codecPrivate = {
-            data: mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize),
+            data: mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize).slice(),
             pos: -1n,
             size: static_cast<int64>(stream.codecpar.extradataSize)
           }
@@ -299,7 +299,7 @@ export default class OMatroskaFormat extends OFormat {
     omatroska.writeEbmlId(this.context.eleWriter, EBMLId.SIMPLE_BLOCK)
     omatroska.writeEbmlLength(this.context.eleWriter, omatroska.ebmlLengthSize(track.number) + 2 + 1 + avpacket.size)
     omatroska.writeEbmlNum(this.context.eleWriter, track.number, omatroska.ebmlLengthSize(track.number))
-    const pts = avRescaleQ(avpacket.pts, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+    const pts = avRescaleQ(avpacket.pts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
 
     this.context.eleWriter.writeInt16(static_cast<int32>(pts - this.context.currentCluster.timeCode))
 
@@ -356,8 +356,10 @@ export default class OMatroskaFormat extends OFormat {
 
     const track = stream.privData as TrackEntry
 
-    if (!track.maxPts || track.maxPts < avpacket.pts) {
-      track.maxPts = avpacket.pts
+    const pts = avRescaleQ(avpacket.pts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+
+    if (!track.maxPts || track.maxPts < pts) {
+      track.maxPts = pts
     }
 
     if (this.options.isLive
@@ -365,11 +367,11 @@ export default class OMatroskaFormat extends OFormat {
         && (
           stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
           || !this.context.hasVideo
-            && (avRescaleQ(avpacket.pts, stream.timeBase, AV_MILLI_TIME_BASE_Q) - this.context.currentCluster.timeCode > 5000n)
+            && (pts - this.context.currentCluster.timeCode > 5000n)
         )
     ) {
       this.writeCluster(formatContext)
-      this.context.currentCluster.timeCode = avRescaleQ(avpacket.pts, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+      this.context.currentCluster.timeCode = pts
       this.context.currentCluster.pos = formatContext.ioWriter.getPos() - this.context.segmentStart
       this.context.cues.entry.push({
         time: this.context.currentCluster.timeCode,
@@ -393,7 +395,7 @@ export default class OMatroskaFormat extends OFormat {
       const track = stream.privData as TrackEntry
 
       if (!this.options.isLive) {
-        const duration = avRescaleQ(track.maxPts, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+        const duration = track.maxPts
         if (duration > this.context.info.duration) {
           this.context.info.duration = reinterpret_cast<float>(static_cast<int32>(duration))
         }
@@ -474,11 +476,13 @@ export default class OMatroskaFormat extends OFormat {
     this.context.elePositionInfos[0].length = segmentLength
     omatroska.updatePositionSize(formatContext.ioWriter, this.context)
 
+    this.context.eleCaches.length = 0
+
     return 0
   }
 
   public flush(formatContext: AVOFormatContext): number {
-    this.writeCluster(formatContext)
+    formatContext.ioWriter.flush()
     this.context.currentCluster.timeCode = -1n
     this.context.currentCluster.pos = -1n
     return 0
