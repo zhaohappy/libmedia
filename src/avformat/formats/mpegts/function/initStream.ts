@@ -90,6 +90,22 @@ export default function initStream(pid: PID, stream: Stream, mpegtsContext: Mpeg
             }
           }
         }
+        else if (String.fromCharCode(regDescriptor.buffer[0]) === 'A'
+          || String.fromCharCode(regDescriptor.buffer[1]) === 'V'
+          || String.fromCharCode(regDescriptor.buffer[2]) === '0'
+          || String.fromCharCode(regDescriptor.buffer[3]) === '1'
+        ) {
+          stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_VIDEO
+          stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_AV1
+          const extDescriptor = descriptorList.find((descriptor) => {
+            return descriptor.tag === 0x80
+          })
+          if (extDescriptor) {
+            stream.codecpar.extradata = avMalloc(extDescriptor.buffer.length)
+            memcpyFromUint8Array(stream.codecpar.extradata, extDescriptor.buffer.length, extDescriptor.buffer)
+            stream.codecpar.extradataSize = extDescriptor.buffer.length
+          }
+        }
       }
     }
   }

@@ -211,6 +211,7 @@ export function getStreamType(stream: Stream) {
     case AVCodecID.AV_CODEC_ID_AC3:
       return mpegts.TSStreamType.AUDIO_AC3
     case AVCodecID.AV_CODEC_ID_OPUS:
+    case AVCodecID.AV_CODEC_ID_AV1:
       return mpegts.TSStreamType.PRIVATE_DATA
     case AVCodecID.AV_CODEC_ID_TRUEHD:
       return mpegts.TSStreamType.AUDIO_TRUEHD
@@ -356,7 +357,7 @@ export function getPMTPayload(pmt: PMT, streams: Stream[]) {
     const codecId = streams[i].codecpar.codecId
 
     switch (streams[i].codecpar.codecType) {
-      case AVMediaType.AVMEDIA_TYPE_AUDIO:
+      case AVMediaType.AVMEDIA_TYPE_AUDIO: {
         if (codecId === AVCodecID.AV_CODEC_ID_AC3) {
           putRegistrationDescriptor(mktag('AC-3'))
         }
@@ -373,7 +374,6 @@ export function getPMTPayload(pmt: PMT, streams: Stream[]) {
           buffer[pos++] = 0x80
           buffer[pos++] = streams[i].codecpar.chLayout.nbChannels
         }
-
         // language und
         buffer[pos++] = mpegts.ISO_639_LANGUAGE_DESCRIPTOR
         buffer[pos++] = 4
@@ -382,6 +382,19 @@ export function getPMTPayload(pmt: PMT, streams: Stream[]) {
         buffer[pos++] = 100
         buffer[pos++] = 0
         break
+      }
+      case AVMediaType.AVMEDIA_TYPE_VIDEO: {
+        if (codecId === AVCodecID.AV_CODEC_ID_AV1) {
+          putRegistrationDescriptor(mktag('AV01'))
+          if (streams[i].codecpar.extradata) {
+            buffer[pos++] = 0x80
+            buffer[pos++] = streams[i].codecpar.extradataSize
+            for (let j = 0; j < streams[i].codecpar.extradataSize; j++) {
+              buffer[pos++] = accessof(reinterpret_cast<pointer<uint8>>(streams[i].codecpar.extradata + j))
+            }
+          }
+        }
+      }
     }
 
     let len = 0xf000 | (pos - descLengthPos - 2)
