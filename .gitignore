@@ -8,6 +8,7 @@ dist/**/
 dist/*
 !dist/decode/
 !dist/resample/
+!dist/scale/
 !dist/stretchpitch/
 !dist/legacy/
 !dist/avtranscoder/
