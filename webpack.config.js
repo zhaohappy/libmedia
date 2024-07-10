@@ -20,23 +20,27 @@ module.exports = (env) => {
   }
   else if (env.avplayer) {
     entry = path.resolve(__dirname, './src/avplayer/AVPlayer.ts');
-    output = `avplayer${env.legacy ? '-legacy' : ''}.js`;
+    output = `avplayer.js`;
     library = 'AVPlayer';
     libraryExport = 'default';
-
-    if (env.legacy && env.release) {
-      outputPath += '/legacy';
+    if (env.legacy) {
+      outputPath += '/avplayer-legacy';
+    }
+    else {
+      outputPath += '/avplayer';
     }
   }
   else if (env.avtranscoder) {
-    outputPath += '/avtranscoder';
     entry = path.resolve(__dirname, './src/avtranscoder/AVTranscoder.ts');
-    output = `avtranscoder${env.legacy ? '-legacy' : ''}.js`;
+    output = `avtranscoder.js`;
     library = 'AVTranscoder';
     libraryExport = 'default';
 
-    if (env.legacy && env.release) {
-      outputPath += '/legacy';
+    if (env.legacy) {
+      outputPath += '/avtranscoder-legacy';
+    }
+    else {
+      outputPath += '/avtranscoder';
     }
   }
   else if (env.polyfill) {

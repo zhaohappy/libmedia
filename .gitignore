@@ -12,6 +12,8 @@ dist/*
 !dist/stretchpitch/
 !dist/legacy/
 !dist/avtranscoder/
+!dist/avplayer/
+!dist/avplayer-legacy/
 
 !dist/[0-9]*.avplayer.js
 !dist/avplayer.js
@@ -22,6 +24,14 @@ dist/legacy/*.*
 dist/avtranscoder/*.*
 !dist/avtranscoder/[0-9]*.avtranscoder.js
 !dist/avtranscoder/avtranscoder.js
+
+dist/avplayer/*.*
+!dist/avplayer/[0-9]*.avplayer.js
+!dist/avplayer/avplayer.js
+
+dist/avplayer-legacy/*.*
+!dist/avplayer-legacy/[0-9]*.avplayer.js
+!dist/avplayer-legacy/avplayer.js
 
 !dist/cheap-polyfill.js
 

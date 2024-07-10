@@ -453,7 +453,7 @@
     </script>
     <script src="./sw.js"></script>
     <script src="../dist/cheap-polyfill.js"></script>
-    <script src="../dist/avplayer.js"></script>
+    <script src="../dist/avplayer/avplayer.js"></script>
     <script src="./vue.js" crossorigin></script>
     <script src="./element-ui.js" crossorigin></script>
 
@@ -679,6 +679,9 @@
             const audioList = data[1]
 
             if (videoList.list.length > 1) {
+              if (videoChangeComponent) {
+                videoChangeComponent.destroy()
+              }
               videoChangeComponent = new Vue({
                 el: '#video-change',
                 data: function() {
@@ -709,6 +712,9 @@
             }
 
             if (audioList.list.length > 1) {
+              if (audioChangeComponent) {
+                audioChangeComponent.destroy()
+              }
               audioChangeComponent = new Vue({
                 el: '#audio-change',
                 data: function() {
