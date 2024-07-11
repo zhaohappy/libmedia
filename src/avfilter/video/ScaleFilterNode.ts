@@ -7,6 +7,8 @@ import * as is from 'common/util/is'
 import { mapFormat, videoFrame2AVFrame } from 'avutil/function/videoFrame2AVFrame'
 import { NOPTS_VALUE } from 'avutil/constant'
 import { AVPixelFormat } from 'avutil/pixfmt'
+import * as errorType from 'avutil/error'
+import * as logger from 'common/util/logger'
 
 export interface ScaleFilterNodeOptions extends AVFilterNodeOptions {
   resource: WebAssemblyResource
@@ -47,8 +49,17 @@ export default class ScaleFilterNode extends AVFilterNode {
 
     if (width !== this.options.output.width
       || height !== this.options.output.height
-      || format !== this.options.output.format && this.options.output.format !== NOPTS_VALUE
+      || format !== this.options.output.format
+        && this.options.output.format !== NOPTS_VALUE
+        && format !== AVPixelFormat.AV_PIX_FMT_NONE
     ) {
+
+      if (format === AVPixelFormat.AV_PIX_FMT_NONE) {
+        logger.error(`src avframe format not support`)
+        outputs[0] = reinterpret_cast<pointer<AVFrame>>(errorType.FORMAT_NOT_SUPPORT)
+        return
+      }
+
       const out = this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame()
 
       if (this.scaler) {
@@ -65,23 +76,31 @@ export default class ScaleFilterNode extends AVFilterNode {
         this.scaler = new VideoScaler({
           resource: this.options.resource
         })
-        await this.scaler.open(
-          {
-            width,
-            height,
-            format
-          },
-          {
-            width: this.options.output.width,
-            height: this.options.output.height,
-            format: this.options.output.format !== NOPTS_VALUE
-              ? this.options.output.format
-              : (format === AVPixelFormat.AV_PIX_FMT_NV12 && !is.number(avframe)
-                ? AVPixelFormat.AV_PIX_FMT_YUV420P
-                : format
-              )
-          }
-        )
+
+        try {
+          await this.scaler.open(
+            {
+              width,
+              height,
+              format
+            },
+            {
+              width: this.options.output.width,
+              height: this.options.output.height,
+              format: this.options.output.format !== NOPTS_VALUE
+                ? this.options.output.format
+                : (format === AVPixelFormat.AV_PIX_FMT_NV12 && !is.number(avframe)
+                  ? AVPixelFormat.AV_PIX_FMT_YUV420P
+                  : format
+                )
+            }
+          )
+        }
+        catch (error) {
+          logger.error(`open scaler failed, error ${error}`)
+          outputs[0] = reinterpret_cast<pointer<AVFrame>>(errorType.FORMAT_NOT_SUPPORT)
+          return
+        }
       }
 
       if (!is.number(avframe)) {

@@ -9,6 +9,7 @@ import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import * as errorType from 'avutil/error'
 import { avbufferCreate } from 'avutil/util/avbuffer'
 import { NOPTS_VALUE } from 'avutil/constant'
+import * as logger from 'common/util/logger'
 
 export interface ResampleFilterNodeOptions extends AVFilterNodeOptions {
   resource: WebAssemblyResource
@@ -72,18 +73,26 @@ export default class ResampleFilterNode extends AVFilterNode {
         this.resampler = new Resampler({
           resource: this.options.resource
         })
-        await this.resampler.open(
-          {
-            channels: avframe.chLayout.nbChannels,
-            sampleRate: avframe.sampleRate,
-            format: avframe.format
-          },
-          {
-            channels: this.options.output.channels,
-            sampleRate: this.options.output.sampleRate,
-            format: this.options.output.format === NOPTS_VALUE ? avframe.format : this.options.output.format
-          }
-        )
+
+        try {
+          await this.resampler.open(
+            {
+              channels: avframe.chLayout.nbChannels,
+              sampleRate: avframe.sampleRate,
+              format: avframe.format
+            },
+            {
+              channels: this.options.output.channels,
+              sampleRate: this.options.output.sampleRate,
+              format: this.options.output.format === NOPTS_VALUE ? avframe.format : this.options.output.format
+            }
+          )
+        }
+        catch (error) {
+          logger.error(`open resampler failed, error ${error}`)
+          outputs[0] = reinterpret_cast<pointer<AVFrame>>(errorType.FORMAT_NOT_SUPPORT)
+          return
+        }
       }
 
       this.resampler.resample(avframe.extendedData, this.pcm, avframe.nbSamples)
