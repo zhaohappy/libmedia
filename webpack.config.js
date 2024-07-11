@@ -104,7 +104,7 @@ module.exports = (env) => {
     devtool: +env.release ? false : 'source-map',
     mode: +env.release ? 'production' : 'development',
     optimization: {
-      sideEffects: true,
+      sideEffects: !!(+env.release),
       usedExports: true,
       // minimize: true,
       // release 下编译会报错，关掉这个优化
