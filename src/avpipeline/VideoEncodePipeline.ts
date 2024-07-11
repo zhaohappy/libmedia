@@ -110,13 +110,13 @@ export default class VideoEncodePipeline extends Pipeline {
           task.encoderReady = this.openSoftwareEncoder(task)
           logger.warn(`video encode error width hardware, taskId: ${task.taskId}, error: ${error}, try to fallback to software encoder`)
         }
+        else {
+          logger.error(`video encode error width hardware, taskId: ${task.taskId}, error: ${error}`)
+        }
       },
-      onReceivePacket(avpacket, avframe) {
+      onReceivePacket(avpacket) {
         task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
         task.stats.videoPacketEncodeCount++
-        if (avframe) {
-          task.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(avframe))
-        }
       },
       enableHardwareAcceleration,
       avpacketPool: task.avpacketPool,
@@ -228,6 +228,9 @@ export default class VideoEncodePipeline extends Pipeline {
                     if (is.number(avframe)) {
                       task.avframePool.release(avframe)
                     }
+                    else {
+                      avframe.close()
+                    }
                     logger.error(`video encode error, taskId: ${options.taskId}, ret: ${ret}`)
                     rightIPCPort.reply(request, ret)
                     break
@@ -316,7 +319,7 @@ export default class VideoEncodePipeline extends Pipeline {
   public async open(taskId: string, parameters: pointer<AVCodecParameters>, timeBase: Rational) {
     const task = this.tasks.get(taskId)
     if (task) {
-      return new Promise<void>(async (resolve, reject) => {
+      return new Promise<number>(async (resolve, reject) => {
         task.openReject = reject
         if (task.hardwareEncoder) {
           try {
@@ -334,10 +337,18 @@ export default class VideoEncodePipeline extends Pipeline {
         task.timeBase = timeBase
 
         if (task.targetEncoder === task.softwareEncoder) {
-          await this.openSoftwareEncoder(task)
+          try {
+            await this.openSoftwareEncoder(task)
+          }
+          catch (error) {
+            logger.error(`open video software encoder failed, error: ${error}`)
+            if (!task.hardwareEncoder) {
+              resolve(errorType.CODEC_NOT_SUPPORT)
+              return
+            }
+          }
         }
-
-        resolve()
+        resolve(0)
       })
     }
     logger.fatal('task not found')

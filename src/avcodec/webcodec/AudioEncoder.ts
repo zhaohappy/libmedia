@@ -26,16 +26,16 @@
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import AVPacket, { AVPacketPool } from 'avutil/struct/avpacket'
 import getAudioCodec from 'avcodec/function/getAudioCodec'
-import AVFrame, { AVFramePool } from 'avutil/struct/avframe'
+import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
 import * as is from 'common/util/is'
 import { avframe2AudioData } from 'avutil/function/avframe2AudioData'
 import { createAVPacket } from 'avutil/util/avpacket'
-import { createAVFrame, refAVFrame } from 'avutil/util/avframe'
+import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
 import encodedAudioChunk2AVPacket from 'avutil/function/encodedAudioChunk2AVPacket'
 
 export type WebAudioEncoderOptions = {
-  onReceivePacket: (avpacket: pointer<AVPacket>, avframe?: pointer<AVFrame>) => void
+  onReceivePacket: (avpacket: pointer<AVPacket>) => void
   onError: (error?: Error) => void
   avpacketPool?: AVPacketPool
   avframePool?: AVFramePool
@@ -89,8 +89,14 @@ export default class WebAudioEncoder {
 
     this.pts += avpacket.duration
     
+    this.options.onReceivePacket(avpacket)
+
     const avframe = this.avframeCache.shift()
-    this.options.onReceivePacket(avpacket, avframe)
+    if (avframe) {
+      this.options.avframePool
+        ? this.options.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(avframe))
+        : destroyAVFrame(avframe)
+    }
   }
 
   private error(error: Error) {
@@ -162,6 +168,13 @@ export default class WebAudioEncoder {
       if (this.encoder.state !== 'closed') {
         this.encoder.close()
       }
+    }
+    if (this.avframeCache.length) {
+      this.avframeCache.forEach((avframe) => {
+        this.options.avframePool
+          ? this.options.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(avframe))
+          : destroyAVFrame(avframe)
+      })
     }
     this.encoder = null
   }

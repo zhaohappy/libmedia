@@ -26,7 +26,7 @@
 import AVPacket, { AVPacketPool } from 'avutil/struct/avpacket'
 import { AVCodecID } from 'avutil/codec'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import AVFrame, { AVFramePool } from 'avutil/struct/avframe'
+import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
 import getVideoCodec from '../function/getVideoCodec'
 import { getHardwarePreference } from '../function/getHardwarePreference'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
@@ -36,7 +36,7 @@ import { createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
 import { BitFormat } from 'avformat/codecs/h264'
 import { PixelFormatDescriptorsMap, PixelFormatFlags } from 'avutil/pixelFormatDescriptor'
-import { createAVFrame, refAVFrame } from 'avutil/util/avframe'
+import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
 import encodedVideoChunk2AVPacket from 'avutil/function/encodedVideoChunk2AVPacket'
 import { mapColorPrimaries, mapColorSpace, mapColorTrc } from 'avutil/function/videoFrame2AVFrame'
@@ -45,7 +45,7 @@ import * as av1 from 'avformat/codecs/av1'
 import * as vp9 from 'avformat/codecs/vp9'
 
 export type WebVideoEncoderOptions = {
-  onReceivePacket: (avpacket: pointer<AVPacket>, avframe?: pointer<AVFrame>) => void
+  onReceivePacket: (avpacket: pointer<AVPacket>) => void
   onError: (error?: Error) => void
   enableHardwareAcceleration?: boolean
   avpacketPool?: AVPacketPool
@@ -137,8 +137,15 @@ export default class WebVideoEncoder {
       avpacket.bitFormat = this.parameters.bitFormat
     }
 
+    this.options.onReceivePacket(avpacket)
+
     const avframe = this.avframeMap.get(inputCounter)
-    this.options.onReceivePacket(avpacket, avframe)
+
+    if (avframe) {
+      this.options.avframePool
+        ? this.options.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(avframe))
+        : destroyAVFrame(avframe)
+    }
     this.avframeMap.delete(inputCounter)
   }
 
@@ -151,6 +158,11 @@ export default class WebVideoEncoder {
     this.currentError = null
 
     const descriptor = PixelFormatDescriptorsMap[parameters.format]
+
+    // webcodecs 目前还不支持 hdr
+    if (!descriptor || descriptor.comp[0].depth > 8) {
+      throw new Error(`format ${parameters.format} not support`)
+    }
 
     const config: VideoEncoderConfig = {
       codec: getVideoCodec(parameters),
@@ -230,6 +242,7 @@ export default class WebVideoEncoder {
       return 0
     }
     catch (error) {
+      frame.close()
       return -1
     }
   }
@@ -243,6 +256,13 @@ export default class WebVideoEncoder {
       if (this.encoder.state !== 'closed') {
         this.encoder.close()
       }
+    }
+    if (this.avframeMap.size) {
+      this.avframeMap.forEach((avframe) => {
+        this.options.avframePool
+          ? this.options.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(avframe))
+          : destroyAVFrame(avframe)
+      })
     }
     this.encoder = null
   }

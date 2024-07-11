@@ -93,7 +93,7 @@ export default class WasmAudioEncoder {
     stack.free(sizeof(Rational))
 
     if (ret < 0) {
-      logger.fatal(`open video decoder failed, ret: ${ret}`)
+      logger.fatal(`open audio encoder failed, ret: ${ret}`)
     }
     await this.encoder.childrenThreadReady()
 

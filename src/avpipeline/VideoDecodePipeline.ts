@@ -70,7 +70,7 @@ type SelfTask = VideoDecodeTaskOptions & {
   frameCaches: (pointer<AVFrameRef> | VideoFrame)[]
   inputEnd: boolean
 
-  openReject?: (error: Error) => void
+  openReject?: (ret: number) => void
 
   needKeyFrame: boolean
 
@@ -184,7 +184,7 @@ export default class VideoDecodePipeline extends Pipeline {
           logger.error(`video decode error, taskId: ${options.taskId}, error: ${error}`)
           const task = this.tasks.get(options.taskId)
           if (task.openReject) {
-            task.openReject(error)
+            task.openReject(errorType.CODEC_NOT_SUPPORT)
             task.openReject = null
           }
         },
@@ -403,8 +403,8 @@ export default class VideoDecodePipeline extends Pipeline {
   public async open(taskId: string, parameters: pointer<AVCodecParameters>) {
     const task = this.tasks.get(taskId)
     if (task) {
-      return new Promise<void>(async (resolve, reject) => {
-        task.openReject = reject
+      return new Promise<number>(async (resolve, reject) => {
+        task.openReject = resolve
         if (task.hardwareDecoder) {
           try {
             await task.hardwareDecoder.open(parameters)
@@ -420,10 +420,18 @@ export default class VideoDecodePipeline extends Pipeline {
         task.parameters = parameters
 
         if (task.targetDecoder === task.softwareDecoder) {
-          await this.openSoftwareDecoder(task)
+          try {
+            await this.openSoftwareDecoder(task)
+          }
+          catch (error) {
+            logger.error(`open video software decoder failed, error: ${error}`)
+            if (!task.hardwareDecoder) {
+              resolve(errorType.CODEC_NOT_SUPPORT)
+              return
+            }
+          }
         }
-
-        resolve()
+        resolve(0)
       })
     }
     logger.fatal('task not found')

@@ -42,6 +42,7 @@ import * as array from 'common/util/array'
 import * as error from 'avutil/error'
 import Sleep from 'common/timer/Sleep'
 import { Rational } from 'avutil/struct/rational'
+import * as errorType from 'avutil/error'
 
 export interface AudioEncodeTaskOptions extends TaskOptions {
   resource: WebAssemblyResource
@@ -78,12 +79,9 @@ export default class AudioEncodePipeline extends Pipeline {
           task.openReject = null
         }
       },
-      onReceivePacket(avpacket, avframe) {
+      onReceivePacket(avpacket) {
         task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
         task.stats.audioPacketEncodeCount++
-        if (avframe) {
-          task.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(avframe))
-        }
       },
       avpacketPool: task.avpacketPool,
       avframePool: task.avframePool
@@ -213,11 +211,18 @@ export default class AudioEncodePipeline extends Pipeline {
   public async open(taskId: string, parameters: pointer<AVCodecParameters>, timeBase: Rational) {
     const task = this.tasks.get(taskId)
     if (task) {
-      return new Promise<void>(async (resolve, reject) => {
+      return new Promise<number>(async (resolve, reject) => {
         task.openReject = reject
-        await task.encoder.open(parameters, timeBase)
-        task.parameters = parameters
-        resolve()
+        try {
+          await task.encoder.open(parameters, timeBase)
+          task.parameters = parameters
+        }
+        catch (error) {
+          logger.error(`open audio encoder failed, error: ${error}`)
+          resolve(errorType.CODEC_NOT_SUPPORT)
+          return
+        }
+        resolve(0)
       })
     }
     logger.fatal('task not found')

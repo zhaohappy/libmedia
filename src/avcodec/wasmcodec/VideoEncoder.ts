@@ -39,6 +39,8 @@ import { videoFrame2AVFrame } from 'avutil/function/videoFrame2AVFrame'
 import { createAVFrame, destroyAVFrame, unrefAVFrame } from 'avutil/util/avframe'
 import { mapUint8Array } from 'cheap/std/memory'
 import { AVCodecID } from 'avutil/codec'
+import Sleep from 'common/timer/Sleep'
+import { avQ2D } from 'avutil/util/rational'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
@@ -58,6 +60,9 @@ export default class WasmVideoEncoder {
   private avpacket: pointer<AVPacket>
 
   private avframe: pointer<AVFrame>
+
+  private encodeQueueSize: number
+  private framerate: int64
 
   constructor(options: WasmVideoEncoderOptions) {
     this.options = options
@@ -81,6 +86,7 @@ export default class WasmVideoEncoder {
       }
       this.options.onReceiveAVPacket(this.avpacket)
       this.avpacket = nullptr
+      this.encodeQueueSize--
     }
   }
 
@@ -112,8 +118,15 @@ export default class WasmVideoEncoder {
     }
     await this.encoder.childrenThreadReady()
 
+    if (this.encoder.asm['encoder_ready']) {
+      this.encoder.call('encoder_ready');
+    }
+
     this.parameters = parameters
     this.timeBase = timeBase
+
+    this.encodeQueueSize = 0
+    this.framerate = static_cast<int64>(avQ2D(parameters.framerate))
   }
 
   public encode(frame: pointer<AVFrame> | VideoFrame, key: boolean) {
@@ -131,8 +144,11 @@ export default class WasmVideoEncoder {
     if (key) {
       frame.pictType = AVPictureType.AV_PICTURE_TYPE_I
     }
+    
+    frame.duration = static_cast<int64>(this.timeBase.den) / this.framerate
 
     let ret = this.encoder.call<int32>('encoder_encode', frame)
+    this.encodeQueueSize++
 
     if (ret) {
       return ret
@@ -198,5 +214,9 @@ export default class WasmVideoEncoder {
       destroyAVFrame(this.avframe)
       this.avframe = nullptr
     }
+  }
+
+  public getQueueLength() {
+    return this.encodeQueueSize
   }
 }

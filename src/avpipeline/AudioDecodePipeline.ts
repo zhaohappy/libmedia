@@ -45,6 +45,7 @@ import getTimestamp from 'common/function/getTimestamp'
 import { audioData2AVFrame } from 'avutil/function/audioData2AVFrame'
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
+import * as errorType from 'avutil/error'
 
 export interface AudioDecodeTaskOptions extends TaskOptions {
   resource: WebAssemblyResource
@@ -60,7 +61,7 @@ type SelfTask = AudioDecodeTaskOptions & {
   frameCaches: pointer<AVFrameRef>[]
   inputEnd: boolean
   parameters: pointer<AVCodecParameters>
-  openReject?: (error: Error) => void
+  openReject?: (ret: number) => void
 
   lastDecodeTimestamp: number
 
@@ -81,7 +82,7 @@ export default class AudioDecodePipeline extends Pipeline {
       onError: (error) => {
         logger.error(`audio decode error, taskId: ${task.taskId}, error: ${error}`)
         if (task.openReject) {
-          task.openReject(error)
+          task.openReject(errorType.CODEC_NOT_SUPPORT)
           task.openReject = null
         }
       },
@@ -134,7 +135,7 @@ export default class AudioDecodePipeline extends Pipeline {
           logger.error(`audio decode error, taskId: ${options.taskId}, error: ${error}`)
           const task = this.tasks.get(options.taskId)
           if (task.openReject) {
-            task.openReject(error)
+            task.openReject(errorType.CODEC_NOT_SUPPORT)
             task.openReject = null
           }
         },
@@ -224,11 +225,18 @@ export default class AudioDecodePipeline extends Pipeline {
   public async open(taskId: string, parameters: pointer<AVCodecParameters>) {
     const task = this.tasks.get(taskId)
     if (task) {
-      return new Promise<void>(async (resolve, reject) => {
-        task.openReject = reject
-        await task.decoder.open(parameters)
-        task.parameters = parameters
-        resolve()
+      return new Promise<number>(async (resolve, reject) => {
+        task.openReject = resolve
+        try {
+          await task.decoder.open(parameters)
+          task.parameters = parameters
+        }
+        catch (error) {
+          logger.error(`open audio decoder failed, error: ${error}`)
+          resolve(errorType.CODEC_NOT_SUPPORT)
+          return
+        }
+        resolve(0)
       })
     }
     logger.fatal('task not found')
