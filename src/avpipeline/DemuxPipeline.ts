@@ -260,7 +260,7 @@ export default class DemuxPipeline extends Pipeline {
     return 0
   }
 
-  public async openStream(taskId: string) {
+  public async openStream(taskId: string, maxProbeDuration: int32 = 2000) {
     const task = this.tasks.get(taskId)
     if (task) {
       await task.leftIPCPort.request('open')
@@ -332,6 +332,7 @@ export default class DemuxPipeline extends Pipeline {
           }
           break
         case AVFormat.MATROSKA:
+        case AVFormat.WEBM:
           if (defined(ENABLE_DEMUXER_MATROSKA)) {
             iformat = new (((await import('avformat/formats/IMatroskaFormat')).default))
           }
@@ -378,7 +379,7 @@ export default class DemuxPipeline extends Pipeline {
       task.formatContext.iformat = iformat
 
       return demux.open(task.formatContext, {
-        maxAnalyzeDuration: 2000,
+        maxAnalyzeDuration: maxProbeDuration,
         fastOpen: task.isLive
       })
     }

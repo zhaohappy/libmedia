@@ -80,7 +80,7 @@ import { IOFlags } from 'common/io/flags'
 import { Ext2Format, Ext2IOLoader } from 'avutil/stringEnum'
 import { AVStreamInterface } from 'avformat/AVStream'
 import { AVFormatContextInterface } from 'avformat/AVFormatContext'
-import dump from 'avformat/dump'
+import dump, { dumpCodecName } from 'avformat/dump'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -903,11 +903,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
                 codec: getVideoCodec(stream.codecpar)
               })
               if (!isSupport.supported) {
-                logger.fatal(`codecId ${stream.codecpar.codecId} not support`)
+                logger.fatal(`${dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} codecId ${stream.codecpar.codecId} not support`)
               }
             }
             else {
-              logger.fatal(`codecId ${stream.codecpar.codecId} not support`)
+              logger.fatal(`${dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} codecId ${stream.codecpar.codecId} not support`)
             }
           }
 
@@ -926,7 +926,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
               avframeList: addressof(this.GlobalData.avframeList),
               avframeListMutex: addressof(this.GlobalData.avframeListMutex)
             })
-          await this.VideoDecoderThread.open(this.taskId, stream.codecpar)
+
+          let ret = await this.VideoDecoderThread.open(this.taskId, stream.codecpar)
+          if (ret < 0) {
+            logger.fatal(`cannot open video ${dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} decoder`)
+          }
+
           await AVPlayer.DemuxerThread.connectStreamTask
             .transfer(this.demuxer2VideoDecoderChannel.port1)
             .invoke(this.subTaskId || this.taskId, stream.index, this.demuxer2VideoDecoderChannel.port1)
@@ -957,11 +962,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
                 numberOfChannels: stream.codecpar.chLayout.nbChannels
               })
               if (!isSupport.supported) {
-                logger.fatal(`codecId ${stream.codecpar.codecId} not support`)
+                logger.fatal(`${dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} codecId ${stream.codecpar.codecId} not support`)
               }
             }
             else {
-              logger.fatal(`codecId ${stream.codecpar.codecId} not support`)
+              logger.fatal(`${dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} codecId ${stream.codecpar.codecId} not support`)
             }
           }
 
@@ -983,7 +988,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
               avframeList: addressof(this.GlobalData.avframeList),
               avframeListMutex: addressof(this.GlobalData.avframeListMutex)
             })
-          await AVPlayer.AudioDecoderThread.open(this.taskId, stream.codecpar)
+          
+          let ret = await AVPlayer.AudioDecoderThread.open(this.taskId, stream.codecpar)
+          if (ret < 0) {
+            logger.fatal(`cannot open audio ${dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} decoder`)
+          }
+
           await AVPlayer.DemuxerThread.connectStreamTask
             .transfer(this.demuxer2AudioDecoderChannel.port1)
             .invoke(this.taskId, stream.index, this.demuxer2AudioDecoderChannel.port1)

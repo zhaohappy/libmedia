@@ -1,4 +1,4 @@
-import { AVFormatContextInterface } from './AVFormatContext'
+import { AVFormatContext, AVFormatContextInterface, AVIFormatContext, AVOFormatContext } from './AVFormatContext'
 import { AVDisposition, AVStreamInterface } from './AVStream'
 import * as object from 'common/util/object'
 import * as stringEnum from 'avutil/stringEnum'
@@ -17,6 +17,7 @@ import * as vvc from './codecs/vvc'
 import * as av1 from './codecs/av1'
 import * as vp9 from './codecs/vp9'
 import * as mp3 from './codecs/mp3'
+import { AVFormat } from './avformat'
 
 export interface DumpIOInfo {
   from: string
@@ -56,14 +57,18 @@ export function dumpKey<T>(obj: Record<string, T>, value: T, defaultValue: strin
   return name
 }
 
-export function dumpCodecName(stream: AVStreamInterface) {
-  if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-    return dumpKey(stringEnum.AudioCodecString2CodecId, stream.codecpar.codecId)
+export function dumpCodecName(codecType: AVMediaType, codecId: AVCodecID) {
+  if (codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+    return dumpKey(stringEnum.AudioCodecString2CodecId, codecId)
   }
-  else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-    return dumpKey(stringEnum.VideoCodecString2CodecId, stream.codecpar.codecId)
+  else if (codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+    return dumpKey(stringEnum.VideoCodecString2CodecId, codecId)
   }
   return 'unknown'
+}
+
+export function dumpFormatName(format: AVFormat) {
+  return dumpKey(stringEnum.Format2AVFormat, format)
 }
 
 function dumpProfileName(codecId: AVCodecID, profile: int32) {
@@ -252,10 +257,32 @@ function dumpAVFormatContextInterface(formatContext: AVFormatContextInterface, i
   return dump
 }
 
-export default function dump(formatContexts: AVFormatContextInterface[], inputs: DumpIOInfo[]) {
+export default function dump(formatContexts: (AVFormatContextInterface | AVIFormatContext | AVOFormatContext)[], inputs: DumpIOInfo[]) {
   let dump = ''
   formatContexts.forEach((formatContext, index) => {
-    dump += dumpAVFormatContextInterface(formatContext, index, inputs[index])
+    if (formatContext instanceof AVFormatContext) {
+      const streams: AVStreamInterface[] = []
+      for (let i = 0; i < formatContext.streams.length; i++) {
+        const stream = formatContext.streams[i]
+        streams.push({
+          index: stream.index,
+          id: stream.id,
+          codecpar: addressof(stream.codecpar),
+          nbFrames: stream.nbFrames,
+          metadata: stream.metadata,
+          duration: stream.duration,
+          startTime: stream.startTime,
+          disposition: stream.disposition,
+          timeBase: addressof(stream.timeBase)
+        })
+      }
+      formatContext = {
+        metadata: formatContext.metadata,
+        format: formatContext.format,
+        streams
+      }
+    }
+    dump += dumpAVFormatContextInterface(formatContext as AVFormatContextInterface, index, inputs[index])
   })
   return dump
 }

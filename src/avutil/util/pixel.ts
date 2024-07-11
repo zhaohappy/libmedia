@@ -378,5 +378,3 @@ export function pixelGetSize(pixfmt: AVPixelFormat, width: int32, height: int32,
     stack.free(sizeof(size) * 4)
   }
 }
-
-

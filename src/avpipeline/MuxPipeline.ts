@@ -47,6 +47,7 @@ import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { AVMediaType } from 'avutil/codec'
 
 export interface MuxTaskOptions extends TaskOptions {
+  isLive?: boolean
   format: AVFormat
   avpacketList: pointer<List<pointer<AVPacketRef>>>
   avpacketListMutex: pointer<Mutex>
@@ -174,8 +175,13 @@ export default class MuxPipeline extends Pipeline {
           }
           break
         case AVFormat.MATROSKA:
+        case AVFormat.WEBM:
           if (defined(ENABLE_MUXER_MATROSKA)) {
-            oformat = new (((await import('avformat/formats/OMatroskaFormat')).default))
+            const options = {
+              isLive: task.isLive,
+              docType: task.format === AVFormat.WEBM ? 'webm' : 'matroska'
+            }
+            oformat = new (((await import('avformat/formats/OMatroskaFormat')).default))(options)
           }
           else {
             logger.error('matroska format not support, maybe you can rebuild avmedia')
@@ -199,6 +205,7 @@ export default class MuxPipeline extends Pipeline {
         else if (avpacket < 0) {
           logger.error(`pull stream ${i} avpacket error, ret: ${avpacket}`)
           task.streams[i].ended = true
+          return errorType.DATA_INVALID
         }
         else {
           avpacket.streamIndex = task.streams[i].stream.index
@@ -254,19 +261,27 @@ export default class MuxPipeline extends Pipeline {
     }
   }
 
-  public async start(taskId: string) {
+  public async start(taskId: string): Promise<number> {
     const task = this.tasks.get(taskId)
     if (task) {
 
       if (task.loop) {
-        logger.fatal('task has started')
+        logger.error('task has started')
+        return errorType.INVALID_OPERATE
       }
 
-      mux.open(task.formatContext)
+      let ret = mux.open(task.formatContext)
+
+      if (ret < 0) {
+        logger.error('mux task open error')
+        return errorType.FORMAT_NOT_SUPPORT
+      }
+
       mux.writeHeader(task.formatContext)
 
       if (!task.streams.length) {
-        logger.fatal('task streams not found')
+        logger.error('task streams not found')
+        return errorType.INVALID_OPERATE
       }
 
       task.loop = new LoopTask(async () => {
@@ -280,6 +295,10 @@ export default class MuxPipeline extends Pipeline {
             else if (avpacket < 0) {
               logger.error(`pull stream ${i} avpacket error, ret: ${avpacket}`)
               task.streams[i].ended = true
+              task.loop.stop()
+              task.ended = true
+              task.rightIPCPort.notify('error')
+              return
             }
             else {
               avpacket.streamIndex = task.streams[i].stream.index
@@ -322,15 +341,17 @@ export default class MuxPipeline extends Pipeline {
           mux.writeTrailer(task.formatContext)
           mux.flush(task.formatContext)
           task.rightIPCPort.notify('end')
-          logger.info('mux end')
           task.loop.stop()
           task.ended = true
         }
       }, 0, 0, false, false)
       task.loop.start()
+
+      return 0
     }
     else {
-      logger.fatal('task not found')
+      logger.error('task not found')
+      return errorType.INVALID_OPERATE
     }
   }
 

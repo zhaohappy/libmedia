@@ -27,6 +27,12 @@ import AVPacket from 'avutil/struct/avpacket'
 import { AVOFormatContext } from './AVFormatContext'
 import * as object from 'common/util/object'
 import * as logger from 'common/util/logger'
+import { OFormatSupportedCodecs } from './formats/OFormat'
+import * as array from 'common/util/array'
+import { AVFormat } from './avformat'
+import { AVCodecID } from 'avutil/codec'
+import * as errorType from 'avutil/error'
+import { dumpCodecName, dumpFormatName } from './dump'
 
 export type MuxOptions = {
   paddingZero?: boolean
@@ -54,11 +60,30 @@ export function open(formatContext: AVOFormatContext, options: MuxOptions = {}) 
     first: new Map()
   }
 
+  let supportCodecs = OFormatSupportedCodecs[formatContext.oformat.type]
+  if (supportCodecs) {
+    for (let i = 0; i < formatContext.streams.length; i++) {
+      const codecId = formatContext.streams[i].codecpar.codecId
+      if (formatContext.oformat.type === AVFormat.WAV) {
+        if (codecId < AVCodecID.AV_CODEC_ID_PCM_S16LE
+          || codecId > AVCodecID.AV_CODEC_ID_ADPCM_XMD
+        ) {
+          logger.error(`format ${dumpFormatName(formatContext.oformat.type)} not support codecId ${dumpCodecName(formatContext.streams[i].codecpar.codecType, codecId)}`)
+          return errorType.CODEC_NOT_SUPPORT
+        }
+      }
+      else if (!array.has(supportCodecs, codecId)) {
+        logger.error(`format ${dumpFormatName(formatContext.oformat.type)} not support codecId ${dumpCodecName(formatContext.streams[i].codecpar.codecType, codecId)}`)
+        return errorType.CODEC_NOT_SUPPORT
+      }
+    }
+  }
   return formatContext.oformat.init(formatContext)
 }
 
-export function writeHeader(formatContext: AVOFormatContext): void {
+export function writeHeader(formatContext: AVOFormatContext): number {
   formatContext.oformat.writeHeader(formatContext)
+  return 0
 }
 
 export function writeAVPacket(formatContext: AVOFormatContext, avpacket: pointer<AVPacket>): number {
@@ -79,8 +104,9 @@ export function writeAVPacket(formatContext: AVOFormatContext, avpacket: pointer
   return formatContext.oformat.writeAVPacket(formatContext, avpacket)
 }
 
-export function writeTrailer(formatContext: AVOFormatContext): void {
+export function writeTrailer(formatContext: AVOFormatContext): number {
   formatContext.oformat.writeTrailer(formatContext)
+  return 0
 }
 
 export function flush(formatContext: AVOFormatContext) {

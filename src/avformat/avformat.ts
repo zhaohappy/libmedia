@@ -37,18 +37,18 @@ export const enum AVFormat {
   FLV,
   MOV,
   MP4 = MOV,
+  M4A = MOV,
   MPEGTS,
   OGGS,
   IVF,
   MATROSKA,
-  WEBM = MATROSKA,
+  WEBM,
   AVI,
 
   MP3,
   AAC,
   WAV,
   FLAC,
-  M4A = MOV,
 
   WEBVTT
 }

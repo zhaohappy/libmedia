@@ -36,6 +36,7 @@ import IOReader from 'common/io/IOReader'
 import IOReaderSync from 'common/io/IOReaderSync'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import { AVFormat } from './avformat'
+import { destroyAVPacket } from 'avutil/util/avpacket'
 
 class AVFormatContextInterval {
 
@@ -134,7 +135,7 @@ export interface AVFormatContextInterface {
   streams: AVStreamInterface[]
 }
 
-class AVFormatContext implements AVIFormatContext, AVOFormatContext {
+export class AVFormatContext implements AVIFormatContext, AVOFormatContext {
 
   public metadataHeaderPadding = -1
 
@@ -146,7 +147,6 @@ class AVFormatContext implements AVIFormatContext, AVOFormatContext {
   public privateData: Record<string, any>
   public processPrivateData: Record<string, any>
   
-  public format: AVFormat
   public iformat: IFormat
   public oformat: OFormat
 
@@ -172,7 +172,16 @@ class AVFormatContext implements AVIFormatContext, AVOFormatContext {
     this.options = {}
     this.privateData = {}
     this.metadata = {}
-    this.format = AVFormat.UNKNOWN
+  }
+
+  get format() {
+    if (this.iformat) {
+      return this.iformat.type
+    }
+    else if (this.oformat) {
+      return this.oformat.type
+    }
+    return AVFormat.UNKNOWN
   }
 
   public getStreamById(id: number) {
@@ -236,6 +245,12 @@ class AVFormatContext implements AVIFormatContext, AVOFormatContext {
     }
     if (this.iformat) {
       this.iformat.destroy(this as AVIFormatContext)
+    }
+
+    if (this.interval.packetBuffer.length) {
+      this.interval.packetBuffer.forEach((avpacket) => {
+        destroyAVPacket(avpacket)
+      })
     }
 
     this.streams.forEach((stream) => {

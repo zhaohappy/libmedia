@@ -23,6 +23,7 @@
  *
  */
 
+import { AVCodecID } from 'avutil/codec'
 import { AVFormat } from '../avformat'
 import { AVOFormatContext } from '../AVFormatContext'
 import AVPacket from 'avutil/struct/avpacket'
@@ -43,4 +44,107 @@ export default abstract class OFormat {
 
   public abstract writeTrailer(formatContext: AVOFormatContext): number
 
+}
+
+export const OFormatSupportedCodecs: Record<Exclude<AVFormat, AVFormat.UNKNOWN>, AVCodecID[]> = {
+  [AVFormat.AAC]: [AVCodecID.AV_CODEC_ID_AAC],
+  [AVFormat.AVI]: [
+    AVCodecID.AV_CODEC_ID_MP3,
+    AVCodecID.AV_CODEC_ID_AC3,
+    AVCodecID.AV_CODEC_ID_AAC,
+
+    AVCodecID.AV_CODEC_ID_MPEG4,
+    AVCodecID.AV_CODEC_ID_H264
+  ],
+  [AVFormat.FLAC]: [AVCodecID.AV_CODEC_ID_FLAC],
+  [AVFormat.FLV]: [
+    AVCodecID.AV_CODEC_ID_MP3,
+    AVCodecID.AV_CODEC_ID_AAC,
+    AVCodecID.AV_CODEC_ID_SPEEX,
+    AVCodecID.AV_CODEC_ID_ADPCM_SWF,
+    AVCodecID.AV_CODEC_ID_NELLYMOSER,
+    AVCodecID.AV_CODEC_ID_PCM_ALAW,
+    AVCodecID.AV_CODEC_ID_PCM_MULAW,
+
+    AVCodecID.AV_CODEC_ID_MPEG4,
+    AVCodecID.AV_CODEC_ID_H264,
+    AVCodecID.AV_CODEC_ID_HEVC,
+    AVCodecID.AV_CODEC_ID_AV1,
+    AVCodecID.AV_CODEC_ID_VP9,
+    AVCodecID.AV_CODEC_ID_VVC
+  ],
+  [AVFormat.IVF]: [AVCodecID.AV_CODEC_ID_VP8, AVCodecID.AV_CODEC_ID_VP9],
+  [AVFormat.MATROSKA]: [
+    AVCodecID.AV_CODEC_ID_VORBIS,
+    AVCodecID.AV_CODEC_ID_OPUS,
+    AVCodecID.AV_CODEC_ID_AAC,
+    AVCodecID.AV_CODEC_ID_MP3,
+    AVCodecID.AV_CODEC_ID_FLAC,
+    AVCodecID.AV_CODEC_ID_ALAC,
+    AVCodecID.AV_CODEC_ID_DTS,
+    AVCodecID.AV_CODEC_ID_EAC3,
+    AVCodecID.AV_CODEC_ID_PCM_F32LE,
+    AVCodecID.AV_CODEC_ID_PCM_S16BE,
+    AVCodecID.AV_CODEC_ID_PCM_S16LE,
+
+    AVCodecID.AV_CODEC_ID_VP8,
+    AVCodecID.AV_CODEC_ID_VP9,
+    AVCodecID.AV_CODEC_ID_AV1,
+    AVCodecID.AV_CODEC_ID_H264,
+    AVCodecID.AV_CODEC_ID_HEVC,
+    AVCodecID.AV_CODEC_ID_VVC,
+    AVCodecID.AV_CODEC_ID_MPEG4,
+    
+    AVCodecID.AV_CODEC_ID_WEBVTT
+  ],
+  [AVFormat.WEBM]: [
+    AVCodecID.AV_CODEC_ID_VORBIS,
+    AVCodecID.AV_CODEC_ID_OPUS,
+
+    AVCodecID.AV_CODEC_ID_VP8,
+    AVCodecID.AV_CODEC_ID_VP9,
+    AVCodecID.AV_CODEC_ID_AV1,
+    
+    AVCodecID.AV_CODEC_ID_WEBVTT
+  ],
+  [AVFormat.MOV]: [
+    AVCodecID.AV_CODEC_ID_VORBIS,
+    AVCodecID.AV_CODEC_ID_OPUS,
+    AVCodecID.AV_CODEC_ID_AAC,
+    AVCodecID.AV_CODEC_ID_MP3,
+    AVCodecID.AV_CODEC_ID_FLAC,
+    AVCodecID.AV_CODEC_ID_SPEEX,
+    AVCodecID.AV_CODEC_ID_AC3,
+
+    AVCodecID.AV_CODEC_ID_VP9,
+    AVCodecID.AV_CODEC_ID_AV1,
+    AVCodecID.AV_CODEC_ID_H264,
+    AVCodecID.AV_CODEC_ID_HEVC,
+    AVCodecID.AV_CODEC_ID_VVC,
+    AVCodecID.AV_CODEC_ID_MPEG4,
+    
+    AVCodecID.AV_CODEC_ID_WEBVTT,
+    AVCodecID.AV_CODEC_ID_MOV_TEXT
+  ],
+  [AVFormat.MP3]: [AVCodecID.AV_CODEC_ID_MP3],
+  [AVFormat.MPEGTS]: [
+    AVCodecID.AV_CODEC_ID_OPUS,
+    AVCodecID.AV_CODEC_ID_AAC,
+    AVCodecID.AV_CODEC_ID_MP3,
+    AVCodecID.AV_CODEC_ID_AC3,,
+    AVCodecID.AV_CODEC_ID_DTS,
+    AVCodecID.AV_CODEC_ID_AAC_LATM,
+    AVCodecID.AV_CODEC_ID_EAC3,
+
+    AVCodecID.AV_CODEC_ID_MPEG4,
+    AVCodecID.AV_CODEC_ID_AV1,
+    AVCodecID.AV_CODEC_ID_H264,
+    AVCodecID.AV_CODEC_ID_HEVC,
+    AVCodecID.AV_CODEC_ID_VVC
+  ],
+  [AVFormat.OGGS]: [
+    AVCodecID.AV_CODEC_ID_VORBIS
+  ],
+  [AVFormat.WAV]: [],
+  [AVFormat.WEBVTT]: [AVCodecID.AV_CODEC_ID_WEBVTT]
 }
