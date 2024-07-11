@@ -58,6 +58,7 @@ import BufferReader from 'common/io/BufferReader'
 import findStreamByTrackUid from './matroska/function/findStreamByTrackUid'
 import findStreamByTrackNumber from './matroska/function/findStreamByTrackNumber'
 import * as intwrite from 'avutil/util/intwrite'
+import * as is from 'common/util/is'
 
 export default class IMatroskaFormat extends IFormat {
 
@@ -179,10 +180,18 @@ export default class IMatroskaFormat extends IFormat {
           stream.codecpar.width = track.video.pixelWidth
           stream.codecpar.height = track.video.pixelHeight
           if (track.video.color) {
-            stream.codecpar.colorPrimaries = track.video.color.primaries
-            stream.codecpar.colorTrc = track.video.color.transferCharacteristics
-            stream.codecpar.colorRange = track.video.color.range
-            stream.codecpar.colorSpace = track.video.color.matrixCoefficients
+            if (is.number(track.video.color.primaries)) {
+              stream.codecpar.colorPrimaries = track.video.color.primaries
+            }
+            if (is.number(track.video.color.transferCharacteristics)) {
+              stream.codecpar.colorTrc = track.video.color.transferCharacteristics
+            }
+            if (is.number(track.video.color.range)) {
+              stream.codecpar.colorRange = track.video.color.range
+            }
+            if (is.number(track.video.color.matrixCoefficients)) {
+              stream.codecpar.colorSpace = track.video.color.matrixCoefficients
+            }
           }
         }
 
