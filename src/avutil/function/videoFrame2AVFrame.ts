@@ -25,7 +25,6 @@
 import { createAVFrame, getVideoBuffer } from '../util/avframe'
 import AVFrame from '../struct/avframe'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
-import { mapUint8Array } from 'cheap/std/memory'
 import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
 import { getHeapU8 } from 'cheap/heap'
 
@@ -50,7 +49,7 @@ export function mapFormat(format: VideoPixelFormat) {
     case 'RGBX':
       return AVPixelFormat.AV_PIX_FMT_RGB0
     default:
-      throw new Error('not support')
+      return AVPixelFormat.AV_PIX_FMT_NONE
   }
 }
 

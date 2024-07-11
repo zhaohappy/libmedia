@@ -44,6 +44,10 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
 
   stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_VVC
 
+  if ((atom.size - 4) <= 0) {
+    return
+  }
+
   const data = avMalloc(atom.size - 4)
   const extradata = await ioReader.readBuffer(atom.size - 4, mapSafeUint8Array(data, atom.size - 4))
 
