@@ -68,6 +68,9 @@ export const LevelCapabilities = [
 ]
 
 export function getLevelByResolution(profile: number, width: number, height: number, fps: number, bitrate: number) {
+
+  bitrate /= 1000
+
   const selectedProfile = profile === HEVCProfile.Main ? 'main' : 'main10'
   const lumaSamplesPerSecond = width * height * fps
   for (const level of LevelCapabilities) {
@@ -305,6 +308,33 @@ export function vpsSpsPps2Extradata(vpss: Uint8ArrayInterface[], spss: Uint8Arra
   }
 
   return buffer
+}
+
+export function annexbExtradata2AvccExtradata(data: Uint8ArrayInterface) {
+  let nalus = splitNaluByStartCode(data)
+
+  if (nalus.length > 2) {
+    const vpss = []
+    const spss = []
+    const ppss = []
+
+    nalus.forEach((nalu) => {
+      const type = (nalu[0] >>> 1) & 0x3f
+      if (type === HEVCNaluType.kSliceVPS) {
+        vpss.push(nalu)
+      }
+      else if (type === HEVCNaluType.kSliceSPS) {
+        spss.push(nalu)
+      }
+      else if (type === HEVCNaluType.kSlicePPS) {
+        ppss.push(nalu)
+      }
+    })
+
+    if (vpss.length && spss.length && ppss.length) {
+      return vpsSpsPps2Extradata(vpss, spss, ppss)
+    }
+  }
 }
 
 /**

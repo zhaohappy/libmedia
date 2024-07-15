@@ -265,6 +265,31 @@ export function spsPps2Extradata(spss: Uint8ArrayInterface[], ppss: Uint8ArrayIn
   return buffer
 }
 
+export function annexbExtradata2AvccExtradata(data: Uint8ArrayInterface) {
+  let nalus = splitNaluByStartCode(data)
+  if (nalus.length > 1) {
+    const spss = []
+    const ppss = []
+    const spsExts = []
+
+    nalus.forEach((nalu) => {
+      const type = nalu[0] & 0x1f
+      if (type === H264NaluType.kSliceSPS) {
+        spss.push(nalu)
+      }
+      else if (type === H264NaluType.kSlicePPS) {
+        ppss.push(nalu)
+      }
+      else if (type === H264NaluType.kSPSExt) {
+        spsExts.push(nalu)
+      }
+    })
+    if (spss.length && ppss.length) {
+      return spsPps2Extradata(spss, ppss, spsExts)
+    }
+  }
+}
+
 /**
  * 
  * annexb 格式的 NALU 转 avcc NALU 

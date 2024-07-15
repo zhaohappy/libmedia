@@ -409,6 +409,33 @@ export function vpsSpsPps2Extradata(vpss: Uint8ArrayInterface[], spss: Uint8Arra
   return buffer
 }
 
+export function annexbExtradata2AvccExtradata(data: Uint8ArrayInterface) {
+  let nalus = splitNaluByStartCode(data)
+
+  if (nalus.length > 2) {
+    const vpss = []
+    const spss = []
+    const ppss = []
+
+    nalus.forEach((nalu) => {
+      const type = (nalu[0] >>> 1) & 0x3f
+      if (type === VVCNaluType.kVPS_NUT) {
+        vpss.push(nalu)
+      }
+      else if (type === VVCNaluType.kSPS_NUT) {
+        spss.push(nalu)
+      }
+      else if (type === VVCNaluType.kPPS_NUT) {
+        ppss.push(nalu)
+      }
+    })
+
+    if (vpss.length && spss.length && ppss.length) {
+      return vpsSpsPps2Extradata(vpss, spss, ppss)
+    }
+  }
+}
+
 /**
  * 
  * annexb 格式的 NALU 转 avcc NALU 
