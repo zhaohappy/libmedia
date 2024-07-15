@@ -248,7 +248,9 @@ export default class VideoEncodePipeline extends Pipeline {
                 }
                 // 硬解队列中的 EncodedVideoChunk 过多会报错， 这里判断做一下延时
                 while (task.targetEncoder instanceof WebVideoEncoder
-                  && task.targetEncoder.getQueueLength() > 10
+                    && task.targetEncoder.getQueueLength() > 10
+                  // || task.targetEncoder instanceof WasmVideoEncoder
+                    // && task.targetEncoder.getQueueLength() > 40
                 ) {
                   await new Sleep(0)
                 }
@@ -309,7 +311,7 @@ export default class VideoEncodePipeline extends Pipeline {
       const parameters = task.parameters
       let threadCount = 1
       if (isWorker()) {
-        threadCount = Math.max(threadCount, navigator.hardwareConcurrency - 2)
+        threadCount = Math.min(Math.max(threadCount, navigator.hardwareConcurrency - 2), 4)
       }
       await task.softwareEncoder.open(parameters, task.timeBase ,threadCount)
       task.softwareEncoderOpened = true

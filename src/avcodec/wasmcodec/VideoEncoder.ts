@@ -28,19 +28,20 @@ import AVFrame, { AVPictureType } from 'avutil/struct/avframe'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import AVPacket, { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
-import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
+import { createAVPacket, destroyAVPacket, getAVPacketSideData } from 'avutil/util/avpacket'
 import * as logger from 'common/util/logger'
 import * as stack from 'cheap/stack'
 import { Rational } from 'avutil/struct/rational'
-import { AV_TIME_BASE } from 'avutil/constant'
 import * as is from 'common/util/is'
 import { BitFormat } from 'avformat/codecs/h264'
 import { videoFrame2AVFrame } from 'avutil/function/videoFrame2AVFrame'
 import { createAVFrame, destroyAVFrame, unrefAVFrame } from 'avutil/util/avframe'
 import { mapUint8Array } from 'cheap/std/memory'
-import { AVCodecID } from 'avutil/codec'
-import Sleep from 'common/timer/Sleep'
+import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import { avQ2D } from 'avutil/util/rational'
+import AVBSFilter from 'avformat/bsf/AVBSFilter'
+import Annexb2AvccFilter from 'avformat/bsf/h2645/Annexb2AvccFilter'
+import { AV_TIME_BASE } from 'avutil/constant'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
@@ -63,6 +64,11 @@ export default class WasmVideoEncoder {
 
   private encodeQueueSize: number
   private framerate: int64
+  private inputCounter: int64
+
+  private bitrateFilter: AVBSFilter
+
+  private extradata: Uint8Array
 
   constructor(options: WasmVideoEncoderOptions) {
     this.options = options
@@ -82,8 +88,30 @@ export default class WasmVideoEncoder {
         || this.parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
         || this.parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
       ) {
+        // wasm 编码器给出的是 annexb 码流
+        if (this.parameters.bitFormat === BitFormat.AVCC) {
+          if (!this.bitrateFilter) {
+            this.bitrateFilter = new Annexb2AvccFilter()
+            const timeBaseP = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
+            timeBaseP.num = this.timeBase.num
+            timeBaseP.den = this.timeBase.den
+            this.bitrateFilter.init(this.parameters, timeBaseP)
+            stack.free(sizeof(Rational))
+          }
+          this.bitrateFilter.sendAVPacket(this.avpacket)
+          this.bitrateFilter.receiveAVPacket(this.avpacket)
+        }
+
+        if (!this.extradata) {
+          const ele = getAVPacketSideData(this.avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+          if (ele) {
+            this.extradata = mapUint8Array(ele.data, ele.size).slice()
+          }
+        }
         this.avpacket.bitFormat = this.parameters.bitFormat
       }
+      this.avpacket.timeBase.den = this.timeBase.den
+      this.avpacket.timeBase.num = this.timeBase.num
       this.options.onReceiveAVPacket(this.avpacket)
       this.avpacket = nullptr
       this.encodeQueueSize--
@@ -95,38 +123,34 @@ export default class WasmVideoEncoder {
   }
 
   public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, threadCount: number = 1) {
-    await this.encoder.run()
+    await this.encoder.run(null, threadCount)
 
     const timeBaseP = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
 
-    timeBaseP.num = timeBase.num
-    timeBaseP.den = timeBase.den
+    timeBaseP.num = 1
+    timeBaseP.den = AV_TIME_BASE
+    
+    // this.encoder.call('encoder_set_flags', 1 << 22)
+    this.encoder.call('encoder_set_max_b_frame', parameters.videoDelay)
 
     let ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, threadCount)
 
     stack.free(sizeof(Rational))
-
-    if (parameters.bitFormat === BitFormat.AVCC) {
-      this.encoder.call('encoder_set_flags', 1 << 22)
-    }
-    if (parameters.videoDelay) {
-      this.encoder.call('encoder_set_max_b_frame', parameters.videoDelay)
-    }
 
     if (ret < 0) {
       logger.fatal(`open video decoder failed, ret: ${ret}`)
     }
     await this.encoder.childrenThreadReady()
 
-    if (this.encoder.asm['encoder_ready']) {
-      this.encoder.call('encoder_ready');
-    }
-
     this.parameters = parameters
-    this.timeBase = timeBase
+    this.timeBase = {
+      num: 1,
+      den: AV_TIME_BASE
+    }
 
     this.encodeQueueSize = 0
     this.framerate = static_cast<int64>(avQ2D(parameters.framerate))
+    this.inputCounter = 0n
   }
 
   public encode(frame: pointer<AVFrame> | VideoFrame, key: boolean) {
@@ -144,11 +168,15 @@ export default class WasmVideoEncoder {
     if (key) {
       frame.pictType = AVPictureType.AV_PICTURE_TYPE_I
     }
-    
+
     frame.duration = static_cast<int64>(this.timeBase.den) / this.framerate
+    frame.pts = this.inputCounter * 1000000n / this.framerate
+    frame.timeBase.den = this.timeBase.den
+    frame.timeBase.num = this.timeBase.num
 
     let ret = this.encoder.call<int32>('encoder_encode', frame)
     this.encodeQueueSize++
+    this.inputCounter++
 
     if (ret) {
       return ret
@@ -181,13 +209,7 @@ export default class WasmVideoEncoder {
   }
 
   public getExtraData() {
-    const pointer = this.encoder.call<pointer<uint8>>('encoder_get_extradata')
-    const size = this.encoder.call<int32>('encoder_get_extradata_size')
-
-    if (pointer && size) {
-      return mapUint8Array(pointer, size).slice()
-    }
-    return null
+    return this.extradata
   }
 
   public getColorSpace() {
@@ -213,6 +235,10 @@ export default class WasmVideoEncoder {
     if (this.avframe) {
       destroyAVFrame(this.avframe)
       this.avframe = nullptr
+    }
+    if (this.bitrateFilter) {
+      this.bitrateFilter.destroy()
+      this.bitrateFilter = null
     }
   }
 

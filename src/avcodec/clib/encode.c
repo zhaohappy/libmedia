@@ -3,8 +3,16 @@
 #include "./logger/log.h"
 
 #include <libavcodec/avcodec.h>
+#include <libavutil/opt.h>
+
+#if MEDIA_TYPE_AUDIO
+#include <libavutil/channel_layout.h>
+#endif
 
 static AVCodecContext* enc_ctx;
+int enc_ctx_max_b_frames = -1;
+int enc_ctx_flags = 0;
+int enc_ctx_flags2 = 0;
 
 int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCodecParameters* codecpar, AVRational* time_base, int thread_count) {
 
@@ -34,13 +42,29 @@ int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCode
   }
 
   (*enc_ctx)->time_base = *time_base;
+  (*enc_ctx)->flags = enc_ctx_flags;
+  (*enc_ctx)->flags2 = enc_ctx_flags2;
 
+  if (enc_ctx_max_b_frames > -1) {
+    (*enc_ctx)->max_b_frames = enc_ctx_max_b_frames;
+  }
+
+  #if MEDIA_TYPE_VIDEO 
   if (wasm_pthread_support()) {
     if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-      // (*dec_ctx)->thread_type = FF_THREAD_SLICE;
+      (*enc_ctx)->thread_type = FF_THREAD_SLICE;
       (*enc_ctx)->thread_count = thread_count;
     }
   }
+  #endif
+
+  #if MEDIA_TYPE_AUDIO
+  if (codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+    if (codecpar->ch_layout.u.mask == 0) {
+      av_channel_layout_default(&(*enc_ctx)->ch_layout, (*enc_ctx)->ch_layout.nb_channels);
+    }
+  }
+  #endif
 
   /* Init the encoders */
   if ((ret = avcodec_open2(*enc_ctx, enc, &opts)) < 0) {
@@ -86,15 +110,11 @@ EM_PORT_API(int) encoder_open(AVCodecParameters* codecpar, AVRational* time_base
 }
 
 EM_PORT_API(void) encoder_set_flags(int flags) {
-  if (enc_ctx) {
-    enc_ctx->flags |= flags;
-  }
+  enc_ctx_flags = flags;
 }
 
 EM_PORT_API(void) encoder_set_flags2(int flags) {
-  if (enc_ctx) {
-    enc_ctx->flags2 |= flags;
-  }
+  enc_ctx_flags2 = flags;
 }
 
 EM_PORT_API(void) encoder_set_gop_size(int gop) {
@@ -103,11 +123,11 @@ EM_PORT_API(void) encoder_set_gop_size(int gop) {
   }
 }
 
+#if MEDIA_TYPE_VIDEO 
 EM_PORT_API(void) encoder_set_max_b_frame(int max) {
-  if (enc_ctx) {
-    enc_ctx->max_b_frames = max;
-  }
+  enc_ctx_max_b_frames = max;
 }
+#endif
 
 EM_PORT_API(int) encoder_encode(AVFrame* frame) {
   return encode_frame(frame);
@@ -135,6 +155,17 @@ EM_PORT_API(int) encoder_get_extradata_size() {
   return 0;
 }
 
+
+#if MEDIA_TYPE_AUDIO
+EM_PORT_API(int) encoder_get_framesize_size() {
+  if (enc_ctx) {
+    return enc_ctx->frame_size;
+  }
+  return 0;
+}
+#endif
+
+#if MEDIA_TYPE_VIDEO 
 EM_PORT_API(int) encoder_get_color_space() {
   if (enc_ctx) {
     return enc_ctx->colorspace;
@@ -155,6 +186,7 @@ EM_PORT_API(int) encoder_get_color_trc() {
   }
   return 0;
 }
+#endif
 
 EM_PORT_API(void) encoder_close() {
   if (enc_ctx) {

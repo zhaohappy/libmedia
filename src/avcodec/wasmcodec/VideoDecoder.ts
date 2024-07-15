@@ -113,7 +113,7 @@ export default class WasmVideoDecoder {
   }
 
   public async open(parameters: pointer<AVCodecParameters>, threadCount: number = 1) {
-    await this.decoder.run()
+    await this.decoder.run(null, threadCount)
     let ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, threadCount)
     if (ret < 0) {
       logger.fatal(`open video decoder failed, ret: ${ret}`)

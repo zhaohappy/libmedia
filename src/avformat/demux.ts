@@ -263,6 +263,9 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
                   stream.codecpar.colorTrc = avframe.colorTrc
                   stream.codecpar.chromaLocation = avframe.chromaLocation
                   stream.codecpar.sampleAspectRatio = avframe.sampleAspectRatio
+                  if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+                    stream.codecpar.frameSize = avframe.nbSamples
+                  }
                   destroyAVFrame(avframe)
                   pictureGot[stream.index] = true
                 },

@@ -289,9 +289,17 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
 
     if (wasmUrl) {
       if (is.string(wasmUrl) || is.arrayBuffer(wasmUrl)) {
-        resource = await compile({
-          source: wasmUrl
-        })
+
+        resource = await compile(
+          {
+            source: wasmUrl
+          },
+          {
+            initFuncs: type === 'encoder' && codecId === AVCodecID.AV_CODEC_ID_HEVC 
+              ? ['__wasm_apply_data_relocs', '_initialize']
+              : ['__wasm_apply_data_relocs']
+          }
+        )
         if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS) && mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
           resource.threadModule = await compile(
             {
@@ -345,7 +353,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         const fps = time ? (static_cast<double>(frameCount) / (time / 1000)) : static_cast<double>(frameCount)
         const size = static_cast<double>(task.stats.bufferOutputBytes) / 1000
         const bitrate = (dts ? size * 8 / (static_cast<double>(dts) / 1000) : 0)
-        const speed = (static_cast<double>(dts) / 1000 / (time / 1000) || -1)
+        const speed = static_cast<double>(dts) / 1000 / (time / 1000)
         let progress = duration ? ((static_cast<double>(dts) / static_cast<double>(duration) * 100)) : 0
         if (progress > 100) {
           progress = 100
@@ -920,6 +928,19 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         }
       }
 
+      if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
+        newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_FLTP
+        if (newStream.codecpar.sampleRate > 48000) {
+          newStream.codecpar.sampleRate = 48000
+        }
+      }
+      else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3) {
+        newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_FLTP
+        if (newStream.codecpar.sampleRate > 48000) {
+          newStream.codecpar.sampleRate = 48000
+        }
+      }
+
       if (newStream.codecpar.profile === NOPTS_VALUE) {
         if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
           newStream.codecpar.profile = aac.MPEG4AudioObjectTypes.AAC_LC
@@ -1396,6 +1417,11 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         else {
           logger.fatal(`${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder codecId ${newStream.codecpar.codecId} not support`)
         }
+      }
+      // x265 需要提前创建线程
+      if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+        encoderResource.enableThreadPool = true
+        encoderResource.enableThreadCountRate = 2
       }
 
       // 注册一个视频编码任务

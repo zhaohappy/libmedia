@@ -108,6 +108,17 @@ export default class ScaleFilterNode extends AVFilterNode {
       }
 
       this.scaler.scale(avframe, out)
+
+      out.width = this.options.output.width
+      out.height = this.options.output.height
+      out.pts = avframe.pts
+      out.duration = avframe.duration
+      out.format = this.options.output.format
+      out.colorPrimaries = avframe.colorPrimaries
+      out.colorRange = avframe.colorRange
+      out.colorSpace = avframe.colorSpace
+      out.colorTrc = avframe.colorTrc
+
       outputs[0] = out
 
       if (!is.number(inputs[0])) {
