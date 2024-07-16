@@ -47,7 +47,7 @@ export type WasmAudioEncoderOptions = {
   avpacketPool?: AVPacketPool
 }
 
-class AudioFrameResize {
+class AudioFrameResizer {
 
   private parameters: pointer<AVCodecParameters>
 
@@ -168,7 +168,7 @@ export default class WasmAudioEncoder {
 
   private pts: int64
   private frameSize: int32
-  private audioFrameResize: AudioFrameResize
+  private audioFrameResizer: AudioFrameResizer
 
   constructor(options: WasmAudioEncoderOptions) {
     this.options = options
@@ -262,13 +262,13 @@ export default class WasmAudioEncoder {
     frame.timeBase.den = this.timeBase.den
     frame.timeBase.num = this.timeBase.num
 
-    if (frame.nbSamples !== this.frameSize || this.audioFrameResize) {
-      if (!this.audioFrameResize) {
-        this.audioFrameResize = new AudioFrameResize(this.parameters, this.frameSize)
+    if (this.frameSize > 0 && frame.nbSamples !== this.frameSize || this.audioFrameResizer) {
+      if (!this.audioFrameResizer) {
+        this.audioFrameResizer = new AudioFrameResizer(this.parameters, this.frameSize)
       }
-      this.audioFrameResize.sendAVFrame(frame)
+      this.audioFrameResizer.sendAVFrame(frame)
       while (true) {
-        let ret = this.audioFrameResize.receiveAVFrame(frame)
+        let ret = this.audioFrameResizer.receiveAVFrame(frame)
         if (ret < 0) {
           return 0
         }
@@ -281,9 +281,9 @@ export default class WasmAudioEncoder {
   }
 
   public async flush() {
-    if (this.audioFrameResize && this.audioFrameResize.remainFrameSize() > 0) {
+    if (this.audioFrameResizer && this.audioFrameResizer.remainFrameSize() > 0) {
       const avframe = createAVFrame()
-      this.audioFrameResize.flush(avframe)
+      this.audioFrameResizer.flush(avframe)
       this.encode_(avframe)
       destroyAVFrame(avframe)
     }
