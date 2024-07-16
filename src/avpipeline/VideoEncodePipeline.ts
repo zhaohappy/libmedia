@@ -311,7 +311,7 @@ export default class VideoEncodePipeline extends Pipeline {
       const parameters = task.parameters
       let threadCount = 1
       if (isWorker()) {
-        threadCount = Math.min(Math.max(threadCount, navigator.hardwareConcurrency - 2), 4)
+        threadCount = Math.max(threadCount, navigator.hardwareConcurrency - 2)
       }
       await task.softwareEncoder.open(parameters, task.timeBase ,threadCount)
       task.softwareEncoderOpened = true
