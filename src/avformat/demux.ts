@@ -232,7 +232,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
         streamBitMap[stream.index] = avpacket.size
       }
 
-      if (!pictureGot[stream.index] && formatContext.getDecoderResource) {
+      if (!pictureGot[stream.index] && formatContext.getDecoderResource && stream.codecpar.codecId !== AVCodecID.AV_CODEC_ID_VVC) {
         let decoder = decoderMap[stream.index]
         if (!decoder) {
           const resource = await formatContext.getDecoderResource(stream.codecpar.codecType, stream.codecpar.codecId)
@@ -242,6 +242,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
                 resource,
                 onReceiveFrame: (avframe) => {
                   stream.codecpar.format = avframe.format
+                  stream.codecpar.frameSize = avframe.nbSamples
                   destroyAVFrame(avframe)
                   pictureGot[stream.index] = true
                 },
@@ -263,9 +264,6 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
                   stream.codecpar.colorTrc = avframe.colorTrc
                   stream.codecpar.chromaLocation = avframe.chromaLocation
                   stream.codecpar.sampleAspectRatio = avframe.sampleAspectRatio
-                  if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-                    stream.codecpar.frameSize = avframe.nbSamples
-                  }
                   destroyAVFrame(avframe)
                   pictureGot[stream.index] = true
                 },
