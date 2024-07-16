@@ -42,7 +42,7 @@ COMPONENTS=""
 
 if [[ $simd == "1" ]]; then
   COMPONENTS="$COMPONENTS --enable-websimd128 --disable-wasmatomic"
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -msimd128 -pthread -mbulk-memory"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -msimd128 -fvectorize -fslp-vectorize -pthread -mbulk-memory"
 else
   COMPONENTS="$COMPONENTS --disable-websimd128"
   if [[ $atomic == "1" ]]; then
@@ -62,10 +62,10 @@ fi
 
 realDecoder=$decode
 if [[ $decode == "speex" ]]; then
-  realDecoder="libspeex"
+  realEncoder="libspeex"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libspeex"
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -I/opt/homebrew/Cellar/speex/1.2.1/include"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L/opt/homebrew/Cellar/speex/1.2.1/lib -lspeex"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/speex/include"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex/lib -lspeex"
 fi
 
 if [[ $decode == "av1" ]]; then
@@ -73,6 +73,20 @@ if [[ $decode == "av1" ]]; then
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libdav1d"
   EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/dav1d/include"
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/dav1d/lib -ldav1d"
+fi
+
+if [[ $decode == "vp8" ]]; then
+  realDecoder="libvpx_vp8"
+  EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libvpx"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx/include"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx/lib -lvpx"
+fi
+
+if [[ $decode == "vp9" ]]; then
+  realDecoder="libvpx_vp9"
+  EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libvpx"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx/include"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx/lib -lvpx"
 fi
 
 emmake make clean

@@ -5,5 +5,5 @@ libdir=${prefix}/lib
 Name: libdav1d
 Description: AV1 decoding library
 Version: 1.4.1
-Libs: -L${libdir} -ldav1d -ldl
-Cflags: -I${includedir}
+Libs: -L${libdir} -ldav1d -pthread -sPTHREAD_POOL_SIZE=4 -ldl
+Cflags: -I${includedir} -pthread

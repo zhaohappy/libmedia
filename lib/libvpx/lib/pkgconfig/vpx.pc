@@ -1,0 +1,14 @@
+# pkg-config file from libvpx v1.14.1-315-ga40848c80
+prefix=/Users/zhaogaoxing/Documents/github/libmedia/lib/libvpx
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: vpx
+Description: WebM Project VPx codec implementation
+Version: 1.14.1
+Requires:
+Conflicts:
+Libs: -L${libdir} -lvpx -lm
+Libs.private: -lm -lpthread
+Cflags: -I${includedir}

@@ -42,7 +42,7 @@ COMPONENTS=""
 
 if [[ $simd == "1" ]]; then
   COMPONENTS="$COMPONENTS --enable-websimd128 --disable-wasmatomic"
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -msimd128 -pthread -mbulk-memory"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -msimd128 -fvectorize -fslp-vectorize -pthread -mbulk-memory"
 else
   COMPONENTS="$COMPONENTS --disable-websimd128"
   if [[ $atomic == "1" ]]; then

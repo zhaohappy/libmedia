@@ -1,0 +1,14 @@
+prefix=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg-simd
+exec_prefix=${prefix}
+libdir=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg-simd/lib
+includedir=/Users/zhaogaoxing/Documents/github/libmedia/lib/ffmpeg-simd/include
+
+Name: libavutil
+Description: FFmpeg utility library
+Version: 59.8.100
+Requires: 
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavutil -pthread -lm -lX11
+Libs.private: 
+Cflags: -I${includedir}

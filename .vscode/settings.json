@@ -43,7 +43,10 @@
         "ios": "c",
         "avcodec.h": "c",
         "buffer.h": "c",
-        "imgutils.h": "c"
+        "imgutils.h": "c",
+        "istream": "c",
+        "variant": "c",
+        "opt.h": "c"
     },
     "cSpell.words": [
         "AACADTS",
@@ -186,6 +189,7 @@
         "isom",
         "itouch",
         "kbps",
+        "kvazaar",
         "lastkeyframelocation",
         "lastkeyframetimestamp",
         "lasttimestamp",
@@ -275,6 +279,7 @@
         "remux",
         "renderable",
         "resampler",
+        "Resizer",
         "retval",
         "rulesdir",
         "samplerate",
@@ -354,6 +359,7 @@
         "vpss",
         "wasmcodec",
         "webcodec",
+        "webcodecs",
         "webglcontextlost",
         "webglcontextrestored",
         "webgpu",

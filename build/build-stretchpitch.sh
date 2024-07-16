@@ -27,7 +27,7 @@ FILE_NAME=stretchpitch
 
 if [ $ENABLE_SIMD == "1" ]; then
   FILE_NAME=stretchpitch-simd
-  CFLAG="$CFLAG -msimd128 -mbulk-memory"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory -msimd128 -fvectorize -fslp-vectorize"
 else
   if [ $ENABLE_ATOMIC == "1" ]; then
     FILE_NAME=stretchpitch-atomic

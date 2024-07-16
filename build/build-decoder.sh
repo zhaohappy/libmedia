@@ -57,6 +57,8 @@ rm $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm
 rm $PROJECT_OUTPUT_PATH/$FILE_NAME.debug.wasm
 rm $INCLUDE_PATH/config.h
 
+DECODER_LIB=""
+
 # 写入 config.h 配置
 sh $NOW_PATH/config.sh $INCLUDE_PATH
 if [ $decode == "h264" ]; then
@@ -64,13 +66,37 @@ if [ $decode == "h264" ]; then
 elif [ $decode == "hevc" ]; then
   echo "#define CODEC_ID AV_CODEC_ID_HEVC" >> $INCLUDE_PATH/config.h
 elif [ $decode == "vp8" ]; then
-  echo "#define CODEC_ID AV_CODEC_ID_VP8" >> $INCLUDE_PATH/config.h
+  if [ $ENABLE_SIMD == "1" ]; then
+    DECODER_LIB="$PROJECT_ROOT_PATH/lib/libvpx-simd/lib/libvpx.a"
+  else
+    if [ $ENABLE_ATOMIC == "1" ]; then
+      DECODER_LIB="$PROJECT_ROOT_PATH/lib/libvpx-atomic/lib/libvpx.a"
+    else
+      DECODER_LIB="$PROJECT_ROOT_PATH/lib/libvpx/lib/libvpx.a"
+    fi
+  fi
 elif [ $decode == "vp9" ]; then
-  echo "#define CODEC_ID AV_CODEC_ID_VP9" >> $INCLUDE_PATH/config.h
+  if [ $ENABLE_SIMD == "1" ]; then
+    DECODER_LIB="$PROJECT_ROOT_PATH/lib/libvpx-simd/lib/libvpx.a"
+  else
+    if [ $ENABLE_ATOMIC == "1" ]; then
+      DECODER_LIB="$PROJECT_ROOT_PATH/lib/libvpx-atomic/lib/libvpx.a"
+    else
+      DECODER_LIB="$PROJECT_ROOT_PATH/lib/libvpx/lib/libvpx.a"
+    fi
+  fi
 elif [ $decode == "mpeg4" ]; then
   echo "#define CODEC_ID AV_CODEC_ID_MPEG4" >> $INCLUDE_PATH/config.h
 elif [ $decode == "av1" ]; then
-  echo "#define CODEC_ID AV_CODEC_ID_AV1" >> $INCLUDE_PATH/config.h
+  if [ $ENABLE_SIMD == "1" ]; then
+    DECODER_LIB="$PROJECT_ROOT_PATH/lib/dav1d-simd/lib/libdav1d.a"
+  else
+    if [ $ENABLE_ATOMIC == "1" ]; then
+      DECODER_LIB="$PROJECT_ROOT_PATH/lib/dav1d-atomic/lib/libdav1d.a"
+    else
+      DECODER_LIB="$PROJECT_ROOT_PATH/lib/dav1d/lib/libdav1d.a"
+    fi
+  fi
 elif [ $decode == "aac" ]; then
   echo "#define CODEC_ID AV_CODEC_ID_AAC" >> $INCLUDE_PATH/config.h
 elif [ $decode == "mp3" ]; then
@@ -78,7 +104,15 @@ elif [ $decode == "mp3" ]; then
 elif [ $decode == "opus" ]; then
   echo "#define CODEC_ID AV_CODEC_ID_OPUS" >> $INCLUDE_PATH/config.h
 elif [ $decode == "speex" ]; then
-  echo "#define CODEC_ID AV_CODEC_ID_SPEEX" >> $INCLUDE_PATH/config.h
+  if [ $ENABLE_SIMD == "1" ]; then
+    DECODER_LIB="$PROJECT_ROOT_PATH/lib/speex-simd/lib/libspeex.a"
+  else
+    if [ $ENABLE_ATOMIC == "1" ]; then
+      DECODER_LIB="$PROJECT_ROOT_PATH/lib/speex-atomic/lib/libspeex.a"
+    else
+      DECODER_LIB="$PROJECT_ROOT_PATH/lib/speex/lib/libspeex.a"
+    fi
+  fi
 elif [ $decode == "flac" ]; then
   echo "#define CODEC_ID AV_CODEC_ID_FLAC" >> $INCLUDE_PATH/config.h
 elif [ $decode == "vorbis" ]; then
@@ -96,7 +130,7 @@ fi
 
 if [[ $ENABLE_SIMD == "1" ]]; then
   DIR_SUBFIX="$DIR_SUBFIX-simd"
-  CFLAG="$CFLAG -msimd128 -mbulk-memory"
+  CFLAG="$CFLAG -msimd128 -fvectorize -fslp-vectorize -mbulk-memory"
   FFMPEG_AVUTIL_PATH=$PROJECT_ROOT_PATH/lib/ffmpeg-simd/lib
 else 
   if [ $ENABLE_ATOMIC == "1" ]; then
@@ -108,7 +142,7 @@ else
   fi
 fi
 
-emcc $CFLAG --no-entry -Wl,--no-check-features $CLIB_PATH/decode.c $CLIB_PATH/logger/log.c \
+emcc $CFLAG --no-entry -Wl,--no-check-features $CLIB_PATH/decode.c $CLIB_PATH/logger/log.c $DECODER_LIB \
   $FFMPEG_AVUTIL_PATH/libavutil.a $FFMPEG_AVUTIL_PATH/libswresample.a $FFMPEG_DECODE_PATH/$decode$DIR_SUBFIX/libavcodec.a \
   -I "$FFMPEG_PATH/include" \
   -I "$PROJECT_ROOT_PATH/src/cheap/include" \

@@ -56,7 +56,7 @@ fi
 
 if [[ $ENABLE_SIMD == "1" ]]; then
   DIR_SUBFIX="$DIR_SUBFIX-simd"
-  CFLAG="$CFLAG -msimd128 -mbulk-memory"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory -msimd128 -fvectorize -fslp-vectorize"
   FFMPEG_AVUTIL_PATH=$PROJECT_ROOT_PATH/lib/ffmpeg-simd/lib
   FFMPEG_RESAMPLE_PATH=$PROJECT_ROOT_PATH/lib/ffmpeg-simd/lib
 else 

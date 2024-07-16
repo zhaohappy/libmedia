@@ -6,35 +6,59 @@ NOW_PATH=$(cd $(dirname $0); pwd)
 
 PROJECT_ROOT_PATH=$(cd $NOW_PATH/../; pwd)
 
-DAV1D_PATH=$(cd $PROJECT_ROOT_PATH/../dav1d; pwd)
+LIBVPX_PATH=$(cd $PROJECT_ROOT_PATH/../libvpx; pwd)
 
-LIB_OUTPUT_PATH=$PROJECT_ROOT_PATH/lib/dav1d
-LIB_BUILD_PATH=$PROJECT_ROOT_PATH/dist/libdav1d
-OPTIONS="-Denable_asm=false -Denable_wasm_atomic=true"
+LIB_OUTPUT_PATH=$PROJECT_ROOT_PATH/lib/libvpx
+LIB_BUILD_PATH=$PROJECT_ROOT_PATH/dist/libvpx
+
+
+EXTRA_CFLAGS="-I$PROJECT_ROOT_PATH/src/cheap/include -O3"
 
 if [[ $simd == "1" ]]; then
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory -msimd128 -fvectorize -fslp-vectorize"
   LIB_OUTPUT_PATH="$LIB_OUTPUT_PATH-simd"
   LIB_BUILD_PATH="$LIB_BUILD_PATH-simd"
-  OPTIONS="-Denable_asm=true -Denable_wasm_atomic=false"
 else
   if [[ $atomic == "1" ]]; then
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory"
     LIB_OUTPUT_PATH="$LIB_OUTPUT_PATH-atomic"
     LIB_BUILD_PATH="$LIB_BUILD_PATH-atomic"
-    OPTIONS="-Denable_asm=false -Denable_wasm_atomic=false"
+  else
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory"
   fi
+fi
+
+if [ ! -d $LIB_OUTPUT_PATH ]; then
+  mkdir $LIB_OUTPUT_PATH
 fi
 
 source $PROJECT_ROOT_PATH/../emsdk/emsdk_env.sh
 
-meson $DAV1D_PATH $LIB_BUILD_PATH \
-  --prefix="$LIB_OUTPUT_PATH" \
-  --cross-file=$NOW_PATH/dav1d-cross-file.txt \
-  --default-library=static \
-  --buildtype=release \
-  -Dbitdepths="['8', '16']" \
-  -Denable_tools=false \
-  -Dlogging=false \
-  -Denable_tests=false \
-  -Denable_docs=false \
-  $OPTIONS \
-&& ninja -C $LIB_BUILD_PATH install
+echo $LIBVPX_PATH
+
+cd $LIBVPX_PATH
+
+emmake make clean
+
+emconfigure ./configure \
+  --prefix=$LIB_OUTPUT_PATH \
+  --libc=$LIB_OUTPUT_PATH \
+  --target=generic-gnu \
+  --cpu=i686-gnu \
+  --enable-pic \
+  --enable-vp8 \
+  --enable-vp9 \
+  --disable-tools \
+  --disable-docs \
+  --disable-examples \
+  --disable-examples \
+  --disable-unit-tests \
+  --disable-libyuv \
+  --disable-webm-io \
+  --extra-cflags="$EXTRA_CFLAGS"
+
+emmake make
+
+emmake make install
+
+emmake make clean

@@ -15,7 +15,7 @@ OPTIONS="-Denable_asm=false -Denable_wasm_atomic=true"
 if [[ $simd == "1" ]]; then
   LIB_OUTPUT_PATH="$LIB_OUTPUT_PATH-simd"
   LIB_BUILD_PATH="$LIB_BUILD_PATH-simd"
-  OPTIONS="-Denable_asm=true -Denable_wasm_atomic=false"
+  OPTIONS="-Denable_asm=false -Denable_wasm_atomic=false -Denable_wasm_simd=true"
 else
   if [[ $atomic == "1" ]]; then
     LIB_OUTPUT_PATH="$LIB_OUTPUT_PATH-atomic"

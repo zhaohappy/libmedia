@@ -7,6 +7,7 @@ ffmpeg-cache
 dist/**/
 dist/*
 !dist/decode/
+!dist/encode/
 !dist/resample/
 !dist/scale/
 !dist/stretchpitch/
@@ -34,7 +35,3 @@ dist/avtranscoder-legacy/*.*
 test/material
 media/*
 media
-
-dist/decode/h264-simd.wasm
-lib/ffmpeg-simd
-lib/decode/h264-simd
