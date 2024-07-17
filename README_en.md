@@ -59,7 +59,6 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 | oggs                              | ✅                                | ✅                                 |
 | ivf                               | ✅                                | ✅                                 |
 | aac                               | ✅                                | ❌                                 |
-| aac                               | ✅                                | ❌                                 |
 | flac                              | ✅                                | ❌                                 |
 | wav                               | ✅                                | ❌                                 |
 | webvtt                            | ✅                                | ❌                                 |
