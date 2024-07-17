@@ -95,7 +95,7 @@ elif [ $encode == "mp3lame" ]; then
 
   if [[ $simd == "1" ]]; then
     EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/mp3lame-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/mp3lame-simd/lib -lxmp3lame"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/mp3lame-simd/lib -lmp3lame"
   else
     EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/mp3lame/include"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/mp3lame/lib -lmp3lame"
@@ -106,40 +106,40 @@ elif [[ $encode == "vp8" ]]; then
 
   if [[ $simd == "1" ]]; then
     EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx-simd/lib -lxvpx"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx-simd/lib -lvpx"
   else
     EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx/include"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx/lib -lvpx"
   fi
-elif [[ $decode == "vp9" ]]; then
+elif [[ $encode == "vp9" ]]; then
   realEncoder="libvpx_vp9"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libvpx"
 
   if [[ $simd == "1" ]]; then
     EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx-simd/lib -lxvpx"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx-simd/lib -lvpx"
   else
     EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx/include"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx/lib -lvpx"
   fi
-elif [[ $decode == "virbos" ]]; then
+elif [[ $encode == "virbos" ]]; then
   realEncoder="libvorbis"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libvorbis"
 
   if [[ $simd == "1" ]]; then
     EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/vorbis-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/vorbis-simd/lib -lxvorbisenc"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/vorbis-simd/lib -lvorbisenc"
   else
     EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/vorbis/include"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/vorbis/lib -lvorbisenc"
   fi
-elif [[ $decode == "speex" ]]; then
+elif [[ $encode == "speex" ]]; then
   realEncoder="libspeex"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libspeex"
 
   if [[ $simd == "1" ]]; then
     EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/speex-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex-simd/lib -lxspeex"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex-simd/lib -lspeex"
   else
     EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/speex/include"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex/lib -lspeex"

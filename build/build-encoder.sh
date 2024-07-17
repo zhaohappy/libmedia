@@ -115,6 +115,10 @@ elif [ $encode == "mpeg4" ]; then
   echo "#define MEDIA_TYPE_VIDEO 1" >> $INCLUDE_PATH/config.h
 elif [ $encode == "aac" ]; then
   echo "#define MEDIA_TYPE_AUDIO 1" >> $INCLUDE_PATH/config.h
+elif [ $encode == "opus" ]; then
+  echo "#define MEDIA_TYPE_AUDIO 1" >> $INCLUDE_PATH/config.h
+elif [ $encode == "flac" ]; then
+  echo "#define MEDIA_TYPE_AUDIO 1" >> $INCLUDE_PATH/config.h
 elif [ $encode == "mp3lame" ]; then
   echo "#define MEDIA_TYPE_AUDIO 1" >> $INCLUDE_PATH/config.h
   if [ $ENABLE_SIMD == "1" ]; then
@@ -137,6 +141,17 @@ elif [ $encode == "speex" ]; then
       ENCODER_LIB="$PROJECT_ROOT_PATH/lib/speex/lib/libspeex.a"
     fi
   fi
+elif [ $encode == "vorbis" ]; then
+  echo "#define MEDIA_TYPE_AUDIO 1" >> $INCLUDE_PATH/config.h
+  if [ $ENABLE_SIMD == "1" ]; then
+    ENCODER_LIB="$PROJECT_ROOT_PATH/lib/vorbis-simd/lib/libvorbisenc.a"
+  else
+    if [ $ENABLE_ATOMIC == "1" ]; then
+      ENCODER_LIB="$PROJECT_ROOT_PATH/lib/vorbis-atomic/lib/libvorbisenc.a"
+    else
+      ENCODER_LIB="$PROJECT_ROOT_PATH/lib/vorbis/lib/libvorbis.a"
+    fi
+  fi
 elif [ $encode == "pcm" ]; then
   echo "#define MEDIA_TYPE_AUDIO 1" >> $INCLUDE_PATH/config.h
 fi
@@ -147,6 +162,8 @@ if [ $ENABLE_DEBUG == "1" ]; then
   CFLAG="$CFLAG -g"
   echo "#define ENABLE_FFMPEG_LOG_LEVEL 1" >> $INCLUDE_PATH/config.h
 fi
+
+FFMPEG_AVUTIL_PATH=$PROJECT_ROOT_PATH/lib/ffmpeg/lib
 
 if [[ $ENABLE_SIMD == "1" ]]; then
   DIR_SUBFIX="$DIR_SUBFIX-simd"
