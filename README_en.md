@@ -77,9 +77,9 @@ Codecs are compiled into separate wasm modules, the decoders are in the ```dist/
 | Safari         | 12+          | 15+        | 16.4+        |
 | Wasmtime       | 0.20+        | 15+        | 15+          |
 | Wasmer         | 0.7+         | N/A        | N/A          |
-| Node.js        | 12.0         | 16.4       | 16.4+        |
+| Node.js        | 12.0+        | 16.4+      | 16.4+        |
 | Deno           | 0.1+         | 1.9+       | 1.9+         |
-| wasm2c         | 1.0.1        | N/A        | N/A          |
+| wasm2c         | 1.0.1+       | N/A        | N/A          |
 
 
 #### Supported decode codecs status

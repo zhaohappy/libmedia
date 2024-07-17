@@ -67,20 +67,20 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 
 ### codecs
 
-编解码器被编译成了单独的 wasm 模块，解码器在 ```dist/decode``` 目录下，编码器在 ```dist/encode``` 目录下。编解码的 wasm 模块有三个版本分别为 baseline、atomic、simd。baseline 版本是基准版本，指令集对应到 WebAssembly 的 MVP 版本，但需要支持 Mutable Globals，兼容性最高，性能最低；atomic 增加了 atomic 原子操作指令集和 Bulk Memory 指令集；simd 增加了 simd 向量加速指令集，性能最高。目前的 simd 版本是靠编译器自动优化的，不同的编解码器实现效果不同（目前没有看见过有针对 wasm 指令集做加速优化的项目，如果想要更高的加速效果想要自己优化）。
+编解码器被编译成了单独的 wasm 模块，解码器在 ```dist/decode``` 目录下，编码器在 ```dist/encode``` 目录下。编解码的 wasm 模块有三个版本分别为 baseline、atomic、simd。baseline 版本是基准版本，指令集对应到 WebAssembly 的 MVP 版本，但需要支持 Mutable Globals，兼容性最高，性能最低；atomic 增加了 atomic 原子操作指令集和 Bulk Memory 指令集；simd 增加了 simd 向量加速指令集，性能最高。目前的 simd 版本是靠编译器自动优化的，不同的编解码器实现效果不同（目前没有看见过有针对 wasm 指令集做加速优化的项目，如果想要更高的加速效果需要自己优化）。
 
 #### 三个版本的兼容性支持情况
 
-| environment    | baseline     | atomic     | simd         |
+| 环境            | baseline     | atomic     | simd         |
 | -----------    | -----------  |----------- | -----------  |
 | Chrome         | 74+          | 75+        | 91+          |
 | Firefox        | 61+          | 79+        | 89+          |
 | Safari         | 12+          | 15+        | 16.4+        |
 | Wasmtime       | 0.20+        | 15+        | 15+          |
 | Wasmer         | 0.7+         | N/A        | N/A          |
-| Node.js        | 12.0         | 16.4       | 16.4+        |
+| Node.js        | 12.0+        | 16.4+      | 16.4+        |
 | Deno           | 0.1+         | 1.9+       | 1.9+         |
-| wasm2c         | 1.0.1        | N/A        | N/A          |
+| wasm2c         | 1.0.1+       | N/A        | N/A          |
 
 
 #### 目前支持的解码 codecs 支持情况
@@ -103,7 +103,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | G.711 A-law | ✅         | ✅          | ✅          | ❌            |
 | G.711 μ-law | ✅         | ✅          | ✅          | ❌            |
 
-#### 支持的编码 codecs 支持情况
+#### 目前支持的编码 codecs 支持情况
 
 | codec       | baseline   | atomic     | simd        |  webcodecs    |
 | ----------- | -----------|----------- | ----------- | -----------   |
