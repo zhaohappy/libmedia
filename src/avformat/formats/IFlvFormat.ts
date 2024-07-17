@@ -265,12 +265,16 @@ export default class IFlvFormat extends IFormat {
           }
           avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
         }
-        else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_SPEEX) {
-          stream.codecpar.sampleRate = 16000
-          stream.codecpar.chLayout.nbChannels = 1
-          await this.readAVPacketData(formatContext, stream, avpacket, size - 1)
-        }
         else {
+          if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_SPEEX) {
+            stream.codecpar.sampleRate = 16000
+            stream.codecpar.chLayout.nbChannels = 1
+          }
+          else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_ALAW
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_MULAW
+          ) {
+            stream.codecpar.sampleRate = 8000
+          }
           await this.readAVPacketData(formatContext, stream, avpacket, size - 1)
         }
 
