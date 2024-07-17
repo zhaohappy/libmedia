@@ -39,6 +39,7 @@ import { AV_TIME_BASE } from 'avutil/constant'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { getBytesPerSample, sampleFormatIsPlanar, sampleSetSilence } from 'avutil/util/sample'
 import { AVSampleFormat } from 'avutil/audiosamplefmt'
+import { avRescaleQ } from 'avutil/util/rational'
 
 export type WasmAudioEncoderOptions = {
   resource: WebAssemblyResource
@@ -117,7 +118,7 @@ class AudioFrameResizer {
     avframe.format = this.parameters.format
     avframe.pts = this.pts
     avframe.timeBase.den = this.parameters.sampleRate
-    avframe.timeBase.num = 0
+    avframe.timeBase.num = 1
 
     getAudioBuffer(avframe)
 
@@ -203,8 +204,8 @@ export default class WasmAudioEncoder {
 
     const timeBaseP = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
 
-    timeBaseP.num = 1
-    timeBaseP.den = AV_TIME_BASE
+    timeBaseP.num = timeBase.num
+    timeBaseP.den = timeBase.den
 
     this.encoder.call('encoder_set_flags', 1 << 22)
     let ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, 1)
@@ -219,16 +220,13 @@ export default class WasmAudioEncoder {
     await this.encoder.childrenThreadReady()
 
     this.parameters = parameters
-    this.timeBase = {
-      num: 1,
-      den: AV_TIME_BASE
-    }
+    this.timeBase = timeBase
 
     this.pts = 0n
   }
 
-  private encode_(frame: pointer<AVFrame>) {
-    let ret = this.encoder.call<int32>('encoder_encode', frame)
+  private encode_(avframe: pointer<AVFrame>) {
+    let ret = this.encoder.call<int32>('encoder_encode', avframe)
     if (ret) {
       return ret
     }
@@ -247,36 +245,37 @@ export default class WasmAudioEncoder {
     return 0
   }
 
-  public encode(frame: pointer<AVFrame> | AudioData) {
+  public encode(avframe: pointer<AVFrame> | AudioData) {
 
-    if (!is.number(frame)) {
+    if (!is.number(avframe)) {
       if (this.avframe) {
         unrefAVFrame(this.avframe)
       }
       else {
         this.avframe = createAVFrame()
       }
-      frame = audioData2AVFrame(frame, this.avframe)
+      avframe = audioData2AVFrame(avframe, this.avframe)
     }
 
-    frame.timeBase.den = this.timeBase.den
-    frame.timeBase.num = this.timeBase.num
+    avframe.timeBase.den = this.timeBase.den
+    avframe.timeBase.num = this.timeBase.num
 
-    if (this.frameSize > 0 && frame.nbSamples !== this.frameSize || this.audioFrameResizer) {
+    if (this.frameSize > 0 && avframe.nbSamples !== this.frameSize || this.audioFrameResizer) {
       if (!this.audioFrameResizer) {
         this.audioFrameResizer = new AudioFrameResizer(this.parameters, this.frameSize)
       }
-      this.audioFrameResizer.sendAVFrame(frame)
+      this.audioFrameResizer.sendAVFrame(avframe)
       while (true) {
-        let ret = this.audioFrameResizer.receiveAVFrame(frame)
+        let ret = this.audioFrameResizer.receiveAVFrame(avframe)
         if (ret < 0) {
           return 0
         }
-        this.encode_(frame)
+        avframe.pts = avRescaleQ(avframe.pts, avframe.timeBase, this.timeBase)
+        this.encode_(avframe)
       }
     }
     else {
-      return this.encode_(frame)
+      return this.encode_(avframe)
     }
   }
 
@@ -284,6 +283,7 @@ export default class WasmAudioEncoder {
     if (this.audioFrameResizer && this.audioFrameResizer.remainFrameSize() > 0) {
       const avframe = createAVFrame()
       this.audioFrameResizer.flush(avframe)
+      avframe.pts = avRescaleQ(avframe.pts, avframe.timeBase, this.timeBase)
       this.encode_(avframe)
       destroyAVFrame(avframe)
     }

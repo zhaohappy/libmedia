@@ -33,6 +33,8 @@ import { createAVPacket } from 'avutil/util/avpacket'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
 import encodedAudioChunk2AVPacket from 'avutil/function/encodedAudioChunk2AVPacket'
+import { avRescaleQ } from 'avutil/util/rational'
+import { AV_TIME_BASE_Q } from 'avutil/constant'
 
 export type WebAudioEncoderOptions = {
   onReceivePacket: (avpacket: pointer<AVPacket>) => void
@@ -84,8 +86,10 @@ export default class WebAudioEncoder {
       encodedAudioChunk2AVPacket(chunk, avpacket, metadata)
     }
 
-    avpacket.pts = this.pts
-    avpacket.dts = this.pts
+    avpacket.pts = avRescaleQ(this.pts, AV_TIME_BASE_Q, this.timeBase)
+    avpacket.dts = avpacket.pts
+    avpacket.timeBase.den = this.timeBase.den
+    avpacket.timeBase.num = this.timeBase.num
 
     this.pts += avpacket.duration
     

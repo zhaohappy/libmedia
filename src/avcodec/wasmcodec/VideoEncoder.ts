@@ -41,7 +41,6 @@ import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import { avQ2D } from 'avutil/util/rational'
 import AVBSFilter from 'avformat/bsf/AVBSFilter'
 import Annexb2AvccFilter from 'avformat/bsf/h2645/Annexb2AvccFilter'
-import { AV_TIME_BASE } from 'avutil/constant'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
@@ -127,10 +126,12 @@ export default class WasmVideoEncoder {
 
     const timeBaseP = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
 
-    timeBaseP.num = 1
-    timeBaseP.den = AV_TIME_BASE
+    timeBaseP.num = timeBase.num
+    timeBaseP.den = timeBase.den
     
-    // this.encoder.call('encoder_set_flags', 1 << 22)
+    if (parameters.codecId === AVCodecID.AV_CODEC_ID_MPEG4) {
+      this.encoder.call('encoder_set_flags', 1 << 22)
+    }
     this.encoder.call('encoder_set_max_b_frame', parameters.videoDelay)
 
     let ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, threadCount)
@@ -143,10 +144,7 @@ export default class WasmVideoEncoder {
     await this.encoder.childrenThreadReady()
 
     this.parameters = parameters
-    this.timeBase = {
-      num: 1,
-      den: AV_TIME_BASE
-    }
+    this.timeBase = timeBase
 
     this.encodeQueueSize = 0
     this.framerate = static_cast<int64>(avQ2D(parameters.framerate))
@@ -170,7 +168,7 @@ export default class WasmVideoEncoder {
     }
 
     frame.duration = static_cast<int64>(this.timeBase.den) / this.framerate
-    frame.pts = this.inputCounter * 1000000n / this.framerate
+    frame.pts = this.inputCounter * static_cast<int64>(this.timeBase.den / this.timeBase.num) / this.framerate
     frame.timeBase.den = this.timeBase.den
     frame.timeBase.num = this.timeBase.num
 
@@ -209,7 +207,16 @@ export default class WasmVideoEncoder {
   }
 
   public getExtraData() {
-    return this.extradata
+    if (this.extradata) {
+      return this.extradata
+    }
+
+    const pointer = this.encoder.call<pointer<uint8>>('encoder_get_extradata')
+    const size = this.encoder.call<int32>('encoder_get_extradata_size')
+    if (pointer && size) {
+      return mapUint8Array(pointer, size).slice()
+    }
+    return null
   }
 
   public getColorSpace() {

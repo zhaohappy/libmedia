@@ -33,7 +33,7 @@ import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import * as is from 'common/util/is'
 import { avframe2VideoFrame } from 'avutil/function/avframe2VideoFrame'
 import { createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
-import { AV_TIME_BASE_Q } from 'avutil/constant'
+import { AV_MILLI_TIME_BASE, AV_MILLI_TIME_BASE_Q, AV_TIME_BASE_Q } from 'avutil/constant'
 import { BitFormat } from 'avformat/codecs/h264'
 import { PixelFormatDescriptorsMap, PixelFormatFlags } from 'avutil/pixelFormatDescriptor'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
@@ -127,8 +127,10 @@ export default class WebVideoEncoder {
       encodedVideoChunk2AVPacket(chunk, avpacket, metadata)
     }
 
-    avpacket.pts = pts
-    avpacket.dts = dts
+    avpacket.pts = avRescaleQ(pts, AV_TIME_BASE_Q, this.timeBase)
+    avpacket.dts = avRescaleQ(dts, AV_TIME_BASE_Q, this.timeBase)
+    avpacket.timeBase.den = this.timeBase.den
+    avpacket.timeBase.num = this.timeBase.num
 
     if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_H264
       || this.parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
@@ -219,7 +221,7 @@ export default class WebVideoEncoder {
       refAVFrame(cache, frame)
       cache.pts = this.inputCounter
       if (cache.duration) {
-        cache.duration = avRescaleQ(cache.duration, this.timeBase, AV_TIME_BASE_Q)
+        cache.duration = avRescaleQ(cache.duration, frame.timeBase, AV_TIME_BASE_Q)
       }
       else {
         cache.duration = 1000000n / this.framerate

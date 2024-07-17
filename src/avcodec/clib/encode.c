@@ -1,6 +1,7 @@
 #include "config.h"
 #include "wasmenv.h"
 #include "./logger/log.h"
+#include <wasmatomic.h>
 
 #include <libavcodec/avcodec.h>
 #include <libavutil/opt.h>
@@ -14,6 +15,36 @@ int enc_ctx_max_b_frames = -1;
 int enc_ctx_flags = 0;
 int enc_ctx_flags2 = 0;
 
+struct AVBuffer {
+  uint8_t *data; /**< data described by this buffer */
+  size_t size; /**< size of data in bytes */
+
+  /**
+   *  number of existing AVBufferRef instances referring to this buffer
+   */
+  atomic_uint refcount;
+
+  /**
+   * a callback for freeing the data
+   */
+  void (*free)(void *opaque, uint8_t *data);
+
+  /**
+   * an opaque pointer, to be used by the freeing callback
+   */
+  void *opaque;
+
+  /**
+   * A combination of AV_BUFFER_FLAG_*
+   */
+  int flags;
+
+  /**
+   * A combination of BUFFER_FLAG_*
+   */
+  int flags_internal;
+};
+
 int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCodecParameters* codecpar, AVRational* time_base, int thread_count) {
 
   int ret;
@@ -21,7 +52,7 @@ int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCode
   AVCodec *enc = NULL;
   AVDictionary *opts = NULL;
 
-  /* find decoder for the stream */
+  /* find encoder for the stream */
   enc = avcodec_find_encoder(codec_id);
   if (!enc) {
     format_log(ERROR ,"Failed to find %s codec\n", avcodec_get_name(codec_id));
@@ -44,6 +75,7 @@ int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCode
   (*enc_ctx)->time_base = *time_base;
   (*enc_ctx)->flags = enc_ctx_flags;
   (*enc_ctx)->flags2 = enc_ctx_flags2;
+  (*enc_ctx)->strict_std_compliance = -2;
 
   if (enc_ctx_max_b_frames > -1) {
     (*enc_ctx)->max_b_frames = enc_ctx_max_b_frames;
@@ -94,6 +126,20 @@ int receive_packet(const AVPacket* packet) {
 
 int encode_frame(const AVFrame* frame) {
   int ret;
+  int i;
+
+  if (frame) {
+    for (i = 0; i < AV_NUM_DATA_POINTERS; i++) {
+      if (frame->buf[i] != NULL) {
+        frame->buf[i]->buffer->free = av_buffer_default_free;
+      }
+    }
+    if (frame->nb_extended_buf > 0) {
+      for (i = 0; i < frame->nb_extended_buf; i++) {
+        frame->extended_buf[i]->buffer->free = av_buffer_default_free;
+      }
+    }
+  }
 
   ret = avcodec_send_frame(enc_ctx, frame);
 
