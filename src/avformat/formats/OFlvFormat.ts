@@ -321,25 +321,7 @@ export default class OFlvFormat extends OFormat {
 
       if (avpacket.size) {
         const now = formatContext.ioWriter.getPos()
-        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
-        ) {
-          oflv.writeTagHeader(
-            formatContext.ioWriter,
-            FlvTag.VIDEO,
-            avpacket.size + 1 + FlvCodecHeaderLength[stream.codecpar.codecId],
-            avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase)
-          )
-
-          oflv.writeVideoTagDataHeader(formatContext.ioWriter, stream, avpacket.flags)
-
-          let ct = 0
-          if (avpacket.pts !== NOPTS_VALUE_BIGINT) {
-            ct = static_cast<int32>(avRescaleQ(avpacket.pts - avpacket.dts, avpacket.timeBase, stream.timeBase))
-          }
-          flvH264.writeDataHeader(formatContext.ioWriter, AVCPacketType.AVC_NALU, ct)
-        }
-        else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1
@@ -368,6 +350,25 @@ export default class OFlvFormat extends OFormat {
               ct = static_cast<int32>(avRescaleQ(avpacket.pts - avpacket.dts, avpacket.timeBase, stream.timeBase))
             }
             formatContext.ioWriter.writeUint24(ct)
+          }
+        }
+        else {
+          oflv.writeTagHeader(
+            formatContext.ioWriter,
+            FlvTag.VIDEO,
+            avpacket.size + 1 + FlvCodecHeaderLength[stream.codecpar.codecId],
+            avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase)
+          )
+          if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
+          ) {
+            oflv.writeVideoTagDataHeader(formatContext.ioWriter, stream, avpacket.flags)
+
+            let ct = 0
+            if (avpacket.pts !== NOPTS_VALUE_BIGINT) {
+              ct = static_cast<int32>(avRescaleQ(avpacket.pts - avpacket.dts, avpacket.timeBase, stream.timeBase))
+            }
+            flvH264.writeDataHeader(formatContext.ioWriter, AVCPacketType.AVC_NALU, ct)
           }
         }
 
