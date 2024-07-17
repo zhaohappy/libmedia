@@ -55,6 +55,7 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 | mp4                               | ✅                                | ✅                                 |
 | mpegts                            | ✅                                | ✅                                 |
 | matroska                          | ✅                                | ✅                                 |
+| webm                              | ✅                                | ✅                                 |
 | mp3                               | ✅                                | ✅                                 |
 | oggs                              | ✅                                | ✅                                 |
 | ivf                               | ✅                                | ✅                                 |
