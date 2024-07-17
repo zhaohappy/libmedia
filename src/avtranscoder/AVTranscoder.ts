@@ -479,6 +479,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     newStream.codecpar = avMallocz(sizeof(AVCodecParameters))
     copyCodecParameters(newStream.codecpar, stream.codecpar)
     newStream.timeBase = avMallocz(sizeof(Rational))
+    
     newStream.timeBase.den = stream.timeBase.den
     newStream.timeBase.num = stream.timeBase.num
 
@@ -491,6 +492,8 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     if (task.options.duration) {
       newStream.duration = avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, accessof(newStream.timeBase))
     }
+
+    newStream.metadata['encoder'] = `libmedia.js-${defined(VERSION)}`
 
     return newStream
   }
@@ -686,11 +689,14 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             }
             if (task.options.output.file instanceof FileSystemFileHandle) {
               if (task.safeFileIO.writeQueueSize > 5) {
-                await this.MuxThread.pause(task.taskId)
-                while (task.safeFileIO.writeQueueSize > 5) {
-                  await new Sleep(0)
+                try {
+                  await this.MuxThread.pause(task.taskId)
+                  while (task.safeFileIO.writeQueueSize > 5) {
+                    await new Sleep(0)
+                  }
+                  await this.MuxThread.unpause(task.taskId)
                 }
-                await this.MuxThread.unpause(task.taskId)
+                catch (e) {}
               }
             }
           }
@@ -939,6 +945,23 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         if (newStream.codecpar.sampleRate > 48000) {
           newStream.codecpar.sampleRate = 48000
         }
+      }
+      else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_FLAC) {
+        if (newStream.codecpar.format !== AVSampleFormat.AV_SAMPLE_FMT_S16
+          && newStream.codecpar.format !== AVSampleFormat.AV_SAMPLE_FMT_S32
+        ) {
+          newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_S16
+        }
+      }
+      else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_ALAW
+        || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_MULAW
+      ) {
+        newStream.codecpar.sampleRate = 8000
+        newStream.codecpar.bitRate = 64000n
+        newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_S16
+      }
+      else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_SPEEX) {
+        newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_S16
       }
 
       if (newStream.codecpar.profile === NOPTS_VALUE) {
@@ -1217,6 +1240,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9) {
           newStream.codecpar.profile = vp9.VP9Profile.Profile0
         }
+        else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP8) {
+          newStream.codecpar.profile = 0
+        }
       }
       if (newStream.codecpar.level === NOPTS_VALUE) {
         if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
@@ -1256,6 +1282,17 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         else {
           newStream.codecpar.bitFormat = BitFormat.AVCC
         }
+      }
+
+      if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4 && newStream.timeBase.den > 65535) {
+        const newTimebase = {
+          den: 65535,
+          num: 1
+        }
+        newStream.startTime = avRescaleQ(newStream.startTime, accessof(newStream.timeBase), newTimebase)
+        newStream.duration = avRescaleQ(newStream.duration, accessof(newStream.timeBase), newTimebase)
+        newStream.timeBase.den = newTimebase.den
+        newStream.timeBase.num = newTimebase.num
       }
 
       await this.DemuxerThread.connectStreamTask
@@ -1422,6 +1459,10 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
         encoderResource.enableThreadPool = true
         encoderResource.enableThreadCountRate = 2
+      }
+      // libvpx 需要提前创建线程
+      else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9) {
+        encoderResource.enableThreadPool = true
       }
 
       // 注册一个视频编码任务

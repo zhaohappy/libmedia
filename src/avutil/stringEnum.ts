@@ -52,7 +52,9 @@ export const AudioCodecString2CodecId = {
   'opus': AVCodecID.AV_CODEC_ID_OPUS,
   'flac': AVCodecID.AV_CODEC_ID_FLAC,
   'speex': AVCodecID.AV_CODEC_ID_SPEEX,
-  'vorbis': AVCodecID.AV_CODEC_ID_VORBIS
+  'vorbis': AVCodecID.AV_CODEC_ID_VORBIS,
+  'g711a': AVCodecID.AV_CODEC_ID_PCM_ALAW,
+  'g711u': AVCodecID.AV_CODEC_ID_PCM_MULAW
 }
 
 export const PixfmtString2AVPixelFormat = {
