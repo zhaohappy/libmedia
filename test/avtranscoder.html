@@ -15,7 +15,6 @@
       <el-radio v-model="radio" label="ts">mpegts</el-radio>
       <el-radio v-model="radio" label="mkv">matroska</el-radio>
       <el-radio v-model="radio" label="oggs">oggs</el-radio>
-      <el-radio v-model="radio" label="ivf">ivf</el-radio>
       <el-radio v-model="radio" label="mp3">mp3</el-radio>
     </div>
   </div>
@@ -56,7 +55,7 @@
         const writeFileHandler = value[0]
 
         transcoder = new AVTranscoder({
-          enableHardware: false,
+          enableHardware: true,
           getWasm: (type, codecId) => {
             switch (type) {
               case 'decoder': {
@@ -108,14 +107,65 @@
                   default:
                     return null
                 }
-                break
+                return null
+              }
+              case 'encoder': {
+
+                if (codecId >= 65536 && codecId <= 65572) {
+                  return '../dist/encode/pcm-simd.wasm'
+                }
+
+                switch (codecId) {
+                  // H264
+                  case 27:
+                    return '../dist/encode/x264-simd.wasm'
+                  // AAC
+                  case 86018:
+                    return '../dist/encode/aac-simd.wasm'
+                  // MP3
+                  case 86017:
+                    return '../dist/encode/mp3lame-simd.wasm'
+                  // HEVC
+                  case 173:
+                    return '../dist/encode/x265-simd.wasm'
+                  // VVC
+                  // case 196:
+                    // return supportAtomic ? '../dist/decode/vvc-atomic.wasm' : '../dist/decode/vvc.wasm'
+                  // Mpeg4
+                  case 12:
+                    return '../dist/encode/mpeg4-simd.wasm'
+                  // AV1
+                  // case 225:
+                    // return supportAtomic ? '../dist/encode/av1-atomic.wasm' : '../dist/encode/av1.wasm'
+                  // Speex
+                  case 86051:
+                    return '../dist/encode/speex-simd.wasm'
+                  // Opus
+                  case 86076:
+                    return '../dist/encode/opus-simd.wasm'
+                  // flac
+                  case 86028:
+                    return '../dist/encode/flac-simd.wasm'
+                  // vorbis
+                  case 86021:
+                    return '../dist/encode/vorbis-simd.wasm'
+                  // vp8
+                  case 139:
+                    return '../dist/encode/vp8-simd.wasm'
+                  // vp9
+                  case 167:
+                    return '../dist/encode/vp9-simd.wasm'
+                  default:
+                    return null
+                }
+                return null
               }
               case 'resampler':
-                return supportAtomic ? '../dist/resample/resample-atomic.wasm' : '../dist/resample/resample.wasm'
+                return '../dist/resample/resample-simd.wasm'
               case 'scaler':
-                return supportAtomic ? '../dist/scale/scale-atomic.wasm' : '../dist/scale/scale.wasm'
+                return '../dist/scale/scale-simd.wasm'
               case 'stretchpitcher':
-                return supportAtomic ? '../dist/stretchpitch/stretchpitch-atomic.wasm' : '../dist/stretchpitch/stretchpitch.wasm'
+                return '../dist/stretchpitch/stretchpitch-simd.wasm'
             }
           },
         })
@@ -133,23 +183,24 @@
             input: {
               file
             },
-            // start: 0,
-            // duration: 10000,
+            // start: 10000,
+            // duration: 30000,
             output: {
               file: writeFileHandler,
               format: outputFormatComp.radio,
               audio: {
                 disable: false,
                 codec: 'aac',
-                bitrate: 128000,
-                // sampleRate: 44100
+                // bitrate: 16000,
+                // channels: 1,
+                // sampleRate: 16000
               },
               video: {
-                disable: false,
-                codec: 'h264',
-                // width: 640,
-                // height: 360,
-                // bitrate: 500000,
+                disable: true,
+                codec: 'hevc',
+                width: 640,
+                height: 360,
+                bitrate: 300_000,
                 // framerate: 30
               }
             }
@@ -172,7 +223,7 @@
     const log = console.log
     console.log = function(tag, msg, style) {
       log(tag, msg)
-      logcatbox.value = logcatbox.value + msg + '\n';
+      logcatbox.value = logcatbox.value + (msg || tag) + '\n';
       logcatbox.scrollTop = logcatbox.scrollHeight;
     }
   </script>

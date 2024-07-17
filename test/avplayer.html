@@ -521,7 +521,7 @@
                 case 'decoder': {
 
                   if (codecId >= 65536 && codecId <= 65572) {
-                    return supportAtomic ? '../dist/decode/pcm-atomic.wasm' : '../dist/decode/pcm.wasm'
+                    return `../dist/decode/pcm${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                   }
 
                   switch (codecId) {
@@ -530,10 +530,10 @@
                       return `../dist/decode/h264${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // AAC
                     case 86018:
-                      return supportAtomic ? '../dist/decode/aac-atomic.wasm' : '../dist/decode/aac.wasm'
+                      return `../dist/decode/aac${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // MP3
                     case 86017:
-                      return supportAtomic ? '../dist/decode/mp3-atomic.wasm' : '../dist/decode/mp3.wasm'
+                      return `../dist/decode/mp3${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // HEVC
                     case 173:
                       return `../dist/decode/hevc${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
@@ -542,22 +542,22 @@
                       return `../dist/decode/vvc${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // Mpeg4
                     case 12:
-                      return supportAtomic ? '../dist/decode/mpeg4-atomic.wasm' : '../dist/decode/mpeg4.wasm'
+                      return `../dist/decode/mpeg4${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // AV1
                     case 225:
                       return `../dist/decode/av1${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // Speex
                     case 86051:
-                      return supportAtomic ? '../dist/decode/speex-atomic.wasm' : '../dist/decode/speex.wasm'
+                      return `../dist/decode/speex${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // Opus
                     case 86076:
-                      return supportAtomic ? '../dist/decode/opus-atomic.wasm' : '../dist/decode/opus.wasm'
+                      return `../dist/decode/opus${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // flac
                     case 86028:
-                      return supportAtomic ? '../dist/decode/flac-atomic.wasm' : '../dist/decode/flac.wasm'
+                      return `../dist/decode/flac${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // vorbis
                     case 86021:
-                      return supportAtomic ? '../dist/decode/vorbis-atomic.wasm' : '../dist/decode/vorbis.wasm'
+                      return `../dist/decode/vorbis${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // vp8
                     case 139:
                       return `../dist/decode/vp8${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
