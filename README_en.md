@@ -46,6 +46,83 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 
 - AVTranscoder is the transcoding tool implementation of libmedia [online demo](https://zhaohappy.github.io/libmedia/test/avtranscoder.html)
 
+### formats
+
+| Format                            | Input                            | Output                             |
+| -----------                       | -----------                      |-----------                         |
+| flv                               | ✅                                | ✅                                 |
+| mov                               | ✅                                | ✅                                 |
+| mp4                               | ✅                                | ✅                                 |
+| mpegts                            | ✅                                | ✅                                 |
+| matroska                          | ✅                                | ✅                                 |
+| mp3                               | ✅                                | ✅                                 |
+| oggs                              | ✅                                | ✅                                 |
+| ivf                               | ✅                                | ✅                                 |
+| aac                               | ✅                                | ❌                                 |
+| aac                               | ✅                                | ❌                                 |
+| flac                              | ✅                                | ❌                                 |
+| wav                               | ✅                                | ❌                                 |
+| webvtt                            | ✅                                | ❌                                 |
+
+
+### codecs
+
+Codecs are compiled into separate wasm modules, the decoders are in the ```dist/decode``` directory, and the encoders are in the ```dist/encode``` directory. There are three versions of the encoding and decoding wasm module: baseline, atomic, and simd. The baseline version's instruction set corresponds to the MVP version of WebAssembly, but it needs to support Mutable Globals, with the highest compatibility and the lowest performance; atomic version add the atomic operation instruction set and Bulk memory instruction set; simd version add the simd vector acceleration instruction set, has the highest performance. The current simd version is automatically optimized by the compiler, and different codecs have different effects (currently I have not seen any codec projects has optimized for the wasm simd instruction set. If you want higher acceleration effects, you may want to optimize yourself).
+
+#### Compatibility support status of three versions
+
+| environment    | baseline     | atomic     | simd         |
+| -----------    | -----------  |----------- | -----------  |
+| Chrome         | 74+          | 75+        | 91+          |
+| Firefox        | 61+          | 79+        | 89+          |
+| Safari         | 12+          | 15+        | 16.4+        |
+| Wasmtime       | 0.20+        | 15+        | 15+          |
+| Wasmer         | 0.7+         | N/A        | N/A          |
+| Node.js        | 12.0         | 16.4       | 16.4+        |
+| Deno           | 0.1+         | 1.9+       | 1.9+         |
+| wasm2c         | 1.0.1        | N/A        | N/A          |
+
+
+#### Supported decode codecs status
+
+| codec       | baseline   | atomic     | simd        |  webcodecs    |
+| ----------- | -----------|----------- | ----------- | -----------   |
+| h264        | ✅         | ✅          | ✅          | ✅            |
+| hevc        | ✅         | ✅          | ✅          | ✅ (hardware only) |
+| vvc         | ✅         | ✅          | ✅          | ❌            |
+| av1         | ✅         | ✅          | ✅          | ✅            |
+| vp8         | ✅         | ✅          | ✅          | ✅            |
+| vp9         | ✅         | ✅          | ✅          | ✅            |
+| mpeg4       | ✅         | ✅          | ✅          | ❌            |
+| aac         | ✅         | ✅          | ✅          | ✅            |
+| mp3         | ✅         | ✅          | ✅          | ✅            |
+| opus        | ✅         | ✅          | ✅          | ✅            |
+| flac        | ✅         | ✅          | ✅          | ❌            |
+| speex       | ✅         | ✅          | ✅          | ❌            |
+| vorbis      | ✅         | ✅          | ✅          | ❌            |
+| G.711 A-law | ✅         | ✅          | ✅          | ❌            |
+| G.711 μ-law | ✅         | ✅          | ✅          | ❌            |
+
+#### Supported encode codecs status
+
+| codec       | baseline   | atomic     | simd        |  webcodecs    |
+| ----------- | -----------|----------- | ----------- | -----------   |
+| h264        | ✅         | ✅          | ✅          | ✅            |
+| hevc        | ❌         | ✅          | ✅          | ❌            |
+| vvc         | ❌         | ❌          | ❌          | ❌            |
+| av1         | ❌         | ❌          | ❌          | ✅            |
+| vp8         | ✅         | ✅          | ✅          | ✅            |
+| vp9         | ✅         | ✅          | ✅          | ✅            |
+| mpeg4       | ❌         | ❌          | ❌          | ❌            |
+| aac         | ✅         | ✅          | ✅          | ✅            |
+| mp3         | ✅         | ✅          | ✅          | ❌            |
+| opus        | ✅         | ✅          | ✅          | ✅            |
+| flac        | ✅         | ✅          | ✅          | ❌            |
+| speex       | ✅         | ✅          | ✅          | ❌            |
+| vorbis      | ✅         | ✅          | ✅          | ❌            |
+| G.711 A-law | ✅         | ✅          | ✅          | ❌            |
+| G.711 μ-law | ✅         | ✅          | ✅          | ❌            |
+
 ### API
 
 #### avformat
