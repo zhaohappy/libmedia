@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>avtranscoder</title>
   <link rel="stylesheet" href="./element-ui.css" crossorigin>
+  <meta http-equiv="origin-trial" content="AvVVD0vRFcVG5+Z0vn8wrVPWUt98Q6/e73ZIicw+Noko1IwIrkB1siQlxc+IdvM0nISlKulUqzx2QflMi1YgFA8AAABieyJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0OjkwMDAiLCJmZWF0dXJlIjoiV2ViQXNzZW1ibHlKU1Byb21pc2VJbnRlZ3JhdGlvbiIsImV4cGlyeSI6MTczOTkyMzE5OX0=">
 </head>
 <body>
 
@@ -55,55 +56,55 @@
         const writeFileHandler = value[0]
 
         transcoder = new AVTranscoder({
-          enableHardware: true,
+          enableHardware: false,
           getWasm: (type, codecId) => {
             switch (type) {
               case 'decoder': {
 
                 if (codecId >= 65536 && codecId <= 65572) {
-                  return supportAtomic ? '../dist/decode/pcm-atomic.wasm' : '../dist/decode/pcm.wasm'
+                  return '../dist/decode/pcm-simd.wasm'
                 }
 
                 switch (codecId) {
                   // H264
                   case 27:
-                    return `../dist/decode/h264${supportAtomic ? '-atomic' : ''}.wasm`
+                    return '../dist/decode/h264-simd.wasm'
                   // AAC
                   case 86018:
-                    return supportAtomic ? '../dist/decode/aac-atomic.wasm' : '../dist/decode/aac.wasm'
+                    return '../dist/decode/aac-simd.wasm'
                   // MP3
                   case 86017:
-                    return supportAtomic ? '../dist/decode/mp3-atomic.wasm' : '../dist/decode/mp3.wasm'
+                    return '../dist/decode/mp3-simd.wasm'
                   // HEVC
                   case 173:
-                    return supportAtomic ? '../dist/decode/hevc-atomic.wasm' : '../dist/decode/hevc.wasm'
+                    return '../dist/decode/hevc-simd.wasm'
                   // VVC
                   case 196:
-                    return supportAtomic ? '../dist/decode/vvc-atomic.wasm' : '../dist/decode/vvc.wasm'
+                    return '../dist/decode/vvc-simd.wasm'
                   // Mpeg4
                   case 12:
-                    return supportAtomic ? '../dist/decode/mpeg4-atomic.wasm' : '../dist/decode/mpeg4.wasm'
+                    return '../dist/decode/mpeg4-simd.wasm'
                   // AV1
                   case 225:
-                    return supportAtomic ? '../dist/decode/av1-atomic.wasm' : '../dist/decode/av1.wasm'
+                    return '../dist/decode/av1-simd.wasm'
                   // Speex
                   case 86051:
-                    return supportAtomic ? '../dist/decode/speex-atomic.wasm' : '../dist/decode/speex.wasm'
+                    return '../dist/decode/speex-simd.wasm'
                   // Opus
                   case 86076:
-                    return supportAtomic ? '../dist/decode/opus-atomic.wasm' : '../dist/decode/opus.wasm'
+                    return '../dist/decode/opus-simd.wasm'
                   // flac
                   case 86028:
-                    return supportAtomic ? '../dist/decode/flac-atomic.wasm' : '../dist/decode/flac.wasm'
+                    return '../dist/decode/flac-simd.wasm'
                   // vorbis
                   case 86021:
-                    return supportAtomic ? '../dist/decode/vorbis-atomic.wasm' : '../dist/decode/vorbis.wasm'
+                    return '../dist/decode/vorbis-simd.wasm'
                   // vp8
                   case 139:
-                    return supportAtomic ? '../dist/decode/vp8-atomic.wasm' : '../dist/decode/vp8.wasm'
+                    return '../dist/decode/vp8-simd.wasm'
                   // vp9
                   case 167:
-                    return supportAtomic ? '../dist/decode/vp9-atomic.wasm' : '../dist/decode/vp9.wasm'
+                    return '../dist/decode/vp9-simd.wasm'
                   default:
                     return null
                 }
@@ -184,7 +185,7 @@
               file
             },
             // start: 10000,
-            // duration: 30000,
+            // duration: 1000,
             output: {
               file: writeFileHandler,
               format: outputFormatComp.radio,
@@ -196,11 +197,11 @@
                 // sampleRate: 16000
               },
               video: {
-                disable: true,
-                codec: 'hevc',
-                width: 640,
-                height: 360,
-                bitrate: 300_000,
+                disable: false,
+                codec: 'h264',
+                // width: 640,
+                // height: 360,
+                // bitrate: 5_000_000,
                 // framerate: 30
               }
             }
