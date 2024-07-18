@@ -1632,7 +1632,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         }
         else {
           oformatContext.streams.push(stream.input)
-          mappingDump += `  Stream #0:${stream.input.index} -> #0:${stream.output.index} (${
+          mappingDump += `  Stream #0:${stream.input.index} -> #0:${stream.input.index} (${
             dumpCodecName(stream.input.codecpar.codecType, stream.input.codecpar.codecId)} -> copy)\n`
         }
       })
