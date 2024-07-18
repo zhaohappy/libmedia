@@ -30,6 +30,7 @@ import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import { createAVFrame, destroyAVFrame } from 'avutil/util/avframe'
 import * as logger from 'common/util/logger'
+import support from 'common/util/support'
 
 export type WasmAudioDecoderOptions = {
   resource: WebAssemblyResource
@@ -77,7 +78,14 @@ export default class WasmAudioDecoder {
 
   public async open(parameters: pointer<AVCodecParameters>) {
     await this.decoder.run()
-    let ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, 1)
+    let ret = 0
+    if (support.jspi) {
+      ret = await this.decoder.callAsync<int32>('decoder_open', parameters, nullptr, 1)
+    }
+    else {
+      ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, 1)
+      await this.decoder.childrenThreadReady()
+    }
     if (ret < 0) {
       logger.fatal(`open audio decoder failed, ret: ${ret}`)
     }

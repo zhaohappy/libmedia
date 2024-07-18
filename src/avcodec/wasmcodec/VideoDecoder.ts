@@ -30,6 +30,7 @@ import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { createAVFrame, destroyAVFrame } from 'avutil/util/avframe'
 import * as logger from 'common/util/logger'
+import support from 'common/util/support'
 
 export type WasmVideoDecoderOptions = {
   resource: WebAssemblyResource
@@ -114,7 +115,16 @@ export default class WasmVideoDecoder {
 
   public async open(parameters: pointer<AVCodecParameters>, threadCount: number = 1) {
     await this.decoder.run(null, threadCount)
-    let ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, threadCount)
+    let ret = 0
+
+    if (support.jspi) {
+      ret = await this.decoder.callAsync<int32>('decoder_open', parameters, nullptr, threadCount)
+    }
+    else {
+      ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, threadCount)
+      await this.decoder.childrenThreadReady()
+    }
+    
     if (ret < 0) {
       logger.fatal(`open video decoder failed, ret: ${ret}`)
     }

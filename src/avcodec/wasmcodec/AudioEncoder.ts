@@ -35,11 +35,11 @@ import { audioData2AVFrame } from 'avutil/function/audioData2AVFrame'
 import * as stack from 'cheap/stack'
 import { createAVFrame, destroyAVFrame, getAudioBuffer, unrefAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
-import { AV_TIME_BASE } from 'avutil/constant'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { getBytesPerSample, sampleFormatIsPlanar, sampleSetSilence } from 'avutil/util/sample'
 import { AVSampleFormat } from 'avutil/audiosamplefmt'
 import { avRescaleQ } from 'avutil/util/rational'
+import support from 'common/util/support'
 
 export type WasmAudioEncoderOptions = {
   resource: WebAssemblyResource
@@ -208,7 +208,15 @@ export default class WasmAudioEncoder {
     timeBaseP.den = timeBase.den
 
     this.encoder.call('encoder_set_flags', 1 << 22)
-    let ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, 1)
+    let ret = 0
+
+    if (support.jspi) {
+      ret = await this.encoder.callAsync<int32>('encoder_open', parameters, timeBaseP, 1)
+    }
+    else {
+      ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, 1)
+      await this.encoder.childrenThreadReady()
+    }
 
     this.frameSize = this.encoder.call<int32>('encoder_get_framesize_size')
 

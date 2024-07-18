@@ -41,6 +41,7 @@ import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import { avQ2D } from 'avutil/util/rational'
 import AVBSFilter from 'avformat/bsf/AVBSFilter'
 import Annexb2AvccFilter from 'avformat/bsf/h2645/Annexb2AvccFilter'
+import support from 'common/util/support'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
@@ -134,14 +135,21 @@ export default class WasmVideoEncoder {
     }
     this.encoder.call('encoder_set_max_b_frame', parameters.videoDelay)
 
-    let ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, threadCount)
+    let ret = 0
+
+    if (support.jspi) {
+      ret = await this.encoder.callAsync<int32>('encoder_open', parameters, timeBaseP, threadCount)
+    }
+    else {
+      ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, threadCount)
+      await this.encoder.childrenThreadReady()
+    }
 
     stack.free(sizeof(Rational))
 
     if (ret < 0) {
       logger.fatal(`open video decoder failed, ret: ${ret}`)
     }
-    await this.encoder.childrenThreadReady()
 
     this.parameters = parameters
     this.timeBase = timeBase
