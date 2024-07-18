@@ -187,6 +187,27 @@ export default class VideoEncodePipeline extends Pipeline {
 
     this.tasks.set(options.taskId, task)
 
+    const caches: (pointer<AVFrameRef> | VideoFrame)[] = []
+
+    async function pullAVFrame() {
+      if (!task.inputEnd) {
+        if (!caches.length) {
+          const avframe = await leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
+          if (is.number(avframe) && avframe < 0) {
+            task.inputEnd = true
+          }
+          caches.push(avframe)
+        }
+        leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull').then((avframe) => {
+          if (is.number(avframe) && avframe < 0) {
+            task.inputEnd = true
+          }
+          caches.push(avframe)
+        })
+      }
+      return caches.length ? caches.shift() : IOError.END as pointer<AVFrameRef>
+    }
+
     rightIPCPort.on(REQUEST, async (request: RpcMessage) => {
       switch (request.method) {
         case 'pull': {
@@ -208,7 +229,7 @@ export default class VideoEncodePipeline extends Pipeline {
                 task.encoderReady = null
               }
 
-              const avframe = await leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
+              const avframe = await pullAVFrame()
 
               if (!is.number(avframe) || avframe > 0) {
                 let ret = task.targetEncoder.encode(avframe, task.gopCounter === 0)
@@ -271,7 +292,6 @@ export default class VideoEncodePipeline extends Pipeline {
                   else {
                     await task.targetEncoder.flush()
                   }
-                  task.inputEnd = true
                   // 等待 flush 出的帧入队
                   if (task.targetEncoder === task.hardwareEncoder) {
                     await new Sleep(0)
