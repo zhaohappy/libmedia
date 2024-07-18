@@ -131,12 +131,16 @@ int encode_frame(const AVFrame* frame) {
   if (frame) {
     for (i = 0; i < AV_NUM_DATA_POINTERS; i++) {
       if (frame->buf[i] != NULL) {
-        frame->buf[i]->buffer->free = av_buffer_default_free;
+        if (frame->buf[i]->buffer->free == NULL) {
+          frame->buf[i]->buffer->free = av_buffer_default_free;
+        }
       }
     }
     if (frame->nb_extended_buf > 0) {
       for (i = 0; i < frame->nb_extended_buf; i++) {
-        frame->extended_buf[i]->buffer->free = av_buffer_default_free;
+        if (frame->extended_buf[i]->buffer->free == NULL) {
+          frame->extended_buf[i]->buffer->free = av_buffer_default_free;
+        }
       }
     }
   }
