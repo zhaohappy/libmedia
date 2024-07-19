@@ -1068,19 +1068,19 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       }
 
       await this.AudioFilterThread.registerTask
-      .transfer(decoder2FilterChannel.port2, filter2EncoderChannel.port1)
-      .invoke({
-        taskId: taskId,
-        graph: {
-          vertices: vertices,
-          edges: edges
-        },
-        inputPorts: [input],
-        outputPorts: [output],
-        stats: addressof(task.stats),
-        avframeList: addressof(this.GlobalData.avframeList),
-        avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-      })
+        .transfer(decoder2FilterChannel.port2, filter2EncoderChannel.port1)
+        .invoke({
+          taskId: taskId,
+          graph: {
+            vertices: vertices,
+            edges: edges
+          },
+          inputPorts: [input],
+          outputPorts: [output],
+          stats: addressof(task.stats),
+          avframeList: addressof(this.GlobalData.avframeList),
+          avframeListMutex: addressof(this.GlobalData.avframeListMutex),
+        })
       
       let encoderResource: WebAssemblyResource = await this.getResource('encoder', newStream.codecpar.codecId, newStream.codecpar.codecType)
       if (!encoderResource) {
