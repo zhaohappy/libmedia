@@ -1316,9 +1316,8 @@ export default class MSEPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       if (task.mediaSource.handle) {
-        if (is.array(arguments[arguments.length - 1])) {
-          arguments[arguments.length - 1].push(task.mediaSource.handle)
-        }
+        // @ts-ignore
+        this.getMediaSource.transfer.push(task.mediaSource.handle)
         return task.mediaSource.handle
       }
       else {
