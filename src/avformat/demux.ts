@@ -232,7 +232,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
         streamBitMap[stream.index] = avpacket.size
       }
 
-      if (!pictureGot[stream.index] && formatContext.getDecoderResource && stream.codecpar.codecId !== AVCodecID.AV_CODEC_ID_VVC) {
+      if (!pictureGot[stream.index] && formatContext.getDecoderResource) {
         let decoder = decoderMap[stream.index]
         if (!decoder) {
           const resource = await formatContext.getDecoderResource(stream.codecpar.codecType, stream.codecpar.codecId)
