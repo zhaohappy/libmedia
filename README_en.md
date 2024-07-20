@@ -113,7 +113,7 @@ Codecs are compiled into separate wasm modules, the decoders are in the ```dist/
 | av1         | ❌         | ❌          | ❌          | ✅                 |
 | vp8         | ✅         | ✅          | ✅          | ✅                 |
 | vp9         | ✅         | ✅          | ✅          | ✅                 |
-| mpeg4       | ❌         | ❌          | ❌          | ❌                 |
+| mpeg4       | ✅         | ✅          | ✅          | ❌                 |
 | aac         | ✅         | ✅          | ✅          | ✅                 |
 | mp3         | ✅         | ✅          | ✅          | ❌                 |
 | opus        | ✅         | ✅          | ✅          | ✅                 |
