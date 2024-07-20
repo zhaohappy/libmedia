@@ -479,7 +479,6 @@ export default class OMovFormat extends OFormat {
     const pts = avRescaleQ(avpacket.pts < 0n ? avpacket.dts : avpacket.pts, avpacket.timeBase, stream.timeBase)
 
     if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
     )

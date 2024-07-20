@@ -1273,6 +1273,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       }
 
       if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+        || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
         || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
         || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
       ) {

@@ -79,9 +79,7 @@ export default class Avcc2AnnexbFilter extends AVBSFilter {
         extradata = mapSafeUint8Array(element.data, element.size)
       }
 
-      if (this.inCodecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-        || this.inCodecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
-      ) {
+      if (this.inCodecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
         convert = h264.avcc2Annexb(buffer, extradata)
       }
       else if (this.inCodecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {

@@ -107,6 +107,7 @@ export function writeVideoTagDataHeader(ioWriter: IOWriter, stream: Stream, flag
   let header = AVCodecID2FlvCodecType[stream.codecpar.codecId] & 0x0f
 
   if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+    || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
     || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
     || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
   ) {

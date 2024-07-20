@@ -137,7 +137,7 @@ export default class IFlvFormat extends IFormat {
 
     stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = mapUint8Array(data, len).slice()
 
-    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264 || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4) {
+    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
       h264.parseAVCodecParameters(stream)
     }
     else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {

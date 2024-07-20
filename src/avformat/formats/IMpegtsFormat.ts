@@ -149,9 +149,7 @@ export default class IMpegtsFormat extends IFormat {
       stream.codecpar.extradataSize = element.size
       deleteAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
 
-      if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
-      ) {
+      if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
         h264.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
       }
       else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {

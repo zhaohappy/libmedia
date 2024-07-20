@@ -280,9 +280,8 @@ export default class OFlvFormat extends OFormat {
     else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
 
       if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
-          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
-          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
       ) && avpacket.bitFormat !== BitFormat.AVCC
       ) {
         this.annexb2AvccFilter.sendAVPacket(avpacket)
