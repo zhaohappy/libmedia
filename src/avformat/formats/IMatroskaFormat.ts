@@ -757,19 +757,13 @@ export default class IMatroskaFormat extends IFormat {
         const time = (cue.time || 0n) * static_cast<int64>(this.context.info.timestampScale) / 1000n
         if (time > pts) {
           const poses = this.context.cues.entry[Math.max(i - 1, 0)].pos
-          if (poses.length === 1) {
-            pos = poses[0].pos + this.context.segmentStart
-          }
-          else if (poses.length > 1) {
+          if (poses.length) {
             const matchPos = poses.find((p) => p.track === track.number)
             if (matchPos) {
               pos = matchPos.pos + this.context.segmentStart
-            }
-            else {
-              pos = poses[0].pos + this.context.segmentStart
+              break
             }
           }
-          break
         }
       }
     }
