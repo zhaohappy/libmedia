@@ -101,7 +101,7 @@ export interface AVPlayerOptions {
   lowLatency?: boolean
 }
 
-const SupportCodecs = [
+const SupportedCodecs = [
   AVCodecID.AV_CODEC_ID_H264,
   AVCodecID.AV_CODEC_ID_HEVC,
   AVCodecID.AV_CODEC_ID_MPEG4,
@@ -242,7 +242,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (codecId >= AVCodecID.AV_CODEC_ID_FIRST_AUDIO && codecId <= AVCodecID.AV_CODEC_ID_PCM_SGA) {
       return true
     }
-    return array.has(SupportCodecs, codecId)
+    return array.has(SupportedCodecs, codecId)
   }
 
   private findBestStream(streams: AVStreamInterface[], mediaType: AVMediaType) {
