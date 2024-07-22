@@ -254,7 +254,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (defaultStream && this.isCodecIdSupported(defaultStream.codecpar.codecId)) {
         return defaultStream
       }
-      return ss.find((stream) => this.isCodecIdSupported(stream.codecpar.codecId))
+      return ss.find((stream) => this.isCodecIdSupported(stream.codecpar.codecId)) || ss[0]
     }
   }
 
