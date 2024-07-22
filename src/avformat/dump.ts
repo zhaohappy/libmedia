@@ -25,6 +25,9 @@ export interface DumpIOInfo {
 }
 
 export function dumpTime(time: int64) {
+  if (time < 0) {
+    time = 0n
+  }
   const ms = static_cast<int32>(time % 1000n)
   const secs = static_cast<int32>(time / 1000n % 60n)
   const mins = static_cast<int32>(time / 1000n / 60n % 60n)
@@ -144,67 +147,69 @@ function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix:
       den: stream.timeBase.num
     })))} tbn`)
 
-    if (stream.disposition) {
-      let disposition = ''
-      if (stream.disposition & AVDisposition.DEFAULT) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DEFAULT)}) `
-      }
-      if (stream.disposition & AVDisposition.DUB) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DUB)}) `
-      }
-      if (stream.disposition & AVDisposition.ORIGINAL) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.ORIGINAL)}) `
-      }
-      if (stream.disposition & AVDisposition.COMMENT) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.COMMENT)}) `
-      }
-      if (stream.disposition & AVDisposition.LYRICS) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.LYRICS)}) `
-      }
-      if (stream.disposition & AVDisposition.KARAOKE) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.KARAOKE)}) `
-      }
-      if (stream.disposition & AVDisposition.FORCED) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.FORCED)}) `
-      }
-      if (stream.disposition & AVDisposition.HEARING_IMPAIRED) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.HEARING_IMPAIRED)}) `
-      }
-      if (stream.disposition & AVDisposition.VISUAL_IMPAIRED) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.VISUAL_IMPAIRED)}) `
-      }
-      if (stream.disposition & AVDisposition.CLEAN_EFFECTS) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.CLEAN_EFFECTS)}) `
-      }
-      if (stream.disposition & AVDisposition.ATTACHED_PIC) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.ATTACHED_PIC)}) `
-      }
-      if (stream.disposition & AVDisposition.TIMED_THUMBNAILS) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.TIMED_THUMBNAILS)}) `
-      }
-      if (stream.disposition & AVDisposition.CAPTIONS) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.CAPTIONS)}) `
-      }
-      if (stream.disposition & AVDisposition.DESCRIPTIONS) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DESCRIPTIONS)}) `
-      }
-      if (stream.disposition & AVDisposition.METADATA) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.METADATA)}) `
-      }
-      if (stream.disposition & AVDisposition.DEPENDENT) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DEPENDENT)}) `
-      }
-      if (stream.disposition & AVDisposition.STILL_IMAGE) {
-        disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.STILL_IMAGE)}) `
-      }
-      if (disposition) {
-        list.push(disposition)
-      }
-    }
+   
   }
   else {
     if (stream.codecpar.bitRate > 0n) {
       list.push(`${dumpBitrate(stream.codecpar.bitRate)}`)
+    }
+  }
+
+  if (stream.disposition) {
+    let disposition = ''
+    if (stream.disposition & AVDisposition.DEFAULT) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DEFAULT)}) `
+    }
+    if (stream.disposition & AVDisposition.DUB) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DUB)}) `
+    }
+    if (stream.disposition & AVDisposition.ORIGINAL) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.ORIGINAL)}) `
+    }
+    if (stream.disposition & AVDisposition.COMMENT) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.COMMENT)}) `
+    }
+    if (stream.disposition & AVDisposition.LYRICS) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.LYRICS)}) `
+    }
+    if (stream.disposition & AVDisposition.KARAOKE) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.KARAOKE)}) `
+    }
+    if (stream.disposition & AVDisposition.FORCED) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.FORCED)}) `
+    }
+    if (stream.disposition & AVDisposition.HEARING_IMPAIRED) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.HEARING_IMPAIRED)}) `
+    }
+    if (stream.disposition & AVDisposition.VISUAL_IMPAIRED) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.VISUAL_IMPAIRED)}) `
+    }
+    if (stream.disposition & AVDisposition.CLEAN_EFFECTS) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.CLEAN_EFFECTS)}) `
+    }
+    if (stream.disposition & AVDisposition.ATTACHED_PIC) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.ATTACHED_PIC)}) `
+    }
+    if (stream.disposition & AVDisposition.TIMED_THUMBNAILS) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.TIMED_THUMBNAILS)}) `
+    }
+    if (stream.disposition & AVDisposition.CAPTIONS) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.CAPTIONS)}) `
+    }
+    if (stream.disposition & AVDisposition.DESCRIPTIONS) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DESCRIPTIONS)}) `
+    }
+    if (stream.disposition & AVDisposition.METADATA) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.METADATA)}) `
+    }
+    if (stream.disposition & AVDisposition.DEPENDENT) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DEPENDENT)}) `
+    }
+    if (stream.disposition & AVDisposition.STILL_IMAGE) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.STILL_IMAGE)}) `
+    }
+    if (disposition) {
+      list.push(disposition)
     }
   }
 
