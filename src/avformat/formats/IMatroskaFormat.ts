@@ -578,6 +578,14 @@ export default class IMatroskaFormat extends IFormat {
         formatContext.interval.packetBuffer.push(avpacket)
       }
     }
+
+    this.context.currentCluster.block = {
+      pos: -1n,
+      size: -1n
+    }
+    this.context.currentCluster.blockGroup = {
+      block: null
+    }
   }
 
   private addClusterIndex(clusterIndex: ClusterIndex) {
