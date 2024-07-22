@@ -351,8 +351,8 @@ export const enum MATROSKAVideoProjectionType {
 export const enum MATROSKALacingMode {
   NO_LACING = 0,
   XIPH = 1,
-  EBML = 2,
-  FIXED_SIZE = 3
+  FIXED_SIZE = 2,
+  EBML = 3
 }
 
 export const enum MATROSKABlockAddIdType {

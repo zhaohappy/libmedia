@@ -404,6 +404,14 @@ export const EbmlSyntaxTrackEntry: Partial<Record<EBMLId, EbmlSyntax<TrackEntry>
     type: EbmlType.STRING,
     filedName: 'name'
   },
+  [EBMLId.TRACK_FLAG_DEFAULT]: {
+    type: EbmlType.BOOL,
+    filedName: 'default'
+  },
+  [EBMLId.TRACK_FLAG_ENABLED]: {
+    type: EbmlType.BOOL,
+    filedName: 'enabled'
+  },
   [EBMLId.TRACK_LANGUAGE]: {
     type: EbmlType.STRING,
     filedName: 'language'
@@ -786,6 +794,18 @@ export async function readVInt(reader: BytesReader | BytesReaderSync, maxLen: nu
 
 // @ts-ignore
 @deasync
+export async function readVSint(reader: BytesReader | BytesReaderSync, maxLen: number) {
+
+  assert(maxLen <= 4)
+
+  const now = reader.getPos()
+  const value = await readVInt(reader, maxLen)
+
+  return value - ((1 << (7 * (static_cast<int32>(reader.getPos() - now)) - 1)) - 1)
+}
+
+// @ts-ignore
+@deasync
 export async function readVInt64(reader: BytesReader | BytesReaderSync, maxLen: number) {
 
   assert(maxLen <= 8)
@@ -981,7 +1001,7 @@ export async function parseEbmlSyntax<T extends Record<string, any>>(
           value = await formatContext.ioReader.readString(static_cast<int32>(length))
           break
         case EbmlType.BOOL:
-          value = true
+          value = !!(await readUint(formatContext, length))
           break
         case EbmlType.BUFFER:
           value = {
@@ -1003,7 +1023,7 @@ export async function parseEbmlSyntax<T extends Record<string, any>>(
           await formatContext.ioReader.skip(static_cast<int32>(length))
           break
       }
-      if (value) {
+      if (value != null) {
         if (item.isArray) {
           const list: any[] = ebml[item.filedName] || []
           list.push(value)

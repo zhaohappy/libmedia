@@ -34,13 +34,14 @@ import { AVFormat } from '../avformat'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/util/avpacket'
-import AVStream from '../AVStream'
+import AVStream, { AVDisposition } from '../AVStream'
 import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { EBMLId, MATROSKABlockAddIdType, MATROSKALacingMode, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
 import { IOFlags } from 'common/io/flags'
 import { Additions, ClusterIndex, MatroskaContext, TrackEntry } from './matroska/type'
 import { EbmlSyntaxAttachments, EbmlSyntaxBlockGroup, EbmlSyntaxChapters, EbmlSyntaxCluster, EbmlSyntaxCues, EbmlSyntaxHeadSeek,
-  EbmlSyntaxHeader, EbmlSyntaxInfo, EbmlSyntaxTags, EbmlSyntaxTracks, parseEbmlSyntax, readEbmlId, readVInt, readVInt64
+  EbmlSyntaxHeader, EbmlSyntaxInfo, EbmlSyntaxTags, EbmlSyntaxTracks, parseEbmlSyntax, readEbmlId, readVInt, readVInt64,
+  readVSint
 } from './matroska/imatroska'
 
 import * as array from 'common/util/array'
@@ -135,6 +136,13 @@ export default class IMatroskaFormat extends IFormat {
             break
           default:
             stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_UNKNOWN
+        }
+
+        if (track.language) {
+          stream.metadata['language'] = track.language
+        }
+        if (track.name) {
+          stream.metadata['name'] = track.name
         }
 
         if (track.audio) {
@@ -260,6 +268,10 @@ export default class IMatroskaFormat extends IFormat {
             stream.duration = static_cast<int64>(this.context.info.duration)
           }
         }
+
+        if (track.default == null || track.default) {
+          stream.disposition |= AVDisposition.DEFAULT
+        }
       })
     }
 
@@ -298,7 +310,6 @@ export default class IMatroskaFormat extends IFormat {
   }
 
   public async readHeader(formatContext: AVIFormatContext): Promise<number> {
-
     const magic = await readEbmlId(formatContext, this.context.header.maxIdLength)
     if (magic !== EBMLId.HEADER) {
       logger.error('not matroska format')
@@ -427,7 +438,7 @@ export default class IMatroskaFormat extends IFormat {
 
     const now = this.blockReader.getPos()
 
-    const trackNumber = await readVInt(this.blockReader, 4)
+    const trackNumber = static_cast<uint32>(await readVInt64(this.blockReader, 8))
 
     const stream = findStreamByTrackNumber(formatContext.streams, trackNumber)
 
@@ -471,19 +482,12 @@ export default class IMatroskaFormat extends IFormat {
       }
       case MATROSKALacingMode.EBML: {
         frameCount = this.blockReader.readUint8() + 1
-        let sum = 0
-        let last = 0
-        for (let i = 0; i < frameCount - 1; i++) {
-          const next = await readVInt(this.blockReader, 4)
-          let size = 0
-          if (last) {
-            size = last + next
-          }
-          else {
-            size = next
-          }
+        frameSize.push(await readVInt(this.blockReader, 4))
+        let sum = frameSize[0]
+        for (let i = 1; i < frameCount - 1; i++) {
+          const next = await readVSint(this.blockReader, 4)
+          let size = next + frameSize[i - 1]
           sum += size
-          last = size
           frameSize.push(size)
         }
         // the last frame
@@ -494,7 +498,13 @@ export default class IMatroskaFormat extends IFormat {
 
       case MATROSKALacingMode.FIXED_SIZE:
         frameCount = this.blockReader.readUint8() + 1
-        frameSize.fill((buffer.length - static_cast<int32>(this.blockReader.getPos() - now) / frameCount), 0, frameCount)
+        const size = (buffer.length - static_cast<int32>(this.blockReader.getPos() - now)) / frameCount
+
+        assert(!(size % frameCount))
+
+        for (let i = 0; i < frameCount; i++) {
+          frameSize.push(size)
+        }
         break
       case MATROSKALacingMode.NO_LACING:
         frameCount = 1

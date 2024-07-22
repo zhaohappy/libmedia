@@ -161,6 +161,8 @@ export interface TrackEntry {
   uid?: uint64
   type?: uint32
   name?: string
+  default?: boolean
+  enabled?: boolean
   language?: string
   codecId?: string
   codecPrivate?: EbmlBin
