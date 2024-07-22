@@ -24,9 +24,10 @@
  */
 
 import IOReader from 'common/io/IOReader'
-import Stream from '../../../AVStream'
+import Stream, { AVDisposition } from '../../../AVStream'
 import { Atom, MOVContext, MOVStreamContext } from '../type'
 import * as logger from 'common/util/logger'
+import { TKHDFlags } from '../boxType'
 
 // @ts-ignore
 @deasync
@@ -38,6 +39,10 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   const version = await ioReader.readUint8()
   // flags
   streamContext.flags = await ioReader.readUint24()
+
+  if (streamContext.flags & TKHDFlags.ENABLED) {
+    stream.disposition |= AVDisposition.DEFAULT
+  }
 
   if (version === 1) {
     stream.metadata['creationTime'] = await ioReader.readUint64()
