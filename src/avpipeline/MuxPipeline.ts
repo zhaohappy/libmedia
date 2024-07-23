@@ -45,10 +45,13 @@ import { AVStreamInterface } from 'avformat/AVStream'
 import { copyCodecParameters } from 'avutil/util/codecparameters'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { AVMediaType } from 'avutil/codec'
+import { Data } from 'common/types/type'
+import * as object from 'common/util/object'
 
 export interface MuxTaskOptions extends TaskOptions {
   isLive?: boolean
   format: AVFormat
+  formatOptions: Data
   avpacketList: pointer<List<pointer<AVPacketRef>>>
   avpacketListMutex: pointer<Mutex>
 }
@@ -122,7 +125,7 @@ export default class MuxPipeline extends Pipeline {
       switch (task.format) {
         case AVFormat.FLV:
           if (defined(ENABLE_MUXER_FLV)) {
-            oformat = new ((await import('avformat/formats/OFlvFormat')).default)
+            oformat = new ((await import('avformat/formats/OFlvFormat')).default)(task.formatOptions)
           }
           else {
             logger.error('flv format not support, maybe you can rebuild avmedia')
@@ -131,7 +134,7 @@ export default class MuxPipeline extends Pipeline {
           break
         case AVFormat.MP4:
           if (defined(ENABLE_MUXER_MP4) || defined(ENABLE_PROTOCOL_DASH)) {
-            oformat = new ((await import('avformat/formats/OMovFormat')).default)
+            oformat = new ((await import('avformat/formats/OMovFormat')).default)(task.formatOptions)
           }
           else {
             logger.error('mp4 format not support, maybe you can rebuild avmedia')
@@ -140,7 +143,7 @@ export default class MuxPipeline extends Pipeline {
           break
         case AVFormat.MPEGTS:
           if (defined(ENABLE_MUXER_MP4) || defined(ENABLE_PROTOCOL_HLS)) {
-            oformat = new ((await import('avformat/formats/OMpegtsFormat')).default)
+            oformat = new ((await import('avformat/formats/OMpegtsFormat')).default)(task.formatOptions)
           }
           else {
             logger.error('mpegts format not support, maybe you can rebuild avmedia')
@@ -167,7 +170,7 @@ export default class MuxPipeline extends Pipeline {
           break
         case AVFormat.MP3:
           if (defined(ENABLE_MUXER_MP3)) {
-            oformat = new ((await import('avformat/formats/OMp3Format')).default)
+            oformat = new ((await import('avformat/formats/OMp3Format')).default)(task.formatOptions)
           }
           else {
             logger.error('mp3 format not support, maybe you can rebuild avmedia')
@@ -181,7 +184,7 @@ export default class MuxPipeline extends Pipeline {
               isLive: task.isLive,
               docType: task.format === AVFormat.WEBM ? 'webm' : 'matroska'
             }
-            oformat = new (((await import('avformat/formats/OMatroskaFormat')).default))(options)
+            oformat = new (((await import('avformat/formats/OMatroskaFormat')).default))(object.extend(task.formatOptions, options))
           }
           else {
             logger.error('matroska format not support, maybe you can rebuild avmedia')

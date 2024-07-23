@@ -93,6 +93,7 @@ import createMessageChannel from 'avutil/function/createMessageChannel'
 import Controller, { ControllerObserver } from './Controller'
 import { AVFormatContextInterface } from 'avformat/AVFormatContext'
 import dump, { dumpCodecName, dumpTime } from 'avformat/dump'
+import { Data } from 'common/types/type'
 
 export interface AVTranscoderOptions {
   getWasm: (type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codec?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
@@ -112,6 +113,7 @@ export interface TaskOptions {
   output: {
     file: FileSystemFileHandle | IOWriterSync
     format?: keyof (typeof Format2AVFormat)
+    formatOptions?: Data
     video?: {
       /**
        * 输出编码类型
@@ -640,7 +642,8 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         avpacketList: addressof(this.GlobalData.avpacketList),
         avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
         stats: addressof(task.stats),
-        rightPort: muxer2OutputChannel.port1
+        rightPort: muxer2OutputChannel.port1,
+        formatOptions: task.options.output.formatOptions
       })
 
     if (ret < 0) {
