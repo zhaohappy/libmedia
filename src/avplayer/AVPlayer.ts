@@ -250,6 +250,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       return stream.codecpar.codecType === mediaType
     })
     if (ss.length) {
+      if (ss.length === 1) {
+        return ss[0]
+      }
       const defaultStream = ss.find((stream) => !!(stream.disposition & AVDisposition.DEFAULT))
       if (defaultStream && this.isCodecIdSupported(defaultStream.codecpar.codecId)) {
         return defaultStream
@@ -1317,11 +1320,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       return
     }
 
-    this.fire(eventType.SEEKING)
-
     if (!this.options.isLive) {
       this.lastStatus = this.status
       this.status = AVPlayerStatus.SEEKING
+
+      this.fire(eventType.SEEKING)
 
       const timestampBigInt = static_cast<int64>(timestamp)
       if (defined(ENABLE_MSE) && this.useMSE) {
@@ -1436,7 +1439,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (!this.options.isLive) {
       let max = 0n
       this.formatContext.streams.forEach((stream) => {
-        const duration =  avRescaleQ(
+        const duration = avRescaleQ(
           stream.duration,
           {
             den: stream.timeBase.den,
