@@ -64,36 +64,49 @@ export function hasAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPacketS
   return false
 }
 
-export function addAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPacketSideDataType, data: pointer<void>, length: size) {
-  for (let i = 0; i < avpacket.sideDataElems; i++) {
-    if (avpacket.sideData[i].type === type) {
-      avFree(avpacket.sideData[i].data)
-      avpacket.sideData[i].data = data
-      avpacket.sideData[i].size = length
+export function addSideData(psd: pointer<pointer<AVPacketSideData>>, pnbSd: pointer<int32>, type: AVPacketSideDataType, data: pointer<void>, length: size) {
+  const sideDataElems = accessof(pnbSd)
+  const sideData = accessof(psd)
+  for (let i = 0; i < sideDataElems; i++) {
+    if (sideData[i].type === type) {
+      avFree(sideData[i].data)
+      sideData[i].data = data
+      sideData[i].size = length
       return
     }
   }
+  const len = (sideDataElems + 1) * sizeof(AVPacketSideData)
+  const newSideData = avMallocz(len) as pointer<AVPacketSideData>
 
-  const len = (avpacket.sideDataElems + 1) * sizeof(AVPacketSideData)
-  const sideData = avMallocz(len) as pointer<AVPacketSideData>
-
-  if (avpacket.sideDataElems) {
-    for (let i = 0; i < avpacket.sideDataElems; i++) {
-      sideData[i] = avpacket.sideData[i]
+  if (sideDataElems) {
+    for (let i = 0; i < sideDataElems; i++) {
+      newSideData[i] = sideData[i]
     }
   }
 
-  const ele = addressof(sideData[avpacket.sideDataElems])
+  const ele = addressof(newSideData[sideDataElems])
   ele.data = data
   ele.type = type
   ele.size = length
 
-  if (avpacket.sideData) {
-    avFree(avpacket.sideData)
+  if (sideData) {
+    avFree(sideData)
   }
 
-  avpacket.sideData = sideData
-  avpacket.sideDataElems++
+  accessof(psd) <- newSideData
+  accessof(pnbSd) <- reinterpret_cast<int32>(sideDataElems + 1)
+
+  return ele
+}
+
+export function newSideData(psd: pointer<pointer<AVPacketSideData>>, pnbSd: pointer<int32>, type: AVPacketSideDataType, size: size) {
+  const data = avMalloc(size + AV_INPUT_BUFFER_PADDING_SIZE)
+  memset(reinterpret_cast<pointer<uint8>>(data + size), 0, AV_INPUT_BUFFER_PADDING_SIZE)
+  return addSideData(psd, pnbSd, type, data, size)
+}
+
+export function addAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPacketSideDataType, data: pointer<void>, length: size) {
+  addSideData(addressof(avpacket.sideData), addressof(avpacket.sideDataElems), type, data, length)
 }
 
 export function deleteAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPacketSideDataType) {
