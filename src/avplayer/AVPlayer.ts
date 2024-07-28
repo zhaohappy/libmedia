@@ -115,7 +115,10 @@ const SupportedCodecs = [
   AVCodecID.AV_CODEC_ID_OPUS,
   AVCodecID.AV_CODEC_ID_FLAC,
   AVCodecID.AV_CODEC_ID_SPEEX,
-  AVCodecID.AV_CODEC_ID_VORBIS
+  AVCodecID.AV_CODEC_ID_VORBIS,
+  AVCodecID.AV_CODEC_ID_AC3,
+  AVCodecID.AV_CODEC_ID_EAC3,
+  AVCodecID.AV_CODEC_ID_DTS
 ]
 
 const defaultAVPlayerOptions: Partial<AVPlayerOptions> = {

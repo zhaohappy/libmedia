@@ -115,6 +115,7 @@ export const OFormatSupportedCodecs: Record<Exclude<AVFormat, AVFormat.UNKNOWN>,
     AVCodecID.AV_CODEC_ID_FLAC,
     AVCodecID.AV_CODEC_ID_SPEEX,
     AVCodecID.AV_CODEC_ID_AC3,
+    AVCodecID.AV_CODEC_ID_EAC3,
 
     AVCodecID.AV_CODEC_ID_VP9,
     AVCodecID.AV_CODEC_ID_AV1,

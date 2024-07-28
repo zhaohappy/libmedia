@@ -120,7 +120,11 @@ export const enum BoxType {
   MFRO = 'mfro',
   TFRA = 'tfra',
   MINF_HDLR = 'minf_hdlr',
-  FRMA = 'frma'
+  FRMA = 'frma',
+  DAC3 = 'dac3',
+  DEC3 = 'dec3',
+  EC_3 = 'ec-3',
+  AC_3 = 'ac-3'
 }
 
 export const BasicBoxs = [

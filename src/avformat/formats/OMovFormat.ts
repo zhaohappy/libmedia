@@ -46,13 +46,16 @@ import * as object from 'common/util/object'
 import rewriteIO from '../function/rewriteIO'
 
 import arrayItemSame from '../function/arrayItemSame'
-import { AVDisposition } from '../AVStream'
+import AVStream, { AVDisposition } from '../AVStream'
 import { AVFormat } from '../avformat'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import { getAVPacketData } from 'avutil/util/avpacket'
 import { Rational } from 'avutil/struct/rational'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
 import { BitFormat } from '../codecs/h264'
+import * as is from 'common/util/is'
+
+import * as ac3 from '../codecs/ac3'
 
 const defaultOptions: MovFormatOptions = {
   fragmentMode: FragmentMode.GOP,
@@ -459,6 +462,80 @@ export default class OMovFormat extends OFormat {
     }
   }
 
+  private handleEAC3(avpacket: pointer<AVPacket>, stream: AVStream) {
+    if (!this.context.ac3Info) {
+      this.context.ac3Info = {
+        done: false,
+        numBlocks: 0,
+        dataRate: 0,
+        ac3BitrateCode: -1,
+        numIndSub: 0,
+        substream: []
+      }
+    }
+
+    const ac3Info = this.context.ac3Info
+
+    const info = ac3.parseHeader(avpacket.data, avpacket.size)
+
+    if (is.number(info)) {
+      ac3Info.done = true
+      return
+    }
+
+    ac3Info.dataRate = Math.max(ac3Info.dataRate, info.bitRate / 1000)
+    ac3Info.ac3BitrateCode = Math.max(ac3Info.ac3BitrateCode, info.ac3BitrateCode)
+
+    if (!ac3Info.done) {
+      if (info.bitstreamId <= 10 && info.substreamId != 0) {
+        return
+      }
+      if (info.frameType === ac3.EAC3FrameType.EAC3_FRAME_TYPE_INDEPENDENT
+        || info.frameType == ac3.EAC3FrameType.EAC3_FRAME_TYPE_AC3_CONVERT) {
+        /* substream ids must be incremental */
+        if (info.substreamId > ac3Info.numIndSub + 1) {
+          return
+        }
+        if (info.substreamId == ac3Info.numIndSub + 1) {
+          return
+        }
+        else if (info.substreamId < ac3Info.numIndSub ||
+          info.substreamId == 0 && ac3Info.substream[0]?.bsid) {
+          ac3Info.done = true
+          return
+        }
+      }
+      else {
+        if (info.substreamId != 0) {
+          return
+        }
+      }
+
+      if (!ac3Info.substream[info.substreamId]) {
+        ac3Info.substream[info.substreamId] = {
+          fscod: 0,
+          bsid: 0,
+          bsmod: 0,
+          acmod: 0,
+          lfeon: 0,
+          numDepSub: 0,
+          chanLoc: 0
+        }
+      }
+
+      ac3Info.substream[info.substreamId].fscod = info.srCode
+      ac3Info.substream[info.substreamId].bsid = info.bitstreamId
+      ac3Info.substream[info.substreamId].bsmod = info.bitstreamMode
+      ac3Info.substream[info.substreamId].acmod = info.channelMode
+      ac3Info.substream[info.substreamId].lfeon = info.lfeOn
+
+      if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3) {
+        ac3Info.done = true
+        return
+      }
+    }
+  }
+
   public writeAVPacket(formatContext: AVOFormatContext, avpacket: pointer<AVPacket>): number {
 
     if (!avpacket.size) {
@@ -486,6 +563,13 @@ export default class OMovFormat extends OFormat {
     ) {
       this.annexb2AvccFilter.sendAVPacket(avpacket)
       this.annexb2AvccFilter.receiveAVPacket(avpacket)
+    }
+    else if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_EAC3
+      )
+      && (!this.context.ac3Info || !this.context.ac3Info.done)
+    ) {
+      this.handleEAC3(avpacket, stream)
     }
 
     if (this.context.fragment) {

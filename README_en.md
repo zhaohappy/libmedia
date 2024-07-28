@@ -100,6 +100,9 @@ Codecs are compiled into separate wasm modules, the decoders are in the ```dist/
 | flac        | ✅         | ✅          | ✅          | ❌                 |
 | speex       | ✅         | ✅          | ✅          | ❌                 |
 | vorbis      | ✅         | ✅          | ✅          | ❌                 |
+| ac3         | ✅         | ✅          | ✅          | ❌                 |
+| eac3        | ✅         | ✅          | ✅          | ❌                 |
+| dts         | ✅         | ✅          | ✅          | ❌                 |
 | G.711 A-law | ✅         | ✅          | ✅          | ❌                 |
 | G.711 μ-law | ✅         | ✅          | ✅          | ❌                 |
 
@@ -120,6 +123,9 @@ Codecs are compiled into separate wasm modules, the decoders are in the ```dist/
 | flac        | ✅         | ✅          | ✅          | ❌                 |
 | speex       | ✅         | ✅          | ✅          | ❌                 |
 | vorbis      | ✅         | ✅          | ✅          | ❌                 |
+| ac3         | ✅         | ✅          | ✅          | ❌                 |
+| eac3        | ✅         | ✅          | ✅          | ❌                 |
+| dts         | ✅         | ✅          | ✅          | ❌                 |
 | G.711 A-law | ✅         | ✅          | ✅          | ❌                 |
 | G.711 μ-law | ✅         | ✅          | ✅          | ❌                 |
 

@@ -43,16 +43,19 @@ import colr from './colr'
 import pasp from './pasp'
 import btrt from './btrt'
 import wave from './wave'
+import dac3 from './dac3'
+import dec3 from './dec3'
 import { mapUint8Array } from 'cheap/std/memory'
 import digital2Tag from '../../../function/digital2Tag'
-import { MPEG4AudioObjectTypes } from '../../../codecs/aac'
 
 const AVCodecID2Tag = {
   [AVCodecID.AV_CODEC_ID_H264]: BoxType.AVC1,
   [AVCodecID.AV_CODEC_ID_HEVC]: BoxType.HVC1,
   [AVCodecID.AV_CODEC_ID_VVC]: BoxType.VVC1,
   [AVCodecID.AV_CODEC_ID_AV1]: BoxType.AV01,
-  [AVCodecID.AV_CODEC_ID_VP9]: BoxType.VP09
+  [AVCodecID.AV_CODEC_ID_VP9]: BoxType.VP09,
+  [AVCodecID.AV_CODEC_ID_AC3]: BoxType.AC_3,
+  [AVCodecID.AV_CODEC_ID_EAC3]: BoxType.EC_3,
 }
 
 function getTag(codecpar: AVCodecParameters): BoxType {
@@ -196,6 +199,12 @@ function writeAudioTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
   }
   else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_OPUS) {
     dops(ioWriter, stream, movContext)
+  }
+  else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3) {
+    dac3(ioWriter, stream, movContext)
+  }
+  else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_EAC3) {
+    dec3(ioWriter, stream, movContext)
   }
   else if (tag == BoxType.MP4A) {
     esds(ioWriter, stream, movContext)

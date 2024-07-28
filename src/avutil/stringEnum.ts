@@ -48,6 +48,9 @@ export const VideoCodecString2CodecId = {
 export const AudioCodecString2CodecId = {
   'copy': AVCodecID.AV_CODEC_ID_NONE,
   'aac': AVCodecID.AV_CODEC_ID_AAC,
+  'ac3': AVCodecID.AV_CODEC_ID_AC3,
+  'eac3': AVCodecID.AV_CODEC_ID_EAC3,
+  'dca': AVCodecID.AV_CODEC_ID_DTS,
   'mp3': AVCodecID.AV_CODEC_ID_MP3,
   'opus': AVCodecID.AV_CODEC_ID_OPUS,
   'flac': AVCodecID.AV_CODEC_ID_FLAC,

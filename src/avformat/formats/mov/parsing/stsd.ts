@@ -43,6 +43,9 @@ import dfla from './dfla'
 import dops from './dops'
 import colr from './colr'
 
+import ac3 from './dac3'
+import eac3 from './dec3'
+
 // @ts-ignore
 @deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
@@ -316,6 +319,28 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
         }
         else if (type === mktag(BoxType.WAVE)) {
           await wave(
+            ioReader,
+            stream,
+            {
+              type,
+              size: size - 8
+            },
+            movContext
+          )
+        }
+        else if (type === mktag(BoxType.DAC3)) {
+          await ac3(
+            ioReader,
+            stream,
+            {
+              type,
+              size: size - 8
+            },
+            movContext
+          )
+        }
+        else if (type === mktag(BoxType.DEC3)) {
+          await eac3(
             ioReader,
             stream,
             {

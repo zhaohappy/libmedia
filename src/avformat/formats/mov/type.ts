@@ -26,6 +26,7 @@
 import IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from './boxType'
 import { FragmentMode, MovMode } from './mov'
+import { AC3HeaderInfo } from '../../codecs/ac3'
 
 export interface BoxsPositionSizeInfo {
   pos: bigint
@@ -68,6 +69,23 @@ export interface Sample {
   flags: number
 }
 
+export interface EC3Info {
+  done: boolean
+  numBlocks: uint8
+  dataRate: uint16
+  ac3BitrateCode: int8
+  numIndSub: uint8
+  substream: {
+    fscod: uint8
+    bsid: uint8
+    bsmod: uint8
+    acmod: uint8
+    lfeon: uint8
+    numDepSub: uint8
+    chanLoc: uint8
+  }[]
+}
+
 export interface MOVContext {
   isom: boolean
   timescale: number
@@ -105,6 +123,7 @@ export interface MOVContext {
     streamIndex: number
     pos: bigint
   }
+  ac3Info?: EC3Info
 }
 
 export interface MOVStreamContext {
