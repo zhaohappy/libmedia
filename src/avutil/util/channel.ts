@@ -28,6 +28,7 @@ import { popCount64 } from './common'
 import { AVChannelOrder } from '../audiosamplefmt'
 import { avFreep } from './mem'
 import { memset } from 'cheap/std/memory'
+import * as error from 'avutil/error'
 
 export function getChannelLayoutNBChannels(layout: uint64) {
   return popCount64(layout)
@@ -38,4 +39,14 @@ export function unInitChannelLayout(channelLayout: pointer<AVChannelLayout>) {
     avFreep(addressof(channelLayout.u.map))
   }
   memset(channelLayout, 0, sizeof(accessof(channelLayout)))
+}
+
+export function setChannelLayoutFromMask(channelLayout: pointer<AVChannelLayout>, mask: int32) {
+  if (!mask) {
+    return error.INVALID_ARGUMENT
+  }
+  channelLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
+  channelLayout.nbChannels = popCount64(static_cast<uint64>(mask))
+  channelLayout.u.mask = static_cast<uint64>(mask)
+  return 0
 }
