@@ -422,6 +422,7 @@ export default class DemuxPipeline extends Pipeline {
       return {
         metadata: task.formatContext.metadata,
         format: task.realFormat,
+        chapters: task.formatContext.chapters,
         streams
       }
     }

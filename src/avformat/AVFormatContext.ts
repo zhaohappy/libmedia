@@ -37,6 +37,15 @@ import IOReaderSync from 'common/io/IOReaderSync'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import { AVFormat } from './avformat'
 import { destroyAVPacket } from 'avutil/util/avpacket'
+import { Rational } from 'avutil/struct/rational'
+
+interface AVChapter {
+  id: uint64
+  timeBase: Rational
+  start: int64
+  end: int64
+  metadata: Record<string, any>
+}
 
 class AVFormatContextInterval {
 
@@ -52,6 +61,7 @@ export interface AVIFormatContext {
   streams: AVStream[]
 
   options: Record<string, any>
+  chapters: AVChapter[]
 
   privateData: Record<string, any>
 
@@ -95,6 +105,7 @@ export interface AVOFormatContext {
   streams: AVStream[]
 
   options: Record<string, any>
+  chapters: AVChapter[]
 
   privateData: Record<string, any>
   processPrivateData: Record<string, any>
@@ -133,6 +144,7 @@ export interface AVFormatContextInterface {
   metadata: Record<string, any>
   format: AVFormat
   streams: AVStreamInterface[]
+  chapters: AVChapter[]
 }
 
 export class AVFormatContext implements AVIFormatContext, AVOFormatContext {
@@ -143,6 +155,7 @@ export class AVFormatContext implements AVIFormatContext, AVOFormatContext {
   public streams: AVStream[]
 
   public options: Record<string, any>
+  public chapters: AVChapter[]
 
   public privateData: Record<string, any>
   public processPrivateData: Record<string, any>
@@ -172,6 +185,7 @@ export class AVFormatContext implements AVIFormatContext, AVOFormatContext {
     this.options = {}
     this.privateData = {}
     this.metadata = {}
+    this.chapters = []
   }
 
   get format() {

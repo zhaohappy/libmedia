@@ -284,6 +284,7 @@ export default function dump(formatContexts: (AVFormatContextInterface | AVIForm
       formatContext = {
         metadata: formatContext.metadata,
         format: formatContext.format,
+        chapters: formatContext.chapters,
         streams
       }
     }

@@ -307,6 +307,26 @@ export default class IMatroskaFormat extends IFormat {
         }
       })
     }
+
+    if (this.context.chapters) {
+      array.each(this.context.chapters.entry, (chapter) => {
+        const atom = chapter.atom
+        if (atom) {
+          formatContext.chapters.push({
+            id: atom.uid,
+            start: atom.start,
+            end: atom.end,
+            timeBase: {
+              num: 1,
+              den: 1000000000
+            },
+            metadata: {
+              title: atom.display?.title || ''
+            }
+          })
+        }
+      })
+    }
   }
 
   public async readHeader(formatContext: AVIFormatContext): Promise<number> {

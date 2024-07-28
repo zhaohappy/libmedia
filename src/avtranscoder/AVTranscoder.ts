@@ -1623,7 +1623,8 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       const oformatContext: AVFormatContextInterface = {
         streams: [],
         format: task.format,
-        metadata: {}
+        metadata: {},
+        chapters: []
       }
 
       let mappingDump = '\nStream mapping:\n'
