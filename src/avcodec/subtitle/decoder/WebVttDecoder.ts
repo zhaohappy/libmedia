@@ -1,5 +1,5 @@
 /*
- * libmedia vtt decode
+ * libmedia webvtt decode
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -50,7 +50,7 @@ function formatTime(time: string) {
   return ts
 }
 
-export default class WebVvtDecoder extends Decoder {
+export default class WebVttDecoder extends Decoder {
 
   private queue: {
     pts: int64

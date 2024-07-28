@@ -1,5 +1,5 @@
 /*
- * libmedia wasm audio decoder
+ * libmedia wasm subtitle decoder
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -30,7 +30,7 @@ import { createAVFrame, destroyAVFrame } from 'avutil/util/avframe'
 import Decoder from './decoder/Decoder'
 import { AVCodecID } from 'avutil/codec'
 import * as errorType from 'avutil/error'
-import WebVvtDecoder from './decoder/WebVttDecoder'
+import WebVttDecoder from './decoder/WebVttDecoder'
 
 export type SubtitleDecoderOptions = {
   onReceiveFrame?: (frame: pointer<AVFrame>) => void
@@ -77,7 +77,7 @@ export default class SubtitleDecoder {
   public async open(parameters: pointer<AVCodecParameters>) {
     switch (parameters.codecId) {
       case AVCodecID.AV_CODEC_ID_WEBVTT:
-        this.decoder = new WebVvtDecoder()
+        this.decoder = new WebVttDecoder()
         break
       default:
         return errorType.CODEC_NOT_SUPPORT
