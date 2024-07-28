@@ -530,7 +530,16 @@
                     // AAC
                     case 86018:
                       return `../dist/decode/aac${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-                    // MP3
+                    // ac3
+                    case 86019:
+                      return `../dist/decode/ac3${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                    // eac3
+                    case 86056:
+                      return `../dist/decode/eac3${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                    // dts
+                    case 86020:
+                      return `../dist/decode/dca${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                      // MP3
                     case 86017:
                       return `../dist/decode/mp3${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // HEVC
