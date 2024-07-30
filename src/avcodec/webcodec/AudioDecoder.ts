@@ -27,7 +27,7 @@ import { AVPacketSideDataType } from 'avutil/codec'
 import getAudioCodec from '../function/getAudioCodec'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { mapUint8Array } from 'cheap/std/memory'
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
+import AVPacket from 'avutil/struct/avpacket'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
 import avpacket2EncodedAudioChunk from 'avutil/function/avpacket2EncodedAudioChunk'
 
@@ -170,5 +170,27 @@ export default class WebAudioDecoder {
 
   public getQueueLength() {
     return this.decoder.decodeQueueSize
+  }
+
+  static async isSupported(parameters: pointer<AVCodecParameters>) {
+    let extradata: Uint8Array = null
+    if (parameters.extradata !== nullptr) {
+      extradata = mapUint8Array(parameters.extradata, parameters.extradataSize).slice()
+    }
+    const config: AudioDecoderConfig = {
+      codec: getAudioCodec(parameters),
+      sampleRate: parameters.sampleRate,
+      numberOfChannels: parameters.chLayout.nbChannels,
+      description: extradata
+    }
+
+    if (!config.description) {
+      // description 不是 arraybuffer 会抛错
+      delete config.description
+    }
+
+    const support = await AudioDecoder.isConfigSupported(config)
+
+    return support.supported
   }
 }

@@ -269,4 +269,27 @@ export default class WebVideoDecoder {
   public setSkipFrameDiscard(discard: number) {
 
   }
+
+  static async isSupported(parameters: pointer<AVCodecParameters>, enableHardwareAcceleration: boolean) {
+    let extradata: Uint8Array = null
+    if (parameters.extradata !== nullptr) {
+      extradata = mapUint8Array(parameters.extradata, parameters.extradataSize).slice()
+    }
+    const config = {
+      codec: getVideoCodec(parameters),
+      codedWidth: parameters.width,
+      codedHeight: parameters.height,
+      description: (parameters.bitFormat !== BitFormat.ANNEXB) ? extradata : undefined,
+      hardwareAcceleration: getHardwarePreference(enableHardwareAcceleration ?? true)
+    }
+
+    if (!config.description) {
+      // description 不是 arraybuffer 会抛错
+      delete config.description
+    }
+
+    const support = await VideoDecoder.isConfigSupported(config)
+
+    return support.supported
+  }
 }

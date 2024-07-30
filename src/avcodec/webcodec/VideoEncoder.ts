@@ -284,4 +284,35 @@ export default class WebVideoEncoder {
   public getQueueLength() {
     return this.encoder.encodeQueueSize
   }
+
+  static async isSupported(parameters: pointer<AVCodecParameters>, enableHardwareAcceleration: boolean) {
+    const descriptor = PixelFormatDescriptorsMap[parameters.format]
+    // webcodecs 目前还不支持 hdr
+    if (!descriptor || descriptor.comp[0].depth > 8) {
+      return false
+    }
+    const config: VideoEncoderConfig = {
+      codec: getVideoCodec(parameters),
+      width: parameters.width,
+      height: parameters.height,
+      bitrate: static_cast<double>(parameters.bitRate),
+      framerate: avQ2D(parameters.framerate),
+      hardwareAcceleration: getHardwarePreference(enableHardwareAcceleration ?? true),
+      latencyMode: parameters.videoDelay ? 'quality' : 'realtime',
+      alpha: descriptor && (descriptor.flags & PixelFormatFlags.ALPHA) ? 'keep' : 'discard'
+    }
+
+    if (parameters.codecId === AVCodecID.AV_CODEC_ID_H264
+      || parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
+      || parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
+    ) {
+      config.avc = {
+        format: parameters.bitFormat === BitFormat.AVCC ? 'avc' : 'annexb'
+      }
+    }
+
+    const support = await VideoEncoder.isConfigSupported(config)
+
+    return support.supported
+  }
 }

@@ -190,4 +190,18 @@ export default class WebAudioEncoder {
   public getQueueLength() {
     return this.encoder.encodeQueueSize
   }
+
+  static async isSupported(parameters: pointer<AVCodecParameters>) {
+    const config: AudioEncoderConfig = {
+      codec: getAudioCodec(parameters),
+      sampleRate: parameters.sampleRate,
+      numberOfChannels: parameters.chLayout.nbChannels,
+      bitrate: static_cast<double>(parameters.bitRate),
+      bitrateMode: 'constant'
+    }
+
+    const support = await AudioEncoder.isConfigSupported(config)
+
+    return support.supported
+  }
 }
