@@ -209,7 +209,7 @@ export default class AVCodecParameters {
 
   /**
    * 码流格式
-   * 对于 h264/h265 标记是 annexb 还是 avcc 格式
+   * 对于 h264/h265/h266 标记是 annexb 还是 avcc 格式
    */
   bitFormat: int32 = 0
 
