@@ -39,7 +39,7 @@ import { AVFormat } from './avformat'
 import { destroyAVPacket } from 'avutil/util/avpacket'
 import { Rational } from 'avutil/struct/rational'
 
-interface AVChapter {
+export interface AVChapter {
   id: uint64
   timeBase: Rational
   start: int64
