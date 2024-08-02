@@ -294,6 +294,28 @@ edp webserver start --port=9000
 
 libmedia 使用 LGPL 开源协议，你需要遵守协议要求，详情查看 [LGPL](https://github.com/zhaohappy/libmedia/blob/master/COPYING.LGPLv3)
 
+但某些依赖库是 GPL 协议，如果你使用了这些依赖库则 libmedia 将被传染为 GPL 协议。这些依赖库使用在下面的组件:
+
+ - dist/encoder/x264.wasm
+ - dist/encoder/x265.wasm
+
+#### 依赖库开源协议
+ - ffmpeg: LGPL v2.1+
+ - soundtouch: LGPL v2.1
+ - libx264: GPL
+ - libx265: GPL
+ - libvorbis: BSD
+ - libspeex: BSD 
+ - libopus: BSD
+ - libvpx: BSD-3-Clause
+ - libogg: BSD
+ - libmp3lame: LGPL
+ - kvazaar: BSD-3-Clause
+ - libflac: BSD
+ - fdkaac: BSD
+ - dav1d: BSD 2-Clause
+
 版权所有 (C) 2024-现在 赵高兴
 
 Copyright (C) 2024-present, Gaoxing Zhao
+

@@ -287,4 +287,25 @@ To debug the code in multi-threaded Worker from source, set the ```ENABLE_THREAD
 
 libmedia uses the LGPL open source license. You need to comply with the license requirements. For details, see [LGPL](https://github.com/zhaohappy/libmedia/blob/master/COPYING.LGPLv3)
 
+But some dependent libraries are under GPL license. If you use these dependent libraries, libmedia will be infected with GPL license. These dependent libraries are used by the following components:
+
+ - dist/encoder/x264.wasm
+ - dist/encoder/x265.wasm
+
+#### Dependence Licence
+ - ffmpeg: LGPL v2.1+
+ - soundtouch: LGPL v2.1
+ - libx264: GPL
+ - libx265: GPL
+ - libvorbis: BSD
+ - libspeex: BSD 
+ - libopus: BSD
+ - libvpx: BSD-3-Clause
+ - libogg: BSD
+ - libmp3lame: LGPL
+ - kvazaar: BSD-3-Clause
+ - libflac: BSD
+ - fdkaac: BSD
+ - dav1d: BSD 2-Clause
+
 Copyright (C) 2024-present, Gaoxing Zhao
