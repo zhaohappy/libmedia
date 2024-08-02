@@ -290,7 +290,10 @@ libmedia uses the LGPL open source license. You need to comply with the license 
 But some dependent libraries are under GPL license. If you use these dependent libraries, libmedia will be infected with GPL license. These dependent libraries are used by the following components:
 
  - dist/encoder/x264.wasm
- - dist/encoder/x265.wasm
+ - dist/encoder/x264-atomic.wasm
+ - dist/encoder/x264-simd.wasm
+ - dist/encoder/x265-atomic.wasm
+ - dist/encoder/x265-simd.wasm
 
 #### Dependence Licence
  - ffmpeg: LGPL v2.1+

@@ -297,7 +297,11 @@ libmedia 使用 LGPL 开源协议，你需要遵守协议要求，详情查看 [
 但某些依赖库是 GPL 协议，如果你使用了这些依赖库则 libmedia 将被传染为 GPL 协议。这些依赖库使用在下面的组件:
 
  - dist/encoder/x264.wasm
- - dist/encoder/x265.wasm
+ - dist/encoder/x264-atomic.wasm
+ - dist/encoder/x264-simd.wasm
+ - dist/encoder/x265-atomic.wasm
+ - dist/encoder/x265-simd.wasm
+
 
 #### 依赖库开源协议
  - ffmpeg: LGPL v2.1+
