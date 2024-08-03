@@ -217,7 +217,7 @@ export default class MSEPipeline extends Pipeline {
         task.audio.track.setSourceBuffer(this.createSourceBuffer(task.mediaSource, addressof(task.audio.oformatContext.streams[0].codecpar)))
         if (!task.audio.enableRawMpeg) {
           mux.open(task.audio.oformatContext, {
-            paddingZero: true
+            paddingZero: false
           })
           mux.writeHeader(task.audio.oformatContext)
         }
@@ -228,7 +228,7 @@ export default class MSEPipeline extends Pipeline {
 
         if (!task.video.enableRawMpeg) {
           mux.open(task.video.oformatContext, {
-            paddingZero: true
+            paddingZero: false
           })
           mux.writeHeader(task.video.oformatContext)
         }
