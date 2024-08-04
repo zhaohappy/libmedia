@@ -930,7 +930,10 @@ export async function readEbmlId(formatContext: AVIFormatContext, maxLen: number
     mask <<= 1
   }
 
-  assert(len <= maxLen)
+  if (len > maxLen) {
+    logger.error(`Length ${len} indicated by an EBML number's first byte ${mask.toString(16)} at pos ${pos} exceeds max length ${maxLen}.`)
+    return errorType.DATA_INVALID
+  }
 
   let value = 0
 

@@ -184,6 +184,9 @@ export interface TrackEntry {
   gopCount?: int32
   currentDts?: int64
   dtsDelta?: int64
+
+  needDecompression?: boolean
+  needDeencryption?: boolean
 }
 
 export interface Tracks {

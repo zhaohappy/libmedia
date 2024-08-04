@@ -363,6 +363,13 @@ export const enum MATROSKABlockAddIdType {
   DVVC = 0x64767643
 }
 
+export const enum MATROSKATrackEncodingComp {
+  MATROSKA_TRACK_ENCODING_COMP_ZLIB        = 0,
+  MATROSKA_TRACK_ENCODING_COMP_BZLIB       = 1,
+  MATROSKA_TRACK_ENCODING_COMP_LZO         = 2,
+  MATROSKA_TRACK_ENCODING_COMP_HEADERSTRIP = 3
+}
+
 export const MkvTag2CodecId: Record<string, AVCodecID> = {
   'A_AAC': AVCodecID.AV_CODEC_ID_AAC,
   'A_AC3': AVCodecID.AV_CODEC_ID_AC3,

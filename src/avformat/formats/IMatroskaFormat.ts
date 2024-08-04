@@ -36,7 +36,7 @@ import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/util/avpacket'
 import AVStream, { AVDisposition } from '../AVStream'
 import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { EBMLId, MATROSKABlockAddIdType, MATROSKALacingMode, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
+import { EBMLId, MATROSKABlockAddIdType, MATROSKALacingMode, MATROSKATrackEncodingComp, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
 import { IOFlags } from 'common/io/flags'
 import { Additions, ClusterIndex, MatroskaContext, TrackEntry } from './matroska/type'
 import { EbmlSyntaxAttachments, EbmlSyntaxBlockGroup, EbmlSyntaxChapters, EbmlSyntaxCluster, EbmlSyntaxCues, EbmlSyntaxHeadSeek,
@@ -60,6 +60,7 @@ import findStreamByTrackUid from './matroska/function/findStreamByTrackUid'
 import findStreamByTrackNumber from './matroska/function/findStreamByTrackNumber'
 import * as intwrite from 'avutil/util/intwrite'
 import * as is from 'common/util/is'
+import * as object from 'common/util/object'
 
 export default class IMatroskaFormat extends IFormat {
 
@@ -263,6 +264,7 @@ export default class IMatroskaFormat extends IFormat {
           }
           else {
             stream.timeBase.den = 1000
+            this.context.info.timestampScale = AV_TIME_BASE
           }
           if (this.context.info.duration) {
             stream.duration = static_cast<int64>(this.context.info.duration)
@@ -271,6 +273,17 @@ export default class IMatroskaFormat extends IFormat {
 
         if (track.default == null || track.default) {
           stream.disposition |= AVDisposition.DEFAULT
+        }
+
+        if (track.encodings) {
+          array.each(track.encodings.entry, (entry) => {
+            if (entry.compression) {
+              track.needDecompression = true
+            }
+            if (entry.encryption) {
+              track.needDeencryption = true
+            }
+          })
         }
       })
     }
@@ -337,7 +350,7 @@ export default class IMatroskaFormat extends IFormat {
     }
 
     const headerSize = await readVInt64(formatContext.ioReader, this.context.header.maxSizeLength)
-    this.context.header = await parseEbmlSyntax(formatContext, headerSize, EbmlSyntaxHeader)
+    this.context.header = object.extend(this.context.header, await parseEbmlSyntax(formatContext, headerSize, EbmlSyntaxHeader))
 
     const segmentId = await readEbmlId(formatContext, this.context.header.maxIdLength)
     if (segmentId !== EBMLId.SEGMENT) {
@@ -352,10 +365,25 @@ export default class IMatroskaFormat extends IFormat {
 
     const readTopLevelEbml: Set<EBMLId> = new Set()
 
-    while (formatContext.ioReader.getPos() < segmentEndPos) {
+    let hasTracks = false
+    let hasCluster = false
+
+    while (formatContext.ioReader.getPos() < segmentEndPos || !hasTracks || !hasCluster) {
       const currentElementPos = formatContext.ioReader.getPos()
       const id = await readEbmlId(formatContext, this.context.header.maxIdLength)
+
+      if (id === errorType.DATA_INVALID) {
+        await this.syncTopLevelElement(formatContext, 2)
+        continue
+      }
+
       const length = await readVInt64(formatContext.ioReader, this.context.header.maxSizeLength)
+
+      if (length === static_cast<int64>(errorType.DATA_INVALID)) {
+        await this.syncTopLevelElement(formatContext, 2)
+        continue
+      }
+
       if (id === EBMLId.SEEK_HEAD) {
         this.context.isLive = false
         this.context.seekHead = await parseEbmlSyntax(formatContext, length, EbmlSyntaxHeadSeek)
@@ -378,9 +406,11 @@ export default class IMatroskaFormat extends IFormat {
         this.context.attachments = await parseEbmlSyntax(formatContext, length, EbmlSyntaxAttachments)
       }
       else if (id === EBMLId.TRACKS) {
+        hasTracks = true
         this.context.tracks = await parseEbmlSyntax(formatContext, length, EbmlSyntaxTracks)
       }
       else if (id === EBMLId.CLUSTER) {
+        hasCluster = true
         this.context.firstCluster = currentElementPos
         if (this.context.isLive || !this.context.seekHead || !(formatContext.ioReader.flags & IOFlags.SEEKABLE)) {
           break
@@ -403,7 +433,9 @@ export default class IMatroskaFormat extends IFormat {
       readTopLevelEbml.add(id)
     }
 
-    await formatContext.ioReader.seek(this.context.firstCluster)
+    if (this.context.firstCluster > 0) {
+      await formatContext.ioReader.seek(this.context.firstCluster)
+    }
 
     this.analyzeStreams(formatContext)
 
@@ -463,7 +495,8 @@ export default class IMatroskaFormat extends IFormat {
     const stream = findStreamByTrackNumber(formatContext.streams, trackNumber)
 
     if (!stream) {
-      return
+      logger.error(`invalid track number ${trackNumber}`)
+      return errorType.EAGAIN
     }
 
     const timestamp = this.blockReader.readInt16()
@@ -520,7 +553,7 @@ export default class IMatroskaFormat extends IFormat {
         frameCount = this.blockReader.readUint8() + 1
         const size = (buffer.length - static_cast<int32>(this.blockReader.getPos() - now)) / frameCount
 
-        assert(!(size % frameCount))
+        assert(size === (size >>> 0))
 
         for (let i = 0; i < frameCount; i++) {
           frameSize.push(size)
@@ -534,6 +567,10 @@ export default class IMatroskaFormat extends IFormat {
 
     const track = stream.privData as TrackEntry
     const trackTimestampScale = track.timeScale || 1
+
+    if (track.needDeencryption) {
+      throw new Error('not support encryption stream')
+    }
 
     // 纳秒时间戳
     let pts = (this.context.currentCluster.timeCode + static_cast<int64>((timestamp * trackTimestampScale) as float))
@@ -550,14 +587,39 @@ export default class IMatroskaFormat extends IFormat {
 
     for (let i = 0; i < frameCount; i++) {
       const avpacket = i !== 0 ? createAVPacket() : packet
+
+      let size = frameSize[i]
+      let offset = 0
+      let header: Uint8Array
+
+      if (track.needDecompression) {
+        const compression = track.encodings.entry.find((entry) => {
+          return !!entry.compression
+        })
+        switch (compression.compression.algo) {
+          case MATROSKATrackEncodingComp.HEADER_STRIP:
+            header = compression.compression.settings.data
+            size += header.length
+            offset = header.length
+            break
+          default:
+            throw new Error(`not support compression stream, algo: ${compression.compression.algo}`)
+        }
+
+      }
+
       avpacket.pos = basePos + this.blockReader.getPos()
       avpacket.streamIndex = stream.index
       avpacket.timeBase = stream.timeBase
       avpacket.pts = pts
-      avpacket.size = frameSize[i]
-      const data = avMalloc(frameSize[i])
-      memcpyFromUint8Array(data, frameSize[i], this.blockReader.readBuffer(frameSize[i]))
-      addAVPacketData(avpacket, data, frameSize[i])
+      avpacket.size = size
+      const data = avMalloc(size)
+      if (header) {
+        memcpyFromUint8Array(data, offset, header)
+      }
+      memcpyFromUint8Array(data + offset, frameSize[i], this.blockReader.readBuffer(frameSize[i]))
+
+      addAVPacketData(avpacket, data, size)
 
       if (isKey) {
         avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
@@ -606,6 +668,8 @@ export default class IMatroskaFormat extends IFormat {
     this.context.currentCluster.blockGroup = {
       block: null
     }
+
+    return 0
   }
 
   private addClusterIndex(clusterIndex: ClusterIndex) {
@@ -637,7 +701,18 @@ export default class IMatroskaFormat extends IFormat {
 
     const now = formatContext.ioReader.getPos()
     const id = await readEbmlId(formatContext, this.context.header.maxIdLength)
+
+    if (id === errorType.DATA_INVALID) {
+      await this.syncTopLevelElement(formatContext)
+      return this.readAVPacket_(formatContext, avpacket)
+    }
+
     const length = await readVInt64(formatContext.ioReader, this.context.header.maxSizeLength)
+
+    if (length === static_cast<int64>(errorType.DATA_INVALID)) {
+      await this.syncTopLevelElement(formatContext)
+      return this.readAVPacket_(formatContext, avpacket)
+    }
 
     if (id === EBMLId.CLUSTER) {
       this.context.currentCluster.pos = now
@@ -653,7 +728,13 @@ export default class IMatroskaFormat extends IFormat {
         time: this.context.currentCluster.timeCode,
         pos: now
       })
-      await this.parseBlock(formatContext, avpacket)
+      let ret = await this.parseBlock(formatContext, avpacket)
+      if (ret === errorType.EAGAIN) {
+        return this.readAVPacket_(formatContext, avpacket)
+      }
+      else if (ret < 0) {
+        return ret
+      }
     }
     else if (id === EBMLId.SIMPLE_BLOCK) {
       this.context.currentCluster.block = {
@@ -661,7 +742,13 @@ export default class IMatroskaFormat extends IFormat {
         size: length,
         data: await formatContext.ioReader.readBuffer(static_cast<int32>(length))
       }
-      await this.parseBlock(formatContext, avpacket)
+      let ret = await this.parseBlock(formatContext, avpacket)
+      if (ret === errorType.EAGAIN) {
+        return this.readAVPacket_(formatContext, avpacket)
+      }
+      else if (ret < 0) {
+        return ret
+      }
     }
     else if (id === EBMLId.BLOCK_GROUP) {
       await parseEbmlSyntax(
@@ -706,16 +793,14 @@ export default class IMatroskaFormat extends IFormat {
   }
 
   @deasync
-  private async syncTopLevelElement(formatContext: AVIFormatContext) {
+  private async syncTopLevelElement(formatContext: AVIFormatContext, analyzeCount: int32 = 3) {
     let pos: int64 = NOPTS_VALUE_BIGINT
-
-    const analyzeCount = 3
 
     while (true) {
       try {
         const now = formatContext.ioReader.getPos()
-        const id = await readEbmlId(formatContext, this.context.header.maxIdLength)
-        const length = await readVInt64(formatContext.ioReader, this.context.header.maxSizeLength)
+        
+        const id = await formatContext.ioReader.peekUint32()
 
         if (id === EBMLId.CLUSTER
           || id === EBMLId.CUES
@@ -728,6 +813,16 @@ export default class IMatroskaFormat extends IFormat {
         ) {
           pos = now
           let count = 0
+
+          await formatContext.ioReader.skip(4)
+          
+          const length = await readVInt64(formatContext.ioReader, this.context.header.maxSizeLength)
+
+          if (length === static_cast<int64>(errorType.DATA_INVALID)) {
+            await formatContext.ioReader.seek(now + 1n)
+            continue
+          }
+
           await formatContext.ioReader.skip(static_cast<int32>(length))
           while (count <= analyzeCount) {
             const id = await readEbmlId(formatContext, this.context.header.maxIdLength)
@@ -757,7 +852,7 @@ export default class IMatroskaFormat extends IFormat {
           }
         }
         else {
-          await formatContext.ioReader.seek(now + 1n)
+          await formatContext.ioReader.skip(1)
           pos = NOPTS_VALUE_BIGINT
         }
       }
