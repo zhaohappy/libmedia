@@ -1,5 +1,5 @@
 /*
- * libmedia string tag to uint32 in big end
+ * libmedia string tag to uint32 in litten end
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -25,7 +25,7 @@
 
 import * as logger from 'common/util/logger'
 
-export default function mkbetag(tag: string): number {
+export default function mktagLe(tag: string): number {
   if (tag.length !== 4) {
     logger.warn(`tag length is not 4, tag: ${tag}`)
   }

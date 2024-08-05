@@ -1,5 +1,5 @@
 /*
- * libmedia string tag to uint32 in little end
+ * libmedia string tag to uint32 in big end
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
