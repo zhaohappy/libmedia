@@ -61,6 +61,9 @@ import findStreamByTrackNumber from './matroska/function/findStreamByTrackNumber
 import * as intwrite from 'avutil/util/intwrite'
 import * as is from 'common/util/is'
 import * as object from 'common/util/object'
+import * as riff from './riff/riff'
+import * as isomTags from './isom/tags'
+import concatTypeArray from 'common/function/concatTypeArray'
 
 export default class IMatroskaFormat extends IFormat {
 
@@ -124,7 +127,7 @@ export default class IMatroskaFormat extends IFormat {
       array.each(this.context.tracks.entry, (track) => {
         const stream = formatContext.createStream()
         stream.privData = track
-        stream.codecpar.codecId = tag2CodecId[track.codecId]
+        stream.codecpar.codecId = tag2CodecId[track.codecId] || AVCodecID.AV_CODEC_ID_NONE
         switch (track.type) {
           case MATROSKATrackType.AUDIO:
             stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
@@ -204,10 +207,43 @@ export default class IMatroskaFormat extends IFormat {
           }
         }
 
-        if (track.codecPrivate?.data) {
-          stream.codecpar.extradataSize = static_cast<int32>(track.codecPrivate.size)
+        let extradataOffset = 0
+
+        if (track.codecId === 'V_MS/VFW/FOURCC' && track.codecPrivate?.size >= 40) {
+          stream.codecpar.bitsPerCodedSample = (track.codecPrivate.data[15] << 8) | track.codecPrivate.data[14]
+          stream.codecpar.codecTag = (track.codecPrivate.data[19] << 24) |  (track.codecPrivate.data[18] << 16)
+            | (track.codecPrivate.data[17] << 8) | track.codecPrivate.data[16]
+          
+          stream.codecpar.codecId = riff.codecBmpTags[stream.codecpar.codecTag] || AVCodecID.AV_CODEC_ID_NONE
+
+          if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_NONE) {
+            stream.codecpar.codecId === isomTags.codecMovVideoTags[stream.codecpar.codecTag] || AVCodecID.AV_CODEC_ID_NONE
+          }
+          extradataOffset = 40
+        }
+        else if (track.codecId === 'V_QUICKTIME' && track.codecPrivate?.size >= 21) {
+          const tags = stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO ? isomTags.codecMovAudioTags : isomTags.codecMovVideoTags
+          stream.codecpar.codecTag = (track.codecPrivate.data[3] << 24) |  (track.codecPrivate.data[2] << 16)
+          | (track.codecPrivate.data[1] << 8) | track.codecPrivate.data[0]
+
+          const codecId = tags[stream.codecpar.codecTag]
+          if (codecId) {
+            const data = new Uint8Array(4)
+            const size = static_cast<int32>(track.codecPrivate.size)
+            data[0] = (size >>> 24) & 0xff
+            data[1] = (size >>> 16) & 0xff
+            data[2] = (size >>> 8) & 0xff
+            data[3] = size & 0xff
+            track.codecPrivate.size += 4n
+            track.codecPrivate.data = concatTypeArray(Uint8Array, [data, track.codecPrivate.data])
+          }
+          stream.codecpar.codecId = codecId || AVCodecID.AV_CODEC_ID_NONE
+        }
+
+        if (track.codecPrivate?.data && (track.codecPrivate.size - static_cast<int64>(extradataOffset)) > 0) {
+          stream.codecpar.extradataSize = static_cast<int32>(track.codecPrivate.size - static_cast<int64>(extradataOffset))
           stream.codecpar.extradata = avMalloc(stream.codecpar.extradataSize)
-          memcpyFromUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize, track.codecPrivate.data)
+          memcpyFromUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize, track.codecPrivate.data.subarray(extradataOffset))
 
           if (stream.codecpar.extradata) {
             switch (stream.codecpar.codecId) {
@@ -527,6 +563,7 @@ export default class IMatroskaFormat extends IFormat {
             }
             size += 0xff
           }
+          sum += size
           frameSize.push(size)
         }
         // the last frame
