@@ -1325,8 +1325,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
   private async doSeek(timestamp: int64, streamIndex: int32, options: {
     onBeforeSeek?: Function
-    notResetAudioDecoder?: boolean
-    notResetVideoDecoder?: boolean
   } = {}) {
 
     if (defined(ENABLE_MSE) && this.useMSE) {
@@ -1388,8 +1386,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       })
       if (seekedTimestamp >= 0n) {
         await Promise.all([
-          !options.notResetAudioDecoder && AVPlayer.AudioDecoderThread?.resetTask(this.taskId),
-          !options.notResetVideoDecoder && this.VideoDecoderThread?.resetTask(this.taskId)
+          AVPlayer.AudioDecoderThread?.resetTask(this.taskId),
+          this.VideoDecoderThread?.resetTask(this.taskId)
         ])
         await Promise.all([
           AVPlayer.AudioRenderThread?.syncSeekTime(
