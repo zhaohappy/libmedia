@@ -242,7 +242,10 @@ export default class AudioRenderPipeline extends Pipeline {
 
         let releaseAudioFrame = true
 
-        if (audioFrame.sampleRate !== task.playSampleRate || audioFrame.format !== task.playFormat) {
+        if (audioFrame.sampleRate !== task.playSampleRate
+          || audioFrame.format !== task.playFormat
+          || audioFrame.chLayout.nbChannels !== task.playChannels
+        ) {
           if (task.resampler) {
             const current = task.resampler.getInputPCMParameters()
             if (current.format !== audioFrame.format || current.sampleRate !== audioFrame.sampleRate) {
@@ -263,7 +266,7 @@ export default class AudioRenderPipeline extends Pipeline {
               {
                 sampleRate: task.playSampleRate,
                 format: task.playFormat,
-                channels: audioFrame.chLayout.nbChannels
+                channels: task.playChannels
               }
             )
           }
