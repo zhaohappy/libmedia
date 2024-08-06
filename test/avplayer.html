@@ -683,8 +683,8 @@
             player.getAudioList()
           ]).then((data) => {
 
-            const videoList = data[0]
-            const audioList = data[1]
+            let videoList = data[0]
+            let audioList = data[1]
 
             if (videoList.list.length > 1) {
               if (videoChangeComponent) {
@@ -758,6 +758,69 @@
                 video: true
               }).then(() => {
                 document.querySelector('#loading-mask').style.display = 'none'
+
+                const audioStreams = player.getStreams().filter((s => s.mediaType === 'Audio'))
+                const videoStreams = player.getStreams().filter((s => s.mediaType === 'Video'))
+
+                if (audioStreams.length > 1) {
+                  if (audioChangeComponent) {
+                    audioChangeComponent.destroy()
+                  }
+                  audioChangeComponent = new Vue({
+                    el: '#audio-change',
+                    data: function() {
+                      return { 
+                        options: audioStreams.map((item) => {
+                          return {
+                            value: item.index,
+                            name: item.metadata['title'] || item.metadata['language'] || item.metadata['name'] || 'default'
+                          }
+                        }),
+                        value: player.getSelectedAudioStreamIndex()
+                      }
+                    },
+                    methods: {
+                      change() {
+                        if (player) {
+                          player.selectAudio(this.value)
+                        }
+                      }
+                    },
+                    mounted: function () {
+                      this.$el.style.display = 'inline-block'
+                    }
+                  })
+                }
+
+                if (videoStreams.length > 1) {
+                  if (videoChangeComponent) {
+                    videoChangeComponent.destroy()
+                  }
+                  videoChangeComponent = new Vue({
+                    el: '#video-change',
+                    data: function() {
+                      return { 
+                        options: videoStreams.map((item) => {
+                          return {
+                            value: item.index,
+                            name: item.metadata['name'] || item.metadata['title'] || 'default'
+                          }
+                        }),
+                        value: player.getSelectedVideoStreamIndex()
+                      }
+                    },
+                    methods: {
+                      change() {
+                        if (player) {
+                          player.selectVideo(this.value)
+                        }
+                      }
+                    },
+                    mounted: function () {
+                      this.$el.style.display = 'inline-block'
+                    }
+                  })
+                }
               })
             // })
           })
