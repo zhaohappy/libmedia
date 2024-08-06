@@ -5,6 +5,7 @@ import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
+import isPointer from 'cheap/std/function/isPointer'
 
 export interface FramerateFilterNodeOptions extends AVFilterNodeOptions {
   framerate: Rational
@@ -52,7 +53,7 @@ export default class FramerateFilterNode extends AVFilterNode {
     }
 
     let pts = avRescaleQ(
-      is.number(avframe) ? avframe.pts : static_cast<int64>(avframe.timestamp),
+      isPointer(avframe) ? avframe.pts : static_cast<int64>(avframe.timestamp),
       this.options.timeBase,
       this.timeBase
     )
@@ -66,7 +67,7 @@ export default class FramerateFilterNode extends AVFilterNode {
           return
         }
         pts = avRescaleQ(
-          is.number(next) ? next.pts : static_cast<int64>(next.timestamp),
+          isPointer(next) ? next.pts : static_cast<int64>(next.timestamp),
           this.options.timeBase,
           this.timeBase
         )
@@ -78,7 +79,7 @@ export default class FramerateFilterNode extends AVFilterNode {
           return
         }
         else {
-          if (is.number(next)) {
+          if (isPointer(next)) {
             this.options.avframePool ? this.options.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(next)) : destroyAVFrame(next)
           }
           else {
@@ -90,7 +91,7 @@ export default class FramerateFilterNode extends AVFilterNode {
     else {
       this.delta = diff - this.step
       this.lastPts = pts
-      if (is.number(avframe)) {
+      if (isPointer(avframe)) {
         const out = this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame()
         refAVFrame(out, avframe)
         outputs[0] = out

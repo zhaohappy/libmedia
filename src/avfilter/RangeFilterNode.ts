@@ -1,6 +1,7 @@
 import AVFilterNode, { AVFilterNodeOptions } from './AVFilterNode'
 import AVFrame, { AVFrameRef } from 'avutil/struct/avframe'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
+import isPointer from 'cheap/std/function/isPointer'
 import { IOError } from 'common/io/error'
 import * as is from 'common/util/is'
 
@@ -32,7 +33,7 @@ export default class RangeFilterNode extends AVFilterNode {
       return
     }
 
-    let pts = is.number(avframe) ? avframe.pts : static_cast<int64>(avframe.timestamp)
+    let pts = isPointer(avframe) ? avframe.pts : static_cast<int64>(avframe.timestamp)
 
     if (pts < this.options.start) {
       while (true) {
@@ -41,13 +42,13 @@ export default class RangeFilterNode extends AVFilterNode {
           outputs[0] = next
           return
         }
-        pts = is.number(next) ? next.pts : static_cast<int64>(next.timestamp)
+        pts = isPointer(next) ? next.pts : static_cast<int64>(next.timestamp)
         if (pts >= this.options.start) {
           outputs[0] = next
           return
         }
         else {
-          if (is.number(next)) {
+          if (isPointer(next)) {
             this.options.avframePool ? this.options.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(next)) : destroyAVFrame(next)
           }
           else {
@@ -61,7 +62,7 @@ export default class RangeFilterNode extends AVFilterNode {
       return
     }
     else {
-      if (is.number(avframe)) {
+      if (isPointer(avframe)) {
         const out = this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame()
         refAVFrame(out, avframe)
         outputs[0] = out

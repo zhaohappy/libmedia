@@ -30,7 +30,6 @@ import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import AVPacket, { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
 import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
 import * as logger from 'common/util/logger'
-import * as is from 'common/util/is'
 import { audioData2AVFrame } from 'avutil/function/audioData2AVFrame'
 import * as stack from 'cheap/stack'
 import { createAVFrame, destroyAVFrame, getAudioBuffer, unrefAVFrame } from 'avutil/util/avframe'
@@ -40,6 +39,7 @@ import { getBytesPerSample, sampleFormatIsPlanar, sampleSetSilence } from 'avuti
 import { AVSampleFormat } from 'avutil/audiosamplefmt'
 import { avRescaleQ } from 'avutil/util/rational'
 import support from 'common/util/support'
+import isPointer from 'cheap/std/function/isPointer'
 
 export type WasmAudioEncoderOptions = {
   resource: WebAssemblyResource
@@ -255,7 +255,7 @@ export default class WasmAudioEncoder {
 
   public encode(avframe: pointer<AVFrame> | AudioData) {
 
-    if (!is.number(avframe)) {
+    if (!isPointer(avframe)) {
       if (this.avframe) {
         unrefAVFrame(this.avframe)
       }

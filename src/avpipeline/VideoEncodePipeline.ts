@@ -47,6 +47,7 @@ import support from 'common/util/support'
 import WasmVideoEncoder from 'avcodec/wasmcodec/VideoEncoder'
 import WebVideoEncoder from 'avcodec/webcodec/VideoEncoder'
 import { Rational } from 'avutil/struct/rational'
+import isPointer from 'cheap/std/function/isPointer'
 
 export interface VideoEncodeTaskOptions extends TaskOptions {
   resource: WebAssemblyResource
@@ -231,7 +232,7 @@ export default class VideoEncodePipeline extends Pipeline {
 
               const avframe = await pullAVFrame()
 
-              if (!is.number(avframe) || avframe > 0) {
+              if (isPointer(avframe) || avframe instanceof VideoFrame) {
                 let ret = task.targetEncoder.encode(avframe, task.gopCounter === 0)
                 if (ret < 0) {
                   task.stats.videoEncodeErrorFrameCount++
@@ -246,7 +247,7 @@ export default class VideoEncodePipeline extends Pipeline {
                     ret = task.targetEncoder.encode(avframe, task.gopCounter === 0)
                   }
                   if (ret < 0) {
-                    if (is.number(avframe)) {
+                    if (isPointer(avframe)) {
                       task.avframePool.release(avframe)
                     }
                     else {
@@ -261,7 +262,7 @@ export default class VideoEncodePipeline extends Pipeline {
                 if (task.gopCounter === task.gop) {
                   task.gopCounter = 0
                 }
-                if (is.number(avframe)) {
+                if (isPointer(avframe)) {
                   task.avframePool.release(avframe)
                 }
                 else {

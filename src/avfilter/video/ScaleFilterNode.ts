@@ -9,6 +9,7 @@ import { NOPTS_VALUE } from 'avutil/constant'
 import { AVPixelFormat } from 'avutil/pixfmt'
 import * as errorType from 'avutil/error'
 import * as logger from 'common/util/logger'
+import isPointer from 'cheap/std/function/isPointer'
 
 export interface ScaleFilterNodeOptions extends AVFilterNodeOptions {
   resource: WebAssemblyResource
@@ -43,9 +44,13 @@ export default class ScaleFilterNode extends AVFilterNode {
       return
     }
 
-    const width = is.number(avframe) ? avframe.width : avframe.displayWidth
-    const height = is.number(avframe) ? avframe.height : avframe.displayHeight
-    const format = is.number(avframe) ? avframe.format : mapFormat(avframe.format)
+    if (avframe == null) {
+      debugger
+    }
+
+    const width = isPointer(avframe) ? avframe.width : avframe.displayWidth
+    const height = isPointer(avframe) ? avframe.height : avframe.displayHeight
+    const format = isPointer(avframe) ? avframe.format : mapFormat(avframe.format)
 
     if (width !== this.options.output.width
       || height !== this.options.output.height
@@ -89,7 +94,7 @@ export default class ScaleFilterNode extends AVFilterNode {
               height: this.options.output.height,
               format: this.options.output.format !== NOPTS_VALUE
                 ? this.options.output.format
-                : (format === AVPixelFormat.AV_PIX_FMT_NV12 && !is.number(avframe)
+                : (format === AVPixelFormat.AV_PIX_FMT_NV12 && !isPointer(avframe)
                   ? AVPixelFormat.AV_PIX_FMT_YUV420P
                   : format
                 )
@@ -103,7 +108,7 @@ export default class ScaleFilterNode extends AVFilterNode {
         }
       }
 
-      if (!is.number(avframe)) {
+      if (!isPointer(avframe)) {
         avframe = videoFrame2AVFrame(inputs[0] as VideoFrame, this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame())
       }
 
@@ -121,12 +126,12 @@ export default class ScaleFilterNode extends AVFilterNode {
 
       outputs[0] = out
 
-      if (!is.number(inputs[0])) {
+      if (!isPointer(inputs[0])) {
         this.options.avframePool ? this.options.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(avframe)) : destroyAVFrame(avframe)
       }
     }
     else {
-      if (is.number(avframe)) {
+      if (isPointer(avframe)) {
         const out = this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame()
         refAVFrame(out, avframe)
         outputs[0] = out

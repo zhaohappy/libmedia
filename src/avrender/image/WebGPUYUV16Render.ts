@@ -25,7 +25,6 @@
 
 import AVFrame, { AVContentLightMetadata, AVFrameSideDataType } from 'avutil/struct/avframe'
 import { AVPixelFormat } from 'avutil/pixfmt'
-import * as is from 'common/util/is'
 
 import { WebGPURenderOptions } from './WebGPURender'
 import WebGPUYUVRender from './WebGPUYUVRender'
@@ -39,6 +38,7 @@ import { ColorTransformOptions, DefaultSDRWhiteLevel, GLType } from './colorTran
 import generateSteps from './colorTransform/generateSteps'
 import HdrMetadata from './struct/HdrMetadata'
 import { getAVFrameSideData } from 'avutil/util/avframe'
+import isPointer from 'cheap/std/function/isPointer'
 
 export default class WebGPUYUV16Render extends WebGPUYUVRender {
 
@@ -767,7 +767,7 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
   }
 
   static isSupport(frame: pointer<AVFrame> | VideoFrame | ImageBitmap): boolean {
-    if (is.number(frame)) {
+    if (isPointer(frame)) {
       const info = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
       if (info) {
         if (info.flags & PixelFormatFlags.RGB) {

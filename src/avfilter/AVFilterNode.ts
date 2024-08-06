@@ -27,8 +27,9 @@
 import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
 import { destroyAVFrame } from 'avutil/util/avframe'
 import IPCPort, { NOTIFY, REQUEST, RpcMessage } from 'common/network/IPCPort'
-import * as is from 'common/util/is'
 import * as array from 'common/util/array'
+import isPointer from 'cheap/std/function/isPointer'
+import * as is from 'common/util/is'
 
 export interface AVFilterNodeOptions {
   avframePool?: AVFramePool
@@ -52,7 +53,7 @@ export class AVFilterNodePort extends IPCPort {
     this.on(REQUEST, async (request: RpcMessage) => {
       try {
         const result = await port.request<pointer<AVFrame> | VideoFrame>(request.method, request.params)
-        this.reply(request, result, null, (is.number(result) || request.method !== 'pull') ? null : [result])
+        this.reply(request, result, null, (isPointer(result) || is.number(result) || request.method !== 'pull') ? null : [result])
       }
       catch (error) {
         this.reply(request, null, error)
@@ -65,7 +66,7 @@ export class AVFilterNodePort extends IPCPort {
     port.on(REQUEST, async (request: RpcMessage) => {
       try {
         const result = await this.request<pointer<AVFrame> | VideoFrame>(request.method, request.params)
-        port.reply(request, result, null, (is.number(result) || request.method !== 'pull') ? null : [result])
+        port.reply(request, result, null, (isPointer(result) || is.number(result) || request.method !== 'pull') ? null : [result])
       }
       catch (error) {
         port.reply(request, null, error)
@@ -161,7 +162,10 @@ export default abstract class AVFilterNode {
             await this.process(input, this.currentOutput)
             
             input.forEach((frame) => {
-              if (is.number(frame)) {
+              if (is.number(frame) && frame < 0) {
+                return
+              }
+              if (isPointer(frame)) {
                 if (frame > 0) {
                   this.options.avframePool ? this.options.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(frame)) : destroyAVFrame(frame)
                 }
@@ -171,7 +175,7 @@ export default abstract class AVFilterNode {
               }
             })
 
-            port.reply(request, this.currentOutput[index], null, is.number(this.currentOutput[index]) ? null : [this.currentOutput[index]])
+            port.reply(request, this.currentOutput[index], null, (isPointer(this.currentOutput[index]) || is.number(this.currentOutput[index])) ? null : [this.currentOutput[index]])
             this.consumedCount++
 
             if (this.pending.length) {
@@ -186,7 +190,7 @@ export default abstract class AVFilterNode {
             }
           }
           else if (this.consumedCount === this.outputCount - 1) {
-            port.reply(request, this.currentOutput[index], null, is.number(this.currentOutput[index]) ? null : [this.currentOutput[index]])
+            port.reply(request, this.currentOutput[index], null, (isPointer(this.currentOutput[index]) || is.number(this.currentOutput[index])) ? null : [this.currentOutput[index]])
             this.consumedCount = 0
             this.currentOutput.length = 0
           }
@@ -197,7 +201,7 @@ export default abstract class AVFilterNode {
                 reject
               })
             })
-            port.reply(request, this.currentOutput[index], null, is.number(this.currentOutput[index]) ? null : [this.currentOutput[index]])
+            port.reply(request, this.currentOutput[index], null, (isPointer(this.currentOutput[index]) || is.number(this.currentOutput[index])) ? null : [this.currentOutput[index]])
             this.consumedCount++
           }
         }

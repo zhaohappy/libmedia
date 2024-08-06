@@ -43,6 +43,7 @@ import * as error from 'avutil/error'
 import Sleep from 'common/timer/Sleep'
 import { Rational } from 'avutil/struct/rational'
 import * as errorType from 'avutil/error'
+import isPointer from 'cheap/std/function/isPointer'
 
 export interface AudioEncodeTaskOptions extends TaskOptions {
   resource: WebAssemblyResource
@@ -152,9 +153,9 @@ export default class AudioEncodePipeline extends Pipeline {
 
               const avframe = await leftIPCPort.request<pointer<AVFrameRef> | AudioData>('pull')
 
-              if (!is.number(avframe) || avframe > 0) {
+              if (isPointer(avframe) || avframe instanceof AudioData) {
                 const ret = task.encoder.encode(avframe)
-                if (is.number(avframe)) {
+                if (isPointer(avframe)) {
                   task.avframePool.release(avframe)
                 }
                 else {

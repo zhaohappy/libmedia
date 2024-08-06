@@ -35,7 +35,7 @@ import ColorSpace from './colorSpace/ColorSpace'
 import HdrMetadata from './struct/HdrMetadata'
 import { getAVFrameSideData } from 'avutil/util/avframe'
 import YUV16Program from './webgl/program/YUV16Program'
-import * as is from 'common/util/is'
+import isPointer from 'cheap/std/function/isPointer'
 
 export default class WebGLYUV16Render extends WebGLYUVRender {
 
@@ -282,7 +282,7 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
   }
 
   static isSupport(frame: pointer<AVFrame> | VideoFrame | ImageBitmap): boolean {
-    if (is.number(frame)) {
+    if (isPointer(frame)) {
       const info = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
       if (info) {
         if (info.flags & PixelFormatFlags.RGB) {

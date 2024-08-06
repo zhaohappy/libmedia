@@ -59,6 +59,7 @@ import WebGPUYUV16Render from 'avrender/image/WebGPUYUV16Render'
 import isWorker from 'common/function/isWorker'
 import { JitterBuffer } from './struct/jitter'
 import nextTick from 'common/function/nextTick'
+import isPointer from 'cheap/std/function/isPointer'
 
 type WebGPURenderFactory = {
   new(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions): WebGPURender,
@@ -260,7 +261,7 @@ export default class VideoRenderPipeline extends Pipeline {
     if (task.render) {
       task.render.destroy()
     }
-    if (!is.number(frame)) {
+    if (!isPointer(frame)) {
       if (defined(ENABLE_WEBGPU)
         && task.enableWebGPU
         && support.webgpu
@@ -384,7 +385,7 @@ export default class VideoRenderPipeline extends Pipeline {
         }
 
         if (task.backFrame) {
-          if (!is.number(task.backFrame)) {
+          if (!isPointer(task.backFrame)) {
             task.backFrame.close()
           }
           else {
@@ -418,7 +419,7 @@ export default class VideoRenderPipeline extends Pipeline {
             return
           }
 
-          assert(!is.number(frame) || frame.data[0], 'got empty video frame')
+          assert(!isPointer(frame) || frame.data[0], 'got empty video frame')
 
           const cost = getTimestamp() - now
           // 超过 1 秒认为是网卡了（断点暂停），对齐一下时间
@@ -445,12 +446,12 @@ export default class VideoRenderPipeline extends Pipeline {
       await this.createRender(task, task.backFrame)
 
       task.firstPTS = avRescaleQ(
-        (!is.number(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
+        (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
         task.timeBase,
         AV_MILLI_TIME_BASE_Q
       )
 
-      logger.debug(`got first video frame, pts: ${!is.number(task.backFrame)
+      logger.debug(`got first video frame, pts: ${!isPointer(task.backFrame)
         ? static_cast<int64>(task.backFrame.timestamp)
         : task.backFrame.pts
       }(${task.firstPTS}ms), taskId: ${task.taskId}`)
@@ -497,7 +498,7 @@ export default class VideoRenderPipeline extends Pipeline {
         }
 
         const pts = avRescaleQ(
-          (!is.number(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
+          (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
           task.timeBase,
           AV_MILLI_TIME_BASE_Q
         )
@@ -590,7 +591,7 @@ export default class VideoRenderPipeline extends Pipeline {
             task.stats.videoFrameDropCount++
           }
           task.renderFrameCount++
-          if (is.number(task.backFrame)) {
+          if (isPointer(task.backFrame)) {
             task.stats.width = task.backFrame.width
             task.stats.height = task.backFrame.height
           }
@@ -641,7 +642,7 @@ export default class VideoRenderPipeline extends Pipeline {
       }
 
       if (task.backFrame) {
-        if (!is.number(task.backFrame)) {
+        if (!isPointer(task.backFrame)) {
           task.backFrame.close()
         }
         else {
@@ -649,7 +650,7 @@ export default class VideoRenderPipeline extends Pipeline {
         }
       }
       if (task.frontFrame) {
-        if (!is.number(task.frontFrame)) {
+        if (!isPointer(task.frontFrame)) {
           task.frontFrame.close()
         }
         else {
@@ -667,7 +668,7 @@ export default class VideoRenderPipeline extends Pipeline {
       task.firstRendered = false
 
       task.firstPTS = avRescaleQ(
-        (!is.number(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
+        (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
         task.timeBase,
         AV_MILLI_TIME_BASE_Q
       )
@@ -866,7 +867,7 @@ export default class VideoRenderPipeline extends Pipeline {
       task.seeking = true
       task.loop.stop()
       if (task.backFrame) {
-        if (!is.number(task.backFrame)) {
+        if (!isPointer(task.backFrame)) {
           task.backFrame.close()
         }
         else {
@@ -874,7 +875,7 @@ export default class VideoRenderPipeline extends Pipeline {
         }
       }
       if (task.frontFrame) {
-        if (!is.number(task.frontFrame)) {
+        if (!isPointer(task.frontFrame)) {
           task.frontFrame.close()
         }
         else {
@@ -901,6 +902,7 @@ export default class VideoRenderPipeline extends Pipeline {
           task.ended = true
           task.seeking = false
           task.adjust = AdjustStatus.None
+          task.backFrame = null
           logger.warn(`pull video frame end after seek, taskId: ${taskId}`)
           task.controlIPCPort.notify('ended')
           return
@@ -912,7 +914,7 @@ export default class VideoRenderPipeline extends Pipeline {
         }
 
         const pts = avRescaleQ(
-          (!is.number(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
+          (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
           task.timeBase,
           AV_MILLI_TIME_BASE_Q
         )
@@ -921,7 +923,7 @@ export default class VideoRenderPipeline extends Pipeline {
           break
         }
 
-        if (!is.number(task.backFrame)) {
+        if (!isPointer(task.backFrame)) {
           if (defined(ENABLE_LOG_TRACE)) {
             logger.trace(`skip video frame pts: ${task.backFrame.timestamp}(${pts}ms), which is earlier then the seeked time(${timestamp}ms), taskId: ${task.taskId}`)
           }
@@ -941,6 +943,11 @@ export default class VideoRenderPipeline extends Pipeline {
   public async afterSeek(taskId: string, timestamp: int64) {
     const task = this.tasks.get(taskId)
     if (task) {
+
+      if (task.ended) {
+        return
+      }
+
       task.startTimestamp = static_cast<int64>(getTimestamp()) - (timestamp + task.startPTS) * 100n / task.playRate
       task.frontFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
 
@@ -958,12 +965,12 @@ export default class VideoRenderPipeline extends Pipeline {
       task.lastRenderTimestamp = getTimestamp()
 
       task.currentPTS = avRescaleQ(
-        (!is.number(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
+        (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
         task.timeBase,
         AV_MILLI_TIME_BASE_Q
       )
 
-      logger.debug(`got first video frame, pts: ${!is.number(task.backFrame)
+      logger.debug(`got first video frame, pts: ${!isPointer(task.backFrame)
         ? static_cast<int64>(task.backFrame.timestamp)
         : task.backFrame.pts
       }(${task.currentPTS}ms), taskId: ${task.taskId}`)
@@ -1002,7 +1009,7 @@ export default class VideoRenderPipeline extends Pipeline {
         task.render = null
       }
       if (task.backFrame) {
-        if (is.number(task.backFrame) && task.backFrame > 0) {
+        if (isPointer(task.backFrame) && task.backFrame > 0) {
           task.avframePool.release(task.backFrame)
         }
         else {
@@ -1011,7 +1018,7 @@ export default class VideoRenderPipeline extends Pipeline {
         task.backFrame = null
       }
       if (task.frontFrame) {
-        if (is.number(task.frontFrame) && task.frontFrame > 0) {
+        if (isPointer(task.frontFrame) && task.frontFrame > 0) {
           task.avframePool.release(task.frontFrame)
         }
         else {

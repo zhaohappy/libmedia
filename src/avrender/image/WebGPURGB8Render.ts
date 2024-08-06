@@ -25,7 +25,6 @@
 
 import AVFrame from 'avutil/struct/avframe'
 import { AVPixelFormat } from 'avutil/pixfmt'
-import * as is from 'common/util/is'
 
 import { WebGPURenderOptions } from './WebGPURender'
 import { PixelFormatDescriptor, PixelFormatDescriptorsMap, PixelFormatFlags } from 'avutil/pixelFormatDescriptor'
@@ -34,6 +33,7 @@ import ColorSpace from './colorSpace/ColorSpace'
 import generateSteps from './colorTransform/generateSteps'
 import { GLType } from './colorTransform/options'
 import WebGPURGBRender from './WebGPURGBRender'
+import isPointer from 'cheap/std/function/isPointer'
 
 export default class WebGPURGB8Render extends WebGPURGBRender {
 
@@ -170,7 +170,7 @@ export default class WebGPURGB8Render extends WebGPURGBRender {
   }
 
   static isSupport(frame: pointer<AVFrame> | VideoFrame | ImageBitmap): boolean {
-    if (is.number(frame)) {
+    if (isPointer(frame)) {
       const info = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
       if (info) {
         return (info.flags & PixelFormatFlags.RGB) && ((info.comp[0].depth + 7) >>> 3) === 1

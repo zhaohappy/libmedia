@@ -23,7 +23,6 @@
  *
  */
 
-import * as is from 'common/util/is'
 import AVFrame from 'avutil/struct/avframe'
 import { AVPixelFormat } from 'avutil/pixfmt'
 import { mapUint8Array } from 'cheap/std/memory'
@@ -34,6 +33,7 @@ import YUV8Program from './webgl/program/YUV8Program'
 import generateSteps from './colorTransform/generateSteps'
 import { GLType } from './colorTransform/options'
 import ColorSpace from './colorSpace/ColorSpace'
+import isPointer from 'cheap/std/function/isPointer'
 
 export default class WebGLYUV8Render extends WebGLYUVRender {
 
@@ -153,7 +153,7 @@ export default class WebGLYUV8Render extends WebGLYUVRender {
   }
 
   static isSupport(frame: pointer<AVFrame> | VideoFrame | ImageBitmap): boolean {
-    if (is.number(frame)) {
+    if (isPointer(frame)) {
       const info = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
       if (info) {
         if (info.flags & PixelFormatFlags.RGB) {

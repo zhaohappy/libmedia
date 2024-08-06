@@ -23,7 +23,6 @@
  *
  */
 
-import * as is from 'common/util/is'
 import AVFrame from 'avutil/struct/avframe'
 import { AVPixelFormat } from 'avutil/pixfmt'
 import { mapUint8Array } from 'cheap/std/memory'
@@ -34,6 +33,7 @@ import { GLType } from './colorTransform/options'
 import ColorSpace from './colorSpace/ColorSpace'
 import WebGLRGBRender from './WebGLRGBRender'
 import RGB8Program from './webgl/program/RGB8Program'
+import isPointer from 'cheap/std/function/isPointer'
 
 export default class WebGLRGB8Render extends WebGLRGBRender {
 
@@ -130,7 +130,7 @@ export default class WebGLRGB8Render extends WebGLRGBRender {
   }
 
   static isSupport(frame: pointer<AVFrame> | VideoFrame | ImageBitmap): boolean {
-    if (is.number(frame)) {
+    if (isPointer(frame)) {
       const info = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
       if (info) {
         return (info.flags & PixelFormatFlags.RGB) && ((info.comp[0].depth + 7) >>> 3) === 1

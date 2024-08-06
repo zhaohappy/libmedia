@@ -32,7 +32,6 @@ import { createAVPacket, destroyAVPacket, getAVPacketSideData } from 'avutil/uti
 import * as logger from 'common/util/logger'
 import * as stack from 'cheap/stack'
 import { Rational } from 'avutil/struct/rational'
-import * as is from 'common/util/is'
 import { BitFormat } from 'avformat/codecs/h264'
 import { videoFrame2AVFrame } from 'avutil/function/videoFrame2AVFrame'
 import { createAVFrame, destroyAVFrame, unrefAVFrame } from 'avutil/util/avframe'
@@ -42,6 +41,7 @@ import { avQ2D } from 'avutil/util/rational'
 import AVBSFilter from 'avformat/bsf/AVBSFilter'
 import Annexb2AvccFilter from 'avformat/bsf/h2645/Annexb2AvccFilter'
 import support from 'common/util/support'
+import isPointer from 'cheap/std/function/isPointer'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
@@ -161,7 +161,7 @@ export default class WasmVideoEncoder {
 
   public encode(frame: pointer<AVFrame> | VideoFrame, key: boolean) {
 
-    if (!is.number(frame)) {
+    if (!isPointer(frame)) {
       if (this.avframe) {
         unrefAVFrame(this.avframe)
       }

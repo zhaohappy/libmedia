@@ -27,7 +27,6 @@ import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import AVPacket, { AVPacketPool } from 'avutil/struct/avpacket'
 import getAudioCodec from 'avcodec/function/getAudioCodec'
 import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
-import * as is from 'common/util/is'
 import { avframe2AudioData } from 'avutil/function/avframe2AudioData'
 import { createAVPacket } from 'avutil/util/avpacket'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
@@ -35,6 +34,7 @@ import { Rational } from 'avutil/struct/rational'
 import encodedAudioChunk2AVPacket from 'avutil/function/encodedAudioChunk2AVPacket'
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
+import isPointer from 'cheap/std/function/isPointer'
 
 export type WebAudioEncoderOptions = {
   onReceivePacket: (avpacket: pointer<AVPacket>) => void
@@ -147,7 +147,7 @@ export default class WebAudioEncoder {
   }
 
   public encode(frame: AudioData | pointer<AVFrame>) {
-    if (is.number(frame)) {
+    if (isPointer(frame)) {
       const cache = this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame()
       refAVFrame(cache, frame)
       this.avframeCache.push(cache)
