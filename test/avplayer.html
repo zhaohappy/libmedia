@@ -689,6 +689,15 @@
             if (videoList.list.length > 1) {
               if (videoChangeComponent) {
                 videoChangeComponent.$destroy()
+                document.querySelector('#video-change').innerHTML = `视频:
+                <el-select v-model="value" @change="change">
+                  <el-option
+                    v-for="item in options"
+                    :key="item.value"
+                    :label="item.name"
+                    :value="item.value">
+                  </el-option>
+                </el-select>`
               }
               videoChangeComponent = new Vue({
                 el: '#video-change',
@@ -722,6 +731,15 @@
             if (audioList.list.length > 1) {
               if (audioChangeComponent) {
                 audioChangeComponent.$destroy()
+                document.querySelector('#audio-change').innerHTML = `音频:
+                <el-select v-model="value" @change="change">
+                  <el-option
+                    v-for="item in options"
+                    :key="item.value"
+                    :label="item.name"
+                    :value="item.value">
+                  </el-option>
+                </el-select>`
               }
               audioChangeComponent = new Vue({
                 el: '#audio-change',
@@ -765,6 +783,15 @@
                 if (audioStreams.length > 1) {
                   if (audioChangeComponent) {
                     audioChangeComponent.$destroy()
+                    document.querySelector('#audio-change').innerHTML = `音频:
+                    <el-select v-model="value" @change="change">
+                      <el-option
+                        v-for="item in options"
+                        :key="item.value"
+                        :label="item.name"
+                        :value="item.value">
+                      </el-option>
+                    </el-select>`
                   }
                   audioChangeComponent = new Vue({
                     el: '#audio-change',
@@ -795,6 +822,15 @@
                 if (videoStreams.length > 1) {
                   if (videoChangeComponent) {
                     videoChangeComponent.$destroy()
+                    document.querySelector('#video-change').innerHTML = `视频:
+                    <el-select v-model="value" @change="change">
+                      <el-option
+                        v-for="item in options"
+                        :key="item.value"
+                        :label="item.name"
+                        :value="item.value">
+                      </el-option>
+                    </el-select>`
                   }
                   videoChangeComponent = new Vue({
                     el: '#video-change',
