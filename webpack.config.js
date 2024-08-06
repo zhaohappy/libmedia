@@ -114,9 +114,11 @@ module.exports = (env) => {
     output: {
       filename: output,
       path: outputPath,
-      library,
-      libraryExport,
-      libraryTarget
+      library: {
+        name: library,
+        type: libraryTarget,
+        export: libraryExport
+      }
     },
     module: {
       rules: [
@@ -199,6 +201,7 @@ module.exports = (env) => {
   if (!env.transformer) {
     config.plugins.push(
       new CheapPlugin({
+        name: 'libmedia',
         env: 'browser',
         projectPath: __dirname,
         exclude: /__test__/,
