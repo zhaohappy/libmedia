@@ -41,7 +41,7 @@ import { Mutex } from 'cheap/thread/mutex'
 import * as logger from 'common/util/logger'
 import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
 import { IOError } from 'common/io/error'
-import { AVMediaType } from 'avutil/codec'
+import { AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import LoopTask from 'common/timer/LoopTask'
 import { IOFlags } from 'common/io/flags'
 import * as array from 'common/util/array'
@@ -49,6 +49,8 @@ import { avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as bigint from 'common/util/bigint'
 import { AVStreamInterface } from 'avformat/AVStream'
+import { addAVPacketSideData, getAVPacketSideData } from 'avutil/util/avpacket'
+import { memcpy } from 'cheap/std/memory'
 
 export const STREAM_INDEX_ALL = -1
 
@@ -65,7 +67,7 @@ export interface DemuxTaskOptions extends TaskOptions {
 
 type SelfTask = DemuxTaskOptions & {
   leftIPCPort: IPCPort
-  rightIPCPorts: Map<number, IPCPort>
+  rightIPCPorts: Map<number, IPCPort & { streamIndex?: number }>
   controlIPCPort: IPCPort
 
   formatContext: AVIFormatContext
@@ -74,6 +76,7 @@ type SelfTask = DemuxTaskOptions & {
 
   cacheAVPackets: Map<number, pointer<AVPacketRef>[]>
   cacheRequests: Map<number, RpcMessage>
+  streamIndexFlush: Map<number, boolean>
 
   realFormat: AVFormat
 
@@ -243,6 +246,7 @@ export default class DemuxPipeline extends Pipeline {
 
       cacheAVPackets: new Map(),
       cacheRequests: new Map(),
+      streamIndexFlush: new Map(),
 
       realFormat: AVFormat.UNKNOWN,
 
@@ -434,14 +438,15 @@ export default class DemuxPipeline extends Pipeline {
   public async connectStreamTask(taskId: string, streamIndex: number, port: MessagePort) {
     const task = this.tasks.get(taskId)
     if (task) {
-      const ipcPort = new IPCPort(port)
+      const ipcPort: IPCPort & { streamIndex?: number } = new IPCPort(port)
 
       task.cacheAVPackets.set(streamIndex, [])
 
+      ipcPort.streamIndex = streamIndex
       ipcPort.on(REQUEST, async (request: RpcMessage) => {
         switch (request.method) {
           case 'pull': {
-            const cacheAVPackets = task.cacheAVPackets.get(streamIndex)
+            const cacheAVPackets = task.cacheAVPackets.get(ipcPort.streamIndex)
             if (cacheAVPackets.length) {
               const avpacket = cacheAVPackets.shift()
               if (task.formatContext.streams[avpacket.streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
@@ -457,7 +462,7 @@ export default class DemuxPipeline extends Pipeline {
                 ipcPort.reply(request, IOError.END)
               }
               else {
-                task.cacheRequests.set(streamIndex, request)
+                task.cacheRequests.set(ipcPort.streamIndex, request)
                 if (task.loop && task.loop.isStarted()) {
                   task.loop.resetInterval()
                 }
@@ -470,6 +475,44 @@ export default class DemuxPipeline extends Pipeline {
       task.rightIPCPorts.set(streamIndex, ipcPort)
 
       logger.debug(`connect stream ${streamIndex}, taskId: ${task.taskId}`)
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+
+
+  public async changeConnectStream(taskId: string, newStreamIndex: number, oldStreamIndex: number, force: boolean = true) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      const cache = task.cacheAVPackets.get(oldStreamIndex)
+      const ipcPort = task.rightIPCPorts.get(oldStreamIndex)
+
+      await task.loop.stopBeforeNextTick()
+
+      if (force) {
+        array.each(cache, (avpacket) => {
+          task.avpacketPool.release(avpacket)
+        })
+        cache.length = 0
+      }
+      else {
+        task.streamIndexFlush.set(newStreamIndex, true)
+      }
+
+      ipcPort.streamIndex = newStreamIndex
+
+      task.cacheAVPackets.set(newStreamIndex, cache)
+      task.rightIPCPorts.set(newStreamIndex, ipcPort)
+
+      task.cacheAVPackets.delete(oldStreamIndex)
+      task.rightIPCPorts.delete(oldStreamIndex)
+
+      if (!force) {
+        task.loop.start()
+      }
+
+      logger.debug(`changed connect stream, new ${newStreamIndex}, old: ${oldStreamIndex}, force: ${force}, taskId: ${task.taskId}`)
     }
     else {
       logger.fatal('task not found')
@@ -570,6 +613,19 @@ export default class DemuxPipeline extends Pipeline {
             task.lastVideoDts = avpacket.dts
           }
 
+          if (task.streamIndexFlush.get(streamIndex)) {
+            const stream = task.formatContext.streams.find((stream) => {
+              return stream.index === streamIndex
+            })
+            const ele = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+            if (!ele && stream && stream.codecpar.extradataSize) {
+              const data = avMalloc(stream.codecpar.extradataSize)
+              memcpy(data, stream.codecpar.extradata, stream.codecpar.extradataSize)
+              addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, data, stream.codecpar.extradataSize)
+            }
+            task.streamIndexFlush.set(streamIndex, false)
+          }
+
           if (task.cacheRequests.has(streamIndex)) {
             task.rightIPCPorts.get(streamIndex).reply(task.cacheRequests.get(streamIndex), avpacket)
             task.cacheRequests.delete(streamIndex)
@@ -630,12 +686,12 @@ export default class DemuxPipeline extends Pipeline {
     }
   }
 
-  public async seek(taskId: string, timestamp: int64, flags: int32): Promise<int64> {
+  public async seek(taskId: string, timestamp: int64, flags: int32, streamIndex: int32 = -1): Promise<int64> {
     const task = this.tasks.get(taskId)
     if (task) {
       if (task.loop) {
         await task.loop.stopBeforeNextTick()
-        let ret = await demux.seek(task.formatContext, -1, timestamp, flags)
+        let ret = await demux.seek(task.formatContext, streamIndex, timestamp, flags)
         if (ret >= 0n) {
           task.cacheAVPackets.forEach((list) => {
             array.each(list, (avpacket) => {

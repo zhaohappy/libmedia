@@ -61,7 +61,7 @@ type SelfTask = AudioDecodeTaskOptions & {
   frameCaches: pointer<AVFrameRef>[]
   inputEnd: boolean
   parameters: pointer<AVCodecParameters>
-  openReject?: (ret: number) => void
+  openReject: (ret: number) => void
 
   lastDecodeTimestamp: number
 
@@ -105,6 +105,31 @@ export default class AudioDecodePipeline extends Pipeline {
     })
   }
 
+  private createWasmcodecDecoder(task: SelfTask, resource: WebAssemblyResource) {
+    return new WasmAudioDecoder({
+      resource: resource,
+      onError: (error) => {
+        logger.error(`audio decode error, taskId: ${task.taskId}, error: ${error}`)
+        if (task.openReject) {
+          task.openReject(errorType.CODEC_NOT_SUPPORT)
+          task.openReject = null
+        }
+      },
+      onReceiveFrame(frame) {
+        task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
+        task.stats.audioFrameDecodeCount++
+        if (task.lastDecodeTimestamp) {
+          task.stats.audioFrameDecodeIntervalMax = Math.max(
+            getTimestamp() - task.lastDecodeTimestamp,
+            task.stats.audioFrameDecodeIntervalMax
+          )
+        }
+        task.lastDecodeTimestamp = getTimestamp()
+      },
+      avframePool: task.avframePool
+    })
+  }
+
   private createTask(options: AudioDecodeTaskOptions): number {
 
     assert(options.leftPort)
@@ -125,33 +150,12 @@ export default class AudioDecodePipeline extends Pipeline {
       lastDecodeTimestamp: 0,
 
       avframePool,
-      avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex)
+      avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex),
+      openReject: null
     }
 
     if (options.resource) {
-      task.decoder = new WasmAudioDecoder({
-        resource: options.resource,
-        onError: (error) => {
-          logger.error(`audio decode error, taskId: ${options.taskId}, error: ${error}`)
-          const task = this.tasks.get(options.taskId)
-          if (task.openReject) {
-            task.openReject(errorType.CODEC_NOT_SUPPORT)
-            task.openReject = null
-          }
-        },
-        onReceiveFrame(frame) {
-          frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
-          task.stats.audioFrameDecodeCount++
-          if (task.lastDecodeTimestamp) {
-            task.stats.audioFrameDecodeIntervalMax = Math.max(
-              getTimestamp() - task.lastDecodeTimestamp,
-              task.stats.audioFrameDecodeIntervalMax
-            )
-          }
-          task.lastDecodeTimestamp = getTimestamp()
-        },
-        avframePool: avframePool
-      })
+      task.decoder = this.createWasmcodecDecoder(task, options.resource)
     }
     else {
       task.decoder = this.createWebcodecDecoder(task)
@@ -233,6 +237,37 @@ export default class AudioDecodePipeline extends Pipeline {
         }
         catch (error) {
           logger.error(`open audio decoder failed, error: ${error}`)
+          resolve(errorType.CODEC_NOT_SUPPORT)
+          return
+        }
+        resolve(0)
+      })
+    }
+    logger.fatal('task not found')
+  }
+
+  public async reopenDecoder(taskId: string, parameters: pointer<AVCodecParameters>, resource?: WebAssemblyResource) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      let decoder: WasmAudioDecoder | WebAudioDecoder
+      if (resource) {
+        decoder = this.createWasmcodecDecoder(task, resource)
+      }
+      else {
+        decoder = this.createWebcodecDecoder(task)
+      }
+      return new Promise<number>(async (resolve, reject) => {
+        task.openReject = resolve
+        try {
+          await decoder.open(parameters)
+          task.parameters = parameters
+          task.decoder.close()
+          task.decoder = decoder
+
+          logger.debug(`reopen audio decoder, taskId: ${task.taskId}`)
+        }
+        catch (error) {
+          logger.error(`reopen audio decoder failed, error: ${error}`)
           resolve(errorType.CODEC_NOT_SUPPORT)
           return
         }

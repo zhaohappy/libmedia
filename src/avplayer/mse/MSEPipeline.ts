@@ -50,7 +50,6 @@ import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
 import SeekableWriteBufferQueue from 'common/io/SeekableWriteBufferQueue'
 import { AVFormat } from 'avformat/avformat'
-import * as is from 'common/util/is'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
 import { mapUint8Array, memcpy } from 'cheap/std/memory'
 import { avFree, avMalloc } from 'avutil/util/mem'
@@ -62,6 +61,9 @@ import * as bigint from 'common/util/bigint'
 import mktag from 'avformat/function/mktag'
 import getMediaSource from '../function/getMediaSource'
 import { JitterBuffer } from 'avpipeline/struct/jitter'
+import * as intread from 'avutil/util/intread'
+import * as h264 from 'avformat/codecs/h264'
+import * as hevc from 'avformat/codecs/hevc'
 
 const BUFFER_MIN = 0.5
 const BUFFER_MAX = 1
@@ -329,7 +331,7 @@ export default class MSEPipeline extends Pipeline {
     }
   }
 
-  private createSourceBuffer(mediaSource: MediaSource, codecpar: pointer<AVCodecParameters>) {
+  private getMimeType(codecpar: pointer<AVCodecParameters>) {
     let mimeType = ''
 
     if (codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
@@ -342,7 +344,11 @@ export default class MSEPipeline extends Pipeline {
     if (!mimeType) {
       logger.fatal('invalid stream')
     }
-    return mediaSource.addSourceBuffer(mimeType)
+    return mimeType
+  }
+
+  private createSourceBuffer(mediaSource: MediaSource, codecpar: pointer<AVCodecParameters>) {
+    return mediaSource.addSourceBuffer(this.getMimeType(codecpar))
   }
 
   // TODO avpacket extradata 混入码流
@@ -395,7 +401,26 @@ export default class MSEPipeline extends Pipeline {
     // 对于没有 B 帧的编码格式可以让 pts 等于 dts，当有 B 帧时可以根据帧类型得到一个最短 pts 递增序列来纠正 pts
     // 直播我们就不去纠正了，一般这种错误出现在老旧视频文件里面，直播不太可能出现，真出现了那也是直播流服务器的问题，应该去修改服务器的问题
     else if (resource.type === 'video' && !task.isLive) {
-      if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
+      if ((avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+        && (
+          (task.video.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+            && h264.isIDR(
+              avpacket,
+              task.video.codecpar.extradata
+                ? (intread.r8(task.video.codecpar.extradata + 4) & 0x03 + 1)
+                : 4
+            )
+          )
+          || (task.video.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+              && hevc.isIDR(
+                  avpacket,
+                  task.video.codecpar.extradata
+                    ? (intread.r8(task.video.codecpar.extradata + 21) & 0x03 + 1)
+                    : 4
+                )
+              )
+          )
+      ) {
         if (avpacket.pts < pullQueue.lastPTS) {
           logger.warn(`got packet with pts ${avpacket.pts}, which is earlier then the last packet(${pullQueue.lastPTS}), try to fix it!`)
           avpacket.pts = pullQueue.lastPTS + (avpacket.dts - pullQueue.lastDTS)
@@ -873,6 +898,69 @@ export default class MSEPipeline extends Pipeline {
     }
   }
 
+  public async reAddStream(
+    taskId: string,
+    streamIndex: int32,
+    codecpar: pointer<AVCodecParameters>,
+    timeBase: pointer<Rational>,
+    startPTS: int64
+  ) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      const resource = codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO ? task.audio : task.video
+      if (resource) {
+        resource.track.reset()
+        resource.bufferQueue.flush()
+        const oformat = new OMovFormat({
+          fragmentMode: FragmentMode.FRAME,
+          fragment: true,
+          fastOpen: true,
+          movMode: MovMode.MP4,
+          defaultBaseIsMoof: true
+        })
+        resource.oformatContext.oformat = oformat
+
+        resource.codecpar = codecpar
+        resource.streamIndex = streamIndex
+        resource.startPTS = startPTS
+
+        const stream = resource.oformatContext.streams[0]
+        copyCodecParameters(addressof(stream.codecpar), codecpar)
+
+        if (codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3) {
+          stream.codecpar.codecTag = mktag('.mp3')
+        }
+
+        const useSampleRateTimeBase = codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
+          && codecpar.frameSize
+          && !task.isLive
+          && avQ2D2(timeBase) > avQ2D({ num: 1, den: codecpar.sampleRate })
+
+        // 点播 frameSize 有并且时间基精度小于采样率精度则使用 sampleRate 作为时间基
+        // 避免一些 mp4 ts 转为 flv 因为时间基精度损失导致的 pts 抖动
+        // 当 pts 抖动时 mse 播放会有颤音
+        if (useSampleRateTimeBase) {
+          stream.timeBase.den = codecpar.sampleRate
+          stream.timeBase.num = 1
+        }
+        else {
+          stream.timeBase.den = timeBase.den
+          stream.timeBase.num = timeBase.num
+        }
+        resource.track.changeMimeType(this.getMimeType(addressof(stream.codecpar)))
+        if (!resource.enableRawMpeg) {
+          mux.open(resource.oformatContext, {
+            paddingZero: false
+          })
+          mux.writeHeader(resource.oformatContext)
+        }
+      }
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+
   public async pause(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
@@ -1237,6 +1325,7 @@ export default class MSEPipeline extends Pipeline {
       task.seeking = false
       return seekTime
     }
+    return 0
   }
 
   public async setPlayRate(taskId: string, rate: double) {

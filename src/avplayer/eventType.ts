@@ -41,6 +41,10 @@ export const SEEKING = 'seeking'
 
 export const SEEKED = 'seeked'
 
+export const CHANGING = 'changing'
+
+export const CHANGED = 'changed'
+
 export const TIMEOUT = 'timeout'
 
 export const ERROR = 'error'

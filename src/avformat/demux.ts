@@ -527,7 +527,7 @@ export async function readAVPacket(formatContext: AVIFormatContext, avpacket: po
 @deasync
 export async function seek(formatContext: AVIFormatContext, streamIndex: number, timestamp: int64, flags: int32): Promise<int64> {
 
-  let stream = formatContext.streams[streamIndex]
+  let stream = formatContext.streams.find((stream) => stream.index === streamIndex)
 
   if (!stream) {
     stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)

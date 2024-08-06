@@ -48,6 +48,7 @@ import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import getTimestamp from 'common/function/getTimestamp'
 import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 import support from 'common/util/support'
+import isPointer from 'cheap/std/function/isPointer'
 
 export interface VideoDecodeTaskOptions extends TaskOptions {
   resource: WebAssemblyResource
@@ -56,6 +57,7 @@ export interface VideoDecodeTaskOptions extends TaskOptions {
   avpacketListMutex: pointer<Mutex>
   avframeList: pointer<List<pointer<AVFrameRef>>>
   avframeListMutex: pointer<Mutex>
+  preferWebCodecs?: boolean
 }
 
 type SelfTask = VideoDecodeTaskOptions & {
@@ -145,6 +147,32 @@ export default class VideoDecodePipeline extends Pipeline {
     })
   }
 
+  private createWasmcodecDecoder(task: SelfTask, resource: WebAssemblyResource) {
+    return new WasmVideoDecoder({
+      resource: resource,
+      onError: (error) => {
+        logger.error(`video decode error, taskId: ${task.taskId}, error: ${error}`)
+        if (task.openReject) {
+          task.openReject(errorType.CODEC_NOT_SUPPORT)
+          task.openReject = null
+        }
+      },
+      onReceiveFrame(frame) {
+        task.firstDecoded = true
+        task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
+        task.stats.videoFrameDecodeCount++
+        if (task.lastDecodeTimestamp) {
+          task.stats.videoFrameDecodeIntervalMax = Math.max(
+            getTimestamp() - task.lastDecodeTimestamp,
+            task.stats.videoFrameDecodeIntervalMax
+          )
+        }
+        task.lastDecodeTimestamp = getTimestamp()
+      },
+      avframePool: task.avframePool
+    })
+  }
+
   private createTask(options: VideoDecodeTaskOptions): number {
 
     assert(options.leftPort)
@@ -178,31 +206,8 @@ export default class VideoDecodePipeline extends Pipeline {
     }
 
     task.softwareDecoder = options.resource
-      ? new WasmVideoDecoder({
-        resource: options.resource,
-        onError: (error) => {
-          logger.error(`video decode error, taskId: ${options.taskId}, error: ${error}`)
-          const task = this.tasks.get(options.taskId)
-          if (task.openReject) {
-            task.openReject(errorType.CODEC_NOT_SUPPORT)
-            task.openReject = null
-          }
-        },
-        onReceiveFrame(frame) {
-          task.firstDecoded = true
-          frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
-          task.stats.videoFrameDecodeCount++
-          if (task.lastDecodeTimestamp) {
-            task.stats.videoFrameDecodeIntervalMax = Math.max(
-              getTimestamp() - task.lastDecodeTimestamp,
-              task.stats.videoFrameDecodeIntervalMax
-            )
-          }
-          task.lastDecodeTimestamp = getTimestamp()
-        },
-        avframePool: avframePool
-      })
-      : (support.videoDecoder ? this.createWebcodecDecoder(task, false) : null)
+        ? this.createWasmcodecDecoder(task, task.resource)
+        : (support.videoDecoder ? this.createWebcodecDecoder(task, false) : null)
 
     if (!task.softwareDecoder) {
       logger.error('software decoder not support')
@@ -222,14 +227,14 @@ export default class VideoDecodePipeline extends Pipeline {
         case 'pull': {
           if (frameCaches.length) {
             const frame = frameCaches.shift()
-            rightIPCPort.reply(request, frame, null, is.number(frame) ? null : [frame])
+            rightIPCPort.reply(request, frame, null, (isPointer(frame) || is.number(frame)) ? null : [frame])
             break
           }
           else if (!task.inputEnd) {
             while (true) {
               if (frameCaches.length) {
                 const frame = frameCaches.shift()
-                rightIPCPort.reply(request, frame, null, is.number(frame) ? null : [frame])
+                rightIPCPort.reply(request, frame, null, (isPointer(frame) || is.number(frame)) ? null : [frame])
                 break
               }
 
@@ -400,9 +405,88 @@ export default class VideoDecodePipeline extends Pipeline {
     }
   }
 
+  public async reopenDecoder(taskId: string, parameters: pointer<AVCodecParameters>, resource?: WebAssemblyResource) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      let softwareDecoder: WasmVideoDecoder | WebVideoDecoder
+
+      if (task.preferWebCodecs && support.videoDecoder && WebVideoDecoder.isSupported(parameters, false)) {
+        softwareDecoder = this.createWebcodecDecoder(task, false)
+      }
+      else {
+        softwareDecoder = resource
+          ? this.createWasmcodecDecoder(task, resource)
+          : (support.videoDecoder ? this.createWebcodecDecoder(task, false) : null)
+      }
+
+      let hardwareDecoder: WebVideoDecoder = (support.videoDecoder && task.enableHardware)
+        ? this.createWebcodecDecoder(task, true)
+        : null
+      return new Promise<number>(async (resolve, reject) => {
+        task.openReject = resolve
+        if (task.softwareDecoder) {
+          task.softwareDecoder.close()
+        }
+        if (task.hardwareDecoder) {
+          task.hardwareDecoder.close()
+        }
+        task.softwareDecoder = softwareDecoder
+        task.hardwareDecoder = hardwareDecoder
+        task.targetDecoder = task.hardwareDecoder || task.softwareDecoder
+        task.hardwareRetryCount = 0
+
+        if (task.hardwareDecoder) {
+          try {
+            await task.hardwareDecoder.open(parameters)
+
+            logger.debug(`reopen video hardware decoder, taskId: ${task.taskId}`)
+          }
+          catch (error) {
+            logger.error(`cannot reopen hardware decoder, ${error}, taskId: ${task.taskId}`)
+            task.hardwareDecoder.close()
+            task.hardwareDecoder = null
+            task.targetDecoder = task.softwareDecoder
+          }
+        }
+
+        task.parameters = parameters
+
+        if (task.targetDecoder === task.softwareDecoder) {
+          try {
+            await this.openSoftwareDecoder(task)
+
+            logger.debug(`reopen video soft decoder, taskId: ${task.taskId}`)
+          }
+          catch (error) {
+            logger.error(`reopen video software decoder failed, error: ${error}`)
+            if (!task.hardwareDecoder) {
+              resolve(errorType.CODEC_NOT_SUPPORT)
+              return
+            }
+          }
+        }
+        resolve(0)
+      })
+    }
+    logger.fatal('task not found')
+  }
+
   public async open(taskId: string, parameters: pointer<AVCodecParameters>) {
     const task = this.tasks.get(taskId)
     if (task) {
+      if (task.preferWebCodecs
+        && support.videoDecoder
+        && WebVideoDecoder.isSupported(parameters, false)
+        && task.softwareDecoder instanceof WasmVideoDecoder
+      ) {
+        task.softwareDecoder.close()
+        const softwareDecoder = this.createWebcodecDecoder(task, false)
+        if (task.softwareDecoder === task.targetDecoder) {
+          task.targetDecoder = softwareDecoder
+        }
+        task.softwareDecoder = softwareDecoder
+      }
+
       return new Promise<number>(async (resolve, reject) => {
         task.openReject = resolve
         if (task.hardwareDecoder) {
@@ -496,7 +580,7 @@ export default class VideoDecodePipeline extends Pipeline {
         task.targetDecoder = task.hardwareDecoder
       }
       array.each(task.frameCaches, (frame) => {
-        if (is.number(frame)) {
+        if (isPointer(frame)) {
           task.avframePool.release(frame)
         }
         else {
@@ -531,7 +615,7 @@ export default class VideoDecodePipeline extends Pipeline {
         task.hardwareDecoder.close()
       }
       task.frameCaches.forEach((frame) => {
-        if (is.number(frame)) {
+        if (isPointer(frame)) {
           task.avframePool.release(frame)
         }
         else {

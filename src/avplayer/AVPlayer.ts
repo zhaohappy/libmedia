@@ -77,11 +77,12 @@ import JitterBufferController from './JitterBufferController'
 import { JitterBuffer } from 'avpipeline/struct/jitter'
 import getAudioCodec from 'avcodec/function/getAudioCodec'
 import { IOFlags } from 'common/io/flags'
-import { Ext2Format, Ext2IOLoader } from 'avutil/stringEnum'
+import { Ext2Format, Ext2IOLoader, mediaType2AVMediaType } from 'avutil/stringEnum'
 import { AVDisposition, AVStreamInterface } from 'avformat/AVStream'
 import { AVFormatContextInterface } from 'avformat/AVFormatContext'
-import dump, { dumpCodecName } from 'avformat/dump'
+import dump, { dumpCodecName, dumpKey } from 'avformat/dump'
 import * as array from 'common/util/array'
+import { isHdr } from 'avutil/function/isHdr'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -98,7 +99,8 @@ export interface AVPlayerOptions {
   loop?: boolean
   jitterBufferMax?: float
   jitterBufferMin?: float
-  lowLatency?: boolean
+  lowLatency?: boolean,
+  findBestStream?: (streams: AVStreamInterface[], mediaType: AVMediaType) => AVStreamInterface
 }
 
 const SupportedCodecs = [
@@ -147,6 +149,7 @@ export const enum AVPlayerStatus {
   PLAYED,
   PAUSED,
   SEEKING,
+  CHANGING,
   DESTROYING,
   DESTROYED
 }
@@ -218,6 +221,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private statsController: StatsController
   private jitterBufferController: JitterBufferController
 
+  public currentTime: int64
+
+  private selectedVideoStream: AVStreamInterface
+  private selectedAudioStream: AVStreamInterface
+  private selectedSubtitleStream: AVStreamInterface
+
   constructor(options: AVPlayerOptions) {
     super(true)
     this.options = object.extend({}, defaultAVPlayerOptions, options)
@@ -230,6 +239,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.renderRotate = 0
     this.flipHorizontal = false
     this.flipVertical = false
+    this.currentTime = 0n
 
     this.stats = make(Stats)
     this.statsController = new StatsController(addressof(this.stats))
@@ -249,6 +259,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   private findBestStream(streams: AVStreamInterface[], mediaType: AVMediaType) {
+    if (this.options.findBestStream) {
+      return this.options.findBestStream(streams, mediaType)
+    }
     const ss = streams.filter((stream) => {
       return stream.codecpar.codecType === mediaType
     })
@@ -376,7 +389,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       const time = element.currentTime
       if (Math.abs(time - lastNotifyTime) >= 1) {
         if (this.status === AVPlayerStatus.PLAYED) {
-          this.fire(eventType.TIME, [static_cast<int64>(time * 1000)])
+          this.currentTime = static_cast<int64>(time * 1000)
+          this.fire(eventType.TIME, [this.currentTime])
           AVPlayer.MSEThread.setCurrentTime(this.taskId, time)
         }
         lastNotifyTime = time
@@ -847,6 +861,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     if (defined(ENABLE_MSE) && this.useMSE) {
       await AVPlayer.startMSEPipeline()
+
+      const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
+      const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
+
+      let hasVideo = false
+
       // 注册一个 mse 处理任务
       await AVPlayer.MSEThread.registerTask.transfer(this.controller.getMuxerRenderControlPort())
         .invoke({
@@ -861,13 +881,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           jitterBuffer: addressof(this.GlobalData.jitterBuffer)
         })
 
-      let hasVideo = false
-
-      const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
-      const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
-
       if (videoStream && options.video) {
         hasVideo = true
+        this.selectedVideoStream = videoStream
         this.videoEnded = false
         this.demuxer2VideoDecoderChannel = createMessageChannel()
         await AVPlayer.DemuxerThread.connectStreamTask
@@ -884,6 +900,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           )
       }
       if (audioStream && options.audio) {
+        this.selectedAudioStream = audioStream
         this.audioEnded = false
         this.demuxer2AudioDecoderChannel = createMessageChannel()
         await AVPlayer.DemuxerThread.connectStreamTask
@@ -928,6 +945,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
 
       if (videoStream && options.video) {
+        this.selectedVideoStream = videoStream
         await this.createVideoDecoderThread()
         await AVPlayer.startVideoRenderPipeline()
 
@@ -964,7 +982,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             avpacketList: addressof(this.GlobalData.avpacketList),
             avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
             avframeList: addressof(this.GlobalData.avframeList),
-            avframeListMutex: addressof(this.GlobalData.avframeListMutex)
+            avframeListMutex: addressof(this.GlobalData.avframeListMutex),
+            preferWebCodecs: !isHdr(videoStream.codecpar)
           })
 
         let ret = await this.VideoDecoderThread.open(this.taskId, videoStream.codecpar)
@@ -977,6 +996,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           .invoke(this.subTaskId || this.taskId, videoStream.index, this.demuxer2VideoDecoderChannel.port1)
       }
       if (audioStream && options.audio) {
+        this.selectedAudioStream = audioStream
         await AVPlayer.startAudioPipeline()
 
         if (AVPlayer.audioContext.state === 'suspended') {
@@ -1117,7 +1137,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             controlPort: this.controller.getAudioRenderControlPort(),
             playFormat: AVSampleFormat.AV_SAMPLE_FMT_FLTP,
             playSampleRate: AVPlayer.audioContext.sampleRate,
-            playChannels: stream.codecpar.chLayout.nbChannels,
+            playChannels: Math.max(stream.codecpar.chLayout.nbChannels, Math.min(AVPlayer.audioContext.destination.channelCount, 2)),
             resamplerResource,
             stretchpitcherResource,
             stats: addressof(this.stats),
@@ -1303,6 +1323,107 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  private async doSeek(timestamp: int64, streamIndex: int32, options: {
+    onBeforeSeek?: Function
+    notResetAudioDecoder?: boolean
+    notResetVideoDecoder?: boolean
+  } = {}) {
+
+    if (defined(ENABLE_MSE) && this.useMSE) {
+      await AVPlayer.MSEThread.beforeSeek(this.taskId)
+    }
+    else {
+      await Promise.all([
+        AVPlayer.AudioRenderThread?.beforeSeek(this.taskId),
+        AVPlayer.VideoRenderThread?.beforeSeek(this.taskId)
+      ])
+    }
+
+    if (options.onBeforeSeek) {
+      await options.onBeforeSeek()
+    }
+
+    let seekedTimestamp = -1n
+
+    if (defined(ENABLE_PROTOCOL_HLS) && this.isHls()) {
+      seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.TIMESTAMP)
+    }
+    else if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
+      seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.TIMESTAMP)
+      if (this.subTaskId) {
+        await AVPlayer.DemuxerThread.seek(this.subTaskId, timestamp, AVSeekFlags.TIMESTAMP)
+      }
+    }
+    else {
+      seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.FRAME, streamIndex)
+    }
+
+    if (seekedTimestamp >= 0n) {
+      logger.debug(`seeked to packet timestamp: ${seekedTimestamp}, taskId: ${this.taskId}`)
+    }
+    else {
+      logger.error(`demuxer seek failed, code: ${seekedTimestamp}, taskId: ${this.taskId}`)
+    }
+
+    if (defined(ENABLE_MSE) && this.useMSE) {
+      if (seekedTimestamp >= 0n) {
+        const time = await AVPlayer.MSEThread.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp)
+        if (this.video) {
+          this.video.currentTime = time
+        }
+        else if (this.audio) {
+          this.audio.currentTime = time
+        }
+      }
+      else {
+        await AVPlayer.MSEThread.afterSeek(this.taskId, NOPTS_VALUE_BIGINT)
+      }
+    }
+    else {
+      let maxQueueLength = 20
+      this.formatContext.streams.forEach((stream) => {
+        if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+          maxQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate)), maxQueueLength)
+        }
+      })
+      if (seekedTimestamp >= 0n) {
+        await Promise.all([
+          !options.notResetAudioDecoder && AVPlayer.AudioDecoderThread?.resetTask(this.taskId),
+          !options.notResetVideoDecoder && this.VideoDecoderThread?.resetTask(this.taskId)
+        ])
+        await Promise.all([
+          AVPlayer.AudioRenderThread?.syncSeekTime(
+            this.taskId,
+            seekedTimestamp > timestamp ? seekedTimestamp : timestamp,
+            maxQueueLength
+          ),
+          AVPlayer.VideoRenderThread?.syncSeekTime(
+            this.taskId,
+            seekedTimestamp > timestamp ? seekedTimestamp : timestamp,
+            maxQueueLength
+          ),
+        ])
+        await Promise.all([
+          AVPlayer.AudioRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp),
+          AVPlayer.VideoRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp),
+        ])
+      }
+      else {
+        await Promise.all([
+          AVPlayer.AudioRenderThread?.syncSeekTime(this.taskId, NOPTS_VALUE_BIGINT, maxQueueLength),
+          AVPlayer.VideoRenderThread?.syncSeekTime(this.taskId, NOPTS_VALUE_BIGINT, maxQueueLength),
+        ])
+        await Promise.all([
+          AVPlayer.AudioRenderThread?.afterSeek(this.taskId, NOPTS_VALUE_BIGINT),
+          AVPlayer.VideoRenderThread?.afterSeek(this.taskId, NOPTS_VALUE_BIGINT),
+        ])
+      }
+      if (this.jitterBufferController) {
+        this.jitterBufferController.reset()
+      }
+    }
+  }
+
   /**
    * 跳转到指定时间戳位置播放（只支持点播）
    * 某些文件可能不会 seek 成功
@@ -1329,100 +1450,19 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       this.fire(eventType.SEEKING)
 
-      const timestampBigInt = static_cast<int64>(timestamp)
-      if (defined(ENABLE_MSE) && this.useMSE) {
-        await AVPlayer.MSEThread.beforeSeek(this.taskId)
+      let streamIndex = -1
+
+      if (this.selectedVideoStream) {
+        streamIndex = this.selectedVideoStream.index
       }
-      else {
-        await Promise.all([
-          AVPlayer.AudioRenderThread?.beforeSeek(this.taskId),
-          AVPlayer.VideoRenderThread?.beforeSeek(this.taskId)
-        ])
+      else if (this.selectedAudioStream) {
+        streamIndex = this.selectedAudioStream.index
       }
 
-      let seekedTimestamp = -1n
+      await this.doSeek(static_cast<int64>(timestamp), streamIndex)
 
-      if (defined(ENABLE_PROTOCOL_HLS) && this.isHls()) {
-        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBigInt, AVSeekFlags.TIMESTAMP)
-      }
-      else if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
-        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBigInt, AVSeekFlags.TIMESTAMP)
-        if (this.subTaskId) {
-          await AVPlayer.DemuxerThread.seek(this.subTaskId, timestampBigInt, AVSeekFlags.TIMESTAMP)
-        }
-      }
-      else {
-        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestampBigInt, AVSeekFlags.FRAME)
-      }
-
-      if (seekedTimestamp >= 0n) {
-        logger.debug(`seeked to packet timestamp: ${seekedTimestamp}, taskId: ${this.taskId}`)
-      }
-      else {
-        logger.error(`demuxer seek failed, code: ${seekedTimestamp}, taskId: ${this.taskId}`)
-      }
-
-      if (defined(ENABLE_MSE) && this.useMSE) {
-        if (seekedTimestamp >= 0n) {
-          const time = await AVPlayer.MSEThread.afterSeek(this.taskId, seekedTimestamp > timestampBigInt ? seekedTimestamp : timestampBigInt)
-          if (this.video) {
-            this.video.currentTime = time
-          }
-          else if (this.audio) {
-            this.audio.currentTime = time
-          }
-        }
-        else {
-          await AVPlayer.MSEThread.afterSeek(this.taskId, NOPTS_VALUE_BIGINT)
-        }
-        this.status = this.lastStatus
-
-        this.fire(eventType.SEEKED)
-      }
-      else {
-        let maxQueueLength = 20
-        this.formatContext.streams.forEach((stream) => {
-          if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-            maxQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate)), maxQueueLength)
-          }
-        })
-        if (seekedTimestamp >= 0n) {
-          await Promise.all([
-            AVPlayer.AudioDecoderThread?.resetTask(this.taskId),
-            this.VideoDecoderThread?.resetTask(this.taskId)
-          ])
-          await Promise.all([
-            AVPlayer.AudioRenderThread?.syncSeekTime(
-              this.taskId,
-              seekedTimestamp > timestampBigInt ? seekedTimestamp : timestampBigInt,
-              maxQueueLength
-            ),
-            AVPlayer.VideoRenderThread?.syncSeekTime(
-              this.taskId,
-              seekedTimestamp > timestampBigInt ? seekedTimestamp : timestampBigInt,
-              maxQueueLength
-            ),
-          ])
-          await Promise.all([
-            AVPlayer.AudioRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestampBigInt ? seekedTimestamp : timestampBigInt),
-            AVPlayer.VideoRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestampBigInt ? seekedTimestamp : timestampBigInt),
-          ])
-        }
-        else {
-          await Promise.all([
-            AVPlayer.AudioRenderThread?.syncSeekTime(this.taskId, NOPTS_VALUE_BIGINT, maxQueueLength),
-            AVPlayer.VideoRenderThread?.syncSeekTime(this.taskId, NOPTS_VALUE_BIGINT, maxQueueLength),
-          ])
-          await Promise.all([
-            AVPlayer.AudioRenderThread?.afterSeek(this.taskId, NOPTS_VALUE_BIGINT),
-            AVPlayer.VideoRenderThread?.afterSeek(this.taskId, NOPTS_VALUE_BIGINT),
-          ])
-        }
-        this.status = this.lastStatus
-        if (this.jitterBufferController) {
-          this.jitterBufferController.reset()
-        }
-      }
+      this.status = this.lastStatus
+      this.fire(eventType.SEEKED)
     }
     else {
       logger.warn(`seek can only used in vod, taskId: ${this.taskId}`)
@@ -1430,7 +1470,38 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   public getStreams() {
-    return this.formatContext.streams
+    return this.formatContext.streams.map((stream) => {
+      return {
+        ...stream,
+        codecparProxy: accessof(stream.codecpar),
+        mediaType: dumpKey(mediaType2AVMediaType, stream.codecpar.codecType)
+      }
+    })
+  }
+
+  public getSelectedVideoStreamIndex() {
+    if (this.selectedVideoStream) {
+      return this.selectedVideoStream.index
+    }
+    return -1
+  }
+
+  public getSelectedAudioStreamIndex() {
+    if (this.selectedAudioStream) {
+      return this.selectedAudioStream.index
+    }
+    return -1
+  }
+
+  public getSelectedSubtitleStreamIndex() {
+    if (this.selectedSubtitleStream) {
+      return this.selectedSubtitleStream.index
+    }
+    return -1
+  }
+
+  public getChapters() {
+    return this.formatContext.chapters
   }
 
   /**
@@ -1779,15 +1850,143 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   public async selectVideo(index: number) {
-    return AVPlayer.IOThread?.selectVideo(this.taskId, index)
+    if (this.isHls() || this.isDash()) {
+      logger.info(`call IOThread selectVideo, index: ${index}, taskId: ${this.taskId}`)
+      return AVPlayer.IOThread?.selectVideo(this.taskId, index)
+    }
+    else {
+      const stream = this.formatContext.streams.find((stream) => stream.index === index)
+      if (this.selectedVideoStream && stream && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO && stream !== this.selectedVideoStream) {
+
+        if (this.status === AVPlayerStatus.CHANGING) {
+          logger.warn(`player is changing now, taskId: ${this.taskId}`)
+          return
+        }
+        this.lastStatus = this.status
+        this.status = AVPlayerStatus.CHANGING
+        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.index, this.selectedVideoStream.index])
+
+        if (this.useMSE) {
+          await this.doSeek(this.currentTime, stream.index, {
+            onBeforeSeek: async () => {
+              await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedVideoStream.index)
+              await AVPlayer.MSEThread.reAddStream(this.taskId, stream.index, stream.codecpar, stream.timeBase, stream.startTime)
+            }
+          })
+        }
+        else {
+          await this.doSeek(this.currentTime, stream.index, {
+            onBeforeSeek: async () => {
+              await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedVideoStream.index)
+              await this.VideoDecoderThread.reopenDecoder(
+                this.taskId,
+                stream.codecpar,
+                await this.getResource('decoder', stream.codecpar.codecId, AVMediaType.AVMEDIA_TYPE_VIDEO)
+              )
+            }
+          })
+        }
+
+        logger.info(`changed selected video stream, from ${this.selectedVideoStream.index} to ${stream.index}, taskId: ${this.taskId}`)
+        this.selectedVideoStream = stream
+
+        this.status = this.lastStatus
+        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.index, this.selectedVideoStream.index])
+      }
+      else {
+        logger.error(`call selectVideo failed, index: ${index}, taskId: ${this.taskId}`)
+      }
+    }
   }
 
   public async selectAudio(index: number) {
-    return AVPlayer.IOThread?.selectAudio(this.taskId, index)
+    if (this.isHls() || this.isDash()) {
+      logger.info(`call IOThread selectAudio, index: ${index}, taskId: ${this.taskId}`)
+      return AVPlayer.IOThread?.selectAudio(this.taskId, index)
+    }
+    else {
+      const stream = this.formatContext.streams.find((stream) => stream.index === index)
+      if (this.selectedAudioStream && stream && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO && stream !== this.selectedAudioStream) {
+        if (this.status === AVPlayerStatus.CHANGING) {
+          logger.warn(`player is changing now, taskId: ${this.taskId}`)
+          return
+        }
+        this.lastStatus = this.status
+        this.status = AVPlayerStatus.CHANGING
+        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.index, this.selectedAudioStream.index])
+
+        if (stream.codecpar.codecId !== this.selectedAudioStream.codecpar.codecId
+          || this.useMSE
+            && (stream.codecpar.sampleRate !== this.selectedAudioStream.codecpar.sampleRate
+            || stream.codecpar.chLayout.nbChannels !== this.selectedAudioStream.codecpar.chLayout.nbChannels)
+        ) {
+          if (this.useMSE) {
+            await this.doSeek(this.currentTime, stream.index, {
+              onBeforeSeek: async () => {
+                await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedAudioStream.index)
+                await AVPlayer.MSEThread.reAddStream(this.taskId, stream.index, stream.codecpar, stream.timeBase, stream.startTime)
+              }
+            })
+          }
+          else {
+            await this.doSeek(this.currentTime, stream.index, {
+              onBeforeSeek: async () => {
+                await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedAudioStream.index)
+                await AVPlayer.AudioDecoderThread.reopenDecoder(
+                  this.taskId,
+                  stream.codecpar,
+                  await this.getResource('decoder', stream.codecpar.codecId, AVMediaType.AVMEDIA_TYPE_AUDIO)
+                )
+              }
+            })
+          }
+        }
+        else {
+          await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedAudioStream.index, false)
+        }
+
+        logger.info(`changed selected audio stream, from ${this.selectedAudioStream.index} to ${stream.index}, taskId: ${this.taskId}`)
+
+        this.selectedAudioStream = stream
+
+        this.status = this.lastStatus
+        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.index, this.selectedAudioStream.index])
+        
+      }
+      else {
+        logger.error(`call selectAudio failed, index: ${index}, taskId: ${this.taskId}`)
+      }
+    }
   }
 
   public async selectSubtitle(index: number) {
-    return AVPlayer.IOThread?.selectSubtitle(this.taskId, index)
+    if (this.isHls() || this.isDash()) {
+      logger.info(`call IOThread selectSubtitle, index: ${index}, taskId: ${this.taskId}`)
+      return AVPlayer.IOThread?.selectSubtitle(this.taskId, index)
+    }
+    else {
+      const stream = this.formatContext.streams.find((stream) => stream.index === index)
+      if (this.selectedSubtitleStream && stream && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE && stream !== this.selectedSubtitleStream) {
+        if (this.status === AVPlayerStatus.CHANGING) {
+          logger.warn(`player is changing now, taskId: ${this.taskId}`)
+          return
+        }
+        this.lastStatus = this.status
+        this.status = AVPlayerStatus.CHANGING
+        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.index, this.selectedSubtitleStream.index])
+
+        // TODO change subtitle
+        logger.info(`changed selected subtitle stream, from ${this.selectedSubtitleStream.index} to ${stream.index}, taskId: ${this.taskId}`)
+
+        this.selectedSubtitleStream = stream
+
+        this.status = this.lastStatus
+        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.index, this.selectedSubtitleStream.index])
+      }
+      else {
+        logger.error(`call selectSubtitle failed, index: ${index}, taskId: ${this.taskId}`)
+      }
+    }
   }
 
   /**
@@ -1937,6 +2136,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   public onTimeUpdate(pts: int64): void {
+    this.currentTime = pts
     this.fire(eventType.TIME, [pts])
   }
 
