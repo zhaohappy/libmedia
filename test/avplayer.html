@@ -688,7 +688,7 @@
 
             if (videoList.list.length > 1) {
               if (videoChangeComponent) {
-                videoChangeComponent.destroy()
+                videoChangeComponent.$destroy()
               }
               videoChangeComponent = new Vue({
                 el: '#video-change',
@@ -721,7 +721,7 @@
 
             if (audioList.list.length > 1) {
               if (audioChangeComponent) {
-                audioChangeComponent.destroy()
+                audioChangeComponent.$destroy()
               }
               audioChangeComponent = new Vue({
                 el: '#audio-change',
@@ -764,7 +764,7 @@
 
                 if (audioStreams.length > 1) {
                   if (audioChangeComponent) {
-                    audioChangeComponent.destroy()
+                    audioChangeComponent.$destroy()
                   }
                   audioChangeComponent = new Vue({
                     el: '#audio-change',
@@ -794,7 +794,7 @@
 
                 if (videoStreams.length > 1) {
                   if (videoChangeComponent) {
-                    videoChangeComponent.destroy()
+                    videoChangeComponent.$destroy()
                   }
                   videoChangeComponent = new Vue({
                     el: '#video-change',
