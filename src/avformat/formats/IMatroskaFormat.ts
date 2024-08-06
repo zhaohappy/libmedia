@@ -148,6 +148,7 @@ export default class IMatroskaFormat extends IFormat {
         if (track.name) {
           stream.metadata['name'] = track.name
         }
+        track.currentDts = 0n
 
         if (track.audio) {
           if (track.codecName === 'A_PCM/FLOAT/IEEE') {
@@ -660,8 +661,12 @@ export default class IMatroskaFormat extends IFormat {
 
       if (isKey) {
         avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
-        if (track.gopCount) {
+        if (track.gopCount > 1) {
           track.dtsDelta = (track.maxPts - track.minPts) / static_cast<int64>(track.gopCount)
+        }
+        else if (!track.dtsDelta) {
+          // 以 30 帧开始
+          track.dtsDelta = avRescaleQ(33n, AV_MILLI_TIME_BASE_Q, stream.timeBase)
         }
         track.gopCount = 1
         track.minPts = pts
@@ -678,7 +683,7 @@ export default class IMatroskaFormat extends IFormat {
         track.maxPts = pts
       }
 
-      if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO || isKey) {
+      if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
         avpacket.dts = pts
       }
       else if (track.dtsDelta) {
@@ -687,7 +692,7 @@ export default class IMatroskaFormat extends IFormat {
       else {
         avpacket.dts = 0n
       }
-      track.currentDts =  avpacket.dts
+      track.currentDts = avpacket.dts
 
       if (additions) {
         this.parseAdditions(avpacket, additions)
