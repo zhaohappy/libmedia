@@ -36,6 +36,8 @@ import { addAVPacketSideData, getAVPacketData } from 'avutil/util/avpacket'
 import { avMalloc } from 'avutil/util/mem'
 import * as expgolomb from 'avutil/util/expgolomb'
 import { Uint8ArrayInterface } from 'common/io/interface'
+import { BitFormat } from './h264'
+import * as intread from 'avutil/util/intread'
 
 export const enum HEVCProfile {
   Main = 1,
@@ -654,6 +656,43 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
       stream.codecpar.width = width
       stream.codecpar.height = height
     }
+  }
+}
+
+export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
+  if (!(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)) {
+    return false
+  }
+  if (avpacket.bitFormat === BitFormat.ANNEXB) {
+    let nalus = splitNaluByStartCode(mapUint8Array(avpacket.data, avpacket.size))
+    return nalus.some((nalu) => {
+      const type = (nalu[0] >>> 1) & 0x3f
+      return type === HEVCNaluType.kSliceIDR_N_LP || type === HEVCNaluType.kSliceIDR_W_RADL
+    })
+  }
+  else {
+    const size = avpacket.size
+    let i = 0
+    while (i < (size - naluLengthSize)) {
+      const type = (intread.r8(avpacket.data + (i + naluLengthSize)) >>> 1) & 0x3f
+      if (type === HEVCNaluType.kSliceIDR_N_LP || type === HEVCNaluType.kSliceIDR_W_RADL) {
+        return true
+      }
+      if (naluLengthSize === 4) {
+        i += intread.rb32(avpacket.data + i)
+      }
+      else if (naluLengthSize === 3) {
+        i += intread.rb24(avpacket.data + i)
+      }
+      else if (naluLengthSize === 2) {
+        i += intread.rb16(avpacket.data + i)
+      }
+      else {
+        i += intread.r8(avpacket.data + i)
+      }
+      i += naluLengthSize
+    }
+    return false
   }
 }
 
