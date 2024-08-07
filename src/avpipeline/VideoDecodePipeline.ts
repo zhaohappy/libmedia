@@ -298,7 +298,16 @@ export default class VideoDecodePipeline extends Pipeline {
                     task.targetDecoder = task.softwareDecoder
                     task.hardwareDecoder.close()
                     task.hardwareDecoder = null
-                    await this.openSoftwareDecoder(task)
+
+                    try {
+                      await this.openSoftwareDecoder(task)
+                    }
+                    catch (error) {
+                      logger.error(`video software decoder open error, taskId: ${options.taskId}`)
+                      rightIPCPort.reply(request, errorType.CODEC_NOT_SUPPORT)
+                      break
+                    }
+                    
                     logger.warn(`video decode error width hardware, taskId: ${task.taskId}, error: ${ret}, try to fallback to software decoder`)
                     if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
                       ret = task.targetDecoder.decode(avpacket)
@@ -400,7 +409,24 @@ export default class VideoDecodePipeline extends Pipeline {
         }
         threadCount = Math.min(threadCount, navigator.hardwareConcurrency)
       }
-      await task.softwareDecoder.open(parameters, threadCount)
+
+      try {
+        await task.softwareDecoder.open(parameters, threadCount)
+      }
+      catch (error) {
+        if ((task.softwareDecoder instanceof WebVideoDecoder) && task.resource) {
+
+          logger.warn(`webcodecs decoder open failed, ${error}, try to fallback to wasm software decoder`)
+
+          task.softwareDecoder.close()
+          task.softwareDecoder = this.createWasmcodecDecoder(task, task.resource)
+          await task.softwareDecoder.open(parameters, threadCount) 
+        }
+        else {
+          throw error
+        }
+      }
+      
       task.softwareDecoderOpened = true
     }
   }
