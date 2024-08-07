@@ -505,16 +505,20 @@ export default class IMatroskaFormat extends IFormat {
       basePos = this.context.currentCluster.blockGroup.block.pos
     }
 
-    let isKey = false
+    let isKey = -1
     let additions: Additions
+    let duration = 0n
 
-    if (this.context.currentCluster.blockGroup) {
+    if (this.context.currentCluster.blockGroup?.block) {
       additions = this.context.currentCluster.blockGroup.additions
       if (!this.context.currentCluster.blockGroup.reference) {
-        isKey = true
+        isKey = 1
       }
       else {
-        isKey = this.context.currentCluster.blockGroup.reference.length === 0
+        isKey = this.context.currentCluster.blockGroup.reference.length === 0 ? 1 : 0
+      }
+      if (this.context.currentCluster.blockGroup.duration) {
+        duration = this.context.currentCluster.blockGroup.duration
       }
     }
 
@@ -538,8 +542,8 @@ export default class IMatroskaFormat extends IFormat {
 
     const timestamp = this.blockReader.readInt16()
     const flags = this.blockReader.readUint8()
-    if (flags & 0x80) {
-      isKey = true
+    if (isKey === -1) {
+      isKey = (flags & 0x80) ? 1 : 0
     }
 
     const lacing = (flags >>> 1) & 0x03
@@ -613,15 +617,16 @@ export default class IMatroskaFormat extends IFormat {
     // 纳秒时间戳
     let pts = (this.context.currentCluster.timeCode + static_cast<int64>((timestamp * trackTimestampScale) as float))
       * static_cast<int64>(this.context.info.timestampScale)
-
     if (track.codecDelay) {
       pts -= track.codecDelay
     }
-
     // 微秒时间戳
     pts /= 1000n
-
     pts = avRescaleQ(pts, AV_TIME_BASE_Q, stream.timeBase)
+
+    duration = static_cast<int64>((static_cast<int32>(duration) * trackTimestampScale) as float) * static_cast<int64>(this.context.info.timestampScale)
+    duration /= 1000n
+    duration = avRescaleQ(duration, AV_TIME_BASE_Q, stream.timeBase)
 
     for (let i = 0; i < frameCount; i++) {
       const avpacket = i !== 0 ? createAVPacket() : packet
@@ -651,6 +656,7 @@ export default class IMatroskaFormat extends IFormat {
       avpacket.timeBase = stream.timeBase
       avpacket.pts = pts
       avpacket.size = size
+      avpacket.duration = duration
       const data = avMalloc(size)
       if (header) {
         memcpyFromUint8Array(data, offset, header)
@@ -687,7 +693,12 @@ export default class IMatroskaFormat extends IFormat {
         avpacket.dts = pts
       }
       else if (track.dtsDelta) {
-        avpacket.dts = track.currentDts + track.dtsDelta
+        if (duration) {
+          avpacket.dts = track.currentDts + duration
+        }
+        else {
+          avpacket.dts = track.currentDts + track.dtsDelta
+        }
       }
       else {
         avpacket.dts = 0n
@@ -799,9 +810,12 @@ export default class IMatroskaFormat extends IFormat {
         EbmlSyntaxBlockGroup,
         this.context.currentCluster.blockGroup
       )
-      await this.parseBlock(formatContext, avpacket)
-      this.context.currentCluster.blockGroup = {
-        block: null
+      let ret = await this.parseBlock(formatContext, avpacket)
+      if (ret === errorType.EAGAIN) {
+        return this.readAVPacket_(formatContext, avpacket)
+      }
+      else if (ret < 0) {
+        return ret
       }
     }
     else if (id === EBMLId.CUES
