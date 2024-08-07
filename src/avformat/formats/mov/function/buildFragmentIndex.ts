@@ -27,9 +27,10 @@ import Stream from '../../../AVStream'
 import { FragmentTrack, MOVContext, MOVStreamContext, Sample } from '../type'
 import { SampleFlags } from '../boxType'
 import { AVPacketFlags } from 'avutil/struct/avpacket'
+import { IOFlags } from 'common/io/flags'
 
 
-export function buildFragmentIndex(stream: Stream, track: FragmentTrack, movContext: MOVContext) {
+export function buildFragmentIndex(stream: Stream, track: FragmentTrack, movContext: MOVContext, ioFlag: int32 = 0) {
   const context = stream.privData as MOVStreamContext
 
   const trex = movContext.trexs.find((trex) => {
@@ -90,6 +91,11 @@ export function buildFragmentIndex(stream: Stream, track: FragmentTrack, movCont
     }
 
     if (!(currentFlags & (SampleFlags.IS_NON_SYN | SampleFlags.DEPENDS_YES))) {
+      sample.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+    }
+
+    if (i === 0 && sampleSizes.length > 1 && (ioFlag & IOFlags.SLICE)) {
+      // 切片的第一个帧强制为关键帧
       sample.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
     }
 
