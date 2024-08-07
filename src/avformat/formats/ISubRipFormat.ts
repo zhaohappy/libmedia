@@ -1,5 +1,5 @@
 /*
- * libmedia vtt decoder
+ * libmedia subrip decoder
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -37,7 +37,7 @@ import { addAVPacketData, addAVPacketSideData } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import * as array from 'common/util/array'
 import * as text from 'common/util/text'
-import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
+import { hhColonDDColonSSCommaMill2Int64 } from 'common/util/time'
 
 
 export default class IWebVttFormat extends IFormat {
@@ -46,7 +46,6 @@ export default class IWebVttFormat extends IFormat {
 
   private queue: {
     identifier?: string
-    options?: string
     startTs: int64
     endTs: int64
     context: string
@@ -72,33 +71,15 @@ export default class IWebVttFormat extends IFormat {
       }
       chunk += line
     }
-    return { chunk, pos }
+    return { chunk: chunk.trim(), pos }
   }
 
   public async readHeader(formatContext: AVIFormatContext): Promise<number> {
-
-    const bom = await formatContext.ioReader.peekBuffer(3)
-
-    if (bom[0] === 0xef && bom[1] === 0xbb && bom[2] === 0xbf) {
-      await formatContext.ioReader.skip(3)
-    }
-
-    const signature = await formatContext.ioReader.peekString(6)
-    if (signature !== 'WEBVTT') {
-      logger.error('the file format is not vtt')
-      return errorType.DATA_INVALID
-    }
-
     const stream = formatContext.createStream()
-    stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_WEBVTT
+    stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_SUBRIP
     stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_SUBTITLE
     stream.timeBase.den = 1000
     stream.timeBase.num = 1
-
-    const header = await formatContext.ioReader.readLine()
-    if (header.indexOf('-') > 0) {
-      stream.metadata['title'] = header.split('-').pop().trim()
-    }
 
     this.index = 0
 
@@ -106,35 +87,20 @@ export default class IWebVttFormat extends IFormat {
       while (true) {
         const { chunk, pos } = await this.readChunk(formatContext)
 
-        if (chunk === '' || /^NOTE/.test(chunk) || /^STYLE/.test(chunk)) {
+        if (chunk === '') {
           continue
         }
 
         const lines = chunk.split(/\r?\n|\r/)
 
-        let identifier: string
-        let options: string
+        let identifier: string = lines.shift().trim()
 
-        // identifier
-        if (lines[0].indexOf('-->') === -1) {
-          identifier = lines.shift().trim()
-        }
-
-        let times = lines.shift().split('-->')
-        const startTs = hhColonDDColonSSDotMill2Int64(times.shift())
-
-        times = times.shift().trim().split(' ')
-
-        const endTs = hhColonDDColonSSDotMill2Int64(times.shift())
+        let times = lines.shift().split(/--?>/)
+        const startTs = hhColonDDColonSSCommaMill2Int64(times[0])
+        const endTs = hhColonDDColonSSCommaMill2Int64(times[1])
 
         if (endTs <= startTs) {
           continue
-        }
-
-        times = times.filter((t) => t !== '')
-
-        if (times.length) {
-          options = times.join(' ')
         }
 
         const context = lines.join('\n').trim()
@@ -145,7 +111,6 @@ export default class IWebVttFormat extends IFormat {
 
         this.queue.push({
           identifier,
-          options,
           context,
           startTs,
           endTs,
@@ -186,12 +151,6 @@ export default class IWebVttFormat extends IFormat {
       const data = avMalloc(buffer.length)
       memcpyFromUint8Array(data, buffer.length, buffer)
       addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_IDENTIFIER, data, buffer.length)
-    }
-    if (cue.options) {
-      const buffer = text.encode(cue.options)
-      const data = avMalloc(buffer.length)
-      memcpyFromUint8Array(data, buffer.length, buffer)
-      addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_SETTINGS, data, buffer.length)
     }
     const buffer = text.encode(cue.context)
     const data = avMalloc(buffer.length)

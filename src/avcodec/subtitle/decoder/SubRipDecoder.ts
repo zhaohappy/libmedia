@@ -26,19 +26,17 @@
 import AVFrame from 'avutil/struct/avframe'
 import AVPacket from 'avutil/struct/avpacket'
 import Decoder from './Decoder'
-import * as text from 'common/util/text'
 import { getAVPacketData } from 'avutil/util/avpacket'
 import { avbufferAlloc } from 'avutil/util/avbuffer'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { Rational } from 'avutil/struct/rational'
-import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
 
-export default class WebVttDecoder extends Decoder {
+export default class SubRipDecoder extends Decoder {
 
   private queue: {
     pts: int64
     duration: int64
-    context: string
+    data: Uint8Array
     timeBase: Rational
   }[]
 
@@ -47,61 +45,11 @@ export default class WebVttDecoder extends Decoder {
     this.queue = []
   }
 
-  private findTimelineTag(constant: string) {
-    const start = constant.indexOf('<')
-    if (start >= 0) {
-      const end = constant.indexOf('>', start)
-      if (end > start) {
-        if (/^(\d{2,}:)?\d{2}:\d{2}\.\d{1,3}$/.test(constant.substring(start + 1, end))) {
-          return {
-            start,
-            end
-          }
-        }
-      }
-    }
-    return {
-      start: -1,
-      end: -1,
-    }
-  }
-
   public sendAVPacket(avpacket: pointer<AVPacket>): int32 {
-    let context = text.decode(getAVPacketData(avpacket))
-    let startPts = avpacket.pts
-    const endPts = startPts + avpacket.duration
-
-    const cache: string[] = []
-
-    while (true) {
-      const { start, end } = this.findTimelineTag(context)
-      if (start < 0) {
-        break
-      }
-      const pts = hhColonDDColonSSDotMill2Int64(context.substring(start + 1, end))
-
-      cache.push(context.substring(0, start))
-
-      this.queue.push({
-        context: cache.join(''),
-        pts: startPts,
-        duration: pts - startPts,
-        timeBase: {
-          den: avpacket.timeBase.den,
-          num: avpacket.timeBase.num
-        }
-      })
-
-      startPts = pts
-      context = context.substring(end + 1)
-    }
-
-    cache.push(context)
-
     this.queue.push({
-      context: cache.join(''),
-      pts: startPts,
-      duration: endPts - startPts,
+      data: getAVPacketData(avpacket).slice(),
+      pts: avpacket.pts,
+      duration: avpacket.duration,
       timeBase: {
         den: avpacket.timeBase.den,
         num: avpacket.timeBase.num
@@ -117,7 +65,7 @@ export default class WebVttDecoder extends Decoder {
       avframe.pts = item.pts
       avframe.duration = item.duration
 
-      const buffer = text.encode(item.context)
+      const buffer = item.data
 
       const ref = avbufferAlloc(buffer.length)
 

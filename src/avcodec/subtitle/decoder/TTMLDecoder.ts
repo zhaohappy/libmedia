@@ -30,16 +30,26 @@ import * as text from 'common/util/text'
 import { getAVPacketData } from 'avutil/util/avpacket'
 import { avbufferAlloc } from 'avutil/util/avbuffer'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
-import { Rational } from 'avutil/struct/rational'
+import xml2json from 'common/util/xml2Json'
+import * as is from 'common/util/is'
+import * as array from 'common/util/array'
+import { AV_MILLI_TIME_BASE } from 'avutil/constant'
 import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
 
-export default class WebVttDecoder extends Decoder {
+
+interface P {
+  begin: string
+  end?: string
+  dur?: string
+  context: string
+}
+
+export default class TTMLDecoder extends Decoder {
 
   private queue: {
     pts: int64
     duration: int64
     context: string
-    timeBase: Rational
   }[]
 
   constructor() {
@@ -47,66 +57,50 @@ export default class WebVttDecoder extends Decoder {
     this.queue = []
   }
 
-  private findTimelineTag(constant: string) {
-    const start = constant.indexOf('<')
-    if (start >= 0) {
-      const end = constant.indexOf('>', start)
-      if (end > start) {
-        if (/^(\d{2,}:)?\d{2}:\d{2}\.\d{1,3}$/.test(constant.substring(start + 1, end))) {
-          return {
-            start,
-            end
-          }
-        }
-      }
+  private praseP(p: P | P[], start: string, end: string) {
+    if (is.array(p)) {
+      array.each(p, (_) => {
+        const pts = hhColonDDColonSSDotMill2Int64(start || _.begin)
+        this.queue.push({
+          context: _.context,
+          pts,
+          duration: _.dur ? hhColonDDColonSSDotMill2Int64(_.dur) : (hhColonDDColonSSDotMill2Int64(end || _.end) - pts),
+        })
+      })
     }
-    return {
-      start: -1,
-      end: -1,
+    else {
+      const pts = hhColonDDColonSSDotMill2Int64(start || p.begin)
+      this.queue.push({
+        context: p.context,
+        pts,
+        duration: p.dur ? hhColonDDColonSSDotMill2Int64(p.dur) : (hhColonDDColonSSDotMill2Int64(end || p.end) - pts),
+      })
     }
   }
 
   public sendAVPacket(avpacket: pointer<AVPacket>): int32 {
     let context = text.decode(getAVPacketData(avpacket))
-    let startPts = avpacket.pts
-    const endPts = startPts + avpacket.duration
 
-    const cache: string[] = []
-
-    while (true) {
-      const { start, end } = this.findTimelineTag(context)
-      if (start < 0) {
-        break
-      }
-      const pts = hhColonDDColonSSDotMill2Int64(context.substring(start + 1, end))
-
-      cache.push(context.substring(0, start))
-
-      this.queue.push({
-        context: cache.join(''),
-        pts: startPts,
-        duration: pts - startPts,
-        timeBase: {
-          den: avpacket.timeBase.den,
-          num: avpacket.timeBase.num
-        }
-      })
-
-      startPts = pts
-      context = context.substring(end + 1)
-    }
-
-    cache.push(context)
-
-    this.queue.push({
-      context: cache.join(''),
-      pts: startPts,
-      duration: endPts - startPts,
-      timeBase: {
-        den: avpacket.timeBase.den,
-        num: avpacket.timeBase.num
-      }
+    const xml = xml2json(context, {
+      aloneValueName: 'context'
     })
+
+    if (xml.tt.body) {
+      if (xml.tt.body.div) {
+        if (is.array(xml.tt.body.div)) {
+          array.each(xml.tt.body.div, (div: any) => {
+            if (div.p) {
+              this.praseP(div.p, div.begin, div.end)
+            }
+          })
+        }
+        else {
+          if (xml.tt.body.div.p) {
+            this.praseP(xml.tt.body.div.p, xml.tt.body.div.begin, xml.tt.body.end)
+          }
+        }
+      }
+    }
 
     return 0
   }
@@ -126,8 +120,8 @@ export default class WebVttDecoder extends Decoder {
       avframe.buf[0] = ref
       avframe.data[0] = ref.data
       avframe.linesize[0] = buffer.length
-      avframe.timeBase.den = item.timeBase.den
-      avframe.timeBase.num = item.timeBase.num
+      avframe.timeBase.den = AV_MILLI_TIME_BASE
+      avframe.timeBase.num = 1
 
       return 1
     }

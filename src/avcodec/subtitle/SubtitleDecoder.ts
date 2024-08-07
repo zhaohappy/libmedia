@@ -31,6 +31,9 @@ import Decoder from './decoder/Decoder'
 import { AVCodecID } from 'avutil/codec'
 import * as errorType from 'avutil/error'
 import WebVttDecoder from './decoder/WebVttDecoder'
+import SubRipDecoder from './decoder/SubRipDecoder'
+import TTMLDecoder from './decoder/TTMLDecoder'
+import TextDecoder from './decoder/TextDecoder'
 
 export type SubtitleDecoderOptions = {
   onReceiveFrame?: (frame: pointer<AVFrame>) => void
@@ -78,6 +81,19 @@ export default class SubtitleDecoder {
     switch (parameters.codecId) {
       case AVCodecID.AV_CODEC_ID_WEBVTT:
         this.decoder = new WebVttDecoder()
+        break
+      // case AVCodecID.AV_CODEC_ID_SUBRIP:
+      //   this.decoder = new SubRipDecoder()
+      //   break
+      case AVCodecID.AV_CODEC_ID_TTML:
+      case AVCodecID.AV_CODEC_ID_MOV_TEXT:
+        this.decoder = new TTMLDecoder()
+        break
+      case AVCodecID.AV_CODEC_ID_TEXT:
+      case AVCodecID.AV_CODEC_ID_SUBRIP:
+      case AVCodecID.AV_CODEC_ID_SSA:
+      case AVCodecID.AV_CODEC_ID_ASS:
+        this.decoder = new TextDecoder()
         break
       default:
         return errorType.CODEC_NOT_SUPPORT
