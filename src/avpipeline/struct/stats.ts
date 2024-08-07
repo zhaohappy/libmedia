@@ -244,4 +244,12 @@ export default class Stats {
    * 上一次 video mux dts
    */
   lastVideoMuxDts: int64
+  /**
+   * 当前音频播放时间戳
+   */
+  audioCurrentTime: int64
+  /**
+   * 当前视频播放时间戳
+   */
+  videoCurrentTime: int64
 }

@@ -221,8 +221,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private statsController: StatsController
   private jitterBufferController: JitterBufferController
 
-  public currentTime: int64
-
   private selectedVideoStream: AVStreamInterface
   private selectedAudioStream: AVStreamInterface
   private selectedSubtitleStream: AVStreamInterface
@@ -239,7 +237,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.renderRotate = 0
     this.flipHorizontal = false
     this.flipVertical = false
-    this.currentTime = 0n
 
     this.stats = make(Stats)
     this.statsController = new StatsController(addressof(this.stats))
@@ -249,6 +246,19 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     mutex.init(addressof(this.GlobalData.avframeListMutex))
 
     logger.info(`create player, taskId: ${this.taskId}`)
+  }
+
+  get currentTime() {
+    if (this.useMSE) {
+      return static_cast<int64>(((this.video || this.audio)?.currentTime || 0) * 1000)
+    }
+    if (this.selectedAudioStream) {
+      return this.stats.audioCurrentTime
+    }
+    else if (this.selectedVideoStream) {
+      return this.stats.videoCurrentTime
+    }
+    return 0n
   }
 
   private isCodecIdSupported(codecId: AVCodecID) {
@@ -389,7 +399,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       const time = element.currentTime
       if (Math.abs(time - lastNotifyTime) >= 1) {
         if (this.status === AVPlayerStatus.PLAYED) {
-          this.currentTime = static_cast<int64>(time * 1000)
           this.fire(eventType.TIME, [this.currentTime])
           AVPlayer.MSEThread.setCurrentTime(this.taskId, time)
         }
@@ -2134,7 +2143,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   public onTimeUpdate(pts: int64): void {
-    this.currentTime = pts
     this.fire(eventType.TIME, [pts])
   }
 

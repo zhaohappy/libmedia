@@ -578,6 +578,7 @@ export default class VideoRenderPipeline extends Pipeline {
             && (inWorker || (-diff < 100n) || (task.renderFrameCount & 0x01n))
           ) {
             task.render.render(task.backFrame)
+            task.stats.videoCurrentTime = pts
             task.stats.videoFrameRenderCount++
             if (task.lastRenderTimestamp) {
               task.stats.videoFrameRenderIntervalMax = Math.max(

@@ -448,15 +448,17 @@ export default class AudioRenderPipeline extends Pipeline {
       }
       pcmBuffer.nbSamples = receive
 
-      if (task.currentPTS - task.lastNotifyPTS >= 1000n) {
-        task.lastNotifyPTS = task.currentPTS
-
-        const latency = (((task.useStretchpitcher ? task.stretchpitcher.get(0).getLatency() : 0)
+      const latency = (((task.useStretchpitcher ? task.stretchpitcher.get(0).getLatency() : 0)
           // 双缓冲，假定后缓冲播放到中间
           + (pcmBuffer.maxnbSamples * 3 >>> 1)) / task.playSampleRate * 1000) >>> 0
+      const currentPts = bigint.max(task.currentPTS - static_cast<int64>(latency), 0n)
 
+      task.stats.audioCurrentTime = currentPts
+
+      if (task.currentPTS - task.lastNotifyPTS >= 1000n) {
+        task.lastNotifyPTS = task.currentPTS
         task.controlIPCPort.notify('syncPts', {
-          pts: bigint.max(task.currentPTS - static_cast<int64>(latency), 0n)
+          pts: currentPts
         })
       }
 
