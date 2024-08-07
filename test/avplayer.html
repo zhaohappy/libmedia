@@ -800,7 +800,7 @@
                         options: audioStreams.map((item) => {
                           return {
                             value: item.index,
-                            name: item.metadata['title'] || item.metadata['language'] || item.metadata['name'] || 'default'
+                            name: item.metadata['title'] || item.metadata['languageString'] || item.metadata['language'] || item.metadata['name'] || 'default'
                           }
                         }),
                         value: player.getSelectedAudioStreamIndex()
@@ -839,7 +839,7 @@
                         options: videoStreams.map((item) => {
                           return {
                             value: item.index,
-                            name: item.metadata['name'] || item.metadata['title'] || 'default'
+                            name: item.metadata['title'] || item.metadata['languageString'] || item.metadata['language'] || item.metadata['name'] || 'default'
                           }
                         }),
                         value: player.getSelectedVideoStreamIndex()
