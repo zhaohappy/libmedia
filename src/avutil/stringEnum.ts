@@ -22,7 +22,13 @@ export const Ext2Format: Record<string, AVFormat> = {
   'webm': AVFormat.WEBM,
   'aac': AVFormat.AAC,
   'flac': AVFormat.FLAC,
-  'wav': AVFormat.WAV
+  'wav': AVFormat.WAV,
+  'srt': AVFormat.SUBRIP,
+  'vtt': AVFormat.WEBVTT,
+  'ssa': AVFormat.ASS,
+  'ass': AVFormat.ASS,
+  'xml': AVFormat.TTML,
+  'ttml': AVFormat.TTML
 }
 
 export const Ext2IOLoader: Record<string, IOType> = {
@@ -58,6 +64,14 @@ export const AudioCodecString2CodecId = {
   'vorbis': AVCodecID.AV_CODEC_ID_VORBIS,
   'g711a': AVCodecID.AV_CODEC_ID_PCM_ALAW,
   'g711u': AVCodecID.AV_CODEC_ID_PCM_MULAW
+}
+
+export const SubtitleCodecString2CodecId = {
+  'webvtt': AVCodecID.AV_CODEC_ID_WEBVTT,
+  'subrip': AVCodecID.AV_CODEC_ID_SUBRIP,
+  'ass': AVCodecID.AV_CODEC_ID_ASS,
+  'ttml': AVCodecID.AV_CODEC_ID_TTML,
+  'mov_text': AVCodecID.AV_CODEC_ID_MOV_TEXT
 }
 
 export const PixfmtString2AVPixelFormat = {

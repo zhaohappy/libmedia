@@ -85,6 +85,7 @@
       }
       #video-change,
       #audio-change,
+      #subtitle-change,
       #play-rate {
         display: none;
         width: 70px;
@@ -99,6 +100,9 @@
       }
       #audio-change {
         bottom: 140px;
+      }
+      #subtitle-change {
+        bottom: 210px;
       }
 
       .label {
@@ -314,6 +318,18 @@
         </el-select>
       </div>
 
+      <div id="subtitle-change">
+        字幕:
+        <el-select v-model="value" @change="change">
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.name"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </div>
+
       <div class="loading-mask" id="loading-mask">
         <div class="loading-spinner">
           <svg viewBox="25 25 50 50" class="circular">
@@ -357,6 +373,8 @@
     <button class="play" onclick="playPlayer()" >play</button>
     <button class="play" onclick="pausePlayer()" >pause</button>
     <button class="play" onclick="stopPlayer()" >stop</button>
+    <button onclick="clickAddSubtitle()">添加字幕</button>
+    <input id="subtitleFile" type="file" onchange="addSubtitle(this)" style="display: none;" />
     <!-- <button onclick="openWriteFile()" >write file</button> -->
 
     <div class="button-group">
@@ -366,7 +384,7 @@
       <button onclick="resume()">resume</button>
     </div>
 
-    <br>
+    <br/>
 
     <div class="stats">
       <div class="stats-item">
@@ -479,6 +497,7 @@
       let playRateComponent;
       let videoChangeComponent;
       let audioChangeComponent;
+      let subtitleChangeComponent;
       let isSeeking;
       const sliderRatio = 1000;
       let supportAtomic = true
@@ -487,6 +506,7 @@
       const playRateDom = document.querySelector('#play-rate')
       const videoChangeDom = document.querySelector('#video-change')
       const audioChangeDom = document.querySelector('#audio-change')
+      const subtitleChangeDom = document.querySelector('#subtitle-change')
       const canvasBg = document.querySelector('#canvas-background')
       const video = document.querySelector('#video')
       const audio = document.querySelector('#audio')
@@ -680,11 +700,13 @@
 
           Promise.all([
             player.getVideoList(),
-            player.getAudioList()
+            player.getAudioList(),
+            player.getSubtitleList()
           ]).then((data) => {
 
             let videoList = data[0]
             let audioList = data[1]
+            let subtitleList = data[2]
 
             if (videoList.list.length > 1) {
               if (videoChangeComponent) {
@@ -770,10 +792,53 @@
               audioChangeDom.style.display = 'none'
             }
 
+            if (subtitleList.list.length > 1) {
+              if (subtitleChangeComponent) {
+                subtitleChangeComponent.$destroy()
+                document.querySelector('#subtitle-change').innerHTML = `字幕:
+                <el-select v-model="value" @change="change">
+                  <el-option
+                    v-for="item in options"
+                    :key="item.value"
+                    :label="item.name"
+                    :value="item.value">
+                  </el-option>
+                </el-select>`
+              }
+              subtitleChangeComponent = new Vue({
+                el: '#subtitle-change',
+                data: function() {
+                  return { 
+                    options: subtitleList.list.map((item, index) => {
+                      return {
+                        value: index,
+                        name: `${item.lang}-${item.codecs}`
+                      }
+                    }),
+                    value: subtitleList.selectedIndex
+                  }
+                },
+                methods: {
+                  change() {
+                    if (player) {
+                      player.selectSubtitle(this.value)
+                    }
+                  }
+                },
+                mounted: function () {
+                  this.$el.style.display = 'inline-block'
+                }
+              })
+            }
+            else {
+              subtitleChangeDom.style.display = 'none'
+            }
+
             // player.seek(400000).then(() => {
               player.play({
                 audio: true,
-                video: true
+                video: true,
+                subtitle: true
               }).then(() => {
                 document.querySelector('#loading-mask').style.display = 'none'
 
@@ -799,11 +864,11 @@
                       return { 
                         options: audioStreams.map((item) => {
                           return {
-                            value: item.index,
+                            value: item.id,
                             name: item.metadata['title'] || item.metadata['languageString'] || item.metadata['language'] || item.metadata['name'] || 'default'
                           }
                         }),
-                        value: player.getSelectedAudioStreamIndex()
+                        value: player.getSelectedAudioStreamId()
                       }
                     },
                     methods: {
@@ -838,11 +903,11 @@
                       return { 
                         options: videoStreams.map((item) => {
                           return {
-                            value: item.index,
+                            value: item.id,
                             name: item.metadata['title'] || item.metadata['languageString'] || item.metadata['language'] || item.metadata['name'] || 'default'
                           }
                         }),
-                        value: player.getSelectedVideoStreamIndex()
+                        value: player.getSelectedVideoStreamId()
                       }
                     },
                     methods: {
@@ -857,6 +922,8 @@
                     }
                   })
                 }
+
+                updateSubtitleList()
               })
             // })
           })
@@ -933,6 +1000,67 @@
             //   player = null
             //   console.log('player destroy')
             // })
+          })
+        }
+      }
+
+      function updateSubtitleList() {
+        if (!player) {
+          return
+        }
+        const subtitleStreams = player.getStreams().filter((s => s.mediaType === 'Subtitle'))
+        if (subtitleStreams.length > 1) {
+          if (subtitleChangeComponent) {
+            subtitleChangeComponent.$destroy()
+            document.querySelector('#subtitle-change').innerHTML = `字幕:
+            <el-select v-model="value" @change="change">
+              <el-option
+                v-for="item in options"
+                :key="item.value"
+                :label="item.name"
+                :value="item.value">
+              </el-option>
+            </el-select>`
+          }
+          subtitleChangeComponent = new Vue({
+            el: '#subtitle-change',
+            data: function() {
+              return { 
+                options: subtitleStreams.map((item) => {
+                  return {
+                    value: item.id,
+                    name: item.metadata['title'] || item.metadata['languageString'] || item.metadata['language'] || item.metadata['name'] || 'default'
+                  }
+                }),
+                value: player.getSelectedSubtitleStreamId()
+              }
+            },
+            methods: {
+              change() {
+                if (player) {
+                  player.selectSubtitle(this.value)
+                }
+              }
+            },
+            mounted: function () {
+              this.$el.style.display = 'inline-block'
+            }
+          })
+        }
+      }
+
+      function clickAddSubtitle() {
+        document.querySelector('#subtitleFile').click()
+      }
+
+      function addSubtitle(target) {
+        if (player) {
+          const file = target.files[0]
+          player.loadExternalSubtitle({
+            source: file,
+            title: file.name.split('.').pop()
+          }).then(() => {
+            updateSubtitleList()
           })
         }
       }

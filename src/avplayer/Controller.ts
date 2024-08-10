@@ -145,11 +145,11 @@ export default class Controller {
     return this.audioRenderControlChannel.port1
   }
 
-  public getMuxerRenderControlPort() {
+  public getMuxerControlPort() {
     return this.muxerControlChannel.port1
   }
 
-  public getDemuxerRenderControlPort() {
+  public getDemuxerControlPort() {
     return this.demuxerControlChannel.port1
   }
 

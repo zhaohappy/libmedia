@@ -50,5 +50,8 @@ export const enum AVFormat {
   WAV,
   FLAC,
 
-  WEBVTT
+  WEBVTT,
+  SUBRIP,
+  ASS,
+  TTML
 }

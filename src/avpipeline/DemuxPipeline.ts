@@ -372,6 +372,42 @@ export default class DemuxPipeline extends Pipeline {
             return errorType.FORMAT_NOT_SUPPORT
           }
           break
+        case AVFormat.WEBVTT:
+          if (defined(ENABLE_DEMUXER_WEBVTT)) {
+            iformat = new (((await import('avformat/formats/IWebVttFormat')).default))
+          }
+          else {
+            logger.error('webvtt format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.SUBRIP:
+          if (defined(ENABLE_DEMUXER_SUBRIP)) {
+            iformat = new (((await import('avformat/formats/ISubRipFormat')).default))
+          }
+          else {
+            logger.error('subrip format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.ASS:
+          if (defined(ENABLE_DEMUXER_ASS)) {
+            iformat = new (((await import('avformat/formats/IAssFormat')).default))
+          }
+          else {
+            logger.error('ass format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.TTML:
+          if (defined(ENABLE_DEMUXER_TTML)) {
+            iformat = new (((await import('avformat/formats/ITTMLFormat')).default))
+          }
+          else {
+            logger.error('ttml format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
         default:
           logger.error('format not support')
           return errorType.FORMAT_NOT_SUPPORT
@@ -449,11 +485,13 @@ export default class DemuxPipeline extends Pipeline {
             const cacheAVPackets = task.cacheAVPackets.get(ipcPort.streamIndex)
             if (cacheAVPackets.length) {
               const avpacket = cacheAVPackets.shift()
-              if (task.formatContext.streams[avpacket.streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-                task.stats.audioPacketQueueLength--
-              }
-              else if (task.formatContext.streams[avpacket.streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-                task.stats.videoPacketQueueLength--
+              if (task.stats !== nullptr) {
+                if (task.formatContext.streams[avpacket.streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+                  task.stats.audioPacketQueueLength--
+                }
+                else if (task.formatContext.streams[avpacket.streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+                  task.stats.videoPacketQueueLength--
+                }
               }
               ipcPort.reply(request, avpacket)
             }
@@ -485,8 +523,18 @@ export default class DemuxPipeline extends Pipeline {
   public async changeConnectStream(taskId: string, newStreamIndex: number, oldStreamIndex: number, force: boolean = true) {
     const task = this.tasks.get(taskId)
     if (task) {
+
+      if (newStreamIndex === oldStreamIndex) {
+        return
+      }
+
       const cache = task.cacheAVPackets.get(oldStreamIndex)
       const ipcPort = task.rightIPCPorts.get(oldStreamIndex)
+      const request = task.cacheRequests.get(oldStreamIndex)
+
+      if (!cache) {
+        logger.warn(`oldStreamIndex ${oldStreamIndex} not found`)
+      }
 
       await task.loop.stopBeforeNextTick()
 
@@ -507,6 +555,11 @@ export default class DemuxPipeline extends Pipeline {
 
       task.cacheAVPackets.delete(oldStreamIndex)
       task.rightIPCPorts.delete(oldStreamIndex)
+
+      if (request) {
+        task.cacheRequests.set(newStreamIndex, request)
+        task.cacheRequests.delete(oldStreamIndex)
+      }
 
       if (!force) {
         task.loop.start()
@@ -531,8 +584,15 @@ export default class DemuxPipeline extends Pipeline {
       task.loop = new LoopTask(async () => {
         if (!isLive) {
           let canDo = false
-          task.cacheAVPackets.forEach((list) => {
-            if (list.length < minQueueLength) {
+          task.cacheAVPackets.forEach((list, streamIndex) => {
+            const stream = task.formatContext.streams.find((stream) => {
+              return stream.index === streamIndex
+            })
+            if (list.length < minQueueLength
+              && (stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_SUBTITLE
+                || task.cacheAVPackets.size === 1
+              )
+            ) {
               canDo = true
             }
           })
@@ -559,58 +619,60 @@ export default class DemuxPipeline extends Pipeline {
 
           assert(streamIndex !== NOPTS_VALUE)
 
-          if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
-            && task.cacheAVPackets.has(streamIndex)
-          ) {
-            task.stats.audioPacketCount++
-            task.stats.audioPacketBytes += static_cast<int64>(avpacket.size)
-            if (task.stats.audioPacketCount > 1 && avpacket.dts > task.lastAudioDts) {
-              const list = task.cacheAVPackets.get(streamIndex)
-              if (list && list.length) {
-                task.stats.audioEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
-                  / (static_cast<int32>(avpacket.dts - list[0].dts) / list.length))
+          if (task.stats !== nullptr) {
+            if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
+              && task.cacheAVPackets.has(streamIndex)
+            ) {
+              task.stats.audioPacketCount++
+              task.stats.audioPacketBytes += static_cast<int64>(avpacket.size)
+              if (task.stats.audioPacketCount > 1 && avpacket.dts > task.lastAudioDts) {
+                const list = task.cacheAVPackets.get(streamIndex)
+                if (list && list.length) {
+                  task.stats.audioEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
+                    / (static_cast<int32>(avpacket.dts - list[0].dts) / list.length))
+                }
+                else {
+                  task.stats.audioEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
+                    / static_cast<int32>(avpacket.dts - task.lastAudioDts))
+                }
               }
-              else {
-                task.stats.audioEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
-                  / static_cast<int32>(avpacket.dts - task.lastAudioDts))
-              }
+              task.lastAudioDts = avpacket.dts
             }
-            task.lastAudioDts = avpacket.dts
-          }
-          else if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
-            && task.cacheAVPackets.has(streamIndex)
-          ) {
-            task.stats.videoPacketCount++
-            task.stats.videoPacketBytes += static_cast<int64>(avpacket.size)
+            else if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
+              && task.cacheAVPackets.has(streamIndex)
+            ) {
+              task.stats.videoPacketCount++
+              task.stats.videoPacketBytes += static_cast<int64>(avpacket.size)
 
-            if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
-              task.stats.keyFrameCount++
-              if (task.stats.keyFrameCount > 1 && avpacket.pts > task.lastKeyFramePts) {
-                task.stats.gop = task.gopCounter
-                task.gopCounter = 1
-                task.stats.keyFrameInterval = static_cast<int32>(avRescaleQ(
-                  avpacket.pts - task.lastKeyFramePts,
-                  avpacket.timeBase,
-                  AV_MILLI_TIME_BASE_Q
-                ))
-              }
-              task.lastKeyFramePts = avpacket.pts
-            }
-            else {
-              task.gopCounter++
-            }
-            if (task.stats.videoPacketCount > 1 && avpacket.dts > task.lastVideoDts) {
-              const list = task.cacheAVPackets.get(streamIndex)
-              if (list && list.length) {
-                task.stats.videoEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
-                  / (static_cast<int32>(avpacket.dts - list[0].dts) / list.length))
+              if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
+                task.stats.keyFrameCount++
+                if (task.stats.keyFrameCount > 1 && avpacket.pts > task.lastKeyFramePts) {
+                  task.stats.gop = task.gopCounter
+                  task.gopCounter = 1
+                  task.stats.keyFrameInterval = static_cast<int32>(avRescaleQ(
+                    avpacket.pts - task.lastKeyFramePts,
+                    avpacket.timeBase,
+                    AV_MILLI_TIME_BASE_Q
+                  ))
+                }
+                task.lastKeyFramePts = avpacket.pts
               }
               else {
-                task.stats.videoEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
-                  / static_cast<int32>(avpacket.dts - task.lastVideoDts))
+                task.gopCounter++
               }
+              if (task.stats.videoPacketCount > 1 && avpacket.dts > task.lastVideoDts) {
+                const list = task.cacheAVPackets.get(streamIndex)
+                if (list && list.length) {
+                  task.stats.videoEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
+                    / (static_cast<int32>(avpacket.dts - list[0].dts) / list.length))
+                }
+                else {
+                  task.stats.videoEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
+                    / static_cast<int32>(avpacket.dts - task.lastVideoDts))
+                }
+              }
+              task.lastVideoDts = avpacket.dts
             }
-            task.lastVideoDts = avpacket.dts
           }
 
           if (task.streamIndexFlush.get(streamIndex)) {
@@ -633,11 +695,18 @@ export default class DemuxPipeline extends Pipeline {
           else {
             if (task.cacheAVPackets.has(streamIndex)) {
               task.cacheAVPackets.get(streamIndex).push(avpacket)
-              if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-                task.stats.audioPacketQueueLength++
+              if (task.stats !== nullptr) {
+                if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+                  task.stats.audioPacketQueueLength++
+                }
+                else if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+                  task.stats.videoPacketQueueLength++
+                }
               }
-              else if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-                task.stats.videoPacketQueueLength++
+              if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE) {
+                if (task.cacheAVPackets.get(streamIndex).length > minQueueLength) {
+                  task.avpacketPool.release(task.cacheAVPackets.get(streamIndex).shift())
+                }
               }
             }
             else {
@@ -699,8 +768,11 @@ export default class DemuxPipeline extends Pipeline {
             })
             list.length = 0
           })
-          task.stats.audioPacketQueueLength = 0
-          task.stats.videoPacketQueueLength = 0
+
+          if (task.stats !== nullptr) {
+            task.stats.audioPacketQueueLength = 0
+            task.stats.videoPacketQueueLength = 0
+          }
 
           const avpacket = task.avpacketPool.alloc() as pointer<AVPacketRef>
 
@@ -716,11 +788,13 @@ export default class DemuxPipeline extends Pipeline {
             const streamIndex = avpacket.streamIndex
             task.cacheAVPackets.get(streamIndex).push(avpacket)
 
-            if (task.formatContext.streams[avpacket.streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-              task.stats.audioPacketQueueLength++
-            }
-            else if (task.formatContext.streams[avpacket.streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-              task.stats.videoPacketQueueLength++
+            if (task.stats !== nullptr) {
+              if (task.formatContext.streams[avpacket.streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+                task.stats.audioPacketQueueLength++
+              }
+              else if (task.formatContext.streams[avpacket.streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+                task.stats.videoPacketQueueLength++
+              }
             }
 
             task.loop.start()
@@ -780,11 +854,14 @@ export default class DemuxPipeline extends Pipeline {
           list.splice(0, i).forEach((avpacket) => {
             task.avpacketPool.release(avpacket)
           })
-          if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-            task.stats.audioPacketQueueLength = list.length
-          }
-          else if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-            task.stats.videoPacketQueueLength = list.length
+
+          if (task.stats !== nullptr) {
+            if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+              task.stats.audioPacketQueueLength = list.length
+            }
+            else if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+              task.stats.videoPacketQueueLength = list.length
+            }
           }
         }
       })

@@ -39,6 +39,14 @@ declare const ENABLE_DEMUXER_FLAC: boolean
 
 declare const ENABLE_DEMUXER_WAV: boolean
 
+declare const ENABLE_DEMUXER_WEBVTT: boolean
+
+declare const ENABLE_DEMUXER_SUBRIP: boolean
+
+declare const ENABLE_DEMUXER_ASS: boolean
+
+declare const ENABLE_DEMUXER_TTML: boolean
+
 declare const ENABLE_MUXER_FLV: boolean
 
 declare const ENABLE_MUXER_MP4: boolean

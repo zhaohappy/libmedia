@@ -99,6 +99,14 @@
       "ENABLE_DEMUXER_FLAC": true,
       // 开启支持 wav 解封装格式
       "ENABLE_DEMUXER_WAV": true,
+      // 开启支持 webvtt 解封装格式
+      "ENABLE_DEMUXER_WEBVTT": true,
+      // 开启支持 srt 解封装格式
+      "ENABLE_DEMUXER_SUBRIP": true,
+      // 开启支持 ass 解封装格式
+      "ENABLE_DEMUXER_ASS": true,
+      // 开启支持 ttml 解封装格式
+      "ENABLE_DEMUXER_TTML": true,
 
       // 开启支持 flv 封装格式
       "ENABLE_MUXER_FLV": true,

@@ -67,6 +67,9 @@ export function dumpCodecName(codecType: AVMediaType, codecId: AVCodecID) {
   else if (codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
     return dumpKey(stringEnum.VideoCodecString2CodecId, codecId)
   }
+  else if (codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE) {
+    return dumpKey(stringEnum.SubtitleCodecString2CodecId, codecId)
+  }
   return 'unknown'
 }
 
@@ -149,14 +152,22 @@ function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix:
 
    
   }
+  else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE) {
+    const codecName = dumpKey(stringEnum.SubtitleCodecString2CodecId, stream.codecpar.codecId)
+    list.push(codecName)
+    if (stream.codecpar.bitRate > 0n) {
+      list.push(`${dumpBitrate(stream.codecpar.bitRate)}`)
+    }
+  }
   else {
     if (stream.codecpar.bitRate > 0n) {
       list.push(`${dumpBitrate(stream.codecpar.bitRate)}`)
     }
   }
 
+  let disposition = ''
   if (stream.disposition) {
-    let disposition = ''
+    disposition = ' '
     if (stream.disposition & AVDisposition.DEFAULT) {
       disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DEFAULT)}) `
     }
@@ -208,12 +219,9 @@ function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix:
     if (stream.disposition & AVDisposition.STILL_IMAGE) {
       disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.STILL_IMAGE)}) `
     }
-    if (disposition) {
-      list.push(disposition)
-    }
   }
 
-  let dump = `${prefix}Stream #${index}:${stream.index} ${mediaType}: ${list.join(', ')}\n`
+  let dump = `${prefix}Stream #${index}:${stream.index} ${mediaType}: ${list.join(', ')}${disposition}\n`
 
   if (Object.keys(stream.metadata).length) {
     dump += `${prefix}  Metadata:\n`

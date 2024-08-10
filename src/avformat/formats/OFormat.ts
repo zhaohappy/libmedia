@@ -147,5 +147,8 @@ export const OFormatSupportedCodecs: Record<Exclude<AVFormat, AVFormat.UNKNOWN>,
     AVCodecID.AV_CODEC_ID_VORBIS
   ],
   [AVFormat.WAV]: [],
-  [AVFormat.WEBVTT]: [AVCodecID.AV_CODEC_ID_WEBVTT]
+  [AVFormat.WEBVTT]: [AVCodecID.AV_CODEC_ID_WEBVTT],
+  [AVFormat.ASS]: [AVCodecID.AV_CODEC_ID_ASS, AVCodecID.AV_CODEC_ID_SSA],
+  [AVFormat.SUBRIP]: [AVCodecID.AV_CODEC_ID_SUBRIP],
+  [AVFormat.TTML]: [AVCodecID.AV_CODEC_ID_TTML]
 }

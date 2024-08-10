@@ -34,6 +34,7 @@ import dashParser from 'avprotocol/dash/parser'
 import FetchIOLoader from './FetchIOLoader'
 import { MPDMediaList } from 'avprotocol/dash/type'
 import getTimestamp from 'common/function/getTimestamp'
+import * as errorType from 'avutil/error'
 
 const FETCHED_HISTORY_LIST_MAX = 10
 
@@ -44,6 +45,21 @@ export interface FetchInfo {
   referrerPolicy?: string
 }
 
+type MediaType = 'audio' | 'video' | 'subtitle'
+
+interface Resource {
+  type: MediaType
+  fetchedMap: Map<string, boolean>
+  fetchedHistoryList: string[]
+  loader: FetchIOLoader
+  segmentIndex: number
+  currentUri: string
+  selectedIndex: number
+  segments: string[]
+  initSegmentPadding: string
+  initedSegment: string
+}
+
 export default class DashIOLoader extends IOLoader {
 
   private info: FetchInfo
@@ -52,35 +68,28 @@ export default class DashIOLoader extends IOLoader {
 
   private mediaPlayList: MPDMediaList
 
-  private fetchedMap: Map<string, boolean>
-
-  private fetchedHistoryList: string[]
-
-  private audioLoader: FetchIOLoader
-
-  private videoLoader: FetchIOLoader
-
-  private audioSegmentIndex: number
-  private videoSegmentIndex: number
-  private audioCurrentUri: string
-  private videoCurrentUri: string
-
-  private audioSelectedIndex: number
-  private videoSelectedIndex: number
-
-  private audioSegments: string[]
-  private videoSegments: string[]
-
-  private audioInitSegmentPadding: string
-  private videoInitSegmentPadding: string
-  private subtitleInitSegmentPadding: string
-
-  private audioInitedSegment: string
-  private videoInitedSegment: string
-
   private fetchMediaPlayListPromise: Promise<void>
 
   private minBuffer: number
+
+  private audioResource: Resource
+  private videoResource: Resource
+  private subtitleResource: Resource
+
+  private createResource(type: MediaType): Resource {
+    return {
+      type,
+      fetchedMap: new Map(),
+      fetchedHistoryList: [],
+      loader: null,
+      segmentIndex: 0,
+      currentUri: '',
+      selectedIndex: 0,
+      segments: [],
+      initSegmentPadding: '',
+      initedSegment: ''
+    }
+  }
 
   private async fetchMediaPlayList(resolve?: () => void) {
     if (!resolve) {
@@ -144,33 +153,47 @@ export default class DashIOLoader extends IOLoader {
       }
 
       if (this.mediaPlayList.mediaList.audio.length) {
-        const media = this.mediaPlayList.mediaList.audio[this.audioSelectedIndex]
+        const media = this.mediaPlayList.mediaList.audio[this.audioResource.selectedIndex]
         if (media.file) {
-          this.audioSegments = [media.file]
+          this.audioResource.segments = [media.file]
         }
         else {
-          if (this.options.isLive && this.audioInitedSegment === media.initSegment) {
-            this.audioSegments = media.mediaSegments.map((s) => s.url)
+          if (this.options.isLive && this.audioResource.initedSegment === media.initSegment) {
+            this.audioResource.segments = media.mediaSegments.map((s) => s.url)
           }
           else {
-            this.audioSegments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
-            this.audioInitedSegment = media.initSegment
+            this.audioResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
+            this.audioResource.initedSegment = media.initSegment
           }
         }
       }
       if (this.mediaPlayList.mediaList.video.length) {
-        this.videoSelectedIndex = this.mediaPlayList.mediaList.video.length - 1
-        const media = this.mediaPlayList.mediaList.video[this.videoSelectedIndex]
+        const media = this.mediaPlayList.mediaList.video[this.videoResource.selectedIndex]
         if (media.file) {
-          this.videoSegments = [media.file]
+          this.videoResource.segments = [media.file]
         }
         else {
-          if (this.options.isLive && this.videoInitedSegment === media.initSegment) {
-            this.videoSegments = media.mediaSegments.map((s) => s.url)
+          if (this.options.isLive && this.videoResource.initedSegment === media.initSegment) {
+            this.videoResource.segments = media.mediaSegments.map((s) => s.url)
           }
           else {
-            this.videoSegments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
-            this.videoInitedSegment = media.initSegment
+            this.videoResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
+            this.videoResource.initedSegment = media.initSegment
+          }
+        }
+      }
+      if (this.mediaPlayList.mediaList.subtitle.length) {
+        const media = this.mediaPlayList.mediaList.subtitle[this.subtitleResource.selectedIndex]
+        if (media.file) {
+          this.subtitleResource.segments = [media.file]
+        }
+        else {
+          if (this.options.isLive && this.subtitleResource.initedSegment === media.initSegment) {
+            this.subtitleResource.segments = media.mediaSegments.map((s) => s.url)
+          }
+          else {
+            this.subtitleResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
+            this.subtitleResource.initedSegment = media.initSegment
           }
         }
       }
@@ -214,14 +237,9 @@ export default class DashIOLoader extends IOLoader {
 
     this.range.from = Math.max(this.range.from, 0)
 
-    this.audioSegmentIndex = 0
-    this.videoSegmentIndex = 0
-
-    this.audioSelectedIndex = 0
-    this.videoSelectedIndex = 0
-
-    this.fetchedMap = new Map()
-    this.fetchedHistoryList = []
+    this.videoResource = this.createResource('video')
+    this.audioResource = this.createResource('audio')
+    this.subtitleResource = this.createResource('subtitle')
 
     this.status = IOLoaderStatus.CONNECTING
     this.retryCount = 0
@@ -229,134 +247,35 @@ export default class DashIOLoader extends IOLoader {
     await this.fetchMediaPlayList()
   }
 
-  private async readAudio(buffer: Uint8ArrayInterface) {
+  private async readResource(buffer: Uint8ArrayInterface, resource: Resource) {
     let ret = 0
 
-    if (this.audioLoader) {
-      ret = await this.audioLoader.read(buffer)
+    if (resource.loader) {
+      ret = await resource.loader.read(buffer)
       if (ret !== IOError.END) {
         return ret
       }
       else {
         if (this.options.isLive) {
-          this.fetchedMap.set(this.audioCurrentUri, true)
-          if (this.fetchedHistoryList.length === FETCHED_HISTORY_LIST_MAX) {
-            this.fetchedMap.delete(this.fetchedHistoryList.shift())
+          resource.fetchedMap.set(resource.currentUri, true)
+          if (resource.fetchedHistoryList.length === FETCHED_HISTORY_LIST_MAX) {
+            resource.fetchedMap.delete(resource.fetchedHistoryList.shift())
           }
-          this.fetchedHistoryList.push(this.audioCurrentUri)
+          resource.fetchedHistoryList.push(resource.currentUri)
         }
         else {
-          this.audioSegmentIndex++
-          if (this.audioSegmentIndex >= this.audioSegments.length) {
+          resource.segmentIndex++
+          if (resource.segmentIndex >= resource.segments.length) {
             return IOError.END
           }
         }
-        this.audioLoader = null
+        resource.loader = null
       }
     }
 
     if (this.options.isLive) {
-      const segments = this.audioSegments.filter((url) => {
-        return !this.fetchedMap.get(url)
-      })
-
-      if (!segments.length) {
-        if (this.mediaPlayList.isEnd) {
-          return IOError.END
-        }
-
-        const wait = ((this.mediaPlayList.duration || this.mediaPlayList.minimumUpdatePeriod)
-          - (getTimestamp() - this.mediaPlayList.timestamp) / 1000)
-        if (wait > 0) {
-          await new Sleep(wait)
-        }
-        if (this.fetchMediaPlayListPromise) {
-          await this.fetchMediaPlayListPromise
-          if (this.status === IOLoaderStatus.ERROR) {
-            return IOError.END
-          }
-        }
-        else {
-          await this.fetchMediaPlayList()
-        }
-        return this.readAudio(buffer)
-      }
-
-      this.audioCurrentUri = segments[0]
-
-      this.audioLoader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
-
-      await this.audioLoader.open(
-        {
-          url: this.audioCurrentUri
-        },
-        {
-          from: 0,
-          to: -1
-        }
-      )
-      return this.audioLoader.read(buffer)
-    }
-    else {
-      this.audioLoader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
-
-      if (this.audioInitSegmentPadding) {
-        await this.audioLoader.open(
-          {
-            url: this.audioInitSegmentPadding
-          },
-          {
-            from: 0,
-            to: -1
-          }
-        )
-        this.audioInitSegmentPadding = null
-        this.audioSegmentIndex--
-      }
-      else {
-        await this.audioLoader.open(
-          {
-            url: this.audioSegments[this.audioSegmentIndex]
-          },
-          {
-            from: 0,
-            to: -1
-          }
-        )
-      }
-      return this.audioLoader.read(buffer)
-    }
-  }
-
-  private async readVideo(buffer: Uint8ArrayInterface) {
-    let ret = 0
-
-    if (this.videoLoader) {
-      ret = await this.videoLoader.read(buffer)
-      if (ret !== IOError.END) {
-        return ret
-      }
-      else {
-        if (this.options.isLive) {
-          this.fetchedMap.set(this.videoCurrentUri, true)
-          if (this.fetchedHistoryList.length === FETCHED_HISTORY_LIST_MAX) {
-            this.fetchedMap.delete(this.fetchedHistoryList.shift())
-          }
-          this.fetchedHistoryList.push(this.videoCurrentUri)
-        }
-        else {
-          this.videoSegmentIndex++
-          if (this.videoSegmentIndex >= this.videoSegments.length) {
-            return IOError.END
-          }
-        }
-        this.videoLoader = null
-      }
-    }
-
-    if (this.options.isLive) {
-      const segments = this.videoSegments.filter((url) => {
-        return !this.fetchedMap.get(url)
+      const segments = resource.segments.filter((url) => {
+        return !resource.fetchedMap.get(url)
       })
 
       if (!segments.length) {
@@ -378,43 +297,43 @@ export default class DashIOLoader extends IOLoader {
         else {
           await this.fetchMediaPlayList()
         }
-        return this.readVideo(buffer)
+        return this.readResource(buffer, resource)
       }
 
-      this.videoCurrentUri = segments[0]
+      resource.currentUri = segments[0]
 
-      this.videoLoader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
+      resource.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
 
-      await this.videoLoader.open(
+      await resource.loader.open(
         {
-          url: this.videoCurrentUri
+          url: resource.currentUri
         },
         {
           from: 0,
           to: -1
         }
       )
-      return this.videoLoader.read(buffer)
+      return resource.loader.read(buffer)
     }
     else {
-      this.videoLoader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
-      if (this.videoInitSegmentPadding) {
-        await this.videoLoader.open(
+      resource.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
+      if (resource.initSegmentPadding) {
+        await resource.loader.open(
           {
-            url: this.videoInitSegmentPadding
+            url: resource.initSegmentPadding
           },
           {
             from: 0,
             to: -1
           }
         )
-        this.videoInitSegmentPadding = null
-        this.videoSegmentIndex--
+        resource.initSegmentPadding = null
+        resource.segmentIndex--
       }
       else {
-        await this.videoLoader.open(
+        await resource.loader.open(
           {
-            url: this.videoSegments[this.videoSegmentIndex]
+            url: resource.segments[resource.segmentIndex]
           },
           {
             from: 0,
@@ -422,63 +341,69 @@ export default class DashIOLoader extends IOLoader {
           }
         )
       }
-      return this.videoLoader.read(buffer)
+      return resource.loader.read(buffer)
     }
   }
 
   public async read(buffer: Uint8ArrayInterface, options: {
-    mediaType: 'audio' | 'video'
+    mediaType: MediaType
   }): Promise<number> {
     if (options.mediaType === 'audio') {
-      return this.readAudio(buffer)
+      return this.readResource(buffer, this.audioResource)
     }
-    else {
-      return this.readVideo(buffer)
+    else if (options.mediaType === 'video') {
+      return this.readResource(buffer, this.videoResource)
+    }
+    else if (options.mediaType === 'subtitle') {
+      return this.readResource(buffer, this.subtitleResource)
+    }
+    return errorType.INVALID_ARGUMENT
+  }
+
+
+  private async seekResource(timestamp: int64, resource: Resource) {
+    if (resource.loader) {
+      await resource.loader.abort()
+      resource.loader = null
+    }
+
+    let seekTime = static_cast<int32>(timestamp)
+
+    if (resource.segments) {
+      let index = 0
+      const mediaList = resource.type === 'audio'
+        ? this.mediaPlayList.mediaList.audio
+        : (resource.type === 'video'
+          ? this.mediaPlayList.mediaList.video
+          : this.mediaPlayList.mediaList.subtitle
+        )
+      const segmentList = mediaList[resource.selectedIndex].mediaSegments
+      if (segmentList?.length) {
+        for (let i = 0; i < segmentList.length; i++) {
+          if (seekTime >= segmentList[i].start * 1000 && seekTime < segmentList[i].end * 1000) {
+            index = i
+            break
+          }
+        }
+      }
+      resource.segmentIndex = index + (mediaList[resource.selectedIndex].initSegment ? 1 : 0)
     }
   }
 
   public async seek(timestamp: int64, options: {
-    mediaType: 'audio' | 'video'
+    mediaType: MediaType
   }) {
 
-    if (this.audioLoader && options.mediaType === 'audio') {
-      await this.audioLoader.abort()
-      this.audioLoader = null
+    if (options.mediaType === 'audio' && this.audioResource.loader) {
+      await this.seekResource(timestamp, this.audioResource)
     }
-    if (this.videoLoader && options.mediaType === 'video') {
-      await this.videoLoader.abort()
-      this.videoLoader = null
+    if (options.mediaType === 'video' && this.videoResource.loader) {
+      await this.seekResource(timestamp, this.videoResource)
     }
-
-    let seekTime = Number(timestamp)
-
-    if (this.audioSegments && options.mediaType === 'audio') {
-      let index = 0
-      const segmentList = this.mediaPlayList.mediaList.audio[this.audioSelectedIndex].mediaSegments
-      if (segmentList?.length) {
-        for (let i = 0; i < segmentList.length; i++) {
-          if (seekTime >= segmentList[i].start * 1000 && seekTime < segmentList[i].end * 1000) {
-            index = i
-            break
-          }
-        }
-      }
-      this.audioSegmentIndex = index + (this.mediaPlayList.mediaList.audio[this.audioSelectedIndex].initSegment ? 1 : 0)
+    if (options.mediaType === 'subtitle' && this.subtitleResource.loader) {
+      await this.seekResource(timestamp, this.subtitleResource)
     }
 
-    if (this.videoSegments && options.mediaType === 'video') {
-      let index = 0
-      const segmentList = this.mediaPlayList.mediaList.video[this.videoSelectedIndex].mediaSegments
-      if (segmentList?.length) {
-        for (let i = 0; i < segmentList.length; i++) {
-          if (seekTime >= segmentList[i].start * 1000 && seekTime < segmentList[i].end * 1000) {
-            index = i
-            break
-          }
-        }
-      }
-      this.videoSegmentIndex = index + (this.mediaPlayList.mediaList.video[this.videoSelectedIndex].initSegment ? 1 : 0)
-    }
     if (this.status === IOLoaderStatus.COMPLETE) {
       this.status = IOLoaderStatus.BUFFERING
     }
@@ -489,13 +414,17 @@ export default class DashIOLoader extends IOLoader {
   }
 
   public async abort() {
-    if (this.videoLoader) {
-      await this.videoLoader.abort()
-      this.videoLoader = null
+    if (this.videoResource.loader) {
+      await this.videoResource.loader.abort()
+      this.videoResource.loader = null
     }
-    if (this.audioLoader) {
-      await this.audioLoader.abort()
-      this.audioLoader = null
+    if (this.audioResource.loader) {
+      await this.audioResource.loader.abort()
+      this.audioResource.loader = null
+    }
+    if (this.subtitleResource.loader) {
+      await this.subtitleResource.loader.abort()
+      this.subtitleResource.loader = null
     }
   }
 
@@ -530,7 +459,7 @@ export default class DashIOLoader extends IOLoader {
             frameRate: media.frameRate
           }
         }),
-        selectedIndex: this.videoSelectedIndex
+        selectedIndex: this.videoResource.selectedIndex
       }
     }
     return {
@@ -547,7 +476,7 @@ export default class DashIOLoader extends IOLoader {
             lang: media.lang
           }
         }),
-        selectedIndex: this.audioSelectedIndex
+        selectedIndex: this.audioResource.selectedIndex
       }
     }
     return {
@@ -565,7 +494,7 @@ export default class DashIOLoader extends IOLoader {
             codecs: media.codecs
           }
         }),
-        selectedIndex: 0
+        selectedIndex: this.subtitleResource.selectedIndex
       }
     }
     return {
@@ -575,43 +504,57 @@ export default class DashIOLoader extends IOLoader {
   }
 
   public selectVideo(index: number) {
-    if (index !== this.videoSelectedIndex
+    if (index !== this.videoResource.selectedIndex
       && this.hasVideo()
       && index >= 0
       && index < this.mediaPlayList.mediaList.video.length
     ) {
-      this.videoSelectedIndex = index
-      const media = this.mediaPlayList.mediaList.video[this.videoSelectedIndex]
+      this.videoResource.selectedIndex = index
+      const media = this.mediaPlayList.mediaList.video[this.videoResource.selectedIndex]
       if (media.file) {
-        this.videoSegments = [media.file]
+        this.videoResource.segments = [media.file]
       }
       else {
-        this.videoSegments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
-        this.videoInitSegmentPadding = media.initSegment
+        this.videoResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
+        this.videoResource.initSegmentPadding = media.initSegment
       }
     }
   }
 
   public selectAudio(index: number) {
-    if (index !== this.audioSelectedIndex
+    if (index !== this.audioResource.selectedIndex
       && this.hasAudio()
       && index >= 0
       && index < this.mediaPlayList.mediaList.audio.length
     ) {
-      this.audioSelectedIndex = index
-      const media = this.mediaPlayList.mediaList.audio[this.audioSelectedIndex]
+      this.audioResource.selectedIndex = index
+      const media = this.mediaPlayList.mediaList.audio[this.audioResource.selectedIndex]
       if (media.file) {
-        this.audioSegments = [media.file]
+        this.audioResource.segments = [media.file]
       }
       else {
-        this.audioSegments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
-        this.audioInitSegmentPadding = media.initSegment
+        this.audioResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
+        this.audioResource.initSegmentPadding = media.initSegment
       }
     }
   }
 
   public selectSubtitle(index: number) {
-
+    if (index !== this.subtitleResource.selectedIndex
+      && this.hasSubtitle()
+      && index >= 0
+      && index < this.mediaPlayList.mediaList.subtitle.length
+    ) {
+      this.subtitleResource.selectedIndex = index
+      const media = this.mediaPlayList.mediaList.subtitle[this.subtitleResource.selectedIndex]
+      if (media.file) {
+        this.subtitleResource.segments = [media.file]
+      }
+      else {
+        this.subtitleResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
+        this.subtitleResource.initSegmentPadding = media.initSegment
+      }
+    }
   }
 
   public getMinBuffer() {
