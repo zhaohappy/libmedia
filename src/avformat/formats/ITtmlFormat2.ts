@@ -40,7 +40,7 @@ import * as text from 'common/util/text'
 import * as ittml from './ttml/ittml'
 import { IOFlags } from 'common/io/flags'
 
-export default class ITTMLFormat extends IFormat {
+export default class ITtmlFormat extends IFormat {
 
   public type: AVFormat = AVFormat.TTML
 
