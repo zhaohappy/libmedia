@@ -565,11 +565,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
-  private isHls() {
+  public isHls() {
     return this.ext === 'm3u8' || this.ext === 'm3u'
   }
 
-  private isDash() {
+  public isDash() {
     return this.ext === 'mpd'
   }
 

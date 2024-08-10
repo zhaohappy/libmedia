@@ -841,95 +841,96 @@
                 subtitle: true
               }).then(() => {
                 document.querySelector('#loading-mask').style.display = 'none'
+                if (!player.isDash()) {
+                  const audioStreams = player.getStreams().filter((s => s.mediaType === 'Audio'))
+                  const videoStreams = player.getStreams().filter((s => s.mediaType === 'Video'))
 
-                const audioStreams = player.getStreams().filter((s => s.mediaType === 'Audio'))
-                const videoStreams = player.getStreams().filter((s => s.mediaType === 'Video'))
-
-                if (audioStreams.length > 1) {
-                  if (audioChangeComponent) {
-                    audioChangeComponent.$destroy()
-                    document.querySelector('#audio-change').innerHTML = `音频:
-                    <el-select v-model="value" @change="change">
-                      <el-option
-                        v-for="item in options"
-                        :key="item.value"
-                        :label="item.name"
-                        :value="item.value">
-                      </el-option>
-                    </el-select>`
-                  }
-                  audioChangeComponent = new Vue({
-                    el: '#audio-change',
-                    data: function() {
-                      return { 
-                        options: audioStreams.map((item) => {
-                          return {
-                            value: item.id,
-                            name: item.metadata['title'] || item.metadata['languageString'] || item.metadata['language'] || item.metadata['name'] || 'default'
-                          }
-                        }),
-                        value: player.getSelectedAudioStreamId()
-                      }
-                    },
-                    methods: {
-                      change() {
-                        if (player) {
-                          player.selectAudio(this.value)
-                        }
-                      }
-                    },
-                    mounted: function () {
-                      this.$el.style.display = 'inline-block'
+                  if (audioStreams.length > 1) {
+                    if (audioChangeComponent) {
+                      audioChangeComponent.$destroy()
+                      document.querySelector('#audio-change').innerHTML = `音频:
+                      <el-select v-model="value" @change="change">
+                        <el-option
+                          v-for="item in options"
+                          :key="item.value"
+                          :label="item.name"
+                          :value="item.value">
+                        </el-option>
+                      </el-select>`
                     }
-                  })
-                }
-                else {
-                  document.querySelector('#audio-change').style.display = 'none'
-                }
-
-                if (videoStreams.length > 1) {
-                  if (videoChangeComponent) {
-                    videoChangeComponent.$destroy()
-                    document.querySelector('#video-change').innerHTML = `视频:
-                    <el-select v-model="value" @change="change">
-                      <el-option
-                        v-for="item in options"
-                        :key="item.value"
-                        :label="item.name"
-                        :value="item.value">
-                      </el-option>
-                    </el-select>`
-                  }
-                  videoChangeComponent = new Vue({
-                    el: '#video-change',
-                    data: function() {
-                      return { 
-                        options: videoStreams.map((item) => {
-                          return {
-                            value: item.id,
-                            name: item.metadata['title'] || item.metadata['languageString'] || item.metadata['language'] || item.metadata['name'] || 'default'
-                          }
-                        }),
-                        value: player.getSelectedVideoStreamId()
-                      }
-                    },
-                    methods: {
-                      change() {
-                        if (player) {
-                          player.selectVideo(this.value)
+                    audioChangeComponent = new Vue({
+                      el: '#audio-change',
+                      data: function() {
+                        return { 
+                          options: audioStreams.map((item) => {
+                            return {
+                              value: item.id,
+                              name: item.metadata['title'] || item.metadata['languageString'] || item.metadata['language'] || item.metadata['name'] || 'default'
+                            }
+                          }),
+                          value: player.getSelectedAudioStreamId()
                         }
+                      },
+                      methods: {
+                        change() {
+                          if (player) {
+                            player.selectAudio(this.value)
+                          }
+                        }
+                      },
+                      mounted: function () {
+                        this.$el.style.display = 'inline-block'
                       }
-                    },
-                    mounted: function () {
-                      this.$el.style.display = 'inline-block'
-                    }
-                  })
-                }
-                else {
-                  document.querySelector('#video-change').style.display = 'none'
-                }
+                    })
+                  }
+                  else {
+                    document.querySelector('#audio-change').style.display = 'none'
+                  }
 
-                updateSubtitleList()
+                  if (videoStreams.length > 1) {
+                    if (videoChangeComponent) {
+                      videoChangeComponent.$destroy()
+                      document.querySelector('#video-change').innerHTML = `视频:
+                      <el-select v-model="value" @change="change">
+                        <el-option
+                          v-for="item in options"
+                          :key="item.value"
+                          :label="item.name"
+                          :value="item.value">
+                        </el-option>
+                      </el-select>`
+                    }
+                    videoChangeComponent = new Vue({
+                      el: '#video-change',
+                      data: function() {
+                        return { 
+                          options: videoStreams.map((item) => {
+                            return {
+                              value: item.id,
+                              name: item.metadata['title'] || item.metadata['languageString'] || item.metadata['language'] || item.metadata['name'] || 'default'
+                            }
+                          }),
+                          value: player.getSelectedVideoStreamId()
+                        }
+                      },
+                      methods: {
+                        change() {
+                          if (player) {
+                            player.selectVideo(this.value)
+                          }
+                        }
+                      },
+                      mounted: function () {
+                        this.$el.style.display = 'inline-block'
+                      }
+                    })
+                  }
+                  else {
+                    document.querySelector('#video-change').style.display = 'none'
+                  }
+
+                  updateSubtitleList()
+                }
               })
             // })
           })
