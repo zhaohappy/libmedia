@@ -64,6 +64,7 @@ import * as object from 'common/util/object'
 import * as riff from './riff/riff'
 import * as isomTags from './isom/tags'
 import concatTypeArray from 'common/function/concatTypeArray'
+import * as text from 'common/util/text'
 
 export default class IMatroskaFormat extends IFormat {
 
@@ -242,9 +243,27 @@ export default class IMatroskaFormat extends IFormat {
         }
 
         if (track.codecPrivate?.data && (track.codecPrivate.size - static_cast<int64>(extradataOffset)) > 0) {
-          stream.codecpar.extradataSize = static_cast<int32>(track.codecPrivate.size - static_cast<int64>(extradataOffset))
-          stream.codecpar.extradata = avMalloc(stream.codecpar.extradataSize)
-          memcpyFromUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize, track.codecPrivate.data.subarray(extradataOffset))
+          let codecPrivateData = track.codecPrivate.data.subarray(extradataOffset)
+
+          if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_SSA
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_ASS
+          ) {
+            const header = text.decode(codecPrivateData)
+            let lines = header.split(/\r?\n/)
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].trim() === '[Events]') {
+                lines = lines.slice(0, i)
+                break
+              }
+            }
+            lines.push('[Events]')
+            lines.push('Format: ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text')
+            codecPrivateData = text.encode(lines.join('\n'))
+          }
+
+          stream.codecpar.extradataSize = codecPrivateData.length
+          stream.codecpar.extradata = avMalloc(codecPrivateData.length)
+          memcpyFromUint8Array(stream.codecpar.extradata, codecPrivateData.length, codecPrivateData)
 
           if (stream.codecpar.extradata) {
             switch (stream.codecpar.codecId) {
@@ -511,10 +530,7 @@ export default class IMatroskaFormat extends IFormat {
 
     if (this.context.currentCluster.blockGroup?.block) {
       additions = this.context.currentCluster.blockGroup.additions
-      if (!this.context.currentCluster.blockGroup.reference) {
-        isKey = 1
-      }
-      else {
+      if (this.context.currentCluster.blockGroup.reference) {
         isKey = this.context.currentCluster.blockGroup.reference.length === 0 ? 1 : 0
       }
       if (this.context.currentCluster.blockGroup.duration) {
