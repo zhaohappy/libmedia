@@ -39,14 +39,15 @@ import { getNextSample } from './mov/function/getNextSample'
 import createMovContext from './mov/function/createMovContext'
 import { AVFormat, AVSeekFlags } from '../avformat'
 import * as array from 'common/util/array'
-import { mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
+import { mapSafeUint8Array, memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
+import { avMalloc, avMallocz } from 'avutil/util/mem'
 import { addAVPacketData, addAVPacketSideData } from 'avutil/util/avpacket'
 import { avRescaleQ } from 'avutil/util/rational'
 import AVStream from '../AVStream'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { IOFlags } from 'common/io/flags'
 import { BitFormat } from '../codecs/h264'
+import * as intread from 'avutil/util/intread'
 
 export default class IMovFormat extends IFormat {
 
@@ -199,6 +200,37 @@ export default class IMovFormat extends IFormat {
         || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
       ) {
         avpacket.bitFormat = BitFormat.AVCC
+      }
+
+      if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_WEBVTT
+        && avpacket.size >= 8
+      ) {
+        const tag = static_cast<uint32>(intread.rb32(avpacket.data + 4))
+        const packetSize = avpacket.size
+        if (tag === mktag(BoxType.VTTE)) {
+          if (packetSize === 8) {
+            const newData = avMallocz(1)
+            addAVPacketData(avpacket, newData, 1)
+            avpacket.size = 1
+          }
+        }
+        if (packetSize > 8 && (tag === mktag(BoxType.VTTE) || tag === mktag(BoxType.VTTC))) {
+          let start: pointer<uint8> = (avpacket.data + 8) as pointer<uint8>
+          const end: pointer<uint8> = (avpacket.data + packetSize) as pointer<uint8>
+          while (start < end) {
+            const size = intread.rb32(start)
+            const tag = static_cast<uint32>(intread.rb32(start + 4))
+            if (tag === mktag(BoxType.PAYL) && size > 8) {
+              const newData = avMalloc(size - 8)
+              memcpy(newData, (start + 8) as pointer<uint8>, size - 8)
+              addAVPacketData(avpacket, newData, size - 8)
+              break
+            }
+            else {
+              start = reinterpret_cast<pointer<uint8>>(start + size)
+            }
+          }
+        }
       }
 
       if (stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
