@@ -52,7 +52,17 @@ export default class TTMLDecoder extends Decoder {
       return 0
     }
 
-    this.queue = this.queue.concat(ittml.parse(context).queue)
+    if (/<tt/.test(context.trim())) {
+      this.queue = this.queue.concat(ittml.parse(context).queue)
+    }
+    else {
+      this.queue.push({
+        pts: avpacket.pts,
+        duration: avpacket.duration,
+        context,
+        region: 'Default'
+      })
+    }
 
     return 0
   }
