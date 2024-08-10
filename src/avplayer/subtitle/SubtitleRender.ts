@@ -293,7 +293,9 @@ export default class SubtitleRender {
   }
 
   public start() {
-    this.loop.start()
+    if (!this.loop.isStarted()) {
+      this.loop.start()
+    }
     this.ended = false
   }
 

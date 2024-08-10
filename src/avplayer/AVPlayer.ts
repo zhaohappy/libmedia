@@ -2307,6 +2307,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           this.lastSelectedInnerSubtitleStreamIndex = stream.index
         }
 
+        if (this.subtitleRender) {
+          this.subtitleRender.start()
+        }
+
         logger.info(`changed selected subtitle stream, from ${this.selectedSubtitleStream.index} to ${stream.index}, taskId: ${this.taskId}`)
 
         this.selectedSubtitleStream = stream
