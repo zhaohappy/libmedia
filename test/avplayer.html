@@ -831,7 +831,7 @@
               })
             }
             else {
-              subtitleChangeDom.style.display = 'none'
+              document.querySelector('#subtitle-change').style.display = 'none'
             }
 
             // player.seek(400000).then(() => {
@@ -883,6 +883,9 @@
                     }
                   })
                 }
+                else {
+                  document.querySelector('#audio-change').style.display = 'none'
+                }
 
                 if (videoStreams.length > 1) {
                   if (videoChangeComponent) {
@@ -921,6 +924,9 @@
                       this.$el.style.display = 'inline-block'
                     }
                   })
+                }
+                else {
+                  document.querySelector('#video-change').style.display = 'none'
                 }
 
                 updateSubtitleList()
@@ -1046,6 +1052,9 @@
               this.$el.style.display = 'inline-block'
             }
           })
+        }
+        else {
+          document.querySelector('#subtitle-change').style.display = 'none'
         }
       }
 
