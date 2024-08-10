@@ -119,8 +119,10 @@ export function buildIndex(stream: Stream) {
     }
   }
 
-  // 最后一个 sample 使用前一个的 duration
-  samplesIndex[currentSample - 1].duration = samplesIndex[currentSample - 2].duration
+  if (samplesIndex.length > 1) {
+    // 最后一个 sample 使用前一个的 duration
+    samplesIndex[currentSample - 1].duration = samplesIndex[currentSample - 2].duration
+  }
 
   context.samplesIndex = samplesIndex
 }
