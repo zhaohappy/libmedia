@@ -38,6 +38,7 @@ import { IOError } from 'common/io/error'
 import * as array from 'common/util/array'
 import * as text from 'common/util/text'
 import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
+import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 
 export default class IWebVttFormat extends IFormat {
@@ -70,9 +71,9 @@ export default class IWebVttFormat extends IFormat {
       if (line === '') {
         break
       }
-      chunk += line
+      chunk += line + '\n'
     }
-    return { chunk, pos }
+    return { chunk: chunk.trim(), pos }
   }
 
   public async readHeader(formatContext: AVIFormatContext): Promise<number> {
@@ -102,15 +103,26 @@ export default class IWebVttFormat extends IFormat {
 
     this.index = 0
 
+    const styles: { style: string, pos: int64 }[] = []
+
+    let lastStartTs = 0n
+
     try {
       while (true) {
         const { chunk, pos } = await this.readChunk(formatContext)
 
-        if (chunk === '' || /^NOTE/.test(chunk) || /^STYLE/.test(chunk)) {
+        if (chunk === '' || /^NOTE/.test(chunk)) {
           continue
         }
 
-        const lines = chunk.split(/\r?\n|\r/)
+        if (/^STYLE/.test(chunk)) {
+          styles.push({
+            style: chunk.replace(/STYLE[\s|\n]?/, ''),
+            pos
+          })
+        }
+
+        const lines = chunk.split('\n')
 
         let identifier: string
         let options: string
@@ -143,17 +155,42 @@ export default class IWebVttFormat extends IFormat {
           continue
         }
 
-        this.queue.push({
+        stream.nbFrames++
+        stream.duration = endTs
+
+        const cue = {
           identifier,
           options,
           context,
           startTs,
           endTs,
           pos
-        })
+        }
+
+        if (startTs >= lastStartTs) {
+          this.queue.push(cue)
+          lastStartTs = startTs
+        }
+        else {
+          array.sortInsert(
+            this.queue,
+            cue,
+            (cue) => {
+              if (cue.startTs < cue.startTs) {
+                return 1
+              }
+              else {
+                return -1
+              }
+            }
+          )
+        }
       }
     }
     catch (error) {
+
+      stream.metadata['styles'] = styles
+
       return 0
     }
 
@@ -197,11 +234,17 @@ export default class IWebVttFormat extends IFormat {
     const data = avMalloc(buffer.length)
     memcpyFromUint8Array(data, buffer.length, buffer)
     addAVPacketData(avpacket, data, buffer.length)
+
+    return 0
   }
 
   public async seek(formatContext: AVIFormatContext, stream: AVStream, timestamp: int64, flags: int32): Promise<int64> {
     if (flags & AVSeekFlags.BYTE) {
       return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
+    }
+    if (timestamp <= 0n) {
+      this.index = 0
+      return 0n
     }
     const index = array.binarySearch(this.queue, (item) => {
       if (item.startTs > timestamp) {
@@ -209,9 +252,9 @@ export default class IWebVttFormat extends IFormat {
       }
       return 1
     })
-    if (index > 0) {
+    if (index >= 0) {
       logger.debug(`seek in cues, found index: ${index}, pts: ${this.queue[index].startTs}, pos: ${this.queue[index].pos}`)
-      this.index = index
+      this.index = Math.max(index - 1, 0)
       return 0n
     }
     return static_cast<int64>(errorType.DATA_INVALID)

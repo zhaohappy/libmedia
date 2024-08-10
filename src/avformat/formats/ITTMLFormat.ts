@@ -26,30 +26,29 @@
 import AVStream from '../AVStream'
 import { AVIFormatContext } from '../AVFormatContext'
 import AVPacket from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
+import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
 import { AVFormat, AVSeekFlags } from '../avformat'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, addAVPacketSideData } from 'avutil/util/avpacket'
+import { addAVPacketData } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import * as array from 'common/util/array'
 import * as text from 'common/util/text'
-import { hhColonDDColonSSCommaMill2Int64 } from 'common/util/time'
+import * as ittml from './ttml/ittml'
+import { IOFlags } from 'common/io/flags'
 
+export default class ITTMLFormat extends IFormat {
 
-export default class IWebVttFormat extends IFormat {
-
-  public type: AVFormat = AVFormat.SUBRIP
+  public type: AVFormat = AVFormat.TTML
 
   private queue: {
-    identifier?: string
-    startTs: int64
-    endTs: int64
+    pts: int64
+    duration: int64
     context: string
-    pos: int64
+    region: string
   }[]
   private index: int32
 
@@ -61,90 +60,39 @@ export default class IWebVttFormat extends IFormat {
     this.queue = []
   }
 
-  private async readChunk(formatContext: AVIFormatContext) {
-    let chunk = ''
-    const pos = formatContext.ioReader.getPos()
-    while (true) {
-      const line = await formatContext.ioReader.readLine()
-      if (line === '') {
-        break
-      }
-      chunk += line + '\n'
-    }
-    return { chunk: chunk.trim(), pos }
-  }
-
   public async readHeader(formatContext: AVIFormatContext): Promise<number> {
     const stream = formatContext.createStream()
-    stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_SUBRIP
+    stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_TTML
     stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_SUBTITLE
     stream.timeBase.den = 1000
     stream.timeBase.num = 1
 
-    this.index = 0
-    let lastStartTs = 0n
+    let xml = ''
 
-    try {
-      while (true) {
-        const { chunk, pos } = await this.readChunk(formatContext)
+    if (formatContext.ioReader.flags & IOFlags.SEEKABLE) {
+      const fileSize = await formatContext.ioReader.fileSize()
+      xml = await formatContext.ioReader.readString(static_cast<int32>(fileSize))
+    }
+    else {
+      try {
+        xml += await formatContext.ioReader.readLine() + '\n'
+      }
+      catch (e) {}
+    }
 
-        if (chunk === '') {
-          continue
-        }
-
-        const lines = chunk.split('\n')
-
-        let identifier: string = lines.shift().trim()
-
-        let times = lines.shift().split(/--?>/)
-        const startTs = hhColonDDColonSSCommaMill2Int64(times[0])
-        const endTs = hhColonDDColonSSCommaMill2Int64(times[1])
-
-        if (endTs <= startTs) {
-          continue
-        }
-
-        const context = lines.join('\n').trim()
-
-        if (!context) {
-          continue
-        }
-
-        stream.nbFrames++
-        stream.duration = endTs
-
-        const cue = {
-          identifier,
-          context,
-          startTs,
-          endTs,
-          pos
-        }
-
-        if (startTs >= lastStartTs) {
-          this.queue.push(cue)
-          lastStartTs = startTs
-        }
-        else {
-          array.sortInsert(
-            this.queue,
-            cue,
-            (cue) => {
-              if (cue.startTs < cue.startTs) {
-                return 1
-              }
-              else {
-                return -1
-              }
-            }
-          )
-        }
+    if (text) {
+      const result = ittml.parse(xml)
+      this.queue = result.queue
+      if (result.head) {
+        const header = JSON.stringify(result.head)
+        const data = text.encode(header)
+        stream.codecpar.extradata = avMalloc(data.length)
+        memcpyFromUint8Array(stream.codecpar.extradata, data.length, data)
+        stream.codecpar.extradataSize = data.length
       }
     }
-    catch (error) {
-      return 0
-    }
-
+    this.index = 0
+    return 0
   }
 
   public async readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
@@ -166,15 +114,9 @@ export default class IWebVttFormat extends IFormat {
     avpacket.timeBase.den = stream.timeBase.den
     avpacket.timeBase.num = stream.timeBase.num
 
-    avpacket.dts = avpacket.pts = cue.startTs
-    avpacket.duration = cue.endTs - cue.startTs
+    avpacket.dts = avpacket.pts = cue.pts
+    avpacket.duration = cue.duration
 
-    if (cue.identifier) {
-      const buffer = text.encode(cue.identifier)
-      const data = avMalloc(buffer.length)
-      memcpyFromUint8Array(data, buffer.length, buffer)
-      addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_IDENTIFIER, data, buffer.length)
-    }
     const buffer = text.encode(cue.context)
     const data = avMalloc(buffer.length)
     memcpyFromUint8Array(data, buffer.length, buffer)
@@ -192,13 +134,13 @@ export default class IWebVttFormat extends IFormat {
       return 0n
     }
     const index = array.binarySearch(this.queue, (item) => {
-      if (item.startTs > timestamp) {
+      if (item.pts > timestamp) {
         return -1
       }
       return 1
     })
     if (index >= 0) {
-      logger.debug(`seek in cues, found index: ${index}, pts: ${this.queue[index].startTs}, pos: ${this.queue[index].pos}`)
+      logger.debug(`seek in cues, found index: ${index}, pts: ${this.queue[index].pts}`)
       this.index = Math.max(index - 1, 0)
       return 0n
     }
