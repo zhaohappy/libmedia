@@ -357,16 +357,16 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
     }
     else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE) {
       if (type === mktag(BoxType.STPP)) {
-        stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_TTML
+        stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_TTML
       }
       else if (type === mktag(BoxType.WVTT)) {
-        stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_WEBVTT
+        stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_WEBVTT
       }
       else if (type === mktag(BoxType.TX3G) || type === mktag(BoxType.TEXT)) {
-        stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MOV_TEXT
+        stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_MOV_TEXT
       }
       else if (type === mktag(BoxType.C608)) {
-        stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_EIA_608
+        stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_EIA_608
       }
       await ioReader.skip(Math.min(size - 8, Number(endPos - ioReader.getPos())))
     }
