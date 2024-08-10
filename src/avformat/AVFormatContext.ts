@@ -38,6 +38,11 @@ import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import { AVFormat } from './avformat'
 import { destroyAVPacket } from 'avutil/util/avpacket'
 import { Rational } from 'avutil/struct/rational'
+import * as staticData from 'cheap/staticData'
+import { Mutex, lock, unlock } from 'cheap/thread/mutex'
+
+const streamCounter: pointer<int32> = reinterpret_cast<pointer<int32>>(staticData.malloc(sizeof(int32), sizeof(int32)))
+const streamCounterMutex: pointer<Mutex> = reinterpret_cast<pointer<Mutex>>(staticData.malloc(sizeof(Mutex), sizeof(atomic_int32)))
 
 export interface AVChapter {
   id: uint64
@@ -213,7 +218,16 @@ export class AVFormatContext implements AVIFormatContext, AVOFormatContext {
   public createStream() {
     const stream = new AVStream()
     stream.index = this.streamIndex++
-    stream.id = stream.index
+
+    if (defined(ENABLE_THREADS)) {
+      lock(streamCounterMutex)
+    }
+    stream.id = accessof(streamCounter)
+    accessof(streamCounter) <- reinterpret_cast<int32>(stream.id + 1)
+    if (defined(ENABLE_THREADS)) {
+      unlock(streamCounterMutex)
+    }
+
     this.removeStreamByIndex(stream.index)
     this.streams.push(stream)
 

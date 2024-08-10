@@ -313,7 +313,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
     )
     ) {
       object.each(streamDtsMap, (list, id) => {
-        const stream = formatContext.getStreamById(+id)
+        const stream = formatContext.getStreamByIndex(+id)
         if (list && list.length > 1) {
           let count = 0n
           for (let i = 1; i < list.length; i++) {
@@ -405,7 +405,7 @@ function addSample(stream: AVStream, avpacket: pointer<AVPacket>) {
 // @ts-ignore
 @deasync
 async function packetNeedRead(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>) {
-  const stream = formatContext.getStreamById(avpacket.streamIndex)
+  const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
   let ret = 0
   // h264 hevc aac 解析到 extradata，继续
   if (stream
@@ -527,12 +527,15 @@ export async function readAVPacket(formatContext: AVIFormatContext, avpacket: po
 @deasync
 export async function seek(formatContext: AVIFormatContext, streamIndex: number, timestamp: int64, flags: int32): Promise<int64> {
 
-  let stream = formatContext.streams.find((stream) => stream.index === streamIndex)
+  let stream = streamIndex > -1 ? formatContext.streams.find((stream) => stream.index === streamIndex) : null
 
   if (!stream) {
     stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
     if (!stream) {
       stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_AUDIO)
+    }
+    if (!stream) {
+      stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_SUBTITLE)
     }
   }
 
