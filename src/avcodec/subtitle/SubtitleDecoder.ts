@@ -25,27 +25,27 @@
 
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import AVPacket from 'avutil/struct/avpacket'
-import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
-import { createAVFrame, destroyAVFrame } from 'avutil/util/avframe'
 import Decoder from './decoder/Decoder'
 import { AVCodecID } from 'avutil/codec'
 import * as errorType from 'avutil/error'
 import WebVttDecoder from './decoder/WebVttDecoder'
 import SubRipDecoder from './decoder/SubRipDecoder'
+import AssDecoder from './decoder/AssDecoder'
 import TTMLDecoder from './decoder/TTMLDecoder'
+import TimedTextDecoder from './decoder/TimedTextDecoder'
 import TextDecoder from './decoder/TextDecoder'
+import { AVSubtitle } from 'avutil/struct/avsubtitle'
 
 export type SubtitleDecoderOptions = {
-  onReceiveFrame?: (frame: pointer<AVFrame>) => void
+  onReceiveSubtitle?: (subtitle: AVSubtitle) => void
   onError?: (error?: Error) => void
-  avframePool?: AVFramePool
 }
 
 export default class SubtitleDecoder {
 
   private options: SubtitleDecoderOptions
 
-  private frame: pointer<AVFrame>
+  private frame: AVSubtitle
 
   private decoder: Decoder
 
@@ -57,19 +57,23 @@ export default class SubtitleDecoder {
     if (this.frame) {
       return this.frame
     }
-    return this.frame = this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame()
+    return this.frame = {
+      pts: 0n,
+      duration: 0n,
+      rects: [],
+      timeBase: {
+        den: 1,
+        num: 1
+      }
+    }
   }
 
   private outputAVFrame() {
     if (this.frame) {
-      if (this.options.onReceiveFrame) {
-        this.options.onReceiveFrame(this.frame)
+      if (this.options.onReceiveSubtitle) {
+        this.options.onReceiveSubtitle(this.frame)
       }
-      else {
-        this.options.avframePool ? this.options.avframePool.release(this.frame as pointer<AVFrameRef>) : destroyAVFrame(this.frame)
-      }
-
-      this.frame = nullptr
+      this.frame = null
     }
   }
 
@@ -86,14 +90,18 @@ export default class SubtitleDecoder {
       //   this.decoder = new SubRipDecoder()
       //   break
       case AVCodecID.AV_CODEC_ID_TTML:
-      case AVCodecID.AV_CODEC_ID_MOV_TEXT:
         this.decoder = new TTMLDecoder()
         break
       case AVCodecID.AV_CODEC_ID_TEXT:
       case AVCodecID.AV_CODEC_ID_SUBRIP:
+        this.decoder = new TextDecoder()
+        break
+      case AVCodecID.AV_CODEC_ID_MOV_TEXT:
+        this.decoder = new TimedTextDecoder()
+        break
       case AVCodecID.AV_CODEC_ID_SSA:
       case AVCodecID.AV_CODEC_ID_ASS:
-        this.decoder = new TextDecoder()
+        this.decoder = new AssDecoder()
         break
       default:
         return errorType.CODEC_NOT_SUPPORT
@@ -137,8 +145,7 @@ export default class SubtitleDecoder {
 
   public close() {
     if (this.frame) {
-      this.options.avframePool ? this.options.avframePool.release(this.frame as pointer<AVFrameRef>) : destroyAVFrame(this.frame)
-      this.frame = nullptr
+      this.frame = null
     }
   }
 }

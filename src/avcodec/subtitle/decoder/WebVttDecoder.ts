@@ -23,15 +23,14 @@
  *
  */
 
-import AVFrame from 'avutil/struct/avframe'
 import AVPacket from 'avutil/struct/avpacket'
 import Decoder from './Decoder'
 import * as text from 'common/util/text'
 import { getAVPacketData } from 'avutil/util/avpacket'
-import { avbufferAlloc } from 'avutil/util/avbuffer'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { Rational } from 'avutil/struct/rational'
 import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
+import { AVSubtitle, AVSubtitleType } from 'avutil/struct/avsubtitle'
+import { AV_MILLI_TIME_BASE } from 'avutil/constant'
 
 export default class WebVttDecoder extends Decoder {
 
@@ -111,24 +110,18 @@ export default class WebVttDecoder extends Decoder {
     return 0
   }
 
-  public receiveAVFrame(avframe: pointer<AVFrame>): int32 {
+  public receiveAVFrame(sub: AVSubtitle): int32 {
     if (this.queue.length) {
       const item = this.queue.shift()
-      avframe.pts = item.pts
-      avframe.duration = item.duration
-
-      const buffer = text.encode(item.context)
-
-      const ref = avbufferAlloc(buffer.length)
-
-      memcpyFromUint8Array(ref.data, buffer.length, buffer)
-
-      avframe.buf[0] = ref
-      avframe.data[0] = ref.data
-      avframe.linesize[0] = buffer.length
-      avframe.timeBase.den = item.timeBase.den
-      avframe.timeBase.num = item.timeBase.num
-
+      sub.pts = item.pts
+      sub.duration = item.duration
+      sub.timeBase.den = AV_MILLI_TIME_BASE
+      sub.timeBase.num = 1
+      sub.rects.push({
+        type: AVSubtitleType.SUBTITLE_WEBVTT,
+        text: item.context,
+        flags: 0
+      })
       return 1
     }
     return 0

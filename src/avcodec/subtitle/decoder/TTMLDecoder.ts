@@ -23,26 +23,13 @@
  *
  */
 
-import AVFrame from 'avutil/struct/avframe'
 import AVPacket from 'avutil/struct/avpacket'
 import Decoder from './Decoder'
 import * as text from 'common/util/text'
 import { getAVPacketData } from 'avutil/util/avpacket'
-import { avbufferAlloc } from 'avutil/util/avbuffer'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
-import xml2json from 'common/util/xml2Json'
-import * as is from 'common/util/is'
-import * as array from 'common/util/array'
 import { AV_MILLI_TIME_BASE } from 'avutil/constant'
-import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
-
-
-interface P {
-  begin: string
-  end?: string
-  dur?: string
-  context: string
-}
+import { AVSubtitle, AVSubtitleType } from 'avutil/struct/avsubtitle'
+import * as ittml from 'avformat/formats/ttml/ittml'
 
 export default class TTMLDecoder extends Decoder {
 
@@ -50,6 +37,7 @@ export default class TTMLDecoder extends Decoder {
     pts: int64
     duration: int64
     context: string
+    region: string
   }[]
 
   constructor() {
@@ -57,71 +45,31 @@ export default class TTMLDecoder extends Decoder {
     this.queue = []
   }
 
-  private praseP(p: P | P[], start: string, end: string) {
-    if (is.array(p)) {
-      array.each(p, (_) => {
-        const pts = hhColonDDColonSSDotMill2Int64(start || _.begin)
-        this.queue.push({
-          context: _.context,
-          pts,
-          duration: _.dur ? hhColonDDColonSSDotMill2Int64(_.dur) : (hhColonDDColonSSDotMill2Int64(end || _.end) - pts),
-        })
-      })
-    }
-    else {
-      const pts = hhColonDDColonSSDotMill2Int64(start || p.begin)
-      this.queue.push({
-        context: p.context,
-        pts,
-        duration: p.dur ? hhColonDDColonSSDotMill2Int64(p.dur) : (hhColonDDColonSSDotMill2Int64(end || p.end) - pts),
-      })
-    }
-  }
-
   public sendAVPacket(avpacket: pointer<AVPacket>): int32 {
     let context = text.decode(getAVPacketData(avpacket))
 
-    const xml = xml2json(context, {
-      aloneValueName: 'context'
-    })
-
-    if (xml.tt.body) {
-      if (xml.tt.body.div) {
-        if (is.array(xml.tt.body.div)) {
-          array.each(xml.tt.body.div, (div: any) => {
-            if (div.p) {
-              this.praseP(div.p, div.begin, div.end)
-            }
-          })
-        }
-        else {
-          if (xml.tt.body.div.p) {
-            this.praseP(xml.tt.body.div.p, xml.tt.body.div.begin, xml.tt.body.end)
-          }
-        }
-      }
+    if (!context) {
+      return 0
     }
+
+    this.queue = this.queue.concat(ittml.parse(context).queue)
 
     return 0
   }
 
-  public receiveAVFrame(avframe: pointer<AVFrame>): int32 {
+  public receiveAVFrame(sub: AVSubtitle): int32 {
     if (this.queue.length) {
       const item = this.queue.shift()
-      avframe.pts = item.pts
-      avframe.duration = item.duration
 
-      const buffer = text.encode(item.context)
-
-      const ref = avbufferAlloc(buffer.length)
-
-      memcpyFromUint8Array(ref.data, buffer.length, buffer)
-
-      avframe.buf[0] = ref
-      avframe.data[0] = ref.data
-      avframe.linesize[0] = buffer.length
-      avframe.timeBase.den = AV_MILLI_TIME_BASE
-      avframe.timeBase.num = 1
+      sub.pts = item.pts
+      sub.duration = item.duration
+      sub.timeBase.den = AV_MILLI_TIME_BASE
+      sub.timeBase.num = 1
+      sub.rects.push({
+        type: AVSubtitleType.SUBTITLE_WEBVTT,
+        text: item.context,
+        flags: 0
+      })
 
       return 1
     }
