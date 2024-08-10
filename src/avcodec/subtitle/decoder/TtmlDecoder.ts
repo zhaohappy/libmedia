@@ -31,7 +31,7 @@ import { AV_MILLI_TIME_BASE } from 'avutil/constant'
 import { AVSubtitle, AVSubtitleType } from 'avutil/struct/avsubtitle'
 import * as ittml from 'avformat/formats/ttml/ittml'
 
-export default class TTMLDecoder extends Decoder {
+export default class TtmlDecoder extends Decoder {
 
   private queue: {
     pts: int64

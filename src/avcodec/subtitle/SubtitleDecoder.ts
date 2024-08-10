@@ -31,7 +31,7 @@ import * as errorType from 'avutil/error'
 import WebVttDecoder from './decoder/WebVttDecoder'
 import SubRipDecoder from './decoder/SubRipDecoder'
 import AssDecoder from './decoder/AssDecoder'
-import TTMLDecoder from './decoder/TTMLDecoder'
+import TtmlDecoder from './decoder/TtmlDecoder'
 import TimedTextDecoder from './decoder/TimedTextDecoder'
 import TextDecoder from './decoder/TextDecoder'
 import { AVSubtitle } from 'avutil/struct/avsubtitle'
@@ -90,7 +90,7 @@ export default class SubtitleDecoder {
       //   this.decoder = new SubRipDecoder()
       //   break
       case AVCodecID.AV_CODEC_ID_TTML:
-        this.decoder = new TTMLDecoder()
+        this.decoder = new TtmlDecoder()
         break
       case AVCodecID.AV_CODEC_ID_TEXT:
       case AVCodecID.AV_CODEC_ID_SUBRIP:

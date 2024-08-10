@@ -401,7 +401,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.TTML:
           if (defined(ENABLE_DEMUXER_TTML)) {
-            iformat = new (((await import('avformat/formats/ITTMLFormat')).default))
+            iformat = new (((await import('avformat/formats/ITtmlFormat')).default))
           }
           else {
             logger.error('ttml format not support, maybe you can rebuild avmedia')
