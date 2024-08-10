@@ -63,6 +63,10 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 | flac     | ✅       | ❌        |
 | wav      | ✅       | ❌        |
 | webvtt   | ✅       | ❌        |
+| srt      | ✅       | ❌        |
+| ass      | ✅       | ❌        |
+| ssa      | ✅       | ❌        |
+| ttml     | ✅       | ❌        |
 
 
 ### Codecs
