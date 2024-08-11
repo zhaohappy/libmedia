@@ -416,11 +416,12 @@ export default class VideoDecodePipeline extends Pipeline {
       catch (error) {
         if ((task.softwareDecoder instanceof WebVideoDecoder) && task.resource) {
 
-          logger.warn(`webcodecs decoder open failed, ${error}, try to fallback to wasm software decoder`)
+          logger.warn(`webcodecs software decoder open failed, ${error}, try to fallback to wasm software decoder`)
 
           task.softwareDecoder.close()
           task.softwareDecoder = this.createWasmcodecDecoder(task, task.resource)
-          await task.softwareDecoder.open(parameters, threadCount) 
+          await task.softwareDecoder.open(parameters, threadCount)
+          task.targetDecoder = task.softwareDecoder
         }
         else {
           throw error
