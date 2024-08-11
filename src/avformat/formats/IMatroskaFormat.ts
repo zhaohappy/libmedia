@@ -381,17 +381,20 @@ export default class IMatroskaFormat extends IFormat {
       array.each(this.context.chapters.entry, (chapter) => {
         const atom = chapter.atom
         if (atom) {
-          formatContext.chapters.push({
-            id: atom.uid,
-            start: atom.start,
-            end: atom.end,
-            timeBase: {
-              num: 1,
-              den: 1000000000
-            },
-            metadata: {
-              title: atom.display?.title || ''
-            }
+          array.each(atom, (item) => {
+            formatContext.chapters.push({
+              id: item.uid,
+              start: item.start,
+              end: item.end,
+              timeBase: {
+                num: 1,
+                den: 1000000000
+              },
+              metadata: {
+                title: item.display?.title || '',
+                language: item.display?.language || ''
+              }
+            })
           })
         }
       })

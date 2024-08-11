@@ -529,6 +529,7 @@ export const EbmlSyntaxChapterAtom: Partial<Record<EBMLId, EbmlSyntax<ChapterAto
 export const EbmlSyntaxChapter: Partial<Record<EBMLId, EbmlSyntax<Chapter>>> = {
   [EBMLId.CHAPTER_ATOM]: {
     type: EbmlType.OBJECT,
+    isArray: true,
     filedName: 'atom',
     child: EbmlSyntaxChapterAtom
   }

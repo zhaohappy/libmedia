@@ -415,7 +415,9 @@ export function writeChapterAtom(writer: IOWriterSync, context: OMatroskaContext
 
 export function writeChapter(writer: IOWriterSync, context: OMatroskaContext, chapter: Chapter) {
   writeEleData(writer, context, EBMLId.EDITION_ENTRY, (eleWriter) => {
-    writeChapterAtom(eleWriter, context, chapter.atom)
+    array.each(chapter.atom, (item) => {
+      writeChapterAtom(eleWriter, context, item)
+    })
   })
 }
 

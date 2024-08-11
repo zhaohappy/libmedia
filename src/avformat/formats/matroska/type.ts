@@ -219,7 +219,7 @@ export interface ChapterAtom {
 }
 
 export interface Chapter {
-  atom: ChapterAtom
+  atom: ChapterAtom[]
 }
 
 export interface Chapters {
