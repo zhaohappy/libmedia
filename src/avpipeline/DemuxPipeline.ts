@@ -770,8 +770,18 @@ export default class DemuxPipeline extends Pipeline {
           })
 
           if (task.stats !== nullptr) {
-            task.stats.audioPacketQueueLength = 0
-            task.stats.videoPacketQueueLength = 0
+            // 判断当前 task 处理的 stream 来重置
+            task.cacheAVPackets.forEach((list, streamIndex) => {
+              const stream = task.formatContext.streams.find((stream) => {
+                return stream.index === streamIndex
+              })
+              if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+                task.stats.audioPacketQueueLength = 0
+              }
+              else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+                task.stats.videoPacketQueueLength = 0
+              }
+            })
           }
 
           const avpacket = task.avpacketPool.alloc() as pointer<AVPacketRef>
