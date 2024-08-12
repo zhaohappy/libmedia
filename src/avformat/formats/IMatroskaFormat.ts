@@ -65,6 +65,7 @@ import * as riff from './riff/riff'
 import * as isomTags from './isom/tags'
 import concatTypeArray from 'common/function/concatTypeArray'
 import * as text from 'common/util/text'
+import isDef from 'common/function/isDef'
 
 export default class IMatroskaFormat extends IFormat {
 
@@ -149,7 +150,7 @@ export default class IMatroskaFormat extends IFormat {
         if (track.name) {
           stream.metadata['name'] = track.name
         }
-        track.currentDts = 0n
+        track.currentDts = -1n
 
         if (track.audio) {
           if (track.codecName === 'A_PCM/FLOAT/IEEE') {
@@ -333,11 +334,11 @@ export default class IMatroskaFormat extends IFormat {
 
         if (track.encodings) {
           array.each(track.encodings.entry, (entry) => {
-            if (entry.compression) {
+            if (entry.compression && isDef(entry.compression.algo)) {
               track.needDecompression = true
             }
-            if (entry.encryption) {
-              track.needDeencryption = true
+            if (entry.encryption && isDef(entry.encryption.algo)) {
+              track.needDecryption = true
             }
           })
         }
@@ -629,7 +630,7 @@ export default class IMatroskaFormat extends IFormat {
     const track = stream.privData as TrackEntry
     const trackTimestampScale = track.timeScale || 1
 
-    if (track.needDeencryption) {
+    if (track.needDecryption) {
       throw new Error('not support encryption stream')
     }
 
@@ -684,45 +685,66 @@ export default class IMatroskaFormat extends IFormat {
 
       addAVPacketData(avpacket, data, size)
 
-      if (isKey) {
-        avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
-        if (track.gopCount > 1) {
-          track.dtsDelta = (track.maxPts - track.minPts) / static_cast<int64>(track.gopCount)
+      if (stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO) {
+        if (isKey) {
+          avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
         }
-        else if (!track.dtsDelta) {
-          // 以 30 帧开始
-          track.dtsDelta = avRescaleQ(33n, AV_MILLI_TIME_BASE_Q, stream.timeBase)
-        }
-        track.gopCount = 1
-        track.minPts = pts
-        track.maxPts = pts
-      }
-      else {
-        track.gopCount++
-        if (!track.dtsDelta) {
-          // 以 30 帧开始
-          track.dtsDelta = avRescaleQ(33n, AV_MILLI_TIME_BASE_Q, stream.timeBase)
-        }
-      }
-      if (pts > track.maxPts) {
-        track.maxPts = pts
-      }
-
-      if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
         avpacket.dts = pts
       }
-      else if (track.dtsDelta) {
-        if (duration) {
-          avpacket.dts = track.currentDts + duration
+      else {
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+        ) {
+          avpacket.bitFormat = h264.BitFormat.AVCC
+        }
+        if (isKey) {
+          avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+          if (track.gopCount > 1) {
+            track.dtsDelta = avRescaleQ(track.maxPts - track.minPts, stream.timeBase, AV_TIME_BASE_Q) / static_cast<int64>(track.gopCount - 1)
+            track.firstGopGot = true
+          }
+          else if (!track.dtsDelta) {
+            // 以 30 帧开始
+            track.dtsDelta = avRescaleQ(33n, AV_MILLI_TIME_BASE_Q, AV_TIME_BASE_Q)
+          }
+          track.gopCount = 1
+          track.minPts = pts
+          track.maxPts = pts
         }
         else {
-          avpacket.dts = track.currentDts + track.dtsDelta
+          if (!track.firstGopGot && track.gopCount > 2 && pts > track.maxPts) {
+            track.dtsDelta = avRescaleQ(track.maxPts - track.minPts, stream.timeBase, AV_TIME_BASE_Q) / static_cast<int64>(track.gopCount - 1)
+          }
+          else if (!track.dtsDelta) {
+            // 以 30 帧开始
+            track.dtsDelta = avRescaleQ(33n, AV_MILLI_TIME_BASE_Q, AV_TIME_BASE_Q)
+          }
+          track.gopCount++
+        }
+        if (pts > track.maxPts) {
+          track.maxPts = pts
+        }
+        if (track.currentDts >= 0n) {
+          if (duration) {
+            track.currentDts = track.currentDts + avRescaleQ(duration, stream.timeBase, AV_TIME_BASE_Q)
+            avpacket.dts = avRescaleQ(track.currentDts, AV_TIME_BASE_Q, stream.timeBase)
+          }
+          else {
+            track.currentDts = track.currentDts + track.dtsDelta
+            avpacket.dts = avRescaleQ(track.currentDts, AV_TIME_BASE_Q, stream.timeBase)
+          }
+        }
+        else {
+          track.currentDts = avRescaleQ(avpacket.pts, stream.timeBase, AV_TIME_BASE_Q)
+          avpacket.dts = avpacket.pts
+          // 第一个包从 0 开始
+          if (track.currentDts < 100000n) {
+            track.currentDts = 0n
+            avpacket.dts = 0n
+          }
         }
       }
-      else {
-        avpacket.dts = 0n
-      }
-      track.currentDts = avpacket.dts
 
       if (additions) {
         this.parseAdditions(avpacket, additions)
@@ -978,6 +1000,9 @@ export default class IMatroskaFormat extends IFormat {
 
     if (pos !== NOPTS_VALUE_BIGINT) {
       await formatContext.ioReader.seek(pos)
+      array.each(this.context.tracks.entry, (track) => {
+        track.currentDts = -1n
+      })
       return now
     }
 

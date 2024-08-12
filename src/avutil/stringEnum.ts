@@ -71,7 +71,12 @@ export const SubtitleCodecString2CodecId = {
   'subrip': AVCodecID.AV_CODEC_ID_SUBRIP,
   'ass': AVCodecID.AV_CODEC_ID_ASS,
   'ttml': AVCodecID.AV_CODEC_ID_TTML,
-  'mov_text': AVCodecID.AV_CODEC_ID_MOV_TEXT
+  'mov_text': AVCodecID.AV_CODEC_ID_MOV_TEXT,
+  'hdmv_pgs': AVCodecID.AV_CODEC_ID_HDMV_PGS_SUBTITLE,
+  'hdmv_text': AVCodecID.AV_CODEC_ID_HDMV_TEXT_SUBTITLE,
+  'dvd': AVCodecID.AV_CODEC_ID_DVD_SUBTITLE,
+  'dvb': AVCodecID.AV_CODEC_ID_DVB_SUBTITLE,
+  'eia_608': AVCodecID.AV_CODEC_ID_EIA_608
 }
 
 export const PixfmtString2AVPixelFormat = {
