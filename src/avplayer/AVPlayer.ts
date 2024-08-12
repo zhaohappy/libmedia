@@ -62,7 +62,7 @@ import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import Stats from 'avpipeline/struct/stats'
 import { memset, mapUint8Array } from 'cheap/std/memory'
-import createMessageChannel from '../avutil/function/createMessageChannel'
+import createMessageChannel from 'avutil/function/createMessageChannel'
 import getVideoCodec from 'avcodec/function/getVideoCodec'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
 import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
@@ -345,6 +345,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
 
       if (videoStream) {
+        // 目前 canvas 还不能渲染 hdr 视频，hdr 先使用 mse 播放
+        // TODO 未来 canvas 支持 hdr 渲染之后去掉
+        if (isHdr(videoStream.codecpar)) {
+          logger.info(`use mse because of hdr`)
+          return true
+        }
         // 1080p 以上使用 mse
         if (videoStream.codecpar.width * videoStream.codecpar.height > 1920 * 1080) {
           // 不支持 webcodec
@@ -1467,7 +1473,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     const subtitleStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_SUBTITLE)
-    if (subtitleStream && options.subtitle) {
+    if (subtitleStream && options.subtitle && this.isCodecIdSupported(subtitleStream.codecpar.codecId)) {
       const externalTask = this.externalSubtitleTasks.find((task) => {
         return task.streamId === subtitleStream.id
       })
@@ -1709,7 +1715,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * 
    * @param timestamp 毫秒
    */
-  public async seek(timestamp: double) {
+  public async seek(timestamp: int64) {
 
     logger.info(`call seek, timestamp: ${timestamp}, taskId: ${this.taskId}`)
 
@@ -1738,7 +1744,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         streamIndex = this.selectedAudioStream.index
       }
 
-      await this.doSeek(static_cast<int64>(timestamp), streamIndex)
+      await this.doSeek(timestamp, streamIndex)
 
       this.status = this.lastStatus
       this.fire(eventType.SEEKED)
@@ -2491,7 +2497,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
   public onFirstAudioRendered(): void {
     logger.info(`first audio frame rendered, taskId: ${this.taskId}`)
-    this.fire(eventType.FIRST_VIDEO_RENDERED)
+    this.fire(eventType.FIRST_AUDIO_RENDERED)
   }
 
   public onStutter() {

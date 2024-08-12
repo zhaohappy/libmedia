@@ -631,7 +631,7 @@
             methods: {
               seek() {
                 isSeeking = true
-                player.seek(this.currentTime).then(() => {
+                player.seek(BigInt(this.currentTime)).then(() => {
                   isSeeking = false
                 })
               }

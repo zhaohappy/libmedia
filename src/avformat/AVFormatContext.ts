@@ -41,6 +41,7 @@ import { Rational } from 'avutil/struct/rational'
 import * as staticData from 'cheap/staticData'
 import { Mutex, lock, unlock } from 'cheap/thread/mutex'
 
+// 在静态区分配 stream 计数器和计数器操作锁
 const streamCounter: pointer<int32> = reinterpret_cast<pointer<int32>>(staticData.malloc(sizeof(int32), sizeof(int32)))
 const streamCounterMutex: pointer<Mutex> = reinterpret_cast<pointer<Mutex>>(staticData.malloc(sizeof(Mutex), sizeof(atomic_int32)))
 
