@@ -559,7 +559,7 @@ export default class OMovFormat extends OFormat {
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
     )
-      && avpacket.bitFormat !== BitFormat.AVCC
+      && avpacket.bitFormat === BitFormat.ANNEXB
     ) {
       this.annexb2AvccFilter.sendAVPacket(avpacket)
       this.annexb2AvccFilter.receiveAVPacket(avpacket)
