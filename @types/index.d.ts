@@ -47,6 +47,12 @@ declare const ENABLE_DEMUXER_ASS: boolean
 
 declare const ENABLE_DEMUXER_TTML: boolean
 
+declare const ENABLE_DEMUXER_H264: boolean
+
+declare const ENABLE_DEMUXER_HEVC: boolean
+
+declare const ENABLE_DEMUXER_VVC: boolean
+
 declare const ENABLE_MUXER_FLV: boolean
 
 declare const ENABLE_MUXER_MP4: boolean

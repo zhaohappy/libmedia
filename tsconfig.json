@@ -107,6 +107,12 @@
       "ENABLE_DEMUXER_ASS": true,
       // 开启支持 ttml 解封装格式
       "ENABLE_DEMUXER_TTML": true,
+      // 开启支持 h264 解封装格式
+      "ENABLE_DEMUXER_H264": true,
+      // 开启支持 hevc 解封装格式
+      "ENABLE_DEMUXER_HEVC": true,
+      // 开启支持 vvc 解封装格式
+      "ENABLE_DEMUXER_VVC": true,
 
       // 开启支持 flv 封装格式
       "ENABLE_MUXER_FLV": true,

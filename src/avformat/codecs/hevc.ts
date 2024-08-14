@@ -112,6 +112,14 @@ export const enum HEVCNaluType {
   kSliceSEI_SUFFIX = 40
 }
 
+
+export const enum HEVCSliceType {
+  kSliceNone = -1,
+  kSliceB = 0,
+  kSliceP = 1,
+  kSliceI = 2
+}
+
 /**
  * 
  * avcc 格式的 extradata 转 annexb vps sps pps
@@ -225,7 +233,7 @@ export function vpsSpsPps2Extradata(vpss: Uint8ArrayInterface[], spss: Uint8Arra
 
   const buffer = new Uint8Array(length)
   const bufferWriter = new BufferWriter(buffer, true)
-  const spsData = parserSPS(sps)
+  const spsData = parseSPS(sps)
 
   bufferWriter.writeUint8(0x01)
   bufferWriter.writeUint8(sps[1])
@@ -252,13 +260,13 @@ export function vpsSpsPps2Extradata(vpss: Uint8ArrayInterface[], spss: Uint8Arra
   bufferWriter.writeUint8((0xff << 6) | 0)
 
   // chromaFormat
-  bufferWriter.writeUint8((0xff << 6) | spsData.chromaFormatIdc)
+  bufferWriter.writeUint8((0xff << 6) | spsData.chroma_format_idc)
 
   // bitDepthLumaMinus8
-  bufferWriter.writeUint8((0xff << 5) | spsData.bitDepthLumaMinus8)
+  bufferWriter.writeUint8((0xff << 5) | spsData.bit_depth_luma_minus8)
 
   // bitDepthChromaMinus8
-  bufferWriter.writeUint8((0xff << 5) | spsData.bitDepthChromaMinus8)
+  bufferWriter.writeUint8((0xff << 5) | spsData.bit_depth_chroma_minus8)
 
   // avgFrameRate
   bufferWriter.writeUint16(0)
@@ -315,7 +323,7 @@ export function vpsSpsPps2Extradata(vpss: Uint8ArrayInterface[], spss: Uint8Arra
 export function annexbExtradata2AvccExtradata(data: Uint8ArrayInterface) {
   let nalus = splitNaluByStartCode(data)
 
-  if (nalus.length > 2) {
+  if (nalus.length >= 2) {
     const vpss = []
     const spss = []
     const ppss = []
@@ -333,7 +341,7 @@ export function annexbExtradata2AvccExtradata(data: Uint8ArrayInterface) {
       }
     })
 
-    if (vpss.length && spss.length && ppss.length) {
+    if (spss.length && ppss.length) {
       return vpsSpsPps2Extradata(vpss, spss, ppss)
     }
   }
@@ -351,7 +359,7 @@ export function annexb2Avcc(data: Uint8ArrayInterface) {
 
   let nalus = splitNaluByStartCode(data)
 
-  if (nalus.length > 2) {
+  if (nalus.length >= 2) {
     const vpss = []
     const spss = []
     const ppss = []
@@ -369,7 +377,7 @@ export function annexb2Avcc(data: Uint8ArrayInterface) {
       }
     })
 
-    if (vpss.length && spss.length && ppss.length) {
+    if (spss.length && ppss.length) {
       extradata = vpsSpsPps2Extradata(vpss, spss, ppss)
 
       nalus = nalus.filter((nalu) => {
@@ -649,7 +657,7 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
     const { spss } = extradata2VpsSpsPps(extradata)
 
     if (spss.length) {
-      const { profile, level, width, height } = parserSPS(spss[0])
+      const { profile, level, width, height } = parseSPS(spss[0])
 
       stream.codecpar.profile = profile
       stream.codecpar.level = level
@@ -696,7 +704,39 @@ export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
   }
 }
 
-export function parserSPS(sps: Uint8ArrayInterface) {
+export interface HevcSPS {
+  profile: number
+  level: number
+  width: number
+  height: number
+  chroma_format_idc: number
+  bit_depth_luma_minus8: number
+  bit_depth_chroma_minus8: number
+  general_profile_space: number
+  general_tier_flag: number
+  general_profile_compatibility_flags: number
+  constraint_flags: number
+  separate_colour_plane_flag: number
+  log2_min_cb_size: number
+  log2_diff_max_min_coding_block_size: number
+  log2_min_tb_size: number
+  log2_diff_max_min_transform_block_size: number
+  log2_max_trafo_size: number
+  log2_ctb_size: number
+  log2_min_pu_size: number
+  ctb_width: number
+  ctb_height: number
+  ctb_size: number
+  min_cb_width: number
+  min_cb_height: number
+  min_tb_width: number
+  min_tb_height: number
+  min_pu_width: number
+  min_pu_height: number
+  log2_max_poc_lsb: number
+}
+
+export function parseSPS(sps: Uint8ArrayInterface): HevcSPS {
 
   if (!sps || sps.length < 3) {
     return
@@ -715,13 +755,13 @@ export function parserSPS(sps: Uint8ArrayInterface) {
   let level = 0
   let width = 0
   let height = 0
-  let bitDepthLumaMinus8 = 0
-  let bitDepthChromaMinus8 = 0
-  let chromaFormatIdc = 1
-  let generalProfileSpace = 0
-  let generalTierFlag = 0
-  let generalProfileCompatibilityFlag = 0
-  let constraintFlags = 0
+  let bit_depth_luma_minus8 = 0
+  let bit_depth_chroma_minus8 = 0
+  let chroma_format_idc = 1
+  let general_profile_space = 0
+  let general_tier_flag = 0
+  let general_profile_compatibility_flags = 0
+  let constraint_flags = 0
 
   const buffer = naluUnescape(sps.subarray(offset))
   const bitReader = new BitReader(buffer.length)
@@ -748,17 +788,19 @@ export function parserSPS(sps: Uint8ArrayInterface) {
   // sps_temporal_id_nesting_flag
   bitReader.readU1()
 
+  let separate_colour_plane_flag = 0
+
   if (spsMaxSubLayersMinus1 <= 6) {
     // profile_tier_level(sps_max_sub_layers_minus1)
 
     // general_profile_space
-    generalProfileSpace = bitReader.readU(2)
+    general_profile_space = bitReader.readU(2)
     // general_tier_flag
-    generalTierFlag = bitReader.readU1()
+    general_tier_flag = bitReader.readU1()
     // general_profile_idc
     profile = bitReader.readU(5)
     // general_profile_compatibility_flag[32]
-    generalProfileCompatibilityFlag = bitReader.readU(32)
+    general_profile_compatibility_flags = bitReader.readU(32)
 
     /**
      * 1 general_progressive_source_flag
@@ -767,7 +809,7 @@ export function parserSPS(sps: Uint8ArrayInterface) {
      * 1 general_frame_only_constraint_flag
      * 44 general_reserved_zero_44bits
      */
-    constraintFlags = bitReader.readU(48)
+    constraint_flags = bitReader.readU(48)
 
     // general_level_idc
     level = bitReader.readU(8)
@@ -816,11 +858,11 @@ export function parserSPS(sps: Uint8ArrayInterface) {
 
     // "The  value  of sps_seq_parameter_set_id shall be in the range of 0 to 15, inclusive."
     expgolomb.readUE(bitReader)
-    chromaFormatIdc = expgolomb.readUE(bitReader)
+    chroma_format_idc = expgolomb.readUE(bitReader)
 
-    if (chromaFormatIdc === 3) {
+    if (chroma_format_idc === 3) {
       // separate_colour_plane_flag
-      bitReader.readU(1)
+      separate_colour_plane_flag = bitReader.readU(1)
     }
 
     width = expgolomb.readUE(bitReader)
@@ -840,43 +882,134 @@ export function parserSPS(sps: Uint8ArrayInterface) {
       confWinBottomOffset = expgolomb.readUE(bitReader)
     }
 
-    bitDepthLumaMinus8 = expgolomb.readUE(bitReader)
-    bitDepthChromaMinus8 = expgolomb.readUE(bitReader)
+    bit_depth_luma_minus8 = expgolomb.readUE(bitReader)
+    bit_depth_chroma_minus8 = expgolomb.readUE(bitReader)
 
 
     let SubWidthC = 2
     let SubHeightC = 2
 
-    if (chromaFormatIdc === 0) {
+    if (chroma_format_idc === 0) {
       SubWidthC = SubHeightC = 0
     }
-    else if (chromaFormatIdc === 2) {
+    else if (chroma_format_idc === 2) {
       SubWidthC = 2
       SubHeightC = 1
     }
-    else if (chromaFormatIdc === 3) {
+    else if (chroma_format_idc === 3) {
       SubWidthC = SubHeightC = 1
     }
 
-    const cropUnitX = SubWidthC * (1 << (bitDepthLumaMinus8 + 1))
-    const cropUnitY = SubHeightC * (1 << (bitDepthLumaMinus8 + 1))
+    const cropUnitX = SubWidthC * (1 << (bit_depth_luma_minus8 + 1))
+    const cropUnitY = SubHeightC * (1 << (bit_depth_luma_minus8 + 1))
 
     width -= cropUnitX * (confWinLeftOffset + confWinRightOffset)
     height -= cropUnitY * (confWinTopOffset + confWinBottomOffset)
   }
 
+  const log2_max_poc_lsb = expgolomb.readUE(bitReader) + 4
+
+  const sublayer_ordering_info_flag = bitReader.readU1()
+  const start = sublayer_ordering_info_flag ? 0 : spsMaxSubLayersMinus1
+  for (let i = start; i < (spsMaxSubLayersMinus1 + 1); i++) {
+    // max_dec_pic_buffering
+    expgolomb.readUE(bitReader)
+    // num_reorder_pics
+    expgolomb.readUE(bitReader)
+    // max_latency_increase
+    expgolomb.readUE(bitReader)
+  }
+
+  const log2_min_cb_size = expgolomb.readUE(bitReader) + 3
+  const log2_diff_max_min_coding_block_size = expgolomb.readUE(bitReader)
+  const log2_min_tb_size = expgolomb.readUE(bitReader) + 2
+  const log2_diff_max_min_transform_block_size = expgolomb.readUE(bitReader)
+  const log2_max_trafo_size = log2_diff_max_min_transform_block_size + log2_min_tb_size
+
+  const log2_ctb_size = log2_min_cb_size + log2_diff_max_min_coding_block_size
+  const log2_min_pu_size = log2_min_cb_size - 1
+
+  const ctb_width  = (width  + (1 << log2_ctb_size) - 1) >> log2_ctb_size
+  const ctb_height = (height + (1 << log2_ctb_size) - 1) >> log2_ctb_size
+  const ctb_size   = ctb_width * ctb_height
+
+  const min_cb_width  = width  >> log2_min_cb_size
+  const min_cb_height = height >> log2_min_cb_size
+  const min_tb_width  = width  >> log2_min_tb_size
+  const min_tb_height = height >> log2_min_tb_size
+  const min_pu_width  = width  >> log2_min_pu_size
+  const min_pu_height = height >> log2_min_pu_size
 
   return {
     profile,
     level,
     width,
     height,
-    chromaFormatIdc,
-    bitDepthLumaMinus8,
-    bitDepthChromaMinus8,
-    generalProfileSpace,
-    generalTierFlag,
-    generalProfileCompatibilityFlag,
-    constraintFlags
+    chroma_format_idc,
+    bit_depth_luma_minus8,
+    bit_depth_chroma_minus8,
+    general_profile_space,
+    general_tier_flag,
+    general_profile_compatibility_flags,
+    constraint_flags,
+    separate_colour_plane_flag,
+    log2_min_cb_size,
+    log2_diff_max_min_coding_block_size,
+    log2_min_tb_size,
+    log2_diff_max_min_transform_block_size,
+    log2_max_trafo_size,
+    log2_ctb_size,
+    log2_min_pu_size,
+    ctb_width,
+    ctb_height,
+    ctb_size,
+    min_cb_width,
+    min_cb_height,
+    min_tb_width,
+    min_tb_height,
+    min_pu_width,
+    min_pu_height,
+    log2_max_poc_lsb
+  }
+}
+
+export interface HevcPPS {
+  pps_pic_parameter_set_id: number
+  pps_seq_parameter_set_id: number
+  dependent_slice_segment_flag: number
+  output_flag_present_flag: number
+  num_extra_slice_header_bits: number
+}
+
+export function parsePPS(pps: Uint8ArrayInterface): HevcPPS {
+  if (!pps || pps.length < 3) {
+    return
+  }
+
+  let offset = 0
+  if (pps[0] === 0x00
+    && pps[1] === 0x00
+    && pps[2] === 0x00
+    && pps[3] === 0x01
+  ) {
+    offset = 4
+  }
+
+  const buffer = naluUnescape(pps.subarray(offset))
+  const bitReader = new BitReader(buffer.length)
+  bitReader.appendBuffer(buffer)
+
+  const pps_pic_parameter_set_id = expgolomb.readUE(bitReader)
+  const pps_seq_parameter_set_id = expgolomb.readUE(bitReader)
+  const dependent_slice_segment_flag = bitReader.readU1()
+  const output_flag_present_flag = bitReader.readU1()
+  const num_extra_slice_header_bits = bitReader.readU(3)
+
+  return {
+    pps_pic_parameter_set_id,
+    pps_seq_parameter_set_id,
+    dependent_slice_segment_flag,
+    output_flag_present_flag,
+    num_extra_slice_header_bits
   }
 }

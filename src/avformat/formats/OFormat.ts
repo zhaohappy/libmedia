@@ -150,5 +150,8 @@ export const OFormatSupportedCodecs: Record<Exclude<AVFormat, AVFormat.UNKNOWN>,
   [AVFormat.WEBVTT]: [AVCodecID.AV_CODEC_ID_WEBVTT],
   [AVFormat.ASS]: [AVCodecID.AV_CODEC_ID_ASS, AVCodecID.AV_CODEC_ID_SSA],
   [AVFormat.SUBRIP]: [AVCodecID.AV_CODEC_ID_SUBRIP],
-  [AVFormat.TTML]: [AVCodecID.AV_CODEC_ID_TTML]
+  [AVFormat.TTML]: [AVCodecID.AV_CODEC_ID_TTML],
+  [AVFormat.H264]: [AVCodecID.AV_CODEC_ID_H264],
+  [AVFormat.HEVC]: [AVCodecID.AV_CODEC_ID_HEVC],
+  [AVFormat.VVC]: [AVCodecID.AV_CODEC_ID_VVC]
 }

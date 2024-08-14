@@ -38,7 +38,7 @@ export function isAnnexb(data: Uint8ArrayInterface) {
   )
 }
 
-function getNextNaluStart(data: Uint8ArrayInterface, offset: number) {
+export function getNextNaluStart(data: Uint8ArrayInterface, offset: number) {
   let t = 0
   for (let i = offset; i < data.length; i++) {
     switch (data[i]) {

@@ -79,9 +79,10 @@ export const enum VVCNaluType {
 }
 
 export const enum VVCSliceType {
-  kB = 0,
-  kP = 1,
-  kI = 2
+  kSliceNone = -1,
+  kSliceB = 0,
+  kSliceP = 1,
+  kSliceI = 2
 }
 
 export const enum VVCAPSType {
@@ -278,7 +279,11 @@ export function vpsSpsPps2Extradata(vpss: Uint8ArrayInterface[], spss: Uint8Arra
   const sps = spss[0]
   let ptl: Uint8Array
   if (sps) {
-    const spsParams = parserSPS(sps)
+    const spsParams = parseSPS(sps)
+    let generalConstraintInfo = spsParams.generalConstraintInfo
+    if (!generalConstraintInfo.length) {
+      generalConstraintInfo = new Array(12).fill(0)
+    }
     const biWriter = new BitWriter()
     biWriter.writeU(9, 0)
     biWriter.writeU(3, spsParams.spsMaxSublayersMinus1 + 1)
@@ -286,19 +291,19 @@ export function vpsSpsPps2Extradata(vpss: Uint8ArrayInterface[], spss: Uint8Arra
     biWriter.writeU(2, spsParams.chromaFormatIdc)
     biWriter.writeU(3, spsParams.bitDepthMinus8)
     biWriter.writeU(5, 0b11111)
-    biWriter.writeU(2, 0b11)
-    biWriter.writeU(6, spsParams.generalConstraintInfo.length)
+    biWriter.writeU(2, 0)
+    biWriter.writeU(6, generalConstraintInfo.length)
     biWriter.writeU(7, spsParams.profile)
     biWriter.writeU1(spsParams.tierFlag)
     biWriter.writeU(8, spsParams.level)
     biWriter.writeU1(spsParams.ptlFrameOnlyConstraintFlag)
     biWriter.writeU1(spsParams.ptlMultilayerEnabledFlag)
 
-    if (spsParams.generalConstraintInfo.length) {
-      for (let i = 0; i < spsParams.generalConstraintInfo.length - 1; i++) {
-        biWriter.writeU(8, spsParams.generalConstraintInfo[i])
+    if (generalConstraintInfo.length) {
+      for (let i = 0; i < generalConstraintInfo.length - 1; i++) {
+        biWriter.writeU(8, generalConstraintInfo[i])
       }
-      biWriter.writeU(6, spsParams.generalConstraintInfo[spsParams.generalConstraintInfo.length - 1])
+      biWriter.writeU(6, generalConstraintInfo[generalConstraintInfo.length - 1])
     }
     else {
       biWriter.writeU(6, 0b111111)
@@ -309,16 +314,20 @@ export function vpsSpsPps2Extradata(vpss: Uint8ArrayInterface[], spss: Uint8Arra
       for (let i = spsParams.spsMaxSublayersMinus1 - 1; i >= 0; i--) {
         ptl_sublayer_level_present_flags = (ptl_sublayer_level_present_flags << 1 | spsParams.ptlSublayerLevelPresentFlag[i])
       }
-      biWriter.writeU(8, ptl_sublayer_level_present_flags)
-    }
-    for (let i = spsParams.spsMaxSublayersMinus1 - 1; i >= 0; i--) {
-      if (spsParams.ptlSublayerLevelPresentFlag[i]) {
-        biWriter.writeU(8, spsParams.sublayerLevelIdc[i])
+      biWriter.writeU(spsParams.spsMaxSublayersMinus1, ptl_sublayer_level_present_flags)
+
+      for (let j = spsParams.spsMaxSublayersMinus1 + 1; j <= 8 && spsParams.spsMaxSublayersMinus1 > 0; ++j) {
+        biWriter.writeU1(0)
+      }
+      for (let i = spsParams.spsMaxSublayersMinus1 - 1; i >= 0; i--) {
+        if (spsParams.ptlSublayerLevelPresentFlag[i]) {
+          biWriter.writeU(8, spsParams.sublayerLevelIdc[i])
+        }
       }
     }
     biWriter.writeU(8, spsParams.generalSubProfileIdc.length)
     for (let i = 0; i < spsParams.generalSubProfileIdc.length; i++) {
-      biWriter.writeU(32, spsParams.sublayerLevelIdc[i])
+      biWriter.writeU(8, spsParams.sublayerLevelIdc[i])
     }
     biWriter.writeU(16, spsParams.width)
     biWriter.writeU(16, spsParams.height)
@@ -327,7 +336,7 @@ export function vpsSpsPps2Extradata(vpss: Uint8ArrayInterface[], spss: Uint8Arra
     ptl = biWriter.getBuffer().subarray(0, biWriter.getPointer())
   }
 
-  let length = 1 + (ptl ? ptl.length : 0)
+  let length = 2 + (ptl ? ptl.length : 0)
 
   if (vpss.length) {
     // type + count
@@ -414,13 +423,13 @@ export function vpsSpsPps2Extradata(vpss: Uint8ArrayInterface[], spss: Uint8Arra
 export function annexbExtradata2AvccExtradata(data: Uint8ArrayInterface) {
   let nalus = splitNaluByStartCode(data)
 
-  if (nalus.length > 2) {
+  if (nalus.length >= 2) {
     const vpss = []
     const spss = []
     const ppss = []
 
     nalus.forEach((nalu) => {
-      const type = (nalu[0] >>> 1) & 0x3f
+      const type = (nalu[1] >>> 3) & 0x1f
       if (type === VVCNaluType.kVPS_NUT) {
         vpss.push(nalu)
       }
@@ -432,7 +441,7 @@ export function annexbExtradata2AvccExtradata(data: Uint8ArrayInterface) {
       }
     })
 
-    if (vpss.length && spss.length && ppss.length) {
+    if (spss.length && ppss.length) {
       return vpsSpsPps2Extradata(vpss, spss, ppss)
     }
   }
@@ -449,13 +458,13 @@ export function annexb2Avcc(data: Uint8ArrayInterface) {
 
   let nalus = splitNaluByStartCode(data)
 
-  if (nalus.length > 2) {
+  if (nalus.length >= 2) {
     const vpss = []
     const spss = []
     const ppss = []
 
     nalus.forEach((nalu) => {
-      const type = (nalu[0] >>> 1) & 0x3f
+      const type = (nalu[1] >>> 3) & 0x1f
       if (type === VVCNaluType.kVPS_NUT) {
         vpss.push(nalu)
       }
@@ -467,11 +476,11 @@ export function annexb2Avcc(data: Uint8ArrayInterface) {
       }
     })
 
-    if (vpss.length && spss.length && ppss.length) {
+    if (spss.length && ppss.length) {
       extradata = vpsSpsPps2Extradata(vpss, spss, ppss)
 
       nalus = nalus.filter((nalu) => {
-        const type = (nalu[0] >>> 1) & 0x3f
+        const type = (nalu[1] >>> 3) & 0x1f
         return type !== VVCNaluType.kVPS_NUT
           && type !== VVCNaluType.kSPS_NUT
           && type !== VVCNaluType.kPPS_NUT
@@ -504,7 +513,7 @@ export function annexb2Avcc(data: Uint8ArrayInterface) {
     }
     bufferWriter.writeBuffer(nalu.subarray(0))
 
-    const type = (nalu[0] >>> 1) & 0x3f
+    const type = (nalu[1] >>> 3) & 0x1f
     if (type === VVCNaluType.kIDR_N_LP
       || type === VVCNaluType.kIDR_W_RADL
       || type === VVCNaluType.kCRA_NUT
@@ -622,7 +631,7 @@ export function avcc2Annexb(data: Uint8ArrayInterface, extradata?: Uint8ArrayInt
     bufferWriter.writeUint8(0x01)
     bufferWriter.writeBuffer(nalu)
 
-    const type = (nalu[0] >>> 1) & 0x3f
+    const type = (nalu[1] >>> 3) & 0x1f
     if (type === VVCNaluType.kIDR_N_LP
       || type === VVCNaluType.kIDR_W_RADL
       || type === VVCNaluType.kCRA_NUT
@@ -675,7 +684,7 @@ export function parseAvccExtraData(avpacket: pointer<AVPacket>, stream: AVStream
     const nalu = data.subarray(static_cast<int32>(bufferReader.getPos()), static_cast<int32>(bufferReader.getPos()) + length)
     bufferReader.skip(length)
 
-    const naluType = (nalu[0] >>> 1) & 0x3f
+    const naluType = (nalu[1] >>> 3) & 0x1f
 
     if (naluType === VVCNaluType.kSPS_NUT) {
       spss.push(nalu)
@@ -715,7 +724,7 @@ export function parseAnnexbExtraData(avpacket: pointer<AVPacket>, force: boolean
     const ppss = []
 
     nalus.forEach((nalu) => {
-      const type = (nalu[0] >>> 1) & 0x3f
+      const type = (nalu[1] >>> 3) & 0x1f
       if (type === VVCNaluType.kVPS_NUT) {
         vpss.push(nalu)
       }
@@ -737,6 +746,14 @@ export function parseAnnexbExtraData(avpacket: pointer<AVPacket>, force: boolean
   }
 }
 
+export function parseAVCodecParametersBySps(stream: AVStream, sps: Uint8Array) {
+  const { profile, level, width, height } = parseSPS(sps)
+  stream.codecpar.profile = profile
+  stream.codecpar.level = level
+  stream.codecpar.width = width
+  stream.codecpar.height = height
+}
+
 export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayInterface) {
   if (!extradata && stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
     extradata = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
@@ -748,12 +765,7 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
     const { spss } = extradata2VpsSpsPps(extradata)
 
     if (spss.length) {
-      const { profile, level, width, height } = parserSPS(spss[0])
-
-      stream.codecpar.profile = profile
-      stream.codecpar.level = level
-      stream.codecpar.width = width
-      stream.codecpar.height = height
+      parseAVCodecParametersBySps(stream, spss[0])
     }
   }
 }
@@ -765,7 +777,7 @@ export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
   if (avpacket.bitFormat === BitFormat.ANNEXB) {
     let nalus = splitNaluByStartCode(mapUint8Array(avpacket.data, avpacket.size))
     return nalus.some((nalu) => {
-      const type = (nalu[0] >>> 1) & 0x3f
+      const type = (nalu[1] >>> 3) & 0x1f
       return type === VVCNaluType.kIDR_N_LP || type === VVCNaluType.kIDR_W_RADL
     })
   }
@@ -773,7 +785,7 @@ export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
     const size = avpacket.size
     let i = 0
     while (i < (size - naluLengthSize)) {
-      const type = (intread.r8(avpacket.data + (i + naluLengthSize)) >>> 1) & 0x3f
+      const type = (intread.r8(avpacket.data + (i + naluLengthSize + 1)) >>> 3) & 0x1f
       if (type === VVCNaluType.kIDR_N_LP || type === VVCNaluType.kIDR_W_RADL) {
         return true
       }
@@ -795,7 +807,30 @@ export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
   }
 }
 
-export function parserSPS(sps: Uint8ArrayInterface) {
+export interface VvcSPS {
+  profile: number
+  level: number
+  width: number
+  height: number
+  chromaFormatIdc: number
+  bitDepthMinus8: number
+  generalProfileSpace: number
+  tierFlag: number
+  generalConstraintInfo: number[]
+  generalSubProfileIdc: number[]
+  ptlFrameOnlyConstraintFlag: number
+  ptlMultilayerEnabledFlag: number
+  spsMaxSublayersMinus1: number
+  ptlSublayerLevelPresentFlag: number[]
+  sublayerLevelIdc: number[]
+  sps_log2_max_pic_order_cnt_lsb_minus4: number
+  sps_poc_msb_cycle_flag: number
+  sps_poc_msb_cycle_len_minus1: number
+  sps_num_extra_ph_bytes: number
+    sps_extra_ph_bit_present_flag: number[]
+}
+
+export function parseSPS(sps: Uint8ArrayInterface): VvcSPS {
   if (!sps || sps.length < 3) {
     return
   }
@@ -955,6 +990,23 @@ export function parserSPS(sps: Uint8ArrayInterface) {
 
   bitDepthMinus8 = expgolomb.readUE(bitReader)
 
+  // sps_entropy_coding_sync_enabled_flag
+  bitReader.readU(1)
+  // sps_entry_point_offsets_present_flag
+  bitReader.readU(1)
+
+  const sps_log2_max_pic_order_cnt_lsb_minus4 = bitReader.readU(4)
+  const sps_poc_msb_cycle_flag = bitReader.readU(1)
+  let sps_poc_msb_cycle_len_minus1 = 0
+  if (sps_poc_msb_cycle_flag) {
+    sps_poc_msb_cycle_len_minus1 = expgolomb.readUE(bitReader)
+  }
+  const sps_extra_ph_bit_present_flag: number[] = []
+  const sps_num_extra_ph_bytes = bitReader.readU(2)
+  for (let i = 0; i < (sps_num_extra_ph_bytes * 8); i++) {
+    sps_extra_ph_bit_present_flag[i] = bitReader.readU(1)
+  }
+
   return {
     profile,
     level,
@@ -970,11 +1022,21 @@ export function parserSPS(sps: Uint8ArrayInterface) {
     ptlMultilayerEnabledFlag,
     spsMaxSublayersMinus1,
     ptlSublayerLevelPresentFlag,
-    sublayerLevelIdc
+    sublayerLevelIdc,
+    sps_log2_max_pic_order_cnt_lsb_minus4,
+    sps_poc_msb_cycle_flag,
+    sps_poc_msb_cycle_len_minus1,
+    sps_num_extra_ph_bytes,
+    sps_extra_ph_bit_present_flag
   }
 }
 
 export function parseExtraData(extradata: Uint8ArrayInterface) {
+
+  if (extradata[0] === 0 && extradata[1] === 0 && extradata[2] === 0 && extradata[3] === 1) {
+    extradata = annexbExtradata2AvccExtradata(extradata)
+  }
+
   const bitReader = new BitReader()
   bitReader.appendBuffer(extradata)
   const ptlPresentFlag = bitReader.readU(8) & 0x01

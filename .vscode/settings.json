@@ -312,6 +312,7 @@
         "stss",
         "stsz",
         "stts",
+        "SUBRIP",
         "Subsampling",
         "syncword",
         "texcoord",

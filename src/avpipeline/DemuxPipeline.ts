@@ -408,6 +408,33 @@ export default class DemuxPipeline extends Pipeline {
             return errorType.FORMAT_NOT_SUPPORT
           }
           break
+        case AVFormat.H264:
+          if (defined(ENABLE_DEMUXER_H264)) {
+            iformat = new (((await import('avformat/formats/IH264Format')).default))
+          }
+          else {
+            logger.error('h264 format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.HEVC:
+          if (defined(ENABLE_DEMUXER_HEVC)) {
+            iformat = new (((await import('avformat/formats/IHevcFormat')).default))
+          }
+          else {
+            logger.error('hevc format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.VVC:
+          if (defined(ENABLE_DEMUXER_VVC)) {
+            iformat = new (((await import('avformat/formats/IVvcFormat')).default))
+          }
+          else {
+            logger.error('vvc format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
         default:
           logger.error('format not support')
           return errorType.FORMAT_NOT_SUPPORT

@@ -47,7 +47,7 @@ export async function demuxFile(readFile: File) {
   await demux.open(iformatContext)
   await demux.analyzeStreams(iformatContext)
 
-  // got stream info from  iformatContext.streams 
+  // got stream info from iformatContext.streams 
 
   while (1) {
     let ret = await demux.readAVPacket(iformatContext, avpacket)

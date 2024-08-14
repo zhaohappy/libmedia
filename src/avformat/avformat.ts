@@ -44,6 +44,9 @@ export const enum AVFormat {
   MATROSKA,
   WEBM,
   AVI,
+  H264,
+  HEVC,
+  VVC,
 
   MP3,
   AAC,

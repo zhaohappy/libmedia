@@ -73,6 +73,16 @@ export const enum H264NaluType {
   kReserved0
 }
 
+export const enum H264SliceType {
+  kSliceNone = -1,
+  kSliceP,
+  kSliceB,
+  kSliceI,
+  kSliceSP = 5,
+  kSliceSB,
+  kSliceSI
+}
+
 export const enum H264Profile {
   kBaseline = 66,
   kMain = 77,
@@ -215,7 +225,7 @@ export function spsPps2Extradata(spss: Uint8ArrayInterface[], ppss: Uint8ArrayIn
 
   const sps = spss[0]
 
-  const params = parserSPS(sps)
+  const params = parseSPS(sps)
 
   if (params.profile !== 66 && params.profile !== 77 && params.profile !== 88) {
     length += 4
@@ -616,7 +626,7 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
     const { spss } = extradata2SpsPps(extradata)
 
     if (spss.length) {
-      const { profile, level, width, height } = parserSPS(spss[0])
+      const { profile, level, width, height } = parseSPS(spss[0])
 
       stream.codecpar.profile = profile
       stream.codecpar.level = level
@@ -663,7 +673,22 @@ export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
   }
 }
 
-export function parserSPS(sps: Uint8ArrayInterface) {
+export interface H264SPS {
+  profile: number
+  level: number
+  width: number
+  height: number
+  chromaFormatIdc: number
+  bitDepthLumaMinus8: number
+  bitDepthChromaMinus8: number
+  frameMbsOnlyFlag: number
+  picOrderCntType: number
+  log2MaxPicOrderCntLsbMinus4: number
+  deltaPicOrderAlwaysZeroFlag: number
+  log2MaxFrameNumMinus4: number
+}
+
+export function parseSPS(sps: Uint8ArrayInterface): H264SPS {
 
   if (!sps || sps.length < 3) {
     return
@@ -743,17 +768,19 @@ export function parserSPS(sps: Uint8ArrayInterface) {
   }
 
   // log2_max_frame_num_minus4
-  expgolomb.readUE(bitReader)
+  const log2MaxFrameNumMinus4 = expgolomb.readUE(bitReader)
 
   const picOrderCntType = expgolomb.readUE(bitReader)
+  let log2MaxPicOrderCntLsbMinus4 = 0
+  let deltaPicOrderAlwaysZeroFlag = 0
 
   if (picOrderCntType === 0) {
     // log2_max_pic_order_cnt_lsb_minus4
-    expgolomb.readUE(bitReader)
+    log2MaxPicOrderCntLsbMinus4 = expgolomb.readUE(bitReader)
   }
   else if (picOrderCntType === 1) {
     // delta_pic_order_always_zero_flag
-    bitReader.readU1()
+    deltaPicOrderAlwaysZeroFlag = bitReader.readU1()
 
     // offset_for_non_ref_pic
     expgolomb.readSE(bitReader)
@@ -816,6 +843,11 @@ export function parserSPS(sps: Uint8ArrayInterface) {
     height,
     chromaFormatIdc,
     bitDepthLumaMinus8,
-    bitDepthChromaMinus8
+    bitDepthChromaMinus8,
+    frameMbsOnlyFlag,
+    picOrderCntType,
+    log2MaxPicOrderCntLsbMinus4,
+    deltaPicOrderAlwaysZeroFlag,
+    log2MaxFrameNumMinus4
   }
 }
