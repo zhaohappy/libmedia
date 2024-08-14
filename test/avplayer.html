@@ -382,6 +382,7 @@
       <button onclick="subVolume()">音量 -</button>
       <button onclick="enterFullscreen()">全屏</button>
       <button onclick="resume()">resume</button>
+      <button onclick="nextFrame()">下一帧</button>
     </div>
 
     <br/>
@@ -1072,6 +1073,12 @@
           }).then(() => {
             updateSubtitleList()
           })
+        }
+      }
+
+      function nextFrame() {
+        if (player) {
+          player.playNextFrame()
         }
       }
 
