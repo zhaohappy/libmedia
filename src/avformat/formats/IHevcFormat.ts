@@ -50,7 +50,7 @@ export interface IHevcFormatOptions {
 
 const DefaultIHevcFormatOptions: IHevcFormatOptions = {
   framerate: {
-    num: 60,
+    num: 30,
     den: 1
   }
 }

@@ -50,7 +50,7 @@ export interface IVvcFormatOptions {
 
 const DefaultIVvcFormatOptions: IVvcFormatOptions = {
   framerate: {
-    num: 60,
+    num: 30,
     den: 1
   }
 }
