@@ -537,6 +537,9 @@ export default class IMatroskaFormat extends IFormat {
       if (this.context.currentCluster.blockGroup.reference) {
         isKey = this.context.currentCluster.blockGroup.reference.length === 0 ? 1 : 0
       }
+      else {
+        isKey = 1
+      }
       if (this.context.currentCluster.blockGroup.duration) {
         duration = this.context.currentCluster.blockGroup.duration
       }
