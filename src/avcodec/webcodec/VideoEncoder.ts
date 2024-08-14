@@ -32,13 +32,14 @@ import { getHardwarePreference } from '../function/getHardwarePreference'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import { avframe2VideoFrame } from 'avutil/function/avframe2VideoFrame'
 import { createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
-import { AV_MILLI_TIME_BASE, AV_MILLI_TIME_BASE_Q, AV_TIME_BASE_Q } from 'avutil/constant'
+import { AV_TIME_BASE_Q } from 'avutil/constant'
 import { BitFormat } from 'avformat/codecs/h264'
 import { PixelFormatDescriptorsMap, PixelFormatFlags } from 'avutil/pixelFormatDescriptor'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
 import encodedVideoChunk2AVPacket from 'avutil/function/encodedVideoChunk2AVPacket'
 import { mapColorPrimaries, mapColorSpace, mapColorTrc } from 'avutil/function/videoFrame2AVFrame'
+import browser from 'common/util/browser'
 
 import * as av1 from 'avformat/codecs/av1'
 import * as vp9 from 'avformat/codecs/vp9'
@@ -50,6 +51,22 @@ export type WebVideoEncoderOptions = {
   enableHardwareAcceleration?: boolean
   avpacketPool?: AVPacketPool
   avframePool?: AVFramePool
+}
+
+// chrome bug: https://issues.chromium.org/issues/357902526
+function fixChromeConstraintSetFlagsBug(desc: Uint8Array) {
+  const constraintSetFlag = desc[2]
+  // 如果最高位是 0，最低位是 1，说明是 chrome 将这个值的二进制顺序搞反了
+  if (constraintSetFlag >> 7 === 0 && (constraintSetFlag & 1) === 1) {
+    let binaryString = constraintSetFlag
+      .toString(2)
+      .padStart(8, '0')
+      .split('')
+      .reverse()
+      .join('')
+
+      desc[2] = parseInt(binaryString, 2)
+  }
 }
 
 export default class WebVideoEncoder {
@@ -99,6 +116,9 @@ export default class WebVideoEncoder {
         }
         else {
           buffer = new Uint8Array(metadata.decoderConfig.description.buffer)
+        }
+        if (browser.chrome && !browser.checkVersion(browser.version, '130', true)) {
+          fixChromeConstraintSetFlagsBug(buffer)
         }
         this.extradata = buffer
       }
