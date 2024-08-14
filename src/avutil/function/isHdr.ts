@@ -3,7 +3,7 @@ import { AVMediaType } from '../codec'
 import AVCodecParameters from '../struct/avcodecparameters'
 import { AVColorTransferCharacteristic } from '../pixfmt'
 
-export function isHdr(parameters: pointer<AVCodecParameters>) {
+export default function isHdr(parameters: pointer<AVCodecParameters>) {
   if (parameters.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO) {
     return false
   }

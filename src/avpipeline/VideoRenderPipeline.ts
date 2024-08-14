@@ -138,6 +138,7 @@ type SelfTask = VideoRenderTaskOptions & {
   renderCreating: boolean
 
   pauseTimestamp: number
+  pauseCurrentPts: int64
   lastNotifyPTS: int64
 
   skipRender: boolean
@@ -202,6 +203,7 @@ export default class VideoRenderPipeline extends Pipeline {
       renderCreating: false,
 
       pauseTimestamp: 0,
+      pauseCurrentPts: 0n,
       lastNotifyPTS: 0n,
 
       skipRender: false,
@@ -248,6 +250,62 @@ export default class VideoRenderPipeline extends Pipeline {
 
     this.tasks.set(options.taskId, task)
     return 0
+  }
+
+  private swap(task: SelfTask) {
+    if (task.seeking) {
+      return
+    }
+    if (task.backFrame) {
+      if (!isPointer(task.backFrame)) {
+        task.backFrame.close()
+      }
+      else {
+        task.avframePool.release(task.backFrame)
+      }
+    }
+
+    task.backFrame = null
+    if (task.frontBuffered) {
+      task.backFrame = task.frontFrame
+      task.frontFrame = null
+    }
+    else {
+      return false
+    }
+    if (task.ended) {
+      return
+    }
+    task.frontBuffered = false
+    const now = getTimestamp()
+
+    task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull').then((frame) => {
+      if (task.afterPullResolver) {
+        task.afterPullResolver()
+      }
+      if (is.number(frame) && frame < 0) {
+        task.ended = true
+        task.frontFrame = null
+        return
+      }
+      assert(!isPointer(frame) || frame.data[0], 'got empty video frame')
+      const cost = getTimestamp() - now
+      // 超过 1 秒认为是网卡了（断点暂停），对齐一下时间
+      if (cost > 1000) {
+        task.startTimestamp += static_cast<int64>(cost)
+      }
+      task.frontFrame = frame
+      task.frontBuffered = true
+      if (task.seekSync) {
+        task.seekSync()
+        task.seekSync = null
+        return
+      }
+      if (!task.backFrame) {
+        this.swap(task)
+      }
+    })
+    return true
   }
 
   private async createRender(task: SelfTask, frame: pointer<AVFrameRef> | VideoFrame) {
@@ -378,71 +436,6 @@ export default class VideoRenderPipeline extends Pipeline {
 
       const me = this
 
-      function swap() {
-
-        if (task.seeking) {
-          return
-        }
-
-        if (task.backFrame) {
-          if (!isPointer(task.backFrame)) {
-            task.backFrame.close()
-          }
-          else {
-            task.avframePool.release(task.backFrame)
-          }
-        }
-
-        task.backFrame = null
-
-        if (task.frontBuffered) {
-          task.backFrame = task.frontFrame
-          task.frontFrame = null
-        }
-        else {
-          return false
-        }
-        if (task.ended) {
-          return
-        }
-        task.frontBuffered = false
-        const now = getTimestamp()
-        task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull').then((frame) => {
-
-          if (task.afterPullResolver) {
-            task.afterPullResolver()
-          }
-
-          if (is.number(frame) && frame < 0) {
-            task.ended = true
-            task.frontFrame = null
-            return
-          }
-
-          assert(!isPointer(frame) || frame.data[0], 'got empty video frame')
-
-          const cost = getTimestamp() - now
-          // 超过 1 秒认为是网卡了（断点暂停），对齐一下时间
-          if (cost > 1000) {
-            task.startTimestamp += static_cast<int64>(cost)
-          }
-
-          task.frontFrame = frame
-          task.frontBuffered = true
-
-          if (task.seekSync) {
-            task.seekSync()
-            task.seekSync = null
-            return
-          }
-
-          if (!task.backFrame) {
-            swap()
-          }
-        })
-        return true
-      }
-
       await this.createRender(task, task.backFrame)
 
       task.firstPTS = avRescaleQ(
@@ -510,7 +503,7 @@ export default class VideoRenderPipeline extends Pipeline {
           }
           else {
             logger.warn(`dropping frame with pts ${pts}, which is earlier then the last rendered frame(${task.currentPTS}), taskId: ${task.taskId}`)
-            swap()
+            this.swap(task)
             return
           }
         }
@@ -617,7 +610,7 @@ export default class VideoRenderPipeline extends Pipeline {
               pts
             })
           }
-          swap()
+          this.swap(task)
         }
         else {
           task.loop.emptyTask()
@@ -693,8 +686,11 @@ export default class VideoRenderPipeline extends Pipeline {
         logger.fatal('task has not played')
       }
       task.pauseTimestamp = getTimestamp()
+      task.pauseCurrentPts = task.currentPTS
       task.loop.stop()
       task.pausing = true
+
+      logger.info(`task paused, taskId: ${task.taskId}`)
     }
     else {
       logger.fatal('task not found')
@@ -711,11 +707,14 @@ export default class VideoRenderPipeline extends Pipeline {
         logger.fatal('task has not played')
       }
       task.startTimestamp += static_cast<int64>(getTimestamp() - task.pauseTimestamp)
+      task.startTimestamp -= task.currentPTS - task.pauseCurrentPts
       if (!task.seeking) {
         task.loop.start()
       }
       task.pausing = false
       task.lastRenderTimestamp = getTimestamp()
+
+      logger.info(`task unpaused, taskId: ${task.taskId}`)
     }
     else {
       logger.fatal('task not found')
@@ -970,6 +969,7 @@ export default class VideoRenderPipeline extends Pipeline {
         task.timeBase,
         AV_MILLI_TIME_BASE_Q
       )
+      task.stats.videoCurrentTime = task.currentPTS
 
       logger.debug(`got first video frame, pts: ${!isPointer(task.backFrame)
         ? static_cast<int64>(task.backFrame.timestamp)
@@ -980,7 +980,35 @@ export default class VideoRenderPipeline extends Pipeline {
       if (!task.pausing) {
         task.loop.start()
       }
+      else if (task.backFrame) {
+        task.render.render(task.backFrame)
+        // reset pause time
+        task.pauseCurrentPts = task.currentPTS
+        task.pauseTimestamp = getTimestamp()
+      }
+
       logger.debug(`after seek end, taskId: ${task.taskId}`)
+    }
+  }
+
+  public async renderNextFrame(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      if (task.backFrame) {
+        const pts = avRescaleQ(
+          (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
+          task.timeBase,
+          AV_MILLI_TIME_BASE_Q
+        )
+        task.render.render(task.backFrame)
+        task.stats.videoCurrentTime = pts
+        task.stats.videoFrameRenderCount++
+        task.currentPTS = pts
+        this.swap(task)
+      }
+    }
+    else {
+      logger.fatal('task not found')
     }
   }
 

@@ -605,7 +605,7 @@ export default class AudioRenderPipeline extends Pipeline {
   public async beforeSeek(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
-      if (!task.fakePlay) {
+      if (!task.fakePlay && !task.pausing) {
         logger.debug(`wait current pull front frame before seek, taskId: ${task.taskId}`)
         await new Promise<void>((resolve) => {
           task.seekSync = resolve

@@ -28,7 +28,16 @@ export const Ext2Format: Record<string, AVFormat> = {
   'ssa': AVFormat.ASS,
   'ass': AVFormat.ASS,
   'xml': AVFormat.TTML,
-  'ttml': AVFormat.TTML
+  'ttml': AVFormat.TTML,
+  'h264': AVFormat.H264,
+  '264': AVFormat.H264,
+  'avc': AVFormat.H264,
+  'h265': AVFormat.HEVC,
+  '265': AVFormat.HEVC,
+  'hevc': AVFormat.HEVC,
+  'h266': AVFormat.VVC,
+  '266': AVFormat.VVC,
+  'vvc': AVFormat.VVC
 }
 
 export const Ext2IOLoader: Record<string, IOType> = {
@@ -83,14 +92,23 @@ export const PixfmtString2AVPixelFormat = {
   'yuv420p': AVPixelFormat.AV_PIX_FMT_YUV420P,
   'yuv422p': AVPixelFormat.AV_PIX_FMT_YUV422P,
   'yuv444p': AVPixelFormat.AV_PIX_FMT_YUV444P,
+  'yuva420p': AVPixelFormat.AV_PIX_FMT_YUVA420P,
+  'yuva422p': AVPixelFormat.AV_PIX_FMT_YUVA422P,
+  'yuva444p': AVPixelFormat.AV_PIX_FMT_YUVA444P,
 
   'yuv420p10le': AVPixelFormat.AV_PIX_FMT_YUV420P10LE,
   'yuv422p10le': AVPixelFormat.AV_PIX_FMT_YUV422P10LE,
   'yuv444p10le': AVPixelFormat.AV_PIX_FMT_YUV444P10LE,
+  'yuva420p10le': AVPixelFormat.AV_PIX_FMT_YUVA420P10LE,
+  'yuva422p10le': AVPixelFormat.AV_PIX_FMT_YUVA422P10LE,
+  'yuva444p10le': AVPixelFormat.AV_PIX_FMT_YUVA444P10LE,
 
   'yuv420p10be': AVPixelFormat.AV_PIX_FMT_YUV420P10BE,
   'yuv422p10be': AVPixelFormat.AV_PIX_FMT_YUV422P10BE,
   'yuv444p10be': AVPixelFormat.AV_PIX_FMT_YUV444P10BE,
+  'yuva420p10be': AVPixelFormat.AV_PIX_FMT_YUVA420P10BE,
+  'yuva422p10be': AVPixelFormat.AV_PIX_FMT_YUVA422P10BE,
+  'yuva444p10be': AVPixelFormat.AV_PIX_FMT_YUVA444P10BE,
 }
 
 export const SampleFmtString2SampleFormat = {
@@ -127,7 +145,10 @@ export const Format2AVFormat: Record<string, AVFormat> = {
   'webm': AVFormat.WEBM,
   'aac': AVFormat.AAC,
   'flac': AVFormat.FLAC,
-  'wav': AVFormat.WAV
+  'wav': AVFormat.WAV,
+  'raw_h264': AVFormat.H264,
+  'raw_h265': AVFormat.HEVC,
+  'raw_vvc': AVFormat.VVC
 }
 
 export const colorRange2AVColorRange: Record<string, AVColorRange> = {

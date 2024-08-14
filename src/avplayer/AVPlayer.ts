@@ -82,7 +82,8 @@ import { AVDisposition, AVStreamInterface } from 'avformat/AVStream'
 import { AVFormatContextInterface } from 'avformat/AVFormatContext'
 import dump, { dumpCodecName, dumpKey } from 'avformat/dump'
 import * as array from 'common/util/array'
-import { isHdr } from 'avutil/function/isHdr'
+import isHdr from 'avutil/function/isHdr'
+import hasAlphaChannel from 'avutil/function/hasAlphaChannel'
 import SubtitleRender from './subtitle/SubtitleRender'
 
 const ObjectFitMap = {
@@ -1067,6 +1068,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     const promises = []
 
     if (this.status === AVPlayerStatus.PAUSED) {
+
+      // 逐帧播放之后视频与音频相差可能过大，这里同步一下
+      if (this.selectedAudioStream && this.selectedVideoStream && (this.stats.videoCurrentTime - this.stats.audioCurrentTime > 1000n)) {
+        await AVPlayer.AudioRenderThread.syncSeekTime(this.taskId, this.stats.videoCurrentTime)
+      }
+
       if (defined(ENABLE_MSE) && this.useMSE) {
         promises.push(AVPlayer.MSEThread.unpause(this.taskId))
         if (this.audio) {
@@ -1079,9 +1086,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       else {
         if (this.audioSourceNode) {
           promises.push(this.audioSourceNode.request('unpause'))
-          if (AVPlayer.audioContext.state === 'suspended') {
-            promises.push(AVPlayer.AudioRenderThread.unpause(this.taskId))
-          }
+          promises.push(AVPlayer.AudioRenderThread.unpause(this.taskId))
         }
         if (this.videoDecoder2VideoRenderChannel) {
           promises.push(AVPlayer.VideoRenderThread.unpause(this.taskId))
@@ -1231,7 +1236,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
             avframeList: addressof(this.GlobalData.avframeList),
             avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-            preferWebCodecs: !isHdr(videoStream.codecpar)
+            preferWebCodecs: !isHdr(videoStream.codecpar) && !hasAlphaChannel(videoStream.codecpar)
           })
 
         let ret = await this.VideoDecoderThread.open(this.taskId, videoStream.codecpar)
@@ -1569,9 +1574,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         if (this.audioSourceNode) {
           promises.push(this.audioSourceNode.request('pause'))
           // stop fake play
-          if (AVPlayer.audioContext.state === 'suspended') {
-            promises.push(AVPlayer.AudioRenderThread.pause(this.taskId))
-          }
+          promises.push(AVPlayer.AudioRenderThread.pause(this.taskId))
         }
         if (this.videoDecoder2VideoRenderChannel) {
           promises.push(AVPlayer.VideoRenderThread.pause(this.taskId))
@@ -1758,8 +1761,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return this.formatContext.streams.map((stream) => {
       return {
         ...stream,
+        mediaType: dumpKey(mediaType2AVMediaType, stream.codecpar.codecType),
         codecparProxy: accessof(stream.codecpar),
-        mediaType: dumpKey(mediaType2AVMediaType, stream.codecpar.codecType)
+        timeBaseProxy: accessof(stream.timeBase)
       }
     })
   }
@@ -2366,6 +2370,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       else {
         logger.error(`call selectSubtitle failed, index: ${index}, taskId: ${this.taskId}`)
       }
+    }
+  }
+
+  /**
+   * 播放视频下一帧，可用于逐帧播放
+   */
+  public async playNextFrame() {
+    if (this.status === AVPlayerStatus.PAUSED && this.selectedVideoStream) {
+      await AVPlayer.VideoRenderThread.renderNextFrame(this.taskId)
     }
   }
 
