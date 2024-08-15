@@ -72,6 +72,7 @@ export default class IHevcFormat extends IFormat {
   private bitReader: BitReader
 
   private sliceType: vvc.VVCSliceType
+  private naluType: vvc.VVCNaluType
   private poc: int32
 
   private pocTid0: int32
@@ -239,11 +240,10 @@ export default class IHevcFormat extends IFormat {
       // sh_picture_header_in_slice_header_flag
       this.bitReader.readU1()
     }
-    // ph_gdr_or_irap_pic_flag
-    this.bitReader.readU1()
+    const ph_gdr_or_irap_pic_flag = this.bitReader.readU1()
     const ph_non_ref_pic_flag = this.bitReader.readU1()
     let ph_gdr_pic_flag = 0
-    if (ph_non_ref_pic_flag) {
+    if (ph_gdr_or_irap_pic_flag) {
       ph_gdr_pic_flag = this.bitReader.readU1()
     }
     const ph_inter_slice_allowed_flag = this.bitReader.readU1()
@@ -251,9 +251,11 @@ export default class IHevcFormat extends IFormat {
       // ph_intra_slice_allowed_flag
       this.bitReader.readU1()
     }
+    // ph_pic_parameter_set_id
     expgolomb.readUE(this.bitReader)
     const poc_lsb = this.bitReader.readU(this.sps.sps_log2_max_pic_order_cnt_lsb_minus4 + 4)
     if (ph_gdr_pic_flag) {
+      // ph_recovery_poc_cnt
       expgolomb.readUE(this.bitReader)
     }
     for (let i = 0; i < this.sps.sps_num_extra_ph_bytes * 8; i++) {
@@ -307,8 +309,6 @@ export default class IHevcFormat extends IFormat {
     }
     this.poc = poc_msb + poc_lsb
 
-    console.log(this.poc)
-
     if (temporalId == 0
       && !ph_non_ref_pic_flag
       && naluType !== vvc.VVCNaluType.kRADL_NUT
@@ -354,6 +354,7 @@ export default class IHevcFormat extends IFormat {
 
       if (type < vvc.VVCNaluType.kVPS_NUT && isFirst) {
         isFirst = false
+        this.naluType = type
         const hasPh = n[n[2] === 1 ? 5 : 6] >>> 7
         if (hasPh) {
           this.computePoc(type, temporalId, n.subarray(n[2] === 1 ? 5 : 6), true)
@@ -428,11 +429,17 @@ export default class IHevcFormat extends IFormat {
         }
       }
       if ((next.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+        || this.naluType === vvc.VVCNaluType.kCRA_NUT
         || (this.sliceType === vvc.VVCSliceType.kSliceP
           || this.sliceType === vvc.VVCSliceType.kSliceI
         )
       ) {
-        if (ipFrameCount === 1) {
+        if (ipFrameCount === 1
+          || (this.naluType === vvc.VVCNaluType.kCRA_NUT
+              || (next.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+            )
+            && this.queue.length
+        ) {
           output()
           this.queue.push({
             avpacket: next,

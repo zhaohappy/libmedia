@@ -36,7 +36,6 @@ import { addAVPacketData, createAVPacket, destroyAVPacket, refAVPacket } from 'a
 import AVStream from '../AVStream'
 import { Rational } from 'avutil/struct/rational'
 import * as object from 'common/util/object'
-import * as nalu from 'avutil/util/nalu'
 import concatTypeArray from 'common/function/concatTypeArray'
 import * as h264 from '../codecs/h264'
 import { AV_TIME_BASE } from 'avutil/constant'
@@ -147,7 +146,12 @@ export default class IH264Format extends IFormat {
           hasFrame = true
         }
       }
-      else if (hasFrame && type === h264.H264NaluType.kSliceAUD) {
+      else if (hasFrame
+        && (type === h264.H264NaluType.kSliceAUD
+          || type === h264.H264NaluType.kSliceSPS
+          || type === h264.H264NaluType.kSlicePPS
+        )
+      ) {
         this.slices.push(next)
         return nalus
       }
@@ -395,7 +399,11 @@ export default class IH264Format extends IFormat {
           || this.sliceType === h264.H264SliceType.kSliceSI
         )
       ) {
-        if (ipFrameCount === 1) {
+        if (ipFrameCount === 1
+          || ((next.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+            && this.queue.length
+          )
+        ) {
           output()
           this.queue.push({
             avpacket: next,

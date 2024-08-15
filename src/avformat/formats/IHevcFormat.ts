@@ -140,7 +140,13 @@ export default class IHevcFormat extends IFormat {
           hasFrame = true
         }
       }
-      else if (hasFrame && type === hevc.HEVCNaluType.kSliceAUD) {
+      else if (hasFrame
+        && (type === hevc.HEVCNaluType.kSliceAUD
+          || type === hevc.HEVCNaluType.kSliceSPS
+          || type === hevc.HEVCNaluType.kSlicePPS
+          || type === hevc.HEVCNaluType.kSliceVPS
+        )
+      ) {
         this.slices.push(next)
         return nalus
       }
@@ -404,7 +410,11 @@ export default class IHevcFormat extends IFormat {
           || this.sliceType === hevc.HEVCSliceType.kSliceI
         )
       ) {
-        if (ipFrameCount === 1) {
+        if (ipFrameCount === 1
+          || ((next.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+            && this.queue.length
+          )
+        ) {
           output()
           this.queue.push({
             avpacket: next,

@@ -58,6 +58,7 @@ To enable the use of SharedArrayBuffer, if multi-threading is not supported, it 
 | webm     | ✅       | ✅        |
 | h264     | ✅       | ❌        |
 | hevc     | ✅       | ❌        |
+| vvc      | ✅       | ❌        |
 | mp3      | ✅       | ✅        |
 | oggs     | ✅       | ✅        |
 | ivf      | ✅       | ✅        |
