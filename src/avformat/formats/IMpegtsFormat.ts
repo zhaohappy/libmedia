@@ -41,7 +41,9 @@ import { TSSliceQueue } from './mpegts/struct'
 import IFormat from './IFormat'
 import initStream from './mpegts/function/initStream'
 import { AVFormat, AVSeekFlags } from '../avformat'
-import { createAVPacket, deleteAVPacketSideData, destroyAVPacket, getAVPacketData, getAVPacketSideData, unrefAVPacket } from 'avutil/util/avpacket'
+import { createAVPacket, deleteAVPacketSideData,
+  destroyAVPacket, getAVPacketData, getAVPacketSideData
+} from 'avutil/util/avpacket'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import AVStream from '../AVStream'
 import seekInBytes from '../function/seekInBytes'
