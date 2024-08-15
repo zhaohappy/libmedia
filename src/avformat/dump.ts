@@ -236,7 +236,7 @@ function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix:
 }
 
 function dumpAVFormatContextInterface(formatContext: AVFormatContextInterface, index: number, input: DumpIOInfo) {
-  let dump = `${input.tag} #${index}, ${dumpKey(stringEnum.Format2AVFormat, formatContext.format)}, from '${input.from}:'\n`
+  let dump = `${input.tag} #${index}, ${dumpKey(stringEnum.Format2AVFormat, formatContext.format)}, from ${input.from}:\n`
   if (Object.keys(formatContext.metadata).length) {
     dump += `  Metadata:\n`
     object.each(formatContext.metadata, (value, key) => {
