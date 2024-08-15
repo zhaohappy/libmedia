@@ -2374,10 +2374,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * 播放视频下一帧，可用于逐帧播放
+   * 播放视频下一帧，可用于逐帧播放（不支持 mse 模式）
    */
   public async playNextFrame() {
-    if (this.status === AVPlayerStatus.PAUSED && this.selectedVideoStream) {
+    if (!this.useMSE && this.status === AVPlayerStatus.PAUSED && this.selectedVideoStream) {
       await AVPlayer.VideoRenderThread.renderNextFrame(this.taskId)
     }
   }
