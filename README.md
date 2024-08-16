@@ -102,6 +102,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | vp8         | ✅         | ✅          | ✅          | ✅                 |
 | vp9         | ✅         | ✅          | ✅          | ✅                 |
 | mpeg4       | ✅         | ✅          | ✅          | ❌                 |
+| theora      | ✅         | ✅          | ✅          | ❌                 |
 | aac         | ✅         | ✅          | ✅          | ✅                 |
 | mp3         | ✅         | ✅          | ✅          | ✅                 |
 | opus        | ✅         | ✅          | ✅          | ✅                 |
@@ -121,10 +122,11 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | h264        | ✅         | ✅          | ✅          | ✅                 |
 | hevc        | ❌         | ✅          | ✅          | ❌                 |
 | vvc         | ❌         | ❌          | ❌          | ❌                 |
-| av1         | ❌         | ❌          | ❌          | ✅                 |
+| av1         | ❌         | ✅          | ✅          | ✅                 |
 | vp8         | ✅         | ✅          | ✅          | ✅                 |
 | vp9         | ✅         | ✅          | ✅          | ✅                 |
 | mpeg4       | ✅         | ✅          | ✅          | ❌                 |
+| theora      | ✅         | ✅          | ✅          | ❌                 |
 | aac         | ✅         | ✅          | ✅          | ✅                 |
 | mp3         | ✅         | ✅          | ✅          | ❌                 |
 | opus        | ✅         | ✅          | ✅          | ✅                 |
@@ -311,20 +313,25 @@ libmedia 使用 LGPL 开源协议，你需要遵守协议要求，详情查看 [
 
 
 #### 依赖库开源协议
- - ffmpeg: LGPL v2.1+
- - soundtouch: LGPL v2.1
- - libx264: GPL
- - libx265: GPL
- - libvorbis: BSD
- - libspeex: BSD 
- - libopus: BSD
- - libvpx: BSD-3-Clause
- - libogg: BSD
- - libmp3lame: LGPL
- - kvazaar: BSD-3-Clause
- - libflac: BSD
- - fdkaac: BSD
- - dav1d: BSD 2-Clause
+ - [ffmpeg](https://github.com/FFmpeg/FFmpeg): LGPL v2.1+
+ - [soundtouch](https://www.surina.net/soundtouch/): LGPL v2.1
+ - [openh264](https://github.com/cisco/openh264): BSD-2-Clause
+ - [x264](https://www.videolan.org/developers/x264.html): GPL
+ - [x265](https://www.videolan.org/developers/x265.html): GPL
+ - [theora](https://github.com/xiph/theora): BSD-3-Clause
+ - [vorbis](https://xiph.org/vorbis/): BSD
+ - [speex](https://www.speex.org/): BSD 
+ - [opus](https://opus-codec.org/): BSD
+ - [libvpx](https://chromium.googlesource.com/webm/libvpx/): BSD-3-Clause
+ - [libogg](https://github.com/gcp/libogg): BSD
+ - [lame](https://lame.sourceforge.io/): LGPL
+ - [kvazaar](https://github.com/ultravideo/kvazaar): BSD-3-Clause
+ - [flac](https://github.com/xiph/flac): BSD
+ - [fdkaac](https://www.linuxfromscratch.org/blfs/view/svn/multimedia/fdk-aac.html): BSD
+ - [dav1d](https://code.videolan.org/videolan/dav1d/): BSD-2-Clause
+ - [aom](https://aomedia.googlesource.com/aom/): BSD-2-Clause
+ - [ass.js](https://github.com/weizhenye/ASS): MIT
+ - [ass-compiler](https://github.com/weizhenye/ass-compiler): MIT
 
 版权所有 (C) 2024-现在 赵高兴
 
