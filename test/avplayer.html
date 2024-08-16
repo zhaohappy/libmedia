@@ -548,6 +548,9 @@
                     // H264
                     case 27:
                       return `../dist/decode/h264${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                    // theora
+                    case 30:
+                      return `../dist/decode/theora${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // AAC
                     case 86018:
                       return `../dist/decode/aac${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
