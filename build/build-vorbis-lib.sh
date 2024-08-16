@@ -6,7 +6,7 @@ NOW_PATH=$(cd $(dirname $0); pwd)
 
 PROJECT_ROOT_PATH=$(cd $NOW_PATH/../; pwd)
 
-KVAZAAR_PATH=$(cd $PROJECT_ROOT_PATH/../vorbis; pwd)
+SOURCE_PATH=$(cd $PROJECT_ROOT_PATH/../vorbis; pwd)
 
 LIB_OUTPUT_PATH=$PROJECT_ROOT_PATH/lib/vorbis
 LIB_BUILD_PATH=$PROJECT_ROOT_PATH/dist/vorbis
@@ -30,7 +30,7 @@ fi
 
 source $PROJECT_ROOT_PATH/../emsdk/emsdk_env.sh
 
-cd $KVAZAAR_PATH
+cd $SOURCE_PATH
 
 export CFLAGS="$EXTRA_CFLAGS"
 export LDFLAGS="$EXTRA_LDFLAGS"

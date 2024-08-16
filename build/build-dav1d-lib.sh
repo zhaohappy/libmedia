@@ -28,7 +28,7 @@ source $PROJECT_ROOT_PATH/../emsdk/emsdk_env.sh
 
 meson $DAV1D_PATH $LIB_BUILD_PATH \
   --prefix="$LIB_OUTPUT_PATH" \
-  --cross-file=$NOW_PATH/dav1d-cross-file.txt \
+  --cross-file=$NOW_PATH/meson-cross-file.txt \
   --default-library=static \
   --buildtype=release \
   -Dbitdepths="['8', '16']" \

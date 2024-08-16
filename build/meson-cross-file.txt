@@ -1,5 +1,6 @@
 [binaries]
 c = 'emcc'
+cpp = 'em++'
 ar = 'emar'
 strip = ''
 
