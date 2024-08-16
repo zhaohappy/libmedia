@@ -42,12 +42,11 @@ struct AVBuffer {
   int flags_internal;
 };
 
-int open_codec_context(AVCodecContext** dec_ctx, enum AVCodecID codec_id, AVCodecParameters* codecpar, AVRational* time_base, int thread_count) {
+int open_codec_context(AVCodecContext** dec_ctx, enum AVCodecID codec_id, AVCodecParameters* codecpar, AVRational* time_base, int thread_count, AVDictionary* opts) {
 
   int ret;
 
   AVCodec *dec = NULL;
-  AVDictionary *opts = NULL;
 
   /* find decoder for the stream */
   dec = avcodec_find_decoder(codec_id);
@@ -131,9 +130,9 @@ int decode_packet(const AVPacket* packet) {
   return 0;
 }
 
-EM_PORT_API(int) decoder_open(AVCodecParameters* codecpar, AVRational* time_base, int thread_count) {
+EM_PORT_API(int) decoder_open(AVCodecParameters* codecpar, AVRational* time_base, int thread_count, AVDictionary* opts) {
   // setLogLevel(DEBUG);
-  return open_codec_context(&dec_ctx, codecpar->codec_id, codecpar, time_base, thread_count);
+  return open_codec_context(&dec_ctx, codecpar->codec_id, codecpar, time_base, thread_count, opts);
 }
 
 EM_PORT_API(int) decoder_decode(AVPacket* packet) {

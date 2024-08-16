@@ -49,6 +49,7 @@ import getTimestamp from 'common/function/getTimestamp'
 import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 import support from 'common/util/support'
 import isPointer from 'cheap/std/function/isPointer'
+import { Data } from 'common/types/type'
 
 export interface VideoDecodeTaskOptions extends TaskOptions {
   resource: WebAssemblyResource
@@ -88,6 +89,8 @@ type SelfTask = VideoDecodeTaskOptions & {
 
   avframePool: AVFramePoolImpl
   avpacketPool: AVPacketPool
+
+  wasmDecoderOptions?: Data
 }
 
 export interface VideoDecodeTaskInfo {
@@ -411,7 +414,7 @@ export default class VideoDecodePipeline extends Pipeline {
       }
 
       try {
-        await task.softwareDecoder.open(parameters, threadCount)
+        await task.softwareDecoder.open(parameters, threadCount, task.wasmDecoderOptions)
       }
       catch (error) {
         if ((task.softwareDecoder instanceof WebVideoDecoder) && task.resource) {
@@ -432,9 +435,14 @@ export default class VideoDecodePipeline extends Pipeline {
     }
   }
 
-  public async reopenDecoder(taskId: string, parameters: pointer<AVCodecParameters>, resource?: WebAssemblyResource) {
+  public async reopenDecoder(taskId: string, parameters: pointer<AVCodecParameters>, resource?: WebAssemblyResource,  wasmDecoderOptions?: Data) {
     const task = this.tasks.get(taskId)
     if (task) {
+
+      if (wasmDecoderOptions) {
+        task.wasmDecoderOptions = wasmDecoderOptions
+      }
+
       let softwareDecoder: WasmVideoDecoder | WebVideoDecoder
 
       if (task.preferWebCodecs && support.videoDecoder && WebVideoDecoder.isSupported(parameters, false)) {
@@ -498,9 +506,10 @@ export default class VideoDecodePipeline extends Pipeline {
     logger.fatal('task not found')
   }
 
-  public async open(taskId: string, parameters: pointer<AVCodecParameters>) {
+  public async open(taskId: string, parameters: pointer<AVCodecParameters>,  wasmDecoderOptions: Data = {}) {
     const task = this.tasks.get(taskId)
     if (task) {
+      task.wasmDecoderOptions = wasmDecoderOptions
       if (task.preferWebCodecs
         && support.videoDecoder
         && WebVideoDecoder.isSupported(parameters, false)

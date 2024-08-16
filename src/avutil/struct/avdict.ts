@@ -23,6 +23,14 @@
  *
  */
 
+export const enum AVDictFlags {
+  MATCH_CASE = 1,
+  IGNORE_SUFFIX = 2,
+  DONT_OVERWRITE = 16,
+  APPEND = 32,
+  MULTIKEY = 64
+}
+
 @struct
 export class AVDictionaryEntry {
   key: pointer<void> = nullptr

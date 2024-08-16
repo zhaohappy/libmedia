@@ -28,7 +28,7 @@ import AVFrame, { AVPictureType } from 'avutil/struct/avframe'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import AVPacket, { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
-import { createAVPacket, destroyAVPacket, getAVPacketSideData } from 'avutil/util/avpacket'
+import { createAVPacket, destroyAVPacket, getAVPacketData, getAVPacketSideData } from 'avutil/util/avpacket'
 import * as logger from 'common/util/logger'
 import * as stack from 'cheap/stack'
 import { Rational } from 'avutil/struct/rational'
@@ -37,11 +37,20 @@ import { videoFrame2AVFrame } from 'avutil/function/videoFrame2AVFrame'
 import { createAVFrame, destroyAVFrame, unrefAVFrame } from 'avutil/util/avframe'
 import { mapUint8Array } from 'cheap/std/memory'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import { avQ2D } from 'avutil/util/rational'
+import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import AVBSFilter from 'avformat/bsf/AVBSFilter'
 import Annexb2AvccFilter from 'avformat/bsf/h2645/Annexb2AvccFilter'
 import support from 'common/util/support'
 import isPointer from 'cheap/std/function/isPointer'
+import * as av1 from 'avformat/codecs/av1'
+import * as vp9 from 'avformat/codecs/vp9'
+import { AVDictionary } from 'avutil/struct/avdict'
+import { Data } from 'common/types/type'
+import * as object from 'common/util/object'
+import * as dict from 'avutil/util/avdict'
+import * as is from 'common/util/is'
+import { avMallocz, avRealloc } from 'avutil/util/mem'
+import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
@@ -69,6 +78,8 @@ export default class WasmVideoEncoder {
   private bitrateFilter: AVBSFilter
 
   private extradata: Uint8Array
+
+  private encoderOptions: pointer<AVDictionary> = nullptr
 
   constructor(options: WasmVideoEncoderOptions) {
     this.options = options
@@ -110,8 +121,20 @@ export default class WasmVideoEncoder {
         }
         this.avpacket.bitFormat = this.parameters.bitFormat
       }
+      else if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_AV1) {
+        if (!this.extradata) {
+          this.extradata = av1.generateExtradata(this.parameters, getAVPacketData(this.avpacket))
+        }
+      }
+      else if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_VP9) {
+        if (!this.extradata) {
+          this.extradata = vp9.generateExtradata(this.parameters)
+        }
+      }
+
       this.avpacket.timeBase.den = this.timeBase.den
       this.avpacket.timeBase.num = this.timeBase.num
+
       this.options.onReceiveAVPacket(this.avpacket)
       this.avpacket = nullptr
       this.encodeQueueSize--
@@ -122,7 +145,7 @@ export default class WasmVideoEncoder {
     return this.encoder.call<int32>('encoder_receive', this.getAVPacket())
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, threadCount: number = 1) {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, threadCount: number = 1, opts: Data = {}) {
     await this.encoder.run(null, threadCount)
 
     const timeBaseP = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
@@ -135,13 +158,27 @@ export default class WasmVideoEncoder {
     }
     this.encoder.call('encoder_set_max_b_frame', parameters.videoDelay)
 
+    if (object.keys(opts).length) {
+      if (this.encoderOptions) {
+        dict.freeAVDict2(this.encoderOptions)
+        free(this.encoderOptions)
+        this.encoderOptions = nullptr
+      }
+      this.encoderOptions = avMallocz(sizeof(AVDictionary))
+      object.each(opts, (value, key) => {
+        if (is.string(value) || is.string(key)) {
+          dict.avDictSet(this.encoderOptions, key, value)
+        }
+      })
+    }
+
     let ret = 0
 
     if (support.jspi) {
-      ret = await this.encoder.callAsync<int32>('encoder_open', parameters, timeBaseP, threadCount)
+      ret = await this.encoder.callAsync<int32>('encoder_open', parameters, timeBaseP, threadCount, this.encoderOptions)
     }
     else {
-      ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, threadCount)
+      ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, threadCount, this.encoderOptions)
       await this.encoder.childrenThreadReady()
     }
 
@@ -159,8 +196,7 @@ export default class WasmVideoEncoder {
     this.inputCounter = 0n
   }
 
-  public encode(frame: pointer<AVFrame> | VideoFrame, key: boolean) {
-
+  private preEncode(frame: pointer<AVFrame> | VideoFrame, key: boolean): pointer<AVFrame> {
     if (!isPointer(frame)) {
       if (this.avframe) {
         unrefAVFrame(this.avframe)
@@ -180,16 +216,14 @@ export default class WasmVideoEncoder {
     frame.timeBase.den = this.timeBase.den
     frame.timeBase.num = this.timeBase.num
 
-    let ret = this.encoder.call<int32>('encoder_encode', frame)
+    return frame
+  }
+
+  private postEncode() {
     this.encodeQueueSize++
     this.inputCounter++
-
-    if (ret) {
-      return ret
-    }
-
     while (true) {
-      ret = this.receiveAVPacket()
+      let ret = this.receiveAVPacket()
       if (ret === 1) {
         this.outputAVPacket()
       }
@@ -201,6 +235,27 @@ export default class WasmVideoEncoder {
       }
     }
     return 0
+  }
+
+  public async encodeAsync(frame: pointer<AVFrame> | VideoFrame, key: boolean) {
+    frame = this.preEncode(frame, key)
+
+    let ret = await this.encoder.callAsync<int32>('encoder_encode', frame)
+    if (ret) {
+      return ret
+    }
+    return this.postEncode()
+  }
+
+  public encode(frame: pointer<AVFrame> | VideoFrame, key: boolean) {
+    frame = this.preEncode(frame, key)
+
+    let ret = this.encoder.call<int32>('encoder_encode', frame)
+    if (ret) {
+      return ret
+    }
+
+    return this.postEncode()
   }
 
   public async flush() {
@@ -254,6 +309,11 @@ export default class WasmVideoEncoder {
     if (this.bitrateFilter) {
       this.bitrateFilter.destroy()
       this.bitrateFilter = null
+    }
+    if (this.encoderOptions) {
+      dict.freeAVDict2(this.encoderOptions)
+      free(this.encoderOptions)
+      this.encoderOptions = nullptr
     }
   }
 

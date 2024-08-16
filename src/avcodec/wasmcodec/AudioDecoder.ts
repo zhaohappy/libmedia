@@ -31,6 +31,12 @@ import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import { createAVFrame, destroyAVFrame } from 'avutil/util/avframe'
 import * as logger from 'common/util/logger'
 import support from 'common/util/support'
+import { AVDictionary } from 'avutil/struct/avdict'
+import { Data } from 'common/types/type'
+import * as object from 'common/util/object'
+import * as dict from 'avutil/util/avdict'
+import * as is from 'common/util/is'
+import { avMallocz } from 'avutil/util/mem'
 
 export type WasmAudioDecoderOptions = {
   resource: WebAssemblyResource
@@ -46,6 +52,8 @@ export default class WasmAudioDecoder {
   private decoder: WebAssemblyRunner
 
   private frame: pointer<AVFrame>
+
+  private decoderOptions: pointer<AVDictionary> = nullptr
 
   constructor(options: WasmAudioDecoderOptions) {
     this.options = options
@@ -76,14 +84,29 @@ export default class WasmAudioDecoder {
     return this.decoder.call<int32>('decoder_receive', this.getAVFrame())
   }
 
-  public async open(parameters: pointer<AVCodecParameters>) {
+  public async open(parameters: pointer<AVCodecParameters>, opts: Data = {}) {
     await this.decoder.run()
+
+    if (object.keys(opts).length) {
+      if (this.decoderOptions) {
+        dict.freeAVDict2(this.decoderOptions)
+        free(this.decoderOptions)
+        this.decoderOptions = nullptr
+      }
+      this.decoderOptions = avMallocz(sizeof(AVDictionary))
+      object.each(opts, (value, key) => {
+        if (is.string(value) || is.string(key)) {
+          dict.avDictSet(this.decoderOptions, key, value)
+        }
+      })
+    }
+
     let ret = 0
     if (support.jspi) {
-      ret = await this.decoder.callAsync<int32>('decoder_open', parameters, nullptr, 1)
+      ret = await this.decoder.callAsync<int32>('decoder_open', parameters, nullptr, 1, this.decoderOptions)
     }
     else {
-      ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, 1)
+      ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, 1, this.decoderOptions)
       await this.decoder.childrenThreadReady()
     }
     if (ret < 0) {
@@ -133,6 +156,11 @@ export default class WasmAudioDecoder {
     if (this.frame) {
       this.options.avframePool ? this.options.avframePool.release(this.frame as pointer<AVFrameRef>) : destroyAVFrame(this.frame)
       this.frame = nullptr
+    }
+    if (this.decoderOptions) {
+      dict.freeAVDict2(this.decoderOptions)
+      free(this.decoderOptions)
+      this.decoderOptions = nullptr
     }
   }
 }

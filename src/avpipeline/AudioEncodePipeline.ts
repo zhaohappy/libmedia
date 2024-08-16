@@ -44,6 +44,7 @@ import Sleep from 'common/timer/Sleep'
 import { Rational } from 'avutil/struct/rational'
 import * as errorType from 'avutil/error'
 import isPointer from 'cheap/std/function/isPointer'
+import { Data } from 'common/types/type'
 
 export interface AudioEncodeTaskOptions extends TaskOptions {
   resource: WebAssemblyResource
@@ -61,6 +62,7 @@ type SelfTask = AudioEncodeTaskOptions & {
   inputEnd: boolean
   avframePool: AVFramePoolImpl
   avpacketPool: AVPacketPool
+  wasmEncoderOptions?: Data
 }
 
 export default class AudioEncodePipeline extends Pipeline {
@@ -209,13 +211,14 @@ export default class AudioEncodePipeline extends Pipeline {
     return 0
   }
 
-  public async open(taskId: string, parameters: pointer<AVCodecParameters>, timeBase: Rational) {
+  public async open(taskId: string, parameters: pointer<AVCodecParameters>, timeBase: Rational, wasmEncoderOptions: Data = {}) {
     const task = this.tasks.get(taskId)
     if (task) {
+      task.wasmEncoderOptions = wasmEncoderOptions
       return new Promise<number>(async (resolve, reject) => {
         task.openReject = reject
         try {
-          await task.encoder.open(parameters, timeBase)
+          await task.encoder.open(parameters, timeBase, task.wasmEncoderOptions)
           task.parameters = parameters
         }
         catch (error) {

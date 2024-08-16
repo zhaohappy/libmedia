@@ -48,6 +48,7 @@ import WasmVideoEncoder from 'avcodec/wasmcodec/VideoEncoder'
 import WebVideoEncoder from 'avcodec/webcodec/VideoEncoder'
 import { Rational } from 'avutil/struct/rational'
 import isPointer from 'cheap/std/function/isPointer'
+import { Data } from 'common/types/type'
 
 export interface VideoEncodeTaskOptions extends TaskOptions {
   resource: WebAssemblyResource
@@ -71,6 +72,7 @@ type SelfTask = VideoEncodeTaskOptions & {
 
   avpacketCaches: pointer<AVPacketRef>[]
   inputEnd: boolean
+  encodeEnd: boolean
 
   openReject?: (error: Error) => void
 
@@ -83,6 +85,9 @@ type SelfTask = VideoEncodeTaskOptions & {
   avpacketPool: AVPacketPool
 
   gopCounter: int32
+
+  firstEncoded: boolean
+  wasmEncoderOptions?: Data
 }
 
 export interface VideoEncodeTaskInfo {
@@ -145,12 +150,14 @@ export default class VideoEncodePipeline extends Pipeline {
       hardwareEncoder: null,
       avpacketCaches,
       inputEnd: false,
+      encodeEnd: false,
       targetEncoder: null,
       parameters: nullptr,
       timeBase: null,
       encoderReady: null,
       softwareEncoderOpened: false,
       gopCounter: 0,
+      firstEncoded: false,
 
       avframePool,
       avpacketPool
@@ -199,12 +206,14 @@ export default class VideoEncodePipeline extends Pipeline {
           }
           caches.push(avframe)
         }
-        leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull').then((avframe) => {
-          if (is.number(avframe) && avframe < 0) {
-            task.inputEnd = true
-          }
-          caches.push(avframe)
-        })
+        if (caches.length < 4) {
+          leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull').then((avframe) => {
+            if (is.number(avframe) && avframe < 0) {
+              task.inputEnd = true
+            }
+            caches.push(avframe)
+          })
+        }
       }
       return caches.length ? caches.shift() : IOError.END as pointer<AVFrameRef>
     }
@@ -217,7 +226,7 @@ export default class VideoEncodePipeline extends Pipeline {
             rightIPCPort.reply(request, avpacket)
             break
           }
-          else if (!task.inputEnd) {
+          else if (!task.encodeEnd) {
             while (true) {
               if (avpacketCaches.length) {
                 const avpacket = avpacketCaches.shift()
@@ -233,18 +242,23 @@ export default class VideoEncodePipeline extends Pipeline {
               const avframe = await pullAVFrame()
 
               if (isPointer(avframe) || avframe instanceof VideoFrame) {
-                let ret = task.targetEncoder.encode(avframe, task.gopCounter === 0)
+                let ret = (!task.firstEncoded && task.targetEncoder instanceof WasmVideoEncoder)
+                  ? await task.targetEncoder.encodeAsync(avframe, task.gopCounter === 0)
+                  : task.targetEncoder.encode(avframe, task.gopCounter === 0)
                 if (ret < 0) {
                   task.stats.videoEncodeErrorFrameCount++
                   if (task.targetEncoder === task.hardwareEncoder && task.softwareEncoder) {
                     task.targetEncoder = task.softwareEncoder
                     task.hardwareEncoder.close()
                     task.hardwareEncoder = null
+                    task.gopCounter = 0
                     await this.openSoftwareEncoder(task)
 
                     logger.warn(`video encode error width hardware, taskId: ${task.taskId}, error: ${ret}, try to fallback to software encode`)
 
-                    ret = task.targetEncoder.encode(avframe, task.gopCounter === 0)
+                    ret = task.targetEncoder instanceof WasmVideoEncoder
+                      ? await task.targetEncoder.encodeAsync(avframe, task.gopCounter === 0)
+                      : task.targetEncoder.encode(avframe, task.gopCounter === 0)
                   }
                   if (ret < 0) {
                     if (isPointer(avframe)) {
@@ -258,6 +272,7 @@ export default class VideoEncodePipeline extends Pipeline {
                     break
                   }
                 }
+                task.firstEncoded = true
                 task.gopCounter++
                 if (task.gopCounter === task.gop) {
                   task.gopCounter = 0
@@ -279,6 +294,7 @@ export default class VideoEncodePipeline extends Pipeline {
                 continue
               }
               else {
+                task.encodeEnd = true
                 if (avframe === IOError.END) {
                   if (task.targetEncoder === task.hardwareEncoder) {
                     // 硬解的 flush 有时会卡主，这里设置 2 秒超时，若超时只能丢弃还未 flush 出来的帧了
@@ -334,14 +350,18 @@ export default class VideoEncodePipeline extends Pipeline {
       if (isWorker()) {
         threadCount = Math.max(threadCount, navigator.hardwareConcurrency - 2)
       }
-      await task.softwareEncoder.open(parameters, task.timeBase ,threadCount)
+      await task.softwareEncoder.open(parameters, task.timeBase, threadCount, task.wasmEncoderOptions)
       task.softwareEncoderOpened = true
+      if (task.softwareEncoder instanceof WasmVideoEncoder) {
+        task.firstEncoded = false
+      }
     }
   }
 
-  public async open(taskId: string, parameters: pointer<AVCodecParameters>, timeBase: Rational) {
+  public async open(taskId: string, parameters: pointer<AVCodecParameters>, timeBase: Rational, wasmEncoderOptions: Data = {}) {
     const task = this.tasks.get(taskId)
     if (task) {
+      task.wasmEncoderOptions = wasmEncoderOptions
       return new Promise<number>(async (resolve, reject) => {
         task.openReject = reject
         if (task.hardwareEncoder) {
@@ -395,6 +415,7 @@ export default class VideoEncodePipeline extends Pipeline {
       })
       task.avpacketCaches.length = 0
       task.inputEnd = false
+      task.encodeEnd = false
 
       logger.info(`reset video encode, taskId: ${task.taskId}`)
     }

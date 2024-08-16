@@ -40,6 +40,12 @@ import { AVSampleFormat } from 'avutil/audiosamplefmt'
 import { avRescaleQ } from 'avutil/util/rational'
 import support from 'common/util/support'
 import isPointer from 'cheap/std/function/isPointer'
+import { AVDictionary } from 'avutil/struct/avdict'
+import { Data } from 'common/types/type'
+import * as object from 'common/util/object'
+import * as dict from 'avutil/util/avdict'
+import * as is from 'common/util/is'
+import { avMallocz } from 'avutil/util/mem'
 
 export type WasmAudioEncoderOptions = {
   resource: WebAssemblyResource
@@ -171,6 +177,8 @@ export default class WasmAudioEncoder {
   private frameSize: int32
   private audioFrameResizer: AudioFrameResizer
 
+  private encoderOptions: pointer<AVDictionary> = nullptr
+
   constructor(options: WasmAudioEncoderOptions) {
     this.options = options
     this.encoder = new WebAssemblyRunner(this.options.resource)
@@ -199,7 +207,7 @@ export default class WasmAudioEncoder {
     return this.encoder.call<int32>('encoder_receive', this.getAVPacket())
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational) {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, opts: Data = {}) {
     await this.encoder.run()
 
     const timeBaseP = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
@@ -208,13 +216,28 @@ export default class WasmAudioEncoder {
     timeBaseP.den = timeBase.den
 
     this.encoder.call('encoder_set_flags', 1 << 22)
+
+    if (object.keys(opts).length) {
+      if (this.encoderOptions) {
+        dict.freeAVDict2(this.encoderOptions)
+        free(this.encoderOptions)
+        this.encoderOptions = nullptr
+      }
+      this.encoderOptions = avMallocz(sizeof(AVDictionary))
+      object.each(opts, (value, key) => {
+        if (is.string(value) || is.string(key)) {
+          dict.avDictSet(this.encoderOptions, key, value)
+        }
+      })
+    }
+
     let ret = 0
 
     if (support.jspi) {
-      ret = await this.encoder.callAsync<int32>('encoder_open', parameters, timeBaseP, 1)
+      ret = await this.encoder.callAsync<int32>('encoder_open', parameters, timeBaseP, 1, this.encoderOptions)
     }
     else {
-      ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, 1)
+      ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, 1, this.encoderOptions)
       await this.encoder.childrenThreadReady()
     }
 
@@ -331,6 +354,11 @@ export default class WasmAudioEncoder {
     if (this.avframe) {
       destroyAVFrame(this.avframe)
       this.avframe = nullptr
+    }
+    if (this.encoderOptions) {
+      dict.freeAVDict2(this.encoderOptions)
+      free(this.encoderOptions)
+      this.encoderOptions = nullptr
     }
   }
 }

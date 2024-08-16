@@ -45,12 +45,11 @@ struct AVBuffer {
   int flags_internal;
 };
 
-int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCodecParameters* codecpar, AVRational* time_base, int thread_count) {
+int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCodecParameters* codecpar, AVRational* time_base, int thread_count, AVDictionary* opts) {
 
   int ret;
 
   AVCodec *enc = NULL;
-  AVDictionary *opts = NULL;
 
   /* find encoder for the stream */
   enc = avcodec_find_encoder(codec_id);
@@ -81,7 +80,7 @@ int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCode
     (*enc_ctx)->max_b_frames = enc_ctx_max_b_frames;
   }
 
-  #if MEDIA_TYPE_VIDEO 
+  #if MEDIA_TYPE_VIDEO
   if (wasm_pthread_support()) {
     if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
       (*enc_ctx)->thread_type = FF_THREAD_SLICE;
@@ -155,8 +154,8 @@ int encode_frame(const AVFrame* frame) {
   return 0;
 }
 
-EM_PORT_API(int) encoder_open(AVCodecParameters* codecpar, AVRational* time_base, int thread_count) {
-  return open_codec_context(&enc_ctx, codecpar->codec_id, codecpar, time_base, thread_count);
+EM_PORT_API(int) encoder_open(AVCodecParameters* codecpar, AVRational* time_base, int thread_count, AVDictionary* opts) {
+  return open_codec_context(&enc_ctx, codecpar->codec_id, codecpar, time_base, thread_count, opts);
 }
 
 EM_PORT_API(void) encoder_set_flags(int flags) {

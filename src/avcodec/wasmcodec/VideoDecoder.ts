@@ -31,6 +31,12 @@ import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { createAVFrame, destroyAVFrame } from 'avutil/util/avframe'
 import * as logger from 'common/util/logger'
 import support from 'common/util/support'
+import { AVDictionary } from 'avutil/struct/avdict'
+import { Data } from 'common/types/type'
+import * as object from 'common/util/object'
+import * as dict from 'avutil/util/avdict'
+import * as is from 'common/util/is'
+import { avMallocz } from 'avutil/util/mem'
 
 export type WasmVideoDecoderOptions = {
   resource: WebAssemblyResource
@@ -84,6 +90,8 @@ export default class WasmVideoDecoder {
 
   private parameters: pointer<AVCodecParameters>
 
+  private decoderOptions: pointer<AVDictionary> = nullptr
+
   constructor(options: WasmVideoDecoderOptions) {
     this.options = options
     this.decoder = new WebAssemblyRunner(this.options.resource)
@@ -113,15 +121,29 @@ export default class WasmVideoDecoder {
     return this.decoder.call<int32>('decoder_receive', this.getAVFrame())
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, threadCount: number = 1) {
+  public async open(parameters: pointer<AVCodecParameters>, threadCount: number = 1, opts: Data = {}) {
     await this.decoder.run(null, threadCount)
     let ret = 0
 
+    if (object.keys(opts).length) {
+      if (this.decoderOptions) {
+        dict.freeAVDict2(this.decoderOptions)
+        free(this.decoderOptions)
+        this.decoderOptions = nullptr
+      }
+      this.decoderOptions = avMallocz(sizeof(AVDictionary))
+      object.each(opts, (value, key) => {
+        if (is.string(value) || is.string(key)) {
+          dict.avDictSet(this.decoderOptions, key, value)
+        }
+      })
+    }
+
     if (support.jspi) {
-      ret = await this.decoder.callAsync<int32>('decoder_open', parameters, nullptr, threadCount)
+      ret = await this.decoder.callAsync<int32>('decoder_open', parameters, nullptr, threadCount, this.decoderOptions)
     }
     else {
-      ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, threadCount)
+      ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, threadCount, this.decoderOptions)
       await this.decoder.childrenThreadReady()
     }
     
@@ -176,6 +198,12 @@ export default class WasmVideoDecoder {
     }
 
     this.parameters = nullptr
+
+    if (this.decoderOptions) {
+      dict.freeAVDict2(this.decoderOptions)
+      free(this.decoderOptions)
+      this.decoderOptions = nullptr
+    }
   }
 
   public setSkipFrameDiscard(discard: AVDiscard) {

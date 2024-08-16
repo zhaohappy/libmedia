@@ -297,7 +297,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             source: wasmUrl
           },
           {
-            initFuncs: type === 'encoder' && codecId === AVCodecID.AV_CODEC_ID_HEVC 
+            initFuncs: type === 'encoder' && codecId === AVCodecID.AV_CODEC_ID_HEVC
               ? ['__wasm_apply_data_relocs', '_initialize']
               : ['__wasm_apply_data_relocs']
           }
@@ -1459,6 +1459,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           logger.fatal(`${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder codecId ${newStream.codecpar.codecId} not support`)
         }
       }
+
+      const wasmEncoderOptions: Data = {}
+
       // x265 需要提前创建线程
       if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
         encoderResource.enableThreadPool = true
@@ -1467,6 +1470,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       // libvpx 需要提前创建线程
       else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9) {
         encoderResource.enableThreadPool = true
+      }
+      else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1) {
+        wasmEncoderOptions['cpu-used'] = '5'
       }
 
       // 注册一个视频编码任务
@@ -1486,7 +1492,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           gop: static_cast<int32>(avQ2D(newStream.codecpar.framerate) * (videoConfig?.keyFrameInterval ?? 5000) / 1000)
         })
 
-      ret = await this.VideoEncoderThread.open(taskId, newStream.codecpar, { num: newStream.timeBase.num, den: newStream.timeBase.den })
+      ret = await this.VideoEncoderThread.open(taskId, newStream.codecpar, { num: newStream.timeBase.num, den: newStream.timeBase.den }, wasmEncoderOptions)
       
       if (ret < 0) {
         logger.error(`cannot open video ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder`)
