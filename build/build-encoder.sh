@@ -67,6 +67,17 @@ if [ $encode == "x264" ]; then
       ENCODER_LIB="$PROJECT_ROOT_PATH/lib/x264/lib/libx264.a"
     fi
   fi
+elif [ $encode == "openh264" ]; then
+  echo "#define MEDIA_TYPE_VIDEO 1" >> $INCLUDE_PATH/config.h
+  if [ $ENABLE_SIMD == "1" ]; then
+    ENCODER_LIB="$PROJECT_ROOT_PATH/lib/openh264-simd/lib/libopenh264.a"
+  else
+    if [ $ENABLE_ATOMIC == "1" ]; then
+      ENCODER_LIB="$PROJECT_ROOT_PATH/lib/openh264-atomic/lib/libopenh264.a"
+    else
+      ENCODER_LIB="$PROJECT_ROOT_PATH/lib/openh264/lib/libopenh264.a"
+    fi
+  fi
 elif [ $encode == "x265" ]; then
   echo "#define MEDIA_TYPE_VIDEO 1" >> $INCLUDE_PATH/config.h
   if [ $ENABLE_SIMD == "1" ]; then
@@ -76,6 +87,17 @@ elif [ $encode == "x265" ]; then
       ENCODER_LIB="$PROJECT_ROOT_PATH/lib/x265-atomic/lib/libx265.a"
     else
       ENCODER_LIB="$PROJECT_ROOT_PATH/lib/x265/lib/libx265.a"
+    fi
+  fi
+elif [ $encode == "av1" ]; then
+  echo "#define MEDIA_TYPE_VIDEO 1" >> $INCLUDE_PATH/config.h
+  if [ $ENABLE_SIMD == "1" ]; then
+    ENCODER_LIB="$PROJECT_ROOT_PATH/lib/aom-simd/lib/libaom.a"
+  else
+    if [ $ENABLE_ATOMIC == "1" ]; then
+      ENCODER_LIB="$PROJECT_ROOT_PATH/lib/aom-atomic/lib/libaom.a"
+    else
+      ENCODER_LIB="$PROJECT_ROOT_PATH/lib/aom/lib/libaom.a"
     fi
   fi
 elif [ $encode == "kvazaar" ]; then
@@ -149,7 +171,18 @@ elif [ $encode == "vorbis" ]; then
     if [ $ENABLE_ATOMIC == "1" ]; then
       ENCODER_LIB="$PROJECT_ROOT_PATH/lib/vorbis-atomic/lib/libvorbisenc.a"
     else
-      ENCODER_LIB="$PROJECT_ROOT_PATH/lib/vorbis/lib/libvorbis.a"
+      ENCODER_LIB="$PROJECT_ROOT_PATH/lib/vorbis/lib/libvorbisenc.a"
+    fi
+  fi
+elif [ $encode == "theora" ]; then
+  echo "#define MEDIA_TYPE_VIDEO 1" >> $INCLUDE_PATH/config.h
+  if [ $ENABLE_SIMD == "1" ]; then
+    ENCODER_LIB="$PROJECT_ROOT_PATH/lib/theora-simd/lib/libtheora.a $PROJECT_ROOT_PATH/lib/theora-simd/lib/libtheoraenc.a $PROJECT_ROOT_PATH/lib/libogg-simd/lib/libogg.a"
+  else
+    if [ $ENABLE_ATOMIC == "1" ]; then
+      ENCODER_LIB="$PROJECT_ROOT_PATH/lib/theora-atomic/lib/libtheora.a $PROJECT_ROOT_PATH/lib/theora-atomic/lib/libtheoraenc.a $PROJECT_ROOT_PATH/lib/libogg-atomic/lib/libogg.a"
+    else
+      ENCODER_LIB="$PROJECT_ROOT_PATH/lib/theora/lib/libtheora.a $PROJECT_ROOT_PATH/lib/theora/lib/libtheoraenc.a $PROJECT_ROOT_PATH/lib/libogg/lib/libogg.a"
     fi
   fi
 elif [ $encode == "pcm" ]; then

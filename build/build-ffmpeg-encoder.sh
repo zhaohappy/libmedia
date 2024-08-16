@@ -78,6 +78,17 @@ elif [ $encode == "x264" ]; then
     EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/x264/include"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/x264/lib -lx264"
   fi
+elif [ $encode == "openh264" ]; then
+  realEncoder="libopenh264"
+  EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libopenh264"
+
+  if [[ $simd == "1" ]]; then
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/openh264-simd/include"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/openh264-simd/lib -lopenh264"
+  else
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/openh264/include"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/openh264/lib -lopenh264"
+  fi
 elif [ $encode == "x265" ]; then
   realEncoder="libx265"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libx265"
@@ -143,6 +154,26 @@ elif [[ $encode == "speex" ]]; then
   else
     EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/speex/include"
     EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex/lib -lspeex"
+  fi
+elif [[ $encode == "av1" ]]; then
+  realEncoder="libaom_av1"
+  EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libaom"
+  if [[ $simd == "1" ]]; then
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/aom-simd/include"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/aom-simd/lib -laom"
+  else
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/aom-atomic/include"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/aom-atomic/lib -laom"
+  fi
+elif [[ $encode == "theora" ]]; then
+  realEncoder="libtheora"
+  EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libtheora"
+  if [[ $simd == "1" ]]; then
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/theora-simd/include -I$PROJECT_ROOT_PATH/lib/libogg-simd/include"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/theora-simd/lib -ltheoraenc"
+  else
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/theora/include -I$PROJECT_ROOT_PATH/lib/libogg/include"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/theora/lib -ltheoraenc"
   fi
 fi
 
