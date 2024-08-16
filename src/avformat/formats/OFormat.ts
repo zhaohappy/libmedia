@@ -94,6 +94,7 @@ export const OFormatSupportedCodecs: Record<Exclude<AVFormat, AVFormat.UNKNOWN>,
     AVCodecID.AV_CODEC_ID_HEVC,
     AVCodecID.AV_CODEC_ID_VVC,
     AVCodecID.AV_CODEC_ID_MPEG4,
+    AVCodecID.AV_CODEC_ID_THEORA,
     
     AVCodecID.AV_CODEC_ID_WEBVTT
   ],

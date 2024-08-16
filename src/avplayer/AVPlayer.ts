@@ -125,6 +125,7 @@ const SupportedCodecs = [
   AVCodecID.AV_CODEC_ID_AV1,
   AVCodecID.AV_CODEC_ID_VP8,
   AVCodecID.AV_CODEC_ID_VP9,
+  AVCodecID.AV_CODEC_ID_THEORA,
 
   AVCodecID.AV_CODEC_ID_AAC,
   AVCodecID.AV_CODEC_ID_MP3,

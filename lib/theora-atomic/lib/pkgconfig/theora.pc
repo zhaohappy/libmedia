@@ -1,0 +1,14 @@
+# theora installed pkg-config file
+
+prefix=/Users/zhaogaoxing/Documents/github/libmedia/lib/theora-atomic
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: theora
+Description: Theora video codec
+Version: 1.2.0alpha1+git
+Requires: ogg >= 1.1
+Conflicts:
+Libs: -L${libdir} -ltheora
+Cflags: -I${includedir}

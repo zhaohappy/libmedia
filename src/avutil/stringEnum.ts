@@ -57,7 +57,8 @@ export const VideoCodecString2CodecId = {
   'av1': AVCodecID.AV_CODEC_ID_AV1,
   'vp9': AVCodecID.AV_CODEC_ID_VP9,
   'vp8': AVCodecID.AV_CODEC_ID_VP8,
-  'mpeg4': AVCodecID.AV_CODEC_ID_MPEG4
+  'mpeg4': AVCodecID.AV_CODEC_ID_MPEG4,
+  'theora': AVCodecID.AV_CODEC_ID_THEORA
 }
 
 export const AudioCodecString2CodecId = {
