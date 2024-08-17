@@ -618,7 +618,37 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  private createSubtitleRender(subtitleStream: AVStreamInterface, taskId: string) {
+    this.subtitleRender = new SubtitleRender({
+      dom: this.canvas || this.video || this.options.container,
+      getCurrentTime: () => {
+        return this.currentTime
+      },
+      avpacketList: addressof(this.GlobalData.avpacketList),
+      avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+      codecpar: subtitleStream.codecpar,
+      container: this.options.container,
+      videoWidth: this.selectedVideoStream?.codecpar.width ?? 0,
+      videoHeight: this.selectedVideoStream?.codecpar.height ?? 0
+    })
+
+    this.subtitleRender.setDemuxTask(taskId)
+
+    this.selectedSubtitleStream = subtitleStream
+
+    if (taskId === this.taskId) {
+      this.lastSelectedInnerSubtitleStreamIndex = subtitleStream.index
+    }
+
+    AVPlayer.DemuxerThread.connectStreamTask.transfer(this.subtitleRender.getDemuxerPort(taskId))
+      .invoke(taskId, subtitleStream.index, this.subtitleRender.getDemuxerPort(taskId))
+  }
+
   public async loadExternalSubtitle(externalSubtitle: ExternalSubtitle) {
+
+    if (this.status === AVPlayerStatus.DESTROYING || this.status === AVPlayerStatus.DESTROYED) {
+      logger.fatal('player has already destroyed')
+    }
 
     if (!externalSubtitle.source) {
       logger.fatal('external subtitle must has source')
@@ -723,11 +753,16 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       stream.metadata['title'] = externalSubtitle.title
     }
 
-    if (this.status === AVPlayerStatus.PLAYED) {
+    const handleStatus = this.status === AVPlayerStatus.PAUSED
+      || this.status === AVPlayerStatus.PLAYED
+      || this.status === AVPlayerStatus.SEEKING
+      || this.status === AVPlayerStatus.CHANGING
+
+    if (handleStatus) {
       await AVPlayer.DemuxerThread.seek(taskId, this.currentTime, AVSeekFlags.FRAME)
     }
 
-    if (this.status === AVPlayerStatus.PLAYED && !this.subtitleRender) {
+    if (handleStatus && !this.subtitleRender) {
       this.createSubtitleRender(stream, taskId)
       this.subtitleRender.start()
     }
@@ -1016,32 +1051,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.status = AVPlayerStatus.LOADED
 
     this.fire(eventType.LOADED)
-  }
-
-  private createSubtitleRender(subtitleStream: AVStreamInterface, taskId: string) {
-    this.subtitleRender = new SubtitleRender({
-      dom: this.canvas || this.video || this.options.container,
-      getCurrentTime: () => {
-        return this.currentTime
-      },
-      avpacketList: addressof(this.GlobalData.avpacketList),
-      avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
-      codecpar: subtitleStream.codecpar,
-      container: this.options.container,
-      videoWidth: this.selectedVideoStream?.codecpar.width ?? 0,
-      videoHeight: this.selectedVideoStream?.codecpar.height ?? 0
-    })
-
-    this.subtitleRender.setDemuxTask(taskId)
-
-    this.selectedSubtitleStream = subtitleStream
-
-    if (taskId === this.taskId) {
-      this.lastSelectedInnerSubtitleStreamIndex = subtitleStream.index
-    }
-
-    AVPlayer.DemuxerThread.connectStreamTask.transfer(this.subtitleRender.getDemuxerPort(taskId))
-      .invoke(taskId, subtitleStream.index, this.subtitleRender.getDemuxerPort(taskId))
   }
 
   public async play(options: {
