@@ -281,7 +281,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
   get currentTime() {
     if (this.useMSE) {
-      return static_cast<int64>(((this.video || this.audio)?.currentTime || 0) * 1000)
+      return static_cast<int64>((((this.video || this.audio)?.currentTime || 0) * 1000) as double)
     }
     if (this.selectedAudioStream) {
       return this.stats.audioCurrentTime
@@ -293,7 +293,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   private isCodecIdSupported(codecId: AVCodecID) {
-    if (codecId >= AVCodecID.AV_CODEC_ID_FIRST_AUDIO && codecId <= AVCodecID.AV_CODEC_ID_PCM_SGA) {
+    if (codecId > AVCodecID.AV_CODEC_ID_FIRST_AUDIO && codecId <= AVCodecID.AV_CODEC_ID_PCM_SGA) {
       return true
     }
     return array.has(SupportedCodecs, codecId)
