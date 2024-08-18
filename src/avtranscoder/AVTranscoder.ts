@@ -241,7 +241,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
   private VideoThreadReady: Promise<void>
   private MuxThreadReady: Promise<void>
 
-  // 下面的线程所有 AVPlayer 实例共享
+  // 下面的线程所有 AVTranscoder 实例共享
   private IOThread: Thread<IOPipeline>
   private DemuxerThread: Thread<DemuxPipeline>
   private MuxThread: Thread<MuxPipeline>
