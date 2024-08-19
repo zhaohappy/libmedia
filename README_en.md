@@ -322,7 +322,7 @@ But some dependent libraries are under GPL license. If you use these dependent l
  - [fdkaac](https://www.linuxfromscratch.org/blfs/view/svn/multimedia/fdk-aac.html): BSD
  - [dav1d](https://code.videolan.org/videolan/dav1d/): BSD-2-Clause
  - [aom](https://aomedia.googlesource.com/aom/): BSD-2-Clause
- - [hls-parser](https://github.com/kuu/hls-parser)
+ - [hls-parser](https://github.com/kuu/hls-parser): MIT
  - [ass.js](https://github.com/weizhenye/ASS): MIT
  - [ass-compiler](https://github.com/weizhenye/ass-compiler): MIT
 

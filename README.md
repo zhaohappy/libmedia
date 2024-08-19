@@ -330,7 +330,7 @@ libmedia 使用 LGPL 开源协议，你需要遵守协议要求，详情查看 [
  - [fdkaac](https://www.linuxfromscratch.org/blfs/view/svn/multimedia/fdk-aac.html): BSD
  - [dav1d](https://code.videolan.org/videolan/dav1d/): BSD-2-Clause
  - [aom](https://aomedia.googlesource.com/aom/): BSD-2-Clause
- - [hls-parser](https://github.com/kuu/hls-parser)
+ - [hls-parser](https://github.com/kuu/hls-parser): MIT
  - [ass.js](https://github.com/weizhenye/ASS): MIT
  - [ass-compiler](https://github.com/weizhenye/ass-compiler): MIT
 
