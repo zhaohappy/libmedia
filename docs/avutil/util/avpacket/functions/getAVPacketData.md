@@ -20,7 +20,7 @@
 
 ### Source
 
-[avutil/util/avpacket.ts:37](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/util/avpacket.ts#L37)
+[avutil/util/avpacket.ts:37](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/util/avpacket.ts#L37)
 
 ## getAVPacketData(avpacket, safe)
 
@@ -38,4 +38,4 @@
 
 ### Source
 
-[avutil/util/avpacket.ts:38](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/util/avpacket.ts#L38)
+[avutil/util/avpacket.ts:38](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/util/avpacket.ts#L38)

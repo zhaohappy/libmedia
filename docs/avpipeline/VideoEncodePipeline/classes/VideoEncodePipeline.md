@@ -26,7 +26,7 @@
 
 #### Source
 
-[avpipeline/VideoEncodePipeline.ts:99](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoEncodePipeline.ts#L99)
+[avpipeline/VideoEncodePipeline.ts:105](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoEncodePipeline.ts#L105)
 
 ## Properties
 
@@ -40,7 +40,7 @@
 
 #### Source
 
-[avpipeline/VideoEncodePipeline.ts:97](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoEncodePipeline.ts#L97)
+[avpipeline/VideoEncodePipeline.ts:103](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoEncodePipeline.ts#L103)
 
 ## Methods
 
@@ -58,7 +58,25 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:48](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L48)
+[avpipeline/Pipeline.ts:48](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L48)
+
+***
+
+### getColorSpace()
+
+> **getColorSpace**(`taskId`): `Promise`\<`object` \| `object`\>
+
+#### Parameters
+
+• **taskId**: `string`
+
+#### Returns
+
+`Promise`\<`object` \| `object`\>
+
+#### Source
+
+[avpipeline/VideoEncodePipeline.ts:432](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoEncodePipeline.ts#L432)
 
 ***
 
@@ -76,7 +94,7 @@
 
 #### Source
 
-[avpipeline/VideoEncodePipeline.ts:367](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoEncodePipeline.ts#L367)
+[avpipeline/VideoEncodePipeline.ts:424](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoEncodePipeline.ts#L424)
 
 ***
 
@@ -94,7 +112,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L60)
+[avpipeline/Pipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L60)
 
 ***
 
@@ -108,13 +126,13 @@
 
 #### Source
 
-[avpipeline/VideoEncodePipeline.ts:400](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoEncodePipeline.ts#L400)
+[avpipeline/VideoEncodePipeline.ts:465](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoEncodePipeline.ts#L465)
 
 ***
 
 ### open()
 
-> **open**(`taskId`, `parameters`, `timeBase`): `Promise`\<`void`\>
+> **open**(`taskId`, `parameters`, `timeBase`, `wasmEncoderOptions`): `Promise`\<`number`\>
 
 #### Parameters
 
@@ -124,13 +142,15 @@
 
 • **timeBase**: `Rational`
 
+• **wasmEncoderOptions**: `Data`= `{}`
+
 #### Returns
 
-`Promise`\<`void`\>
+`Promise`\<`number`\>
 
 #### Source
 
-[avpipeline/VideoEncodePipeline.ts:314](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoEncodePipeline.ts#L314)
+[avpipeline/VideoEncodePipeline.ts:361](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoEncodePipeline.ts#L361)
 
 ***
 
@@ -152,7 +172,7 @@
 
 #### Source
 
-[avpipeline/VideoEncodePipeline.ts:375](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoEncodePipeline.ts#L375)
+[avpipeline/VideoEncodePipeline.ts:440](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoEncodePipeline.ts#L440)
 
 ***
 
@@ -170,7 +190,7 @@
 
 #### Source
 
-[avpipeline/VideoEncodePipeline.ts:344](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoEncodePipeline.ts#L344)
+[avpipeline/VideoEncodePipeline.ts:400](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoEncodePipeline.ts#L400)
 
 ***
 
@@ -192,7 +212,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:56](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L56)
+[avpipeline/Pipeline.ts:56](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L56)
 
 ***
 
@@ -214,4 +234,4 @@
 
 #### Source
 
-[avpipeline/VideoEncodePipeline.ts:382](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoEncodePipeline.ts#L382)
+[avpipeline/VideoEncodePipeline.ts:447](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoEncodePipeline.ts#L447)

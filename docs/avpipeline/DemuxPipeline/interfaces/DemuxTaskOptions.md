@@ -18,7 +18,7 @@
 
 #### Source
 
-[avpipeline/DemuxPipeline.ts:61](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/DemuxPipeline.ts#L61)
+[avpipeline/DemuxPipeline.ts:63](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/DemuxPipeline.ts#L63)
 
 ***
 
@@ -28,7 +28,7 @@
 
 #### Source
 
-[avpipeline/DemuxPipeline.ts:62](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/DemuxPipeline.ts#L62)
+[avpipeline/DemuxPipeline.ts:64](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/DemuxPipeline.ts#L64)
 
 ***
 
@@ -38,7 +38,7 @@
 
 #### Source
 
-[avpipeline/DemuxPipeline.ts:57](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/DemuxPipeline.ts#L57)
+[avpipeline/DemuxPipeline.ts:59](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/DemuxPipeline.ts#L59)
 
 ***
 
@@ -52,7 +52,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:32](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L32)
+[avpipeline/Pipeline.ts:32](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L32)
 
 ***
 
@@ -62,7 +62,7 @@
 
 #### Source
 
-[avpipeline/DemuxPipeline.ts:63](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/DemuxPipeline.ts#L63)
+[avpipeline/DemuxPipeline.ts:65](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/DemuxPipeline.ts#L65)
 
 ***
 
@@ -72,7 +72,7 @@
 
 #### Source
 
-[avpipeline/DemuxPipeline.ts:56](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/DemuxPipeline.ts#L56)
+[avpipeline/DemuxPipeline.ts:58](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/DemuxPipeline.ts#L58)
 
 ***
 
@@ -82,7 +82,7 @@
 
 #### Source
 
-[avpipeline/DemuxPipeline.ts:59](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/DemuxPipeline.ts#L59)
+[avpipeline/DemuxPipeline.ts:61](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/DemuxPipeline.ts#L61)
 
 ***
 
@@ -92,7 +92,7 @@
 
 #### Source
 
-[avpipeline/DemuxPipeline.ts:58](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/DemuxPipeline.ts#L58)
+[avpipeline/DemuxPipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/DemuxPipeline.ts#L60)
 
 ***
 
@@ -106,7 +106,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:30](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L30)
+[avpipeline/Pipeline.ts:30](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L30)
 
 ***
 
@@ -116,7 +116,7 @@
 
 #### Source
 
-[avpipeline/DemuxPipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/DemuxPipeline.ts#L60)
+[avpipeline/DemuxPipeline.ts:62](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/DemuxPipeline.ts#L62)
 
 ***
 
@@ -130,7 +130,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:31](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L31)
+[avpipeline/Pipeline.ts:31](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L31)
 
 ***
 
@@ -144,7 +144,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:34](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L34)
+[avpipeline/Pipeline.ts:34](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L34)
 
 ***
 
@@ -158,4 +158,4 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:33](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L33)
+[avpipeline/Pipeline.ts:33](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L33)

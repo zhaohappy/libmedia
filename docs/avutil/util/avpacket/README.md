@@ -12,6 +12,7 @@
 
 - [addAVPacketData](functions/addAVPacketData.md)
 - [addAVPacketSideData](functions/addAVPacketSideData.md)
+- [addSideData](functions/addSideData.md)
 - [copyAVPacketData](functions/copyAVPacketData.md)
 - [copyAVPacketProps](functions/copyAVPacketProps.md)
 - [copyAVPacketSideData](functions/copyAVPacketSideData.md)
@@ -24,5 +25,6 @@
 - [getAVPacketSideData](functions/getAVPacketSideData.md)
 - [hasAVPacketSideData](functions/hasAVPacketSideData.md)
 - [initAVPacketData](functions/initAVPacketData.md)
+- [newSideData](functions/newSideData.md)
 - [refAVPacket](functions/refAVPacket.md)
 - [unrefAVPacket](functions/unrefAVPacket.md)

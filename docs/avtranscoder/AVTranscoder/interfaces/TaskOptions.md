@@ -14,7 +14,7 @@
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:103](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L103)
+[avtranscoder/AVTranscoder.ts:111](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L111)
 
 ***
 
@@ -36,7 +36,7 @@
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:97](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L97)
+[avtranscoder/AVTranscoder.ts:105](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L105)
 
 ***
 
@@ -46,7 +46,7 @@
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:104](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L104)
+[avtranscoder/AVTranscoder.ts:112](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L112)
 
 ***
 
@@ -72,7 +72,7 @@
 
 #### audio.codec?
 
-> `optional` **codec**: `"copy"` \| `"mp3"` \| `"vorbis"` \| `"flac"` \| `"opus"` \| `"aac"` \| `"speex"`
+> `optional` **codec**: `"copy"` \| `"mp3"` \| `"vorbis"` \| `"flac"` \| `"opus"` \| `"aac"` \| `"ac3"` \| `"eac3"` \| `"dca"` \| `"speex"` \| `"g711a"` \| `"g711u"`
 
 输出编码类型
 
@@ -88,7 +88,7 @@
 
 #### audio.sampleFmt?
 
-> `optional` **sampleFmt**: `"float"` \| `"u8"` \| `"s16"` \| `"s32"` \| `"double"` \| `"u8p"` \| `"s16p"` \| `"s32p"` \| `"s64"` \| `"s64p"` \| `"floatp"` \| `"doublep"`
+> `optional` **sampleFmt**: `"float"` \| `"u8"` \| `"s16"` \| `"s32"` \| `"u8p"` \| `"s16p"` \| `"s32p"` \| `"s64"` \| `"s64p"` \| `"floatp"` \| `"double"` \| `"doublep"`
 
 输出采样格式
 
@@ -105,6 +105,10 @@
 #### format?
 
 > `optional` **format**: `string`
+
+#### formatOptions?
+
+> `optional` **formatOptions**: `Data`
 
 #### video?
 
@@ -132,7 +136,7 @@
 
 #### video.codec?
 
-> `optional` **codec**: `"avc"` \| `"copy"` \| `"vp8"` \| `"h264"` \| `"hevc"` \| `"h265"` \| `"vvc"` \| `"h266"` \| `"av1"` \| `"vp9"` \| `"mpeg4"`
+> `optional` **codec**: `"avc"` \| `"copy"` \| `"vp8"` \| `"h264"` \| `"h265"` \| `"hevc"` \| `"h266"` \| `"vvc"` \| `"av1"` \| `"vp9"` \| `"mpeg4"` \| `"theora"`
 
 输出编码类型
 
@@ -170,7 +174,7 @@
 
 #### video.pixfmt?
 
-> `optional` **pixfmt**: `"yuv420p"` \| `"yuv422p"` \| `"yuv444p"` \| `"yuv420p10le"` \| `"yuv422p10le"` \| `"yuv444p10le"` \| `"yuv420p10be"` \| `"yuv422p10be"` \| `"yuv444p10be"`
+> `optional` **pixfmt**: `"yuv420p"` \| `"yuv422p"` \| `"yuv444p"` \| `"yuva420p"` \| `"yuva422p"` \| `"yuva444p"` \| `"yuv420p10le"` \| `"yuv422p10le"` \| `"yuv444p10le"` \| `"yuva420p10le"` \| `"yuva422p10le"` \| `"yuva444p10le"` \| `"yuv420p10be"` \| `"yuv422p10be"` \| `"yuv444p10be"` \| `"yuva420p10be"` \| `"yuva422p10be"` \| `"yuva444p10be"`
 
 输出像素格式
 
@@ -186,7 +190,7 @@
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:105](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L105)
+[avtranscoder/AVTranscoder.ts:113](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L113)
 
 ***
 
@@ -196,4 +200,4 @@
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:102](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L102)
+[avtranscoder/AVTranscoder.ts:110](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L110)

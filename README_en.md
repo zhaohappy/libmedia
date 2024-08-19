@@ -8,13 +8,13 @@ English | [中文](README.md)
  
 libmedia is a tool library for processing multimedia content (such as audio, video, subtitles) on the web platform.
 
-libmedia has typescript module and webAssembly module, and the design concept is dominated by typescript module; we implement the audio and video demux and mux layer in typescript module, so that we can process asynchronous IO. This allows the entire system to run on a non-SharedArrayBuffer environment;
+libmedia has typescript module and webAssembly module, and the design concept is all things dominated by typescript module; we implement the module of media demux and mux in typescript, so that we can use asynchronous IO to process stream from anywhere. This allows the entire system to run on a non-SharedArrayBuffer environment;
 
-The decoding and encoding modules are put into the webAssembly module. These modules can be compiled from the libavcodec module of FFmpeg, and each decoder and encoder is compiled into a separate wasm module to solve the problem of too large a compiled product. When using it, only You need to load the modules you want to use. At the same time, the codec module can use WebCodecs.
+The decoding and encoding modules are put into the webAssembly module. These modules can be compiled from the libavcodec module of FFmpeg, and each decoder and encoder is compiled into a separate wasm module to solve the problem of too large of compiled c/c++ product. When using it, only You need to load the modules you want to use. At the same time, the codec module can use WebCodecs.
 
-The api design of libmedia refers to the design of FFmpeg. Many data structure concepts are consistent, so you can see data structures such as ```AVStream```, ```AVCodecParameters```, ```AVFormatContext```, ```AVPacket```, ```AVFrame```, etc. As the de facto standard in the audio and video industry, FFmpeg's design is very excellent; following the design, we can directly obtain excellent design patterns, and it also reduces the difficulty for developers to learn and understand. After all, most audio and video developers have learned about FFmpeg; of course, the main reason is that we need to make this data readable and writable in both typescript modules and webAssembly modules. The prerequisite is that its layout in memory is consistent with FFmpeg.
+The api design of libmedia refers to the FFmpeg. Many data structure concepts are consistent, so you can see data structures such as ```AVStream```, ```AVCodecParameters```, ```AVFormatContext```, ```AVPacket```, ```AVFrame```, etc. As the de facto standard in the audio and video industry, FFmpeg's design is very excellent; following the design, we can directly obtain excellent design patterns, and it also reduces the difficulty for developers to learn and understand. After all, most audio and video developers have learned about FFmpeg; of course, the main reason is that we need to make this data readable and writable in both typescript modules and webAssembly modules. The prerequisite is that its layout in memory is consistent with FFmpeg.
 
-libmedia is designed to run on multi-threads, but can fall back to running on a single thread; so it is more friendly to multi-threaded development; developers can do multi-threaded development based on this very elegantly, after all, multi-threading is used in the audio and video field The experience is definitely much higher.
+libmedia is designed to run on multi-threads, but can fallback to running on a single thread; so it is more friendly to multi-threaded development; developers can easy do multi-threaded development based on this, After all, using multithreading in the audio and video domain significantly enhances the overall experience.
 
 
 ### Libraries
@@ -31,12 +31,12 @@ libmedia is designed to run on multi-threads, but can fall back to running on a 
 
 ### Multi-threaded
 
-libmedia supports multi-threading, but the page needs to use SharedArrayBuffer. You can add the following two response headers to the response header of the top-level document:
+libmedia supports multi-threading, but the page needs to use SharedArrayBuffer. You can add the following two response headers to the response header of the top-level document to enable use of SharedArrayBuffer:
 
 - Cross-Origin-Opener-Policy: same-origin
 - Cross-Origin-Embedder-Policy: require-corp
 
-To enable the use of SharedArrayBuffer, if multi-threading is not supported, it will fall back to running on the main thread.
+if multi-threading is not supported, it will fall back to running on the main thread.
 
 
 ### Tools
@@ -235,7 +235,7 @@ Codecs are compiled into separate wasm modules, the decoders are in the ```dist/
 
 ### Start
 
-If you want to integrate this project for development, it is recommended to use this warehouse as a sub-module. The project uses the [cheap](https://github.com/zhaohappy/cheap) library, which requires you to have some understanding of the use of cheap.
+If you want to integrate this project for development, it is recommended to use libmedia as a sub-module. The project dependence on [cheap](https://github.com/zhaohappy/cheap) library, which requires you to understanding of the usage of cheap.
 
 Currently, this project only supports using webpack for compilation and packaging.
 
@@ -322,6 +322,7 @@ But some dependent libraries are under GPL license. If you use these dependent l
  - [fdkaac](https://www.linuxfromscratch.org/blfs/view/svn/multimedia/fdk-aac.html): BSD
  - [dav1d](https://code.videolan.org/videolan/dav1d/): BSD-2-Clause
  - [aom](https://aomedia.googlesource.com/aom/): BSD-2-Clause
+ - [hls-parser](https://github.com/kuu/hls-parser)
  - [ass.js](https://github.com/weizhenye/ASS): MIT
  - [ass-compiler](https://github.com/weizhenye/ass-compiler): MIT
 

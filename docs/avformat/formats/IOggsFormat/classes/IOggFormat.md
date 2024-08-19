@@ -26,7 +26,7 @@
 
 #### Source
 
-[avformat/formats/IOggsFormat.ts:74](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IOggsFormat.ts#L74)
+[avformat/formats/IOggsFormat.ts:74](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IOggsFormat.ts#L74)
 
 ## Properties
 
@@ -36,7 +36,7 @@
 
 #### Source
 
-[avformat/formats/IOggsFormat.ts:59](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IOggsFormat.ts#L59)
+[avformat/formats/IOggsFormat.ts:59](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IOggsFormat.ts#L59)
 
 ***
 
@@ -58,7 +58,7 @@
 
 #### Source
 
-[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IFormat.ts#L35)
+[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IFormat.ts#L35)
 
 ***
 
@@ -72,7 +72,7 @@
 
 #### Source
 
-[avformat/formats/IOggsFormat.ts:57](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IOggsFormat.ts#L57)
+[avformat/formats/IOggsFormat.ts:57](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IOggsFormat.ts#L57)
 
 ## Methods
 
@@ -94,7 +94,7 @@
 
 #### Source
 
-[avformat/formats/IFormat.ts:39](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IFormat.ts#L39)
+[avformat/formats/IFormat.ts:39](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IFormat.ts#L39)
 
 ***
 
@@ -112,7 +112,7 @@
 
 #### Source
 
-[avformat/formats/IOggsFormat.ts:452](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IOggsFormat.ts#L452)
+[avformat/formats/IOggsFormat.ts:452](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IOggsFormat.ts#L452)
 
 ***
 
@@ -134,7 +134,7 @@
 
 #### Source
 
-[avformat/formats/IOggsFormat.ts:80](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IOggsFormat.ts#L80)
+[avformat/formats/IOggsFormat.ts:80](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IOggsFormat.ts#L80)
 
 ***
 
@@ -158,7 +158,7 @@
 
 #### Source
 
-[avformat/formats/IOggsFormat.ts:282](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IOggsFormat.ts#L282)
+[avformat/formats/IOggsFormat.ts:282](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IOggsFormat.ts#L282)
 
 ***
 
@@ -180,7 +180,7 @@
 
 #### Source
 
-[avformat/formats/IOggsFormat.ts:162](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IOggsFormat.ts#L162)
+[avformat/formats/IOggsFormat.ts:162](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IOggsFormat.ts#L162)
 
 ***
 
@@ -208,4 +208,4 @@
 
 #### Source
 
-[avformat/formats/IOggsFormat.ts:409](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IOggsFormat.ts#L409)
+[avformat/formats/IOggsFormat.ts:409](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IOggsFormat.ts#L409)

@@ -14,7 +14,7 @@
 
 #### Source
 
-[avformat/formats/IFlvFormat.ts:63](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IFlvFormat.ts#L63)
+[avformat/formats/IFlvFormat.ts:65](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IFlvFormat.ts#L65)
 
 ***
 
@@ -24,4 +24,4 @@
 
 #### Source
 
-[avformat/formats/IFlvFormat.ts:64](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IFlvFormat.ts#L64)
+[avformat/formats/IFlvFormat.ts:66](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IFlvFormat.ts#L66)

@@ -19,7 +19,7 @@ discard all
 
 #### Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:73](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoDecoder.ts#L73)
+[avcodec/wasmcodec/VideoDecoder.ts:80](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoDecoder.ts#L80)
 
 ***
 
@@ -31,7 +31,7 @@ discard all bidirectional frames
 
 #### Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:61](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoDecoder.ts#L61)
+[avcodec/wasmcodec/VideoDecoder.ts:68](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoDecoder.ts#L68)
 
 ***
 
@@ -43,7 +43,7 @@ discard useless packets like 0 size packets in avi
 
 #### Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:53](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoDecoder.ts#L53)
+[avcodec/wasmcodec/VideoDecoder.ts:60](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoDecoder.ts#L60)
 
 ***
 
@@ -55,7 +55,7 @@ discard nothing
 
 #### Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:49](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoDecoder.ts#L49)
+[avcodec/wasmcodec/VideoDecoder.ts:56](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoDecoder.ts#L56)
 
 ***
 
@@ -67,7 +67,7 @@ discard all non intra frames
 
 #### Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:65](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoDecoder.ts#L65)
+[avcodec/wasmcodec/VideoDecoder.ts:72](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoDecoder.ts#L72)
 
 ***
 
@@ -79,7 +79,7 @@ discard all frames except keyframes
 
 #### Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:69](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoDecoder.ts#L69)
+[avcodec/wasmcodec/VideoDecoder.ts:76](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoDecoder.ts#L76)
 
 ***
 
@@ -91,4 +91,4 @@ discard all non reference
 
 #### Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:57](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoDecoder.ts#L57)
+[avcodec/wasmcodec/VideoDecoder.ts:64](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoDecoder.ts#L64)

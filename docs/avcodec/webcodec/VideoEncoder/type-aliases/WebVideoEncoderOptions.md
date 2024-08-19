@@ -36,13 +36,11 @@
 
 ### onReceivePacket()
 
-> **onReceivePacket**: (`avpacket`, `avframe`?) => `void`
+> **onReceivePacket**: (`avpacket`) => `void`
 
 #### Parameters
 
 • **avpacket**: `pointer`\<[`AVPacket`](../../../../avutil/struct/avpacket/classes/AVPacket.md)\>
-
-• **avframe?**: `pointer`\<[`AVFrame`](../../../../avutil/struct/avframe/classes/AVFrame.md)\>
 
 #### Returns
 
@@ -50,4 +48,4 @@
 
 ## Source
 
-[avcodec/webcodec/VideoEncoder.ts:43](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoEncoder.ts#L43)
+[avcodec/webcodec/VideoEncoder.ts:48](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/webcodec/VideoEncoder.ts#L48)

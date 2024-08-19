@@ -22,7 +22,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoEncoder.ts:62](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoEncoder.ts#L62)
+[avcodec/wasmcodec/VideoEncoder.ts:84](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoEncoder.ts#L84)
 
 ## Methods
 
@@ -36,7 +36,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoEncoder.ts:177](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoEncoder.ts#L177)
+[avcodec/wasmcodec/VideoEncoder.ts:293](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoEncoder.ts#L293)
 
 ***
 
@@ -56,7 +56,27 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoEncoder.ts:119](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoEncoder.ts#L119)
+[avcodec/wasmcodec/VideoEncoder.ts:250](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoEncoder.ts#L250)
+
+***
+
+### encodeAsync()
+
+> **encodeAsync**(`frame`, `key`): `Promise`\<`0` \| `int32`\>
+
+#### Parameters
+
+• **frame**: `VideoFrame` \| `pointer`\<[`AVFrame`](../../../../avutil/struct/avframe/classes/AVFrame.md)\>
+
+• **key**: `boolean`
+
+#### Returns
+
+`Promise`\<`0` \| `int32`\>
+
+#### Source
+
+[avcodec/wasmcodec/VideoEncoder.ts:240](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoEncoder.ts#L240)
 
 ***
 
@@ -70,7 +90,33 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoEncoder.ts:156](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoEncoder.ts#L156)
+[avcodec/wasmcodec/VideoEncoder.ts:261](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoEncoder.ts#L261)
+
+***
+
+### getColorSpace()
+
+> **getColorSpace**(): `object`
+
+#### Returns
+
+`object`
+
+##### colorPrimaries
+
+> **colorPrimaries**: `int32`
+
+##### colorSpace
+
+> **colorSpace**: `int32`
+
+##### colorTrc
+
+> **colorTrc**: `int32`
+
+#### Source
+
+[avcodec/wasmcodec/VideoEncoder.ts:285](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoEncoder.ts#L285)
 
 ***
 
@@ -84,13 +130,27 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoEncoder.ts:167](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoEncoder.ts#L167)
+[avcodec/wasmcodec/VideoEncoder.ts:272](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoEncoder.ts#L272)
+
+***
+
+### getQueueLength()
+
+> **getQueueLength**(): `number`
+
+#### Returns
+
+`number`
+
+#### Source
+
+[avcodec/wasmcodec/VideoEncoder.ts:320](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoEncoder.ts#L320)
 
 ***
 
 ### open()
 
-> **open**(`parameters`, `timeBase`, `threadCount`): `Promise`\<`void`\>
+> **open**(`parameters`, `timeBase`, `threadCount`, `opts`): `Promise`\<`void`\>
 
 #### Parameters
 
@@ -100,10 +160,12 @@
 
 • **threadCount**: `number`= `1`
 
+• **opts**: `Data`= `{}`
+
 #### Returns
 
 `Promise`\<`void`\>
 
 #### Source
 
-[avcodec/wasmcodec/VideoEncoder.ts:91](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoEncoder.ts#L91)
+[avcodec/wasmcodec/VideoEncoder.ts:148](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoEncoder.ts#L148)

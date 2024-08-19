@@ -22,7 +22,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/AudioEncoder.ts:60](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/AudioEncoder.ts#L60)
+[avcodec/wasmcodec/AudioEncoder.ts:182](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/AudioEncoder.ts#L182)
 
 ## Methods
 
@@ -36,17 +36,17 @@
 
 #### Source
 
-[avcodec/wasmcodec/AudioEncoder.ts:158](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/AudioEncoder.ts#L158)
+[avcodec/wasmcodec/AudioEncoder.ts:342](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/AudioEncoder.ts#L342)
 
 ***
 
 ### encode()
 
-> **encode**(`frame`): `0` \| `int32`
+> **encode**(`avframe`): `0` \| `int32`
 
 #### Parameters
 
-• **frame**: `pointer`\<[`AVFrame`](../../../../avutil/struct/avframe/classes/AVFrame.md)\> \| `AudioData`
+• **avframe**: `pointer`\<[`AVFrame`](../../../../avutil/struct/avframe/classes/AVFrame.md)\> \| `AudioData`
 
 #### Returns
 
@@ -54,7 +54,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/AudioEncoder.ts:104](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/AudioEncoder.ts#L104)
+[avcodec/wasmcodec/AudioEncoder.ts:279](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/AudioEncoder.ts#L279)
 
 ***
 
@@ -68,7 +68,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/AudioEncoder.ts:137](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/AudioEncoder.ts#L137)
+[avcodec/wasmcodec/AudioEncoder.ts:313](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/AudioEncoder.ts#L313)
 
 ***
 
@@ -82,13 +82,13 @@
 
 #### Source
 
-[avcodec/wasmcodec/AudioEncoder.ts:148](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/AudioEncoder.ts#L148)
+[avcodec/wasmcodec/AudioEncoder.ts:332](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/AudioEncoder.ts#L332)
 
 ***
 
 ### open()
 
-> **open**(`parameters`, `timeBase`): `Promise`\<`void`\>
+> **open**(`parameters`, `timeBase`, `opts`): `Promise`\<`void`\>
 
 #### Parameters
 
@@ -96,10 +96,12 @@
 
 • **timeBase**: `Rational`
 
+• **opts**: `Data`= `{}`
+
 #### Returns
 
 `Promise`\<`void`\>
 
 #### Source
 
-[avcodec/wasmcodec/AudioEncoder.ts:83](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/AudioEncoder.ts#L83)
+[avcodec/wasmcodec/AudioEncoder.ts:210](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/AudioEncoder.ts#L210)

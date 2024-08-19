@@ -14,7 +14,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/HlsIOLoader.ts:46](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/HlsIOLoader.ts#L46)
+[avnetwork/ioLoader/HlsIOLoader.ts:46](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/HlsIOLoader.ts#L46)
 
 ***
 
@@ -24,7 +24,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/HlsIOLoader.ts:48](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/HlsIOLoader.ts#L48)
+[avnetwork/ioLoader/HlsIOLoader.ts:48](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/HlsIOLoader.ts#L48)
 
 ***
 
@@ -34,7 +34,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/HlsIOLoader.ts:45](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/HlsIOLoader.ts#L45)
+[avnetwork/ioLoader/HlsIOLoader.ts:45](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/HlsIOLoader.ts#L45)
 
 ***
 
@@ -44,4 +44,4 @@
 
 #### Source
 
-[avnetwork/ioLoader/HlsIOLoader.ts:47](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/HlsIOLoader.ts#L47)
+[avnetwork/ioLoader/HlsIOLoader.ts:47](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/HlsIOLoader.ts#L47)

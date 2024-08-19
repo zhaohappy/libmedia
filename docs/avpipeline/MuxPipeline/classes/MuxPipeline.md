@@ -26,7 +26,7 @@
 
 #### Source
 
-[avpipeline/MuxPipeline.ts:73](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/MuxPipeline.ts#L73)
+[avpipeline/MuxPipeline.ts:77](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/MuxPipeline.ts#L77)
 
 ## Properties
 
@@ -40,7 +40,7 @@
 
 #### Source
 
-[avpipeline/MuxPipeline.ts:71](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/MuxPipeline.ts#L71)
+[avpipeline/MuxPipeline.ts:75](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/MuxPipeline.ts#L75)
 
 ## Methods
 
@@ -52,7 +52,7 @@
 
 • **taskId**: `string`
 
-• **stream**: `AVStreamInterface`
+• **stream**: [`AVStreamInterface`](../../../avformat/AVStream/interfaces/AVStreamInterface.md)
 
 • **port**: `MessagePort`
 
@@ -62,7 +62,7 @@
 
 #### Source
 
-[avpipeline/MuxPipeline.ts:222](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/MuxPipeline.ts#L222)
+[avpipeline/MuxPipeline.ts:232](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/MuxPipeline.ts#L232)
 
 ***
 
@@ -80,7 +80,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:48](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L48)
+[avpipeline/Pipeline.ts:48](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L48)
 
 ***
 
@@ -98,13 +98,13 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L60)
+[avpipeline/Pipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L60)
 
 ***
 
 ### open()
 
-> **open**(`taskId`): `Promise`\<`number`\>
+> **open**(`taskId`): `Promise`\<`-2` \| `-1` \| `0`\>
 
 #### Parameters
 
@@ -112,11 +112,11 @@
 
 #### Returns
 
-`Promise`\<`number`\>
+`Promise`\<`-2` \| `-1` \| `0`\>
 
 #### Source
 
-[avpipeline/MuxPipeline.ts:115](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/MuxPipeline.ts#L115)
+[avpipeline/MuxPipeline.ts:119](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/MuxPipeline.ts#L119)
 
 ***
 
@@ -134,7 +134,7 @@
 
 #### Source
 
-[avpipeline/MuxPipeline.ts:335](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/MuxPipeline.ts#L335)
+[avpipeline/MuxPipeline.ts:361](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/MuxPipeline.ts#L361)
 
 ***
 
@@ -156,7 +156,7 @@
 
 #### Source
 
-[avpipeline/MuxPipeline.ts:359](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/MuxPipeline.ts#L359)
+[avpipeline/MuxPipeline.ts:385](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/MuxPipeline.ts#L385)
 
 ***
 
@@ -178,13 +178,13 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:56](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L56)
+[avpipeline/Pipeline.ts:56](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L56)
 
 ***
 
 ### start()
 
-> **start**(`taskId`): `Promise`\<`void`\>
+> **start**(`taskId`): `Promise`\<`number`\>
 
 #### Parameters
 
@@ -192,11 +192,11 @@
 
 #### Returns
 
-`Promise`\<`void`\>
+`Promise`\<`number`\>
 
 #### Source
 
-[avpipeline/MuxPipeline.ts:257](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/MuxPipeline.ts#L257)
+[avpipeline/MuxPipeline.ts:267](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/MuxPipeline.ts#L267)
 
 ***
 
@@ -214,7 +214,7 @@
 
 #### Source
 
-[avpipeline/MuxPipeline.ts:347](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/MuxPipeline.ts#L347)
+[avpipeline/MuxPipeline.ts:373](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/MuxPipeline.ts#L373)
 
 ***
 
@@ -236,7 +236,7 @@
 
 #### Source
 
-[avpipeline/MuxPipeline.ts:366](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/MuxPipeline.ts#L366)
+[avpipeline/MuxPipeline.ts:392](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/MuxPipeline.ts#L392)
 
 ***
 
@@ -258,4 +258,4 @@
 
 #### Source
 
-[avpipeline/MuxPipeline.ts:244](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/MuxPipeline.ts#L244)
+[avpipeline/MuxPipeline.ts:254](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/MuxPipeline.ts#L254)

@@ -18,7 +18,7 @@
 
 #### Source
 
-[avutil/struct/avpacket.ts:172](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L172)
+[avutil/struct/avpacket.ts:172](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avpacket.ts#L172)
 
 ***
 
@@ -36,4 +36,4 @@
 
 #### Source
 
-[avutil/struct/avpacket.ts:173](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avpacket.ts#L173)
+[avutil/struct/avpacket.ts:173](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avpacket.ts#L173)

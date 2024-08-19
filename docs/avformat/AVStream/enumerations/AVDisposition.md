@@ -20,7 +20,7 @@ AVStream.attached_pic.
 
 #### Source
 
-[avformat/AVStream.ts:66](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L66)
+[avformat/AVStream.ts:66](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L66)
 
 ***
 
@@ -32,7 +32,7 @@ To specify text track kind (different from subtitles default).
 
 #### Source
 
-[avformat/AVStream.ts:76](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L76)
+[avformat/AVStream.ts:76](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L76)
 
 ***
 
@@ -44,7 +44,7 @@ stream without voice
 
 #### Source
 
-[avformat/AVStream.ts:58](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L58)
+[avformat/AVStream.ts:58](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L58)
 
 ***
 
@@ -54,7 +54,7 @@ stream without voice
 
 #### Source
 
-[avformat/AVStream.ts:37](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L37)
+[avformat/AVStream.ts:37](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L37)
 
 ***
 
@@ -64,7 +64,7 @@ stream without voice
 
 #### Source
 
-[avformat/AVStream.ts:34](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L34)
+[avformat/AVStream.ts:34](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L34)
 
 ***
 
@@ -76,7 +76,7 @@ dependent audio stream (mix_type=0 in mpegts)
 
 #### Source
 
-[avformat/AVStream.ts:82](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L82)
+[avformat/AVStream.ts:82](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L82)
 
 ***
 
@@ -86,7 +86,7 @@ dependent audio stream (mix_type=0 in mpegts)
 
 #### Source
 
-[avformat/AVStream.ts:77](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L77)
+[avformat/AVStream.ts:77](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L77)
 
 ***
 
@@ -96,7 +96,7 @@ dependent audio stream (mix_type=0 in mpegts)
 
 #### Source
 
-[avformat/AVStream.ts:35](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L35)
+[avformat/AVStream.ts:35](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L35)
 
 ***
 
@@ -110,7 +110,7 @@ even when user did not explicitly ask for subtitles.
 
 #### Source
 
-[avformat/AVStream.ts:46](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L46)
+[avformat/AVStream.ts:46](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L46)
 
 ***
 
@@ -122,7 +122,7 @@ stream for hearing impaired audiences
 
 #### Source
 
-[avformat/AVStream.ts:50](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L50)
+[avformat/AVStream.ts:50](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L50)
 
 ***
 
@@ -132,7 +132,7 @@ stream for hearing impaired audiences
 
 #### Source
 
-[avformat/AVStream.ts:39](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L39)
+[avformat/AVStream.ts:39](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L39)
 
 ***
 
@@ -142,7 +142,7 @@ stream for hearing impaired audiences
 
 #### Source
 
-[avformat/AVStream.ts:38](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L38)
+[avformat/AVStream.ts:38](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L38)
 
 ***
 
@@ -152,7 +152,7 @@ stream for hearing impaired audiences
 
 #### Source
 
-[avformat/AVStream.ts:78](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L78)
+[avformat/AVStream.ts:78](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L78)
 
 ***
 
@@ -162,7 +162,7 @@ stream for hearing impaired audiences
 
 #### Source
 
-[avformat/AVStream.ts:33](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L33)
+[avformat/AVStream.ts:33](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L33)
 
 ***
 
@@ -172,7 +172,7 @@ stream for hearing impaired audiences
 
 #### Source
 
-[avformat/AVStream.ts:36](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L36)
+[avformat/AVStream.ts:36](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L36)
 
 ***
 
@@ -184,7 +184,7 @@ still images in video stream (still_picture_flag=1 in mpegts
 
 #### Source
 
-[avformat/AVStream.ts:86](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L86)
+[avformat/AVStream.ts:86](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L86)
 
 ***
 
@@ -197,7 +197,7 @@ to chapter markers. Only ever used with AV_DISPOSITION_ATTACHED_PIC.
 
 #### Source
 
-[avformat/AVStream.ts:71](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L71)
+[avformat/AVStream.ts:71](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L71)
 
 ***
 
@@ -209,4 +209,4 @@ stream for visual impaired audiences
 
 #### Source
 
-[avformat/AVStream.ts:54](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L54)
+[avformat/AVStream.ts:54](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L54)

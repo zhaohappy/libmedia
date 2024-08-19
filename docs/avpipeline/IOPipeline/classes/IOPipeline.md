@@ -26,7 +26,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:62](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L62)
+[avpipeline/IOPipeline.ts:62](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L62)
 
 ## Properties
 
@@ -40,7 +40,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L60)
+[avpipeline/IOPipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L60)
 
 ## Methods
 
@@ -58,7 +58,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:48](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L48)
+[avpipeline/Pipeline.ts:48](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L48)
 
 ***
 
@@ -84,7 +84,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:249](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L249)
+[avpipeline/IOPipeline.ts:249](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L249)
 
 ***
 
@@ -102,7 +102,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:183](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L183)
+[avpipeline/IOPipeline.ts:183](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L183)
 
 ***
 
@@ -120,7 +120,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:315](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L315)
+[avpipeline/IOPipeline.ts:315](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L315)
 
 ***
 
@@ -142,11 +142,11 @@
 
 ##### selectedIndex
 
-> **selectedIndex**: `number` = `0`
+> **selectedIndex**: `number`
 
 #### Source
 
-[avpipeline/IOPipeline.ts:264](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L264)
+[avpipeline/IOPipeline.ts:264](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L264)
 
 ***
 
@@ -164,7 +164,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L60)
+[avpipeline/Pipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L60)
 
 ***
 
@@ -190,7 +190,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:231](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L231)
+[avpipeline/IOPipeline.ts:231](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L231)
 
 ***
 
@@ -208,7 +208,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:195](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L195)
+[avpipeline/IOPipeline.ts:195](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L195)
 
 ***
 
@@ -226,7 +226,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:219](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L219)
+[avpipeline/IOPipeline.ts:219](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L219)
 
 ***
 
@@ -244,7 +244,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:207](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L207)
+[avpipeline/IOPipeline.ts:207](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L207)
 
 ***
 
@@ -262,7 +262,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:175](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L175)
+[avpipeline/IOPipeline.ts:175](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L175)
 
 ***
 
@@ -284,7 +284,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:332](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L332)
+[avpipeline/IOPipeline.ts:332](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L332)
 
 ***
 
@@ -304,7 +304,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:293](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L293)
+[avpipeline/IOPipeline.ts:293](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L293)
 
 ***
 
@@ -324,7 +324,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:304](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L304)
+[avpipeline/IOPipeline.ts:304](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L304)
 
 ***
 
@@ -344,7 +344,7 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:279](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L279)
+[avpipeline/IOPipeline.ts:279](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L279)
 
 ***
 
@@ -366,7 +366,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:56](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L56)
+[avpipeline/Pipeline.ts:56](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L56)
 
 ***
 
@@ -388,4 +388,4 @@
 
 #### Source
 
-[avpipeline/IOPipeline.ts:339](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/IOPipeline.ts#L339)
+[avpipeline/IOPipeline.ts:339](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/IOPipeline.ts#L339)

@@ -24,7 +24,7 @@
 
 #### Source
 
-[avutil/struct/avbuffer.ts:138](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avbuffer.ts#L138)
+[avutil/struct/avbuffer.ts:138](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avbuffer.ts#L138)
 
 ***
 
@@ -34,7 +34,7 @@
 
 #### Source
 
-[avutil/struct/avbuffer.ts:120](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avbuffer.ts#L120)
+[avutil/struct/avbuffer.ts:120](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avbuffer.ts#L120)
 
 ***
 
@@ -46,7 +46,7 @@ a callback for freeing the data
 
 #### Source
 
-[avutil/struct/avbuffer.ts:129](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avbuffer.ts#L129)
+[avutil/struct/avbuffer.ts:129](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avbuffer.ts#L129)
 
 ***
 
@@ -56,7 +56,7 @@ a callback for freeing the data
 
 #### Source
 
-[avutil/struct/avbuffer.ts:133](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avbuffer.ts#L133)
+[avutil/struct/avbuffer.ts:133](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avbuffer.ts#L133)
 
 ***
 
@@ -68,7 +68,7 @@ an opaque pointer, to be used by the freeing callback
 
 #### Source
 
-[avutil/struct/avbuffer.ts:124](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avbuffer.ts#L124)
+[avutil/struct/avbuffer.ts:124](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avbuffer.ts#L124)
 
 ***
 
@@ -78,4 +78,4 @@ an opaque pointer, to be used by the freeing callback
 
 #### Source
 
-[avutil/struct/avbuffer.ts:131](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avbuffer.ts#L131)
+[avutil/struct/avbuffer.ts:131](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avbuffer.ts#L131)

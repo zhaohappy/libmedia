@@ -68,7 +68,7 @@ common/io/BitReader.ts:23
 
 #### Source
 
-common/io/BitReader.ts:155
+common/io/BitReader.ts:171
 
 ***
 
@@ -82,7 +82,7 @@ common/io/BitReader.ts:155
 
 #### Source
 
-common/io/BitReader.ts:179
+common/io/BitReader.ts:195
 
 ***
 
@@ -96,7 +96,7 @@ common/io/BitReader.ts:179
 
 #### Source
 
-common/io/BitReader.ts:109
+common/io/BitReader.ts:125
 
 ***
 
@@ -110,7 +110,7 @@ common/io/BitReader.ts:109
 
 #### Source
 
-common/io/BitReader.ts:151
+common/io/BitReader.ts:167
 
 ***
 
@@ -196,6 +196,24 @@ common/io/BitReader.ts:101
 
 ***
 
+### skip()
+
+> **skip**(`n`): `void`
+
+#### Parameters
+
+• **n**: `number`
+
+#### Returns
+
+`void`
+
+#### Source
+
+common/io/BitReader.ts:109
+
+***
+
 ### skipPadding()
 
 > **skipPadding**(): `void`
@@ -206,4 +224,4 @@ common/io/BitReader.ts:101
 
 #### Source
 
-common/io/BitReader.ts:185
+common/io/BitReader.ts:201

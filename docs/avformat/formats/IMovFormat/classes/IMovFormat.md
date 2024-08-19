@@ -30,7 +30,7 @@
 
 #### Source
 
-[avformat/formats/IMovFormat.ts:59](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMovFormat.ts#L59)
+[avformat/formats/IMovFormat.ts:60](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMovFormat.ts#L60)
 
 ## Properties
 
@@ -52,7 +52,7 @@
 
 #### Source
 
-[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IFormat.ts#L35)
+[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IFormat.ts#L35)
 
 ***
 
@@ -62,7 +62,7 @@
 
 #### Source
 
-[avformat/formats/IMovFormat.ts:57](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMovFormat.ts#L57)
+[avformat/formats/IMovFormat.ts:58](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMovFormat.ts#L58)
 
 ***
 
@@ -76,7 +76,7 @@
 
 #### Source
 
-[avformat/formats/IMovFormat.ts:53](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMovFormat.ts#L53)
+[avformat/formats/IMovFormat.ts:54](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMovFormat.ts#L54)
 
 ## Methods
 
@@ -98,7 +98,7 @@
 
 #### Source
 
-[avformat/formats/IFormat.ts:39](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IFormat.ts#L39)
+[avformat/formats/IFormat.ts:39](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IFormat.ts#L39)
 
 ***
 
@@ -116,7 +116,7 @@
 
 #### Source
 
-[avformat/formats/IMovFormat.ts:363](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMovFormat.ts#L363)
+[avformat/formats/IMovFormat.ts:395](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMovFormat.ts#L395)
 
 ***
 
@@ -138,7 +138,7 @@
 
 #### Source
 
-[avformat/formats/IMovFormat.ts:67](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMovFormat.ts#L67)
+[avformat/formats/IMovFormat.ts:68](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMovFormat.ts#L68)
 
 ***
 
@@ -162,7 +162,7 @@
 
 #### Source
 
-[avformat/formats/IMovFormat.ts:219](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMovFormat.ts#L219)
+[avformat/formats/IMovFormat.ts:251](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMovFormat.ts#L251)
 
 ***
 
@@ -184,7 +184,7 @@
 
 #### Source
 
-[avformat/formats/IMovFormat.ts:73](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMovFormat.ts#L73)
+[avformat/formats/IMovFormat.ts:74](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMovFormat.ts#L74)
 
 ***
 
@@ -212,4 +212,4 @@
 
 #### Source
 
-[avformat/formats/IMovFormat.ts:269](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMovFormat.ts#L269)
+[avformat/formats/IMovFormat.ts:301](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMovFormat.ts#L301)

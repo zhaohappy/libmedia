@@ -25,11 +25,11 @@ FFmpeg AVCodecParameters 定义
 > **bitFormat**: `int32` = `0`
 
 码流格式
-对于 h264/h265 标记是 annexb 还是 avcc 格式
+对于 h264/h265/h266 标记是 annexb 还是 avcc 格式
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:214](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L214)
+[avutil/struct/avcodecparameters.ts:214](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L214)
 
 ***
 
@@ -41,7 +41,7 @@ The average bitrate of the encoded data (in bits per second).
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:89](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L89)
+[avutil/struct/avcodecparameters.ts:89](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L89)
 
 ***
 
@@ -61,7 +61,7 @@ Can be 0
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:102](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L102)
+[avutil/struct/avcodecparameters.ts:102](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L102)
 
 ***
 
@@ -81,7 +81,7 @@ Can be 0
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:114](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L114)
+[avutil/struct/avcodecparameters.ts:114](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L114)
 
 ***
 
@@ -96,7 +96,7 @@ Corresponds to nBlockAlign in WAVEFORMATEX.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:183](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L183)
+[avutil/struct/avcodecparameters.ts:183](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L183)
 
 ***
 
@@ -108,7 +108,7 @@ Audio only. The channel layout and number of channels.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:171](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L171)
+[avutil/struct/avcodecparameters.ts:171](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L171)
 
 ***
 
@@ -118,7 +118,7 @@ Audio only. The channel layout and number of channels.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:161](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L161)
+[avutil/struct/avcodecparameters.ts:161](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L161)
 
 ***
 
@@ -130,7 +130,7 @@ Specific type of the encoded data (the codec used).
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:50](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L50)
+[avutil/struct/avcodecparameters.ts:50](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L50)
 
 ***
 
@@ -142,7 +142,7 @@ Additional information about the codec (corresponds to the AVI FOURCC).
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:54](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L54)
+[avutil/struct/avcodecparameters.ts:54](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L54)
 
 ***
 
@@ -154,7 +154,7 @@ General type of the encoded data.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:46](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L46)
+[avutil/struct/avcodecparameters.ts:46](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L46)
 
 ***
 
@@ -169,7 +169,7 @@ av_packet_side_data_add(), and will be freed by avcodec_parameters_free().
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:73](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L73)
+[avutil/struct/avcodecparameters.ts:73](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L73)
 
 ***
 
@@ -179,7 +179,7 @@ av_packet_side_data_add(), and will be freed by avcodec_parameters_free().
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:158](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L158)
+[avutil/struct/avcodecparameters.ts:158](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L158)
 
 ***
 
@@ -191,7 +191,7 @@ Video only. Additional colorspace characteristics.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:157](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L157)
+[avutil/struct/avcodecparameters.ts:157](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L157)
 
 ***
 
@@ -201,7 +201,7 @@ Video only. Additional colorspace characteristics.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:160](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L160)
+[avutil/struct/avcodecparameters.ts:160](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L160)
 
 ***
 
@@ -211,7 +211,7 @@ Video only. Additional colorspace characteristics.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:159](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L159)
+[avutil/struct/avcodecparameters.ts:159](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L159)
 
 ***
 
@@ -228,7 +228,7 @@ bytes zeroed.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:64](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L64)
+[avutil/struct/avcodecparameters.ts:64](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L64)
 
 ***
 
@@ -238,7 +238,7 @@ bytes zeroed.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:65](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L65)
+[avutil/struct/avcodecparameters.ts:65](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L65)
 
 ***
 
@@ -250,7 +250,7 @@ Video only. The order of the fields in interlaced video.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:152](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L152)
+[avutil/struct/avcodecparameters.ts:152](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L152)
 
 ***
 
@@ -263,7 +263,7 @@ Video only. The order of the fields in interlaced video.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:84](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L84)
+[avutil/struct/avcodecparameters.ts:84](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L84)
 
 ***
 
@@ -275,7 +275,7 @@ Audio only. Audio frame size, if known. Required by some formats to be static.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:188](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L188)
+[avutil/struct/avcodecparameters.ts:188](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L188)
 
 ***
 
@@ -296,7 +296,7 @@ when no higher-level timing information is available.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:147](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L147)
+[avutil/struct/avcodecparameters.ts:147](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L147)
 
 ***
 
@@ -306,7 +306,7 @@ when no higher-level timing information is available.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:126](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L126)
+[avutil/struct/avcodecparameters.ts:126](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L126)
 
 ***
 
@@ -321,7 +321,7 @@ padding.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:196](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L196)
+[avutil/struct/avcodecparameters.ts:196](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L196)
 
 ***
 
@@ -331,7 +331,7 @@ padding.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:120](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L120)
+[avutil/struct/avcodecparameters.ts:120](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L120)
 
 ***
 
@@ -347,7 +347,7 @@ coded_side_data.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:78](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L78)
+[avutil/struct/avcodecparameters.ts:78](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L78)
 
 ***
 
@@ -359,7 +359,7 @@ Codec-specific bitstream restrictions that the stream conforms to.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:119](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L119)
+[avutil/struct/avcodecparameters.ts:119](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L119)
 
 ***
 
@@ -375,7 +375,7 @@ set to 0 (the denominator may have any value).
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:135](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L135)
+[avutil/struct/avcodecparameters.ts:135](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L135)
 
 ***
 
@@ -387,7 +387,7 @@ Audio only. The number of audio samples per second.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:176](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L176)
+[avutil/struct/avcodecparameters.ts:176](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L176)
 
 ***
 
@@ -399,7 +399,7 @@ Audio only. Number of samples to skip after a discontinuity.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:208](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L208)
+[avutil/struct/avcodecparameters.ts:208](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L208)
 
 ***
 
@@ -414,7 +414,7 @@ audio without any trailing padding.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:204](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L204)
+[avutil/struct/avcodecparameters.ts:204](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L204)
 
 ***
 
@@ -426,7 +426,7 @@ Video only. Number of delayed frames.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:166](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L166)
+[avutil/struct/avcodecparameters.ts:166](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L166)
 
 ***
 
@@ -438,7 +438,7 @@ Video only. The dimensions of the video frame in pixels.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:125](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L125)
+[avutil/struct/avcodecparameters.ts:125](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L125)
 
 ## Methods
 
@@ -452,4 +452,4 @@ Video only. The dimensions of the video frame in pixels.
 
 #### Source
 
-[avutil/struct/avcodecparameters.ts:216](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avcodecparameters.ts#L216)
+[avutil/struct/avcodecparameters.ts:216](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avcodecparameters.ts#L216)

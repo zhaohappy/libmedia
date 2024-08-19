@@ -15,3 +15,7 @@
 ### Classes
 
 - [AVStream](classes/AVStream.md)
+
+### Interfaces
+
+- [AVStreamInterface](interfaces/AVStreamInterface.md)

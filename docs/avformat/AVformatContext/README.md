@@ -8,8 +8,14 @@
 
 ## Index
 
+### Classes
+
+- [AVFormatContext](classes/AVFormatContext.md)
+
 ### Interfaces
 
+- [AVChapter](interfaces/AVChapter.md)
+- [AVFormatContextInterface](interfaces/AVFormatContextInterface.md)
 - [AVIFormatContext](interfaces/AVIFormatContext.md)
 - [AVOFormatContext](interfaces/AVOFormatContext.md)
 

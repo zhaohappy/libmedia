@@ -26,7 +26,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:70](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMpegtsFormat.ts#L70)
+[avformat/formats/IMpegtsFormat.ts:72](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMpegtsFormat.ts#L72)
 
 ## Properties
 
@@ -48,7 +48,7 @@
 
 #### Source
 
-[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IFormat.ts#L35)
+[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IFormat.ts#L35)
 
 ***
 
@@ -62,7 +62,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:62](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMpegtsFormat.ts#L62)
+[avformat/formats/IMpegtsFormat.ts:64](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMpegtsFormat.ts#L64)
 
 ## Methods
 
@@ -84,7 +84,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:82](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMpegtsFormat.ts#L82)
+[avformat/formats/IMpegtsFormat.ts:84](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMpegtsFormat.ts#L84)
 
 ***
 
@@ -102,7 +102,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:572](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMpegtsFormat.ts#L572)
+[avformat/formats/IMpegtsFormat.ts:572](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMpegtsFormat.ts#L572)
 
 ***
 
@@ -124,7 +124,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:75](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMpegtsFormat.ts#L75)
+[avformat/formats/IMpegtsFormat.ts:77](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMpegtsFormat.ts#L77)
 
 ***
 
@@ -148,7 +148,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:408](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMpegtsFormat.ts#L408)
+[avformat/formats/IMpegtsFormat.ts:408](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMpegtsFormat.ts#L408)
 
 ***
 
@@ -170,7 +170,7 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:97](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMpegtsFormat.ts#L97)
+[avformat/formats/IMpegtsFormat.ts:99](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMpegtsFormat.ts#L99)
 
 ***
 
@@ -198,4 +198,4 @@
 
 #### Source
 
-[avformat/formats/IMpegtsFormat.ts:488](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMpegtsFormat.ts#L488)
+[avformat/formats/IMpegtsFormat.ts:488](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMpegtsFormat.ts#L488)

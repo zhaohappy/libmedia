@@ -30,7 +30,7 @@
 
 #### Source
 
-[avformat/formats/OFlvFormat.ts:72](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OFlvFormat.ts#L72)
+[avformat/formats/OFlvFormat.ts:73](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OFlvFormat.ts#L73)
 
 ## Properties
 
@@ -40,7 +40,7 @@
 
 #### Source
 
-[avformat/formats/OFlvFormat.ts:64](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OFlvFormat.ts#L64)
+[avformat/formats/OFlvFormat.ts:65](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OFlvFormat.ts#L65)
 
 ***
 
@@ -50,7 +50,7 @@
 
 #### Source
 
-[avformat/formats/OFlvFormat.ts:68](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OFlvFormat.ts#L68)
+[avformat/formats/OFlvFormat.ts:69](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OFlvFormat.ts#L69)
 
 ***
 
@@ -60,7 +60,7 @@
 
 #### Source
 
-[avformat/formats/OFlvFormat.ts:66](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OFlvFormat.ts#L66)
+[avformat/formats/OFlvFormat.ts:67](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OFlvFormat.ts#L67)
 
 ***
 
@@ -74,7 +74,7 @@
 
 #### Source
 
-[avformat/formats/OFlvFormat.ts:60](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OFlvFormat.ts#L60)
+[avformat/formats/OFlvFormat.ts:61](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OFlvFormat.ts#L61)
 
 ## Methods
 
@@ -96,7 +96,7 @@
 
 #### Source
 
-[avformat/formats/OFlvFormat.ts:149](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OFlvFormat.ts#L149)
+[avformat/formats/OFlvFormat.ts:150](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OFlvFormat.ts#L150)
 
 ***
 
@@ -118,7 +118,7 @@
 
 #### Source
 
-[avformat/formats/OFlvFormat.ts:444](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OFlvFormat.ts#L444)
+[avformat/formats/OFlvFormat.ts:509](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OFlvFormat.ts#L509)
 
 ***
 
@@ -140,7 +140,7 @@
 
 #### Source
 
-[avformat/formats/OFlvFormat.ts:99](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OFlvFormat.ts#L99)
+[avformat/formats/OFlvFormat.ts:100](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OFlvFormat.ts#L100)
 
 ***
 
@@ -164,7 +164,7 @@
 
 #### Source
 
-[avformat/formats/OFlvFormat.ts:215](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OFlvFormat.ts#L215)
+[avformat/formats/OFlvFormat.ts:230](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OFlvFormat.ts#L230)
 
 ***
 
@@ -186,7 +186,7 @@
 
 #### Source
 
-[avformat/formats/OFlvFormat.ts:157](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OFlvFormat.ts#L157)
+[avformat/formats/OFlvFormat.ts:158](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OFlvFormat.ts#L158)
 
 ***
 
@@ -208,4 +208,4 @@
 
 #### Source
 
-[avformat/formats/OFlvFormat.ts:349](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OFlvFormat.ts#L349)
+[avformat/formats/OFlvFormat.ts:402](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OFlvFormat.ts#L402)

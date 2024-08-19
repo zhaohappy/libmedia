@@ -34,7 +34,7 @@
 
 #### Source
 
-[avplayer/AVPlayer.ts:197](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L197)
+[avplayer/AVPlayer.ts:268](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L268)
 
 ## Properties
 
@@ -92,7 +92,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:142](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L142)
+[avplayer/AVPlayer.ts:202](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L202)
 
 ***
 
@@ -102,7 +102,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:143](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L143)
+[avplayer/AVPlayer.ts:203](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L203)
 
 ***
 
@@ -112,7 +112,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:135](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L135)
+[avplayer/AVPlayer.ts:195](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L195)
 
 ***
 
@@ -122,7 +122,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:134](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L134)
+[avplayer/AVPlayer.ts:194](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L194)
 
 ***
 
@@ -132,7 +132,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:141](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L141)
+[avplayer/AVPlayer.ts:201](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L201)
 
 ***
 
@@ -142,7 +142,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:140](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L140)
+[avplayer/AVPlayer.ts:200](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L200)
 
 ***
 
@@ -152,7 +152,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:145](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L145)
+[avplayer/AVPlayer.ts:205](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L205)
 
 ***
 
@@ -162,7 +162,17 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:137](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L137)
+[avplayer/AVPlayer.ts:197](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L197)
+
+***
+
+### Resource
+
+> `static` **Resource**: `Map`\<`string`, `WebAssemblyResource`\>
+
+#### Source
+
+[avplayer/AVPlayer.ts:208](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L208)
 
 ***
 
@@ -172,7 +182,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:144](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L144)
+[avplayer/AVPlayer.ts:204](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L204)
 
 ***
 
@@ -182,7 +192,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:136](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L136)
+[avplayer/AVPlayer.ts:196](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L196)
 
 ***
 
@@ -192,7 +202,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:147](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L147)
+[avplayer/AVPlayer.ts:207](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L207)
 
 ***
 
@@ -202,7 +212,23 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:132](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L132)
+[avplayer/AVPlayer.ts:192](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L192)
+
+## Accessors
+
+### currentTime
+
+> `get` **currentTime**(): `int64` \| `0n`
+
+当前播放时间戳（毫秒）
+
+#### Returns
+
+`int64` \| `0n`
+
+#### Source
+
+[avplayer/AVPlayer.ts:296](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L296)
 
 ## Methods
 
@@ -210,13 +236,15 @@ common/event/Emitter.ts:50
 
 > **destroy**(): `Promise`\<`void`\>
 
+销毁播放器
+
 #### Returns
 
 `Promise`\<`void`\>
 
 #### Source
 
-[avplayer/AVPlayer.ts:1827](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1827)
+[avplayer/AVPlayer.ts:2587](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2587)
 
 ***
 
@@ -234,7 +262,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:1692](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1692)
+[avplayer/AVPlayer.ts:2190](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2190)
 
 ***
 
@@ -252,7 +280,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:1703](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1703)
+[avplayer/AVPlayer.ts:2201](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2201)
 
 ***
 
@@ -268,7 +296,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:1770](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1770)
+[avplayer/AVPlayer.ts:2520](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2520)
 
 ***
 
@@ -284,7 +312,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avplayer/AVPlayer.ts:1790](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1790)
+[avplayer/AVPlayer.ts:2540](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2540)
 
 ***
 
@@ -326,6 +354,8 @@ common/event/Emitter.ts:74
 
 > **getAudioList**(): `Promise`\<`object`\>
 
+获取音频列表（ dash 使用）
+
 #### Returns
 
 `Promise`\<`object`\>
@@ -340,7 +370,23 @@ common/event/Emitter.ts:74
 
 #### Source
 
-[avplayer/AVPlayer.ts:1747](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1747)
+[avplayer/AVPlayer.ts:2295](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2295)
+
+***
+
+### getChapters()
+
+> **getChapters**(): [`AVChapter`](../../../avformat/AVFormatContext/interfaces/AVChapter.md)[]
+
+获取章节信息
+
+#### Returns
+
+[`AVChapter`](../../../avformat/AVFormatContext/interfaces/AVChapter.md)[]
+
+#### Source
+
+[avplayer/AVPlayer.ts:1881](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L1881)
 
 ***
 
@@ -356,7 +402,7 @@ common/event/Emitter.ts:74
 
 #### Source
 
-[avplayer/AVPlayer.ts:1415](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1415)
+[avplayer/AVPlayer.ts:1890](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L1890)
 
 ***
 
@@ -372,7 +418,7 @@ common/event/Emitter.ts:74
 
 #### Source
 
-[avplayer/AVPlayer.ts:1549](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1549)
+[avplayer/AVPlayer.ts:2047](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2047)
 
 ***
 
@@ -388,7 +434,55 @@ common/event/Emitter.ts:74
 
 #### Source
 
-[avplayer/AVPlayer.ts:1639](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1639)
+[avplayer/AVPlayer.ts:2137](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2137)
+
+***
+
+### getSelectedAudioStreamId()
+
+> **getSelectedAudioStreamId**(): `number`
+
+获取当前选择播放的音频流 id
+
+#### Returns
+
+`number`
+
+#### Source
+
+[avplayer/AVPlayer.ts:1857](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L1857)
+
+***
+
+### getSelectedSubtitleStreamId()
+
+> **getSelectedSubtitleStreamId**(): `number`
+
+获取当前选择播放的字幕流 id
+
+#### Returns
+
+`number`
+
+#### Source
+
+[avplayer/AVPlayer.ts:1869](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L1869)
+
+***
+
+### getSelectedVideoStreamId()
+
+> **getSelectedVideoStreamId**(): `number`
+
+获取当前选择播放的视频流 id
+
+#### Returns
+
+`number`
+
+#### Source
+
+[avplayer/AVPlayer.ts:1845](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L1845)
 
 ***
 
@@ -396,27 +490,31 @@ common/event/Emitter.ts:74
 
 > **getStats**(): `default`
 
+获取统计数据
+
 #### Returns
 
 `default`
 
 #### Source
 
-[avplayer/AVPlayer.ts:1823](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1823)
+[avplayer/AVPlayer.ts:2578](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2578)
 
 ***
 
 ### getStreams()
 
-> **getStreams**(): `AVStreamInterface`[]
+> **getStreams**(): `object`[]
+
+获取流信息
 
 #### Returns
 
-`AVStreamInterface`[]
+`object`[]
 
 #### Source
 
-[avplayer/AVPlayer.ts:1406](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1406)
+[avplayer/AVPlayer.ts:1826](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L1826)
 
 ***
 
@@ -424,27 +522,7 @@ common/event/Emitter.ts:74
 
 > **getSubtitleList**(): `Promise`\<`object`\>
 
-#### Returns
-
-`Promise`\<`object`\>
-
-##### list
-
-> **list**: `object`[]
-
-##### selectedIndex
-
-> **selectedIndex**: `number` = `0`
-
-#### Source
-
-[avplayer/AVPlayer.ts:1751](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1751)
-
-***
-
-### getVideoList()
-
-> **getVideoList**(): `Promise`\<`object`\>
+获取字幕列表（ dash 使用）
 
 #### Returns
 
@@ -460,7 +538,31 @@ common/event/Emitter.ts:74
 
 #### Source
 
-[avplayer/AVPlayer.ts:1743](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1743)
+[avplayer/AVPlayer.ts:2304](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2304)
+
+***
+
+### getVideoList()
+
+> **getVideoList**(): `Promise`\<`object`\>
+
+获取视频列表（ dash 使用）
+
+#### Returns
+
+`Promise`\<`object`\>
+
+##### list
+
+> **list**: `object`[]
+
+##### selectedIndex
+
+> **selectedIndex**: `number`
+
+#### Source
+
+[avplayer/AVPlayer.ts:2286](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2286)
 
 ***
 
@@ -476,7 +578,7 @@ common/event/Emitter.ts:74
 
 #### Source
 
-[avplayer/AVPlayer.ts:1595](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1595)
+[avplayer/AVPlayer.ts:2093](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2093)
 
 ***
 
@@ -506,9 +608,11 @@ common/event/Emitter.ts:315
 
 ***
 
-### isMSE()
+### isDash()
 
-> **isMSE**(): `boolean`
+> **isDash**(): `boolean`
+
+当前播放的源是否是 dash
 
 #### Returns
 
@@ -516,17 +620,57 @@ common/event/Emitter.ts:315
 
 #### Source
 
-[avplayer/AVPlayer.ts:1739](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1739)
+[avplayer/AVPlayer.ts:604](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L604)
+
+***
+
+### isHls()
+
+> **isHls**(): `boolean`
+
+当前播放的源是否是 hls
+
+#### Returns
+
+`boolean`
+
+#### Source
+
+[avplayer/AVPlayer.ts:595](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L595)
+
+***
+
+### isMSE()
+
+> **isMSE**(): `boolean`
+
+当前是否是 mse 播放模式
+
+#### Returns
+
+`boolean`
+
+#### Source
+
+[avplayer/AVPlayer.ts:2277](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2277)
 
 ***
 
 ### load()
 
-> **load**(`source`): `Promise`\<`void`\>
+> **load**(`source`, `externalSubtitles`): `Promise`\<`void`\>
+
+加载媒体源，分析流信息
 
 #### Parameters
 
 • **source**: `string` \| `File`
+
+媒体源，支持 url 和 文件
+
+• **externalSubtitles**: [`ExternalSubtitle`](../interfaces/ExternalSubtitle.md)[]= `[]`
+
+外挂字幕源
 
 #### Returns
 
@@ -534,7 +678,27 @@ common/event/Emitter.ts:315
 
 #### Source
 
-[avplayer/AVPlayer.ts:469](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L469)
+[avplayer/AVPlayer.ts:816](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L816)
+
+***
+
+### loadExternalSubtitle()
+
+> **loadExternalSubtitle**(`externalSubtitle`): `Promise`\<`number`\>
+
+加载外挂字幕
+
+#### Parameters
+
+• **externalSubtitle**: [`ExternalSubtitle`](../interfaces/ExternalSubtitle.md)
+
+#### Returns
+
+`Promise`\<`number`\>
+
+#### Source
+
+[avplayer/AVPlayer.ts:677](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L677)
 
 ***
 
@@ -566,31 +730,419 @@ common/event/Emitter.ts:224
 
 ### on()
 
-> **on**(`type`, `listener`): `default`
+#### on(event, listener, options)
 
-注册监听
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
 
-#### Parameters
+##### Parameters
 
-• **type**: `string` \| `Namespace`
+• **event**: `"loading"`
 
-• **listener**: `Function` \| `EmitterOptions`
+• **listener**
 
-#### Returns
+• **options?**: `Partial`\<`EmitterOptions`\>
 
-`default`
+##### Returns
 
-#### Inherited from
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
 
 `Emitter.on`
 
-#### Source
+##### Source
 
-common/event/Emitter.ts:174
+[avplayer/AVPlayer.ts:2893](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2893)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"loaded"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2894](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2894)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"playing"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2895](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2895)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"played"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2896](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2896)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"paused"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2897](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2897)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"stopped"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2898](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2898)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"ended"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2899](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2899)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"seeking"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2900](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2900)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"stopped"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2901](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2901)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"changing"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2902](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2902)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"changed"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2903](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2903)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"resume"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2904](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2904)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"time"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2905](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2905)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"firstAudioRendered"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2907](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2907)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"firstVideoRendered"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2908](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2908)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"error"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2910](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2910)
+
+#### on(event, listener, options)
+
+> **on**(`event`, `listener`, `options`?): [`AVPlayer`](AVPlayer.md)
+
+##### Parameters
+
+• **event**: `"timeout"`
+
+• **listener**
+
+• **options?**: `Partial`\<`EmitterOptions`\>
+
+##### Returns
+
+[`AVPlayer`](AVPlayer.md)
+
+##### Overrides
+
+`Emitter.on`
+
+##### Source
+
+[avplayer/AVPlayer.ts:2911](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2911)
 
 ***
 
 ### onAudioEnded()
+
+`Internal`
 
 > **onAudioEnded**(): `void`
 
@@ -604,11 +1156,13 @@ common/event/Emitter.ts:174
 
 #### Source
 
-[avplayer/AVPlayer.ts:1869](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1869)
+[avplayer/AVPlayer.ts:2635](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2635)
 
 ***
 
 ### onCanvasUpdated()
+
+`Internal`
 
 > **onCanvasUpdated**(): `void`
 
@@ -622,11 +1176,13 @@ common/event/Emitter.ts:174
 
 #### Source
 
-[avplayer/AVPlayer.ts:1874](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1874)
+[avplayer/AVPlayer.ts:2643](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2643)
 
 ***
 
 ### onFirstAudioRendered()
+
+`Internal`
 
 > **onFirstAudioRendered**(): `void`
 
@@ -636,11 +1192,13 @@ common/event/Emitter.ts:174
 
 #### Source
 
-[avplayer/AVPlayer.ts:1889](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1889)
+[avplayer/AVPlayer.ts:2671](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2671)
 
 ***
 
 ### onFirstVideoRendered()
+
+`Internal`
 
 > **onFirstVideoRendered**(): `void`
 
@@ -654,11 +1212,13 @@ common/event/Emitter.ts:174
 
 #### Source
 
-[avplayer/AVPlayer.ts:1884](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1884)
+[avplayer/AVPlayer.ts:2663](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2663)
 
 ***
 
 ### onFirstVideoRenderedAfterUpdateCanvas()
+
+`Internal`
 
 > **onFirstVideoRenderedAfterUpdateCanvas**(): `void`
 
@@ -672,11 +1232,39 @@ common/event/Emitter.ts:174
 
 #### Source
 
-[avplayer/AVPlayer.ts:1898](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1898)
+[avplayer/AVPlayer.ts:2686](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2686)
+
+***
+
+### onGetDecoderResource()
+
+`Internal`
+
+> **onGetDecoderResource**(`mediaType`, `codecId`): `Promise`\<`WebAssemblyResource`\>
+
+#### Parameters
+
+• **mediaType**: `AVMediaType`
+
+• **codecId**: `AVCodecID`
+
+#### Returns
+
+`Promise`\<`WebAssemblyResource`\>
+
+#### Implementation of
+
+`ControllerObserver.onGetDecoderResource`
+
+#### Source
+
+[avplayer/AVPlayer.ts:2656](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2656)
 
 ***
 
 ### onMSESeek()
+
+`Internal`
 
 > **onMSESeek**(`time`): `void`
 
@@ -694,11 +1282,13 @@ common/event/Emitter.ts:174
 
 #### Source
 
-[avplayer/AVPlayer.ts:1913](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1913)
+[avplayer/AVPlayer.ts:2707](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2707)
 
 ***
 
 ### onStutter()
+
+`Internal`
 
 > **onStutter**(): `void`
 
@@ -708,11 +1298,13 @@ common/event/Emitter.ts:174
 
 #### Source
 
-[avplayer/AVPlayer.ts:1894](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1894)
+[avplayer/AVPlayer.ts:2679](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2679)
 
 ***
 
 ### onTimeUpdate()
+
+`Internal`
 
 > **onTimeUpdate**(`pts`): `void`
 
@@ -730,11 +1322,13 @@ common/event/Emitter.ts:174
 
 #### Source
 
-[avplayer/AVPlayer.ts:1909](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1909)
+[avplayer/AVPlayer.ts:2700](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2700)
 
 ***
 
 ### onVideoEnded()
+
+`Internal`
 
 > **onVideoEnded**(): `void`
 
@@ -748,7 +1342,7 @@ common/event/Emitter.ts:174
 
 #### Source
 
-[avplayer/AVPlayer.ts:1864](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1864)
+[avplayer/AVPlayer.ts:2627](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2627)
 
 ***
 
@@ -812,7 +1406,7 @@ common/event/Emitter.ts:376
 
 #### Source
 
-[avplayer/AVPlayer.ts:1235](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1235)
+[avplayer/AVPlayer.ts:1619](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L1619)
 
 ***
 
@@ -820,13 +1414,23 @@ common/event/Emitter.ts:376
 
 > **play**(`options`): `Promise`\<`void`\>
 
+播放
+
 #### Parameters
 
 • **options**= `undefined`
 
 • **options.audio?**: `boolean`
 
+是否播放音频
+
+• **options.subtitle?**: `boolean`
+
+是否播放字幕
+
 • **options.video?**: `boolean`
+
+是否播放视频
 
 #### Returns
 
@@ -834,7 +1438,23 @@ common/event/Emitter.ts:376
 
 #### Source
 
-[avplayer/AVPlayer.ts:710](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L710)
+[avplayer/AVPlayer.ts:1098](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L1098)
+
+***
+
+### playNextFrame()
+
+> **playNextFrame**(): `Promise`\<`void`\>
+
+播放视频下一帧，可用于逐帧播放，暂停状态下使用（不支持 mse 模式）
+
+#### Returns
+
+`Promise`\<`void`\>
+
+#### Source
+
+[avplayer/AVPlayer.ts:2511](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2511)
 
 ***
 
@@ -856,7 +1476,7 @@ common/event/Emitter.ts:376
 
 #### Source
 
-[avplayer/AVPlayer.ts:1732](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1732)
+[avplayer/AVPlayer.ts:2265](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2265)
 
 ***
 
@@ -872,7 +1492,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1556](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1556)
+[avplayer/AVPlayer.ts:2054](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2054)
 
 ***
 
@@ -885,7 +1505,7 @@ resume 音频
 
 #### Parameters
 
-• **timestamp**: `double`
+• **timestamp**: `int64`
 
 毫秒
 
@@ -895,7 +1515,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1286](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1286)
+[avplayer/AVPlayer.ts:1782](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L1782)
 
 ***
 
@@ -903,6 +1523,8 @@ resume 音频
 
 > **selectAudio**(`index`): `Promise`\<`void`\>
 
+设置播放音频轨道
+
 #### Parameters
 
 • **index**: `number`
@@ -913,7 +1535,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1759](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1759)
+[avplayer/AVPlayer.ts:2374](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2374)
 
 ***
 
@@ -921,6 +1543,8 @@ resume 音频
 
 > **selectSubtitle**(`index`): `Promise`\<`void`\>
 
+设置播放字幕轨道
+
 #### Parameters
 
 • **index**: `number`
@@ -931,7 +1555,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1763](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1763)
+[avplayer/AVPlayer.ts:2440](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2440)
 
 ***
 
@@ -939,6 +1563,8 @@ resume 音频
 
 > **selectVideo**(`index`): `Promise`\<`void`\>
 
+设置播放视频轨道
+
 #### Parameters
 
 • **index**: `number`
@@ -949,7 +1575,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1755](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1755)
+[avplayer/AVPlayer.ts:2314](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2314)
 
 ***
 
@@ -969,7 +1595,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1719](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1719)
+[avplayer/AVPlayer.ts:2217](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2217)
 
 ***
 
@@ -987,7 +1613,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1520](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1520)
+[avplayer/AVPlayer.ts:2018](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2018)
 
 ***
 
@@ -1010,7 +1636,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1651](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1651)
+[avplayer/AVPlayer.ts:2149](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2149)
 
 ***
 
@@ -1030,7 +1656,47 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1681](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1681)
+[avplayer/AVPlayer.ts:2179](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2179)
+
+***
+
+### setSubTitleDelay()
+
+> **setSubTitleDelay**(`delay`): `void`
+
+设置字幕延时（毫秒）
+
+#### Parameters
+
+• **delay**: `int32`
+
+#### Returns
+
+`void`
+
+#### Source
+
+[avplayer/AVPlayer.ts:2230](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2230)
+
+***
+
+### setSubtitleEnable()
+
+> **setSubtitleEnable**(`enable`): `void`
+
+设置是否开启字幕显示
+
+#### Parameters
+
+• **enable**: `boolean`
+
+#### Returns
+
+`void`
+
+#### Source
+
+[avplayer/AVPlayer.ts:2241](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2241)
 
 ***
 
@@ -1054,7 +1720,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1605](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1605)
+[avplayer/AVPlayer.ts:2103](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2103)
 
 ***
 
@@ -1080,7 +1746,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1809](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1809)
+[avplayer/AVPlayer.ts:2559](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2559)
 
 ***
 
@@ -1088,19 +1754,23 @@ resume 音频
 
 > **stop**(): `Promise`\<`void`\>
 
+停止播放
+
 #### Returns
 
 `Promise`\<`void`\>
 
 #### Source
 
-[avplayer/AVPlayer.ts:1436](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1436)
+[avplayer/AVPlayer.ts:1920](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L1920)
 
 ***
 
 ### setLogLevel()
 
 > `static` **setLogLevel**(`level`): `void`
+
+设置日志等级
 
 #### Parameters
 
@@ -1112,7 +1782,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:2062](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L2062)
+[avplayer/AVPlayer.ts:2867](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2867)
 
 ***
 
@@ -1126,7 +1796,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1954](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1954)
+[avplayer/AVPlayer.ts:2748](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2748)
 
 ***
 
@@ -1140,7 +1810,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1935](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1935)
+[avplayer/AVPlayer.ts:2729](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2729)
 
 ***
 
@@ -1154,7 +1824,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1999](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1999)
+[avplayer/AVPlayer.ts:2793](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2793)
 
 ***
 
@@ -1162,13 +1832,15 @@ resume 音频
 
 > `static` **startPipelines**(): `Promise`\<`void`\>
 
+提前运行所有管线
+
 #### Returns
 
 `Promise`\<`void`\>
 
 #### Source
 
-[avplayer/AVPlayer.ts:2016](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L2016)
+[avplayer/AVPlayer.ts:2813](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2813)
 
 ***
 
@@ -1182,7 +1854,7 @@ resume 音频
 
 #### Source
 
-[avplayer/AVPlayer.ts:1984](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L1984)
+[avplayer/AVPlayer.ts:2778](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2778)
 
 ***
 
@@ -1190,10 +1862,12 @@ resume 音频
 
 > `static` **stopPipelines**(): `Promise`\<`void`\>
 
+停止所有管线
+
 #### Returns
 
 `Promise`\<`void`\>
 
 #### Source
 
-[avplayer/AVPlayer.ts:2024](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avplayer/AVPlayer.ts#L2024)
+[avplayer/AVPlayer.ts:2824](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avplayer/AVPlayer.ts#L2824)

@@ -26,7 +26,7 @@
 
 #### Source
 
-[avformat/formats/IMatroskaFormat.ts:70](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMatroskaFormat.ts#L70)
+[avformat/formats/IMatroskaFormat.ts:78](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMatroskaFormat.ts#L78)
 
 ## Properties
 
@@ -48,7 +48,7 @@
 
 #### Source
 
-[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IFormat.ts#L35)
+[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IFormat.ts#L35)
 
 ***
 
@@ -62,7 +62,7 @@
 
 #### Source
 
-[avformat/formats/IMatroskaFormat.ts:64](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMatroskaFormat.ts#L64)
+[avformat/formats/IMatroskaFormat.ts:72](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMatroskaFormat.ts#L72)
 
 ## Methods
 
@@ -84,7 +84,7 @@
 
 #### Source
 
-[avformat/formats/IFormat.ts:39](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IFormat.ts#L39)
+[avformat/formats/IFormat.ts:39](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IFormat.ts#L39)
 
 ***
 
@@ -102,7 +102,7 @@
 
 #### Source
 
-[avformat/formats/IMatroskaFormat.ts:776](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMatroskaFormat.ts#L776)
+[avformat/formats/IMatroskaFormat.ts:1015](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMatroskaFormat.ts#L1015)
 
 ***
 
@@ -124,7 +124,7 @@
 
 #### Source
 
-[avformat/formats/IMatroskaFormat.ts:74](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMatroskaFormat.ts#L74)
+[avformat/formats/IMatroskaFormat.ts:82](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMatroskaFormat.ts#L82)
 
 ***
 
@@ -148,7 +148,7 @@
 
 #### Source
 
-[avformat/formats/IMatroskaFormat.ts:649](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMatroskaFormat.ts#L649)
+[avformat/formats/IMatroskaFormat.ts:883](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMatroskaFormat.ts#L883)
 
 ***
 
@@ -170,7 +170,7 @@
 
 #### Source
 
-[avformat/formats/IMatroskaFormat.ts:291](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMatroskaFormat.ts#L291)
+[avformat/formats/IMatroskaFormat.ts:405](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMatroskaFormat.ts#L405)
 
 ***
 
@@ -198,4 +198,4 @@
 
 #### Source
 
-[avformat/formats/IMatroskaFormat.ts:727](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMatroskaFormat.ts#L727)
+[avformat/formats/IMatroskaFormat.ts:969](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMatroskaFormat.ts#L969)

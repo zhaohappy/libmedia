@@ -26,7 +26,7 @@ from FFmpeg
 
 #### Source
 
-[avformat/AVStream.ts:108](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L108)
+[avformat/AVStream.ts:108](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L108)
 
 ***
 
@@ -38,7 +38,7 @@ AV_DISPOSITION_* bit field
 
 #### Source
 
-[avformat/AVStream.ts:162](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L162)
+[avformat/AVStream.ts:162](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L162)
 
 ***
 
@@ -55,7 +55,7 @@ provide a hint to the muxer about the estimated duration.
 
 #### Source
 
-[avformat/AVStream.ts:142](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L142)
+[avformat/AVStream.ts:142](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L142)
 
 ***
 
@@ -67,7 +67,7 @@ provide a hint to the muxer about the estimated duration.
 
 #### Source
 
-[avformat/AVStream.ts:157](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L157)
+[avformat/AVStream.ts:157](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L157)
 
 ***
 
@@ -81,7 +81,7 @@ encoding: set by the user, replaced by libavformat if left unset
 
 #### Source
 
-[avformat/AVStream.ts:104](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L104)
+[avformat/AVStream.ts:104](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L104)
 
 ***
 
@@ -93,7 +93,7 @@ stream index in AVFormatContext
 
 #### Source
 
-[avformat/AVStream.ts:97](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L97)
+[avformat/AVStream.ts:97](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L97)
 
 ***
 
@@ -103,7 +103,7 @@ stream index in AVFormatContext
 
 #### Source
 
-[avformat/AVStream.ts:132](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L132)
+[avformat/AVStream.ts:132](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L132)
 
 ***
 
@@ -115,7 +115,7 @@ number of frames in this stream if known or 0
 
 #### Source
 
-[avformat/AVStream.ts:130](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L130)
+[avformat/AVStream.ts:130](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L130)
 
 ***
 
@@ -125,7 +125,7 @@ number of frames in this stream if known or 0
 
 #### Source
 
-[avformat/AVStream.ts:106](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L106)
+[avformat/AVStream.ts:106](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L106)
 
 ***
 
@@ -137,7 +137,7 @@ number of frames in this stream if known or 0
 
 #### Source
 
-[avformat/AVStream.ts:181](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L181)
+[avformat/AVStream.ts:181](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L181)
 
 ***
 
@@ -149,7 +149,7 @@ pos 到 sample index 的映射
 
 #### Source
 
-[avformat/AVStream.ts:193](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L193)
+[avformat/AVStream.ts:193](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L193)
 
 ***
 
@@ -172,7 +172,7 @@ changes), then it does not appear in this array.
 
 #### Source
 
-[avformat/AVStream.ts:125](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L125)
+[avformat/AVStream.ts:125](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L125)
 
 ***
 
@@ -192,7 +192,7 @@ demuxer must NOT set this.
 
 #### Source
 
-[avformat/AVStream.ts:152](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L152)
+[avformat/AVStream.ts:152](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L152)
 
 ***
 
@@ -212,7 +212,7 @@ encoding: May be set by the caller before avformat_write_header() to
 
 #### Source
 
-[avformat/AVStream.ts:176](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L176)
+[avformat/AVStream.ts:176](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L176)
 
 ## Methods
 
@@ -226,4 +226,4 @@ encoding: May be set by the caller before avformat_write_header() to
 
 #### Source
 
-[avformat/AVStream.ts:196](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVStream.ts#L196)
+[avformat/AVStream.ts:196](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVStream.ts#L196)

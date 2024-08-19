@@ -10,6 +10,10 @@
 
 - `default`
 
+## Implements
+
+- `ControllerObserver`
+
 ## Constructors
 
 ### new AVTranscoder()
@@ -30,7 +34,7 @@
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:252](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L252)
+[avtranscoder/AVTranscoder.ts:265](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L265)
 
 ## Properties
 
@@ -80,6 +84,16 @@ common/event/Emitter.ts:60
 
 common/event/Emitter.ts:50
 
+***
+
+### Resource
+
+> `static` **Resource**: `Map`\<`string`, `WebAssemblyResource`\>
+
+#### Source
+
+[avtranscoder/AVTranscoder.ts:235](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L235)
+
 ## Methods
 
 ### addTask()
@@ -96,7 +110,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:1554](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L1554)
+[avtranscoder/AVTranscoder.ts:1584](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L1584)
 
 ***
 
@@ -114,7 +128,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:1671](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L1671)
+[avtranscoder/AVTranscoder.ts:1760](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L1760)
 
 ***
 
@@ -128,7 +142,7 @@ common/event/Emitter.ts:50
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:1682](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L1682)
+[avtranscoder/AVTranscoder.ts:1771](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L1771)
 
 ***
 
@@ -244,6 +258,30 @@ common/event/Emitter.ts:174
 
 ***
 
+### onGetDecoderResource()
+
+> **onGetDecoderResource**(`mediaType`, `codecId`): `Promise`\<`WebAssemblyResource`\>
+
+#### Parameters
+
+• **mediaType**: `AVMediaType`
+
+• **codecId**: `AVCodecID`
+
+#### Returns
+
+`Promise`\<`WebAssemblyResource`\>
+
+#### Implementation of
+
+`ControllerObserver.onGetDecoderResource`
+
+#### Source
+
+[avtranscoder/AVTranscoder.ts:1873](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L1873)
+
+***
+
 ### one()
 
 > **one**(`type`, `listener`): `default`
@@ -306,7 +344,7 @@ common/event/Emitter.ts:376
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:1651](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L1651)
+[avtranscoder/AVTranscoder.ts:1740](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L1740)
 
 ***
 
@@ -320,7 +358,7 @@ common/event/Emitter.ts:376
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:417](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L417)
+[avtranscoder/AVTranscoder.ts:471](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L471)
 
 ***
 
@@ -338,7 +376,7 @@ common/event/Emitter.ts:376
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:1749](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L1749)
+[avtranscoder/AVTranscoder.ts:1838](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L1838)
 
 ***
 
@@ -356,7 +394,7 @@ common/event/Emitter.ts:376
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:1598](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L1598)
+[avtranscoder/AVTranscoder.ts:1665](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L1665)
 
 ***
 
@@ -374,4 +412,4 @@ common/event/Emitter.ts:376
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:1661](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L1661)
+[avtranscoder/AVTranscoder.ts:1750](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L1750)

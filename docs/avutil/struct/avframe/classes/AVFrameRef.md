@@ -42,7 +42,7 @@ frame timestamp estimated using various heuristics, in stream time base
 
 #### Source
 
-[avutil/struct/avframe.ts:557](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L557)
+[avutil/struct/avframe.ts:557](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L557)
 
 ***
 
@@ -67,7 +67,7 @@ extended_buf array.
 
 #### Source
 
-[avutil/struct/avframe.ts:505](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L505)
+[avutil/struct/avframe.ts:505](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L505)
 
 ***
 
@@ -83,7 +83,7 @@ Channel layout of the audio data.
 
 #### Source
 
-[avutil/struct/avframe.ts:645](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L645)
+[avutil/struct/avframe.ts:645](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L645)
 
 ***
 
@@ -97,7 +97,7 @@ Channel layout of the audio data.
 
 #### Source
 
-[avutil/struct/avframe.ts:550](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L550)
+[avutil/struct/avframe.ts:550](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L550)
 
 ***
 
@@ -111,7 +111,7 @@ Channel layout of the audio data.
 
 #### Source
 
-[avutil/struct/avframe.ts:541](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L541)
+[avutil/struct/avframe.ts:541](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L541)
 
 ***
 
@@ -129,7 +129,7 @@ MPEG vs JPEG YUV range.
 
 #### Source
 
-[avutil/struct/avframe.ts:540](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L540)
+[avutil/struct/avframe.ts:540](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L540)
 
 ***
 
@@ -147,7 +147,7 @@ YUV colorspace type.
 
 #### Source
 
-[avutil/struct/avframe.ts:549](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L549)
+[avutil/struct/avframe.ts:549](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L549)
 
 ***
 
@@ -161,7 +161,7 @@ YUV colorspace type.
 
 #### Source
 
-[avutil/struct/avframe.ts:542](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L542)
+[avutil/struct/avframe.ts:542](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L542)
 
 ***
 
@@ -175,7 +175,7 @@ YUV colorspace type.
 
 #### Source
 
-[avutil/struct/avframe.ts:623](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L623)
+[avutil/struct/avframe.ts:623](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L623)
 
 ***
 
@@ -189,7 +189,7 @@ YUV colorspace type.
 
 #### Source
 
-[avutil/struct/avframe.ts:625](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L625)
+[avutil/struct/avframe.ts:625](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L625)
 
 ***
 
@@ -203,7 +203,7 @@ YUV colorspace type.
 
 #### Source
 
-[avutil/struct/avframe.ts:627](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L627)
+[avutil/struct/avframe.ts:627](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L627)
 
 ***
 
@@ -228,7 +228,7 @@ the frame intended for presentation.
 
 #### Source
 
-[avutil/struct/avframe.ts:621](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L621)
+[avutil/struct/avframe.ts:621](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L621)
 
 ***
 
@@ -253,7 +253,7 @@ MUST be set to NULL.
 
 #### Source
 
-[avutil/struct/avframe.ts:327](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L327)
+[avutil/struct/avframe.ts:327](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L327)
 
 ***
 
@@ -273,7 +273,7 @@ were errors during the decoding.
 
 #### Source
 
-[avutil/struct/avframe.ts:583](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L583)
+[avutil/struct/avframe.ts:583](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L583)
 
 ***
 
@@ -289,7 +289,7 @@ Duration of the frame, in the same units as pts. 0 if unknown.
 
 #### Source
 
-[avutil/struct/avframe.ts:650](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L650)
+[avutil/struct/avframe.ts:650](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L650)
 
 ***
 
@@ -314,7 +314,7 @@ the frame. It is freed in av_frame_unref().
 
 #### Source
 
-[avutil/struct/avframe.ts:519](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L519)
+[avutil/struct/avframe.ts:519](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L519)
 
 ***
 
@@ -341,7 +341,7 @@ extended_data must be used in order to access all channels.
 
 #### Source
 
-[avutil/struct/avframe.ts:360](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L360)
+[avutil/struct/avframe.ts:360](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L360)
 
 ***
 
@@ -361,7 +361,7 @@ lavu_frame_flags
 
 #### Source
 
-[avutil/struct/avframe.ts:533](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L533)
+[avutil/struct/avframe.ts:533](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L533)
 
 ***
 
@@ -379,7 +379,7 @@ enum AVSampleFormat for audio)
 
 #### Source
 
-[avutil/struct/avframe.ts:384](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L384)
+[avutil/struct/avframe.ts:384](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L384)
 
 ***
 
@@ -393,7 +393,7 @@ enum AVSampleFormat for audio)
 
 #### Source
 
-[avutil/struct/avframe.ts:372](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L372)
+[avutil/struct/avframe.ts:372](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L372)
 
 ***
 
@@ -410,7 +410,7 @@ AVHWFramesContext describing the frame.
 
 #### Source
 
-[avutil/struct/avframe.ts:601](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L601)
+[avutil/struct/avframe.ts:601](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L601)
 
 ***
 
@@ -430,7 +430,7 @@ Use AV_FRAME_FLAG_INTERLACED instead
 
 #### Source
 
-[avutil/struct/avframe.ts:471](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L471)
+[avutil/struct/avframe.ts:471](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L471)
 
 ***
 
@@ -450,7 +450,7 @@ Use AV_FRAME_FLAG_KEY instead
 
 #### Source
 
-[avutil/struct/avframe.ts:392](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L392)
+[avutil/struct/avframe.ts:392](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L392)
 
 ***
 
@@ -480,7 +480,7 @@ may be extra padding present for performance reasons.
 
 #### Source
 
-[avutil/struct/avframe.ts:344](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L344)
+[avutil/struct/avframe.ts:344](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L344)
 
 ***
 
@@ -498,7 +498,7 @@ metadata.
 
 #### Source
 
-[avutil/struct/avframe.ts:574](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L574)
+[avutil/struct/avframe.ts:574](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L574)
 
 ***
 
@@ -514,7 +514,7 @@ Number of elements in extended_buf.
 
 #### Source
 
-[avutil/struct/avframe.ts:524](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L524)
+[avutil/struct/avframe.ts:524](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L524)
 
 ***
 
@@ -530,7 +530,7 @@ number of audio samples (per channel) described by this frame
 
 #### Source
 
-[avutil/struct/avframe.ts:377](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L377)
+[avutil/struct/avframe.ts:377](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L377)
 
 ***
 
@@ -544,7 +544,7 @@ number of audio samples (per channel) described by this frame
 
 #### Source
 
-[avutil/struct/avframe.ts:528](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L528)
+[avutil/struct/avframe.ts:528](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L528)
 
 ***
 
@@ -580,7 +580,7 @@ opaque_ref the reference-counted analogue
 
 #### Source
 
-[avutil/struct/avframe.ts:443](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L443)
+[avutil/struct/avframe.ts:443](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L443)
 
 ***
 
@@ -602,7 +602,7 @@ purpose.
 
 #### Source
 
-[avutil/struct/avframe.ts:612](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L612)
+[avutil/struct/avframe.ts:612](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L612)
 
 ***
 
@@ -620,7 +620,7 @@ Tell user application that palette has changed from previous frame.
 
 #### Source
 
-[avutil/struct/avframe.ts:486](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L486)
+[avutil/struct/avframe.ts:486](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L486)
 
 ***
 
@@ -636,7 +636,7 @@ Picture type of the frame.
 
 #### Source
 
-[avutil/struct/avframe.ts:397](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L397)
+[avutil/struct/avframe.ts:397](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L397)
 
 ***
 
@@ -654,7 +654,7 @@ only AVPacket.dts values without pts values.
 
 #### Source
 
-[avutil/struct/avframe.ts:414](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L414)
+[avutil/struct/avframe.ts:414](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L414)
 
 ***
 
@@ -677,7 +677,7 @@ use AV_CODEC_FLAG_COPY_OPAQUE to pass through arbitrary user
 
 #### Source
 
-[avutil/struct/avframe.ts:567](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L567)
+[avutil/struct/avframe.ts:567](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L567)
 
 ***
 
@@ -702,7 +702,7 @@ use AV_CODEC_FLAG_COPY_OPAQUE to pass through arbitrary user
 
 #### Source
 
-[avutil/struct/avframe.ts:595](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L595)
+[avutil/struct/avframe.ts:595](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L595)
 
 ***
 
@@ -726,7 +726,7 @@ for the target frame's private_ref field.
 
 #### Source
 
-[avutil/struct/avframe.ts:640](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L640)
+[avutil/struct/avframe.ts:640](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L640)
 
 ***
 
@@ -742,7 +742,7 @@ Presentation timestamp in time_base units (time when frame should be shown to us
 
 #### Source
 
-[avutil/struct/avframe.ts:407](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L407)
+[avutil/struct/avframe.ts:407](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L407)
 
 ***
 
@@ -758,7 +758,7 @@ quality (between 1 (good) and FF_LAMBDA_MAX (bad))
 
 #### Source
 
-[avutil/struct/avframe.ts:427](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L427)
+[avutil/struct/avframe.ts:427](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L427)
 
 ***
 
@@ -768,7 +768,7 @@ quality (between 1 (good) and FF_LAMBDA_MAX (bad))
 
 #### Source
 
-[avutil/struct/avframe.ts:660](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L660)
+[avutil/struct/avframe.ts:660](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L660)
 
 ***
 
@@ -801,7 +801,7 @@ higher-layer timing information is not available.
 
 #### Source
 
-[avutil/struct/avframe.ts:463](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L463)
+[avutil/struct/avframe.ts:463](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L463)
 
 ***
 
@@ -817,7 +817,7 @@ Sample aspect ratio for the video frame, 0/1 if unknown/unspecified.
 
 #### Source
 
-[avutil/struct/avframe.ts:402](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L402)
+[avutil/struct/avframe.ts:402](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L402)
 
 ***
 
@@ -833,7 +833,7 @@ Sample rate of the audio data.
 
 #### Source
 
-[avutil/struct/avframe.ts:491](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L491)
+[avutil/struct/avframe.ts:491](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L491)
 
 ***
 
@@ -847,7 +847,7 @@ Sample rate of the audio data.
 
 #### Source
 
-[avutil/struct/avframe.ts:526](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L526)
+[avutil/struct/avframe.ts:526](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L526)
 
 ***
 
@@ -866,7 +866,7 @@ or filters.
 
 #### Source
 
-[avutil/struct/avframe.ts:422](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L422)
+[avutil/struct/avframe.ts:422](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L422)
 
 ***
 
@@ -886,7 +886,7 @@ Use AV_FRAME_FLAG_TOP_FIELD_FIRST instead
 
 #### Source
 
-[avutil/struct/avframe.ts:479](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L479)
+[avutil/struct/avframe.ts:479](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L479)
 
 ***
 
@@ -915,7 +915,7 @@ cropping "Cropping rectangle".
 
 #### Source
 
-[avutil/struct/avframe.ts:371](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L371)
+[avutil/struct/avframe.ts:371](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L371)
 
 ## Methods
 
@@ -933,4 +933,4 @@ cropping "Cropping rectangle".
 
 #### Source
 
-[avutil/struct/avframe.ts:652](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avutil/struct/avframe.ts#L652)
+[avutil/struct/avframe.ts:652](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avutil/struct/avframe.ts#L652)

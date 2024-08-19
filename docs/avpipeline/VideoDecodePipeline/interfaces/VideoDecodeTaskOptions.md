@@ -18,7 +18,7 @@
 
 #### Source
 
-[avpipeline/VideoDecodePipeline.ts:57](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoDecodePipeline.ts#L57)
+[avpipeline/VideoDecodePipeline.ts:59](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoDecodePipeline.ts#L59)
 
 ***
 
@@ -28,7 +28,7 @@
 
 #### Source
 
-[avpipeline/VideoDecodePipeline.ts:58](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoDecodePipeline.ts#L58)
+[avpipeline/VideoDecodePipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoDecodePipeline.ts#L60)
 
 ***
 
@@ -38,7 +38,7 @@
 
 #### Source
 
-[avpipeline/VideoDecodePipeline.ts:55](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoDecodePipeline.ts#L55)
+[avpipeline/VideoDecodePipeline.ts:57](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoDecodePipeline.ts#L57)
 
 ***
 
@@ -48,7 +48,7 @@
 
 #### Source
 
-[avpipeline/VideoDecodePipeline.ts:56](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoDecodePipeline.ts#L56)
+[avpipeline/VideoDecodePipeline.ts:58](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoDecodePipeline.ts#L58)
 
 ***
 
@@ -62,7 +62,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:32](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L32)
+[avpipeline/Pipeline.ts:32](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L32)
 
 ***
 
@@ -72,7 +72,7 @@
 
 #### Source
 
-[avpipeline/VideoDecodePipeline.ts:54](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoDecodePipeline.ts#L54)
+[avpipeline/VideoDecodePipeline.ts:56](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoDecodePipeline.ts#L56)
 
 ***
 
@@ -86,7 +86,17 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:30](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L30)
+[avpipeline/Pipeline.ts:30](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L30)
+
+***
+
+### preferWebCodecs?
+
+> `optional` **preferWebCodecs**: `boolean`
+
+#### Source
+
+[avpipeline/VideoDecodePipeline.ts:61](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoDecodePipeline.ts#L61)
 
 ***
 
@@ -96,7 +106,7 @@
 
 #### Source
 
-[avpipeline/VideoDecodePipeline.ts:53](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/VideoDecodePipeline.ts#L53)
+[avpipeline/VideoDecodePipeline.ts:55](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/VideoDecodePipeline.ts#L55)
 
 ***
 
@@ -110,7 +120,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:31](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L31)
+[avpipeline/Pipeline.ts:31](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L31)
 
 ***
 
@@ -124,7 +134,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:34](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L34)
+[avpipeline/Pipeline.ts:34](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L34)
 
 ***
 
@@ -138,4 +148,4 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:33](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L33)
+[avpipeline/Pipeline.ts:33](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L33)

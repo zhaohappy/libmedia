@@ -8,13 +8,33 @@
 
 ## Properties
 
+### chapters
+
+> **chapters**: [`AVChapter`](AVChapter.md)[]
+
+#### Source
+
+[avformat/AVFormatContext.ts:129](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L129)
+
+***
+
 ### errorFlag
 
 > **errorFlag**: `number`
 
 #### Source
 
-[avformat/AVFormatContext.ts:98](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L98)
+[avformat/AVFormatContext.ts:139](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L139)
+
+***
+
+### format
+
+> **format**: `AVFormat`
+
+#### Source
+
+[avformat/AVFormatContext.ts:134](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L134)
 
 ***
 
@@ -24,7 +44,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:100](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L100)
+[avformat/AVFormatContext.ts:141](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L141)
 
 ***
 
@@ -34,7 +54,17 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:96](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L96)
+[avformat/AVFormatContext.ts:137](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L137)
+
+***
+
+### metadata
+
+> **metadata**: `Record`\<`string`, `any`\>
+
+#### Source
+
+[avformat/AVFormatContext.ts:125](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L125)
 
 ***
 
@@ -44,7 +74,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:85](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L85)
+[avformat/AVFormatContext.ts:123](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L123)
 
 ***
 
@@ -54,7 +84,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:94](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L94)
+[avformat/AVFormatContext.ts:135](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L135)
 
 ***
 
@@ -64,7 +94,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:89](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L89)
+[avformat/AVFormatContext.ts:128](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L128)
 
 ***
 
@@ -74,7 +104,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:91](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L91)
+[avformat/AVFormatContext.ts:131](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L131)
 
 ***
 
@@ -84,7 +114,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:92](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L92)
+[avformat/AVFormatContext.ts:132](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L132)
 
 ***
 
@@ -94,7 +124,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:102](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L102)
+[avformat/AVFormatContext.ts:143](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L143)
 
 ***
 
@@ -104,7 +134,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:87](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L87)
+[avformat/AVFormatContext.ts:126](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L126)
 
 ## Methods
 
@@ -122,7 +152,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:112](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L112)
+[avformat/AVFormatContext.ts:153](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L153)
 
 ***
 
@@ -136,7 +166,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:110](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L110)
+[avformat/AVFormatContext.ts:151](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L151)
 
 ***
 
@@ -150,7 +180,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:120](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L120)
+[avformat/AVFormatContext.ts:161](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L161)
 
 ***
 
@@ -168,7 +198,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:104](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L104)
+[avformat/AVFormatContext.ts:145](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L145)
 
 ***
 
@@ -186,7 +216,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:106](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L106)
+[avformat/AVFormatContext.ts:147](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L147)
 
 ***
 
@@ -204,7 +234,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:108](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L108)
+[avformat/AVFormatContext.ts:149](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L149)
 
 ***
 
@@ -222,7 +252,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:114](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L114)
+[avformat/AVFormatContext.ts:155](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L155)
 
 ***
 
@@ -240,7 +270,7 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:116](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L116)
+[avformat/AVFormatContext.ts:157](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L157)
 
 ***
 
@@ -258,4 +288,4 @@
 
 #### Source
 
-[avformat/AVFormatContext.ts:118](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/AVFormatContext.ts#L118)
+[avformat/AVFormatContext.ts:159](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/AVFormatContext.ts#L159)

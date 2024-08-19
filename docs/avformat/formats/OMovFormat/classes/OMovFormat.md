@@ -30,7 +30,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:75](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OMovFormat.ts#L75)
+[avformat/formats/OMovFormat.ts:78](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OMovFormat.ts#L78)
 
 ## Properties
 
@@ -40,7 +40,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:71](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OMovFormat.ts#L71)
+[avformat/formats/OMovFormat.ts:74](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OMovFormat.ts#L74)
 
 ***
 
@@ -54,7 +54,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:67](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OMovFormat.ts#L67)
+[avformat/formats/OMovFormat.ts:70](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OMovFormat.ts#L70)
 
 ## Methods
 
@@ -76,7 +76,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:94](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OMovFormat.ts#L94)
+[avformat/formats/OMovFormat.ts:97](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OMovFormat.ts#L97)
 
 ***
 
@@ -98,7 +98,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:744](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OMovFormat.ts#L744)
+[avformat/formats/OMovFormat.ts:827](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OMovFormat.ts#L827)
 
 ***
 
@@ -120,7 +120,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:83](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OMovFormat.ts#L83)
+[avformat/formats/OMovFormat.ts:86](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OMovFormat.ts#L86)
 
 ***
 
@@ -144,7 +144,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:462](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OMovFormat.ts#L462)
+[avformat/formats/OMovFormat.ts:539](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OMovFormat.ts#L539)
 
 ***
 
@@ -166,7 +166,7 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:154](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OMovFormat.ts#L154)
+[avformat/formats/OMovFormat.ts:157](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OMovFormat.ts#L157)
 
 ***
 
@@ -188,4 +188,4 @@
 
 #### Source
 
-[avformat/formats/OMovFormat.ts:637](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/OMovFormat.ts#L637)
+[avformat/formats/OMovFormat.ts:720](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/OMovFormat.ts#L720)

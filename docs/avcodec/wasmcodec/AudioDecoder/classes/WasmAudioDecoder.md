@@ -22,7 +22,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/AudioDecoder.ts:49](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/AudioDecoder.ts#L49)
+[avcodec/wasmcodec/AudioDecoder.ts:58](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/AudioDecoder.ts#L58)
 
 ## Methods
 
@@ -36,7 +36,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/AudioDecoder.ts:120](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/AudioDecoder.ts#L120)
+[avcodec/wasmcodec/AudioDecoder.ts:151](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/AudioDecoder.ts#L151)
 
 ***
 
@@ -54,7 +54,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/AudioDecoder.ts:86](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/AudioDecoder.ts#L86)
+[avcodec/wasmcodec/AudioDecoder.ts:117](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/AudioDecoder.ts#L117)
 
 ***
 
@@ -68,17 +68,19 @@
 
 #### Source
 
-[avcodec/wasmcodec/AudioDecoder.ts:109](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/AudioDecoder.ts#L109)
+[avcodec/wasmcodec/AudioDecoder.ts:140](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/AudioDecoder.ts#L140)
 
 ***
 
 ### open()
 
-> **open**(`parameters`): `Promise`\<`void`\>
+> **open**(`parameters`, `opts`): `Promise`\<`void`\>
 
 #### Parameters
 
 • **parameters**: `pointer`\<[`AVCodecParameters`](../../../../avutil/struct/avcodecparameters/classes/AVCodecParameters.md)\>
+
+• **opts**: `Data`= `{}`
 
 #### Returns
 
@@ -86,4 +88,4 @@
 
 #### Source
 
-[avcodec/wasmcodec/AudioDecoder.ts:78](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/AudioDecoder.ts#L78)
+[avcodec/wasmcodec/AudioDecoder.ts:87](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/AudioDecoder.ts#L87)

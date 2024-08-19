@@ -16,4 +16,4 @@
 
 ## Source
 
-[avformat/mux.ts:31](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/mux.ts#L31)
+[avformat/mux.ts:37](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/mux.ts#L37)

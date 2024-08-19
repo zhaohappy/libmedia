@@ -14,7 +14,7 @@
 
 #### Source
 
-[avformat/demux.ts:47](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/demux.ts#L47)
+[avformat/demux.ts:50](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/demux.ts#L50)
 
 ***
 
@@ -24,4 +24,4 @@
 
 #### Source
 
-[avformat/demux.ts:49](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/demux.ts#L49)
+[avformat/demux.ts:52](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/demux.ts#L52)

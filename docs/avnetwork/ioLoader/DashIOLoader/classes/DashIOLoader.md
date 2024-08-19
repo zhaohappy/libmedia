@@ -30,7 +30,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/IOLoader.ts:67](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/IOLoader.ts#L67)
+[avnetwork/ioLoader/IOLoader.ts:67](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/IOLoader.ts#L67)
 
 ## Properties
 
@@ -44,7 +44,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/IOLoader.ts:59](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/IOLoader.ts#L59)
+[avnetwork/ioLoader/IOLoader.ts:59](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/IOLoader.ts#L59)
 
 ## Methods
 
@@ -62,7 +62,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:491](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L491)
+[avnetwork/ioLoader/DashIOLoader.ts:416](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L416)
 
 ***
 
@@ -84,7 +84,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:542](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L542)
+[avnetwork/ioLoader/DashIOLoader.ts:471](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L471)
 
 ***
 
@@ -98,7 +98,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:507](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L507)
+[avnetwork/ioLoader/DashIOLoader.ts:436](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L436)
 
 ***
 
@@ -112,7 +112,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:617](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L617)
+[avnetwork/ioLoader/DashIOLoader.ts:560](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L560)
 
 ***
 
@@ -130,11 +130,11 @@
 
 ##### selectedIndex
 
-> **selectedIndex**: `number` = `0`
+> **selectedIndex**: `number`
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:559](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L559)
+[avnetwork/ioLoader/DashIOLoader.ts:488](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L488)
 
 ***
 
@@ -156,7 +156,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:523](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L523)
+[avnetwork/ioLoader/DashIOLoader.ts:452](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L452)
 
 ***
 
@@ -170,7 +170,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:515](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L515)
+[avnetwork/ioLoader/DashIOLoader.ts:444](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L444)
 
 ***
 
@@ -184,7 +184,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:519](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L519)
+[avnetwork/ioLoader/DashIOLoader.ts:448](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L448)
 
 ***
 
@@ -198,7 +198,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:511](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L511)
+[avnetwork/ioLoader/DashIOLoader.ts:440](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L440)
 
 ***
 
@@ -222,7 +222,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:202](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L202)
+[avnetwork/ioLoader/DashIOLoader.ts:225](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L225)
 
 ***
 
@@ -236,7 +236,7 @@
 
 • **options**
 
-• **options.mediaType**: `"audio"` \| `"video"`
+• **options.mediaType**: `MediaType`
 
 #### Returns
 
@@ -248,7 +248,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:429](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L429)
+[avnetwork/ioLoader/DashIOLoader.ts:348](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L348)
 
 ***
 
@@ -262,7 +262,7 @@
 
 • **options**
 
-• **options.mediaType**: `"audio"` \| `"video"`
+• **options.mediaType**: `MediaType`
 
 #### Returns
 
@@ -274,7 +274,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:440](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L440)
+[avnetwork/ioLoader/DashIOLoader.ts:393](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L393)
 
 ***
 
@@ -292,7 +292,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:595](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L595)
+[avnetwork/ioLoader/DashIOLoader.ts:524](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L524)
 
 ***
 
@@ -310,7 +310,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:613](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L613)
+[avnetwork/ioLoader/DashIOLoader.ts:542](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L542)
 
 ***
 
@@ -328,7 +328,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:577](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L577)
+[avnetwork/ioLoader/DashIOLoader.ts:506](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L506)
 
 ***
 
@@ -346,7 +346,7 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:487](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L487)
+[avnetwork/ioLoader/DashIOLoader.ts:412](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L412)
 
 ***
 
@@ -364,4 +364,4 @@
 
 #### Source
 
-[avnetwork/ioLoader/DashIOLoader.ts:502](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avnetwork/ioLoader/DashIOLoader.ts#L502)
+[avnetwork/ioLoader/DashIOLoader.ts:431](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avnetwork/ioLoader/DashIOLoader.ts#L431)

@@ -14,13 +14,13 @@
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:92](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L92)
+[avtranscoder/AVTranscoder.ts:100](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L100)
 
 ***
 
 ### getWasm()
 
-> **getWasm**: (`type`, `codec`?) => `string` \| `ArrayBuffer` \| `WebAssemblyResource`
+> **getWasm**: (`type`, `codec`?, `mediaType`?) => `string` \| `ArrayBuffer` \| `WebAssemblyResource`
 
 #### Parameters
 
@@ -28,13 +28,15 @@
 
 • **codec?**: `AVCodecID`
 
+• **mediaType?**: `AVMediaType`
+
 #### Returns
 
 `string` \| `ArrayBuffer` \| `WebAssemblyResource`
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:91](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L91)
+[avtranscoder/AVTranscoder.ts:99](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L99)
 
 ***
 
@@ -54,4 +56,4 @@
 
 #### Source
 
-[avtranscoder/AVTranscoder.ts:93](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avtranscoder/AVTranscoder.ts#L93)
+[avtranscoder/AVTranscoder.ts:101](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avtranscoder/AVTranscoder.ts#L101)

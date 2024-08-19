@@ -26,7 +26,7 @@
 
 #### Source
 
-[avformat/formats/IMp3Format.ts:64](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMp3Format.ts#L64)
+[avformat/formats/IMp3Format.ts:64](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMp3Format.ts#L64)
 
 ## Properties
 
@@ -48,7 +48,7 @@
 
 #### Source
 
-[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IFormat.ts#L35)
+[avformat/formats/IFormat.ts:35](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IFormat.ts#L35)
 
 ***
 
@@ -62,7 +62,7 @@
 
 #### Source
 
-[avformat/formats/IMp3Format.ts:60](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMp3Format.ts#L60)
+[avformat/formats/IMp3Format.ts:60](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMp3Format.ts#L60)
 
 ## Methods
 
@@ -84,7 +84,7 @@
 
 #### Source
 
-[avformat/formats/IFormat.ts:39](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IFormat.ts#L39)
+[avformat/formats/IFormat.ts:39](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IFormat.ts#L39)
 
 ***
 
@@ -102,7 +102,7 @@
 
 #### Source
 
-[avformat/formats/IMp3Format.ts:466](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMp3Format.ts#L466)
+[avformat/formats/IMp3Format.ts:466](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMp3Format.ts#L466)
 
 ***
 
@@ -124,7 +124,7 @@
 
 #### Source
 
-[avformat/formats/IMp3Format.ts:68](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMp3Format.ts#L68)
+[avformat/formats/IMp3Format.ts:68](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMp3Format.ts#L68)
 
 ***
 
@@ -148,7 +148,7 @@
 
 #### Source
 
-[avformat/formats/IMp3Format.ts:299](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMp3Format.ts#L299)
+[avformat/formats/IMp3Format.ts:299](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMp3Format.ts#L299)
 
 ***
 
@@ -170,7 +170,7 @@
 
 #### Source
 
-[avformat/formats/IMp3Format.ts:85](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMp3Format.ts#L85)
+[avformat/formats/IMp3Format.ts:85](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMp3Format.ts#L85)
 
 ***
 
@@ -198,4 +198,4 @@
 
 #### Source
 
-[avformat/formats/IMp3Format.ts:403](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avformat/formats/IMp3Format.ts#L403)
+[avformat/formats/IMp3Format.ts:403](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avformat/formats/IMp3Format.ts#L403)

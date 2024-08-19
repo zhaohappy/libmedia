@@ -22,7 +22,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:86](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoDecoder.ts#L86)
+[avcodec/wasmcodec/VideoDecoder.ts:95](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoDecoder.ts#L95)
 
 ## Methods
 
@@ -36,7 +36,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:158](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoDecoder.ts#L158)
+[avcodec/wasmcodec/VideoDecoder.ts:190](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoDecoder.ts#L190)
 
 ***
 
@@ -54,7 +54,7 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:125](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoDecoder.ts#L125)
+[avcodec/wasmcodec/VideoDecoder.ts:157](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoDecoder.ts#L157)
 
 ***
 
@@ -68,13 +68,13 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:147](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoDecoder.ts#L147)
+[avcodec/wasmcodec/VideoDecoder.ts:179](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoDecoder.ts#L179)
 
 ***
 
 ### open()
 
-> **open**(`parameters`, `threadCount`): `Promise`\<`void`\>
+> **open**(`parameters`, `threadCount`, `opts`): `Promise`\<`void`\>
 
 #### Parameters
 
@@ -82,13 +82,15 @@
 
 • **threadCount**: `number`= `1`
 
+• **opts**: `Data`= `{}`
+
 #### Returns
 
 `Promise`\<`void`\>
 
 #### Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:115](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoDecoder.ts#L115)
+[avcodec/wasmcodec/VideoDecoder.ts:124](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoDecoder.ts#L124)
 
 ***
 
@@ -106,4 +108,4 @@
 
 #### Source
 
-[avcodec/wasmcodec/VideoDecoder.ts:171](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/wasmcodec/VideoDecoder.ts#L171)
+[avcodec/wasmcodec/VideoDecoder.ts:209](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/wasmcodec/VideoDecoder.ts#L209)

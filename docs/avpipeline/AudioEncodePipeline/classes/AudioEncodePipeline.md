@@ -26,7 +26,7 @@
 
 #### Source
 
-[avpipeline/AudioEncodePipeline.ts:68](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioEncodePipeline.ts#L68)
+[avpipeline/AudioEncodePipeline.ts:72](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/AudioEncodePipeline.ts#L72)
 
 ## Properties
 
@@ -40,7 +40,7 @@
 
 #### Source
 
-[avpipeline/AudioEncodePipeline.ts:66](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioEncodePipeline.ts#L66)
+[avpipeline/AudioEncodePipeline.ts:70](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/AudioEncodePipeline.ts#L70)
 
 ## Methods
 
@@ -58,7 +58,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:48](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L48)
+[avpipeline/Pipeline.ts:48](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L48)
 
 ***
 
@@ -76,7 +76,7 @@
 
 #### Source
 
-[avpipeline/AudioEncodePipeline.ts:226](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioEncodePipeline.ts#L226)
+[avpipeline/AudioEncodePipeline.ts:235](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/AudioEncodePipeline.ts#L235)
 
 ***
 
@@ -94,13 +94,13 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L60)
+[avpipeline/Pipeline.ts:60](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L60)
 
 ***
 
 ### open()
 
-> **open**(`taskId`, `parameters`, `timeBase`): `Promise`\<`void`\>
+> **open**(`taskId`, `parameters`, `timeBase`, `wasmEncoderOptions`): `Promise`\<`number`\>
 
 #### Parameters
 
@@ -110,13 +110,15 @@
 
 • **timeBase**: `Rational`
 
+• **wasmEncoderOptions**: `Data`= `{}`
+
 #### Returns
 
-`Promise`\<`void`\>
+`Promise`\<`number`\>
 
 #### Source
 
-[avpipeline/AudioEncodePipeline.ts:213](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioEncodePipeline.ts#L213)
+[avpipeline/AudioEncodePipeline.ts:214](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/AudioEncodePipeline.ts#L214)
 
 ***
 
@@ -138,7 +140,7 @@
 
 #### Source
 
-[avpipeline/AudioEncodePipeline.ts:250](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioEncodePipeline.ts#L250)
+[avpipeline/AudioEncodePipeline.ts:259](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/AudioEncodePipeline.ts#L259)
 
 ***
 
@@ -156,7 +158,7 @@
 
 #### Source
 
-[avpipeline/AudioEncodePipeline.ts:234](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioEncodePipeline.ts#L234)
+[avpipeline/AudioEncodePipeline.ts:243](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/AudioEncodePipeline.ts#L243)
 
 ***
 
@@ -178,7 +180,7 @@
 
 #### Source
 
-[avpipeline/Pipeline.ts:56](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/Pipeline.ts#L56)
+[avpipeline/Pipeline.ts:56](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/Pipeline.ts#L56)
 
 ***
 
@@ -200,4 +202,4 @@
 
 #### Source
 
-[avpipeline/AudioEncodePipeline.ts:257](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avpipeline/AudioEncodePipeline.ts#L257)
+[avpipeline/AudioEncodePipeline.ts:266](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avpipeline/AudioEncodePipeline.ts#L266)

@@ -22,7 +22,7 @@
 
 #### Source
 
-[avcodec/webcodec/VideoEncoder.ts:70](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoEncoder.ts#L70)
+[avcodec/webcodec/VideoEncoder.ts:91](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/webcodec/VideoEncoder.ts#L91)
 
 ## Methods
 
@@ -36,7 +36,7 @@
 
 #### Source
 
-[avcodec/webcodec/VideoEncoder.ts:214](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoEncoder.ts#L214)
+[avcodec/webcodec/VideoEncoder.ts:276](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/webcodec/VideoEncoder.ts#L276)
 
 ***
 
@@ -56,7 +56,7 @@
 
 #### Source
 
-[avcodec/webcodec/VideoEncoder.ts:181](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoEncoder.ts#L181)
+[avcodec/webcodec/VideoEncoder.ts:238](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/webcodec/VideoEncoder.ts#L238)
 
 ***
 
@@ -70,7 +70,33 @@
 
 #### Source
 
-[avcodec/webcodec/VideoEncoder.ts:210](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoEncoder.ts#L210)
+[avcodec/webcodec/VideoEncoder.ts:272](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/webcodec/VideoEncoder.ts#L272)
+
+***
+
+### getColorSpace()
+
+> **getColorSpace**(): `object`
+
+#### Returns
+
+`object`
+
+##### colorPrimaries
+
+> **colorPrimaries**: `AVColorPrimaries`
+
+##### colorSpace
+
+> **colorSpace**: `AVColorSpace`
+
+##### colorTrc
+
+> **colorTrc**: `AVColorTransferCharacteristic`
+
+#### Source
+
+[avcodec/webcodec/VideoEncoder.ts:296](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/webcodec/VideoEncoder.ts#L296)
 
 ***
 
@@ -84,7 +110,7 @@
 
 #### Source
 
-[avcodec/webcodec/VideoEncoder.ts:223](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoEncoder.ts#L223)
+[avcodec/webcodec/VideoEncoder.ts:292](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/webcodec/VideoEncoder.ts#L292)
 
 ***
 
@@ -98,7 +124,7 @@
 
 #### Source
 
-[avcodec/webcodec/VideoEncoder.ts:227](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoEncoder.ts#L227)
+[avcodec/webcodec/VideoEncoder.ts:304](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/webcodec/VideoEncoder.ts#L304)
 
 ***
 
@@ -118,4 +144,24 @@
 
 #### Source
 
-[avcodec/webcodec/VideoEncoder.ts:127](https://github.com/zhaohappy/libmedia/blob/a88305ff5d10e91621f2d71d24c72fc85681b8f7/src/avcodec/webcodec/VideoEncoder.ts#L127)
+[avcodec/webcodec/VideoEncoder.ts:179](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/webcodec/VideoEncoder.ts#L179)
+
+***
+
+### isSupported()
+
+> `static` **isSupported**(`parameters`, `enableHardwareAcceleration`): `Promise`\<`boolean`\>
+
+#### Parameters
+
+• **parameters**: `pointer`\<[`AVCodecParameters`](../../../../avutil/struct/avcodecparameters/classes/AVCodecParameters.md)\>
+
+• **enableHardwareAcceleration**: `boolean`
+
+#### Returns
+
+`Promise`\<`boolean`\>
+
+#### Source
+
+[avcodec/webcodec/VideoEncoder.ts:308](https://github.com/zhaohappy/libmedia/blob/87bf8029d8be58d5035a3f4dc7037c25d1ac371b/src/avcodec/webcodec/VideoEncoder.ts#L308)

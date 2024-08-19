@@ -19,3 +19,4 @@
 ### Interfaces
 
 - [AVPlayerOptions](interfaces/AVPlayerOptions.md)
+- [ExternalSubtitle](interfaces/ExternalSubtitle.md)
