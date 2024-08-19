@@ -29,7 +29,7 @@ import DemuxPipeline from 'avpipeline/DemuxPipeline'
 import VideoDecodePipeline from 'avpipeline/VideoDecodePipeline'
 import AudioDecodePipeline from 'avpipeline/AudioDecodePipeline'
 import { Thread, closeThread, createThreadFromClass } from 'cheap/thread/thread'
-import Emitter from 'common/event/Emitter'
+import Emitter, { EmitterOptions } from 'common/event/Emitter'
 import generateUUID from 'common/function/generateUUID'
 import * as is from 'common/util/is'
 import * as object from 'common/util/object'
@@ -85,6 +85,8 @@ import * as array from 'common/util/array'
 import isHdr from 'avutil/function/isHdr'
 import hasAlphaChannel from 'avutil/function/hasAlphaChannel'
 import SubtitleRender from './subtitle/SubtitleRender'
+import { Fn } from 'common/types/type'
+import { player_event_changed, player_event_changing, player_event_error, player_event_no_param, player_event_time } from './type'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -92,8 +94,17 @@ const ObjectFitMap = {
 }
 
 export interface ExternalSubtitle {
+  /**
+   * 字幕源，支持 url 和 文件
+   */
   source: string | File
+  /**
+   * 字幕语言
+   */
   lang?: string
+  /**
+   * 字幕标题
+   */
   title?: string
 }
 
@@ -279,6 +290,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     logger.info(`create player, taskId: ${this.taskId}`)
   }
 
+  /**
+   * 当前播放时间戳（毫秒）
+   */
   get currentTime() {
     if (this.useMSE) {
       return static_cast<int64>((((this.video || this.audio)?.currentTime || 0) * 1000) as double)
@@ -573,10 +587,20 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  /**
+   * 当前播放的源是否是 hls
+   * 
+   * @returns 
+   */
   public isHls() {
     return this.ext === 'm3u8' || this.ext === 'm3u'
   }
 
+  /**
+   * 当前播放的源是否是 dash
+   * 
+   * @returns 
+   */
   public isDash() {
     return this.ext === 'mpd'
   }
@@ -644,6 +668,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       .invoke(taskId, subtitleStream.index, this.subtitleRender.getDemuxerPort(taskId))
   }
 
+  /**
+   * 加载外挂字幕
+   * 
+   * @param externalSubtitle 
+   * @returns 
+   */
   public async loadExternalSubtitle(externalSubtitle: ExternalSubtitle) {
 
     if (this.status === AVPlayerStatus.DESTROYING || this.status === AVPlayerStatus.DESTROYED) {
@@ -777,6 +807,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return 0
   }
 
+  /**
+   * 加载媒体源，分析流信息
+   * 
+   * @param source 媒体源，支持 url 和 文件
+   * @param externalSubtitles 外挂字幕源
+   */
   public async load(source: string | File, externalSubtitles: ExternalSubtitle[] = []) {
 
     logger.info(`call load, taskId: ${this.taskId}`)
@@ -1053,9 +1089,24 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.fire(eventType.LOADED)
   }
 
+  /**
+   * 播放
+   * 
+   * @param options 
+   * @returns 
+   */
   public async play(options: {
+    /**
+     * 是否播放音频
+     */
     audio?: boolean
+    /**
+     * 是否播放视频
+     */
     video?: boolean
+    /**
+     * 是否播放字幕
+     */
     subtitle?: boolean
   } = {
     audio: true,
@@ -1767,10 +1818,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  /**
+   * 获取流信息
+   * 
+   * @returns 
+   */
   public getStreams() {
     return this.formatContext.streams.map((stream) => {
       return {
         ...stream,
+        /**
+         * 媒体类型
+         */
         mediaType: dumpKey(mediaType2AVMediaType, stream.codecpar.codecType),
         codecparProxy: accessof(stream.codecpar),
         timeBaseProxy: accessof(stream.timeBase)
@@ -1778,6 +1837,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     })
   }
 
+  /**
+   * 获取当前选择播放的视频流 id
+   * 
+   * @returns 
+   */
   public getSelectedVideoStreamId() {
     if (this.selectedVideoStream) {
       return this.selectedVideoStream.id
@@ -1785,6 +1849,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return -1
   }
 
+  /**
+   * 获取当前选择播放的音频流 id
+   * 
+   * @returns 
+   */
   public getSelectedAudioStreamId() {
     if (this.selectedAudioStream) {
       return this.selectedAudioStream.id
@@ -1792,6 +1861,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return -1
   }
 
+  /**
+   * 获取当前选择播放的字幕流 id
+   * 
+   * @returns 
+   */
   public getSelectedSubtitleStreamId() {
     if (this.selectedSubtitleStream) {
       return this.selectedSubtitleStream.id
@@ -1799,6 +1873,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return -1
   }
 
+  /**
+   * 获取章节信息
+   * 
+   * @returns 
+   */
   public getChapters() {
     return this.formatContext.chapters
   }
@@ -1833,6 +1912,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return 0n
   }
 
+  /**
+   * 停止播放
+   * 
+   * @returns 
+   */
   public async stop() {
 
     logger.info(`call stop, taskId: ${this.taskId}`)
@@ -2185,22 +2269,48 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     logger.info(`player call resize, width: ${width}, height: ${height}, taskId: ${this.taskId}`)
   }
 
+  /**
+   * 当前是否是 mse 播放模式
+   * 
+   * @returns 
+   */
   public isMSE() {
     return this.useMSE
   }
 
+  /**
+   * 获取视频列表（ dash 使用）
+   * 
+   * @returns 
+   */
   public async getVideoList() {
     return AVPlayer.IOThread?.getVideoList(this.taskId)
   }
 
+  /**
+   * 获取音频列表（ dash 使用）
+   * 
+   * @returns 
+   */
   public async getAudioList() {
     return AVPlayer.IOThread?.getAudioList(this.taskId)
   }
 
+  /**
+   * 获取字幕列表（ dash 使用）
+   * 
+   * @returns 
+   */
   public async getSubtitleList() {
     return AVPlayer.IOThread?.getSubtitleList(this.taskId)
   }
 
+  /**
+   * 设置播放视频轨道
+   * 
+   * @param id 流 id，dash 传 getVideoList 列表中的 index
+   * @returns 
+   */
   public async selectVideo(index: number) {
     if (defined(ENABLE_PROTOCOL_HLS) && this.isHls() || defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
       logger.info(`call IOThread selectVideo, index: ${index}, taskId: ${this.taskId}`)
@@ -2216,7 +2326,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
         this.lastStatus = this.status
         this.status = AVPlayerStatus.CHANGING
-        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.index, this.selectedVideoStream.index])
+        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.id, this.selectedVideoStream.id])
 
         if (this.useMSE) {
           await this.doSeek(this.currentTime, stream.index, {
@@ -2239,7 +2349,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           })
         }
 
-        logger.info(`changed selected video stream, from ${this.selectedVideoStream.index} to ${stream.index}, taskId: ${this.taskId}`)
+        logger.info(`changed selected video stream, from ${this.selectedVideoStream.id} to ${stream.id}, taskId: ${this.taskId}`)
         this.selectedVideoStream = stream
 
         if (this.subtitleRender) {
@@ -2247,7 +2357,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
 
         this.status = this.lastStatus
-        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.index, this.selectedVideoStream.index])
+        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.id, this.selectedVideoStream.id])
       }
       else {
         logger.error(`call selectVideo failed, index: ${index}, taskId: ${this.taskId}`)
@@ -2255,6 +2365,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  /**
+   * 设置播放音频轨道
+   * 
+   * @param id 流 id，dash 传 getAudioList 列表中的 index
+   * @returns 
+   */
   public async selectAudio(index: number) {
     if (defined(ENABLE_PROTOCOL_HLS) && this.isHls() || defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
       logger.info(`call IOThread selectAudio, index: ${index}, taskId: ${this.taskId}`)
@@ -2269,7 +2385,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
         this.lastStatus = this.status
         this.status = AVPlayerStatus.CHANGING
-        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.index, this.selectedAudioStream.index])
+        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.id, this.selectedAudioStream.id])
 
         if (stream.codecpar.codecId !== this.selectedAudioStream.codecpar.codecId
           || this.useMSE
@@ -2301,12 +2417,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedAudioStream.index, false)
         }
 
-        logger.info(`changed selected audio stream, from ${this.selectedAudioStream.index} to ${stream.index}, taskId: ${this.taskId}`)
+        logger.info(`changed selected audio stream, from ${this.selectedAudioStream.id} to ${stream.id}, taskId: ${this.taskId}`)
 
         this.selectedAudioStream = stream
 
         this.status = this.lastStatus
-        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.index, this.selectedAudioStream.index])
+        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.id, this.selectedAudioStream.id])
         
       }
       else {
@@ -2315,6 +2431,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  /**
+   * 设置播放字幕轨道
+   * 
+   * @param id 流 id，dash 传 getSubtitleList 列表中的 index
+   * @returns 
+   */
   public async selectSubtitle(index: number) {
     if (defined(ENABLE_PROTOCOL_HLS) && this.isHls() || defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
       logger.info(`call IOThread selectSubtitle, index: ${index}, taskId: ${this.taskId}`)
@@ -2336,7 +2458,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
         this.lastStatus = this.status
         this.status = AVPlayerStatus.CHANGING
-        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.index, this.selectedSubtitleStream.index])
+        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.id, this.selectedSubtitleStream.id])
 
         this.subtitleRender.reopenDecoder(stream.codecpar)
         
@@ -2370,12 +2492,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           this.subtitleRender.start()
         }
 
-        logger.info(`changed selected subtitle stream, from ${this.selectedSubtitleStream.index} to ${stream.index}, taskId: ${this.taskId}`)
+        logger.info(`changed selected subtitle stream, from ${this.selectedSubtitleStream.id} to ${stream.id}, taskId: ${this.taskId}`)
 
         this.selectedSubtitleStream = stream
 
         this.status = this.lastStatus
-        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.index, this.selectedSubtitleStream.index])
+        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.id, this.selectedSubtitleStream.id])
       }
       else {
         logger.error(`call selectSubtitle failed, index: ${index}, taskId: ${this.taskId}`)
@@ -2384,7 +2506,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * 播放视频下一帧，可用于逐帧播放（不支持 mse 模式）
+   * 播放视频下一帧，可用于逐帧播放，暂停状态下使用（不支持 mse 模式）
    */
   public async playNextFrame() {
     if (!this.useMSE && this.status === AVPlayerStatus.PAUSED && this.selectedVideoStream) {
@@ -2448,10 +2570,20 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  /**
+   * 获取统计数据
+   * 
+   * @returns 
+   */
   public getStats() {
     return this.stats
   }
 
+  /**
+   * 销毁播放器
+   * 
+   * @returns 
+   */
   public async destroy() {
 
     logger.info(`call destroy, taskId: ${this.taskId}`)
@@ -2489,16 +2621,25 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.status = AVPlayerStatus.DESTROYED
   }
 
+  /**
+   * @internal
+   */
   public onVideoEnded(): void {
     this.videoEnded = true
     this.handleEnded()
   }
 
+  /**
+   * @internal
+   */
   public onAudioEnded(): void {
     this.audioEnded = true
     this.handleEnded()
   }
 
+  /**
+   * @internal
+   */
   public onCanvasUpdated(): void {
     this.updateCanvas = this.createCanvas()
     const canvas = (supportOffscreenCanvas() && cheapConfig.USE_THREADS && defined(ENABLE_THREADS))
@@ -2509,24 +2650,39 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       .invoke(this.taskId, canvas)
   }
 
+  /**
+   * @internal
+   */
   public async onGetDecoderResource(mediaType: AVMediaType, codecId: AVCodecID): Promise<WebAssemblyResource> {
     return this.getResource('decoder', codecId, mediaType)
   }
 
+  /**
+   * @internal
+   */
   public onFirstVideoRendered(): void {
     logger.info(`first video frame rendered, taskId: ${this.taskId}`)
     this.fire(eventType.FIRST_VIDEO_RENDERED)
   }
 
+  /**
+   * @internal
+   */
   public onFirstAudioRendered(): void {
     logger.info(`first audio frame rendered, taskId: ${this.taskId}`)
     this.fire(eventType.FIRST_AUDIO_RENDERED)
   }
 
+  /**
+   * @internal
+   */
   public onStutter() {
     this.stats.audioStutter++
   }
 
+  /**
+   * @internal
+   */
   public onFirstVideoRenderedAfterUpdateCanvas(): void {
     if (this.updateCanvas) {
       if (this.canvas) {
@@ -2538,10 +2694,16 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  /**
+   * @internal
+   */
   public onTimeUpdate(pts: int64): void {
     this.fire(eventType.TIME, [pts])
   }
 
+  /**
+   * @internal
+   */
   public onMSESeek(time: number): void {
     if (this.audio) {
       this.audio.currentTime = time
@@ -2645,6 +2807,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  /**
+   * 提前运行所有管线
+   */
   static async startPipelines() {
     await AVPlayer.startDemuxPipeline()
     await AVPlayer.startAudioPipeline()
@@ -2653,6 +2818,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     logger.info('AVPlayer pipelines started')
   }
 
+  /**
+   * 停止所有管线
+   */
   static async stopPipelines() {
     if (AVPlayer.VideoRenderThread) {
       await AVPlayer.VideoRenderThread.clear()
@@ -2691,6 +2859,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
   }
 
+  /**
+   * 设置日志等级
+   * 
+   * @param level 
+   */
   static setLogLevel(level: number) {
     AVPlayer.level = level
     logger.setLevel(level)
@@ -2716,4 +2889,33 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     logger.info(`set log level: ${level}`)
   }
+
+  public on(event: typeof eventType.LOADING, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.LOADED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.PLAYING, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.PLAYED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.PAUSED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.STOPPED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.ENDED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.SEEKING, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.STOPPED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.CHANGING, listener: typeof player_event_changing, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.CHANGED, listener: typeof player_event_changed, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.RESUME, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.TIME, listener: typeof player_event_time, options?: Partial<EmitterOptions>): AVPlayer
+
+  public on(event: typeof eventType.FIRST_AUDIO_RENDERED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.FIRST_VIDEO_RENDERED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+
+  public on(event: typeof eventType.ERROR, listener: typeof player_event_error, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.TIMEOUT, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+
+  public on(event: string, listener: Fn, options: Partial<EmitterOptions> = {}) {
+    super.on(event, object.extend({
+      fn: listener
+    }, options))
+    return this
+  }
 }
+
+

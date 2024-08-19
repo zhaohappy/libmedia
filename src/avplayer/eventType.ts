@@ -49,8 +49,6 @@ export const TIMEOUT = 'timeout'
 
 export const ERROR = 'error'
 
-export const STATS = 'stats'
-
 export const TIME = 'time'
 
 export const RESUME = 'resume'

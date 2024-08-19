@@ -46,10 +46,25 @@ const streamCounter: pointer<int32> = reinterpret_cast<pointer<int32>>(staticDat
 const streamCounterMutex: pointer<Mutex> = reinterpret_cast<pointer<Mutex>>(staticData.malloc(sizeof(Mutex), sizeof(atomic_int32)))
 
 export interface AVChapter {
+  /**
+   * 章节 id
+   */
   id: uint64
+  /**
+   * 时间基
+   */
   timeBase: Rational
+  /**
+   * 开始时间
+   */
   start: int64
+  /**
+   * 结束时间
+   */
   end: int64
+  /**
+   * 元数据
+   */
   metadata: Record<string, any>
 }
 
