@@ -161,9 +161,9 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
       return
     }
 
-    const bytesPerPix = (descriptor.comp[0].depth + 7) >>> 3
+    const bytesPerPixel = (descriptor.comp[0].depth + 7) >>> 3
 
-    if ((frame.linesize[0] / bytesPerPix) !== this.textureWidth
+    if ((frame.linesize[0] / bytesPerPixel) !== this.textureWidth
       || frame.height !== this.videoHeight
       || frame.width !== this.videoWidth
       || frame.format !== this.format
