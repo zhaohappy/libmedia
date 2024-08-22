@@ -89,8 +89,11 @@ export default class FramerateFilterNode extends AVFilterNode {
       }
     }
     else {
-      this.delta = diff - this.step
+      if (this.lastPts > -1n) {
+        this.delta = diff - this.step
+      }
       this.lastPts = pts
+
       if (isPointer(avframe)) {
         const out = this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame()
         refAVFrame(out, avframe)
