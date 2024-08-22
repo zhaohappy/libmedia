@@ -319,15 +319,15 @@ libmedia 使用 LGPL 开源协议，你需要遵守协议要求，详情查看 [
  - [x264](https://www.videolan.org/developers/x264.html): GPL
  - [x265](https://www.videolan.org/developers/x265.html): GPL
  - [theora](https://github.com/xiph/theora): BSD-3-Clause
- - [vorbis](https://xiph.org/vorbis/): BSD
- - [speex](https://www.speex.org/): BSD 
- - [opus](https://opus-codec.org/): BSD
+ - [vorbis](https://xiph.org/vorbis/): based BSD
+ - [speex](https://www.speex.org/): revised BSD 
+ - [opus](https://opus-codec.org/): BSD-3-Clause
  - [libvpx](https://chromium.googlesource.com/webm/libvpx/): BSD-3-Clause
- - [libogg](https://github.com/gcp/libogg): BSD
+ - [libogg](https://github.com/gcp/libogg): BSD-3-Clause
  - [lame](https://lame.sourceforge.io/): LGPL
  - [kvazaar](https://github.com/ultravideo/kvazaar): BSD-3-Clause
- - [flac](https://github.com/xiph/flac): BSD
- - [fdkaac](https://www.linuxfromscratch.org/blfs/view/svn/multimedia/fdk-aac.html): BSD
+ - [flac](https://github.com/xiph/flac): BSD-3-Clause
+ - [fdkaac](https://www.linuxfromscratch.org/blfs/view/svn/multimedia/fdk-aac.html): based BSD
  - [dav1d](https://code.videolan.org/videolan/dav1d/): BSD-2-Clause
  - [aom](https://aomedia.googlesource.com/aom/): BSD-2-Clause
  - [hls-parser](https://github.com/kuu/hls-parser): MIT
