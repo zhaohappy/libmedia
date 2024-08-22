@@ -904,7 +904,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       let ret = 0
 
       if (audioConfig) {
-        if (audioConfig.codec) {
+        if (audioConfig.codec && audioConfig.codec !== 'copy') {
           const codecId = AudioCodecString2CodecId[audioConfig.codec]
           if (!is.number(codecId)) {
             logger.fatal(`invalid codec name(${audioConfig.codec})`)
@@ -1180,7 +1180,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       let ret = 0
 
       if (videoConfig) {
-        if (videoConfig.codec) {
+        if (videoConfig.codec && videoConfig.codec !== 'copy') {
           const codecId = VideoCodecString2CodecId[videoConfig.codec]
           if (!is.number(codecId)) {
             logger.fatal(`invalid codec name(${videoConfig.codec})`)
