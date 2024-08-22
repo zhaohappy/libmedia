@@ -114,17 +114,17 @@ export const PixfmtString2AVPixelFormat = {
 
 export const SampleFmtString2SampleFormat = {
   'u8': AVSampleFormat.AV_SAMPLE_FMT_U8,
-  'u8p': AVSampleFormat.AV_SAMPLE_FMT_U8P,
+  'u8-planar': AVSampleFormat.AV_SAMPLE_FMT_U8P,
   's16': AVSampleFormat.AV_SAMPLE_FMT_S16,
-  's16p': AVSampleFormat.AV_SAMPLE_FMT_S16P,
+  's16-planar': AVSampleFormat.AV_SAMPLE_FMT_S16P,
   's32': AVSampleFormat.AV_SAMPLE_FMT_S32,
-  's32p': AVSampleFormat.AV_SAMPLE_FMT_S32P,
+  's32-planar': AVSampleFormat.AV_SAMPLE_FMT_S32P,
   's64': AVSampleFormat.AV_SAMPLE_FMT_S64,
-  's64p': AVSampleFormat.AV_SAMPLE_FMT_S64P,
+  's64-planar': AVSampleFormat.AV_SAMPLE_FMT_S64P,
   'float': AVSampleFormat.AV_SAMPLE_FMT_FLT,
-  'floatp': AVSampleFormat.AV_SAMPLE_FMT_FLTP,
+  'float-planar': AVSampleFormat.AV_SAMPLE_FMT_FLTP,
   'double': AVSampleFormat.AV_SAMPLE_FMT_DBL,
-  'doublep': AVSampleFormat.AV_SAMPLE_FMT_DBLP,
+  'double-planar': AVSampleFormat.AV_SAMPLE_FMT_DBLP,
 }
 
 export const Format2AVFormat: Record<string, AVFormat> = {
