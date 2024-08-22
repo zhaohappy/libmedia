@@ -30,6 +30,7 @@ import IPCPort, { NOTIFY, REQUEST, RpcMessage } from 'common/network/IPCPort'
 import * as array from 'common/util/array'
 import isPointer from 'cheap/std/function/isPointer'
 import * as is from 'common/util/is'
+import AVOutputNode from './AVOutputNode'
 
 export interface AVFilterNodeOptions {
   avframePool?: AVFramePool
@@ -277,7 +278,7 @@ export default abstract class AVFilterNode {
     this.outputConnectedMap.delete(node)
   }
 
-  public connect(node: AVFilterNode) {
+  public connect(node: AVFilterNode | AVOutputNode) {
     if (this.outputConnectedMap.size === this.outputCount) {
       throw new Error('all output has connected')
     }

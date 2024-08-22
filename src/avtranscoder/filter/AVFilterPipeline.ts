@@ -30,7 +30,8 @@ import AVFramePoolImpl from 'avutil/implement/AVFramePoolImpl'
 import * as error from 'avutil/error'
 import Pipeline, { TaskOptions } from 'avpipeline/Pipeline'
 import { FilterGraph, FilterGraphDes, FilterGraphPortDes, checkFilterGraphInvalid, createFilterGraph } from './graph'
-import { AVFilterNodePort } from 'avfilter/AVFilterNode'
+import AVInputNode from 'avfilter/AVInputNode'
+import AVOutputNode from 'avfilter/AVOutputNode'
 
 
 export interface AVFilterTaskOptions extends TaskOptions {
@@ -44,7 +45,8 @@ export interface AVFilterTaskOptions extends TaskOptions {
 type SelfTask = AVFilterTaskOptions & {
   avframePool: AVFramePoolImpl
   filterGraph: FilterGraph
-  filterPorts: AVFilterNodePort[]
+  inputNodes: AVInputNode[]
+  outputNodes: AVOutputNode[]
 }
 
 export default class AVFilterPipeline extends Pipeline {
@@ -64,27 +66,24 @@ export default class AVFilterPipeline extends Pipeline {
       return error.INVALID_OPERATE
     }
 
-    const filterPorts: AVFilterNodePort[] = []
+    const inputNodes: AVInputNode[] = []
+    const outputNodes: AVOutputNode[] = []
     for (let i = 0; i < options.inputPorts.length; i++) {
-      const port = new AVFilterNodePort(options.inputPorts[i].port)
-      filterPorts.push(port)
+      const inputNode = new AVInputNode(options.inputPorts[i].port)
+      inputNodes.push(inputNode)
       const next = filterGraph.inputs.find((vertex) => {
         return vertex.id === options.inputPorts[i].id
       })
-      const  { port: nextPort, index } = next.filter.getFreeInputNodePort()
-      port.connect(nextPort)
-      next.filter.addInputPeer(this, index)
+      inputNode.connect(next.filter)
     }
 
     for (let i = 0; i < options.outputPorts.length; i++) {
-      const port = new AVFilterNodePort(options.outputPorts[i].port)
-      filterPorts.push(port)
+      const outputNode = new AVOutputNode(options.outputPorts[i].port)
+      outputNodes.push(outputNode)
       const prev = filterGraph.outputs.find((vertex) => {
         return vertex.id === options.outputPorts[i].id
       })
-      const  { port: prevPort, index } = prev.filter.getFreeOutputNodePort()
-      prevPort.connect(port)
-      prev.filter.addOutputPeer(this, index)
+     prev.filter.connect(outputNode)
     }
 
     for (let i = 0; i < filterGraph.vertices.length; i++) {
@@ -94,7 +93,8 @@ export default class AVFilterPipeline extends Pipeline {
     this.tasks.set(options.taskId, {
       ...options,
       filterGraph,
-      filterPorts,
+      inputNodes,
+      outputNodes,
       avframePool
     })
 
