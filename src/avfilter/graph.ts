@@ -1,7 +1,7 @@
-import RangeFilterNode from 'avfilter/RangeFilterNode'
-import ResampleFilterNode from 'avfilter/audio/ResampleFilterNode'
-import FramerateFilterNode from 'avfilter/video/FramerateFilterNode'
-import ScaleFilterNode from 'avfilter/video/ScaleFilterNode'
+import RangeFilterNode from './RangeFilterNode'
+import ResampleFilterNode from './audio/ResampleFilterNode'
+import FramerateFilterNode from './video/FramerateFilterNode'
+import ScaleFilterNode from './video/ScaleFilterNode'
 import { AVFramePool } from 'avutil/struct/avframe'
 import * as logger from 'common/util/logger'
 

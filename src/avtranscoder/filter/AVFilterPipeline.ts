@@ -29,7 +29,7 @@ import { AVFrameRef } from 'avutil/struct/avframe'
 import AVFramePoolImpl from 'avutil/implement/AVFramePoolImpl'
 import * as error from 'avutil/error'
 import Pipeline, { TaskOptions } from 'avpipeline/Pipeline'
-import { FilterGraph, FilterGraphDes, FilterGraphPortDes, checkFilterGraphInvalid, createFilterGraph } from './graph'
+import { FilterGraph, FilterGraphDes, FilterGraphPortDes, checkFilterGraphInvalid, createFilterGraph } from 'avfilter/graph'
 import AVInputNode from 'avfilter/AVInputNode'
 import AVOutputNode from 'avfilter/AVOutputNode'
 
@@ -83,7 +83,7 @@ export default class AVFilterPipeline extends Pipeline {
       const prev = filterGraph.outputs.find((vertex) => {
         return vertex.id === options.outputPorts[i].id
       })
-     prev.filter.connect(outputNode)
+      prev.filter.connect(outputNode)
     }
 
     for (let i = 0; i < filterGraph.vertices.length; i++) {
