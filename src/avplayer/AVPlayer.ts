@@ -115,16 +115,58 @@ interface ExternalSubtitleTask extends ExternalSubtitle {
 }
 
 export interface AVPlayerOptions {
+  /**
+   * dom 挂载元素
+   */
   container: HTMLDivElement
+  /**
+   * 获取 wasm 回调
+   * 
+   * @param type 
+   * @param codecId 
+   * @param mediaType 
+   * @returns 
+   */
   getWasm: (type: 'decoder' | 'resampler' | 'stretchpitcher', codecId?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
+  /**
+   * 是否是直播
+   */
   isLive?: boolean
+  /**
+   * 自定义检查是否使用 mse 模式
+   */
   checkUseMES?: (streams: AVStreamInterface[]) => boolean
+  /**
+   * 是否启用硬件加速
+   */
   enableHardware?: boolean
+  /**
+   * 是否启用 WebGPU 渲染
+   */
   enableWebGPU?: boolean
+  /**
+   * 是否循环播放
+   */
   loop?: boolean
+  /**
+   * 是否开启低延时模式（直播）开始之后会根据网络情况自动调整 buffer，尽量在不卡顿的情况下降低延时
+   */
+  lowLatency?: boolean
+  /**
+   * jitter buffer 最大值 lowLatency 模式下影响最高延时
+   */
   jitterBufferMax?: float
+  /**
+   * jitter buffer 最小值 lowLatency 模式下影响最低延时
+   */
   jitterBufferMin?: float
-  lowLatency?: boolean,
+  /**
+   * 预加载 buffer 时长（秒）
+   */
+  preLoadTime?: int32
+  /***
+   * 自定义查找播放流回调
+   */
   findBestStream?: (streams: AVStreamInterface[], mediaType: AVMediaType) => AVStreamInterface
 }
 
@@ -163,7 +205,8 @@ const defaultAVPlayerOptions: Partial<AVPlayerOptions> = {
   loop: false,
   jitterBufferMax: 10,
   jitterBufferMin: 4,
-  lowLatency: false
+  lowLatency: false,
+  preLoadTime: 4
 }
 
 @struct
@@ -691,7 +734,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     const taskId = generateUUID()
 
-    const ioloader2DemuxerChannel = new MessageChannel()
+    const ioloader2DemuxerChannel = createMessageChannel()
 
     const externalSubtitleTask: ExternalSubtitleTask = object.extend({
       taskId,
@@ -1557,7 +1600,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     let minQueueLength = 10
     if (is.string(this.source) && !this.options.isLive) {
       this.formatContext.streams.forEach((stream) => {
-        minQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate) * 4), minQueueLength)
+        minQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate) * this.options.preLoadTime), minQueueLength)
       })
     }
     promises.push(AVPlayer.DemuxerThread.startDemux(this.taskId, this.options.isLive, minQueueLength))
@@ -2917,5 +2960,3 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return this
   }
 }
-
-
