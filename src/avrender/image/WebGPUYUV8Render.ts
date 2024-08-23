@@ -49,13 +49,22 @@ export default class WebGPUYUV8Render extends WebGPUYUVRender {
       outputRGB: true
     })
 
+    let y = 'textureSample(yTexture, s, in_texcoord.xy).x'
     let u = 'textureSample(uTexture, s, in_texcoord.xy).x'
     let v = 'textureSample(vTexture, s, in_texcoord.xy).x'
     let alpha = '1.0'
 
-    if (format === AVPixelFormat.AV_PIX_FMT_NV12) {
+    if (format === AVPixelFormat.AV_PIX_FMT_NV12
+      || format === AVPixelFormat.AV_PIX_FMT_NV24
+    ) {
       u = 'textureSample(uTexture, s, in_texcoord.xy).x'
       v = 'textureSample(uTexture, s, in_texcoord.xy).y'
+    }
+    else if (format === AVPixelFormat.AV_PIX_FMT_NV21
+      || format === AVPixelFormat.AV_PIX_FMT_NV42
+    ) {
+      u = 'textureSample(uTexture, s, in_texcoord.xy).y'
+      v = 'textureSample(uTexture, s, in_texcoord.xy).x'
     }
 
     if ((descriptor.flags & PixelFormatFlags.ALPHA) && descriptor.nbComponents === 4) {
@@ -71,7 +80,7 @@ export default class WebGPUYUV8Render extends WebGPUYUVRender {
       
       @fragment
       fn main(@location(0) in_texcoord: vec4<f32>) -> @location(0) vec4<f32> {
-        let y = textureSample(yTexture, s, in_texcoord.xy).x;
+        let y = ${y};
         let u = ${u};
         let v = ${v};
         let alpha = ${alpha};

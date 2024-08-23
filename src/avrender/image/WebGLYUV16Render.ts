@@ -68,13 +68,22 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
 
     const steps = generateSteps(this.srcColorSpace, this.dstColorSpace, colorTransformOptions)
 
+    let y = 'texture2D(y_Sampler, v_color.xy).x'
     let u = 'texture2D(u_Sampler, v_color.xy).x'
     let v = 'texture2D(v_Sampler, v_color.xy).x'
     let alpha = '1.0'
 
-    if (format === AVPixelFormat.AV_PIX_FMT_NV12) {
+    if (format === AVPixelFormat.AV_PIX_FMT_NV12
+      || format === AVPixelFormat.AV_PIX_FMT_NV24
+    ) {
       u = 'texture2D(u_Sampler, v_color.xy).x'
       v = 'texture2D(u_Sampler, v_color.xy).y'
+    }
+    else if (format === AVPixelFormat.AV_PIX_FMT_NV21
+      || format === AVPixelFormat.AV_PIX_FMT_NV42
+    ) {
+      u = 'texture2D(u_Sampler, v_color.xy).y'
+      v = 'texture2D(u_Sampler, v_color.xy).x'
     }
 
     if ((descriptor.flags & PixelFormatFlags.ALPHA) && descriptor.nbComponents === 4) {
@@ -112,7 +121,7 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
       
       void main () {
       
-        float y = texture2D(y_Sampler, v_color.xy).x;
+        float y = ${y};
         float u = ${u};
         float v = ${v};
         float alpha = ${alpha};
