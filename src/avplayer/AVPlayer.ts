@@ -2447,8 +2447,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             && (stream.codecpar.sampleRate !== this.selectedAudioStream.codecpar.sampleRate
             || stream.codecpar.chLayout.nbChannels !== this.selectedAudioStream.codecpar.chLayout.nbChannels)
         ) {
+          let seekStreamId = stream.index
+          if (this.selectedVideoStream) {
+            seekStreamId = this.selectedVideoStream.index
+          }
           if (this.useMSE) {
-            await this.doSeek(this.currentTime, stream.index, {
+            await this.doSeek(this.currentTime, seekStreamId, {
               onBeforeSeek: async () => {
                 await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedAudioStream.index)
                 await AVPlayer.MSEThread.reAddStream(this.taskId, stream.index, stream.codecpar, stream.timeBase, stream.startTime)
@@ -2456,7 +2460,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             })
           }
           else {
-            await this.doSeek(this.currentTime, stream.index, {
+            await this.doSeek(this.currentTime, seekStreamId, {
               onBeforeSeek: async () => {
                 await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedAudioStream.index)
                 await AVPlayer.AudioDecoderThread.reopenDecoder(

@@ -355,6 +355,9 @@ export default class SubtitleRender {
   }
 
   public setDemuxTask(taskId: string) {
+    if (this.currentPort !== taskId) {
+      this.pulling = false
+    }
     this.currentPort = taskId
   }
 

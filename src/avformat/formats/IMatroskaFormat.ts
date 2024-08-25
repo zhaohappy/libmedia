@@ -999,6 +999,9 @@ export default class IMatroskaFormat extends IFormat {
           break
         }
       }
+      if (pos === NOPTS_VALUE_BIGINT) {
+        pos = this.context.clusterIndexes[this.context.clusterIndexes.length - 1].pos
+      }
     }
 
     if (pos !== NOPTS_VALUE_BIGINT) {
