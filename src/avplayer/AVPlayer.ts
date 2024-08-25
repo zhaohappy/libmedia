@@ -458,6 +458,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       height: 100%;
     `
     canvas.ondragstart = () => false
+
+    Object.defineProperty(canvas, 'currentTime', {
+      enumerable: true,
+      configurable: false,
+      get: () => {
+        return Number(this.currentTime) / 1000
+      },
+      set: (time: number) => {
+        this.seek(static_cast<int64>(Math.floor(time * 1000)))
+      }
+    })
+
     return canvas
   }
 
