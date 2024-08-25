@@ -129,8 +129,8 @@ export default class IWebVttFormat extends IFormat {
           array.sortInsert(
             this.queue,
             cue,
-            (cue) => {
-              if (cue.startTs < cue.startTs) {
+            (a) => {
+              if (a.startTs < cue.startTs) {
                 return 1
               }
               else {

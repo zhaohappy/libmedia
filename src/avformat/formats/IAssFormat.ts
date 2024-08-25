@@ -127,7 +127,7 @@ export default class IAssFormat extends IFormat {
         
         const line = (await formatContext.ioReader.readLine()).trim()
 
-        if (/^;/.test(line)) {
+        if (/^;/.test(line) || /^Comment:/.test(line)) {
           continue
         }
 
@@ -151,8 +151,8 @@ export default class IAssFormat extends IFormat {
           array.sortInsert(
             this.queue,
             cue,
-            (cue) => {
-              if (cue.startTs < cue.startTs) {
+            (a) => {
+              if (a.startTs < cue.startTs) {
                 return 1
               }
               else {
