@@ -303,6 +303,7 @@ export default class AssRender {
       dia.$div.remove()
     }
     this.store.actives.length = 0
+    this.store.space.length = 0
   }
 
   public resize() {

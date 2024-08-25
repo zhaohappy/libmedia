@@ -173,7 +173,7 @@ export default class SubtitleRender {
         this.loop.stop()
       }
 
-      if (this.queue.length < 2 && !this.ended) {
+      if (this.queue.length < 6 && !this.ended) {
         this.pull()
       }
 
