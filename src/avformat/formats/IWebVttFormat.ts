@@ -255,6 +255,14 @@ export default class IWebVttFormat extends IFormat {
     if (index >= 0) {
       logger.debug(`seek in cues, found index: ${index}, pts: ${this.queue[index].startTs}, pos: ${this.queue[index].pos}`)
       this.index = Math.max(index - 1, 0)
+      while (this.index > 0) {
+        if (this.queue[this.index - 1].startTs === this.queue[this.index].startTs) {
+          this.index--
+        }
+        else {
+          break
+        }
+      }
       return 0n
     }
     return static_cast<int64>(errorType.DATA_INVALID)

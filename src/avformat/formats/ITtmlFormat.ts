@@ -142,6 +142,14 @@ export default class ITtmlFormat extends IFormat {
     if (index >= 0) {
       logger.debug(`seek in cues, found index: ${index}, pts: ${this.queue[index].pts}`)
       this.index = Math.max(index - 1, 0)
+      while (this.index > 0) {
+        if (this.queue[this.index - 1].pts === this.queue[this.index].pts) {
+          this.index--
+        }
+        else {
+          break
+        }
+      }
       return 0n
     }
     return static_cast<int64>(errorType.DATA_INVALID)
