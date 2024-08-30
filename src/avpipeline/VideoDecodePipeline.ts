@@ -332,9 +332,9 @@ export default class VideoDecodePipeline extends Pipeline {
                   break
                 }
                 task.avpacketPool.release(avpacket)
-                // 硬解队列中的 EncodedVideoChunk 过多会报错， 这里判断做一下延时
-                while (task.targetDecoder === task.hardwareDecoder
-                  && task.hardwareDecoder.getQueueLength() > 20
+                // WebVideoDecoder 队列中的 EncodedVideoChunk 过多会导致内存占用激增，这里控制一下
+                while (task.targetDecoder instanceof WebVideoDecoder
+                  && task.targetDecoder.getQueueLength() > 20
                 ) {
                   await new Sleep(0)
                 }
