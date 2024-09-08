@@ -1,0 +1,9 @@
+<div class="avplayer-ui-control-play-rate">
+  <div class="avplayer-ui-control-play-rate-value">{{language.CONTROL_PLAYRATE}}</div>
+  <div class="libmedia-ui-selector">
+   {{#each list:i}}
+      <div key="{{this}}" class="libmedia-ui-selector-item {{#if index === i}}active{{/if}}" on-click="change(i)">{{this}}x</div>
+    {{/each}}
+  </div>
+  <style>{{{style}}}</style>
+</div>

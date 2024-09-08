@@ -33,6 +33,7 @@ import { getAVPacketSideData } from 'avutil/util/avpacket'
 import { getHardwarePreference } from '../function/getHardwarePreference'
 import { BitFormat } from 'avformat/codecs/h264'
 import avpacket2EncodedVideoChunk from 'avutil/function/avpacket2EncodedVideoChunk'
+import * as logger from 'common/util/logger'
 
 export type WebVideoDecoderOptions = {
   onReceiveFrame: (frame: VideoFrame) => void
@@ -195,7 +196,7 @@ export default class WebVideoDecoder {
     const key = avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
 
     if (this.keyframeRequire && !key) {
-      return
+      return 0
     }
 
     const timestamp = static_cast<double>(avpacket.pts)
@@ -219,6 +220,7 @@ export default class WebVideoDecoder {
       this.decoder.decode(videoChunk)
     }
     catch (error) {
+      logger.error(`decode error, ${error}`)
       return -1
     }
 

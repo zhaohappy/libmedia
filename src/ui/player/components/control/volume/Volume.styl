@@ -1,0 +1,60 @@
+.avplayer-ui-control-volume {
+  width: 100%
+  height: 100%
+  display: flex
+  align-items: center
+  justify-content: center
+
+  &:hover {
+    svg {
+      animation: icon_scale .4s ease both
+    }
+  }
+
+  &:hover {
+    .avplayer-ui-volume-panel {
+      opacity: 1
+      pointer-events: auto
+    }
+  }
+
+  .avplayer-ui-volume-icon {
+    justify-content: center
+    align-items: center
+    display: flex
+  }
+
+  .avplayer-ui-volume-panel {
+    text-align: center
+    opacity: 0
+    pointer-events: none
+    left: 0
+    right: 0
+    bottom: var(--libmedia-ui-control-height)
+    width: var(--libmedia-ui-control-height)
+    height: var(--libmedia-ui-volume-height)
+    transition: all var(--libmedia-ui-transition-duration) ease
+    justify-content: center
+    align-items: center
+    padding: 0 5px
+    font-size: 12px
+    display: flex
+    position: absolute
+
+    .avplayer-ui-volume-inner {
+      border-radius: var(--libmedia-ui-border-radius)
+      background-color: var(--libmedia-ui-widget-background)
+      flex-direction: column
+      align-items: center
+      gap: 10px
+      width: 100%
+      height: 100%
+      padding: 10px 0 12px
+      display: flex
+
+      .libmedia-ui-slider {
+        flex: 1
+      }
+    }
+  }
+}

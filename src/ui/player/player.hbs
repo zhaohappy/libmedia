@@ -1,0 +1,70 @@
+<div id="avplayer-ui-container" class="avplayer-ui-container" data-bar-show="{{showBar ? 1 : 0}}" on-mousemove="mousemove()">
+  <div class="avplayer-ui-player" on-click="playClick()"></div>
+  <div class="avplayer-ui-header">
+    <span class="avplayer-ui-title">{{title}}</span>
+  </div>
+  <div class="avplayer-ui-footer">
+    <div class="avplayer-ui-progress-container">
+      <Progress player="{{player}}" indicatorUrl="{{indicatorUrl}}" />
+    </div>
+    <div class="avplayer-ui-control">
+      <div class="avplayer-ui-footer-left">
+        <div class="avplayer-ui-control-item">
+          <Play player="{{player}}" language="{{language}}" model="played" ref="play" />
+        </div>
+        <div class="avplayer-ui-control-item">
+          <Volume player="{{player}}" language="{{language}}" />
+        </div>
+        <div class="avplayer-ui-control-item">
+          <Loop player="{{player}}" language="{{language}}" />
+        </div>
+        <div class="avplayer-ui-control-item">
+          <Timer player="{{player}}" language="{{language}}" />
+        </div>
+      </div>
+      <div class="avplayer-ui-footer-right">
+        <div class="avplayer-ui-control-item">
+          <VideoTrack player="{{player}}" language="{{language}}" />
+        </div>
+        <div class="avplayer-ui-control-item">
+          <AudioTrack player="{{player}}" language="{{language}}" />
+        </div>
+        <div class="avplayer-ui-control-item">
+          <SubtitleTrack player="{{player}}" language="{{language}}" />
+        </div>
+        <div class="avplayer-ui-control-item">
+          <Playrate player="{{player}}" language="{{language}}" />
+        </div>
+        <div class="avplayer-ui-control-item">
+          <Setting player="{{player}}" language="{{language}}" />
+        </div>
+        <div class="avplayer-ui-control-item">
+          <Pip player="{{player}}" language="{{language}}" />
+        </div>
+        <div class="avplayer-ui-control-item">
+          <Fullscreen player="{{player}}" language="{{language}}" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="avplayer-ui-folder-container" data-fold="{{folded ? 1 : 0}}">
+    <Folder player="{{player}}" language="{{language}}" />
+    <div class="avplayer-ui-folder-toggle hint--right" data-hint="{{ folded ? language.TIP_UNFOLD : language.TIP_FOLD}}" on-click="toggleFold()">
+      <svg viewBox="0 0 24 24">
+        <path d="m10 17 5-5-5-5v10z"></path>
+      </svg>
+    </div>
+  </div>
+  <div class="avplayer-ui-mask">
+    <div class="avplayer-ui-state" data-show="{{(!played || error) ? 1 : 0}}">
+      {{#if error}}
+        <img src="{{errorStateUrl}}">
+      {{else if !played}}
+        <img src="{{pauseStateUrl}}" on-click="playClick()">
+      {{/if}}
+    </div>
+  </div>
+  <style>
+    {{{style}}}
+  </style>
+</div>

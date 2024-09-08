@@ -1,0 +1,428 @@
+[class*="hint--"] {
+  font-style: normal
+  position: relative
+
+  &:before,
+  &:after {
+    visibility: hidden
+    opacity: 0
+    z-index: 1000000
+    pointer-events: none
+    transition: all .3s
+    position: absolute
+    transform: translate3d(0, 0, 0)
+  }
+
+  &:hover {
+    &:before,
+    &:after {
+      visibility: visible
+      opacity: 1
+      transition-delay: .1s
+    }
+  }
+
+  &:before {
+    content: ""
+    z-index: 1000001
+    background: none
+    border: 6px solid #0000
+    position: absolute
+  }
+
+  &:after {
+    color: var(--libmedia-ui-tip-font-color)
+    white-space: nowrap
+    background: var(--libmedia-ui-tip-background)
+    padding: 8px 10px
+    font-size: 12px
+    line-height: 12px
+  }
+}
+
+[class*="hint--"][data-hint]:after {
+  content: attr(data-hint)
+}
+  
+[data-hint=""]:before, [data-hint=""]:after {
+  display: none !important
+}
+  
+.hint--top-left:before, .hint--top-right:before, .hint--top:before {
+  border-top-color: var(--libmedia-ui-tip-background)
+}
+  
+.hint--bottom-left:before, .hint--bottom-right:before, .hint--bottom:before {
+  border-bottom-color: var(--libmedia-ui-tip-background)
+}
+  
+.hint--left:before {
+  border-left-color: var(--libmedia-ui-tip-background)
+}
+  
+.hint--right:before {
+  border-right-color: var(--libmedia-ui-tip-background)
+}
+  
+.hint--top:before {
+  margin-bottom: -11px
+}
+  
+.hint--top:before, .hint--top:after {
+  bottom: 100%
+  left: 50%
+}
+  
+.hint--top:before {
+  left: calc(50% - 6px)
+}
+  
+.hint--top:after {
+  transform: translateX(-50%)
+}
+  
+.hint--top:hover:before {
+  transform: translateY(-8px)
+}
+  
+.hint--top:hover:after {
+  transform: translateX(-50%)translateY(-8px)
+}
+  
+.hint--bottom:before {
+  margin-top: -11px
+}
+  
+.hint--bottom:before, .hint--bottom:after {
+  top: 100%
+  left: 50%
+}
+  
+.hint--bottom:before {
+  left: calc(50% - 6px)
+}
+  
+.hint--bottom:after {
+  transform: translateX(-50%)
+}
+  
+.hint--bottom:hover:before {
+  transform: translateY(8px)
+}
+  
+.hint--bottom:hover:after {
+  transform: translateX(-50%)translateY(8px)
+}
+  
+.hint--right:before {
+  margin-bottom: -6px
+  margin-left: -11px
+}
+  
+.hint--right:after {
+  margin-bottom: -14px
+}
+  
+.hint--right:before, .hint--right:after {
+  bottom: 50%
+  left: 100%
+}
+  
+.hint--right:hover:before, .hint--right:hover:after {
+  transform: translateX(8px)
+}
+  
+.hint--left:before {
+  margin-bottom: -6px
+  margin-right: -11px
+}
+  
+.hint--left:after {
+  margin-bottom: -14px
+}
+  
+.hint--left:before, .hint--left:after {
+  bottom: 50%
+  right: 100%
+}
+  
+.hint--left:hover:before, .hint--left:hover:after {
+  transform: translateX(-8px)
+}
+  
+.hint--top-left:before {
+  margin-bottom: -11px
+}
+  
+.hint--top-left:before, .hint--top-left:after {
+  bottom: 100%
+  left: 50%
+}
+  
+.hint--top-left:before {
+  left: calc(50% - 6px)
+}
+  
+.hint--top-left:after {
+  margin-left: 12px
+  transform: translateX(-100%)
+}
+
+.hint--top-left:hover:before {
+  transform: translateY(-8px)
+}
+
+.hint--top-left:hover:after {
+  transform: translateX(-100%)translateY(-8px)
+}
+
+.hint--top-right:before {
+  margin-bottom: -11px
+}
+
+.hint--top-right:before, .hint--top-right:after {
+  bottom: 100%
+  left: 50%
+}
+
+.hint--top-right:before {
+  left: calc(50% - 6px)
+}
+
+.hint--top-right:after {
+  margin-left: -12px
+  transform: translateX(0)
+}
+
+.hint--top-right:hover:before, .hint--top-right:hover:after {
+  transform: translateY(-8px)
+}
+
+.hint--bottom-left:before {
+  margin-top: -11px
+}
+
+.hint--bottom-left:before, .hint--bottom-left:after {
+  top: 100%
+  left: 50%
+}
+
+.hint--bottom-left:before {
+  left: calc(50% - 6px)
+}
+
+.hint--bottom-left:after {
+  margin-left: 12px
+  transform: translateX(-100%)
+}
+
+.hint--bottom-left:hover:before {
+  transform: translateY(8px)
+}
+
+.hint--bottom-left:hover:after {
+  transform: translateX(-100%)translateY(8px)
+}
+
+.hint--bottom-right:before {
+  margin-top: -11px
+}
+
+.hint--bottom-right:before, .hint--bottom-right:after {
+  top: 100%
+  left: 50%
+}
+
+.hint--bottom-right:before {
+  left: calc(50% - 6px)
+}
+
+.hint--bottom-right:after {
+  margin-left: -12px
+  transform: translateX(0)
+}
+
+.hint--bottom-right:hover:before, .hint--bottom-right:hover:after {
+  transform: translateY(8px)
+}
+
+.hint--small:after, .hint--medium:after, .hint--large:after {
+  white-space: normal
+  word-wrap: break-word
+  line-height: 1.4em
+}
+
+.hint--small:after {
+  width: 80px
+}
+
+.hint--medium:after {
+  width: 150px
+}
+
+.hint--large:after {
+  width: 300px
+}
+
+[class*="hint--"]:after {
+  text-shadow: 0 -1px #000
+  box-shadow: 4px 4px 8px #0000004d
+}
+
+.hint--error:after {
+  text-shadow: 0 -1px #592726
+  background-color: #b34e4d
+}
+
+.hint--error.hint--top-left:before, .hint--error.hint--top-right:before, .hint--error.hint--top:before {
+  border-top-color: #b34e4d
+}
+
+.hint--error.hint--bottom-left:before, .hint--error.hint--bottom-right:before, .hint--error.hint--bottom:before {
+  border-bottom-color: #b34e4d
+}
+
+.hint--error.hint--left:before {
+  border-left-color: #b34e4d
+}
+
+.hint--error.hint--right:before {
+  border-right-color: #b34e4d
+}
+
+.hint--warning:after {
+  text-shadow: 0 -1px #6c5328
+  background-color: #c09854
+}
+
+.hint--warning.hint--top-left:before, .hint--warning.hint--top-right:before, .hint--warning.hint--top:before {
+  border-top-color: #c09854
+}
+
+.hint--warning.hint--bottom-left:before, .hint--warning.hint--bottom-right:before, .hint--warning.hint--bottom:before {
+  border-bottom-color: #c09854
+}
+
+.hint--warning.hint--left:before {
+  border-left-color: #c09854
+}
+
+.hint--warning.hint--right:before {
+  border-right-color: #c09854
+}
+
+.hint--info:after {
+  text-shadow: 0 -1px #1a3c4d
+  background-color: #3986ac
+}
+
+.hint--info.hint--top-left:before, .hint--info.hint--top-right:before, .hint--info.hint--top:before {
+  border-top-color: #3986ac
+}
+
+.hint--info.hint--bottom-left:before, .hint--info.hint--bottom-right:before, .hint--info.hint--bottom:before {
+  border-bottom-color: #3986ac
+}
+
+.hint--info.hint--left:before {
+  border-left-color: #3986ac
+}
+
+.hint--info.hint--right:before {
+  border-right-color: #3986ac
+}
+
+.hint--success:after {
+  text-shadow: 0 -1px #1a321a
+  background-color: #458746
+}
+
+.hint--success.hint--top-left:before, .hint--success.hint--top-right:before, .hint--success.hint--top:before {
+  border-top-color: #458746
+}
+
+.hint--success.hint--bottom-left:before, .hint--success.hint--bottom-right:before, .hint--success.hint--bottom:before {
+  border-bottom-color: #458746
+}
+
+.hint--success.hint--left:before {
+  border-left-color: #458746
+}
+
+.hint--success.hint--right:before {
+  border-right-color: #458746
+}
+
+.hint--always:after, .hint--always:before {
+  opacity: 1
+  visibility: visible
+}
+
+.hint--always.hint--top:before {
+  transform: translateY(-8px)
+}
+
+.hint--always.hint--top:after {
+  transform: translateX(-50%)translateY(-8px)
+}
+
+.hint--always.hint--top-left:before {
+  transform: translateY(-8px)
+}
+
+.hint--always.hint--top-left:after {
+  transform: translateX(-100%)translateY(-8px)
+}
+
+.hint--always.hint--top-right:before, .hint--always.hint--top-right:after {
+  transform: translateY(-8px)
+}
+
+.hint--always.hint--bottom:before {
+  transform: translateY(8px)
+}
+
+.hint--always.hint--bottom:after {
+  transform: translateX(-50%)translateY(8px)
+}
+
+.hint--always.hint--bottom-left:before {
+  transform: translateY(8px)
+}
+
+.hint--always.hint--bottom-left:after {
+  transform: translateX(-100%)translateY(8px)
+}
+
+.hint--always.hint--bottom-right:before, .hint--always.hint--bottom-right:after {
+  transform: translateY(8px)
+}
+
+.hint--always.hint--left:before, .hint--always.hint--left:after {
+  transform: translateX(-8px)
+}
+
+.hint--always.hint--right:before, .hint--always.hint--right:after {
+  transform: translateX(8px)
+}
+
+.hint--rounded:after {
+  border-radius: 4px
+}
+
+.hint--no-animate:before, .hint--no-animate:after {
+  transition-duration: 0s
+}
+
+.hint--bounce:before, .hint--bounce:after {
+  transition: opacity .3s, visibility .3s, transform .3s cubic-bezier(.71, 1.7, .77, 1.24)
+}
+
+.hint--no-shadow:before, .hint--no-shadow:after {
+  text-shadow: initial
+  box-shadow: initial
+}
+
+.hint--no-arrow:before {
+  display: none
+}

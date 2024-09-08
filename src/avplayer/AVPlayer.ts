@@ -859,6 +859,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     await AVPlayer.DemuxerThread.startDemux(taskId, false, 10)
     this.externalSubtitleTasks.push(externalSubtitleTask)
 
+    this.fire(eventType.STREAM_UPDATE)
+
     return 0
   }
 
@@ -879,6 +881,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.ioloader2DemuxerChannel = createMessageChannel()
 
     memset(addressof(this.stats), 0, sizeof(Stats))
+    this.externalSubtitleTasks.length = 0
 
     await AVPlayer.startDemuxPipeline()
 
@@ -1186,7 +1189,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (this.status === AVPlayerStatus.PAUSED) {
 
       // 逐帧播放之后视频与音频相差可能过大，这里同步一下
-      if (this.selectedAudioStream && this.selectedVideoStream && (this.stats.videoCurrentTime - this.stats.audioCurrentTime > 1000n)) {
+      if (this.selectedAudioStream && this.selectedVideoStream && (this.stats.videoCurrentTime - this.stats.audioCurrentTime > 400n)) {
         await AVPlayer.AudioRenderThread.syncSeekTime(this.taskId, this.stats.videoCurrentTime)
       }
 
@@ -2018,7 +2021,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await AVPlayer.DemuxerThread.unregisterTask(this.externalSubtitleTasks[i].taskId)
       await AVPlayer.IOThread.unregisterTask(this.externalSubtitleTasks[i].taskId)
     }
-    this.externalSubtitleTasks.length = 0
 
     if (this.subtitleRender) {
       this.subtitleRender.destroy()
@@ -2054,6 +2056,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.videoDecoder2VideoRenderChannel = null
     this.audioDecoder2AudioRenderChannel = null
     this.audioRender2AudioWorkletChannel = null
+
+    this.selectedAudioStream = null
+    this.selectedVideoStream = null
+    this.selectedSubtitleStream = null
+    this.lastSelectedInnerSubtitleStreamIndex = -1
 
     this.statsController.stop()
     if (this.jitterBufferController) {
@@ -2361,18 +2368,57 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
+   * 获取 status 状态
+   * 
+   * @returns 
+   */
+  public getStatus() {
+    return this.status
+  }
+
+  public hasAudio() {
+    return !!this.selectedAudioStream
+  }
+
+  public hasVideo() {
+    return !!this.selectedVideoStream
+  }
+
+  public hasSubtitle() {
+    return !!this.selectedSubtitleStream
+  }
+
+  public getSource() {
+    return this.source
+  }
+
+  public getExternalSubtitle() {
+    return this.externalSubtitleTasks.map((task) => {
+      return {
+        source: task.source,
+        lang: task.lang,
+        title: task.title
+      }
+    })
+  }
+
+  public getOptions() {
+    return this.options
+  }
+
+  /**
    * 设置播放视频轨道
    * 
    * @param id 流 id，dash 传 getVideoList 列表中的 index
    * @returns 
    */
-  public async selectVideo(index: number) {
+  public async selectVideo(id: number) {
     if (defined(ENABLE_PROTOCOL_HLS) && this.isHls() || defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
-      logger.info(`call IOThread selectVideo, index: ${index}, taskId: ${this.taskId}`)
-      return AVPlayer.IOThread?.selectVideo(this.taskId, index)
+      logger.info(`call IOThread selectVideo, index: ${id}, taskId: ${this.taskId}`)
+      return AVPlayer.IOThread?.selectVideo(this.taskId, id)
     }
     else {
-      const stream = this.formatContext.streams.find((stream) => stream.id === index)
+      const stream = this.formatContext.streams.find((stream) => stream.id === id)
       if (this.selectedVideoStream && stream && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO && stream !== this.selectedVideoStream) {
 
         if (this.status === AVPlayerStatus.CHANGING) {
@@ -2415,7 +2461,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.id, this.selectedVideoStream.id])
       }
       else {
-        logger.error(`call selectVideo failed, index: ${index}, taskId: ${this.taskId}`)
+        logger.error(`call selectVideo failed, id: ${id}, taskId: ${this.taskId}`)
       }
     }
   }
@@ -2426,13 +2472,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @param id 流 id，dash 传 getAudioList 列表中的 index
    * @returns 
    */
-  public async selectAudio(index: number) {
+  public async selectAudio(id: number) {
     if (defined(ENABLE_PROTOCOL_HLS) && this.isHls() || defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
-      logger.info(`call IOThread selectAudio, index: ${index}, taskId: ${this.taskId}`)
-      return AVPlayer.IOThread?.selectAudio(this.taskId, index)
+      logger.info(`call IOThread selectAudio, index: ${id}, taskId: ${this.taskId}`)
+      return AVPlayer.IOThread?.selectAudio(this.taskId, id)
     }
     else {
-      const stream = this.formatContext.streams.find((stream) => stream.id === index)
+      const stream = this.formatContext.streams.find((stream) => stream.id === id)
       if (this.selectedAudioStream && stream && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO && stream !== this.selectedAudioStream) {
         if (this.status === AVPlayerStatus.CHANGING) {
           logger.warn(`player is changing now, taskId: ${this.taskId}`)
@@ -2485,7 +2531,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         
       }
       else {
-        logger.error(`call selectAudio failed, index: ${index}, taskId: ${this.taskId}`)
+        logger.error(`call selectAudio failed, id: ${id}, taskId: ${this.taskId}`)
       }
     }
   }
@@ -2496,10 +2542,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @param id 流 id，dash 传 getSubtitleList 列表中的 index
    * @returns 
    */
-  public async selectSubtitle(index: number) {
+  public async selectSubtitle(id: number) {
     if (defined(ENABLE_PROTOCOL_HLS) && this.isHls() || defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
-      logger.info(`call IOThread selectSubtitle, index: ${index}, taskId: ${this.taskId}`)
-      await AVPlayer.IOThread?.selectSubtitle(this.taskId, index)
+      logger.info(`call IOThread selectSubtitle, index: ${id}, taskId: ${this.taskId}`)
+      await AVPlayer.IOThread?.selectSubtitle(this.taskId, id)
       if (this.subtitleTaskId) {
         await AVPlayer.DemuxerThread.seek(this.subtitleTaskId, this.currentTime, AVSeekFlags.TIMESTAMP)
       }
@@ -2509,7 +2555,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
     }
     else {
-      const stream = this.formatContext.streams.find((stream) => stream.id === index)
+      const stream = this.formatContext.streams.find((stream) => stream.id === id)
       if (this.selectedSubtitleStream && stream && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE && stream !== this.selectedSubtitleStream) {
         if (this.status === AVPlayerStatus.CHANGING) {
           logger.warn(`player is changing now, taskId: ${this.taskId}`)
@@ -2559,7 +2605,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.id, this.selectedSubtitleStream.id])
       }
       else {
-        logger.error(`call selectSubtitle failed, index: ${index}, taskId: ${this.taskId}`)
+        logger.error(`call selectSubtitle failed, id: ${id}, taskId: ${this.taskId}`)
       }
     }
   }
@@ -2962,13 +3008,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   public on(event: typeof eventType.CHANGED, listener: typeof player_event_changed, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.RESUME, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.TIME, listener: typeof player_event_time, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.STREAM_UPDATE,listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
 
   public on(event: typeof eventType.FIRST_AUDIO_RENDERED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.FIRST_VIDEO_RENDERED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
 
   public on(event: typeof eventType.ERROR, listener: typeof player_event_error, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.TIMEOUT, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
-
+  public on(event: string, listener: Fn, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: string, listener: Fn, options: Partial<EmitterOptions> = {}) {
     super.on(event, object.extend({
       fn: listener

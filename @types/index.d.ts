@@ -13,6 +13,16 @@ declare module '*.frag' {
   export default content
 }
 
+declare module '*.hbs' {
+  const content: string
+  export default content
+}
+
+declare module '*.styl' {
+  const content: string
+  export default content
+}
+
 declare const ENABLE_LOG_TRACE: boolean
 
 declare const ENABLE_PROTOCOL_HLS: boolean

@@ -1,0 +1,34 @@
+.libmedia-ui-selector {
+  text-align: center
+  border-radius: var(--libmedia-ui-border-radius)
+  opacity: 0;
+  pointer-events: none
+  bottom: var(--libmedia-ui-control-height)
+  max-height: var(--libmedia-ui-selector-max-height)
+  background-color: var(--libmedia-ui-widget-background)
+  transition: all var(--libmedia-ui-transition-duration) ease
+  flex-direction: column
+  align-items: center
+  display: flex
+  position: absolute
+  overflow: hidden auto
+
+  .libmedia-ui-selector-item {
+    flex-shrink: 0
+    justify-content: center
+    align-items: center
+    width: 100%
+    padding: 10px 15px
+    line-height: 1
+    display: flex
+    cursor: pointer
+
+    &.active {
+      color: var(--libmedia-ui-theme)
+    }
+
+    &:hover {
+      background-color: var(--libmedia-ui-widget-hover-background)
+    }
+  }
+}

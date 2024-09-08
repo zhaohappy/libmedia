@@ -40,6 +40,32 @@ export const enum IOLoaderStatus {
   COMPLETE
 }
 
+export interface IOLoaderVideoStreamInfo {
+  list: {
+    width: number
+    height: number
+    frameRate: number
+    codecs: string
+  }[]
+  selectedIndex: number
+}
+
+export interface IOLoaderAudioStreamInfo {
+  list: {
+    lang: string
+    codecs: string
+  }[]
+  selectedIndex: number
+}
+
+export interface IOLoaderSubtitleStreamInfo {
+  list: {
+    lang: string
+    codecs: string
+  }[]
+  selectedIndex: number
+}
+
 export type IOLoaderOptions = {
   isLive?: boolean
   preload?: number

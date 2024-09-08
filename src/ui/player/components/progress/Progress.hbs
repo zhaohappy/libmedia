@@ -1,0 +1,22 @@
+<div class="avplayer-ui-progress">
+  <div class="avplayer-ui-progress-inner" ref="slider" on-mouseenter="hoverEnter()" on-mousemove="hoverMove()" on-mouseleave="hoverLeave()" on-click="hoverClick()">
+    <div class="avplayer-ui-progress-hover" style="width: {{hoverWidth}}%;"></div>
+    <div class="avplayer-ui-progress-loaded" style="width: {{loadedWidth}}%;"></div>
+    <div class="avplayer-ui-progress-played" style="width: {{playedWidth}}%;"></div>
+    <div class="avplayer-ui-progress-chapter">
+      {{#each chapters}}
+        <span key="{{this.text}}" class="avplayer-ui-progress-chapter-item" style="left: {{left}}%;" on-mouseenter="chapterEnter(this)" on-mouseleave="chapterLeave(this)" on-click="chapterClick(this)"></span>
+      {{/each}}
+    </div>
+    {{#if indicatorUrl}}
+    <div class="avplayer-ui-progress-indicator" on-mousedown="indicatorDown()" style="left: {{playedWidth}}%;">
+      <i class="avplayer-ui-icon-indicator">
+        <img width="{{indicatorSize}}" height="{{indicatorSize}}" src="{{indicatorUrl}}" draggable="false">
+      </i>
+    </div>
+    {{/if}}
+    <div class="avplayer-ui-progress-tip" style="left: {{hoverWidth}}%; display: {{showTip ? 'block' : 'none'}};">{{hoverChapter || formatTime(hoverTime)}}</div>
+  </div>
+  <div class="libmedia-ui-progress-thumb"></div>
+  <style>{{{style}}}</style>
+</div>

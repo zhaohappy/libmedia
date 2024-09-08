@@ -35,6 +35,7 @@ import encodedAudioChunk2AVPacket from 'avutil/function/encodedAudioChunk2AVPack
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
 import isPointer from 'cheap/std/function/isPointer'
+import * as logger from 'common/util/logger'
 
 export type WebAudioEncoderOptions = {
   onReceivePacket: (avpacket: pointer<AVPacket>) => void
@@ -159,6 +160,7 @@ export default class WebAudioEncoder {
       return 0
     }
     catch (error) {
+      logger.error(`encode error, ${error}`)
       return -1
     }
   }

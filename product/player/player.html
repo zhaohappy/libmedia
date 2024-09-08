@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="origin-trial" content="AvVVD0vRFcVG5+Z0vn8wrVPWUt98Q6/e73ZIicw+Noko1IwIrkB1siQlxc+IdvM0nISlKulUqzx2QflMi1YgFA8AAABieyJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0OjkwMDAiLCJmZWF0dXJlIjoiV2ViQXNzZW1ibHlKU1Byb21pc2VJbnRlZ3JhdGlvbiIsImV4cGlyeSI6MTczOTkyMzE5OX0=">
+    <title>libmedia-player</title>
+    <style>
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+      }
+      #app {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      .avplayer-ui-container {
+        --libmedia-ui-background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+      }
+    </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.CHEAP_DISABLE_THREAD = false
+  </script>
+  <script src="../../test/sw.js"></script>
+  <script src="../../dist/cheap-polyfill.js"></script>
+  <script src="../../dist/avplayer-ui/avplayer.js"></script>
+
+  <script>
+
+    let supportAtomic = false
+    let supportSimd = false
+
+    const player = new AVPlayer({
+      container: document.querySelector('#app'),
+      getWasm: (type, codecId) => {
+        switch (type) {
+          case 'decoder': {
+
+            if (codecId >= 65536 && codecId <= 65572) {
+              return `../../dist/decode/pcm${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+            }
+
+            switch (codecId) {
+              // H264
+              case 27:
+                return `../../dist/decode/h264${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // theora
+              case 30:
+                return `../../dist/decode/theora${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // AAC
+              case 86018:
+                return `../../dist/decode/aac${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // ac3
+              case 86019:
+                return `../../dist/decode/ac3${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // eac3
+              case 86056:
+                return `../../dist/decode/eac3${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // dts
+              case 86020:
+                return `../../dist/decode/dca${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // MP3
+              case 86017:
+                return `../../dist/decode/mp3${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // HEVC
+              case 173:
+                return `../../dist/decode/hevc${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // VVC
+              case 196:
+                return `../../dist/decode/vvc${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // Mpeg4
+              case 12:
+                return `../../dist/decode/mpeg4${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // AV1
+              case 225:
+                return `../../dist/decode/av1${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // Speex
+              case 86051:
+                return `../../dist/decode/speex${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // Opus
+              case 86076:
+                return `../../dist/decode/opus${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // flac
+              case 86028:
+                return `../../dist/decode/flac${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // vorbis
+              case 86021:
+                return `../../dist/decode/vorbis${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // vp8
+              case 139:
+                return `../../dist/decode/vp8${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              // vp9
+              case 167:
+                return `../../dist/decode/vp9${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+              default:
+                return null
+            }
+            break
+          }
+          case 'resampler':
+            return `../../dist/resample/resample${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+          case 'stretchpitcher':
+            return `../../dist/stretchpitch/stretchpitch${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        }
+      },
+      enableHardware: true,
+      jitterBufferMax: 4,
+      jitterBufferMin: 1,
+      lowLatency: true,
+      indicatorUrl: '../../src/ui/player/img/indicator.svg',
+      pauseStateUrl: '../../src/ui/player/img/state.svg',
+      errorStateUrl: '../../src/ui/player/img/error.svg',
+    })
+
+    function testSupportWasmAtomic() {
+      const asm = 'AGFzbQEAAAABBgFgAX8BfwISAQNlbnYGbWVtb3J5AgMBgIACAwIBAAcJAQVsb2FkOAAACgoBCAAgAP4SAAAL'
+      const binaryData = atob(asm)
+      const uint8Array = new Uint8Array(binaryData.length)
+      for (let i = 0; i < binaryData.length; i++) {
+        uint8Array[i] = binaryData.charCodeAt(i)
+      }
+
+      const instance = WebAssembly.compile(uint8Array).then(() => {
+        console.log('wasm atomic support')
+        supportAtomic = true
+      }, () => {
+        supportAtomic = false
+        console.log('wasm atomic not support')
+      })
+    }
+
+    function testSupportWasmSimd() {
+      const asm = 'AGFzbQEAAAABBQFgAAF7AhIBA2VudgZtZW1vcnkCAwGAgAIDAgEACgoBCABBAP0ABAAL'
+      const binaryData = atob(asm)
+      const uint8Array = new Uint8Array(binaryData.length)
+      for (let i = 0; i < binaryData.length; i++) {
+        uint8Array[i] = binaryData.charCodeAt(i)
+      }
+
+      const instance = WebAssembly.compile(uint8Array).then(() => {
+        console.log('wasm simd support')
+        supportSimd = true
+      }, () => {
+        supportSimd = false
+        console.log('wasm simd not support')
+      })
+    }
+
+    testSupportWasmAtomic()
+    testSupportWasmSimd()
+  </script>
+</body>
+</html>

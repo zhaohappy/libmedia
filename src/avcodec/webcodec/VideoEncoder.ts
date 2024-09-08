@@ -40,6 +40,7 @@ import { Rational } from 'avutil/struct/rational'
 import encodedVideoChunk2AVPacket from 'avutil/function/encodedVideoChunk2AVPacket'
 import { mapColorPrimaries, mapColorSpace, mapColorTrc } from 'avutil/function/videoFrame2AVFrame'
 import browser from 'common/util/browser'
+import * as logger from 'common/util/logger'
 
 import * as av1 from 'avformat/codecs/av1'
 import * as vp9 from 'avformat/codecs/vp9'
@@ -264,6 +265,7 @@ export default class WebVideoEncoder {
       return 0
     }
     catch (error) {
+      logger.error(`encode error, ${error}`)
       frame.close()
       return -1
     }

@@ -24,7 +24,7 @@
  */
 
 import Sleep from 'common/timer/Sleep'
-import IOLoader, { IOLoaderStatus, Range } from './IOLoader'
+import IOLoader, { IOLoaderStatus, IOLoaderVideoStreamInfo, Range } from './IOLoader'
 import * as object from 'common/util/object'
 import { IOError } from 'common/io/error'
 import { Uint8ArrayInterface } from 'common/io/interface'
@@ -457,13 +457,14 @@ export default class HlsIOLoader extends IOLoader {
     return this.mediaPlayList.duration
   }
 
-  public getVideoList() {
+  public getVideoList(): IOLoaderVideoStreamInfo {
     return {
       list: this.masterPlaylist?.variants.map((variant) => {
         return {
           width: variant.resolution?.width ?? 0,
           height: variant.resolution?.height ?? 0,
-          frameRate: variant.frameRate ?? 0
+          frameRate: variant.frameRate ?? 0,
+          codecs: variant.codecs
         }
       }) ?? [],
       selectedIndex: 0

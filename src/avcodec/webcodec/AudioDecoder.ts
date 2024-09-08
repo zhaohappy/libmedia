@@ -30,6 +30,7 @@ import { mapUint8Array } from 'cheap/std/memory'
 import AVPacket from 'avutil/struct/avpacket'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
 import avpacket2EncodedAudioChunk from 'avutil/function/avpacket2EncodedAudioChunk'
+import * as logger from 'common/util/logger'
 
 export type WebAudioDecoderOptions = {
   onReceiveFrame: (frame: AudioData) => void
@@ -151,6 +152,7 @@ export default class WebAudioDecoder {
       this.decoder.decode(audioChunk)
     }
     catch (error) {
+      logger.error(`decode error, ${error}`)
       return -1
     }
 

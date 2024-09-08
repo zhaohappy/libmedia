@@ -1,0 +1,12 @@
+<div class="avplayer-ui-control-play hint--top" data-hint="{{played ? language.TIP_PAUSE : language.TIP_PLAY}}" on-click="playClick()">
+  {{#if played}}
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+    <path d="M7 3a2 2 0 0 0-2 2v12a2 2 0 1 0 4 0V5a2 2 0 0 0-2-2zM15 3a2 2 0 0 0-2 2v12a2 2 0 1 0 4 0V5a2 2 0 0 0-2-2z"></path>
+  </svg>
+  {{else}}
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+    <path d="M17.982 9.275L8.06 3.27A2.013 2.013 0 0 0 5 4.994v12.011a2.017 2.017 0 0 0 3.06 1.725l9.922-6.005a2.017 2.017 0 0 0 0-3.45z"></path>
+  </svg>
+  {{/if}}
+  <style>{{{style}}}</style>
+</div>

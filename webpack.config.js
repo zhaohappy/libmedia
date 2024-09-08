@@ -19,16 +19,31 @@ module.exports = (env) => {
     outputPath = path.resolve(__dirname, './src/cheap/build');
   }
   else if (env.avplayer) {
-    entry = path.resolve(__dirname, './src/avplayer/AVPlayer.ts');
-    output = `avplayer.js`;
-    library = 'AVPlayer';
-    libraryExport = 'default';
-    if (env.legacy) {
-      outputPath += '/avplayer-legacy';
+    if (env.ui) {
+      entry = path.resolve(__dirname, './src/ui/player/player.ts');
+      output = `avplayer.js`;
+      library = 'AVPlayer';
+      libraryExport = 'default';
+      if (env.legacy) {
+        outputPath += '/avplayer-ui-legacy';
+      }
+      else {
+        outputPath += '/avplayer-ui';
+      }
     }
     else {
-      outputPath += '/avplayer';
+      entry = path.resolve(__dirname, './src/avplayer/AVPlayer.ts');
+      output = `avplayer.js`;
+      library = 'AVPlayer';
+      libraryExport = 'default';
+      if (env.legacy) {
+        outputPath += '/avplayer-legacy';
+      }
+      else {
+        outputPath += '/avplayer';
+      }
     }
+    
   }
   else if (env.avtranscoder) {
     entry = path.resolve(__dirname, './src/avtranscoder/AVTranscoder.ts');
@@ -192,7 +207,30 @@ module.exports = (env) => {
           use: [
             'raw-loader'
           ]
-        }
+        },
+        {
+          test: /\.styl(us)?$/,
+          use: [
+            {
+              loader: path.resolve(__dirname, './build/webpack/loader/stylus-loader.js'),
+              options: {
+                paths: [
+                  __dirname,
+                  path.join(__dirname, './demo')
+                ],
+                release: true
+              }
+            }
+          ]
+        },
+        {
+          test: /\.hbs$/,
+          use: [
+            {
+              loader: path.resolve(__dirname, './build/webpack/loader/hbs-loader.js')
+            }
+          ]
+        },
       ],
     },
     plugins: []

@@ -28,7 +28,7 @@ import IPCPort from 'common/network/IPCPort'
 import LoopTask from 'common/timer/LoopTask'
 import * as logger from 'common/util/logger'
 import AssRender from './AssRender'
-import {  AVSubtitleType } from 'avutil/struct/avsubtitle'
+import { AVSubtitleType } from 'avutil/struct/avsubtitle'
 import { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
 import { IOError } from 'common/io/error'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
@@ -43,12 +43,13 @@ import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 import * as object from 'common/util/object'
+import { destroyAVPacket } from 'avutil/util/avpacket'
 
 export interface SubtitleRenderOptions {
   delay?: int64
   getCurrentTime: () => int64
-  avpacketList: pointer<List<pointer<AVPacketRef>>>
-  avpacketListMutex: pointer<Mutex>
+  avpacketList?: pointer<List<pointer<AVPacketRef>>>
+  avpacketListMutex?: pointer<Mutex>
   codecpar: pointer<AVCodecParameters>
   dom: HTMLElement
   container: HTMLElement
@@ -156,7 +157,9 @@ export default class SubtitleRender {
     this.demuxer2SubtitleRenderChannels = new Map()
     this.leftPorts = new Map()
 
-    this.avpacketPool = new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex)
+    if (options.avpacketList) {
+      this.avpacketPool = new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex)
+    }
 
     this.createDecoder()
     
@@ -296,14 +299,24 @@ export default class SubtitleRender {
       avpacket.pts = avRescaleQ(avpacket.pts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
       avpacket.duration = avRescaleQ(avpacket.duration, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
       const ret = this.decoder.decode(avpacket)
-      this.avpacketPool.release(avpacket)
+      if (this.avpacketPool) {
+        this.avpacketPool.release(avpacket)
+      }
+      else {
+        destroyAVPacket(avpacket)
+      }
       if (ret < 0) {
         logger.debug(`SubtitleRender decode avpacket error, ret: ${avpacket}`)
         this.ended = true
       }
     }
     else {
-      this.avpacketPool.release(avpacket)
+      if (this.avpacketPool) {
+        this.avpacketPool.release(avpacket)
+      }
+      else {
+        destroyAVPacket(avpacket)
+      }
     }
     this.pulling = false
   }

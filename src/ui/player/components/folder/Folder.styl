@@ -1,0 +1,171 @@
+.avplayer-ui-folder {
+  width: 100%
+  height: 100%
+  padding: var(--libmedia-ui-padding) 0
+  transition: all var(--libmedia-ui-transition-duration) ease
+  background-color: var(--libmedia-ui-widget-background)
+  overflow: auto
+
+  &::-webkit-scrollbar {
+    display: none
+  }
+
+  ul {
+    margin: 0
+    padding: 0
+    list-style: none
+  }
+
+  svg {
+    width: 24px
+    height: 24px
+  }
+
+  .avplayer-ui-folder-open {
+    display: flex
+    justify-content: center
+    align-items: center
+    margin-bottom: 10px
+    height: 30px
+    width: var(--libmedia-ui-folder-width)
+    padding-right: var(--libmedia-ui-padding)
+    
+    .avplayer-ui-folder-open-dir {
+      transform: scale(0.9)
+
+      .avplayer-ui-folder-open-name {
+        margin-left: 3px
+      }
+    }
+    
+    .item {
+      cursor pointer
+      display: flex
+      justify-content: center
+      align-items: center
+      opacity: var(--libmedia-ui-control-opacity)
+      transition: opacity var(--libmedia-ui-transition-duration) ease
+      &:hover {
+        opacity: 1
+      }
+    }
+
+    .avplayer-ui-folder-open-name {
+      display: inline-block
+      font-size: 12px
+    }
+
+    .item + .item {
+      margin-left: 20px
+    }
+  }
+
+  .avplayer-ui-folder-node {
+    display: flex
+    flex-direction: row
+    justify-content: flex-start
+    align-items: center
+    height: 30px
+    width: var(--libmedia-ui-folder-width)
+    padding-right: var(--libmedia-ui-padding)
+    opacity: var(--libmedia-ui-control-opacity)
+    transition: opacity var(--libmedia-ui-transition-duration) ease
+
+    &.active {
+      background-color: var(--libmedia-ui-theme) !important
+    }
+
+    &:hover {
+      background-color: var(--libmedia-ui-widget-hover-background)
+      opacity: 1
+    }
+  }
+
+  .avplayer-ui-folder-expand {
+    cursor: pointer
+    font-size: 0
+    display: flex
+    justify-content: center
+    align-items: center
+    transition: transform linear .1s
+    transform: rotate(0)
+    width: 24px
+    height: 100%
+
+    &[data-open='1'] {
+      transform: rotate(90deg)
+    }
+  }
+
+  .avplayer-ui-folder-icon {
+    display: flex
+    justify-content: center
+    align-items: center
+    width: 24px
+    height: 100%
+
+    &.mov {
+      margin-left: 24px
+      transform: scale(0.9)
+    }
+    &.music {
+      margin-left: 24px
+    }
+    &.url {
+      margin-left: 24px
+    }
+
+    &.play,
+    &.delete {
+      cursor: pointer
+      transform: scale(0.8)
+      transform-origin: center center
+      &:hover {
+        svg {
+          animation: icon_scale .4s ease both
+        }
+      }
+    }
+  }
+
+  .avplayer-ui-folder-node-name {
+    padding: 0 5px
+    min-width 100px
+    flex-grow: 1
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+  }
+
+  .avplayer-ui-folder-tip {
+    text-shadow: 0 -1px var(--libmedia-ui-tip-background)
+    box-shadow: 4px 4px 8px var(--libmedia-ui-tip-background)
+    color: var(--libmedia-ui-tip-font-color)
+    white-space: nowrap
+    background: var(--libmedia-ui-tip-background)
+    padding: 8px 10px
+    font-size: 12px
+    line-height: 12px
+    opacity: 0
+    z-index: 1000000
+    pointer-events: none
+    transition: all .3s ease .1s, top 0s ease 0s
+    position: absolute
+    transform: translate3d(0, 0, 0)
+    left: 100%
+
+    &::before {
+      content: ""
+      border: 5px solid #0000
+      position: absolute
+      border-right-color: var(--libmedia-ui-tip-background)
+      left: -10px
+      transform: translateY(1px)
+    }
+
+    &[data-show='1'] {
+      transform: translateX(8px)
+      opacity: 1
+    }
+  }
+}

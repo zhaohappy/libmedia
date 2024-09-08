@@ -1,0 +1,117 @@
+.avplayer-ui-progress {
+  cursor: pointer
+  height: var(--libmedia-ui-progress-height)
+  justify-content: center
+  align-items: center
+  display: flex
+  position: relative
+
+  &:hover {
+    .avplayer-ui-progress-inner {
+      height: 100%
+    }
+  }
+
+  .avplayer-ui-progress-inner {
+    transition: height var(--libmedia-ui-transition-duration) ease
+    background-color: var(--libmedia-ui-progress-color)
+    align-items: center
+    width: 100%
+    height: 50%
+    display: flex
+    position: relative
+
+    .avplayer-ui-progress-hover {
+      background-color: var(--libmedia-ui-hover-color)
+      width: 0%
+      height: 100%
+      position: absolute
+    }
+
+    .avplayer-ui-progress-loaded {
+      background-color: var(--libmedia-ui-loaded-color)
+      width: 0%
+      height: 100%
+      position: absolute
+    }
+
+    .avplayer-ui-progress-played {
+      background-color: var(--libmedia-ui-theme)
+      width: 0%
+      height: 100%
+      position: absolute
+    }
+
+    .avplayer-ui-progress-chapter {
+      pointer-events: none
+      width: 100%
+      height: 100%
+      position: absolute
+    }
+
+    .avplayer-ui-progress-indicator {
+      width: var(--libmedia-ui-indicator-size)
+      height: var(--libmedia-ui-indicator-size)
+      transform: scale(var(--libmedia-ui-indicator-scale))
+      margin-left: calc(var(--libmedia-ui-indicator-size) / -2)
+      transition: transform var(--libmedia-ui-transition-duration) ease
+      border-radius: 50%
+      justify-content: center
+      align-items: center
+      display: flex
+      position: absolute
+      left: 0
+
+      &:hover {
+        transform: scale(1.2) !important
+      }
+
+      .avplayer-ui-icon-indicator {
+        width: 100%
+        height: 100%
+      }
+    }
+
+    .avplayer-ui-progress-chapter {
+      pointer-events: none
+      width: 100%
+      height: 100%
+      position: absolute
+      overflow: hidden
+
+      .avplayer-ui-progress-chapter-item {
+        pointer-events: auto
+        transform: translateX(calc(var(--libmedia-ui-chapter-width) / -2))
+        background-color: var(--libmedia-ui-chapter-color)
+        width: var(--libmedia-ui-chapter-width)
+        height: 100%
+        position: absolute
+      }
+    }
+
+    .avplayer-ui-progress-tip {
+      border-radius: var(--libmedia-ui-border-radius)
+      white-space: nowrap
+      background-color: var(--libmedia-ui-tip-background)
+      transform: translateX(-50%)
+      padding: 3px 5px
+      font-size: 12px
+      line-height: 1
+      display: none
+      position: absolute
+      top: -25px
+      left: 0
+    }
+  }
+
+  .libmedia-ui-progress-thumb {
+    bottom: calc(var(--libmedia-ui-bottom-gap) + 10px)
+    border-radius: var(--libmedia-ui-border-radius)
+    pointer-events: none
+    background-color: var(--libmedia-ui-widget-background)
+    display: none
+    position: absolute
+    left: 0
+    box-shadow: 0 1px 3px #0003, 0 1px 2px -1px #0003
+  }
+}

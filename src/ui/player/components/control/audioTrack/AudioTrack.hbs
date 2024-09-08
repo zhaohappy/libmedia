@@ -1,0 +1,9 @@
+<div class="avplayer-ui-control-audio-track">
+  <div class="avplayer-ui-control-audio-track-value">{{language.CONTROL_AUDIO_TRACK}}</div>
+  <div class="libmedia-ui-selector">
+    {{#each list:i}}
+      <div key="{{id}}" class="libmedia-ui-selector-item {{#if selectIndex === i}}active{{/if}}" on-click="change(i)">{{name}}</div>
+    {{/each}}
+  </div>
+  <style>{{{style}}}</style>
+</div>

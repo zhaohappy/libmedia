@@ -1,0 +1,15 @@
+<div class="avplayer-ui-control-subtitle-track">
+  <div class="avplayer-ui-control-subtitle-track-value">{{language.CONTROL_SUBTITLE_TRACK}}</div>
+  <div class="libmedia-ui-selector">
+    {{#each list:i}}
+      <div key="{{id}}" class="libmedia-ui-selector-item {{#if selectIndex === i}}active{{/if}}" on-click="change(i)">{{name}}</div>
+    {{/each}}
+    <label class="libmedia-ui-selector-item" {{#if canUseFilePicker}} on-click="openFile()" {{else}} for="avplayer-file-open-subtitle" {{/if}}>
+      {{language.CONTROL_SUBTITLE_TRACK_ADD}}
+      {{#if !canUseFilePicker}} 
+      <input accept="{{accept}}" type="file" id="avplayer-file-open-subtitle" style="display: none;" on-change="fileChange()">
+      {{/if}}
+    </label>
+  </div>
+  <style>{{{style}}}</style>
+</div>

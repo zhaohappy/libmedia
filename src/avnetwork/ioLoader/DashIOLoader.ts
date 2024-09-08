@@ -24,7 +24,9 @@
  */
 
 import Sleep from 'common/timer/Sleep'
-import IOLoader, { IOLoaderStatus, Range } from './IOLoader'
+import IOLoader, { IOLoaderAudioStreamInfo, IOLoaderStatus,
+  IOLoaderSubtitleStreamInfo, IOLoaderVideoStreamInfo, Range
+} from './IOLoader'
 import * as object from 'common/util/object'
 import { IOError } from 'common/io/error'
 import { Uint8ArrayInterface } from 'common/io/interface'
@@ -449,14 +451,15 @@ export default class DashIOLoader extends IOLoader {
     return this.mediaPlayList?.mediaList.subtitle.length > 0
   }
 
-  public getVideoList() {
+  public getVideoList(): IOLoaderVideoStreamInfo {
     if (this.hasVideo()) {
       return {
         list: this.mediaPlayList.mediaList.video.map((media) => {
           return {
             width: media.width,
             height: media.height,
-            frameRate: media.frameRate
+            frameRate: media.frameRate,
+            codecs: media.codecs
           }
         }),
         selectedIndex: this.videoResource.selectedIndex
@@ -468,12 +471,13 @@ export default class DashIOLoader extends IOLoader {
     }
   }
 
-  public getAudioList() {
+  public getAudioList(): IOLoaderAudioStreamInfo {
     if (this.hasAudio()) {
       return {
         list: this.mediaPlayList.mediaList.audio.map((media) => {
           return {
-            lang: media.lang
+            lang: media.lang,
+            codecs: media.codecs
           }
         }),
         selectedIndex: this.audioResource.selectedIndex
@@ -485,7 +489,7 @@ export default class DashIOLoader extends IOLoader {
     }
   }
 
-  public getSubtitleList() {
+  public getSubtitleList(): IOLoaderSubtitleStreamInfo {
     if (this.hasSubtitle()) {
       return {
         list: this.mediaPlayList.mediaList.subtitle.map((media) => {
