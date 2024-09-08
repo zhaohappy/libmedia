@@ -45,6 +45,9 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     },
     errorStateUrl: {
       type: 'string'
+    },
+    fullscreenDom: {
+      type: 'object'
     }
   },
 
@@ -173,6 +176,7 @@ export interface AVPlayerUIOptions extends AVPlayerOptions {
   indicatorUrl?: string
   pauseStateUrl?: string
   errorStateUrl?: string
+  fullscreenDom?: HTMLElement
 }
 
 export default class AVPlayerUI extends AVPlayer {
@@ -188,7 +192,8 @@ export default class AVPlayerUI extends AVPlayer {
         player: this,
         indicatorUrl: options.indicatorUrl,
         pauseStateUrl: options.pauseStateUrl,
-        errorStateUrl: options.errorStateUrl
+        errorStateUrl: options.errorStateUrl,
+        fullscreenDom: options.fullscreenDom
       }
     }, AVPlayerUIComponentOptions))
   }

@@ -18,6 +18,9 @@ const Fullscreen: ComponentOptions = {
     language: {
       type: 'object',
       required: true
+    },
+    dom: {
+      type: 'object'
     }
   },
 
@@ -48,7 +51,7 @@ const Fullscreen: ComponentOptions = {
         }
       }
       else {
-        const element: HTMLElement = player.getOptions().container.parentElement
+        const element: HTMLElement = this.get('dom') || player.getOptions().container.parentElement
         if (element.requestFullscreen) {
           element.requestFullscreen()
         }
