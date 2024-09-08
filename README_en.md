@@ -41,10 +41,13 @@ if multi-threading is not supported, it will fall back to running on the main th
 
 ### Tools
 
-- AVPlayer is libmedia's audio and video player implementation, supporting soft decoding, hard decoding, and MSE; it supports multiple encapsulation protocols and multiple encoding formats.[online demo](https://zhaohappy.github.io/libmedia/test/avplayer.html)
+- AVPlayer is libmedia's audio and video player implementation, supporting soft decoding, hard decoding, and MSE; it supports multiple encapsulation protocols and multiple encoding formats.
+[online demo](https://zhaohappy.github.io/libmedia/test/avplayer.html)
+[online player](https://zhaohappy.github.io/libmedia/product/player/player.html)
 
 
-- AVTranscoder is the transcoding tool implementation of libmedia [online demo](https://zhaohappy.github.io/libmedia/test/avtranscoder.html)
+- AVTranscoder is the transcoding tool implementation of libmedia
+[online demo](https://zhaohappy.github.io/libmedia/test/avtranscoder.html)
 
 ### Formats
 

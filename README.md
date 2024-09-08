@@ -42,10 +42,13 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 
 ### 工具
 
-- AVPlayer 是 libmedia 的音视频播放器实现，支持软解、硬解、MSE；支持多种封装协议、多种编码格式。[在线 demo](https://zhaohappy.github.io/libmedia/test/avplayer.html)
+- AVPlayer 是 libmedia 的音视频播放器实现，支持软解、硬解、MSE；支持多种封装协议、多种编码格式。
+[在线 demo](https://zhaohappy.github.io/libmedia/test/avplayer.html)
+[在线本地播放器](https://zhaohappy.github.io/libmedia/product/player/player.html)
 
 
-- AVTranscoder 是 libmedia 的转码工具实现 [在线 demo](https://zhaohappy.github.io/libmedia/test/avtranscoder.html)
+- AVTranscoder 是 libmedia 的转码工具实现 
+[在线 demo](https://zhaohappy.github.io/libmedia/test/avtranscoder.html)
 
 ### 当前支持的封装格式
 
