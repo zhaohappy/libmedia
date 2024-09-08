@@ -18,13 +18,22 @@
         height: 100%;
         overflow: hidden;
       }
+      #video {
+        object-fit: cover;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+      }
       .avplayer-ui-container {
-        --libmedia-ui-background-color: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(10px);
+        --libmedia-ui-background-color: rgba(0, 0, 0, 0.3);
       }
     </style>
 </head>
 <body>
+  <video id="video" src="./background.mp4" loop muted poster="./background.png"></video>
   <div id="app"></div>
   <script>
     window.CHEAP_DISABLE_THREAD = false
@@ -119,6 +128,31 @@
       pauseStateUrl: '../../src/ui/player/img/state.svg',
       errorStateUrl: '../../src/ui/player/img/error.svg',
     })
+
+    const video = document.querySelector('#video')
+
+    player.on('played', () => {
+      video.pause()
+    })
+    player.on('ended', () => {
+      video.play()
+    })
+    player.on('stopped', () => {
+      video.play()
+    })
+
+    if (typeof VideoDecoder === 'function') {
+      const support = VideoDecoder.isConfigSupported({
+        codec: 'avc1.640034',
+        codedWidth: 3840,
+        codedHeight: 2160,
+        hardwareAcceleration: 'prefer-hardware'
+      }).then((support) => {
+        if (support.supported) {
+          video.play()
+        }
+      })
+    }
 
     function testSupportWasmAtomic() {
       const asm = 'AGFzbQEAAAABBgFgAX8BfwISAQNlbnYGbWVtb3J5AgMBgIACAwIBAAcJAQVsb2FkOAAACgoBCAAgAP4SAAAL'
