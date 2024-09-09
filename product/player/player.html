@@ -191,6 +191,14 @@
       })
     }
 
+    if (typeof crossOriginIsolated === 'boolean' && !crossOriginIsolated) {
+      navigator.serviceWorker.ready.then(function(reg) {
+        if (!crossOriginIsolated && !navigator.serviceWorker.controller) {
+          window.location.reload()
+        }
+      })
+    }
+
     function testSupportWasmAtomic() {
       const asm = 'AGFzbQEAAAABBgFgAX8BfwISAQNlbnYGbWVtb3J5AgMBgIACAwIBAAcJAQVsb2FkOAAACgoBCAAgAP4SAAAL'
       const binaryData = atob(asm)

@@ -197,6 +197,11 @@ const Folder: ComponentOptions = {
 
     openUrl() {
       const url = this.$refs['url'].value
+
+      if (!url) {
+        return
+      }
+
       const isLive = this.$refs['live'].checked
       this.addUrl(url, isLive)
       this.root.push(this.generateStoreUrl(url, isLive))
