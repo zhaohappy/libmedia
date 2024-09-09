@@ -140,6 +140,10 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
         .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO)
         .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
         .length > 0
+        && streams
+        .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
+        .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
+        .length === 0
     }
   },
 
