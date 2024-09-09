@@ -33,13 +33,15 @@
     bottom: var(--libmedia-ui-control-height)
     width: var(--libmedia-ui-control-height)
     height: var(--libmedia-ui-volume-height)
-    transition: all var(--libmedia-ui-transition-duration) ease
+    transition: all  ease
+    transition: all var(--libmedia-ui-transition-duration) ease 0s
     justify-content: center
     align-items: center
     padding: 0 5px
     font-size: 12px
     display: flex
     position: absolute
+    z-index: 1
 
     .avplayer-ui-volume-inner {
       border-radius: var(--libmedia-ui-border-radius)

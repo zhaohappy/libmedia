@@ -44,6 +44,9 @@ const Play: ComponentOptions = {
       }
 
       if (this.get('played')) {
+        if (player.isLive()) {
+          return
+        }
         player.pause()
       }
       else {

@@ -20,11 +20,25 @@
       {{/if}}
     </label>
   </div>
-  <ul role="list" class="avplayer-ui-folder-list">
+  <div class="avplayer-ui-url-open">
+    <input ref="url" placeholder="{{language.FOLDER_OPEN_URL_PLACEHOLDER}}" type="text" class="avplayer-ui-url-open-input">
+    <label class="avplayer-ui-url-open-live">
+      <input type="checkbox" checked="false" ref="live" >
+      <span>{{language.CHECKBOX_LIVE}}</span>
+    </label>
+    <div class="avplayer-ui-folder-icon add hint--top" data-hint="{{language.BUTTON_ADD}}" on-click="openUrl()">
+      <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <g stroke-width="0"></g><g stroke-linecap="round" stroke-linejoin="round"></g><g> <path style="stroke: none;" clip-rule="evenodd" d="M10 1C9.73478 1 9.48043 1.10536 9.29289 1.29289L3.29289 7.29289C3.10536 7.48043 3 7.73478 3 8V20C3 21.6569 4.34315 23 6 23H7C7.55228 23 8 22.5523 8 22C8 21.4477 7.55228 21 7 21H6C5.44772 21 5 20.5523 5 20V9H10C10.5523 9 11 8.55228 11 8V3H18C18.5523 3 19 3.44772 19 4V7C19 7.55228 19.4477 8 20 8C20.5523 8 21 7.55228 21 7V4C21 2.34315 19.6569 1 18 1H10ZM9 7H6.41421L9 4.41421V7ZM12.5 24" fill-rule="evenodd"></path> </g><svg fill="none" height="120%" viewBox="00 0 24 24" width="120%" x="-4" xmlns="http://www.w3.org/2000/svg" y="-4"><g><path d="M17 15V18M17 21V18M17 18H14M17 18H20" stroke="" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" style=""></path></g></svg>
+      </svg>
+    </div>
+  </div>
+  <div class="avplayer-ui-folder-list-container" ref="scroll">
+    <ul role="list" class="avplayer-ui-folder-list">
     {{#each root}}
-      <FolderNode ref="{{this.id}}" key="{{this.name}}" node="{{this}}" />
+      <FolderNode ref="{{this.id}}" key="{{this.name}}" node="{{this}}" language="{{language}}" />
     {{/each}}
   </ul>
+  </div>
   <div class="avplayer-ui-folder-tip" style="top: {{tipTop}}px" data-show="{{tipShow ? 1 : 0}}">
     {{tip}}
   </div>

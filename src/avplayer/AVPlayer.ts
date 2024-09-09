@@ -170,7 +170,7 @@ export interface AVPlayerOptions {
   findBestStream?: (streams: AVStreamInterface[], mediaType: AVMediaType) => AVStreamInterface
 }
 
-const SupportedCodecs = [
+export const AVPlayerSupportedCodecs = [
   AVCodecID.AV_CODEC_ID_H264,
   AVCodecID.AV_CODEC_ID_HEVC,
   AVCodecID.AV_CODEC_ID_MPEG4,
@@ -353,7 +353,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (codecId > AVCodecID.AV_CODEC_ID_FIRST_AUDIO && codecId <= AVCodecID.AV_CODEC_ID_PCM_SGA) {
       return true
     }
-    return array.has(SupportedCodecs, codecId)
+    return array.has(AVPlayerSupportedCodecs, codecId)
   }
 
   private findBestStream(streams: AVStreamInterface[], mediaType: AVMediaType) {
@@ -2065,6 +2065,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.statsController.stop()
     if (this.jitterBufferController) {
       this.jitterBufferController.stop()
+      this.jitterBufferController = null
     }
 
     this.fire(eventType.STOPPED)
@@ -2341,6 +2342,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
+   * 当前是否是 live 模式
+   * 
+   * @returns 
+   */
+  public isLive() {
+    return this.options.isLive
+  }
+
+  /**
    * 获取视频列表（ dash 使用）
    * 
    * @returns 
@@ -2376,22 +2386,47 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return this.status
   }
 
+   /**
+   * 是否播放了音频
+   * 
+   * @returns 
+   */
   public hasAudio() {
     return !!this.selectedAudioStream
   }
 
+  /**
+   * 是否播放了视频
+   * 
+   * @returns 
+   */
   public hasVideo() {
     return !!this.selectedVideoStream
   }
 
+  /**
+   * 是否播放了字幕
+   * 
+   * @returns 
+   */
   public hasSubtitle() {
     return !!this.selectedSubtitleStream
   }
 
+  /**
+   * 获取当前的播放源
+   * 
+   * @returns 
+   */
   public getSource() {
     return this.source
   }
 
+  /**
+   * 获取当前加载的外挂字幕
+   * 
+   * @returns 
+   */
   public getExternalSubtitle() {
     return this.externalSubtitleTasks.map((task) => {
       return {
@@ -2402,8 +2437,28 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     })
   }
 
+  /**
+   * 获取 AVPlayerOptions
+   * 
+   * @returns 
+   */
   public getOptions() {
     return this.options
+  }
+
+  /**
+   * 重新设置是否是直播，load 之前调用
+   * 
+   * @param is 
+   */
+  public setIsLive(is: boolean) {
+    this.options.isLive = is
+  }
+  /**
+   * 获取 audioContext 声音输出 Node，可拿给外部去处理
+   */
+  public getAudioOutputNode(): AudioNode {
+    return this.gainNode
   }
 
   /**

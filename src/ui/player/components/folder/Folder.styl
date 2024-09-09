@@ -3,12 +3,6 @@
   height: 100%
   padding: var(--libmedia-ui-padding) 0
   transition: all var(--libmedia-ui-transition-duration) ease
-  background-color: var(--libmedia-ui-widget-background)
-  overflow: auto
-
-  &::-webkit-scrollbar {
-    display: none
-  }
 
   ul {
     margin: 0
@@ -25,11 +19,11 @@
     display: flex
     justify-content: center
     align-items: center
-    margin-bottom: 10px
     height: 30px
+    margin-bottom: 10px
     width: var(--libmedia-ui-folder-width)
-    padding-right: var(--libmedia-ui-padding)
     
+    padding-right: var(--libmedia-ui-padding)
     .avplayer-ui-folder-open-dir {
       transform: scale(0.9)
 
@@ -57,6 +51,73 @@
 
     .item + .item {
       margin-left: 20px
+    }
+  }
+
+  .avplayer-ui-url-open {
+    display: flex
+    justify-content: center
+    align-items: center
+    margin-bottom: 10px
+    height: 30px
+    width: var(--libmedia-ui-folder-width)
+    padding: 0 var(--libmedia-ui-padding)
+    opacity: var(--libmedia-ui-control-opacity)
+    transition: opacity var(--libmedia-ui-transition-duration) ease
+
+    .avplayer-ui-url-open-input {
+      flex: 1
+      font-size: 12px
+      border: 1px 
+      border-radius: 4px
+      color: var(--libmedia-ui-font-color)
+      outline: none
+      border: 1px solid var(--libmedia-ui-font-color)
+      background: none
+      height: 28px
+      line-height: 28px
+      margin-left: 14px
+
+      &::placeholder {
+        color: var(--libmedia-ui-font-color)
+      }
+    }
+    .avplayer-ui-folder-icon {
+      width: 30px
+      transform: scale(0.9)
+      svg {
+        stroke: var(--libmedia-ui-font-color)
+      }
+      &:hover {
+        cursor: pointer
+        svg {
+          animation: icon_scale .4s ease both
+        }
+      }
+    }
+
+    .avplayer-ui-url-open-live {
+      display: flex
+      justify-content: center
+      align-items: center
+      font-size: 12px
+    }
+
+    &:hover {
+      opacity: 1
+    }
+  }
+
+  .avplayer-ui-folder-list-container {
+    position: absolute
+    top: 90px
+    bottom: 0px
+    left: 0px
+    right: 0px
+    overflow: auto
+    
+    &::-webkit-scrollbar {
+      display: none
     }
   }
 
@@ -88,12 +149,17 @@
     justify-content: center
     align-items: center
     transition: transform linear .1s
-    transform: rotate(0)
     width: 24px
     height: 100%
 
+    svg {
+      transform: rotate(0)
+    }
+
     &[data-open='1'] {
-      transform: rotate(90deg)
+      svg {
+        transform: rotate(90deg)
+      }
     }
   }
 
@@ -119,7 +185,6 @@
     &.delete {
       cursor: pointer
       transform: scale(0.8)
-      transform-origin: center center
       &:hover {
         svg {
           animation: icon_scale .4s ease both
@@ -149,7 +214,7 @@
     opacity: 0
     z-index: 1000000
     pointer-events: none
-    transition: all .3s ease .1s, top 0s ease 0s
+    transition: all var(--libmedia-ui-transition-duration) ease .1s, top 0s ease 0s
     position: absolute
     transform: translate3d(0, 0, 0)
     left: 100%

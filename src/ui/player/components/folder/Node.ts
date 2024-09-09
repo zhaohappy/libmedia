@@ -19,6 +19,10 @@ const Node: ComponentOptions = {
   propTypes: {
     node: {
       type: 'object'
+    },
+    language: {
+      type: 'object',
+      required: true
     }
   },
 
@@ -63,7 +67,7 @@ const Node: ComponentOptions = {
       if (this.$refs['name'].scrollWidth > this.$refs['name'].clientWidth) {
         this.fire('tip', {
           top: this.$el.offsetTop,
-          text: this.get('node.name')
+          text: is.string(this.get('node.source')) ? this.get('node.source') : this.get('node.name')
         })
       }
     },

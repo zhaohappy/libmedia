@@ -1,10 +1,11 @@
 
-import AVPlayer, { AVPlayerOptions, AVPlayerStatus } from 'avplayer/AVPlayer'
+import AVPlayer, { AVPlayerOptions, AVPlayerStatus, AVPlayerSupportedCodecs } from 'avplayer/AVPlayer'
 import { Component, ComponentOptions } from 'yox'
 import Yox from 'yox/dist/standard/runtime/yox'
 import * as object from 'common/util/object'
 import * as eventType from 'avplayer/eventType'
 import * as is from 'common/util/is'
+import * as array from 'common/util/array'
 import * as url from 'common/util/url'
 
 import Progress from './components/progress/Progress'
@@ -20,11 +21,15 @@ import SubtitleTrack from './components/control/subtitleTrack/SubtitleTrack'
 import Loop from './components/control/loop/Loop'
 import Pip from './components/control/pip/Pip'
 import Folder from './components/folder/Folder'
+import Loading from './components/loading/Loading'
+import PcmVisualization from './components/pcmVisualization/PcmVisualization'
 
 import template from './player.hbs'
 import style from './player.styl'
 import getLanguage from './i18n/getLanguage'
 import debounce from 'common/function/debounce'
+import { AVMediaType } from 'avutil/codec'
+import { AVStreamInterface } from 'avformat/AVStream'
 
 const AVPlayerUIComponentOptions: ComponentOptions = {
 
@@ -59,7 +64,16 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       showBar: true,
       played: false,
       folded: false,
-      language: getLanguage()
+      loading: false,
+      language: getLanguage(),
+      streams: [],
+      isLive: false
+    }
+  },
+
+  events: {
+    error: function(event, msg) {
+      this.set('error', msg)
     }
   },
 
@@ -69,10 +83,12 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
         if (this.showBarTimer) {
           clearTimeout(this.showBarTimer)
         }
-        this.showBarTimer = setTimeout(() => {
-          this.set('showBar', false)
-          this.showBarTimer = null
-        }, 5000)
+        if (this.get('folded')) {
+          this.showBarTimer = setTimeout(() => {
+            this.set('showBar', false)
+            this.showBarTimer = null
+          }, 5000)
+        }
       }
     },
     folded: function(value) {
@@ -88,6 +104,45 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     }
   },
 
+  computed: {
+    hasVideoTrack: function() {
+      const streams: AVStreamInterface[] = this.get('streams')
+      return streams
+        .filter((stream) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
+        .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
+        .length > 1
+    },
+    hasAudioTrack: function() {
+      const streams: AVStreamInterface[] = this.get('streams')
+      return streams
+        .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO)
+        .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
+        .length > 1
+    },
+    hasSubtitleTrack: function() {
+      const streams: AVStreamInterface[] = this.get('streams')
+      const isLive = this.get('isLive')
+      return !isLive && streams
+        .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
+        .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
+        .length > 0
+    },
+    hasPip: function() {
+      const streams: AVStreamInterface[] = this.get('streams')
+      return streams
+        .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
+        .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
+        .length > 0
+    },
+    hasPcmVisualization: function () {
+      const streams: AVStreamInterface[] = this.get('streams')
+      return streams
+        .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO)
+        .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
+        .length > 0
+    }
+  },
+
   methods: {
     init(player: AVPlayer) {
       const source = player.getSource()
@@ -97,6 +152,8 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       else {
         this.set('title', source.name)
       }
+      this.set('streams', player.getStreams())
+      this.set('isLive', player.isLive())
     },
 
     mousemove() {
@@ -133,8 +190,18 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     // @ts-ignore
     player.options.container = container
 
+    player.on(eventType.LOADING + this.namespace, () => {
+      this.set('loading', true)
+      this.set('error', '')
+    })
     player.on(eventType.LOADED + this.namespace, () => {
       this.init(player)
+    })
+    player.on(eventType.PLAYED + this.namespace, () => {
+      this.set('loading', false)
+    })
+    player.on(eventType.STOPPED + this.namespace, () => {
+      this.set('title', '')
     })
     if (player.getStatus() >= AVPlayerStatus.LOADED) {
       this.init(player)
@@ -168,7 +235,9 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     SubtitleTrack,
     Loop,
     Pip,
-    Folder
+    Folder,
+    Loading,
+    PcmVisualization
   }
 }
 

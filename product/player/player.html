@@ -18,7 +18,7 @@
         height: 100%;
         overflow: hidden;
       }
-      #video {
+      #background-video {
         object-fit: cover;
         position: absolute;
         top: 0;
@@ -30,10 +30,21 @@
       .avplayer-ui-container {
         --libmedia-ui-background-color: rgba(0, 0, 0, 0.3);
       }
+      .avplayer-ui-container .avplayer-ui-folder-container {
+        background: none !important;
+      }
+      .avplayer-ui-container .avplayer-ui-folder-container .avplayer-ui-folder {
+        backdrop-filter: blur(10px);
+        background-color: rgba(0, 0, 0, 0.1) !important;
+      }
+      .avplayer-ui-container .avplayer-ui-folder-container .avplayer-ui-folder-toggle {
+        backdrop-filter: blur(10px);
+        background-color: rgba(0, 0, 0, 0.1) !important;
+      }
     </style>
 </head>
 <body>
-  <video id="video" src="./background.mp4" loop muted poster="./background.png"></video>
+  <video id="background-video" src="./background.mp4" loop muted poster="./background.png"></video>
   <div id="app"></div>
   <script>
     window.CHEAP_DISABLE_THREAD = false
@@ -46,6 +57,8 @@
 
     let supportAtomic = false
     let supportSimd = false
+
+    const backgroundVideo = document.querySelector('#background-video')
 
     const player = new AVPlayer({
       container: document.querySelector('#app'),
@@ -130,18 +143,6 @@
       fullscreenDom: document.body
     })
 
-    const video = document.querySelector('#video')
-
-    player.on('played', () => {
-      video.pause()
-    })
-    player.on('ended', () => {
-      video.play()
-    })
-    player.on('stopped', () => {
-      video.play()
-    })
-
     if (typeof VideoDecoder === 'function') {
       const support = VideoDecoder.isConfigSupported({
         codec: 'avc1.640034',
@@ -150,7 +151,42 @@
         hardwareAcceleration: 'prefer-hardware'
       }).then((support) => {
         if (support.supported) {
-          video.play()
+          backgroundVideo.play()
+
+          player.on('played', () => {
+            if (player.hasVideo()) {
+              if (!backgroundVideo.paused) {
+                backgroundVideo.pause()
+              }
+            }
+            else if (backgroundVideo.paused) {
+              backgroundVideo.play()
+            }
+          })
+          player.on('ended', () => {
+            if (backgroundVideo.paused) {
+              backgroundVideo.play()
+            }
+          })
+          player.on('stopped', () => {
+            if (backgroundVideo.paused) {
+              backgroundVideo.play()
+            }
+          })
+          let playBeforeHidden = false
+          document.addEventListener('visibilitychange', (event) => {
+            if (document.visibilityState === 'hidden') {
+              playBeforeHidden = !backgroundVideo.paused
+              if (!backgroundVideo.paused) {
+                backgroundVideo.pause()
+              }
+            }
+            else {
+              if (playBeforeHidden) {
+                backgroundVideo.play()
+              }
+            }
+          })
         }
       })
     }

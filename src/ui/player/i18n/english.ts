@@ -16,6 +16,8 @@ export const TIP_FOLD = 'Fold'
 
 export const TIP_UNFOLD = 'Unfold'
 
+export const TIP_DELETE = 'Delete'
+
 export const CONTROL_PLAYRATE = 'Speed'
 
 export const CONTROL_AUDIO_TRACK = 'Audio'
@@ -29,3 +31,9 @@ export const CONTROL_SUBTITLE_TRACK_ADD = 'Add'
 export const FOLDER_OPEN_DIR = 'Open Fold'
 
 export const FOLDER_OPEN_FILE = 'Open File'
+
+export const FOLDER_OPEN_URL_PLACEHOLDER = 'Input Url'
+
+export const BUTTON_ADD = 'Add'
+
+export const CHECKBOX_LIVE = 'Live'

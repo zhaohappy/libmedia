@@ -1,7 +1,7 @@
 <li class="avplayer-ui-folder-list-li" role="listitem" on-mouseenter="mouseenter()" on-mouseleave="mouseleave()">
   <div class="avplayer-ui-folder-node {{#if node.played}}active{{/if}}" style="padding-inline-start: {{paddingStart(node)}}px;">
     {{#if isFolder(node)}}
-      <div class="avplayer-ui-folder-expand" data-open="{{node.opened ? 1 : 0}}" on-click="toggle()">
+      <div class="avplayer-ui-folder-expand hint--right" data-open="{{node.opened ? 1 : 0}}" on-click="toggle()" data-hint="{{ node.opened ? language.TIP_FOLD : language.TIP_UNFOLD}}" >
         <svg viewBox="0 0 24 24">
           <path d="m10 17 5-5-5-5v10z"></path>
         </svg>
@@ -34,7 +34,7 @@
     <div class="avplayer-ui-folder-node-name" ref="name">{{node.name}}</div>
 
     {{#if !isFolder(node)}}
-    <div class="avplayer-ui-folder-icon play" on-click="play()">
+    <div class="avplayer-ui-folder-icon play hint--top" on-click="play()" data-hint="{{ !node.paused ? language.TIP_PLAY : language.TIP_PAUSE }}">
       {{#if node.played && !node.paused}}
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
         <path d="M7 3a2 2 0 0 0-2 2v12a2 2 0 1 0 4 0V5a2 2 0 0 0-2-2zM15 3a2 2 0 0 0-2 2v12a2 2 0 1 0 4 0V5a2 2 0 0 0-2-2z"></path>
@@ -47,7 +47,7 @@
     </div>
     {{/if}}
     {{#if !node.depth}}
-    <div class="avplayer-ui-folder-icon delete" on-click="delete()">
+    <div class="avplayer-ui-folder-icon delete hint--top" on-click="delete()" data-hint="{{language.TIP_DELETE}}">
       <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg>
     </div>
     {{/if}}
@@ -55,7 +55,7 @@
   {{#if isFolder(node) && node.opened}}
   <ul role="list" class="avplayer-ui-folder-list">
     {{#each node.children}}
-      <FolderNode ref="{{this.id}}" key="{{this.name}}" node="{{this}}" />
+      <FolderNode ref="{{this.id}}" key="{{this.name}}" node="{{this}}" language="{{language}}" />
     {{/each}}
   </ul>
   {{/if}}

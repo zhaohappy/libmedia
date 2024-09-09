@@ -18,6 +18,8 @@ export const TIP_FOLD = '折叠'
 
 export const TIP_UNFOLD = '展开'
 
+export const TIP_DELETE = '删除'
+
 export const CONTROL_PLAYRATE = '倍速'
 
 export const CONTROL_AUDIO_TRACK = '音频'
@@ -31,3 +33,9 @@ export const CONTROL_SUBTITLE_TRACK_ADD = '添加字幕'
 export const FOLDER_OPEN_DIR = '打开文件夹'
 
 export const FOLDER_OPEN_FILE = '打开文件'
+
+export const FOLDER_OPEN_URL_PLACEHOLDER = '输入网络地址'
+
+export const BUTTON_ADD = '添加'
+
+export const CHECKBOX_LIVE = '直播'

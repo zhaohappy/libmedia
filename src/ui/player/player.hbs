@@ -4,9 +4,11 @@
     <span class="avplayer-ui-title">{{title}}</span>
   </div>
   <div class="avplayer-ui-footer">
+    {{#if !isLive}}
     <div class="avplayer-ui-progress-container">
       <Progress player="{{player}}" indicatorUrl="{{indicatorUrl}}" />
     </div>
+    {{/if}}
     <div class="avplayer-ui-control">
       <div class="avplayer-ui-footer-left">
         <div class="avplayer-ui-control-item">
@@ -15,32 +17,44 @@
         <div class="avplayer-ui-control-item">
           <Volume player="{{player}}" language="{{language}}" />
         </div>
+        {{#if !isLive}}
         <div class="avplayer-ui-control-item">
           <Loop player="{{player}}" language="{{language}}" />
         </div>
+        {{/if}}
+        {{#if !isLive}}
         <div class="avplayer-ui-control-item">
           <Timer player="{{player}}" language="{{language}}" />
         </div>
+        {{/if}}
       </div>
       <div class="avplayer-ui-footer-right">
+        {{#if hasVideoTrack}}
         <div class="avplayer-ui-control-item">
           <VideoTrack player="{{player}}" language="{{language}}" />
         </div>
+        {{/if}}
+        {{#if hasAudioTrack}}
         <div class="avplayer-ui-control-item">
           <AudioTrack player="{{player}}" language="{{language}}" />
         </div>
+        {{/if}}
+        {{#if hasSubtitleTrack}}
         <div class="avplayer-ui-control-item">
           <SubtitleTrack player="{{player}}" language="{{language}}" />
         </div>
+        {{/if}}
         <div class="avplayer-ui-control-item">
           <Playrate player="{{player}}" language="{{language}}" />
         </div>
         <div class="avplayer-ui-control-item">
           <Setting player="{{player}}" language="{{language}}" />
         </div>
+        {{#if hasPip}}
         <div class="avplayer-ui-control-item">
           <Pip player="{{player}}" language="{{language}}" />
         </div>
+        {{/if}}
         <div class="avplayer-ui-control-item">
           <Fullscreen player="{{player}}" language="{{language}}" dom="{{fullscreenDom}}" />
         </div>
@@ -55,8 +69,16 @@
       </svg>
     </div>
   </div>
+  <Loading player="{{player}}" language="{{language}}" />
+  {{#if hasPcmVisualization}}
+  <div class="avplayer-ui-pcm-visualization-mask">
+    <div class="avplayer-ui-pcm-visualization-container">
+      <PcmVisualization player="{{player}}" language="{{language}}" />
+    </div>
+  </div>
+  {{/if}}
   <div class="avplayer-ui-mask">
-    <div class="avplayer-ui-state" data-show="{{(!played || error) ? 1 : 0}}">
+    <div class="avplayer-ui-state" data-show="{{(title && (!played && !loading || error)) ? 1 : 0}}">
       {{#if error}}
         <img src="{{errorStateUrl}}">
       {{else if !played}}

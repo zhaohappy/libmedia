@@ -36,6 +36,10 @@
     .avplayer-ui-title {
       line-height: var(--libmedia-ui-header-height)
       font-size: 16px
+      max-width: 100%
+      overflow: hidden
+      text-overflow: ellipsis
+      white-space: nowrap
     }
   }
 
@@ -136,9 +140,11 @@
     width: var(--libmedia-ui-folder-width)
     bottom: calc(var(--libmedia-ui-progress-height) + var(--libmedia-ui-bottom-gap) + var(--libmedia-ui-control-height))
     box-shadow: 2px 0px 8px rgba(0, 0, 0, 0.6)
+    background-color: var(--libmedia-ui-widget-background)
+    border-top-right-radius: 8px
+    border-bottom-right-radius: 8px
 
     .avplayer-ui-folder-toggle {
-      background-color: var(--libmedia-ui-widget-background)
       width: 24px
       height: 60px
       justify-content: center
@@ -211,6 +217,22 @@
     }
   }
 
+  .avplayer-ui-pcm-visualization-mask {
+    pointer-events: none
+    justify-content: center
+    align-items: center
+    width: 100%
+    height: 100%
+    display: flex
+    position: absolute
+    transition: all var(--libmedia-ui-transition-duration) ease
+
+    .avplayer-ui-pcm-visualization-container {
+      width: 80%
+      height: 80%
+    }
+  }
+
   &[data-bar-show='0'] {
 
     cursor: none
@@ -235,6 +257,10 @@
       .avplayer-ui-folder-toggle {
         pointer-events: none
       }
+    }
+
+    .avplayer-ui-pcm-visualization-mask {
+      background-color: rgba(0, 0, 0, 0.5)
     }
   }
 }

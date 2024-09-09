@@ -6,10 +6,11 @@ import template from './Folder.hbs'
 import style from './Folder.styl'
 import Node, { movExt, musicExt, subtitleExt } from './Node'
 import * as array from 'common/util/array'
-import * as object from 'common/util/object'
 import * as indexDB from '../../../util/db'
 import generateUUID from 'common/function/generateUUID'
 import * as logger from 'common/util/logger'
+import * as urlUtil from 'common/util/url'
+import * as is from 'common/util/is'
 
 interface FileNode {
   id: string
@@ -24,6 +25,7 @@ interface FileNode {
   paused?: boolean
   parent?: FileNode
   ref?: any
+  isLive?: boolean
 }
 
 const Folder: ComponentOptions = {
@@ -137,6 +139,18 @@ const Folder: ComponentOptions = {
       })
     },
 
+    addUrl(url: string, isLive: boolean) {
+      const params = urlUtil.parse(url)
+      this.append('root', {
+        id: generateUUID(),
+        type: 'file',
+        name: params.file,
+        depth: 0,
+        source: url,
+        isLive
+      })
+    },
+
     openDir() {
       // @ts-ignore
       showDirectoryPicker({
@@ -175,6 +189,20 @@ const Folder: ComponentOptions = {
         }
         indexDB.store(indexDB.KEY_FOLDER_ROOT, this.root)
       })
+    },
+
+    generateStoreUrl(url: string, isLive: boolean) {
+      return `${isLive ? 'libmediaLive:' : ''}${url}`
+    },
+
+    openUrl() {
+      const url = this.$refs['url'].value
+      const isLive = this.$refs['live'].checked
+      this.addUrl(url, isLive)
+      this.root.push(this.generateStoreUrl(url, isLive))
+      indexDB.store(indexDB.KEY_FOLDER_ROOT, this.root)
+      this.$refs['url'].value = ''
+      this.$refs['live'].checked = false
     },
 
     fileChange(event) {
@@ -283,22 +311,37 @@ const Folder: ComponentOptions = {
       }
 
       if (player.getStatus() === AVPlayerStatus.STOPPED) {
+        player.setIsLive(!!node.get('node.isLive'))
         player.load(node.get('node.source')).then(() => {
           player.play()
+          .catch((error) => {
+            this.file('error', `${error}`)
+          })
           node.set('node.paused', false)
           this.findSubtitle(node.get('node'))
+        })
+        .catch((error) => {
+          this.file('error', `${error}`)
         })
       }
       else {
         player.stop().then(() => {
+          player.setIsLive(!!node.get('node.isLive'))
           player.load(node.get('node.source')).then(() => {
             player.play()
+            .catch((error) => {
+              this.file('error', `${error}`)
+            })
             node.set('node.paused', false)
             this.findSubtitle(node.get('node'))
+          })
+          .catch((error) => {
+            this.file('error', `${error}`)
           })
         })
       }
       this.playNodeId = node.get('node.id')
+      this.fire('playNode', node.get('node'))
     },
     delete(event, node) {
       let index = -1
@@ -306,12 +349,13 @@ const Folder: ComponentOptions = {
       for (let i = 0; i < root.length; i++) {
         if (root[i].id === node.id) {
           index = i
+          break
         }
       }
       if (index > -1) {
         this.removeAt('root', index)
       }
-      array.remove(this.root, node.handle)
+      array.remove(this.root, node.handle || this.generateStoreUrl(node.source, node.isLive))
       indexDB.store(indexDB.KEY_FOLDER_ROOT, this.root)
     },
 
@@ -319,7 +363,7 @@ const Folder: ComponentOptions = {
       if (data) {
         this.set('tipShow', true)
         this.set('tip', data.text)
-        this.set('tipTop', data.top - this.$el.scrollTop)
+        this.set('tipTop', data.top - this.$refs['scroll'].scrollTop + 90)
       }
       else {
         this.set('tipShow', false)
@@ -336,11 +380,21 @@ const Folder: ComponentOptions = {
         for (let i = 0; i < this.root.length; i++) {
           const handle = this.root[i]
           try {
-            if (handle.kind === 'file') {
-              await this.addFile(handle)
+            if (is.string(handle)) {
+              let url = handle
+              const isLive = /^libmediaLive:/.test(url)
+              if (isLive) {
+                url = url.replace(/^libmediaLive:/, '')
+              }
+              this.addUrl(url, isLive)
             }
-            else if (handle.kind === 'directory') {
-              await this.addDir(handle)
+            else {
+              if (handle.kind === 'file') {
+                await this.addFile(handle)
+              }
+              else if (handle.kind === 'directory') {
+                await this.addDir(handle)
+              }
             }
             list.push(handle)
           }

@@ -1,5 +1,5 @@
 import { ComponentOptions } from 'yox'
-import AVPlayer from 'avplayer/AVPlayer'
+import AVPlayer, { AVPlayerStatus } from 'avplayer/AVPlayer'
 
 import template from './Fullscreen.hbs'
 import style from './Fullscreen.styl'
