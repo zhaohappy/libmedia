@@ -257,6 +257,7 @@ const PcmVisualization: ComponentOptions = {
     if (this.namespace) {
       player.off(this.namespace)
     }
+    this.playing = false
     window.removeEventListener('resize', this.onresize)
   }
 }
