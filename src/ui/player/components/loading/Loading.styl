@@ -1,0 +1,65 @@
+.avplayer-ui-loading-mask {
+  position: absolute
+  width: 100%
+  height: 100%
+  background-color: rgba(0,0,0,1)
+  text-align: center
+  top: 0
+  left: 0
+  display: flex
+  align-items: center
+  justify-content: center
+  opacity: 0
+  pointer-events: none
+  transition: all var(--libmedia-ui-transition-duration) ease
+
+  .avplayer-ui-loading-spinner {
+    top: 50%
+    margin-top: -21px
+    width: 100%
+    text-align: center
+    position: absolute
+
+    .avplayer-ui-circular {
+      height: 42px
+      width: 42px
+      animation: loading-rotate 2s linear infinite
+
+      circle {
+        animation: loading-dash 1.5s ease-in-out infinite
+        stroke-dasharray: 90, 150
+        stroke-dashoffset: 0
+        stroke-width: 2
+        stroke: var(--libmedia-ui-theme)
+        stroke-linecap: round
+      }
+    }
+  }
+
+  &[data-loading='1'] {
+    opacity: 1
+    pointer-events: auto
+  }
+}
+
+@keyframes loading-rotate {
+  to {
+    transform: rotate(1turn)
+  }
+}
+@keyframes loading-dash {
+  0% {
+    stroke-dasharray: 1,200
+    stroke-dashoffset: 0
+  }
+
+  50% {
+    stroke-dasharray: 90,150
+    stroke-dashoffset: -40px
+  }
+
+  to {
+    stroke-dasharray: 90,150
+    stroke-dashoffset: -120px
+  }
+}
