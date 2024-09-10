@@ -5,6 +5,7 @@ import * as eventType from 'avplayer/eventType'
 import template from './PcmVisualization.hbs'
 import style from './PcmVisualization.styl'
 import debounce from 'common/function/debounce'
+import getTimestamp from 'common/function/getTimestamp'
 
 // 将 RGB 转换为 HSL
 function rgbToHsl(r: number, g: number, b: number) {
@@ -81,12 +82,22 @@ class Drawer {
   private INNER_MAX_HEIGHT = 0.2
 
   private MAX_LENGTH = 64
+  private MAX_FRAMERATE = 30
+  private timeDelta: number = Math.floor(1000 / this.MAX_FRAMERATE)
+
+  private lastTimestamp: number = getTimestamp()
 
   constructor() {
 
   }
 
   draw(data: Uint8Array, context: CanvasRenderingContext2D) {
+    const now = getTimestamp()
+    if (now - this.lastTimestamp < this.timeDelta) {
+      return
+    }
+    this.lastTimestamp = now
+
     const width = context.canvas.width
     const height = context.canvas.height
     const minRadius = Math.min(width, height) / 2
@@ -102,18 +113,24 @@ class Drawer {
     const outerPoints = []
     const lines = []
     const innerPoints = []
+    const color = []
 
     const delta = 2 * Math.PI / length
+    const degDelta = 360 / length
+    const hslColor = rgbToHsl(255, 0, 0)
 
     for (let i = 0; i < length; i++) {
-      const factor = 0 + 1 * Math.pow(data[i * step] / 255, 2.2)
+      const outerFactor = 0 + 1 * Math.pow(data[i * step] / 255, 1.5)
+      const innerFactor = 0 + 1 * Math.pow(data[i * step] / 255, 1)
+      const lineFactor = 0 + 1 * Math.pow(data[i * step] / 255, 2.2)
+
       outerPoints.push({
-        x: width / 2 + (radius + this.OUTER_MAX_HEIGHT * minRadius * factor) * Math.cos(i * delta * -1),
-        y: height / 2 + (radius + this.OUTER_MAX_HEIGHT * minRadius * factor) * Math.sin(i * delta * -1),
+        x: width / 2 + (radius + this.OUTER_MAX_HEIGHT * minRadius * outerFactor) * Math.cos(i * delta * -1),
+        y: height / 2 + (radius + this.OUTER_MAX_HEIGHT * minRadius * outerFactor) * Math.sin(i * delta * -1),
       })
       innerPoints.push({
-        x: width / 2 + (radius - this.INNER_MAX_HEIGHT * minRadius * factor) * Math.cos(i * delta * -1),
-        y: height / 2 + (radius - this.INNER_MAX_HEIGHT * minRadius * factor) * Math.sin(i * delta * -1),
+        x: width / 2 + (radius - this.INNER_MAX_HEIGHT * minRadius * innerFactor) * Math.cos(i * delta * -1),
+        y: height / 2 + (radius - this.INNER_MAX_HEIGHT * minRadius * innerFactor) * Math.sin(i * delta * -1),
       })
       lines.push({
         start: {
@@ -121,13 +138,19 @@ class Drawer {
           y: height / 2 + radius * Math.sin(i * delta * -1),
         },
         end: {
-          x: width / 2 + (radius + this.MIDDLE_MAX_HEIGHT * minRadius * factor) * Math.cos(i * delta * -1),
-          y: height / 2 + (radius + this.MIDDLE_MAX_HEIGHT * minRadius * factor) * Math.sin(i * delta * -1),
+          x: width / 2 + (radius + this.MIDDLE_MAX_HEIGHT * minRadius * lineFactor) * Math.cos(i * delta * -1),
+          y: height / 2 + (radius + this.MIDDLE_MAX_HEIGHT * minRadius * lineFactor) * Math.sin(i * delta * -1),
         }
       })
-    }
 
-    const hslColor = rgbToHsl(255, 0, 0)
+      let deg = Math.floor(i * degDelta) - 60
+      if (deg < 0) {
+        deg += 360
+      }
+      const interpolatedHue = interpolateHue(hslColor[0], deg)
+      const newRgbColor = hslToRgb(interpolatedHue, hslColor[1], hslColor[2])
+      color.push(`rgb(${newRgbColor[0]},${newRgbColor[1]},${newRgbColor[2]})`)
+    }
 
     context.lineCap = 'round'
     context.lineWidth = 8
@@ -136,20 +159,10 @@ class Drawer {
     context.shadowOffsetX = 0
     context.shadowOffsetY = 0
 
-    const degDelta = 360 / outerPoints.length
-
     for (let i = 0; i < outerPoints.length; i++) {
-      let deg = Math.floor(i * degDelta) - 60
-      if (deg < 0) {
-        deg += 360
-      }
-      const interpolatedHue = interpolateHue(hslColor[0], deg)
-      const newRgbColor = hslToRgb(interpolatedHue, hslColor[1], hslColor[2])
-
-      const colorString = `rgb(${newRgbColor[0]},${newRgbColor[1]},${newRgbColor[2]})`
-      context.strokeStyle = colorString
-      context.fillStyle = colorString
-      context.shadowColor = colorString
+      context.strokeStyle = color[i]
+      context.fillStyle = color[i]
+      context.shadowColor = color[i]
 
       context.beginPath()
       context.arc(outerPoints[i].x, outerPoints[i].y, 4, 0, Math.PI * 2, true)
@@ -164,16 +177,20 @@ class Drawer {
       context.lineTo(lines[i].end.x, lines[i].end.y)
       context.stroke()
     }
-
-    context.beginPath()
+    
     context.lineWidth = 2
-    context.strokeStyle = 'rgba(149, 251, 254)'
-    context.moveTo(innerPoints[0].x, innerPoints[0].y)
-    for (let i = 1; i < innerPoints.length; i++) {
-      context.lineTo(innerPoints[i].x, innerPoints[i].y)
+    for (let i = 0; i < innerPoints.length; i++) {
+      let next = (i === innerPoints.length - 1) ? 0 : (i + 1)
+      const gradient = context.createLinearGradient(innerPoints[i].x, innerPoints[i].y, innerPoints[next].x, innerPoints[next].y) 
+      gradient.addColorStop(0, color[i])
+      gradient.addColorStop(1, color[next])
+      context.strokeStyle = gradient
+      context.shadowColor = color[i]
+      context.beginPath()
+      context.moveTo(innerPoints[i].x, innerPoints[i].y)
+      context.lineTo(innerPoints[next].x, innerPoints[next].y)
+      context.stroke()
     }
-    context.lineTo(innerPoints[0].x, innerPoints[0].y)
-    context.stroke()
   }
 }
 
