@@ -1360,10 +1360,10 @@ export default class MSEPipeline extends Pipeline {
       task.targetRate = static_cast<int64>(Math.floor(rate * 100))
 
       if (!task.enableJitterBuffer) {
-        if (task.audio) {
+        if (task.audio && task.audio.loop) {
           task.audio.loop.resetInterval()
         }
-        if (task.video) {
+        if (task.video && task.video.loop) {
           task.video.loop.resetInterval()
         }
       }

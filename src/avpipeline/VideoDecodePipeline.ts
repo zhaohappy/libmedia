@@ -297,10 +297,21 @@ export default class VideoDecodePipeline extends Pipeline {
                 let ret = task.targetDecoder.decode(avpacket)
                 if (ret < 0) {
                   task.stats.videoDecodeErrorPacketCount++
-                  if (task.targetDecoder === task.hardwareDecoder && task.softwareDecoder) {
-                    task.targetDecoder = task.softwareDecoder
-                    task.hardwareDecoder.close()
-                    task.hardwareDecoder = null
+                  if ((task.targetDecoder instanceof WebVideoDecoder) && task.softwareDecoder) {
+                    if (task.targetDecoder === task.hardwareDecoder) {
+                      task.targetDecoder = task.softwareDecoder
+                      task.hardwareDecoder.close()
+                      task.hardwareDecoder = null
+                    }
+                    else if (task.resource) {
+                      task.softwareDecoder.close()
+                      task.softwareDecoder = this.createWasmcodecDecoder(task, task.resource)
+                    }
+                    else {
+                      logger.error(`cannot fallback to wasm video decoder because of resource not found , taskId: ${options.taskId}`)
+                      rightIPCPort.reply(request, errorType.CODEC_NOT_SUPPORT)
+                      break
+                    }
 
                     try {
                       await this.openSoftwareDecoder(task)
@@ -596,9 +607,6 @@ export default class VideoDecodePipeline extends Pipeline {
         discard = AVDiscard.AVDISCARD_NONE
       }
       task.softwareDecoder.setSkipFrameDiscard(discard)
-    }
-    else {
-      logger.fatal('task not found')
     }
   }
 

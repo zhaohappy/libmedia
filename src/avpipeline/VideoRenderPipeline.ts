@@ -692,9 +692,6 @@ export default class VideoRenderPipeline extends Pipeline {
 
       logger.info(`task paused, taskId: ${task.taskId}`)
     }
-    else {
-      logger.fatal('task not found')
-    }
   }
 
   public async unpause(taskId: string) {
@@ -715,9 +712,6 @@ export default class VideoRenderPipeline extends Pipeline {
       task.lastRenderTimestamp = getTimestamp()
 
       logger.info(`task unpaused, taskId: ${task.taskId}`)
-    }
-    else {
-      logger.fatal('task not found')
     }
   }
 
@@ -750,9 +744,6 @@ export default class VideoRenderPipeline extends Pipeline {
       }
       task.targetRate = static_cast<int64>(Math.floor(rate * 100))
     }
-    else {
-      logger.fatal('task not found')
-    }
   }
 
   public async setRenderMode(taskId: string, mode: RenderMode) {
@@ -767,9 +758,6 @@ export default class VideoRenderPipeline extends Pipeline {
           }
         })
       }
-    }
-    else {
-      logger.fatal('task not found')
     }
   }
 
@@ -786,9 +774,6 @@ export default class VideoRenderPipeline extends Pipeline {
         })
       }
     }
-    else {
-      logger.fatal('task not found')
-    }
   }
 
   public async enableHorizontalFlip(taskId: string, enable: boolean) {
@@ -803,9 +788,6 @@ export default class VideoRenderPipeline extends Pipeline {
           }
         })
       }
-    }
-    else {
-      logger.fatal('task not found')
     }
   }
 
@@ -822,9 +804,6 @@ export default class VideoRenderPipeline extends Pipeline {
         })
       }
     }
-    else {
-      logger.fatal('task not found')
-    }
   }
 
   public async resize(taskId: string, width: int32, height: int32) {
@@ -839,18 +818,12 @@ export default class VideoRenderPipeline extends Pipeline {
         })
       }
     }
-    else {
-      logger.fatal('task not found')
-    }
   }
 
   public async setSkipRender(taskId: string, skip: boolean) {
     const task = this.tasks.get(taskId)
     if (task) {
       task.skipRender = skip
-    }
-    else {
-      logger.fatal('task not found')
     }
   }
 
@@ -1006,9 +979,6 @@ export default class VideoRenderPipeline extends Pipeline {
         task.currentPTS = pts
         this.swap(task)
       }
-    }
-    else {
-      logger.fatal('task not found')
     }
   }
 
