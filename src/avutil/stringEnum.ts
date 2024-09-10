@@ -73,8 +73,8 @@ export const AudioCodecString2CodecId = {
   'flac': AVCodecID.AV_CODEC_ID_FLAC,
   'speex': AVCodecID.AV_CODEC_ID_SPEEX,
   'vorbis': AVCodecID.AV_CODEC_ID_VORBIS,
-  'g711a': AVCodecID.AV_CODEC_ID_PCM_ALAW,
-  'g711u': AVCodecID.AV_CODEC_ID_PCM_MULAW
+  'pcm_alaw': AVCodecID.AV_CODEC_ID_PCM_ALAW,
+  'pcm_mulaw': AVCodecID.AV_CODEC_ID_PCM_MULAW
 }
 
 export const SubtitleCodecString2CodecId = {

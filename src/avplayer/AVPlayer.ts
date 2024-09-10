@@ -231,6 +231,13 @@ export const enum AVPlayerStatus {
   DESTROYED
 }
 
+export const enum AVPlayerProgress {
+  OPEN_FILE,
+  ANALYZE_FILE,
+  LOAD_AUDIO_DECODER,
+  LOAD_VIDEO_DECODER
+}
+
 export default class AVPlayer extends Emitter implements ControllerObserver {
   static level: number = logger.INFO
 
@@ -1030,10 +1037,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
     }
 
+    this.fire(eventType.PROGRESS, [AVPlayerProgress.OPEN_FILE])
+
     ret = await AVPlayer.DemuxerThread.openStream(this.taskId)
     if (ret < 0) {
       logger.fatal(`open stream failed, ret: ${ret}, taskId: ${this.taskId}`)
     }
+
+    this.fire(eventType.PROGRESS, [AVPlayerProgress.ANALYZE_FILE, this.ext])
+
     let formatContext = await AVPlayer.DemuxerThread.analyzeStreams(this.taskId)
     if (is.number(formatContext) || !formatContext.streams.length) {
       logger.fatal(`analyze stream failed, ret: ${formatContext}`)
@@ -1254,6 +1266,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         })
 
       if (videoStream && options.video) {
+        this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_VIDEO_DECODER, videoStream])
         hasVideo = true
         this.selectedVideoStream = videoStream
         this.videoEnded = false
@@ -1272,6 +1285,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           )
       }
       if (audioStream && options.audio) {
+        this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_AUDIO_DECODER, audioStream])
         this.selectedAudioStream = audioStream
         this.audioEnded = false
         this.demuxer2AudioDecoderChannel = createMessageChannel()
@@ -1317,6 +1331,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
 
       if (videoStream && options.video) {
+        this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_VIDEO_DECODER, videoStream])
         this.selectedVideoStream = videoStream
         await this.createVideoDecoderThread()
         await AVPlayer.startVideoRenderPipeline()
@@ -1368,6 +1383,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           .invoke(this.subTaskId || this.taskId, videoStream.index, this.demuxer2VideoDecoderChannel.port1)
       }
       if (audioStream && options.audio) {
+        this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_AUDIO_DECODER, audioStream])
         this.selectedAudioStream = audioStream
         await AVPlayer.startAudioPipeline()
 
@@ -2186,6 +2202,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     else if (this.audio) {
       this.audio.volume = this.volume
     }
+
+    this.fire(eventType.VOLUME_CHANGE, [this.volume])
 
     logger.info(`player call setVolume, set ${volume}, used ${this.volume}, taskId: ${this.taskId}`)
   }
@@ -3074,6 +3092,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   public on(event: string, listener: Fn, options: Partial<EmitterOptions> = {}) {
     super.on(event, object.extend({
       fn: listener
+    }, options))
+    return this
+  }
+  public one(event: string, listener: Fn, options: Partial<EmitterOptions> = {}) {
+    super.on(event, object.extend({
+      fn: listener,
+      max: 1
     }, options))
     return this
   }
