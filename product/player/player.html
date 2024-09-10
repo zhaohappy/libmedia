@@ -44,7 +44,7 @@
     </style>
 </head>
 <body>
-  <video id="background-video" src="./background.mp4" loop muted poster="./background.png"></video>
+  <video id="background-video" loop muted poster="./background.png"></video>
   <div id="app"></div>
   <script>
     window.CHEAP_DISABLE_THREAD = false
@@ -151,6 +151,13 @@
         hardwareAcceleration: 'prefer-hardware'
       }).then((support) => {
         if (support.supported) {
+          if (screen.availWidth * screen.availHeight <= 2560 * 1440) {
+            backgroundVideo.src = './background_2k_30fps.mp4'
+          }
+          else {
+            backgroundVideo.src = './background_4k_30fps.mp4'
+          }
+
           backgroundVideo.play()
 
           player.on('played', () => {
@@ -234,7 +241,7 @@
     }
 
     testSupportWasmAtomic()
-    testSupportWasmSimd()
+    // testSupportWasmSimd()
   </script>
 </body>
 </html>
