@@ -1,0 +1,8 @@
+<div class="avplayer-ui-loading-tip" data-show="{{showMessage ? 1 : 0}}">
+  <div class="avplayer-ui-loading-message-list">
+    {{#each message:index}}
+      <div key="{{this}}" class="avplayer-ui-loading-message" style="bottom: {{(message.length - 1 - index) * 30}}px;" data-last="{{message.length - 1 === index ? 1 : 0}}">{{this}}</div>
+    {{/each}}
+  </div>
+  <style>{{{style}}}</style>
+</div>

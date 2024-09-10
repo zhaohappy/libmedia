@@ -1,0 +1,41 @@
+.avplayer-ui-loading-tip {
+  position: absolute
+  right: 20px
+  bottom: calc(var(--libmedia-ui-bottom-height) + 10px)
+  opacity: 1
+  pointer-events: none
+  transition: all 1s ease
+
+  .avplayer-ui-loading-message {
+    transition: bottom 0.1s ease, transform 1s ease
+    border-radius: var(--libmedia-ui-border-radius)
+    white-space: nowrap
+    background-color: var(--libmedia-ui-tip-background)
+    padding: 3px 5px
+    font-size: 12px
+    line-height: 1
+    position: absolute
+    right: 0px
+
+    &[data-last='1'] {
+      animation: avplayer-ui-loading-message-last 0.1s ease
+    }
+  }
+
+  &[data-show='0'] {
+    opacity: 0
+    .avplayer-ui-loading-message {
+      transform: translateY(-40px)
+    }
+  }
+}
+
+@keyframes avplayer-ui-loading-message-last {
+  0% {
+    opacity: 0
+  }
+
+  100% {
+    opacity: 1
+  }
+}
