@@ -6,7 +6,7 @@ export const TIP_SETTING = 'Settings'
 
 export const TIP_FULLSCREEN = 'Fullscreen'
 
-export const TIP_LOOP_START = 'Start Loop'
+export const TIP_LOOP_START = 'Open Loop'
 
 export const TIP_LOOP_STOP = 'Close Loop'
 
