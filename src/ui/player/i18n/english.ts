@@ -37,3 +37,15 @@ export const FOLDER_OPEN_URL_PLACEHOLDER = 'Input Url'
 export const BUTTON_ADD = 'Add'
 
 export const CHECKBOX_LIVE = 'Live'
+
+export const LOADING_MESSAGE_OPEN_FILE = 'opening source...'
+
+export const LOADING_MESSAGE_ANALYZE_FILE = 'analyzing source(${mux})...'
+
+export const LOADING_MESSAGE_LOAD_AUDIO_DECODER = 'loading audio decoder(${decoder})...'
+
+export const LOADING_MESSAGE_LOAD_VIDEO_DECODER = 'loading video decoder(${decoder})...'
+
+export const LOADING_MESSAGE_LOAD_END = 'readied (`･ω･´)ゞ'
+
+export const LOADING_MESSAGE_LOAD_FAILED = 'failed (∩︵∩)'

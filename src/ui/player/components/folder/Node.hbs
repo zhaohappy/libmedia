@@ -1,4 +1,4 @@
-<li class="avplayer-ui-folder-list-li" role="listitem" on-mouseenter="mouseenter()" on-mouseleave="mouseleave()">
+<li class="avplayer-ui-folder-list-li" role="listitem">
   <div class="avplayer-ui-folder-node {{#if node.played}}active{{/if}}" style="padding-inline-start: {{paddingStart(node)}}px;">
     {{#if isFolder(node)}}
       <div class="avplayer-ui-folder-expand hint--right" data-open="{{node.opened ? 1 : 0}}" on-click="toggle()" data-hint="{{ node.opened ? language.TIP_FOLD : language.TIP_UNFOLD}}" >
@@ -31,7 +31,7 @@
       </div>
       {{/if}}
     {{/if}}
-    <div class="avplayer-ui-folder-node-name" ref="name">{{node.name}}</div>
+    <div class="avplayer-ui-folder-node-name" ref="name" on-mouseenter="mouseenter()" on-mouseleave="mouseleave()">{{node.name}}</div>
 
     {{#if !isFolder(node)}}
     <div class="avplayer-ui-folder-icon play hint--top" on-click="play()" data-hint="{{ !node.paused ? language.TIP_PLAY : language.TIP_PAUSE }}">

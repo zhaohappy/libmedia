@@ -320,13 +320,13 @@ const Folder: ComponentOptions = {
         player.load(node.get('node.source')).then(() => {
           player.play()
           .catch((error) => {
-            this.file('error', `${error}`)
+            this.fire('error', `${error}`)
           })
           node.set('node.paused', false)
           this.findSubtitle(node.get('node'))
         })
         .catch((error) => {
-          this.file('error', `${error}`)
+          this.fire('error', `${error}`)
         })
       }
       else {
@@ -335,13 +335,13 @@ const Folder: ComponentOptions = {
           player.load(node.get('node.source')).then(() => {
             player.play()
             .catch((error) => {
-              this.file('error', `${error}`)
+              this.fire('error', `${error}`)
             })
             node.set('node.paused', false)
             this.findSubtitle(node.get('node'))
           })
           .catch((error) => {
-            this.file('error', `${error}`)
+            this.fire('error', `${error}`)
           })
         })
       }
@@ -383,7 +383,7 @@ const Folder: ComponentOptions = {
         this.root = root || []
         const list = []
         for (let i = 0; i < this.root.length; i++) {
-          const handle = this.root[i]
+          const handle: FileSystemFileHandle | string = this.root[i]
           try {
             if (is.string(handle)) {
               let url = handle
@@ -394,6 +394,20 @@ const Folder: ComponentOptions = {
               this.addUrl(url, isLive)
             }
             else {
+              // @ts-ignore
+              let permission = await handle.queryPermission({
+                mode: 'read'
+              })
+
+              if (permission !== 'granted') {
+                // @ts-ignore
+                permission = await handle.requestPermission({
+                  mode: 'read'
+                })
+                if (permission !== 'granted') {
+                  throw new Error(`not has permission to access ${handle.name}`)
+                }
+              }
               if (handle.kind === 'file') {
                 await this.addFile(handle)
               }

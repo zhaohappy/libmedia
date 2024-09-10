@@ -41,6 +41,18 @@
       text-overflow: ellipsis
       white-space: nowrap
     }
+
+    a {
+      position: absolute
+      right: calc((var(--libmedia-ui-header-height) - 16px) / 2)
+      top: calc((var(--libmedia-ui-header-height) - 16px) / 2)
+      height: 16px
+
+      svg {
+        height: 16px
+        width: 16px
+      }
+    }
   }
 
   .avplayer-ui-player {
@@ -226,11 +238,6 @@
     display: flex
     position: absolute
     transition: all var(--libmedia-ui-transition-duration) ease
-
-    .avplayer-ui-pcm-visualization-container {
-      width: 80%
-      height: 80%
-    }
   }
 
   &[data-bar-show='0'] {

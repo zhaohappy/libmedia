@@ -23,6 +23,7 @@ import Pip from './components/control/pip/Pip'
 import Folder from './components/folder/Folder'
 import Loading from './components/loading/Loading'
 import PcmVisualization from './components/pcmVisualization/PcmVisualization'
+import LoadingTip from './components/loadingTip/LoadingTip'
 
 import template from './player.hbs'
 import style from './player.styl'
@@ -30,6 +31,7 @@ import getLanguage from './i18n/getLanguage'
 import debounce from 'common/function/debounce'
 import { AVMediaType } from 'avutil/codec'
 import { AVStreamInterface } from 'avformat/AVStream'
+import Keyboard from './Keyboard'
 
 const AVPlayerUIComponentOptions: ComponentOptions = {
 
@@ -181,6 +183,14 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
 
     toggleFold() {
       this.set('folded', !this.get('folded'))
+    },
+
+    fold() {
+      this.set('folded', true)
+    },
+
+    unfold() {
+      this.set('folded', false)
     }
   },
 
@@ -241,7 +251,8 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     Pip,
     Folder,
     Loading,
-    PcmVisualization
+    PcmVisualization,
+    LoadingTip
   }
 }
 
@@ -256,6 +267,8 @@ export default class AVPlayerUI extends AVPlayer {
 
   public ui: Component
 
+  private keyboard: Keyboard
+
   constructor(options: AVPlayerUIOptions) {
     super(object.extend({}, options, { container: null }))
     this.ui = new Yox(object.extend({
@@ -269,5 +282,24 @@ export default class AVPlayerUI extends AVPlayer {
         fullscreenDom: options.fullscreenDom
       }
     }, AVPlayerUIComponentOptions))
+
+    this.keyboard = new Keyboard(this)
+  }
+
+  public foldFolder() {
+    // @ts-ignore
+    this.ui.fold()
+  }
+
+  public unfoldFolder() {
+    // @ts-ignore
+    this.ui.unfold()
+  }
+
+  public async destroy() {
+    await super.destroy()
+    this.keyboard.destroy()
+    // @ts-ignore
+    this.ui.destroy()
   }
 }

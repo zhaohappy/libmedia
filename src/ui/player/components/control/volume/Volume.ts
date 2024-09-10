@@ -2,6 +2,7 @@ import { ComponentOptions } from 'yox'
 import AVPlayer from 'avplayer/AVPlayer'
 import * as storage from '../../../../util/storage'
 import Slider from '../../../../components/slider/Slider'
+import * as eventType from 'avplayer/eventType'
 
 import template from './Volume.hbs'
 import style from './Volume.styl'
@@ -54,6 +55,11 @@ const Volume: ComponentOptions = {
   afterMount() {
     this.namespace = '.component_volume' + Math.random()
     const player = this.get('player') as AVPlayer
+
+    player.on(eventType.VOLUME_CHANGE + this.namespace, (volume) => {
+      this.set('volume', Math.floor(volume * 100))
+    })
+
     player.setVolume(this.get('volume') / 100)
   },
 

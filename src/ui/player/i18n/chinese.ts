@@ -39,3 +39,15 @@ export const FOLDER_OPEN_URL_PLACEHOLDER = '输入网络地址'
 export const BUTTON_ADD = '添加'
 
 export const CHECKBOX_LIVE = '直播'
+
+export const LOADING_MESSAGE_OPEN_FILE = '正在打开源...'
+
+export const LOADING_MESSAGE_ANALYZE_FILE = '正在分析源(${mux})...'
+
+export const LOADING_MESSAGE_LOAD_AUDIO_DECODER = '正在加载音频解码器(${decoder})...'
+
+export const LOADING_MESSAGE_LOAD_VIDEO_DECODER = '正在加载视频解码器(${decoder})...'
+
+export const LOADING_MESSAGE_LOAD_END = '已就绪 (`･ω･´)ゞ'
+
+export const LOADING_MESSAGE_LOAD_FAILED = '加载失败 (∩︵∩)'
