@@ -15,7 +15,7 @@ function rgbToHsl(r: number, g: number, b: number) {
 
   const max = Math.max(r, g, b)
   const min = Math.min(r, g, b)
-  let h, s, l = (max + min) / 2
+  let h: number, s: number, l = (max + min) / 2
 
   if (max === min) {
     h = s = 0
@@ -42,7 +42,7 @@ function rgbToHsl(r: number, g: number, b: number) {
 
 // 将 HSL 转换为 RGB
 function hslToRgb(h: number, s: number, l: number) {
-  let r, g, b
+  let r: number, g: number, b: number
 
   if (s == 0) {
     r = g = b = l
@@ -69,7 +69,7 @@ function hslToRgb(h: number, s: number, l: number) {
 }
 
 // 色相插值函数
-function interpolateHue(hue, t) {
+function interpolateHue(hue: number, t: number) {
   let newHue = (hue + t) % 360
   if (newHue < 0) newHue += 360
   return newHue

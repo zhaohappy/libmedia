@@ -1,7 +1,7 @@
 
 import { AVPlayerStatus } from 'avplayer/AVPlayer'
 import * as keyboard from 'common/util/keyboard'
-import AVPlayerUI from './player'
+import AVPlayerUI from './AVPlayer'
 import * as object from 'common/util/object'
 import * as array from 'common/util/array'
 import CommandQueue from 'common/helper/CommandQueue'

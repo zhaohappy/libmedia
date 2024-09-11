@@ -20,7 +20,7 @@ module.exports = (env) => {
   }
   else if (env.avplayer) {
     if (env.ui) {
-      entry = path.resolve(__dirname, './src/ui/player/player.ts');
+      entry = path.resolve(__dirname, './src/ui/avplayer/AVPlayer.ts');
       output = `avplayer.js`;
       library = 'AVPlayer';
       libraryExport = 'default';

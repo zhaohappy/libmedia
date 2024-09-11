@@ -25,8 +25,8 @@ import Loading from './components/loading/Loading'
 import PcmVisualization from './components/pcmVisualization/PcmVisualization'
 import LoadingTip from './components/loadingTip/LoadingTip'
 
-import template from './player.hbs'
-import style from './player.styl'
+import template from './AVPlayer.hbs'
+import style from './AVPlayer.styl'
 import getLanguage from './i18n/getLanguage'
 import debounce from 'common/function/debounce'
 import { AVMediaType } from 'avutil/codec'
@@ -216,6 +216,7 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     })
     player.on(eventType.STOPPED + this.namespace, () => {
       this.set('title', '')
+      this.set('streams', [])
     })
     if (player.getStatus() >= AVPlayerStatus.LOADED) {
       this.init(player)

@@ -221,6 +221,10 @@ const Progress: ComponentOptions = {
     player.on(eventType.LOADED + this.namespace, () => {
       this.init(player)
     })
+    player.on(eventType.STOPPED + this.namespace, () => {
+      this.set('currentTime', 0)
+      this.set('loadedTime', 0)
+    })
     player.on(eventType.TIME + this.namespace, (pts: int64) => {
 
       if (this.seeking) {

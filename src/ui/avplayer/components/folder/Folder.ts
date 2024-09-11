@@ -11,6 +11,7 @@ import generateUUID from 'common/function/generateUUID'
 import * as logger from 'common/util/logger'
 import * as urlUtil from 'common/util/url'
 import * as is from 'common/util/is'
+import CustomEvent from 'common/event/CustomEvent'
 
 interface FileNode {
   id: string
@@ -302,6 +303,7 @@ const Folder: ComponentOptions = {
           }
           root = root.parent
         }
+        this.playNodeId = null
       }
       let root = node
       while (root !== this) {
@@ -328,6 +330,8 @@ const Folder: ComponentOptions = {
         .catch((error) => {
           this.fire('error', `${error}`)
         })
+        this.playNodeId = node.get('node.id')
+        this.fire('playNode', node.get('node'))
       }
       else {
         player.stop().then(() => {
@@ -343,10 +347,10 @@ const Folder: ComponentOptions = {
           .catch((error) => {
             this.fire('error', `${error}`)
           })
+          this.playNodeId = node.get('node.id')
+          this.fire('playNode', node.get('node'))
         })
       }
-      this.playNodeId = node.get('node.id')
-      this.fire('playNode', node.get('node'))
     },
     delete(event, node) {
       let index = -1
@@ -428,19 +432,26 @@ const Folder: ComponentOptions = {
     }
 
     const player = this.get('player') as AVPlayer
-    player.on(eventType.ENDED + this.namespace, () => {
-      if (this.playNodeId) {
-        let node = this.findNodeById(this.playNodeId, this.get('root'))
-        if (node) {
-          node.ref.set('node.paused', true)
-        }
-      }
-    })
     player.on(eventType.STOPPED + this.namespace, () => {
       if (this.playNodeId) {
         let node = this.findNodeById(this.playNodeId, this.get('root'))
         if (node) {
-          node.ref.set('node.paused', true)
+          if (node.ref) {
+            node.ref.set('node.paused', true)
+          }
+          else {
+            node.paused = true
+          }
+          let root = node
+          while (root) {
+            if (root.ref) {
+              root.ref.set('node.played', false)
+            }
+            else {
+              root.played = false
+            }
+            root = root.parent
+          }
         }
       }
     })
@@ -448,7 +459,12 @@ const Folder: ComponentOptions = {
       if (this.playNodeId) {
         let node = this.findNodeById(this.playNodeId, this.get('root'))
         if (node) {
-          node.ref.set('node.paused', true)
+          if (node.ref) {
+            node.ref.set('node.paused', true)
+          }
+          else {
+            node.paused = true
+          }
         }
       }
     })
@@ -456,7 +472,12 @@ const Folder: ComponentOptions = {
       if (this.playNodeId) {
         let node = this.findNodeById(this.playNodeId, this.get('root'))
         if (node) {
-          node.ref.set('node.paused', false)
+          if (node.ref) {
+            node.ref.set('node.paused', false)
+          }
+          else {
+            node.paused = false
+          }
         }
       }
     })
