@@ -384,7 +384,7 @@ export default class IFlvFormat extends IFormat {
             stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_HEVC
             avpacket.bitFormat = BitFormat.AVCC
           }
-          if (tag === mktag('vvc1')) {
+          else if (tag === mktag('vvc1')) {
             stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_VVC
             avpacket.bitFormat = BitFormat.AVCC
           }
