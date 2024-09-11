@@ -2077,6 +2077,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.selectedVideoStream = null
     this.selectedSubtitleStream = null
     this.lastSelectedInnerSubtitleStreamIndex = -1
+    this.source = null
+    this.ext = ''
 
     this.statsController.stop()
     if (this.jitterBufferController) {
