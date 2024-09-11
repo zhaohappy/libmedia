@@ -297,9 +297,12 @@ export default class VideoDecodePipeline extends Pipeline {
                 let ret = task.targetDecoder.decode(avpacket)
                 if (ret < 0) {
                   task.stats.videoDecodeErrorPacketCount++
+                  // 硬解或者 webcodecs 软解失败
                   if ((task.targetDecoder instanceof WebVideoDecoder) && task.softwareDecoder) {
+
+                    logger.warn(`video decode error width hardware, taskId: ${task.taskId}, error: ${ret}, try to fallback to software decoder`)
+
                     if (task.targetDecoder === task.hardwareDecoder) {
-                      task.targetDecoder = task.softwareDecoder
                       task.hardwareDecoder.close()
                       task.hardwareDecoder = null
                     }
@@ -315,6 +318,7 @@ export default class VideoDecodePipeline extends Pipeline {
 
                     try {
                       await this.openSoftwareDecoder(task)
+                      task.targetDecoder = task.softwareDecoder
                     }
                     catch (error) {
                       logger.error(`video software decoder open error, taskId: ${options.taskId}`)
@@ -322,12 +326,34 @@ export default class VideoDecodePipeline extends Pipeline {
                       break
                     }
                     
-                    logger.warn(`video decode error width hardware, taskId: ${task.taskId}, error: ${ret}, try to fallback to software decoder`)
                     if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
                       ret = task.targetDecoder.decode(avpacket)
                       if (ret >= 0) {
                         task.avpacketPool.release(avpacket)
                         continue
+                      }
+                      // webcodecs 软解失败，回退到 wasm 软解
+                      if ((task.targetDecoder instanceof WebVideoDecoder) && task.resource) {
+
+                        logger.warn(`video decode error width webcodecs soft decoder, taskId: ${task.taskId}, error: ${ret}, try to fallback to wasm software decoder`)
+
+                        task.softwareDecoder.close()
+                        task.softwareDecoder = this.createWasmcodecDecoder(task, task.resource)
+                        task.softwareDecoderOpened = false
+                        try {
+                          await this.openSoftwareDecoder(task)
+                          task.targetDecoder = task.softwareDecoder
+                        }
+                        catch (error) {
+                          logger.error(`video wasm software decoder open error, taskId: ${options.taskId}`)
+                          rightIPCPort.reply(request, errorType.CODEC_NOT_SUPPORT)
+                          break
+                        }
+                        ret = task.targetDecoder.decode(avpacket)
+                        if (ret >= 0) {
+                          task.avpacketPool.release(avpacket)
+                          continue
+                        }
                       }
                     }
                     else {
