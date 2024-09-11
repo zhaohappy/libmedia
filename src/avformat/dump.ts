@@ -226,7 +226,7 @@ function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix:
   if (Object.keys(stream.metadata).length) {
     dump += `${prefix}  Metadata:\n`
     object.each(stream.metadata, (value, key) => {
-      if (!is.object(value) || !is.array(value)) {
+      if (!is.object(value) && !is.array(value)) {
         dump += `${prefix}    ${key}: ${value}\n`
       }
     })
