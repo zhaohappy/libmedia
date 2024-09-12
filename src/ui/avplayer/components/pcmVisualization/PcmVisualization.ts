@@ -81,7 +81,7 @@ class Drawer {
   private MIDDLE_MAX_HEIGHT = 0.3
   private INNER_MAX_HEIGHT = 0.2
 
-  private MAX_LENGTH = 64
+  private MAX_LENGTH = 100
   private MAX_FRAMERATE = 30
   private timeDelta: number = Math.floor(1000 / this.MAX_FRAMERATE)
 

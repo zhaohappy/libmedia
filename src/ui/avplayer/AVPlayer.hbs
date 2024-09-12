@@ -65,12 +65,12 @@
     </div>
   </div>
   <div class="avplayer-ui-folder-container" data-fold="{{folded ? 1 : 0}}">
-    <Folder player="{{player}}" language="{{language}}" />
     <div class="avplayer-ui-folder-toggle hint--right" data-hint="{{ folded ? language.TIP_UNFOLD : language.TIP_FOLD}}" on-click="toggleFold()">
       <svg viewBox="0 0 24 24">
         <path d="m10 17 5-5-5-5v10z"></path>
       </svg>
     </div>
+    <Folder player="{{player}}" language="{{language}}" />
   </div>
   <LoadingTip player="{{player}}" language="{{language}}" error="{{error}}" />
   {{#if hasPcmVisualization && !loading}}

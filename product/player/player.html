@@ -170,11 +170,6 @@
               backgroundVideo.play()
             }
           })
-          player.on('ended', () => {
-            if (backgroundVideo.paused) {
-              backgroundVideo.play()
-            }
-          })
           player.on('stopped', () => {
             if (backgroundVideo.paused) {
               backgroundVideo.play()
