@@ -220,15 +220,15 @@ class AVPlayerGlobalData {
 
 export const enum AVPlayerStatus {
   STOPPED,
+  DESTROYING,
+  DESTROYED,
   LOADING,
   LOADED,
   PLAYING,
   PLAYED,
   PAUSED,
   SEEKING,
-  CHANGING,
-  DESTROYING,
-  DESTROYED
+  CHANGING
 }
 
 export const enum AVPlayerProgress {
@@ -2440,6 +2440,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   public getSource() {
     return this.source
+  }
+
+  /**
+   * 获取 formatContext 对象
+   * 
+   * @returns 
+   */
+  public getFormatContext() {
+    return this.formatContext
   }
 
   /**

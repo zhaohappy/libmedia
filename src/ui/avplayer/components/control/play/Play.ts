@@ -72,9 +72,6 @@ const Play: ComponentOptions = {
 
     const player = this.get('player') as AVPlayer
 
-    player.on(eventType.ENDED + this.namespace, () => {
-      this.set('played', false)
-    })
     player.on(eventType.STOPPED + this.namespace, () => {
       this.set('played', false)
     })

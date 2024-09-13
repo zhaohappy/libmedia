@@ -24,6 +24,7 @@ import Folder from './components/folder/Folder'
 import Loading from './components/loading/Loading'
 import PcmVisualization from './components/pcmVisualization/PcmVisualization'
 import LoadingTip from './components/loadingTip/LoadingTip'
+import Info from './components/info/Info'
 
 import template from './AVPlayer.hbs'
 import style from './AVPlayer.styl'
@@ -32,6 +33,12 @@ import debounce from 'common/function/debounce'
 import { AVMediaType } from 'avutil/codec'
 import { AVStreamInterface } from 'avformat/AVStream'
 import Keyboard from './Keyboard'
+
+import outside from '../util/outside'
+
+export const enum MenuAction {
+  STATS
+}
 
 const AVPlayerUIComponentOptions: ComponentOptions = {
 
@@ -59,6 +66,16 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
   },
 
   data: function () {
+
+    const language = getLanguage()
+
+    const menu = [
+      {
+        name: language.MENU_STATS,
+        action: MenuAction.STATS
+      }
+    ]
+
     return {
       style,
       title: '',
@@ -67,15 +84,25 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       played: false,
       folded: false,
       loading: false,
-      language: getLanguage(),
+      language,
       streams: [],
-      isLive: false
+      isLive: false,
+      menu,
+      showMenu: false,
+      menuTop: 0,
+      menuLeft: 0,
+
+      showInfo: false
     }
   },
 
   events: {
     error: function(event, msg) {
       this.set('error', msg)
+    },
+
+    closeInfo: function() {
+      this.set('showInfo', false)
     }
   },
 
@@ -191,6 +218,17 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
 
     unfold() {
       this.set('folded', false)
+    },
+
+    menuAction(action: MenuAction) {
+      if (action === MenuAction.STATS) {
+        this.set('showInfo', true)
+      }
+      this.set('showMenu', false)
+    },
+
+    menuOutside() {
+      this.set('showMenu', false)
     }
   },
 
@@ -226,6 +264,16 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       player.resize(container.offsetWidth, container.offsetHeight)
     }, 500)
     window.addEventListener('resize', this.onresize)
+
+    this.oncontextmenu = (event: MouseEvent) => {
+      if (this.$refs['playerContainer'].contains(event.target)) {
+        this.set('showMenu', true)
+        this.set('menuTop', event.clientY)
+        this.set('menuLeft', event.clientX)
+        event.preventDefault()
+      }
+    }
+    window.addEventListener('contextmenu', this.oncontextmenu)
   },
 
   beforeDestroy() {
@@ -235,6 +283,7 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     }
 
     window.removeEventListener('resize', this.onresize)
+    window.removeEventListener('contextmenu', this.oncontextmenu)
   },
 
   components: {
@@ -253,7 +302,8 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     Folder,
     Loading,
     PcmVisualization,
-    LoadingTip
+    LoadingTip,
+    Info
   }
 }
 
@@ -272,6 +322,7 @@ export default class AVPlayerUI extends AVPlayer {
 
   constructor(options: AVPlayerUIOptions) {
     super(object.extend({}, options, { container: null }))
+    Yox.dom.addSpecialEvent('outside', outside)
     this.ui = new Yox(object.extend({
       el: options.container,
       replace: false,

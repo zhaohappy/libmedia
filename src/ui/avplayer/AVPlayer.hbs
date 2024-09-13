@@ -1,5 +1,5 @@
 <div id="avplayer-ui-container" class="avplayer-ui-container" data-bar-show="{{showBar ? 1 : 0}}" on-mousemove="mousemove()">
-  <div class="avplayer-ui-player" on-click="playClick()"></div>
+  <div class="avplayer-ui-player" on-click="playClick()" ref="playerContainer"></div>
   <div class="avplayer-ui-header">
     <span class="avplayer-ui-title">{{title}}</span>
     <a href="https://github.com/zhaohappy/libmedia" target="_blank">
@@ -89,6 +89,18 @@
       {{/if}}
     </div>
   </div>
+  {{#if showInfo}}
+  <div class="avplayer-ui-mask info">
+    <Info player="{{player}}" language="{{language}}" />
+  </div>
+  {{/if}}
+  {{#if showMenu}}
+  <div class="avplayer-ui-menu" style="top: {{menuTop}}px; left: {{menuLeft}}px;" on-outside="menuOutside()">
+    {{#each menu}}
+      <div key="{{action}}" class="avplayer-ui-menu-item" on-click="menuAction(action)">{{name}}</div>
+    {{/each}}
+  </div>
+  {{/if}}
   <style>
     {{{style}}}
   </style>

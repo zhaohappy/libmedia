@@ -49,3 +49,7 @@ export const LOADING_MESSAGE_LOAD_VIDEO_DECODER = 'loading video decoder(${decod
 export const LOADING_MESSAGE_LOAD_END = 'readied (`･ω･´)ゞ'
 
 export const LOADING_MESSAGE_LOAD_FAILED = 'failed (∩︵∩)'
+
+export const INFO_TITLE = 'Stats Info'
+
+export const MENU_STATS = 'Source Stats Info'

@@ -227,6 +227,10 @@
         transform: scale(1)
       }
     }
+
+    &.info {
+      height: calc(100% - var(--libmedia-ui-bottom-height))
+    }
   }
 
   .avplayer-ui-pcm-visualization-mask {
@@ -238,6 +242,22 @@
     display: flex
     position: absolute
     transition: all var(--libmedia-ui-transition-duration) ease
+  }
+
+  .avplayer-ui-menu {
+    position: fixed
+    border-radius: var(--libmedia-ui-border-radius)
+    background-color: var(--libmedia-ui-widget-background)
+    transition: all var(--libmedia-ui-transition-duration) ease
+
+    .avplayer-ui-menu-item {
+      padding: 10px 60px
+      font-size: 14px
+      cursor: pointer
+      &:hover {
+        background-color: var(--libmedia-ui-widget-hover-background)
+      }
+    }
   }
 
   &[data-bar-show='0'] {

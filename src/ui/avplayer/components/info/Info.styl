@@ -1,0 +1,68 @@
+.avplayer-ui-info {
+  pointer-events: auto
+  background: var(--libmedia-ui-tip-background)
+  border-radius: 4px
+  color: #fff
+  line-height: 18px
+  padding-bottom: 15px
+  text-align: center
+  text-align: left
+  -webkit-font-smoothing: antialiased
+  position: relative
+  max-height: 80%
+  max-width: 80%
+  overflow: auto
+
+  scrollbar-width: thin
+
+  &::-webkit-scrollbar {
+    width: 8px
+    height: 8px
+  }
+
+  .avplayer-ui-info-title {
+    border-bottom: 1px solid hsla(0, 0%, 100%, .1)
+    font-size: 16px
+    line-height: 40px
+    text-align: center
+  }
+  .avplayer-ui-info-close {
+    fill: #fff
+    color: #fff
+    cursor: pointer
+    height: 22px
+    position: absolute
+    right: 10px
+    top: 8px
+    width: 22px
+  }
+  .avplayer-ui-info-panel {
+    padding: 15px 26px 0
+    position: relative
+
+    .avplayer-ui-info-format {
+      font-size: 12px
+      font-weight: 500
+    }
+
+    .avplayer-ui-info-line {
+      min-width: 290px
+
+      .avplayer-ui-info-line-title {
+        font-size: 12px
+        font-weight: 500
+        margin-right: 10px
+        text-align: right
+        text-indent: -99em
+        width: 190px
+        display: inline-block
+      }
+      .avplayer-ui-info-line-value {
+        color: #999
+        font-size: 12px
+        font-weight: 400
+        margin-right: 6px
+      }
+    }
+  }
+}
