@@ -27,7 +27,7 @@ import BitReader from 'common/io/BitReader'
 import { FrameInfo } from './type'
 import * as errorType from 'avutil/error'
 import * as logger from 'common/util/logger'
-import { BlockSizeTable, FLAC_MAX_CHANNELS, FlacCHMode, SampleSizeTable } from './flac'
+import { BlockSizeTable, FLAC_MAX_CHANNELS, FlacCHMode, SampleRateTable, SampleSizeTable } from './flac'
 import crc8 from 'avutil/function/crc8'
 
 export function getUtf8(reader: BitReader) {
@@ -111,7 +111,7 @@ export function decodeFrameHeader(bitReader: BitReader, info: Partial<FrameInfo>
   }
 
   if (srCode < 12) {
-    info.sampleRate = SampleSizeTable[srCode]
+    info.sampleRate = SampleRateTable[srCode]
   }
   else if (srCode === 12) {
     info.sampleRate = bitReader.readU(8) * 1000
