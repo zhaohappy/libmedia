@@ -209,8 +209,6 @@ export default class AudioDecodePipeline extends Pipeline {
                 if (ret < 0) {
                   task.stats.audioDecodeErrorPacketCount++
                   logger.error(`audio decode error, taskId: ${options.taskId}, ret: ${ret}`)
-                  rightIPCPort.reply(request, ret)
-                  break
                 }
                 continue
               }
