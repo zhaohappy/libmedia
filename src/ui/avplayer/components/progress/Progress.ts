@@ -157,6 +157,12 @@ const Progress: ComponentOptions = {
 
     hoverClick: function(event: CustomEvent) {
       const player = this.get('player') as AVPlayer
+
+      const status = player.getStatus()
+      if (status !== AVPlayerStatus.PLAYED && status !== AVPlayerStatus.PAUSED) {
+        return
+      }
+
       this.seeking = true
       player.seek(static_cast<int64>(this.get('hoverTime') as double)).then(() => {
         this.seeking = false
