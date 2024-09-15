@@ -95,4 +95,5 @@ export interface FlacContext {
   cachePos: int64
   cacheBuffer: Uint8Array
   bitReader: BitReader
+  isVarSize: number
 }

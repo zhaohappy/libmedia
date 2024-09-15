@@ -103,7 +103,8 @@ export default class IFlacFormat extends IFormat {
       cachePos: 0n,
       bitReader: new BitReader(16),
       fileSize: 0n,
-      firstFramePos: 0n
+      firstFramePos: 0n,
+      isVarSize: -1
     }
   }
 
@@ -286,8 +287,11 @@ export default class IFlacFormat extends IFormat {
 
       let i = buffers.length ? 0 : 2
 
+      // 根据规范 isVarSize 是不能变的，但发现某些文件中间的某一帧变了，这里将强行指定到第一个帧的值来判断
+      const sync = this.context.isVarSize < 0 ? [0xf8, 0xf9] : ( this.context.isVarSize ? [0xf9] : [0xf8])
+
       for (; i < this.context.cacheBuffer.length - 2; i++) {
-        if (this.context.cacheBuffer[i] === 0xff && (this.context.cacheBuffer[i + 1] === 0xf9 || this.context.cacheBuffer[i + 1] === 0xf8)) {
+        if (this.context.cacheBuffer[i] === 0xff && array.has(sync, this.context.cacheBuffer[i + 1])) {
           if (i) {
             buffers.push(this.context.cacheBuffer.subarray(0, i))
             this.context.cacheBuffer = this.context.cacheBuffer.subarray(i)
@@ -389,6 +393,10 @@ export default class IFlacFormat extends IFormat {
       avpacket.dts = avpacket.pts = this.context.frameInfo.isVarSize
         ? this.context.frameInfo.frameOrSampleNum
         : this.context.frameInfo.frameOrSampleNum * static_cast<int64>(this.context.frameInfo.blocksize)
+
+      if (this.context.isVarSize < 0) {
+        this.context.isVarSize = this.context.frameInfo.isVarSize
+      }
 
       return 0
     }
