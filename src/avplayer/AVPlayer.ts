@@ -343,7 +343,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   /**
    * 当前播放时间戳（毫秒）
    */
-  get currentTime() {
+  get currentTime(): int64 {
     if (this.useMSE) {
       return static_cast<int64>((((this.video || this.audio)?.currentTime || 0) * 1000) as double)
     }

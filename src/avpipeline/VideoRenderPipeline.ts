@@ -893,6 +893,7 @@ export default class VideoRenderPipeline extends Pipeline {
         )
 
         if (pts - task.startPTS >= timestamp) {
+          task.stats.videoCurrentTime = pts
           break
         }
 

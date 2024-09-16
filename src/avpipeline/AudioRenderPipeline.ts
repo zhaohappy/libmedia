@@ -687,6 +687,7 @@ export default class AudioRenderPipeline extends Pipeline {
           task.paddingAVFrame = audioFrame
           task.frameEnded = false
           task.lastNotifyPTS = pts
+          task.stats.audioCurrentTime = pts
           break
         }
         else {
