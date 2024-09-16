@@ -231,6 +231,9 @@ const Progress: ComponentOptions = {
       this.set('currentTime', 0)
       this.set('loadedTime', 0)
     })
+    player.on(eventType.SEEKED + this.namespace, () => {
+      this.set('currentTime', static_cast<double>(player.currentTime))
+    })
     player.on(eventType.TIME + this.namespace, (pts: int64) => {
 
       if (this.seeking) {
