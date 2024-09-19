@@ -11,21 +11,16 @@
   position: relative
   max-height: 80%
   max-width: 80%
-  overflow: auto
   user-select: text
-
-  scrollbar-width: thin
-
-  &::-webkit-scrollbar {
-    width: 8px
-    height: 8px
-  }
+  display: flex
+  flex-direction: column
 
   .avplayer-ui-info-title {
     border-bottom: 1px solid hsla(0, 0%, 100%, .1)
     font-size: 16px
     line-height: 40px
     text-align: center
+    height: 41px
   }
   .avplayer-ui-info-close {
     fill: #fff
@@ -38,8 +33,16 @@
     width: 22px
   }
   .avplayer-ui-info-panel {
+    flex: 1
     padding: 15px 26px 0
     position: relative
+    overflow: auto
+    scrollbar-width: thin
+
+    &::-webkit-scrollbar {
+      width: 8px
+      height: 8px
+    }
 
     .avplayer-ui-info-format {
       font-size: 12px

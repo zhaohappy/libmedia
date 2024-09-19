@@ -34,7 +34,7 @@
     <div class="avplayer-ui-folder-node-name" ref="name" on-mouseenter="mouseenter()" on-mouseleave="mouseleave()">{{node.name}}</div>
 
     {{#if !isFolder(node)}}
-    <div class="avplayer-ui-folder-icon play hint--top" on-click="play()" data-hint="{{ !node.paused ? language.TIP_PLAY : language.TIP_PAUSE }}">
+    <div class="avplayer-ui-folder-icon play hint--top" on-click="play()" data-hint="{{(!node.played || node.paused) ? language.TIP_PLAY : language.TIP_PAUSE }}">
       {{#if node.played && !node.paused}}
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
         <path d="M7 3a2 2 0 0 0-2 2v12a2 2 0 1 0 4 0V5a2 2 0 0 0-2-2zM15 3a2 2 0 0 0-2 2v12a2 2 0 1 0 4 0V5a2 2 0 0 0-2-2z"></path>
