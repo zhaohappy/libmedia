@@ -37,6 +37,7 @@ export interface ControllerObserver {
   onTimeUpdate: (pts: int64) => void
   onMSESeek: (time: number) => void
   onGetDecoderResource: (mediaType: AVMediaType, codecId: AVCodecID) => Promise<WebAssemblyResource>
+  isPictureInPicture: () => boolean
 }
 
 export default class Controller {
@@ -128,12 +129,12 @@ export default class Controller {
     })
 
     this.onVisibilityChange = (event: any) => {
-      this.visibilityHidden = document.visibilityState === 'hidden'
+      this.visibilityHidden = document.visibilityState === 'hidden' && !this.observer.isPictureInPicture()
       this.videoRenderControlIPCPort.notify('skipRender', {
         skipRender: this.visibilityHidden
       })
     }
-    this.visibilityHidden = document.visibilityState === 'hidden'
+    this.visibilityHidden = document.visibilityState === 'hidden' && !this.observer.isPictureInPicture()
     document.addEventListener('visibilitychange', this.onVisibilityChange)
   }
 

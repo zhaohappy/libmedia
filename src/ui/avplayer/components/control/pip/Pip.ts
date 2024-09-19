@@ -57,7 +57,6 @@ const Pip: ComponentOptions = {
         }
         else {
           this.playerContainer = player.getOptions().container.parentElement
-          // @ts-ignore
           this.pipWindow = await documentPictureInPicture.requestWindow({
             disallowReturnToOpener: true,
             width: 320,

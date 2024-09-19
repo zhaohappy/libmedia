@@ -457,6 +457,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
   private createCanvas() {
     const canvas = document.createElement('canvas')
+    canvas.id = 'avplayer-canvas-' + generateUUID()
     canvas.className = 'avplayer-canvas'
     canvas.width = this.options.container.offsetWidth * devicePixelRatio
     canvas.height = this.options.container.offsetHeight * devicePixelRatio
@@ -2488,6 +2489,22 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   public getAudioOutputNode(): AudioNode {
     return this.gainNode
+  }
+
+  /**
+   * 判断是否处于画中画状态
+   * 
+   * @returns 
+   */
+  public isPictureInPicture() {
+    if (this.useMSE) {
+      return this.video && document.pictureInPictureElement === this.video
+    }
+    else if (this.canvas && typeof documentPictureInPicture === 'object') {
+      return documentPictureInPicture.window
+        && documentPictureInPicture.window.document.body.querySelector('#' + this.canvas.id) === this.canvas
+    }
+    return false
   }
 
   /**
