@@ -292,14 +292,14 @@ export default class FetchIOLoader extends IOLoader {
     this.buffers.length = 0
     if (this.status === IOLoaderStatus.COMPLETE) {
       this.status = IOLoaderStatus.BUFFERING
-    }0
+    }
   }
 
   public async size() {
     if (this.options.isLive) {
       return 0n
     }
-    return static_cast<int64>(this.contentLength)
+    return static_cast<int64>(this.contentLength || 0)
   }
 
   public async abort() {
