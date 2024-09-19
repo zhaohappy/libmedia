@@ -294,11 +294,6 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         resource = await compile(
           {
             source: wasmUrl
-          },
-          {
-            initFuncs: type === 'encoder' && codecId === AVCodecID.AV_CODEC_ID_HEVC
-              ? ['__wasm_apply_data_relocs', '_initialize']
-              : ['__wasm_apply_data_relocs']
           }
         )
         if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS) && mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
