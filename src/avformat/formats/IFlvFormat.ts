@@ -181,7 +181,7 @@ export default class IFlvFormat extends IFormat {
 
     avpacket.pos = now
 
-    const type = await formatContext.ioReader.readUint8()
+    const type = (await formatContext.ioReader.readUint8()) & 0x1f
     const size = await formatContext.ioReader.readUint24()
     let timestamp = await formatContext.ioReader.readUint24()
     const timestampExt = await formatContext.ioReader.readUint8()
@@ -198,6 +198,8 @@ export default class IFlvFormat extends IFormat {
         avpacket.streamIndex = stream.index
       }
 
+      avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+
       const audioHeader = await formatContext.ioReader.readUint8()
 
       if (stream) {
@@ -213,7 +215,6 @@ export default class IFlvFormat extends IFormat {
           else {
             await this.readAVPacketData(formatContext, stream, avpacket, size - 2)
           }
-          avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
         }
         else {
           await this.readAVPacketData(formatContext, stream, avpacket, size - 1)
@@ -263,7 +264,6 @@ export default class IFlvFormat extends IFormat {
           else {
             await this.readAVPacketData(formatContext, stream, avpacket, size - 2)
           }
-          avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
         }
         else {
           if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_SPEEX) {
