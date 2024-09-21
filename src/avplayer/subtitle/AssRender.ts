@@ -40,7 +40,11 @@ const GLOBAL_CSS = '.ASS-box{font-family:Arial;overflow:hidden;pointer-events:no
 
 function addGlobalStyle(container: any) {
   const rootNode = container.getRootNode() || document
-  const styleRoot = rootNode === document ? document.head : rootNode
+  let isDocument = rootNode instanceof Document
+  if (!isDocument && typeof documentPictureInPicture === 'object' && documentPictureInPicture.window) {
+    isDocument = rootNode === documentPictureInPicture.window.document
+  }
+  const styleRoot = isDocument ? rootNode.head : rootNode
   let $style = styleRoot.querySelector('#ASS-global-style')
   if (!$style) {
     $style = document.createElement('style')
@@ -48,6 +52,13 @@ function addGlobalStyle(container: any) {
     $style.id = 'ASS-global-style'
     $style.append(document.createTextNode(GLOBAL_CSS))
     styleRoot.append($style)
+  }
+  if (!document.head.querySelector('#ASS-global-style')) {
+    $style = document.createElement('style')
+    $style.type = 'text/css'
+    $style.id = 'ASS-global-style'
+    $style.append(document.createTextNode(GLOBAL_CSS))
+    document.head.append($style)
   }
 }
 
