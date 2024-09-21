@@ -50,6 +50,8 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
 
   constructor() {
     super()
+    this.ended = false
+    this.pause = true
     this.ipcPort.on(REQUEST, async (request: RpcMessage) => {
       switch (request.method) {
         case 'init': {
