@@ -322,13 +322,17 @@ const Folder: ComponentOptions = {
         player.load(node.get('node.source')).then(() => {
           player.play()
           .catch((error) => {
-            this.fire('error', `${error}`)
+            this.fire('error', {
+              message: `${error}`
+            })
           })
           node.set('node.paused', false)
           this.findSubtitle(node.get('node'))
         })
         .catch((error) => {
-          this.fire('error', `${error}`)
+          this.fire('error', {
+            message: `${error}`
+          })
         })
         this.playNodeId = node.get('node.id')
         this.fire('playNode', node.get('node'))
@@ -339,13 +343,17 @@ const Folder: ComponentOptions = {
           player.load(node.get('node.source')).then(() => {
             player.play()
             .catch((error) => {
-              this.fire('error', `${error}`)
+              this.fire('error', {
+                message: `${error}`
+              })
             })
             node.set('node.paused', false)
             this.findSubtitle(node.get('node'))
           })
           .catch((error) => {
-            this.fire('error', `${error}`)
+            this.fire('error', {
+              message: `${error}`
+            })
           })
           this.playNodeId = node.get('node.id')
           this.fire('playNode', node.get('node'))

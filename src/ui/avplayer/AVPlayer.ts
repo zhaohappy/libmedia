@@ -97,8 +97,8 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
   },
 
   events: {
-    error: function(event, msg) {
-      this.set('error', msg)
+    error: function(event, data) {
+      this.set('error', data.message)
     },
 
     closeInfo: function() {
