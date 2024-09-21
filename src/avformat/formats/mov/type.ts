@@ -124,6 +124,7 @@ export interface MOVContext {
     pos: bigint
   }
   ac3Info?: EC3Info
+  firstMoof?: int64
 }
 
 export interface MOVStreamContext {

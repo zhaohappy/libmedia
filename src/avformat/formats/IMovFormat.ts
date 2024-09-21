@@ -265,6 +265,10 @@ export default class IMovFormat extends IFormat {
               currentTrack: null
             }
 
+            if (!this.context.firstMoof) {
+              this.context.firstMoof = pos
+            }
+
             await imov.readMoof(
               formatContext.ioReader,
               formatContext,
@@ -311,11 +315,19 @@ export default class IMovFormat extends IFormat {
 
     const streamContext = stream.privData as MOVStreamContext
 
+    const resetFragment = () => {
+      this.context.currentFragment = null
+      formatContext.streams.forEach((stream) => {
+        const movStreamContext = stream.privData as MOVStreamContext
+        movStreamContext.samplesIndex.length = 0
+      })
+    }
+
     // dash 使用时间戳去 seek
     if (flags & AVSeekFlags.TIMESTAMP && this.context.fragment) {
       const seekTime = avRescaleQ(timestamp, stream.timeBase, AV_MILLI_TIME_BASE_Q)
       await formatContext.ioReader.seek(seekTime, true)
-      this.context.currentFragment = null
+      resetFragment()
       return 0n
     }
 
@@ -332,9 +344,14 @@ export default class IMovFormat extends IFormat {
         })
         if (index > -1) {
           await formatContext.ioReader.seek(streamContext.fragIndexes[index].pos, true)
-          this.context.currentFragment = null
+          resetFragment()
           return 0n
         }
+      }
+      if (pts === 0n && this.context.firstMoof) {
+        await formatContext.ioReader.seek(this.context.firstMoof)
+        resetFragment()
+        return 0n
       }
       return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
     }

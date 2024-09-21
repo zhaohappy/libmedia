@@ -286,74 +286,73 @@ export async function readMfra(
 ) {
   const endPos = ioReader.getPos() + static_cast<int64>(atom.size)
   while (ioReader.getPos() < endPos) {
-    const pos = await ioReader.fileSize()
+    const pos = ioReader.getPos()
     const size = await ioReader.readUint32()
     const type = await ioReader.readUint32()
-    if (type !== mktag(BoxType.TFRA)) {
-      logger.error('invalid tfra box data')
-      return
-    }
-    const version = await ioReader.readUint8()
-    await ioReader.skip(3)
-    const trackId = await ioReader.readUint32()
-    const fieldLength = await ioReader.readUint32()
-    const itemCount = await ioReader.readUint32()
+    
+    if (type === mktag(BoxType.TFRA)) {
+      const version = await ioReader.readUint8()
+      await ioReader.skip(3)
+      const trackId = await ioReader.readUint32()
+      const fieldLength = await ioReader.readUint32()
+      const itemCount = await ioReader.readUint32()
 
-    const stream = formatContext.streams.find((stream) => {
-      return (stream.privData as MOVStreamContext).trackId === trackId
-    })
+      const stream = formatContext.streams.find((stream) => {
+        return (stream.privData as MOVStreamContext).trackId === trackId
+      })
 
-    if (stream) {
+      if (stream) {
 
-      const movStreamContext = stream.privData as MOVStreamContext
+        const movStreamContext = stream.privData as MOVStreamContext
 
-      let time: int64
-      let offset: int64
-      for (let i = 0; i < itemCount; i++) {
-        if (version === 1) {
-          time = await ioReader.readUint64()
-          offset = await ioReader.readUint64()
-        }
-        else {
-          time = static_cast<int64>(await ioReader.readUint32())
-          offset = static_cast<int64>(await ioReader.readUint32())
-        }
-
-        movStreamContext.fragIndexes.push({
-          pos: offset,
-          time
-        })
-
-        for (let j = 0; j < ((fieldLength >> 4) & 3) + 1; j++) {
-          await ioReader.skip(1)
-        }
-        for (let j = 0; j < ((fieldLength >> 2) & 3) + 1; j++) {
-          await ioReader.skip(1)
-        }
-        for (let j = 0; j < ((fieldLength >> 0) & 3) + 1; j++) {
-          await ioReader.skip(1)
-        }
-      }
-      if (movStreamContext.fragIndexes.length) {
-        await ioReader.seek(movStreamContext.fragIndexes[movStreamContext.fragIndexes.length - 1].pos)
-        const size = await ioReader.readUint32()
-        const type = await ioReader.readUint32()
-        if (type === mktag(BoxType.MOOF)) {
-          movContext.currentFragment = {
-            pos: 0n,
-            size,
-            sequence: 0,
-            tracks: [],
-            currentTrack: null
+        let time: int64
+        let offset: int64
+        for (let i = 0; i < itemCount; i++) {
+          if (version === 1) {
+            time = await ioReader.readUint64()
+            offset = await ioReader.readUint64()
           }
-          await readMoof(ioReader, formatContext, movContext, {
-            size,
-            type
+          else {
+            time = static_cast<int64>(await ioReader.readUint32())
+            offset = static_cast<int64>(await ioReader.readUint32())
+          }
+
+          movStreamContext.fragIndexes.push({
+            pos: offset,
+            time
           })
-          if (movStreamContext.samplesIndex.length) {
-            const sample = movStreamContext.samplesIndex[movStreamContext.samplesIndex.length - 1]
-            stream.duration = sample.pts + static_cast<int64>(sample.duration)
-            movStreamContext.samplesIndex.length = 0
+
+          for (let j = 0; j < ((fieldLength >> 4) & 3) + 1; j++) {
+            await ioReader.skip(1)
+          }
+          for (let j = 0; j < ((fieldLength >> 2) & 3) + 1; j++) {
+            await ioReader.skip(1)
+          }
+          for (let j = 0; j < ((fieldLength >> 0) & 3) + 1; j++) {
+            await ioReader.skip(1)
+          }
+        }
+        if (movStreamContext.fragIndexes.length) {
+          await ioReader.seek(movStreamContext.fragIndexes[movStreamContext.fragIndexes.length - 1].pos)
+          const size = await ioReader.readUint32()
+          const type = await ioReader.readUint32()
+          if (type === mktag(BoxType.MOOF)) {
+            movContext.currentFragment = {
+              pos: 0n,
+              size,
+              sequence: 0,
+              tracks: [],
+              currentTrack: null
+            }
+            await readMoof(ioReader, formatContext, movContext, {
+              size,
+              type
+            })
+            if (movStreamContext.samplesIndex.length) {
+              const sample = movStreamContext.samplesIndex[movStreamContext.samplesIndex.length - 1]
+              stream.duration = sample.pts + static_cast<int64>(sample.duration)
+              movStreamContext.samplesIndex.length = 0
+            }
           }
         }
       }
