@@ -993,13 +993,14 @@ export default class VideoRenderPipeline extends Pipeline {
   public async unregisterTask(id: string): Promise<void> {
     const task = this.tasks.get(id)
     if (task) {
+      const started = !!task.loop
       if (task.loop) {
         await task.loop.stopBeforeNextTick()
         task.loop.destroy()
         task.loop = null
       }
 
-      if (!task.ended && !task.frontFrame) {
+      if (started && !task.ended && !task.frontFrame) {
         await new Promise<void>((resolve) => {
           task.afterPullResolver = resolve
         })
