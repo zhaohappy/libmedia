@@ -264,7 +264,7 @@ export default class DemuxPipeline extends Pipeline {
     return 0
   }
 
-  public async openStream(taskId: string, maxProbeDuration: int32 = 2000) {
+  public async openStream(taskId: string, maxProbeDuration: int32 = 3000) {
     const task = this.tasks.get(taskId)
     if (task) {
       await task.leftIPCPort.request('open')
