@@ -202,8 +202,8 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       }
     },
 
-    playClick() {
-      if (this.$refs['play']) {
+    playClick(container: boolean) {
+      if (this.$refs['play'] && (!this.get('showMenu') || !container)) {
         this.$refs['play'].playClick()
       }
     },
