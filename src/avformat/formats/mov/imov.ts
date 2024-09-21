@@ -353,6 +353,7 @@ export async function readMfra(
           if (movStreamContext.samplesIndex.length) {
             const sample = movStreamContext.samplesIndex[movStreamContext.samplesIndex.length - 1]
             stream.duration = sample.pts + static_cast<int64>(sample.duration)
+            movStreamContext.samplesIndex.length = 0
           }
         }
       }
