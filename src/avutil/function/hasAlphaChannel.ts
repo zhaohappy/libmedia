@@ -32,5 +32,5 @@ export default function hasAlphaChannel(parameters: pointer<AVCodecParameters>) 
     return false
   }
   const descriptor = PixelFormatDescriptorsMap[parameters.format]
-  return descriptor.flags & PixelFormatFlags.ALPHA
+  return descriptor && (descriptor.flags & PixelFormatFlags.ALPHA)
 }
