@@ -83,7 +83,7 @@ const Pip: ComponentOptions = {
             try {
               const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('')
               const style = document.createElement('style')
-              style.textContent = cssRules;
+              style.textContent = cssRules
               this.pipWindow.document.head.appendChild(style)
             }
             catch (e) {
