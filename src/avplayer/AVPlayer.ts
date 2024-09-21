@@ -1624,8 +1624,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (this.subtitleRender && this.externalSubtitleTasks.length) {
       for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
         const stream = this.formatContext.streams.find((s => s.id === this.externalSubtitleTasks[i].streamId))
-        await AVPlayer.DemuxerThread.connectStreamTask.transfer(this.subtitleRender.getDemuxerPort(this.externalSubtitleTasks[i].taskId))
-          .invoke(this.externalSubtitleTasks[i].taskId, stream.index, this.subtitleRender.getDemuxerPort(this.externalSubtitleTasks[i].taskId))
+        if (stream !== subtitleStream) {
+          await AVPlayer.DemuxerThread.connectStreamTask.transfer(this.subtitleRender.getDemuxerPort(this.externalSubtitleTasks[i].taskId))
+            .invoke(this.externalSubtitleTasks[i].taskId, stream.index, this.subtitleRender.getDemuxerPort(this.externalSubtitleTasks[i].taskId))
+        }
       }
     }
 
