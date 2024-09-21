@@ -92,6 +92,8 @@ enum AdjustStatus {
   Decelerate
 }
 
+let disableWebGPU = false
+
 export interface VideoRenderTaskOptions extends TaskOptions {
   canvas: HTMLCanvasElement | OffscreenCanvas
   renderMode: RenderMode
@@ -308,7 +310,7 @@ export default class VideoRenderPipeline extends Pipeline {
     return true
   }
 
-  private async createRender(task: SelfTask, frame: pointer<AVFrameRef> | VideoFrame) {
+  private async createRender(task: SelfTask, frame: pointer<AVFrameRef> | VideoFrame, fallback: boolean = false) {
     if (task.renderCreating) {
       return
     }
@@ -323,6 +325,7 @@ export default class VideoRenderPipeline extends Pipeline {
       if (defined(ENABLE_WEBGPU)
         && task.enableWebGPU
         && support.webgpu
+        && !disableWebGPU
         && (
           // chrome116+ webgpu 可以导入 VideoFrame 作为纹理
           (browser.chrome || browser.newEdge) && browser.checkVersion(browser.majorVersion, '116', true)
@@ -355,7 +358,11 @@ export default class VideoRenderPipeline extends Pipeline {
     }
     else {
       // 优先使用 webgpu，webgpu 性能优于 webgl
-      if (defined(ENABLE_WEBGPU) && task.enableWebGPU && support.webgpu) {
+      if (defined(ENABLE_WEBGPU)
+        && task.enableWebGPU
+        && support.webgpu
+        && !disableWebGPU
+      ) {
         array.each(WebGPURenderList, (RenderFactory) => {
           if (RenderFactory.isSupport(frame)) {
             task.render = new RenderFactory(task.canvas, {
@@ -396,13 +403,30 @@ export default class VideoRenderPipeline extends Pipeline {
       task.renderCreating = false
       return
     }
-    await task.render.init()
-    task.render.viewport(task.viewportWidth, task.viewportHeight)
-    task.render.clear()
-    task.render.setRotate(task.renderRotate ?? 0)
-    task.render.enableHorizontalFlip(task.flipHorizontal ?? false)
-    task.render.enableVerticalFlip(task.flipVertical ?? false)
 
+    try {
+      await task.render.init()
+      task.render.viewport(task.viewportWidth, task.viewportHeight)
+      task.render.setRotate(task.renderRotate ?? 0)
+      task.render.enableHorizontalFlip(task.flipHorizontal ?? false)
+      task.render.enableVerticalFlip(task.flipVertical ?? false)
+      task.render.render(frame)
+      task.render.clear()
+    }
+    catch (error) {
+      if (task.render instanceof WebGPURender) {
+        disableWebGPU = true
+        task.renderCreating = false
+        logger.warn('not support webgpu render, try to fallback to webgl render')
+        return this.createRender(task, frame, true)
+      }
+      else if (fallback) {
+        task.renderCreating = false
+        logger.warn('canvas context lost after fallback, wait for recreate canvas')
+        task.controlIPCPort.notify('updateCanvas')
+        return
+      }
+    }
     task.renderRedyed = true
     task.renderCreating = false
   }

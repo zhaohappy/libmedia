@@ -82,6 +82,10 @@ export default abstract class WebGPURender extends ImageRender {
       powerPreference: this.options.powerPreference ?? 'high-performance'
     })
 
+    if (!this.adapter) {
+      logger.fatal('not support webgpu render')
+    }
+
     const canRequiredFeatures: GPUFeatureName[] = []
     array.each(requiredFeatures, (feature) => {
       if (this.adapter.features.has(feature)) {
