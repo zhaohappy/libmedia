@@ -62,7 +62,7 @@ fi
 
 realDecoder=$decode
 if [[ $decode == "speex" ]]; then
-  realEncoder="libspeex"
+  realDecoder="libspeex"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libspeex"
   EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/speex/include"
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex/lib -lspeex"
