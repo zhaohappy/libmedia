@@ -768,6 +768,7 @@ export default class AudioRenderPipeline extends Pipeline {
 
     next /= (task.playRate * task.playTempo)
 
+    task.currentPTS = avRescaleQ(audioFrame.pts, task.timeBase, AV_MILLI_TIME_BASE_Q)
     const targetSamples = static_cast<int64>(getTimestamp() - task.fakePlayStartTimestamp) * static_cast<int64>(audioFrame.sampleRate) / 1000n
 
     const diff = Number(targetSamples - task.fakePlaySamples)
@@ -777,6 +778,12 @@ export default class AudioRenderPipeline extends Pipeline {
     task.fakePlaySamples += static_cast<int64>(audioFrame.nbSamples)
 
     task.avframePool.release(audioFrame)
+    if (task.currentPTS - task.lastNotifyPTS >= 1000n) {
+      task.lastNotifyPTS = task.currentPTS
+      task.controlIPCPort.notify('syncPts', {
+        pts: task.currentPTS
+      })
+    }
 
     task.fakePlayTimer = setTimeout(() => {
       task.fakePlayTimer = null
