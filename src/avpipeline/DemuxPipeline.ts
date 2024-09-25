@@ -51,6 +51,7 @@ import * as bigint from 'common/util/bigint'
 import { AVStreamInterface } from 'avformat/AVStream'
 import { addAVPacketSideData, getAVPacketSideData } from 'avutil/util/avpacket'
 import { memcpy } from 'cheap/std/memory'
+import analyzeAVFormat from 'avutil/function/analyzeAVFormat'
 
 export const STREAM_INDEX_ALL = -1
 
@@ -97,59 +98,6 @@ export default class DemuxPipeline extends Pipeline {
 
   constructor() {
     super()
-  }
-
-  private async judgeFormat(ioReader: IOReader, defaultFormat: AVFormat = AVFormat.UNKNOWN) {
-    let signature = await ioReader.peekString(8)
-    if ( /^FLV/.test(signature)) {
-      return AVFormat.FLV
-    }
-    else if (/^DKIF/.test(signature)) {
-      return AVFormat.IVF
-    }
-    else if (/^ftyp/.test(signature.slice(4, 8))) {
-      return AVFormat.MP4
-    }
-    else if (/^OggS/.test(signature)) {
-      return AVFormat.OGGS
-    }
-    else if (/^ID3/.test(signature)) {
-      return AVFormat.MP3
-    }
-    else if (/^fLaC/.test(signature)) {
-      return AVFormat.FLAC
-    }
-    else if (/^RIFF/.test(signature)) {
-      const dataType = (await ioReader.peekString(12)).slice(8)
-      if (/^WAVE/.test(dataType)) {
-        return AVFormat.WAV
-      }
-    }
-    else if (/^ADIF/.test(signature)) {
-      return AVFormat.AAC
-    }
-    else if ((await ioReader.peekUint32()) === 0x1A45DFA3) {
-      return AVFormat.MATROSKA
-    }
-    else {
-      const buf = await ioReader.peekBuffer(2)
-      switch (buf[0]) {
-        case 0x56:
-          if ((buf[1] & 0xe0) === 0xe0) {
-            return AVFormat.AAC
-          }
-          break
-        case 0xff:
-          if ((buf[1] & 0xf6) === 0xf0) {
-            return AVFormat.AAC
-          }
-          else if ([0xf2, 0xf4, 0xf6, 0xfa, 0xfc].includes(buf[1] & 0xfe)) {
-            return AVFormat.MP3
-          }
-          break
-      }
-    }
-    return defaultFormat
   }
 
   private createTask(options: DemuxTaskOptions): number {
@@ -292,7 +240,7 @@ export default class DemuxPipeline extends Pipeline {
 
       let format: AVFormat
       try {
-        format = await this.judgeFormat(task.ioReader, task.format)
+        format = await analyzeAVFormat(task.ioReader, task.format)
         task.format = format
       }
       catch (error) {
