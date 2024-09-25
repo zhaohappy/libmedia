@@ -668,9 +668,6 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
 }
 
 export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
-  if (!(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)) {
-    return false
-  }
   if (avpacket.bitFormat === BitFormat.ANNEXB) {
     let nalus = splitNaluByStartCode(mapUint8Array(avpacket.data, avpacket.size))
     return nalus.some((nalu) => {
