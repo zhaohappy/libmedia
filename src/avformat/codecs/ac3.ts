@@ -24,8 +24,8 @@
  */
 
 import { AV_CH_LAYOUT } from 'avutil/audiosamplefmt'
-import { mapUint8Array } from 'cheap/std/memory'
 import BitReader from 'common/io/BitReader'
+import { Uint8ArrayInterface } from 'common/io/interface'
 
 export const enum AC3DeltaStrategy {
   DBA_REUSE = 0,
@@ -108,7 +108,7 @@ export interface AC3HeaderInfo {
   dolbySurroundMode: int32
   srShift: uint8
   sampleRate: uint16
-  bitRate: uint32
+  bitrate: uint32
   channels: uint8
   frameSize: uint16
   channelLayout: uint64
@@ -173,9 +173,9 @@ const EAC3Blocks = [
 
 const AC3_HEADER_SIZE = 7
 
-export function parseHeader(buf: pointer<uint8>, size: size) {
+export function parseHeader(buf: Uint8ArrayInterface) {
   const bitReader = new BitReader(size)
-  bitReader.appendBuffer(mapUint8Array(buf, size))
+  bitReader.appendBuffer(buf)
 
   const info: AC3HeaderInfo = {
     syncWord: 0,
@@ -194,7 +194,7 @@ export function parseHeader(buf: pointer<uint8>, size: size) {
     dolbySurroundMode: 0,
     srShift: 0,
     sampleRate: 0,
-    bitRate: 0,
+    bitrate: 0,
     channels: 0,
     frameSize: 0,
     channelLayout: 0n,
@@ -255,7 +255,7 @@ export function parseHeader(buf: pointer<uint8>, size: size) {
 
     info.srShift = Math.max(info.bitstreamId, 8) - 8
     info.sampleRate = AC3SampleRateTab[info.srCode] >> info.srShift
-    info.bitRate = (AC3BitrateTab[info.ac3BitrateCode] * 1000) >> info.srShift
+    info.bitrate = (AC3BitrateTab[info.ac3BitrateCode] * 1000) >> info.srShift
     info.channels = AC3ChannelsTab[info.channelMode] + info.lfeOn;
     info.frameSize = AC3FrameSizeTab[frameSizeCode][info.srCode] * 2
     info.frameType = EAC3FrameType.EAC3_FRAME_TYPE_AC3_CONVERT
@@ -293,7 +293,7 @@ export function parseHeader(buf: pointer<uint8>, size: size) {
     info.channelMode = bitReader.readU(3)
     info.lfeOn = bitReader.readU(1)
 
-    info.bitRate = 8 * info.frameSize * info.sampleRate / (info.numBlocks * 256)
+    info.bitrate = 8 * info.frameSize * info.sampleRate / (info.numBlocks * 256)
     info.channels = AC3ChannelsTab[info.channelMode] + info.lfeOn
   }
   info.channelLayout = static_cast<uint64>(AC3ChannelLayout[info.channelMode])

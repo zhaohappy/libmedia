@@ -56,6 +56,7 @@ import { BitFormat } from '../codecs/h264'
 import * as is from 'common/util/is'
 
 import * as ac3 from '../codecs/ac3'
+import { mapUint8Array } from 'cheap/std/memory'
 
 const defaultOptions: MovFormatOptions = {
   fragmentMode: FragmentMode.GOP,
@@ -476,14 +477,14 @@ export default class OMovFormat extends OFormat {
 
     const ac3Info = this.context.ac3Info
 
-    const info = ac3.parseHeader(avpacket.data, avpacket.size)
+    const info = ac3.parseHeader(mapUint8Array(avpacket.data, avpacket.size))
 
     if (is.number(info)) {
       ac3Info.done = true
       return
     }
 
-    ac3Info.dataRate = Math.max(ac3Info.dataRate, info.bitRate / 1000)
+    ac3Info.dataRate = Math.max(ac3Info.dataRate, info.bitrate / 1000)
     ac3Info.ac3BitrateCode = Math.max(ac3Info.ac3BitrateCode, info.ac3BitrateCode)
 
     if (!ac3Info.done) {

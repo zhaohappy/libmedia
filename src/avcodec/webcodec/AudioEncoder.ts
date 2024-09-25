@@ -116,7 +116,7 @@ export default class WebAudioEncoder {
       codec: getAudioCodec(parameters),
       sampleRate: parameters.sampleRate,
       numberOfChannels: parameters.chLayout.nbChannels,
-      bitrate: static_cast<double>(parameters.bitRate),
+      bitrate: static_cast<double>(parameters.bitrate),
       bitrateMode: 'constant'
     }
 
@@ -198,7 +198,7 @@ export default class WebAudioEncoder {
       codec: getAudioCodec(parameters),
       sampleRate: parameters.sampleRate,
       numberOfChannels: parameters.chLayout.nbChannels,
-      bitrate: static_cast<double>(parameters.bitRate),
+      bitrate: static_cast<double>(parameters.bitrate),
       bitrateMode: 'constant'
     }
 

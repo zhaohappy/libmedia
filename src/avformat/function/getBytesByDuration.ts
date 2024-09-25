@@ -32,7 +32,7 @@ import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 export function getBytesByDuration(streams: AVStream[], duration: int64, timeBase: Rational) {
   let bytes = 0n
   array.each(streams, (st) => {
-    bytes += st.codecpar.bitRate * avRescaleQ(duration, timeBase, AV_MILLI_TIME_BASE_Q) / 8000n
+    bytes += st.codecpar.bitrate * avRescaleQ(duration, timeBase, AV_MILLI_TIME_BASE_Q) / 8000n
   })
   return bytes
 }

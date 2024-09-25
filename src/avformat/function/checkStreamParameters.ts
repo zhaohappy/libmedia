@@ -37,7 +37,7 @@ export function checkStreamParameters(context: AVIFormatContext | AVOFormatConte
         if (stream.codecpar.chLayout.nbChannels === NOPTS_VALUE
           || stream.codecpar.sampleRate === NOPTS_VALUE
           || stream.codecpar.frameSize === NOPTS_VALUE
-          || stream.codecpar.bitRate === 0n
+          || stream.codecpar.bitrate === 0n
         ) {
           result = false
         }
@@ -46,7 +46,7 @@ export function checkStreamParameters(context: AVIFormatContext | AVOFormatConte
         if (avQ2D(stream.codecpar.framerate) === 0
           || stream.codecpar.width === NOPTS_VALUE
           || stream.codecpar.height === NOPTS_VALUE
-          || stream.codecpar.bitRate === 0n
+          || stream.codecpar.bitrate === 0n
         ) {
           result = false
         }

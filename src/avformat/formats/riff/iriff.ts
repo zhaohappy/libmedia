@@ -110,7 +110,7 @@ export async function readFormatTag(ioReader: IOReader, codecpar: pointer<AVCode
     }
   }
 
-  codecpar.bitRate = BigInt(bitrate)
+  codecpar.bitrate = BigInt(bitrate)
 
   if (codecpar.sampleRate < 0) {
     logger.error(`Invalid sample rate: ${codecpar.sampleRate}`)
@@ -123,7 +123,7 @@ export async function readFormatTag(ioReader: IOReader, codecpar: pointer<AVCode
   }
 
   if (codecpar.codecId == AVCodecID.AV_CODEC_ID_ADPCM_G726 && codecpar.sampleRate) {
-    codecpar.bitsPerCodedSample = static_cast<int32>(codecpar.bitRate) / codecpar.sampleRate
+    codecpar.bitsPerCodedSample = static_cast<int32>(codecpar.bitrate) / codecpar.sampleRate
   }
   if (channels != codecpar.chLayout.nbChannels) {
     codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_UNSPEC

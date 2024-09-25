@@ -114,8 +114,8 @@ function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix:
     }
     list.push(channel)
     list.push(dumpKey(stringEnum.SampleFmtString2SampleFormat, stream.codecpar.format))
-    if (stream.codecpar.bitRate > 0n) {
-      list.push(`${dumpBitrate(stream.codecpar.bitRate)}`)
+    if (stream.codecpar.bitrate > 0n) {
+      list.push(`${dumpBitrate(stream.codecpar.bitrate)}`)
     }
   }
   else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
@@ -138,8 +138,8 @@ function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix:
 
     list.push(`${stream.codecpar.width}x${stream.codecpar.height} [SAR: ${stream.codecpar.sampleAspectRatio.num}:${stream.codecpar.sampleAspectRatio.den} DAR ${dar.num}:${dar.den}]`)
 
-    if (stream.codecpar.bitRate > 0n) {
-      list.push(`${dumpBitrate(stream.codecpar.bitRate)}`)
+    if (stream.codecpar.bitrate > 0n) {
+      list.push(`${dumpBitrate(stream.codecpar.bitrate)}`)
     }
     if (avQ2D(stream.codecpar.framerate) > 0) {
       list.push(`${avQ2D(stream.codecpar.framerate).toFixed(2)} fps`)
@@ -155,13 +155,13 @@ function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix:
   else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE) {
     const codecName = dumpKey(stringEnum.SubtitleCodecString2CodecId, stream.codecpar.codecId)
     list.push(codecName)
-    if (stream.codecpar.bitRate > 0n) {
-      list.push(`${dumpBitrate(stream.codecpar.bitRate)}`)
+    if (stream.codecpar.bitrate > 0n) {
+      list.push(`${dumpBitrate(stream.codecpar.bitrate)}`)
     }
   }
   else {
-    if (stream.codecpar.bitRate > 0n) {
-      list.push(`${dumpBitrate(stream.codecpar.bitRate)}`)
+    if (stream.codecpar.bitrate > 0n) {
+      list.push(`${dumpBitrate(stream.codecpar.bitrate)}`)
     }
   }
 
@@ -260,7 +260,7 @@ function dumpAVFormatContextInterface(formatContext: AVFormatContextInterface, i
     if (s < start || start === -1n) {
       start = s
     }
-    bitrate += stream.codecpar.bitRate
+    bitrate += stream.codecpar.bitrate
   })
 
   dump += `  Duration: ${dumpTime(duration)}, start: ${dumpTime(start)}, bitrate: ${dumpBitrate(bitrate)}\n`

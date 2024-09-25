@@ -243,6 +243,8 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
                 onReceiveFrame: (avframe) => {
                   stream.codecpar.format = avframe.format
                   stream.codecpar.frameSize = avframe.nbSamples
+                  stream.codecpar.sampleRate = avframe.sampleRate
+                  stream.codecpar.chLayout = avframe.chLayout
                   destroyAVFrame(avframe)
                   pictureGot[stream.index] = true
                 },
@@ -264,6 +266,8 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
                   stream.codecpar.colorTrc = avframe.colorTrc
                   stream.codecpar.chromaLocation = avframe.chromaLocation
                   stream.codecpar.sampleAspectRatio = avframe.sampleAspectRatio
+                  stream.codecpar.width = avframe.width
+                  stream.codecpar.height = avframe.height
                   destroyAVFrame(avframe)
                   pictureGot[stream.index] = true
                 },
@@ -302,7 +306,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
       const duration = Number(avpacket.dts - stream.firstDTS) * stream.timeBase.num / stream.timeBase.den
 
       if (duration) {
-        stream.codecpar.bitRate = static_cast<int64>(streamBitMap[stream.index] * 8 / duration)
+        stream.codecpar.bitrate = static_cast<int64>(streamBitMap[stream.index] * 8 / duration)
       }
     }
 
@@ -333,7 +337,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
           }
           const duration = Number(avpacket.dts - stream.firstDTS) * stream.timeBase.num / stream.timeBase.den
           if (duration) {
-            stream.codecpar.bitRate = static_cast<int64>(streamBitMap[stream.index] * 8 / duration)
+            stream.codecpar.bitrate = static_cast<int64>(streamBitMap[stream.index] * 8 / duration)
           }
         }
       })

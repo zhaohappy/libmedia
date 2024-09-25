@@ -911,7 +911,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           }
         }
         if (audioConfig.bitrate) {
-          newStream.codecpar.bitRate = static_cast<int64>(audioConfig.bitrate)
+          newStream.codecpar.bitrate = static_cast<int64>(audioConfig.bitrate)
         }
         if (audioConfig.channels) {
           newStream.codecpar.chLayout.nbChannels = audioConfig.channels
@@ -954,7 +954,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_MULAW
       ) {
         newStream.codecpar.sampleRate = 8000
-        newStream.codecpar.bitRate = 64000n
+        newStream.codecpar.bitrate = 64000n
         newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_S16
       }
       else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_SPEEX) {
@@ -1086,7 +1086,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             codec: getAudioCodec(newStream.codecpar),
             sampleRate: newStream.codecpar.sampleRate,
             numberOfChannels: newStream.codecpar.chLayout.nbChannels,
-            bitrate: static_cast<int32>(newStream.codecpar.bitRate),
+            bitrate: static_cast<int32>(newStream.codecpar.bitrate),
             bitrateMode: 'constant'
           })
           if (!isSupport.supported) {
@@ -1193,7 +1193,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           newStream.codecpar.height = videoConfig.height
         }
         if (videoConfig.bitrate) {
-          newStream.codecpar.bitRate = static_cast<int64>(videoConfig.bitrate)
+          newStream.codecpar.bitrate = static_cast<int64>(videoConfig.bitrate)
         }
         if (videoConfig.pixfmt) {
           const pixfmt = PixfmtString2AVPixelFormat[videoConfig.pixfmt]
@@ -1251,7 +1251,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             newStream.codecpar.width,
             newStream.codecpar.height,
             avQ2D(newStream.codecpar.framerate),
-            static_cast<double>(newStream.codecpar.bitRate)
+            static_cast<double>(newStream.codecpar.bitrate)
           )
         }
         else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {

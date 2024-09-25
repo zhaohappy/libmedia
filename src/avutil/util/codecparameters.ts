@@ -67,7 +67,7 @@ export function copyCodecParameters(dst: pointer<AVCodecParameters>, src: pointe
   dst.codecId = src.codecId
   dst.codecTag = src.codecTag
   dst.format = src.format
-  dst.bitRate = src.bitRate
+  dst.bitrate = src.bitrate
   dst.bitsPerCodedSample = src.bitsPerCodedSample
   dst.bitsPerRawSample = src.bitsPerRawSample
   dst.profile = src.profile

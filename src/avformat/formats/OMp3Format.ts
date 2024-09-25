@@ -194,8 +194,8 @@ export default class OMp3Format extends OFormat {
     header |= channels << 6
 
     for (bitrateIdx = 1; bitrateIdx < 15; bitrateIdx++) {
-      let bitRate = static_cast<int64>(1000 * mp3.getBitRateByVersionLayerIndex(ver, 3 - 1, bitrateIdx))
-      let error = bigint.abs(bitRate - stream.codecpar.bitRate)
+      let bitrate = static_cast<int64>(1000 * mp3.getBitRateByVersionLayerIndex(ver, 3 - 1, bitrateIdx))
+      let error = bigint.abs(bitrate - stream.codecpar.bitrate)
 
       if (error < bestBitrateError) {
         bestBitrateError = error
@@ -384,15 +384,15 @@ export default class OMp3Format extends OFormat {
     if (avpacket.data && avpacket.size > 4) {
       frameHeader.parse(this.context.frameHeader, accessof(reinterpret_cast<pointer<uint32>>(avpacket.data)))
 
-      const bitRate = mp3.getBitRateByVersionLayerIndex(
+      const bitrate = mp3.getBitRateByVersionLayerIndex(
         this.context.frameHeader.version,
         this.context.frameHeader.layer,
         this.context.frameHeader.bitrateIndex
       )
       if (!this.context.initialBitrate) {
-        this.context.initialBitrate = bitRate
+        this.context.initialBitrate = bitrate
       }
-      else if (bitRate !== this.context.initialBitrate) {
+      else if (bitrate !== this.context.initialBitrate) {
         this.context.hasVariableBitrate = true
       }
 
