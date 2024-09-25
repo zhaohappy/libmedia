@@ -38,11 +38,14 @@ import { IOError } from 'common/io/error'
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as array from 'common/util/array'
-import { MPEG4Channels, MPEG4SamplingFrequencies, avCodecParameters2Extradata } from '../codecs/aac'
+import { avCodecParameters2Extradata, parseLATMHeader, parseADTSHeader } from '../codecs/aac'
+import * as is from 'common/util/is'
+import LATM2RawFilter from '../bsf/aac/LATM2RawFilter'
 
 const enum FrameType {
   ADIF,
-  ADTS
+  ADTS,
+  LATM
 }
 
 const PACKET_SIZE = 1024
@@ -55,12 +58,21 @@ export default class IAacFormat extends IFormat {
   private fileSize: int64
   private currentPts: int64
 
+  private latmFilter: LATM2RawFilter
+
   constructor() {
     super()
   }
 
   public init(formatContext: AVIFormatContext): void {
     this.currentPts = 0n
+  }
+
+  public destroy(formatContext: AVIFormatContext): void {
+    if (this.latmFilter) {
+      this.latmFilter.destroy()
+      this.latmFilter = null
+    }
   }
 
   private async estimateTotalBlock(formatContext: AVIFormatContext) {
@@ -97,6 +109,10 @@ export default class IAacFormat extends IFormat {
       stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_AAC
       stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
       this.frameType = FrameType.ADIF
+
+      stream.duration = this.fileSize
+      stream.timeBase.den = PACKET_SIZE * 16
+      stream.timeBase.num = 1
     }
     // ADTS
     else if (signature[0] === 0xff && (signature[1] & 0xf0) === 0xf0) {
@@ -105,15 +121,15 @@ export default class IAacFormat extends IFormat {
       stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_AAC
       stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
 
-      const nextFrame = await formatContext.ioReader.peekBuffer(7)
+      const info = parseADTSHeader(await formatContext.ioReader.peekBuffer(20))
 
-      const profile = (nextFrame[2] & 0xC0) >>> 6
-      const samplingFrequencyIndex = (nextFrame[2] & 0x3C) >>> 2
-      const channelConfiguration = ((nextFrame[2] & 0x01) << 2) | ((nextFrame[3] & 0xC0) >>> 6)
+      if (is.number(info)) {
+        return errorType.DATA_INVALID
+      }
 
-      stream.codecpar.profile = profile + 1
-      stream.codecpar.sampleRate = MPEG4SamplingFrequencies[samplingFrequencyIndex]
-      stream.codecpar.chLayout.nbChannels = MPEG4Channels[channelConfiguration]
+      stream.codecpar.profile = info.profile
+      stream.codecpar.sampleRate = info.sampleRate
+      stream.codecpar.chLayout.nbChannels = info.channels
       const extradata = avCodecParameters2Extradata(stream.codecpar)
       stream.codecpar.extradata = avMalloc(extradata.length)
       memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
@@ -126,6 +142,35 @@ export default class IAacFormat extends IFormat {
         AV_TIME_BASE_Q,
         stream.timeBase
       )
+    }
+    else if (signature[0] === 0x56 && (signature[1] & 0xe0) === 0xe0) {
+      this.frameType = FrameType.LATM
+      const stream = formatContext.createStream()
+      stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_AAC
+      stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
+
+      const info = parseLATMHeader(await formatContext.ioReader.peekBuffer(20))
+
+      if (is.number(info)) {
+        return errorType.DATA_INVALID
+      }
+
+      stream.codecpar.profile = info.profile
+      stream.codecpar.sampleRate = info.sampleRate
+      stream.codecpar.chLayout.nbChannels = info.channels
+      const extradata = avCodecParameters2Extradata(stream.codecpar)
+      stream.codecpar.extradata = avMalloc(extradata.length)
+      memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
+      stream.codecpar.extradataSize = extradata.length
+
+      stream.duration = this.fileSize
+      stream.timeBase.den = PACKET_SIZE * 16
+      stream.timeBase.num = 1
+
+      this.latmFilter = new LATM2RawFilter()
+
+      this.latmFilter.init(addressof(stream.codecpar), addressof(stream.timeBase))
+
     }
     else {
       return errorType.DATA_INVALID
@@ -146,6 +191,11 @@ export default class IAacFormat extends IFormat {
 
       if (this.frameType === FrameType.ADIF) {
         nextFrame = await formatContext.ioReader.readBuffer(Math.min(PACKET_SIZE, static_cast<int32>(this.fileSize - now)))
+        const data = avMalloc(nextFrame.length)
+        memcpyFromUint8Array(data, nextFrame.length, nextFrame)
+        addAVPacketData(avpacket, data, nextFrame.length)
+        avpacket.duration = static_cast<int64>(PACKET_SIZE)
+        avpacket.pos = now
       }
       else if (this.frameType === FrameType.ADTS) {
         const header = await formatContext.ioReader.readBuffer(7)
@@ -173,24 +223,52 @@ export default class IAacFormat extends IFormat {
         avpacket.duration = duration
 
         nextFrame = await formatContext.ioReader.readBuffer(adtsFramePayloadLength)
+
+        const data = avMalloc(nextFrame.length)
+        memcpyFromUint8Array(data, nextFrame.length, nextFrame)
+        addAVPacketData(avpacket, data, nextFrame.length)
+        avpacket.pos = now
+      }
+      else if (this.frameType === FrameType.LATM) {
+        if (now === this.fileSize) {
+          return IOError.END
+        }
+        while (true) {
+          let ret = this.latmFilter.receiveAVPacket(avpacket)
+          if (ret === errorType.EOF) {
+            if (formatContext.ioReader.getPos() === this.fileSize) {
+              return IOError.END
+            }
+            nextFrame = await formatContext.ioReader.readBuffer(Math.min(PACKET_SIZE, static_cast<int32>(this.fileSize - now)))
+            const data = avMalloc(nextFrame.length)
+            memcpyFromUint8Array(data, nextFrame.length, nextFrame)
+            addAVPacketData(avpacket, data, nextFrame.length)
+            this.latmFilter.sendAVPacket(avpacket)
+            continue
+          }
+          else if (ret < 0) {
+            return ret
+          }
+          else {
+            avpacket.duration = static_cast<int64>(avpacket.size)
+            avpacket.pos = this.currentPts
+            break
+          }
+        }
       }
 
-      const data = avMalloc(nextFrame.length)
-      memcpyFromUint8Array(data, nextFrame.length, nextFrame)
-      addAVPacketData(avpacket, data, nextFrame.length)
-      avpacket.dts = avpacket.pts = this.currentPts
-
-      avpacket.pos = now
       avpacket.streamIndex = stream.index
       avpacket.timeBase.den = stream.timeBase.den
       avpacket.timeBase.num = stream.timeBase.num
+      avpacket.dts = avpacket.pts = this.currentPts
       this.currentPts += avpacket.duration
 
       return 0
     }
     catch (error) {
       if (formatContext.ioReader.error !== IOError.END) {
-        logger.error(error.message)
+        logger.error(`read packet error, ${error}`)
+        return errorType.DATA_INVALID
       }
       return formatContext.ioReader.error
     }
@@ -198,51 +276,46 @@ export default class IAacFormat extends IFormat {
 
   @deasync
   private async syncFrame(formatContext: AVIFormatContext) {
+
+    if (this.frameType === FrameType.ADIF) {
+      return
+    }
+
     let pos: int64 = NOPTS_VALUE_BIGINT
 
     const analyzeCount = 3
 
+    const syncWord = this.frameType === FrameType.ADTS ? 0xFFF : 0x2B7
+    const shift = this.frameType === FrameType.ADTS ? 4 : 5
+
     while (true) {
       try {
-        const word = (await formatContext.ioReader.peekUint16()) >>> 4
-        if (word === 0xfff) {
-          pos = formatContext.ioReader.getPos()
-          const header = await formatContext.ioReader.peekBuffer(7)
-          const aacFrameLength = ((header[3] & 0x03) << 11)
-          | (header[4] << 3)
-          | ((header[5] & 0xE0) >>> 5)
-
-          if (aacFrameLength > 500 * 1024) {
-            await formatContext.ioReader.skip(1)
-            continue
+        let count = 0
+        pos = formatContext.ioReader.getPos()
+        while (true) {
+          if (count === analyzeCount) {
+            break
           }
-
-          await formatContext.ioReader.skip(aacFrameLength)
-          let count = 0
-
-          while (true) {
-            if (count === analyzeCount) {
-              break
-            }
-            const word = (await formatContext.ioReader.peekUint16()) >>> 4
-            if (word === 0xfff) {
+          const word = (await formatContext.ioReader.peekUint16()) >>> shift
+          if (word === syncWord) {
+            const info = this.frameType === FrameType.ADTS
+              ? parseADTSHeader(await formatContext.ioReader.peekBuffer(9))
+              : parseLATMHeader(await formatContext.ioReader.peekBuffer(20))
+            if (!is.number(info)) {
               count++
-              const header = await formatContext.ioReader.peekBuffer(7)
-              const aacFrameLength = ((header[3] & 0x03) << 11)
-                | (header[4] << 3)
-                | ((header[5] & 0xE0) >>> 5)
-              if (aacFrameLength > 500 * 1024) {
-                break
-              }
-              await formatContext.ioReader.skip(aacFrameLength)
+              await formatContext.ioReader.skip(info.headerLength + info.framePayloadLength)
+              continue
             }
             else {
               break
             }
           }
-          if (count === analyzeCount) {
+          else {
             break
           }
+        }
+        if (count === analyzeCount) {
+          break
         }
         await formatContext.ioReader.skip(1)
       }
@@ -333,6 +406,29 @@ export default class IAacFormat extends IFormat {
           return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
         }
       }
+    }
+    else if (this.frameType === FrameType.ADIF || this.frameType === FrameType.LATM) {
+
+      if (this.latmFilter) {
+        this.latmFilter.reset()
+      }
+      
+      const now = formatContext.ioReader.getPos()
+
+      if (timestamp < 0n) {
+        timestamp = 0n
+      }
+      else if (timestamp > this.fileSize) {
+        timestamp = this.fileSize
+      }
+      await formatContext.ioReader.seek(timestamp)
+
+      this.currentPts = timestamp
+
+      if (this.frameType === FrameType.LATM && !(flags & AVSeekFlags.ANY)) {
+        await this.syncFrame(formatContext)
+      }
+      return now
     }
     return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
   }
