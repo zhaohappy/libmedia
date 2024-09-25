@@ -115,4 +115,8 @@ export default class Avcc2AnnexbFilter extends AVBSFilter {
       return errorType.DATA_INVALID
     }
   }
+
+  public reset(): number {
+    return 0
+  }
 }

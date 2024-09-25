@@ -29,7 +29,7 @@ import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
 import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE } from 'avutil/constant'
-import { MPEG4Channels, MPEG4SamplingFrequencies, avCodecParameters2Extradata } from '../../codecs/aac'
+import { avCodecParameters2Extradata } from '../../codecs/aac'
 import { avRescaleQ } from 'avutil/util/rational'
 import { avFree, avMalloc } from 'avutil/util/mem'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
@@ -37,6 +37,8 @@ import { Rational } from 'avutil/struct/rational'
 import { addAVPacketData, addAVPacketSideData, unrefAVPacket } from 'avutil/util/avpacket'
 import { AVPacketSideDataType } from 'avutil/codec'
 import BitReader from 'common/io/BitReader'
+import * as aac from '../../codecs/aac'
+import * as is from 'common/util/is'
 
 
 export default class LATM2RawFilter extends AVBSFilter {
@@ -74,147 +76,40 @@ export default class LATM2RawFilter extends AVBSFilter {
     return 0
   }
 
-  private getLATMValue() {
-    const bytesForValue = this.bitReader.readU(2)
-    let value = 0
-
-    for (let i = 0; i <= bytesForValue; i++) {
-      value = value << 8
-      value = value | this.bitReader.readU(8)
-    }
-
-    return value
-  }
-
   public sendAVPacket(avpacket: pointer<AVPacket>): number {
 
     const buffer = mapUint8Array(avpacket.data, avpacket.size)
 
-    this.bitReader.clear()
     this.bitReader.appendBuffer(buffer)
 
     let lastDts = avpacket.dts || avpacket.pts
 
-    while (this.bitReader.remainingLength() > 3) {
+    while (this.bitReader.remainingLength() >= 20) {
 
-      const syncWord = this.bitReader.readU(11)
+      const now = this.bitReader.getPos()
 
-      if (syncWord !== 0x2B7) {
-        logger.error(`AACLATMParser found syncWord not 0x2B7, got: 0x${syncWord.toString(16)}`)
+      const info = aac.parseLATMHeader(null, this.bitReader)
+
+      if (is.number(info)) {
+        logger.error(`AACLATMParser parse failed`)
         this.bitReader.clear()
         return errorType.DATA_INVALID
       }
-      const audioMuxLengthBytes = this.bitReader.readU(13)
 
-      if (audioMuxLengthBytes > this.bitReader.remainingLength()) {
+      if (info.framePayloadLength >= this.bitReader.remainingLength()) {
+        this.bitReader.skipPadding()
+        this.bitReader.backToPos(now)
         break
       }
 
-      const useSameStreamMux = this.bitReader.readU1() === 0x01
-
-      if (!useSameStreamMux) {
-        const audioMuxVersion = this.bitReader.readU1() === 0x01
-        const audioMuxVersionA = audioMuxVersion && this.bitReader.readU1() === 0x01
-        if (audioMuxVersionA) {
-          logger.error('audioMuxVersionA is Not Supported')
-          this.bitReader.clear()
-          return errorType.DATA_INVALID
-        }
-        if (audioMuxVersion) {
-          this.getLATMValue()
-        }
-        const allStreamsSameTimeFraming = this.bitReader.readU1() === 0x01
-        if (!allStreamsSameTimeFraming) {
-          logger.error('allStreamsSameTimeFraming zero is Not Supported')
-          this.bitReader.clear()
-          return errorType.DATA_INVALID
-        }
-        const numSubFrames = this.bitReader.readU(6)
-        if (numSubFrames !== 0) {
-          logger.error('more than 2 numSubFrames Not Supported')
-          this.bitReader.clear()
-          return errorType.DATA_INVALID
-        }
-
-        const numProgram = this.bitReader.readU(4)
-        if (numProgram !== 0) {
-          logger.error('more than 2 numProgram Not Supported')
-          this.bitReader.clear()
-          return errorType.DATA_INVALID
-        }
-
-        const numLayer = this.bitReader.readU(3)
-        if (numLayer !== 0) {
-          logger.error('more than 2 numLayer Not Supported\'')
-          this.bitReader.clear()
-          return errorType.DATA_INVALID
-        }
-
-        let fillBits = audioMuxVersion ? this.getLATMValue() : 0
-
-        const audioObjectType = this.bitReader.readU(5)
-        fillBits -= 5
-
-        const samplingFreqIndex = this.bitReader.readU(4)
-        fillBits -= 4
-
-        const channelConfig = this.bitReader.readU(4)
-        fillBits -= 4
-
-        this.bitReader.readU(3)
-        fillBits -= 3
-
-        if (fillBits > 0) {
-          this.bitReader.readU(fillBits)
-        }
-
-        const frameLengthType = this.bitReader.readU(3)
-        if (frameLengthType === 0) {
-          this.bitReader.readU(8)
-        }
-        else {
-          logger.error(`frameLengthType = ${frameLengthType}, only frameLengthType = 0 supported`)
-          this.bitReader.clear()
-          return errorType.DATA_INVALID
-        }
-
-        const otherDataPresent = this.bitReader.readU1() === 0x01
-        if (otherDataPresent) {
-          if (audioMuxVersion) {
-            this.getLATMValue()
-          }
-          else {
-            let otherDataLenBits = 0
-            while (true) {
-              otherDataLenBits = otherDataLenBits << 8
-              const otherDataLenEsc = this.bitReader.readU1() === 0x01
-              const otherDataLenTmp = this.bitReader.readU(8)
-              otherDataLenBits += otherDataLenTmp
-              if (!otherDataLenEsc) {
-                break
-              }
-            }
-          }
-        }
-
-        const crcCheckPresent = this.bitReader.readU1() === 0x01
-        if (crcCheckPresent) {
-          this.bitReader.readU(8)
-        }
-
-        this.streamMuxConfig.profile = audioObjectType + 1
-        this.streamMuxConfig.sampleRate = MPEG4SamplingFrequencies[samplingFreqIndex]
-        this.streamMuxConfig.channels = MPEG4Channels[channelConfig]
+      if (!info.useSameStreamMux) {
+        this.streamMuxConfig.profile = info.profile
+        this.streamMuxConfig.sampleRate = info.sampleRate
+        this.streamMuxConfig.channels = info.channels
       }
 
-      let length = 0
-      while (true) {
-        const tmp = this.bitReader.readU(8)
-        length += tmp
-        if (tmp !== 0xff) {
-          break
-        }
-      }
+      const length = info.framePayloadLength
+
       const rawData = new Uint8Array(length)
       for (let i = 0; i < length; i++) {
         rawData[i] = this.bitReader.readU(8)
@@ -258,6 +153,7 @@ export default class LATM2RawFilter extends AVBSFilter {
 
       this.bitReader.skipPadding()
     }
+    return 0
   }
 
   public receiveAVPacket(avpacket: pointer<AVPacket>): number {
@@ -273,6 +169,7 @@ export default class LATM2RawFilter extends AVBSFilter {
 
       avpacket.dts = avpacket.pts = item.dts
       avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+      avpacket.duration = this.refSampleDuration
       if (item.extradata) {
         const extradata = avMalloc(item.extradata.length)
         memcpyFromUint8Array(extradata, item.extradata.length, item.extradata)
@@ -283,5 +180,10 @@ export default class LATM2RawFilter extends AVBSFilter {
     else {
       return errorType.EOF
     }
+  }
+
+  public reset(): number {
+    this.bitReader.clear()
+    return 0
   }
 }

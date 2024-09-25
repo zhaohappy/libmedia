@@ -57,4 +57,5 @@ export default abstract class AVBSFilter {
 
   public abstract sendAVPacket(avpacket: pointer<AVPacket>): number
   public abstract receiveAVPacket(avpacket: pointer<AVPacket>): number
+  public abstract reset(): number
 }

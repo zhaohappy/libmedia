@@ -27,6 +27,7 @@ import Stream from '../AVStream'
 import { AVPacketSideDataType } from 'avutil/codec'
 import { NOPTS_VALUE } from 'avutil/constant'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import BitReader from 'common/io/BitReader'
 import { Uint8ArrayInterface } from 'common/io/interface'
 
 export const enum MPEG4AudioObjectTypes {
@@ -167,4 +168,235 @@ export function avCodecParameters2Extradata(codecpar: AVCodecParameters) {
   extradata[1] = ((samplingFreqIndex & 0x01) << 7) | ((channelConfig & 0x0f) << 3)
 
   return extradata
+}
+
+export interface AACADTSHeader {
+  syncWord: number
+  profile: number
+  sampleRate: number
+  channels: number
+  aacFrameLength: number
+  numberOfRawDataBlocksInFrame: number
+  headerLength: number
+  framePayloadLength: number
+}
+
+export interface AACLATMHeader {
+  syncWord: number
+  profile: number
+  sampleRate: number
+  channels: number
+  useSameStreamMux: boolean
+  headerLength: number
+  framePayloadLength: number
+  muxLengthBytes: number
+}
+
+/**
+ * 
+ * adts 封装转 raw
+ * 
+ * bits    
+ * - 12  syncword
+ * - 1   ID (MPEG 标识位，固定为 1)
+ * - 2   Layer ( 固定为 0)
+ * - 1   Protection Absent ( 指示是否有 CRC 校验，1 表示没有校验）
+ * - 2   Profile
+ * - 4   Sampling Frequency Index ( 采样率的索引）
+ * - 1   Private Bit ( 保留位，一般设置为 0)
+ * - 3   Channel Configuration ( 音频通道数）
+ * - 1   Original Copy ( 原始拷贝标志位，一般设置为 0)
+ * - 1   Home ( 保留位，一般设置为 0)
+ * - 1   Copyright Identification Bit（置 0）
+ * - 1   Copyright Identification Start（置 0）
+ * - 13  Frame Length ( 帧长度，包括 ADTS 头和音频帧数据的长度）
+ * - 11  Buffer Fullness ( 缓冲区满度，可用于音频流的同步）
+ * - 2   Number of Raw Data Blocks in Frame ( 帧中原始数据块的数量）
+ * - 16  CRC (Protection Absent 控制）
+ * - N  raw aac data
+ * 
+ */
+export function parseADTSHeader(buffer: Uint8ArrayInterface): AACADTSHeader | number {
+
+  if (buffer.length < 7) {
+    return -1
+  }
+
+  const syncWord = (buffer[0] << 4) | (buffer[0 + 1] >> 4)
+
+  if (syncWord !== 0xFFF) {
+    return -1
+  }
+
+  /*
+    * const id = (buffer[1] & 0x08) >>> 3
+    * const layer = (buffer[1] & 0x06) >>> 1
+    */
+  const protectionAbsent = buffer[1] & 0x01
+  const profile = (buffer[2] & 0xC0) >>> 6
+  const samplingFrequencyIndex = (buffer[2] & 0x3C) >>> 2
+  const channelConfiguration = ((buffer[2] & 0x01) << 2) | ((buffer[3] & 0xC0) >>> 6)
+
+  // adts_variable_header()
+  const aacFrameLength = ((buffer[3] & 0x03) << 11)
+    | (buffer[4] << 3)
+    | ((buffer[5] & 0xE0) >>> 5)
+
+  const numberOfRawDataBlocksInFrame = buffer[6] & 0x03
+
+  let headerLength = protectionAbsent === 1 ? 7 : 9
+  let framePayloadLength = aacFrameLength - headerLength
+
+  return {
+    syncWord,
+    profile: profile + 1,
+    sampleRate: MPEG4SamplingFrequencies[samplingFrequencyIndex],
+    channels: MPEG4Channels[channelConfiguration],
+    aacFrameLength,
+    numberOfRawDataBlocksInFrame,
+    headerLength,
+    framePayloadLength
+  }
+}
+
+export function parseLATMHeader(buffer: Uint8ArrayInterface, bitReader?: BitReader) {
+  if (!bitReader) {
+    bitReader = new BitReader()
+    bitReader.appendBuffer(buffer)
+  }
+
+  function getLATMValue() {
+    const bytesForValue = bitReader.readU(2)
+    let value = 0
+
+    for (let i = 0; i <= bytesForValue; i++) {
+      value = value << 8
+      value = value | bitReader.readU(8)
+    }
+    return value
+  }
+
+  const now = bitReader.getPos()
+
+  const info: AACLATMHeader = {
+    syncWord: 0,
+    profile: 0,
+    sampleRate: 0,
+    channels: 0,
+    useSameStreamMux: false,
+    headerLength: 0,
+    framePayloadLength: 0,
+    muxLengthBytes: 0
+  }
+
+  const syncWord = bitReader.readU(11)
+
+  if (syncWord !== 0x2B7) {
+    return -1
+  }
+
+  info.syncWord = syncWord
+
+  info.muxLengthBytes = bitReader.readU(13)
+
+  const useSameStreamMux = bitReader.readU1() === 0x01
+
+  info.useSameStreamMux = useSameStreamMux
+
+  if (!useSameStreamMux) {
+    const audioMuxVersion = bitReader.readU1() === 0x01
+    const audioMuxVersionA = audioMuxVersion && bitReader.readU1() === 0x01
+    if (audioMuxVersionA) {
+      return -1
+    }
+    if (audioMuxVersion) {
+      getLATMValue()
+    }
+    const allStreamsSameTimeFraming = bitReader.readU1() === 0x01
+    if (!allStreamsSameTimeFraming) {
+      return -1
+    }
+    const numSubFrames = bitReader.readU(6)
+    if (numSubFrames !== 0) {
+      return -1
+    }
+
+    const numProgram = bitReader.readU(4)
+    if (numProgram !== 0) {
+      return -1
+    }
+
+    const numLayer = bitReader.readU(3)
+    if (numLayer !== 0) {
+      return -1
+    }
+
+    let fillBits = audioMuxVersion ? getLATMValue() : 0
+
+    const audioObjectType = bitReader.readU(5)
+    fillBits -= 5
+
+    const samplingFreqIndex = bitReader.readU(4)
+    fillBits -= 4
+
+    const channelConfig = bitReader.readU(4)
+    fillBits -= 4
+
+    bitReader.readU(3)
+    fillBits -= 3
+
+    if (fillBits > 0) {
+      bitReader.readU(fillBits)
+    }
+
+    const frameLengthType = bitReader.readU(3)
+    if (frameLengthType === 0) {
+      bitReader.readU(8)
+    }
+    else {
+      return -1
+    }
+
+    const otherDataPresent = bitReader.readU1() === 0x01
+    if (otherDataPresent) {
+      if (audioMuxVersion) {
+        getLATMValue()
+      }
+      else {
+        let otherDataLenBits = 0
+        while (true) {
+          otherDataLenBits = otherDataLenBits << 8
+          const otherDataLenEsc = bitReader.readU1() === 0x01
+          const otherDataLenTmp = bitReader.readU(8)
+          otherDataLenBits += otherDataLenTmp
+          if (!otherDataLenEsc) {
+            break
+          }
+        }
+      }
+    }
+
+    const crcCheckPresent = bitReader.readU1() === 0x01
+    if (crcCheckPresent) {
+      bitReader.readU(8)
+    }
+
+    info.profile = audioObjectType + 1
+    info.sampleRate = MPEG4SamplingFrequencies[samplingFreqIndex]
+    info.channels = MPEG4Channels[channelConfig]
+  }
+
+  let length = 0
+  while (true) {
+    const tmp = bitReader.readU(8)
+    length += tmp
+    if (tmp !== 0xff) {
+      break
+    }
+  }
+
+  info.framePayloadLength = length
+  info.headerLength = bitReader.getPos() - now + (bitReader.getBitLeft() === 8 ? 0 : 1)
+
+  return info
 }

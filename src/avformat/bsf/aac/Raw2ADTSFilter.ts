@@ -56,7 +56,7 @@ export default class Raw2ADTSFilter extends AVBSFilter {
 
   public sendAVPacket(avpacket: pointer<AVPacket>): number {
     if (!avpacket.data || !avpacket.size) {
-      return
+      return 0
     }
 
     const size = 7 + avpacket.size
@@ -103,6 +103,8 @@ export default class Raw2ADTSFilter extends AVBSFilter {
     copyAVPacketProps(this.cache, avpacket)
     addAVPacketData(this.cache, bufferPointer, size)
     this.cached = true
+
+    return 0
   }
 
   public receiveAVPacket(avpacket: pointer<AVPacket>): number {
@@ -115,5 +117,9 @@ export default class Raw2ADTSFilter extends AVBSFilter {
     else {
       return errorType.EOF
     }
+  }
+
+  public reset(): number {
+    return 0
   }
 }

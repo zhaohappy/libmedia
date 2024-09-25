@@ -36,6 +36,8 @@ import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { Rational } from 'avutil/struct/rational'
 import { addAVPacketData, addAVPacketSideData, unrefAVPacket } from 'avutil/util/avpacket'
 import { AVPacketSideDataType } from 'avutil/codec'
+import * as aac from '../../codecs/aac'
+import * as is from 'common/util/is'
 
 export default class ADTS2RawFilter extends AVBSFilter {
 
@@ -64,31 +66,7 @@ export default class ADTS2RawFilter extends AVBSFilter {
 
     return 0
   }
-
-  /**
-   * 
-   * adts 封装转 raw
-   * 
-   * bits    
-   * - 12  syncword
-   * - 1   ID (MPEG 标识位，固定为 1)
-   * - 2   Layer ( 固定为 0)
-   * - 1   Protection Absent ( 指示是否有 CRC 校验，1 表示没有校验）
-   * - 2   Profile
-   * - 4   Sampling Frequency Index ( 采样率的索引）
-   * - 1   Private Bit ( 保留位，一般设置为 0)
-   * - 3   Channel Configuration ( 音频通道数）
-   * - 1   Original Copy ( 原始拷贝标志位，一般设置为 0)
-   * - 1   Home ( 保留位，一般设置为 0)
-   * - 1   Copyright Identification Bit（置 0）
-   * - 1   Copyright Identification Start（置 0）
-   * - 13  Frame Length ( 帧长度，包括 ADTS 头和音频帧数据的长度）
-   * - 11  Buffer Fullness ( 缓冲区满度，可用于音频流的同步）
-   * - 2   Number of Raw Data Blocks in Frame ( 帧中原始数据块的数量）
-   * - 16  CRC (Protection Absent 控制）
-   * - N  raw aac data
-   * 
-   */
+  
   public sendAVPacket(avpacket: pointer<AVPacket>): number {
     let i = 0
 
@@ -97,31 +75,12 @@ export default class ADTS2RawFilter extends AVBSFilter {
 
     while (i < buffer.length) {
 
-      const syncWord = (buffer[i] << 4) | (buffer[i + 1] >> 4)
+      const info = aac.parseADTSHeader(buffer.subarray(i))
 
-      if (syncWord !== 0xFFF) {
-        logger.error(`found syncWord not 0xFFF, got: 0x${syncWord.toString(16)}`)
+      if (is.number(info)) {
+        logger.error(`AACADTSParser parse failed`)
         return errorType.DATA_INVALID
       }
-
-      /*
-       * const id = (buffer[1] & 0x08) >>> 3
-       * const layer = (buffer[1] & 0x06) >>> 1
-       */
-      const protectionAbsent = buffer[i + 1] & 0x01
-      const profile = (buffer[i + 2] & 0xC0) >>> 6
-      const samplingFrequencyIndex = (buffer[i + 2] & 0x3C) >>> 2
-      const channelConfiguration = ((buffer[i + 2] & 0x01) << 2) | ((buffer[i + 3] & 0xC0) >>> 6)
-
-      // adts_variable_header()
-      const aacFrameLength = ((buffer[i + 3] & 0x03) << 11)
-        | (buffer[i + 4] << 3)
-        | ((buffer[i + 5] & 0xE0) >>> 5)
-
-      const numberOfRawDataBlocksInFrame = buffer[i + 6] & 0x03
-
-      let adtsHeaderLength = protectionAbsent === 1 ? 7 : 9
-      let adtsFramePayloadLength = aacFrameLength - adtsHeaderLength
 
       const item = {
         dts: lastDts,
@@ -130,11 +89,11 @@ export default class ADTS2RawFilter extends AVBSFilter {
         duration: NOPTS_VALUE,
       }
 
-      item.buffer = buffer.subarray(i + adtsHeaderLength, i + adtsHeaderLength + adtsFramePayloadLength)
+      item.buffer = buffer.subarray(i + info.headerLength, i + info.headerLength + info.framePayloadLength)
 
-      this.streamMuxConfig.profile = profile + 1
-      this.streamMuxConfig.sampleRate = MPEG4SamplingFrequencies[samplingFrequencyIndex]
-      this.streamMuxConfig.channels = MPEG4Channels[channelConfiguration]
+      this.streamMuxConfig.profile = info.profile
+      this.streamMuxConfig.sampleRate = info.sampleRate
+      this.streamMuxConfig.channels = info.channels
 
       const hasNewExtraData = this.inCodecpar.profile !== this.streamMuxConfig.profile
         || this.inCodecpar.sampleRate !== this.streamMuxConfig.sampleRate
@@ -142,7 +101,7 @@ export default class ADTS2RawFilter extends AVBSFilter {
 
 
       const duration = avRescaleQ(
-        static_cast<int64>((numberOfRawDataBlocksInFrame + 1) * 1024 / this.streamMuxConfig.sampleRate * AV_TIME_BASE),
+        static_cast<int64>((info.numberOfRawDataBlocksInFrame + 1) * 1024 / this.streamMuxConfig.sampleRate * AV_TIME_BASE),
         AV_TIME_BASE_Q,
         this.inTimeBase
       )
@@ -167,9 +126,10 @@ export default class ADTS2RawFilter extends AVBSFilter {
 
       this.caches.push(item)
 
-      i += aacFrameLength
+      i += info.aacFrameLength
       lastDts += duration
     }
+    return 0
   }
 
   public receiveAVPacket(avpacket: pointer<AVPacket>): number {
@@ -196,5 +156,9 @@ export default class ADTS2RawFilter extends AVBSFilter {
     else {
       return errorType.EOF
     }
+  }
+
+  public reset(): number {
+    return 0
   }
 }

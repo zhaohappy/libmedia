@@ -129,7 +129,7 @@ export default class Raw2LATMFilter extends AVBSFilter {
 
   public sendAVPacket(avpacket: pointer<AVPacket>): number {
     if (!avpacket.data || !avpacket.size) {
-      return
+      return 0
     }
 
     this.bitWriter.clear()
@@ -189,6 +189,8 @@ export default class Raw2LATMFilter extends AVBSFilter {
     copyAVPacketProps(this.cache, avpacket)
     addAVPacketData(this.cache, bufferPointer, size)
     this.cached = true
+
+    return 0
   }
 
   public receiveAVPacket(avpacket: pointer<AVPacket>): number {
@@ -201,5 +203,9 @@ export default class Raw2LATMFilter extends AVBSFilter {
     else {
       return errorType.EOF
     }
+  }
+
+  public reset(): number {
+    return 0
   }
 }
