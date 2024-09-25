@@ -88,6 +88,91 @@ async function parseOneBox(
         movContext
       )
     }
+    // 兼容 hdlr 在 minf 后面，先解析 hdlr 得到 track 类型
+    else if (type === mktag(BoxType.MDIA)) {
+      let hdlr = false
+      let minfPos = 0n
+
+      const endPos = ioReader.getPos() + static_cast<int64>(size - 8)
+
+      while (ioReader.getPos() < endPos) {
+        const size = await ioReader.readUint32()
+        const type = await ioReader.readUint32()
+
+        if (type === mktag(BoxType.HDLR)) {
+          await parsers[type](
+            ioReader,
+            stream,
+            {
+              type,
+              size: size - 8
+            },
+            movContext
+          )
+          hdlr = true
+        }
+        else if (type === mktag(BoxType.MINF) && hdlr) {
+          await parseOneBox(
+            ioReader,
+            stream,
+            {
+              type,
+              size: size - 8
+            },
+            movContext
+          )
+        }
+        else {
+          if (type === mktag(BoxType.MINF) && !hdlr) {
+            minfPos = ioReader.getPos() - 8n
+            await ioReader.skip(size - 8)
+          }
+          else if (parsers[type]) {
+            await parsers[type](
+              ioReader,
+              stream,
+              {
+                type,
+                size: size - 8
+              },
+              movContext
+            )
+          }
+          else if (ContainerBoxs.some((boxType) => {
+            return mktag(boxType) === type
+          })) {
+            await parseOneBox(
+              ioReader,
+              stream,
+              {
+                type,
+                size: size - 8
+              },
+              movContext
+            )
+          }
+          else {
+            await ioReader.skip(size - 8)
+          }
+        }
+      }
+      if (minfPos) {
+        const now = ioReader.getPos()
+        await ioReader.seek(minfPos)
+        const size = await ioReader.readUint32()
+        const type = await ioReader.readUint32()
+        await parseOneBox(
+          ioReader,
+          stream,
+          {
+            type,
+            size: size - 8
+          },
+          movContext
+        )
+        await ioReader.seek(now)
+      }
+    }
     else if (ContainerBoxs.some((boxType) => {
       return mktag(boxType) === type
     })) {
