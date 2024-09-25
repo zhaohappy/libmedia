@@ -57,6 +57,7 @@ if multi-threading is not supported, it will fall back to running on the main th
 | mov      | ✅       | ✅        |
 | mp4      | ✅       | ✅        |
 | mpegts   | ✅       | ✅        |
+| mpegps   | ✅       | ❌        |
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | h264     | ✅       | ❌        |
