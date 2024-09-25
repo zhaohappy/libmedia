@@ -74,29 +74,37 @@ export default class IMovFormat extends IFormat {
   public async readHeader(formatContext: AVIFormatContext): Promise<number> {
     try {
 
+      const fileSize = await formatContext.ioReader.fileSize()
+
       let ret = 0
 
       let size = await formatContext.ioReader.readUint32()
       let type = await formatContext.ioReader.readUint32()
 
-      if (type !== mktag(BoxType.FTYP)) {
-        logger.error('the file format is not mp4')
-        return errorType.DATA_INVALID
+      if (type === mktag(BoxType.FTYP)) {
+        await imov.readFtyp(formatContext.ioReader, this.context, {
+          type,
+          size: size - 8
+        })
       }
-
-      await imov.readFtyp(formatContext.ioReader, this.context, {
-        type,
-        size: size - 8
-      })
+      else if (!fileSize || size < fileSize) {
+        await formatContext.ioReader.skip(size - 8)
+      }
 
       let firstMdatPos = 0n
 
       while (!this.context.foundMoov) {
         const pos = formatContext.ioReader.getPos()
+
+        if (pos === fileSize) {
+          logger.error('the file format is not mp4')
+          return errorType.DATA_INVALID
+        }
+
         size = await formatContext.ioReader.readUint32()
         type = await formatContext.ioReader.readUint32()
 
-        if (size < 8) {
+        if (size < 8 || fileSize && (pos + static_cast<int64>(size) > fileSize)) {
           logger.error(`invalid box size ${size}`)
           return errorType.DATA_INVALID
         }
@@ -295,7 +303,8 @@ export default class IMovFormat extends IFormat {
     }
     catch (error) {
       if (formatContext.ioReader.error !== IOError.END) {
-        logger.error(error.message)
+        logger.error(`read packet error, ${error}`)
+        return errorType.DATA_INVALID
       }
       return formatContext.ioReader.error
     }
