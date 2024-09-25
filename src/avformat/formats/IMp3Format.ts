@@ -28,7 +28,7 @@ import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import IFormat from './IFormat'
-import { AVFormat } from '../avformat'
+import { AVFormat, AVSeekFlags } from '../avformat'
 import { mapSafeUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData } from 'avutil/util/avpacket'
@@ -46,6 +46,7 @@ import * as id3v2 from './mp3/id3v2'
 import * as frameHeader from './mp3/frameHeader'
 import { IOError } from 'common/io/error'
 import { FrameHeader } from './mp3/frameHeader'
+import * as errorType from 'avutil/error'
 
 interface Mp3Context {
   firstFramePos: int64
@@ -189,7 +190,7 @@ export default class IMp3Format extends IFormat {
 
     stream.codecpar.chLayout.nbChannels = channels
 
-    const bitRate = static_cast<int64>(mp3.getBitRateByVersionLayerIndex(
+    const bitrate = static_cast<int64>(mp3.getBitRateByVersionLayerIndex(
       mp3Context.frameHeader.version,
       mp3Context.frameHeader.layer,
       mp3Context.frameHeader.bitrateIndex
@@ -264,7 +265,7 @@ export default class IMp3Format extends IFormat {
       }
       else {
         this.context.isVBR = false
-        stream.codecpar.bitRate = bitRate * 1000n
+        stream.codecpar.bitrate = bitrate * 1000n
         mp3Context.nbFrame = (fileSize - this.context.firstFramePos - static_cast<int64>(ID3V1_SIZE)) / static_cast<int64>(frameLength)
         stream.duration = (mp3Context.nbFrame * static_cast<int64>(stream.codecpar.frameSize))
         mp3Context.frameLength = frameLength
@@ -405,33 +406,68 @@ export default class IMp3Format extends IFormat {
     const now = formatContext.ioReader.getPos()
     const mp3Context = stream.privData as Mp3StreamContext
 
-    if (stream.sampleIndexes.length) {
-      let index = array.binarySearch(stream.sampleIndexes, (item) => {
-        if (item.pts > timestamp) {
-          return -1
-        }
-        return 1
-      })
-      if (index > 0 && avRescaleQ(timestamp - stream.sampleIndexes[index - 1].pts, stream.timeBase, AV_MILLI_TIME_BASE_Q) < 10000n) {
-        logger.debug(`seek in sampleIndexes, found index: ${index}, pts: ${stream.sampleIndexes[index - 1].pts}, pos: ${stream.sampleIndexes[index - 1].pos}`)
-        await formatContext.ioReader.seek(stream.sampleIndexes[index - 1].pos)
-        mp3Context.nextDTS = stream.sampleIndexes[index - 1].dts
-        return now
-      }
-    }
+    if (flags & AVSeekFlags.BYTE) {
 
-    if (timestamp === 0n) {
-      await formatContext.ioReader.seek(this.context.firstFramePos)
+      const size = await formatContext.ioReader.fileSize()
+
+      if (size <= 0n) {
+        return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
+      }
+
+      if (timestamp < 0n) {
+        timestamp = 0n
+      }
+      else if (timestamp > size) {
+        timestamp = size
+      }
+      await formatContext.ioReader.seek(timestamp)
+
+      if (!(flags & AVSeekFlags.ANY)) {
+        await this.syncToFrame(formatContext)
+
+        if (stream.duration && size) {
+          mp3Context.nextDTS = timestamp / size * stream.duration
+        }
+      }
       return now
     }
+    else {
+      if (stream.sampleIndexes.length) {
+        let index = array.binarySearch(stream.sampleIndexes, (item) => {
+          if (item.pts > timestamp) {
+            return -1
+          }
+          return 1
+        })
+        if (index > 0 && avRescaleQ(timestamp - stream.sampleIndexes[index - 1].pts, stream.timeBase, AV_MILLI_TIME_BASE_Q) < 10000n) {
+          logger.debug(`seek in sampleIndexes, found index: ${index}, pts: ${stream.sampleIndexes[index - 1].pts}, pos: ${stream.sampleIndexes[index - 1].pos}`)
+          await formatContext.ioReader.seek(stream.sampleIndexes[index - 1].pos)
+          mp3Context.nextDTS = stream.sampleIndexes[index - 1].dts
+          return now
+        }
+      }
 
-    if (this.context.isVBR) {
-      if (mp3Context.tocIndexes.length) {
-        const sample = mp3Context.tocIndexes[static_cast<int32>(timestamp / (stream.duration / static_cast<int64>(XING_TOC_COUNT)))]
-        if (sample) {
-          logger.debug(`seek in xing toc indexes, pts: ${sample.dts}, pos: ${sample.pos}`)
-          await formatContext.ioReader.seek(sample.pos)
-          mp3Context.nextDTS = sample.dts
+      if (timestamp === 0n) {
+        await formatContext.ioReader.seek(this.context.firstFramePos)
+        return now
+      }
+
+      if (this.context.isVBR) {
+        if (mp3Context.tocIndexes.length) {
+          const sample = mp3Context.tocIndexes[static_cast<int32>(timestamp / (stream.duration / static_cast<int64>(XING_TOC_COUNT)))]
+          if (sample) {
+            logger.debug(`seek in xing toc indexes, pts: ${sample.dts}, pos: ${sample.pos}`)
+            await formatContext.ioReader.seek(sample.pos)
+            mp3Context.nextDTS = sample.dts
+          }
+          else {
+            logger.debug('not found any keyframe index, try to seek in bytes')
+            const frameLength = frameHeader.getFrameLength(mp3Context.frameHeader, stream.codecpar.sampleRate)
+            const frame = timestamp / static_cast<int64>(stream.codecpar.frameSize)
+            const pos = frame * static_cast<int64>(frameLength) + this.context.firstFramePos
+            mp3Context.nextDTS = frame * static_cast<int64>(stream.codecpar.frameSize)
+            await formatContext.ioReader.seek(pos)
+          }
         }
         else {
           logger.debug('not found any keyframe index, try to seek in bytes')
@@ -443,22 +479,14 @@ export default class IMp3Format extends IFormat {
         }
       }
       else {
-        logger.debug('not found any keyframe index, try to seek in bytes')
-        const frameLength = frameHeader.getFrameLength(mp3Context.frameHeader, stream.codecpar.sampleRate)
         const frame = timestamp / static_cast<int64>(stream.codecpar.frameSize)
-        const pos = frame * static_cast<int64>(frameLength) + this.context.firstFramePos
+        const pos = frame * static_cast<int64>(mp3Context.frameLength) + this.context.firstFramePos
         mp3Context.nextDTS = frame * static_cast<int64>(stream.codecpar.frameSize)
         await formatContext.ioReader.seek(pos)
       }
-    }
-    else {
-      const frame = timestamp / static_cast<int64>(stream.codecpar.frameSize)
-      const pos = frame * static_cast<int64>(mp3Context.frameLength) + this.context.firstFramePos
-      mp3Context.nextDTS = frame * static_cast<int64>(stream.codecpar.frameSize)
-      await formatContext.ioReader.seek(pos)
-    }
 
-    await this.syncToFrame(formatContext)
+      await this.syncToFrame(formatContext)
+    }
 
     return now
   }
