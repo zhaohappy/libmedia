@@ -81,6 +81,8 @@
 
       // 开启支持 mpegts 解封装格式
       "ENABLE_DEMUXER_MPEGTS": true,
+      // 开启支持 mpegps 解封装格式
+      "ENABLE_DEMUXER_MPEGPS": true,
       // 开启支持 mp4 解封装格式
       "ENABLE_DEMUXER_MP4": true,
       // 开启支持 flv 解封装格式

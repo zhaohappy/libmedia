@@ -1,5 +1,5 @@
 /*
- * libmedia avformat defined
+ * libmedia mpegvideo util
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -23,39 +23,27 @@
  *
  */
 
-export const enum AVSeekFlags {
-  NONE = 0,
-  BACKWARD = 1,
-  BYTE = 2,
-  ANY = 4,
-  FRAME = 8,
-  TIMESTAMP = 16
+import AVPacket from 'avutil/struct/avpacket'
+import { getAVPacketData } from 'avutil/util/avpacket'
+
+export const enum MpegVideoPictureType {
+  I = 1,
+  P,
+  B
 }
 
-export const enum AVFormat {
-  UNKNOWN = -1,
-  FLV,
-  MOV,
-  MP4 = MOV,
-  M4A = MOV,
-  MPEGTS,
-  MPEGPS,
-  OGGS,
-  IVF,
-  MATROSKA,
-  WEBM,
-  AVI,
-  H264,
-  HEVC,
-  VVC,
+export function isIDR(avpacket: pointer<AVPacket>) {
+  const data = getAVPacketData(avpacket)
 
-  MP3,
-  AAC,
-  WAV,
-  FLAC,
-
-  WEBVTT,
-  SUBRIP,
-  ASS,
-  TTML
+  for (let i = 0; i < data.length - 6; i++) {
+    if (data[i] === 0
+      && data[i + 1] === 0
+      && data[i + 2] === 1
+      && data[i + 3] === 0
+    ) {
+      const picType = (data[i + 5] >> 3) & 7
+      return picType === MpegVideoPictureType.I
+    }
+  }
+  return false
 }

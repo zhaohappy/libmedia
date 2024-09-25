@@ -300,11 +300,20 @@ export default class DemuxPipeline extends Pipeline {
           }
           break
         case AVFormat.MPEGTS:
-          if (defined(ENABLE_DEMUXER_MP4) || defined(ENABLE_PROTOCOL_HLS)) {
+          if (defined(ENABLE_DEMUXER_MPEGPS) || defined(ENABLE_PROTOCOL_HLS)) {
             iformat = new ((await import('avformat/formats/IMpegtsFormat')).default)
           }
           else {
             logger.error('mpegts format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.MPEGPS:
+          if (defined(ENABLE_DEMUXER_MPEGPS)) {
+            iformat = new ((await import('avformat/formats/IMpegpsFormat')).default)
+          }
+          else {
+            logger.error('mpegps format not support, maybe you can rebuild avmedia')
             return errorType.FORMAT_NOT_SUPPORT
           }
           break

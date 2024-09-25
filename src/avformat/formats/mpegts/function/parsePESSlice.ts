@@ -24,9 +24,7 @@
  */
 
 import { PES, TSSliceQueue } from '../struct'
-import * as logger from 'common/util/logger'
-import { TSStreamId, TSStreamType } from '../mpegts'
-import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
+
 
 export default function parsePESSlice(queue: TSSliceQueue): PES {
   let data = new Uint8Array(queue.totalLength)
@@ -37,7 +35,6 @@ export default function parsePESSlice(queue: TSSliceQueue): PES {
   }
 
   const streamId = data[3]
-  const pesPacketLength = (data[4] << 8) | data[5]
 
   const pes = new PES()
   pes.data = data
@@ -46,83 +43,6 @@ export default function parsePESSlice(queue: TSSliceQueue): PES {
   pes.streamType = queue.streamType
   pes.pos = queue.pos
   pes.randomAccessIndicator = queue.randomAccessIndicator
-
-  if (streamId !== TSStreamId.PROGRAM_STREAM_MAP
-    && streamId !== TSStreamId.PADDING_STREAM
-    && streamId !== TSStreamId.PRIVATE_STREAM_2
-    && streamId !== TSStreamId.ECM_STREAM
-    && streamId !== TSStreamId.EMM_STREAM
-    && streamId !== TSStreamId.PROGRAM_STREAM_DIRECTORY
-    && streamId !== TSStreamId.DSMCC_STREAM
-    && streamId !== TSStreamId.TYPE_E_STREAM
-  ) {
-    // const pesScramblingControl = (data[6] & 0x30) >>> 4
-    const ptsDtsFlags = (data[7] & 0xC0) >>> 6
-    const pesHeaderDataLength = data[8]
-
-    let pts: int64 = NOPTS_VALUE_BIGINT
-    let dts: int64 = NOPTS_VALUE_BIGINT
-
-    if (ptsDtsFlags === 0x02 || ptsDtsFlags === 0x03) {
-      pts = static_cast<int64>((data[9] & 0x0E) * 536870912
-        + (data[10] & 0xFF) * 4194304
-        + (data[11] & 0xFE) * 16384
-        + (data[12] & 0xFF) * 128
-        + (data[13] & 0xFE) / 2)
-
-      if (ptsDtsFlags === 0x03) {
-        dts = static_cast<int64>((data[14] & 0x0E) * 536870912
-          + (data[15] & 0xFF) * 4194304
-          + (data[16] & 0xFE) * 16384
-          + (data[17] & 0xFF) * 128
-          + (data[18] & 0xFE) / 2)
-      }
-      else {
-        dts = pts
-      }
-    }
-
-    pes.dts = dts
-    pes.pts = pts
-
-    const payloadStartIndex = 6 + 3 + pesHeaderDataLength
-    let payloadLength: number = 0
-
-    if (pesPacketLength !== 0) {
-      if (pesPacketLength < 3 + pesHeaderDataLength) {
-        logger.error('Malformed PES: PES_packet_length < 3 + PES_header_data_length')
-        return
-      }
-      payloadLength = pesPacketLength - 3 - pesHeaderDataLength
-    }
-    else {
-      // PES_packet_length === 0
-      payloadLength = data.byteLength - payloadStartIndex
-    }
-
-    pes.payload = data.subarray(payloadStartIndex, payloadStartIndex + payloadLength)
-  }
-  else if (streamId === TSStreamId.PROGRAM_STREAM_MAP
-    || streamId === TSStreamId.PRIVATE_STREAM_2
-    || streamId === TSStreamId.ECM_STREAM
-    || streamId === TSStreamId.EMM_STREAM
-    || streamId === TSStreamId.PROGRAM_STREAM_DIRECTORY
-    || streamId === TSStreamId.DSMCC_STREAM
-    || streamId === TSStreamId.TYPE_E_STREAM
-  ) {
-    if (pes.streamId === TSStreamType.PRIVATE_DATA) {
-      const payloadStartIndex = 6
-      let payloadLength: number = 0
-
-      if (pesPacketLength !== 0) {
-        payloadLength = pesPacketLength
-      }
-      else {
-        // PES_packet_length === 0
-        payloadLength = data.byteLength - payloadStartIndex
-      }
-      pes.payload = data.subarray(payloadStartIndex, payloadStartIndex + payloadLength)
-    }
-  }
+  
   return pes
 }

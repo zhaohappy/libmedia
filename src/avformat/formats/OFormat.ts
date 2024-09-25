@@ -144,6 +144,19 @@ export const OFormatSupportedCodecs: Record<Exclude<AVFormat, AVFormat.UNKNOWN>,
     AVCodecID.AV_CODEC_ID_HEVC,
     AVCodecID.AV_CODEC_ID_VVC
   ],
+  [AVFormat.MPEGPS]: [
+    AVCodecID.AV_CODEC_ID_MP1,
+    AVCodecID.AV_CODEC_ID_MP2,
+    AVCodecID.AV_CODEC_ID_MP3,
+    AVCodecID.AV_CODEC_ID_AC3,,
+    AVCodecID.AV_CODEC_ID_DTS,
+
+    AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+    AVCodecID.AV_CODEC_ID_MPEG4,
+    AVCodecID.AV_CODEC_ID_H264,
+    AVCodecID.AV_CODEC_ID_HEVC,
+    AVCodecID.AV_CODEC_ID_VVC
+  ],
   [AVFormat.OGGS]: [
     AVCodecID.AV_CODEC_ID_VORBIS
   ],

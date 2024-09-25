@@ -41,7 +41,7 @@ import { TSSliceQueue } from './mpegts/struct'
 import IFormat from './IFormat'
 import initStream from './mpegts/function/initStream'
 import { AVFormat, AVSeekFlags } from '../avformat'
-import { createAVPacket, deleteAVPacketSideData,
+import { addAVPacketData, createAVPacket, deleteAVPacketSideData,
   destroyAVPacket, getAVPacketData, getAVPacketSideData
 } from 'avutil/util/avpacket'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
@@ -55,9 +55,10 @@ import * as hevc from '../codecs/hevc'
 import * as vvc from '../codecs/vvc'
 import * as aac from '../codecs/aac'
 import * as opus from '../codecs/opus'
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
+import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import { avMalloc } from 'avutil/util/mem'
-import { memcpy, mapSafeUint8Array } from 'cheap/std/memory'
+import { memcpy, mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
+import { BitFormat } from '../codecs/h264'
 
 export default class IMpegtsFormat extends IFormat {
 
@@ -171,7 +172,37 @@ export default class IMpegtsFormat extends IFormat {
 
   private parsePESSlice(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>, queue: TSSliceQueue, stream: AVStream) {
     const pes = parsePESSlice(queue)
-    parsePES(pes, avpacket, stream)
+
+    parsePES(pes)
+
+    if (pes.randomAccessIndicator || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+      avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+    }
+  
+    const codecId = stream.codecpar.codecId
+    if (codecId === AVCodecID.AV_CODEC_ID_H264
+      || codecId === AVCodecID.AV_CODEC_ID_H265
+      || codecId === AVCodecID.AV_CODEC_ID_VVC
+    ) {
+      avpacket.bitFormat = BitFormat.ANNEXB
+    }
+  
+    avpacket.streamIndex = stream.index
+  
+    avpacket.dts = pes.dts
+    avpacket.pts = pes.pts
+    avpacket.pos = pes.pos
+    avpacket.timeBase.den = 90000
+    avpacket.timeBase.num = 1
+  
+    if (stream.startTime === NOPTS_VALUE_BIGINT) {
+      stream.startTime = avpacket.pts || avpacket.dts
+    }
+  
+    const payload = avMalloc(pes.payload.length)
+    memcpyFromUint8Array(payload, pes.payload.length, pes.payload)
+    addAVPacketData(avpacket, payload, pes.payload.length)
+
     clearTSSliceQueue(queue)
 
     const streamContext = stream.privData as MpegtsStreamContext
@@ -399,7 +430,8 @@ export default class IMpegtsFormat extends IFormat {
           return IOError.END
         }
         else {
-          throw error
+          logger.error(`read packet error, ${error}`)
+          return errorType.DATA_INVALID
         }
       }
     }
@@ -513,21 +545,6 @@ export default class IMpegtsFormat extends IFormat {
       return 0n
     }
 
-    if (stream && stream.sampleIndexes.length) {
-      let index = array.binarySearch(stream.sampleIndexes, (item) => {
-        if (item.pts > timestamp) {
-          return -1
-        }
-        return 1
-      })
-      if (index > 0 && avRescaleQ(timestamp - stream.sampleIndexes[index - 1].pts, stream.timeBase, AV_MILLI_TIME_BASE_Q) < 10000n) {
-        logger.debug(`seek in sampleIndexes, found index: ${index}, pts: ${stream.sampleIndexes[index - 1].pts}, pos: ${stream.sampleIndexes[index - 1].pos}`)
-        await formatContext.ioReader.seek(stream.sampleIndexes[index - 1].pos)
-        this.context.ioEnd = false
-        return now
-      }
-    }
-
     if (flags & AVSeekFlags.BYTE) {
 
       const size = await formatContext.ioReader.fileSize()
@@ -553,7 +570,24 @@ export default class IMpegtsFormat extends IFormat {
       return now
     }
     else {
+
+      if (stream && stream.sampleIndexes.length) {
+        let index = array.binarySearch(stream.sampleIndexes, (item) => {
+          if (item.pts > timestamp) {
+            return -1
+          }
+          return 1
+        })
+        if (index > 0 && avRescaleQ(timestamp - stream.sampleIndexes[index - 1].pts, stream.timeBase, AV_MILLI_TIME_BASE_Q) < 10000n) {
+          logger.debug(`seek in sampleIndexes, found index: ${index}, pts: ${stream.sampleIndexes[index - 1].pts}, pos: ${stream.sampleIndexes[index - 1].pos}`)
+          await formatContext.ioReader.seek(stream.sampleIndexes[index - 1].pos)
+          this.context.ioEnd = false
+          return now
+        }
+      }
+
       logger.debug('not found any keyframe index, try to seek in bytes')
+
       let ret = await seekInBytes(
         formatContext,
         stream,

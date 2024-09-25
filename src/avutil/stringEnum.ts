@@ -38,7 +38,9 @@ export const Ext2Format: Record<string, AVFormat> = {
   'hevc': AVFormat.HEVC,
   'h266': AVFormat.VVC,
   '266': AVFormat.VVC,
-  'vvc': AVFormat.VVC
+  'vvc': AVFormat.VVC,
+  'mpeg': AVFormat.MPEGPS,
+  'mpg': AVFormat.MPEGPS
 }
 
 export const Ext2IOLoader: Record<string, IOType> = {

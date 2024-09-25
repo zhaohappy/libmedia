@@ -1,5 +1,5 @@
 /*
- * libmedia avformat defined
+ * libmedia mpegps identify defined
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -23,39 +23,23 @@
  *
  */
 
-export const enum AVSeekFlags {
-  NONE = 0,
-  BACKWARD = 1,
-  BYTE = 2,
-  ANY = 4,
-  FRAME = 8,
-  TIMESTAMP = 16
+export const MAX_SYNC_SIZE = 100000
+
+export const enum MpegpsStreamId {
+  AUDIO_ID = 0xc0,
+  VIDEO_ID = 0xe0,
+  H264_ID = 0xe2,
+  AC3_ID = 0x80,
+  DTS_ID = 0x88,
+  LPCM_ID = 0xa0,
+  SUB_ID = 0x20
 }
 
-export const enum AVFormat {
-  UNKNOWN = -1,
-  FLV,
-  MOV,
-  MP4 = MOV,
-  M4A = MOV,
-  MPEGTS,
-  MPEGPS,
-  OGGS,
-  IVF,
-  MATROSKA,
-  WEBM,
-  AVI,
-  H264,
-  HEVC,
-  VVC,
-
-  MP3,
-  AAC,
-  WAV,
-  FLAC,
-
-  WEBVTT,
-  SUBRIP,
-  ASS,
-  TTML
+export const enum MpegpsStartCode {
+  PACK_START = 0x1ba,
+  SYSTEM_HEADER_START = 0x1bb,
+  PADDING_STREAM = 0x1be,
+  PRIVATE_STREAM_1 = 0x1bd,
+  PRIVATE_STREAM_2 = 0x1bf,
+  PROGRAM_STREAM_MAP = 0x1bc
 }
