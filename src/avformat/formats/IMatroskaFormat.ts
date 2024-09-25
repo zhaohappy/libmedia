@@ -886,7 +886,8 @@ export default class IMatroskaFormat extends IFormat {
     }
     catch (error) {
       if (formatContext.ioReader.error !== IOError.END) {
-        logger.error(error.message)
+        logger.error(`read packet error, ${error}`)
+        return errorType.DATA_INVALID
       }
       return formatContext.ioReader.error
     }
