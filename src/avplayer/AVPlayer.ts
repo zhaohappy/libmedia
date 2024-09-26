@@ -1788,14 +1788,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       logger.error(`demuxer seek failed, code: ${seekedTimestamp}, taskId: ${this.taskId}`)
     }
 
-    for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
-      await AVPlayer.DemuxerThread.seek(this.externalSubtitleTasks[i].taskId, timestamp, AVSeekFlags.FRAME)
-    }
-
-    if (this.subtitleRender) {
-      this.subtitleRender.reset()
-    }
-
     if (defined(ENABLE_MSE) && this.useMSE) {
       if (seekedTimestamp >= 0n) {
         const time = await AVPlayer.MSEThread.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp)
@@ -1852,6 +1844,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (this.jitterBufferController) {
         this.jitterBufferController.reset()
       }
+    }
+    for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
+      await AVPlayer.DemuxerThread.seek(this.externalSubtitleTasks[i].taskId, this.currentTime, AVSeekFlags.FRAME)
+    }
+    if (this.subtitleRender) {
+      this.subtitleRender.reset()
     }
   }
 
