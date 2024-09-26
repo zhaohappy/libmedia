@@ -69,7 +69,7 @@ const Fullscreen: ComponentOptions = {
   },
 
   afterMount() {
-    this.namespace = '.component_setting' + Math.random()
+    this.namespace = '.component_control_fullscreen' + Math.random()
 
     const player = this.get('player') as AVPlayer
 

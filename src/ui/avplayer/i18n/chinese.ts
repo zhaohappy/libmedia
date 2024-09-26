@@ -55,3 +55,23 @@ export const LOADING_MESSAGE_LOAD_FAILED = '加载失败 (∩︵∩)'
 export const INFO_TITLE = '统计信息'
 
 export const MENU_STATS = '源统计信息'
+
+export const SETTINGS_TITLE = '设置'
+
+export const SETTING_TAB_DECODER = '解码器'
+
+export const SETTING_TAB_PLAY = '播放'
+
+export const SETTING_TAB_SUBTITLE = '字幕'
+
+export const SETTING_TAB_VIDEO = '画面'
+
+export const SETTING_TAB_AUDIO = '声音'
+
+export const SETTING_TAB_FILTER = '滤镜'
+
+export const SETTING_TAB_KEYBOARD = '快捷键'
+
+export const SETTING_TAB_LANGUAGE = '语言'
+
+export const SETTING_TAB_SKIN = '皮肤'

@@ -94,6 +94,11 @@
     <Info player="{{player}}" language="{{language}}" />
   </div>
   {{/if}}
+  {{#if showSettings}}
+  <div class="avplayer-ui-mask showSettings">
+    <Settings player="{{player}}" language="{{language}}" />
+  </div>
+  {{/if}}
   {{#if showMenu}}
   <div class="avplayer-ui-menu" style="top: {{menuTop}}px; left: {{menuLeft}}px;" on-outside="menuOutside()">
     {{#each menu}}

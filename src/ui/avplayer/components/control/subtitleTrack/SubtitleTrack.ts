@@ -144,7 +144,7 @@ const SubtitleTrack: ComponentOptions = {
   },
 
   afterMount() {
-    this.namespace = '.component_subtitle_track' + Math.random()
+    this.namespace = '.component_control_subtitle_track' + Math.random()
     const player = this.get('player') as AVPlayer
 
     player.on(eventType.LOADED + this.namespace, () => {

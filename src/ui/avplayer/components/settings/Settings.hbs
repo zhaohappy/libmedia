@@ -1,0 +1,19 @@
+<div class="avplayer-ui-settings">
+  <div class="avplayer-ui-settings-title">
+    {{language.SETTINGS_TITLE}}
+  </div>
+  <span class="avplayer-ui-settings-close" on-click="close()">
+    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" data-pointer="none" viewBox="0 0 16 16"><path d="m8 6.939 3.182-3.182a.75.75 0 1 1 1.061 1.061L9.061 8l3.182 3.182a.75.75 0 1 1-1.061 1.061L8 9.061l-3.182 3.182a.75.75 0 1 1-1.061-1.061L6.939 8 3.757 4.818a.75.75 0 1 1 1.061-1.061L8 6.939z"></path></svg>
+  </span>
+  <div class="avplayer-ui-settings-panel">
+    <div class="avplayer-ui-settings-tabs">
+      {{#each list}}
+      <div class="avplayer-ui-settings-tab {{#if id === tab}}active{{/if}}" on-click="set('tab', id)">{{name}}</div>
+      {{/each}}
+    </div>
+    <div class="avplayer-ui-settings-context">
+
+    </div>
+  </div>
+  <style>{{{style}}}</style>
+</div>

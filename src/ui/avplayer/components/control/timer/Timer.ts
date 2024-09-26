@@ -51,7 +51,7 @@ const Timer: ComponentOptions = {
   },
 
   afterMount() {
-    this.namespace = '.component_timer' + Math.random()
+    this.namespace = '.component_control_timer' + Math.random()
     const player = this.get('player') as AVPlayer
     player.on(eventType.LOADED + this.namespace, () => {
       this.init(player)

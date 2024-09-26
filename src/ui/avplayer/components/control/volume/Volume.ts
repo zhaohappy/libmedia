@@ -53,7 +53,7 @@ const Volume: ComponentOptions = {
   },
 
   afterMount() {
-    this.namespace = '.component_volume' + Math.random()
+    this.namespace = '.component_control_volume' + Math.random()
     const player = this.get('player') as AVPlayer
 
     player.on(eventType.VOLUME_CHANGE + this.namespace, (volume) => {

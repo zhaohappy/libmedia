@@ -31,11 +31,15 @@ const Setting: ComponentOptions = {
   methods: {
     init(player: AVPlayer) {
 
+    },
+
+    click() {
+      this.fire('openSettings')
     }
   },
 
   afterMount() {
-    this.namespace = '.component_setting' + Math.random()
+    this.namespace = '.component_control_setting' + Math.random()
 
     const player = this.get('player') as AVPlayer
 

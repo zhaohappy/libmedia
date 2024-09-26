@@ -68,7 +68,7 @@ const Play: ComponentOptions = {
   },
 
   afterMount() {
-    this.namespace = '.component_play' + Math.random()
+    this.namespace = '.component_control_play' + Math.random()
 
     const player = this.get('player') as AVPlayer
 

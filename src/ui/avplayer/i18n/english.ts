@@ -53,3 +53,23 @@ export const LOADING_MESSAGE_LOAD_FAILED = 'failed (∩︵∩)'
 export const INFO_TITLE = 'Stats Info'
 
 export const MENU_STATS = 'Source Stats Info'
+
+export const SETTINGS_TITLE = 'Settings'
+
+export const SETTING_TAB_DECODER = 'Decoder'
+
+export const SETTING_TAB_PLAY = 'Play'
+
+export const SETTING_TAB_SUBTITLE = 'Subtitle'
+
+export const SETTING_TAB_VIDEO = 'Picture'
+
+export const SETTING_TAB_AUDIO = 'Sound'
+
+export const SETTING_TAB_FILTER = 'Filter'
+
+export const SETTING_TAB_KEYBOARD = 'Shortcut'
+
+export const SETTING_TAB_LANGUAGE = 'Language'
+
+export const SETTING_TAB_SKIN = 'Skin'

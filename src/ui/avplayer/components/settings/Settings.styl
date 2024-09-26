@@ -1,0 +1,77 @@
+.avplayer-ui-settings {
+  pointer-events: auto
+  background: var(--libmedia-ui-tip-background)
+  border-radius: 4px
+  color: #fff
+  position: relative
+
+  width: 600px
+  height: 500px
+
+  display: flex
+  flex-direction: column
+
+  .avplayer-ui-settings-title {
+    border-bottom: 1px solid hsla(0, 0%, 100%, .1)
+    font-size: 16px
+    line-height: 40px
+    text-align: center
+    height: 41px
+  }
+  .avplayer-ui-settings-close {
+    fill: #fff
+    color: #fff
+    cursor: pointer
+    height: 22px
+    position: absolute
+    right: 10px
+    top: 8px
+    width: 22px
+  }
+
+  .avplayer-ui-settings-panel {
+    flex: 1
+    position: relative
+    display: flex
+
+    .avplayer-ui-settings-tabs {
+      width: 141px
+      height: 100%
+      padding: 20px
+      overflow: auto
+      transition: all var(--libmedia-ui-transition-duration) ease
+      border-right: 1px solid hsla(0, 0%, 100%, .1)
+
+      .avplayer-ui-settings-tab {
+        width 100px
+        height: 36px
+        text-align: center
+        line-height: 36px
+        cursor: pointer
+        border-radius: 4px
+        font-size: 14px
+        opacity: var(--libmedia-ui-control-opacity)
+        background-color: var(--libmedia-ui-widget-hover-background)
+
+        &:hover {
+          opacity: 1
+        }
+
+        &.active {
+          opacity: 1
+          background-color: var(--libmedia-ui-theme)
+        }
+
+        & + .avplayer-ui-settings-tab {
+          margin-top: 10px
+        }
+      }
+    }
+    .avplayer-ui-settings-context {
+      flex: 1
+      height: 100%
+      overflow: auto
+      padding: 20px
+    }
+  }
+}

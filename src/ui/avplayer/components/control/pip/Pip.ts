@@ -102,7 +102,7 @@ const Pip: ComponentOptions = {
   },
 
   afterMount() {
-    this.namespace = '.component_setting' + Math.random()
+    this.namespace = '.component_control_pip' + Math.random()
 
     this.onenter = (event) => {
       this.pipWindow = event.window

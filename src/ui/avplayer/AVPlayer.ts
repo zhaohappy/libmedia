@@ -25,6 +25,7 @@ import Loading from './components/loading/Loading'
 import PcmVisualization from './components/pcmVisualization/PcmVisualization'
 import LoadingTip from './components/loadingTip/LoadingTip'
 import Info from './components/info/Info'
+import Settings from './components/settings/Settings'
 
 import template from './AVPlayer.hbs'
 import style from './AVPlayer.styl'
@@ -92,7 +93,8 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       menuTop: 0,
       menuLeft: 0,
 
-      showInfo: false
+      showInfo: false,
+      showSettings: false
     }
   },
 
@@ -103,6 +105,14 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
 
     closeInfo: function() {
       this.set('showInfo', false)
+    },
+
+    openSettings: function() {
+      this.set('showSettings', true)
+    },
+
+    closeSettings: function() {
+      this.set('showSettings', false)
     }
   },
 
@@ -303,7 +313,8 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     Loading,
     PcmVisualization,
     LoadingTip,
-    Info
+    Info,
+    Settings
   }
 }
 

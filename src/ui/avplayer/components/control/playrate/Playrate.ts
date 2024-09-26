@@ -51,7 +51,7 @@ const Playrate: ComponentOptions = {
   },
 
   afterMount() {
-    this.namespace = '.component_play_rate' + Math.random()
+    this.namespace = '.component_control_play_rate' + Math.random()
     const player = this.get('player') as AVPlayer
     player.setPlaybackRate(this.get('list')[this.get('index')])
   },
