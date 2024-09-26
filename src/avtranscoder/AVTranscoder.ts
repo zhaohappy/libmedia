@@ -231,6 +231,10 @@ const defaultAVTranscoderOptions: Partial<AVTranscoderOptions> = {
 
 export default class AVTranscoder extends Emitter implements ControllerObserver {
 
+  static util = {
+    compile
+  }
+
   static Resource: Map<string, WebAssemblyResource> = new Map()
 
   private level: number = logger.INFO

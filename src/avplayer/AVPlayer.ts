@@ -239,6 +239,11 @@ export const enum AVPlayerProgress {
 }
 
 export default class AVPlayer extends Emitter implements ControllerObserver {
+
+  static util = {
+    compile
+  }
+
   static level: number = logger.INFO
 
   static DemuxThreadReady: Promise<void>
@@ -2313,10 +2318,26 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * 
    * @param delay 
    */
-  public setSubTitleDelay(delay: int32) {
-    if (this.subtitleRender) {
+  public setSubtitleDelay(delay: int32) {
+    if (this.subtitleRender && this.getSubtitleDelay() !== delay) {
       this.subtitleRender.setDelay(static_cast<int64>(delay))
+
+      logger.info(`set subtitle delay ${delay}`)
+
+      this.fire(eventType.SUBTITLE_DELAY_CHANGE, [delay])
     }
+  }
+
+  /**
+   * 获取字幕延时（毫秒）
+   * 
+   * @returns 
+   */
+  public getSubtitleDelay() {
+    if (this.subtitleRender) {
+      return static_cast<int32>(this.subtitleRender.getDelay())
+    }
+    return 0
   }
 
   /**
@@ -2959,7 +2980,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     return AVPlayer.AudioThreadReady = new Promise(async (resolve) => {
-      AVPlayer.audioContext = new (AudioContext || webkitAudioContext)()
+      if (!AVPlayer.audioContext) {
+        AVPlayer.audioContext = new (AudioContext || webkitAudioContext)()
+      }
       if (support.audioWorklet) {
         await registerProcessor(
           AVPlayer.audioContext,
