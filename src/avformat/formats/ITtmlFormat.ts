@@ -143,7 +143,9 @@ export default class ITtmlFormat extends IFormat {
       logger.debug(`seek in cues, found index: ${index}, pts: ${this.queue[index].pts}`)
       this.index = Math.max(index - 1, 0)
       while (this.index > 0) {
-        if (this.queue[this.index - 1].pts === this.queue[this.index].pts) {
+        if (this.queue[this.index - 1].pts === this.queue[this.index].pts
+          || (this.queue[this.index - 1].pts + this.queue[this.index - 1].duration) > timestamp
+        ) {
           this.index--
         }
         else {

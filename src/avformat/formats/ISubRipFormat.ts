@@ -201,7 +201,9 @@ export default class IWebVttFormat extends IFormat {
       logger.debug(`seek in cues, found index: ${index}, pts: ${this.queue[index].startTs}, pos: ${this.queue[index].pos}`)
       this.index = Math.max(index - 1, 0)
       while (this.index > 0) {
-        if (this.queue[this.index - 1].startTs === this.queue[this.index].startTs) {
+        if (this.queue[this.index - 1].startTs === this.queue[this.index].startTs
+          || this.queue[this.index - 1].endTs > timestamp
+        ) {
           this.index--
         }
         else {
