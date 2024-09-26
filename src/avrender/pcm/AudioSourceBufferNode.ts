@@ -33,7 +33,7 @@ import * as logger from 'common/util/logger'
 import * as cheapConfig from 'cheap/config'
 import os from 'common/util/os'
 
-const BUFFER_LENGTH = (os.windows || os.mac || os.linux) ? 10 : 20
+const BUFFER_LENGTH = (os.windows || os.mac || os.linux) ? 20 : 30
 
 export default class AudioSourceBufferNode {
 
