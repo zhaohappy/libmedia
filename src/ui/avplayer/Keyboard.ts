@@ -7,6 +7,7 @@ import * as array from 'common/util/array'
 import CommandQueue from 'common/helper/CommandQueue'
 import * as bigint from 'common/util/bigint'
 import { Timeout } from 'common/types/type'
+import * as is from 'common/util/is'
 
 export const enum KeyboardPlayerActionKey {
   PLAY_OR_PAUSE = 1,
@@ -23,7 +24,9 @@ export const enum KeyboardPlayerActionKey {
   VOLUME_DOWN,
   EXIT_FULLSCREEN,
   FOLD_FOLDER,
-  UNFOLD_FOLDER
+  UNFOLD_FOLDER,
+  SUBTITLE_DELAY_ADD,
+  SUBTITLE_DELAY_SUB
 }
 
 type ActionType = 'up' | 'down' | 'longDown'
@@ -36,7 +39,35 @@ export interface KeyboardPlayerAction {
   longDownBefore?: boolean
 }
 
-const DefaultKeyboardMap: Record<KeyboardPlayerActionKey, KeyboardPlayerAction> = {
+const DefaultKeyboardMap: Record<KeyboardPlayerActionKey, KeyboardPlayerAction | KeyboardPlayerAction[]> = {
+  [KeyboardPlayerActionKey.SUBTITLE_DELAY_ADD]: [
+    {
+      keyCode: keyboard.charKey['+'],
+      with: [keyboard.combinationKey.ctrl],
+      action: 'up',
+      playerStatus: [AVPlayerStatus.PLAYED, AVPlayerStatus.PAUSED]
+    },
+    {
+      keyCode: keyboard.charKey['+'],
+      with: [keyboard.combinationKey.ctrl, keyboard.combinationKey.shift],
+      action: 'up',
+      playerStatus: [AVPlayerStatus.PLAYED, AVPlayerStatus.PAUSED]
+    },
+  ],
+  [KeyboardPlayerActionKey.SUBTITLE_DELAY_SUB]: [
+    {
+      keyCode: keyboard.charKey['-'],
+      with: [keyboard.combinationKey.ctrl],
+      action: 'up',
+      playerStatus: [AVPlayerStatus.PLAYED, AVPlayerStatus.PAUSED]
+    },
+    {
+      keyCode: keyboard.charKey['-'],
+      with: [keyboard.combinationKey.ctrl, keyboard.combinationKey.shift],
+      action: 'up',
+      playerStatus: [AVPlayerStatus.PLAYED, AVPlayerStatus.PAUSED]
+    },
+  ],
   [KeyboardPlayerActionKey.PLAY_OR_PAUSE]: {
     keyCode: keyboard.charKey.space,
     with: [],
@@ -120,7 +151,7 @@ const DefaultKeyboardMap: Record<KeyboardPlayerActionKey, KeyboardPlayerAction> 
     keyCode: keyboard.charKey.u,
     with: [keyboard.combinationKey.ctrl],
     action: 'up'
-  },
+  }
 }
 
 export default class Keyboard {
@@ -255,7 +286,15 @@ export default class Keyboard {
     this.player.unfoldFolder()
   }
 
-  private runAction(key: KeyboardPlayerActionKey, action: KeyboardPlayerAction) {
+  private actionSubtitleDelayAdd() {
+    this.player.setSubtitleDelay(Math.min(5000, this.player.getSubtitleDelay() + 100))
+  }
+
+  private actionSubtitleDelaySub() {
+    this.player.setSubtitleDelay(Math.max(-5000, this.player.getSubtitleDelay() - 100))
+  }
+
+  private runAction(key: KeyboardPlayerActionKey) {
     switch (key) {
       case KeyboardPlayerActionKey.PLAY_OR_PAUSE:
         this.actionPlayOrPause()
@@ -302,6 +341,12 @@ export default class Keyboard {
       case KeyboardPlayerActionKey.VOLUME_UP:
         this.actionVolumeUp()
         break
+      case KeyboardPlayerActionKey.SUBTITLE_DELAY_ADD:
+        this.actionSubtitleDelayAdd()
+        break
+      case KeyboardPlayerActionKey.SUBTITLE_DELAY_SUB:
+        this.actionSubtitleDelaySub()
+        break
     }
   }
 
@@ -311,67 +356,87 @@ export default class Keyboard {
     }
     this.longDownTimer.set(action.keyCode, setTimeout(() => {
       this.longDownTimer.delete(action.keyCode)
-      this.runAction(key, action)
+      this.runAction(key)
       this.longDownRunning.set(action.keyCode, key)
     }, 1000))
   }
 
   private getActionKeys(event: KeyboardEvent, type: ActionType, longDownBefore: boolean = false) {
 
-    let key: KeyboardPlayerActionKey
+    let resultKey: KeyboardPlayerActionKey
+    let resultAction: KeyboardPlayerAction
 
     object.each(DefaultKeyboardMap, ((action, key_) => {
-      if (action.keyCode === event.keyCode
-        && type === action.action
-        && (!action.playerStatus || array.has(action.playerStatus, this.player.getStatus()))
-        && (!longDownBefore || action.longDownBefore)
-      ) {
-        const combinationKey: number[] = []
-        if (event.shiftKey) {
-          combinationKey.push(keyboard.combinationKey.shift)
-        }
-        if (event.ctrlKey) {
-          combinationKey.push(keyboard.combinationKey.ctrl)
-        }
-        if (event.metaKey) {
-          combinationKey.push(keyboard.combinationKey.meta)
-        }
-        if (event.altKey) {
-          combinationKey.push(keyboard.combinationKey.alt)
-        }
-        if (combinationKey.length === action.with.length) {
-          let checked = true
-          for (let i = 0; i < combinationKey.length; i++) {
-            if (!array.has(action.with, combinationKey[i])) {
-              checked = false
-              break
-            }
+      const isAction = (action: KeyboardPlayerAction) => {
+        if (action.keyCode === event.keyCode
+          && type === action.action
+          && (!action.playerStatus || array.has(action.playerStatus, this.player.getStatus()))
+          && (!longDownBefore || action.longDownBefore)
+        ) {
+          const combinationKey: number[] = []
+          if (event.shiftKey) {
+            combinationKey.push(keyboard.combinationKey.shift)
           }
-          if (checked) {
-            key = (+key_) as KeyboardPlayerActionKey
-            return false
+          if (event.ctrlKey) {
+            combinationKey.push(keyboard.combinationKey.ctrl)
+          }
+          if (event.metaKey) {
+            combinationKey.push(keyboard.combinationKey.meta)
+          }
+          if (event.altKey) {
+            combinationKey.push(keyboard.combinationKey.alt)
+          }
+          if (combinationKey.length === action.with.length) {
+            let checked = true
+            for (let i = 0; i < combinationKey.length; i++) {
+              if (!array.has(action.with, combinationKey[i])) {
+                checked = false
+                break
+              }
+            }
+            if (checked) {
+              resultKey = +key_
+              resultAction = action
+              return true
+            }
           }
         }
       }
+
+      if (is.array(action)) {
+        let got = false
+        array.each(action, (item) => {
+          if (isAction(item)) {
+            got = true
+            return false
+          }
+        })
+        if (got) {
+          return false
+        }
+      }
+      else {
+        return !isAction(action)
+      }
     }))
-    return key
+
+    if (resultAction) {
+      return {
+        key: resultKey,
+        action: resultAction
+      }
+    }
   }
 
   private onKeyDown(event: KeyboardEvent) {
-    let key = this.getActionKeys(event, 'down')
-    if (key) {
-      const action = DefaultKeyboardMap[key]
-      if (action) {
-        this.runAction(key, action)
-        return
-      }
+    let result = this.getActionKeys(event, 'down')
+    if (result) {
+      this.runAction(result.key)
+      return
     }
-    key = this.getActionKeys(event, 'longDown')
-    if (key) {
-      const action = DefaultKeyboardMap[key]
-      if (action && !this.longDownRunning.has(action.keyCode)) {
-        this.longDownAction(key, action)
-      }
+    result = this.getActionKeys(event, 'longDown')
+    if (result && !this.longDownRunning.has(result.action.keyCode)) {
+      this.longDownAction(result.key, result.action)
     }
   }
 
@@ -380,13 +445,10 @@ export default class Keyboard {
       clearTimeout(this.longDownTimer.get(event.keyCode))
       this.longDownTimer.delete(event.keyCode)
     }
-    let key = this.getActionKeys(event, 'up', this.longDownRunning.has(event.keyCode))
-    if (key) {
-      const action = DefaultKeyboardMap[key]
-      if (action) {
-        if (!action.longDownBefore || this.longDownRunning.has(event.keyCode)) {
-          this.runAction(key, action)
-        }
+    let result = this.getActionKeys(event, 'up', this.longDownRunning.has(event.keyCode))
+    if (result) {
+      if (!result.action.longDownBefore || this.longDownRunning.has(event.keyCode)) {
+        this.runAction(result.key)
       }
     }
     this.longDownRunning.delete(event.keyCode)
