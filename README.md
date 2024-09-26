@@ -337,6 +337,7 @@ libmedia 使用 LGPL 开源协议，你需要遵守协议要求，详情查看 [
  - [hls-parser](https://github.com/kuu/hls-parser): MIT
  - [ass.js](https://github.com/weizhenye/ASS): MIT
  - [ass-compiler](https://github.com/weizhenye/ass-compiler): MIT
+ - [yox](https://github.com/yoxjs/yox): MIT
 
 版权所有 (C) 2024-现在 赵高兴
 

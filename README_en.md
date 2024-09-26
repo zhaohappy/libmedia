@@ -329,5 +329,6 @@ But some dependent libraries are under GPL license. If you use these dependent l
  - [hls-parser](https://github.com/kuu/hls-parser): MIT
  - [ass.js](https://github.com/weizhenye/ASS): MIT
  - [ass-compiler](https://github.com/weizhenye/ass-compiler): MIT
+ - [yox](https://github.com/yoxjs/yox): MIT
 
 Copyright (C) 2024-present, Gaoxing Zhao
