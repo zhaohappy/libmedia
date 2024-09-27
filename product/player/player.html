@@ -41,13 +41,44 @@
         backdrop-filter: blur(10px);
         background-color: rgba(0, 0, 0, 0.1) !important;
       }
+      .button-fullscreen-mask {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, .6);
+        display: none;
+        top: 0;
+        left: 0;
+      }
+      #button-fullscreen {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-50%);
+
+        width: 400px;
+        height: 120px;
+        border-radius: 20px;
+        font-size: 40px;
+        line-height: 120px;
+        color: #fff;
+        background-color: #23ade5;
+        text-align: center;
+      }
     </style>
 </head>
 <body>
   <video id="background-video" loop muted poster="./background.png"></video>
   <div id="app"></div>
+  <div class="button-fullscreen-mask">
+    <div id="button-fullscreen">点击进入全屏</div>
+  </div>
   <script>
     window.CHEAP_DISABLE_THREAD = false
+    const ua = navigator.userAgent.toLowerCase()
+    if (ua.indexOf('android') > -1 || ua.indexOf('iphone') > -1) {
+      window.CHEAP_HEAP_MAXIMUM = 16384
+    }
   </script>
   <script src="./sw.js"></script>
   <script src="../../dist/cheap-polyfill.js"></script>
@@ -58,187 +89,235 @@
     let supportAtomic = false
     let supportSimd = false
 
-    const backgroundVideo = document.querySelector('#background-video')
+    let player
 
-    const player = new AVPlayer({
-      container: document.querySelector('#app'),
-      getWasm: (type, codecId) => {
-        switch (type) {
-          case 'decoder': {
+    function run() {
+      const backgroundVideo = document.querySelector('#background-video')
 
-            if (codecId >= 65536 && codecId <= 65572) {
-              return `../../dist/decode/pcm${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-            }
+      player = new AVPlayer({
+        container: document.querySelector('#app'),
+        getWasm: (type, codecId) => {
+          switch (type) {
+            case 'decoder': {
 
-            switch (codecId) {
-              // H264
-              case 27:
-                return `../../dist/decode/h264${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // theora
-              case 30:
-                return `../../dist/decode/theora${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // AAC
-              case 86018:
-                return `../../dist/decode/aac${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // ac3
-              case 86019:
-                return `../../dist/decode/ac3${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // eac3
-              case 86056:
-                return `../../dist/decode/eac3${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // dts
-              case 86020:
-                return `../../dist/decode/dca${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-                // MP3
-              case 86017:
-                return `../../dist/decode/mp3${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // HEVC
-              case 173:
-                return `../../dist/decode/hevc${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // VVC
-              case 196:
-                return `../../dist/decode/vvc${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // Mpeg4
-              case 12:
-                return `../../dist/decode/mpeg4${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // AV1
-              case 225:
-                return `../../dist/decode/av1${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // Speex
-              case 86051:
-                return `../../dist/decode/speex${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // Opus
-              case 86076:
-                return `../../dist/decode/opus${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // flac
-              case 86028:
-                return `../../dist/decode/flac${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // vorbis
-              case 86021:
-                return `../../dist/decode/vorbis${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // vp8
-              case 139:
-                return `../../dist/decode/vp8${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              // vp9
-              case 167:
-                return `../../dist/decode/vp9${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-              default:
-                return null
-            }
-            break
-          }
-          case 'resampler':
-            return `../../dist/resample/resample${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-          case 'stretchpitcher':
-            return `../../dist/stretchpitch/stretchpitch${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
-        }
-      },
-      enableHardware: true,
-      jitterBufferMax: 4,
-      jitterBufferMin: 1,
-      lowLatency: true,
-      indicatorUrl: '../../src/ui/avplayer/img/indicator.svg',
-      pauseStateUrl: '../../src/ui/avplayer/img/state.svg',
-      errorStateUrl: '../../src/ui/avplayer/img/error.svg',
-      fullscreenDom: document.body
-    })
-
-    if (typeof VideoDecoder === 'function') {
-      const support = VideoDecoder.isConfigSupported({
-        codec: 'avc1.640034',
-        codedWidth: 3840,
-        codedHeight: 2160,
-        hardwareAcceleration: 'prefer-hardware'
-      }).then((support) => {
-        if (support.supported) {
-          if (screen.availWidth * screen.availHeight <= 2560 * 1440) {
-            backgroundVideo.src = './background_2k_30fps.mp4'
-          }
-          else {
-            backgroundVideo.src = './background_4k_30fps.mp4'
-          }
-
-          backgroundVideo.play()
-
-          player.on('played', () => {
-            if (player.hasVideo()) {
-              if (!backgroundVideo.paused) {
-                backgroundVideo.pause()
+              if (codecId >= 65536 && codecId <= 65572) {
+                return `../../dist/decode/pcm${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
               }
-            }
-            else if (backgroundVideo.paused) {
-              backgroundVideo.play()
-            }
-          })
-          player.on('stopped', () => {
-            if (backgroundVideo.paused) {
-              backgroundVideo.play()
-            }
-          })
-          let playBeforeHidden = false
-          document.addEventListener('visibilitychange', (event) => {
-            if (document.visibilityState === 'hidden') {
-              playBeforeHidden = !backgroundVideo.paused
-              if (!backgroundVideo.paused) {
-                backgroundVideo.pause()
+
+              switch (codecId) {
+                // H264
+                case 27:
+                  return `../../dist/decode/h264${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // theora
+                case 30:
+                  return `../../dist/decode/theora${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // AAC
+                case 86018:
+                  return `../../dist/decode/aac${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // ac3
+                case 86019:
+                  return `../../dist/decode/ac3${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // eac3
+                case 86056:
+                  return `../../dist/decode/eac3${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // dts
+                case 86020:
+                  return `../../dist/decode/dca${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                  // MP3
+                case 86017:
+                  return `../../dist/decode/mp3${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // HEVC
+                case 173:
+                  return `../../dist/decode/hevc${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // VVC
+                case 196:
+                  return `../../dist/decode/vvc${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // Mpeg4
+                case 12:
+                  return `../../dist/decode/mpeg4${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // AV1
+                case 225:
+                  return `../../dist/decode/av1${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // Speex
+                case 86051:
+                  return `../../dist/decode/speex${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // Opus
+                case 86076:
+                  return `../../dist/decode/opus${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // flac
+                case 86028:
+                  return `../../dist/decode/flac${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // vorbis
+                case 86021:
+                  return `../../dist/decode/vorbis${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // vp8
+                case 139:
+                  return `../../dist/decode/vp8${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                // vp9
+                case 167:
+                  return `../../dist/decode/vp9${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+                default:
+                  return null
               }
+              break
+            }
+            case 'resampler':
+              return `../../dist/resample/resample${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+            case 'stretchpitcher':
+              return `../../dist/stretchpitch/stretchpitch${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+          }
+        },
+        enableHardware: true,
+        jitterBufferMax: 4,
+        jitterBufferMin: 1,
+        lowLatency: true,
+        indicatorUrl: '../../src/ui/avplayer/img/indicator.svg',
+        pauseStateUrl: '../../src/ui/avplayer/img/state.svg',
+        errorStateUrl: '../../src/ui/avplayer/img/error.svg',
+        fullscreenDom: document.body,
+      })
+
+      if (typeof VideoDecoder === 'function' && false) {
+        const support = VideoDecoder.isConfigSupported({
+          codec: 'avc1.640034',
+          codedWidth: 3840,
+          codedHeight: 2160,
+          hardwareAcceleration: 'prefer-hardware'
+        }).then((support) => {
+          if (support.supported) {
+            if (screen.availWidth * screen.availHeight <= 2560 * 1440) {
+              backgroundVideo.src = './background_2k_30fps.mp4'
             }
             else {
-              if (playBeforeHidden) {
+              backgroundVideo.src = './background_4k_30fps.mp4'
+            }
+
+            backgroundVideo.play()
+
+            player.on('played', () => {
+              if (player.hasVideo()) {
+                if (!backgroundVideo.paused) {
+                  backgroundVideo.pause()
+                }
+              }
+              else if (backgroundVideo.paused) {
                 backgroundVideo.play()
               }
-            }
+            })
+            player.on('stopped', () => {
+              if (backgroundVideo.paused) {
+                backgroundVideo.play()
+              }
+            })
+            let playBeforeHidden = false
+            document.addEventListener('visibilitychange', (event) => {
+              if (document.visibilityState === 'hidden') {
+                playBeforeHidden = !backgroundVideo.paused
+                if (!backgroundVideo.paused) {
+                  backgroundVideo.pause()
+                }
+              }
+              else {
+                if (playBeforeHidden) {
+                  backgroundVideo.play()
+                }
+              }
+            })
+          }
+        })
+      }
+
+      if (typeof crossOriginIsolated === 'boolean' && !crossOriginIsolated) {
+        navigator.serviceWorker.ready.then(function(reg) {
+          if (!crossOriginIsolated && !navigator.serviceWorker.controller) {
+            window.location.reload()
+          }
+        })
+      }
+
+      function testSupportWasmAtomic() {
+        const asm = 'AGFzbQEAAAABBgFgAX8BfwISAQNlbnYGbWVtb3J5AgMBgIACAwIBAAcJAQVsb2FkOAAACgoBCAAgAP4SAAAL'
+        const binaryData = atob(asm)
+        const uint8Array = new Uint8Array(binaryData.length)
+        for (let i = 0; i < binaryData.length; i++) {
+          uint8Array[i] = binaryData.charCodeAt(i)
+        }
+
+        const instance = WebAssembly.compile(uint8Array).then(() => {
+          console.log('wasm atomic support')
+          supportAtomic = true
+        }, () => {
+          supportAtomic = false
+          console.log('wasm atomic not support')
+        })
+      }
+
+      function testSupportWasmSimd() {
+        const asm = 'AGFzbQEAAAABBQFgAAF7AhIBA2VudgZtZW1vcnkCAwGAgAIDAgEACgoBCABBAP0ABAAL'
+        const binaryData = atob(asm)
+        const uint8Array = new Uint8Array(binaryData.length)
+        for (let i = 0; i < binaryData.length; i++) {
+          uint8Array[i] = binaryData.charCodeAt(i)
+        }
+
+        const instance = WebAssembly.compile(uint8Array).then(() => {
+          console.log('wasm simd support')
+          supportSimd = true
+        }, () => {
+          supportSimd = false
+          console.log('wasm simd not support')
+        })
+      }
+
+      testSupportWasmAtomic()
+      testSupportWasmSimd()
+
+      AVPlayer.setLogLevel(1)
+    }
+
+    if (!(AVPlayer.util.os.windows || AVPlayer.util.os.mac || AVPlayer.util.os.linux)) {
+      if (screen.orientation && screen.orientation.lock) {
+        const button = document.querySelector('#button-fullscreen')
+        button.onclick = () => {
+          document.body.requestFullscreen().then(() => {
+            screen.orientation.lock('landscape')
+              .then(() => {
+                if (!player) {
+                  run()
+                }
+              })
+              .catch(err => {
+                if (!player) {
+                  run()
+                }
+              })
           })
         }
-      })
-    }
+        
+        window.addEventListener('orientationchange', function() {
+          if (window.orientation === 0 || window.orientation === 180) {
+            document.querySelector('.button-fullscreen-mask').style.display = 'block'
+          }
+          else if (window.orientation === 90 || window.orientation === -90) {
+            document.querySelector('.button-fullscreen-mask').style.display = 'none'
+          }
+        })
 
-    if (typeof crossOriginIsolated === 'boolean' && !crossOriginIsolated) {
-      navigator.serviceWorker.ready.then(function(reg) {
-        if (!crossOriginIsolated && !navigator.serviceWorker.controller) {
-          window.location.reload()
+        if (window.orientation === 0 || window.orientation === 180) {
+          document.querySelector('.button-fullscreen-mask').style.display = 'block'
         }
-      })
-    }
-
-    function testSupportWasmAtomic() {
-      const asm = 'AGFzbQEAAAABBgFgAX8BfwISAQNlbnYGbWVtb3J5AgMBgIACAwIBAAcJAQVsb2FkOAAACgoBCAAgAP4SAAAL'
-      const binaryData = atob(asm)
-      const uint8Array = new Uint8Array(binaryData.length)
-      for (let i = 0; i < binaryData.length; i++) {
-        uint8Array[i] = binaryData.charCodeAt(i)
       }
-
-      const instance = WebAssembly.compile(uint8Array).then(() => {
-        console.log('wasm atomic support')
-        supportAtomic = true
-      }, () => {
-        supportAtomic = false
-        console.log('wasm atomic not support')
-      })
-    }
-
-    function testSupportWasmSimd() {
-      const asm = 'AGFzbQEAAAABBQFgAAF7AhIBA2VudgZtZW1vcnkCAwGAgAIDAgEACgoBCABBAP0ABAAL'
-      const binaryData = atob(asm)
-      const uint8Array = new Uint8Array(binaryData.length)
-      for (let i = 0; i < binaryData.length; i++) {
-        uint8Array[i] = binaryData.charCodeAt(i)
+      else {
+        run()
       }
-
-      const instance = WebAssembly.compile(uint8Array).then(() => {
-        console.log('wasm simd support')
-        supportSimd = true
-      }, () => {
-        supportSimd = false
-        console.log('wasm simd not support')
-      })
+    }
+    else {
+      run()
     }
 
-    testSupportWasmAtomic()
-    testSupportWasmSimd()
-
-    AVPlayer.setLogLevel(1)
+    if (navigator.wakeLock) {
+      navigator.wakeLock.request('screen')
+    }
   </script>
 </body>
 </html>

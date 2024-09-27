@@ -100,6 +100,7 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
 
   events: {
     error: function(event, data) {
+      console.log('error', data.message)
       this.set('error', data.message)
     },
 
@@ -200,20 +201,22 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     },
 
     mousemove() {
-      this.set('showBar', true)
-      if (this.showBarTimer) {
-        clearTimeout(this.showBarTimer)
-      }
-      if (this.get('played') && this.get('folded')) {
-        this.showBarTimer = setTimeout(() => {
-          this.set('showBar', false)
-          this.showBarTimer = null
-        }, 5000)
-      }
+      setTimeout(() => {
+        this.set('showBar', true)
+        if (this.showBarTimer) {
+          clearTimeout(this.showBarTimer)
+        }
+        if (this.get('played') && this.get('folded')) {
+          this.showBarTimer = setTimeout(() => {
+            this.set('showBar', false)
+            this.showBarTimer = null
+          }, 5000)
+        }
+      })
     },
 
     playClick(container: boolean) {
-      if (this.$refs['play'] && (!this.get('showMenu') || !container)) {
+      if (this.$refs['play'] && ((!this.get('showMenu') && this.get('showBar')) || !container)) {
         this.$refs['play'].playClick()
       }
     },
