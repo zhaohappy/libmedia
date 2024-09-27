@@ -104,6 +104,10 @@ const Info: ComponentOptions = {
     close() {
       this.fire('closeInfo')
       return false
+    },
+
+    preventDefault(event: CustomEvent) {
+      event.preventDefault()
     }
   },
 

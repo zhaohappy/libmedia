@@ -32,7 +32,7 @@
       </svg>
     </div>
   </div>
-  <div class="avplayer-ui-folder-list-container" ref="scroll">
+  <div class="avplayer-ui-folder-list-container" ref="scroll" on-keydown="preventDefault()" on-keyup="preventDefault()">
     <ul role="list" class="avplayer-ui-folder-list">
     {{#each root}}
       <FolderNode ref="{{this.id}}" key="{{this.name}}" node="{{this}}" language="{{language}}" />

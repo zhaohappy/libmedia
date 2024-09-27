@@ -275,6 +275,10 @@ const Folder: ComponentOptions = {
           })
         }
       }
+    },
+
+    preventDefault(event: CustomEvent) {
+      event.preventDefault()
     }
   },
 
