@@ -47,9 +47,10 @@ import { avRescaleQ } from 'avutil/util/rational'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
 import * as errorType from 'avutil/error'
 import { Data } from 'common/types/type'
+import compileResource from 'avutil/function/compileResource'
 
 export interface AudioDecodeTaskOptions extends TaskOptions {
-  resource: WebAssemblyResource
+  resource: ArrayBuffer | WebAssemblyResource
   avpacketList: pointer<List<pointer<AVPacketRef>>>
   avpacketListMutex: pointer<Mutex>
   avframeList: pointer<List<pointer<AVFrameRef>>>
@@ -57,7 +58,8 @@ export interface AudioDecodeTaskOptions extends TaskOptions {
   timeBase: Rational
 }
 
-type SelfTask = AudioDecodeTaskOptions & {
+type SelfTask = Omit<AudioDecodeTaskOptions, 'resource'> & {
+  resource: WebAssemblyResource
   decoder: WasmAudioDecoder | WebAudioDecoder
   frameCaches: pointer<AVFrameRef>[]
   inputEnd: boolean
@@ -135,7 +137,7 @@ export default class AudioDecodePipeline extends Pipeline {
     })
   }
 
-  private createTask(options: AudioDecodeTaskOptions): number {
+  private async createTask(options: AudioDecodeTaskOptions): Promise<number> {
 
     assert(options.leftPort)
     assert(options.rightPort)
@@ -148,6 +150,7 @@ export default class AudioDecodePipeline extends Pipeline {
 
     const task: SelfTask = {
       ...options,
+      resource: await compileResource(options.resource),
       frameCaches,
       inputEnd: false,
       decoder: null,
@@ -159,8 +162,8 @@ export default class AudioDecodePipeline extends Pipeline {
       openReject: null
     }
 
-    if (options.resource) {
-      task.decoder = this.createWasmcodecDecoder(task, options.resource)
+    if (task.resource) {
+      task.decoder = this.createWasmcodecDecoder(task, task.resource)
     }
     else {
       task.decoder = this.createWebcodecDecoder(task)
@@ -250,7 +253,12 @@ export default class AudioDecodePipeline extends Pipeline {
     logger.fatal('task not found')
   }
 
-  public async reopenDecoder(taskId: string, parameters: pointer<AVCodecParameters>, resource?: WebAssemblyResource, wasmDecoderOptions?: Data) {
+  public async reopenDecoder(
+    taskId: string,
+    parameters: pointer<AVCodecParameters>,
+    resource?: string | ArrayBuffer | WebAssemblyResource,
+    wasmDecoderOptions?: Data
+  ) {
     const task = this.tasks.get(taskId)
     if (task) {
       if (wasmDecoderOptions) {
@@ -258,6 +266,7 @@ export default class AudioDecodePipeline extends Pipeline {
       }
       let decoder: WasmAudioDecoder | WebAudioDecoder
       if (resource) {
+        resource = await compileResource(resource)
         decoder = this.createWasmcodecDecoder(task, resource)
       }
       else {
@@ -268,6 +277,9 @@ export default class AudioDecodePipeline extends Pipeline {
         try {
           await decoder.open(parameters)
           task.parameters = parameters
+          if (resource) {
+            task.resource = resource as WebAssemblyResource
+          }
           task.decoder.close()
           task.decoder = decoder
 

@@ -49,13 +49,14 @@ import { Timeout } from 'common/types/type'
 import Sleep from 'common/timer/Sleep'
 import { JitterBuffer } from './struct/jitter'
 import * as bigint from 'common/util/bigint'
+import compileResource from 'avutil/function/compileResource'
 
 export interface AudioRenderTaskOptions extends TaskOptions {
   playSampleRate: int32
   playFormat: AVSampleFormat
   playChannels: int32
-  resamplerResource: WebAssemblyResource
-  stretchpitcherResource: WebAssemblyResource
+  resamplerResource: ArrayBuffer | WebAssemblyResource
+  stretchpitcherResource: ArrayBuffer | WebAssemblyResource
   timeBase: Rational
   startPTS: int64
   avframeList: pointer<List<pointer<AVFrameRef>>>
@@ -68,6 +69,8 @@ type SelfTask = AudioRenderTaskOptions & {
   leftIPCPort: IPCPort
   rightIPCPort: IPCPort
   controlIPCPort: IPCPort
+  resamplerResource: WebAssemblyResource
+  stretchpitcherResource: WebAssemblyResource
   resampler: Resampler
   stretchpitcher: Map<int32, StretchPitcher>
   outPCMBuffer: AVPCMBuffer
@@ -130,6 +133,8 @@ export default class AudioRenderPipeline extends Pipeline {
       leftIPCPort,
       rightIPCPort,
       controlIPCPort,
+      resamplerResource: await compileResource(options.resamplerResource),
+      stretchpitcherResource: await compileResource(options.stretchpitcherResource),
       resampler: null,
       stretchpitcher: new Map(),
       outPCMBuffer: null,
@@ -169,7 +174,7 @@ export default class AudioRenderPipeline extends Pipeline {
     for (let i = 0; i < options.playChannels; i++) {
 
       const stretchpitcher = new StretchPitcher({
-        resource: options.stretchpitcherResource
+        resource: task.stretchpitcherResource
       })
 
       task.stretchpitcher.set(i, stretchpitcher)
@@ -837,7 +842,7 @@ export default class AudioRenderPipeline extends Pipeline {
     if (this.tasks.has(options.taskId)) {
       return error.INVALID_OPERATE
     }
-    return await this.createTask(options)
+    return this.createTask(options)
   }
 
   public async unregisterTask(taskId: string): Promise<void> {

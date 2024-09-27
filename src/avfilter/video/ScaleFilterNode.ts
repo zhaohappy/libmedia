@@ -10,9 +10,10 @@ import { AVPixelFormat } from 'avutil/pixfmt'
 import * as errorType from 'avutil/error'
 import * as logger from 'common/util/logger'
 import isPointer from 'cheap/std/function/isPointer'
+import compileResource from 'avutil/function/compileResource'
 
 export interface ScaleFilterNodeOptions extends AVFilterNodeOptions {
-  resource: WebAssemblyResource
+  resource: WebAssemblyResource | ArrayBuffer
   output: ScaleParameters
 }
 
@@ -78,8 +79,12 @@ export default class ScaleFilterNode extends AVFilterNode {
         }
       }
       if (!this.scaler) {
+        let resource = this.options.resource
+        if (is.arrayBuffer(resource)) {
+          resource = await compileResource(resource)
+        }
         this.scaler = new VideoScaler({
-          resource: this.options.resource
+          resource
         })
 
         try {

@@ -93,6 +93,7 @@ import Controller, { ControllerObserver } from './Controller'
 import { AVFormatContextInterface } from 'avformat/AVFormatContext'
 import dump, { dumpCodecName, dumpTime } from 'avformat/dump'
 import { Data } from 'common/types/type'
+import compileResource from 'avutil/function/compileResource'
 
 export interface AVTranscoderOptions {
   getWasm: (type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codec?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
@@ -235,7 +236,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     compile
   }
 
-  static Resource: Map<string, WebAssemblyResource> = new Map()
+  static Resource: Map<string, WebAssemblyResource | ArrayBuffer> = new Map()
 
   private level: number = logger.INFO
 
@@ -293,31 +294,30 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     let resource: WebAssemblyResource
 
     if (wasmUrl) {
-      if (is.string(wasmUrl) || is.arrayBuffer(wasmUrl)) {
-
-        resource = await compile(
-          {
-            source: wasmUrl
+      let resource: WebAssemblyResource | ArrayBuffer
+      // safari 15 不支持将 WebAssembly.Module 传递到 worker 中
+      if (browser.safari && !browser.checkVersion(browser.majorVersion, '16', true) && (is.string(wasmUrl) || is.arrayBuffer(wasmUrl))) {
+        if (is.string(wasmUrl)) {
+          const params: Partial<any> = {
+            method: 'GET',
+            headers: {},
+            mode: 'cors',
+            cache: 'default',
+            referrerPolicy: 'no-referrer-when-downgrade'
           }
-        )
-        if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS) && mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-          resource.threadModule = await compile(
-            {
-              // firefox 使用 arraybuffer 会卡主
-              source: browser.firefox ? wasmUrl : resource.buffer
-            },
-            {
-              child: true
-            }
-          )
+          const response = await fetch(wasmUrl, params)
+          resource = await response.arrayBuffer()
         }
-        delete resource.buffer
+        else {
+          resource = wasmUrl
+        }
       }
       else {
-        resource = wasmUrl
+        resource = await compileResource(wasmUrl, mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO)
       }
 
       AVTranscoder.Resource.set(key, resource)
+
       return resource
     }
   }
@@ -978,7 +978,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         .transfer(demuxer2DecoderChannel.port1)
         .invoke(task.taskId, stream.index, demuxer2DecoderChannel.port1)
 
-      let decoderResource: WebAssemblyResource = await this.getResource('decoder', stream.codecpar.codecId, stream.codecpar.codecType)
+      let decoderResource = await this.getResource('decoder', stream.codecpar.codecId, stream.codecpar.codecType)
       if (!decoderResource) {
         if (support.audioDecoder) {
           const isSupport = await AudioDecoder.isConfigSupported({
@@ -1021,7 +1021,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         return ret
       }
 
-      let resamplerResource: WebAssemblyResource = await this.getResource('resampler')
+      let resamplerResource = await this.getResource('resampler')
       if (!resamplerResource) {
         logger.fatal('resampler not found')
       }
@@ -1083,7 +1083,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           avframeListMutex: addressof(this.GlobalData.avframeListMutex),
         })
       
-      let encoderResource: WebAssemblyResource = await this.getResource('encoder', newStream.codecpar.codecId, newStream.codecpar.codecType)
+      let encoderResource = await this.getResource('encoder', newStream.codecpar.codecId, newStream.codecpar.codecType)
       if (!encoderResource) {
         if (support.audioEncoder) {
           const isSupport = await AudioEncoder.isConfigSupported({
@@ -1301,7 +1301,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         .transfer(demuxer2DecoderChannel.port1)
         .invoke(task.subTaskId || task.taskId, stream.index, demuxer2DecoderChannel.port1)
 
-      let decoderResource: WebAssemblyResource = await this.getResource('decoder', stream.codecpar.codecId, stream.codecpar.codecType)
+      let decoderResource = await this.getResource('decoder', stream.codecpar.codecId, stream.codecpar.codecType)
       if (!decoderResource) {
         if (support.videoDecoder) {
           const isSupport = await VideoDecoder.isConfigSupported({
@@ -1339,7 +1339,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         return ret
       }
 
-      let scalerResource: WebAssemblyResource = await this.getResource('scaler')
+      let scalerResource = await this.getResource('scaler')
       if (!scalerResource) {
         logger.fatal('scaler not found')
       }
@@ -1441,7 +1441,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         avframeListMutex: addressof(this.GlobalData.avframeListMutex),
       })
       
-      let encoderResource: WebAssemblyResource = await this.getResource('encoder', newStream.codecpar.codecId, newStream.codecpar.codecType)
+      let encoderResource = await this.getResource('encoder', newStream.codecpar.codecId, newStream.codecpar.codecType)
       if (!encoderResource) {
         if (support.videoEncoder) {
           const isSupport = await VideoEncoder.isConfigSupported({
@@ -1459,15 +1459,16 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       }
 
       const wasmEncoderOptions: Data = {}
+      const resourceExtraData: Data = {}
 
       // x265 需要提前创建线程
       if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
-        encoderResource.enableThreadPool = true
-        encoderResource.enableThreadCountRate = 2
+        resourceExtraData.enableThreadPool = true
+        resourceExtraData.enableThreadCountRate = 2
       }
       // libvpx 需要提前创建线程
       else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9) {
-        encoderResource.enableThreadPool = true
+        resourceExtraData.enableThreadPool = true
       }
       else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1) {
         wasmEncoderOptions['cpu-used'] = '5'
@@ -1479,6 +1480,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         .invoke({
           taskId: taskId,
           resource: encoderResource,
+          resourceExtraData,
           leftPort: filter2EncoderChannel.port2,
           rightPort: encoder2MuxerChannel.port1,
           stats: addressof(task.stats),
@@ -1868,7 +1870,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     logger.info(`set log level: ${level}`)
   }
 
-  public async onGetDecoderResource(mediaType: AVMediaType, codecId: AVCodecID): Promise<WebAssemblyResource> {
+  public async onGetDecoderResource(mediaType: AVMediaType, codecId: AVCodecID): Promise<WebAssemblyResource | ArrayBuffer> {
     return this.getResource('decoder', codecId, mediaType)
   }
 }

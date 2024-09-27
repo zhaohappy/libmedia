@@ -49,7 +49,6 @@ import getTimestamp from 'common/function/getTimestamp'
 import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
 import SeekableWriteBufferQueue from 'common/io/SeekableWriteBufferQueue'
-import { AVFormat } from 'avformat/avformat'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
 import { mapUint8Array, memcpy } from 'cheap/std/memory'
 import { avFree, avMalloc } from 'avutil/util/mem'
@@ -69,7 +68,6 @@ const BUFFER_MIN = 0.5
 const BUFFER_MAX = 1
 
 export interface MSETaskOptions extends TaskOptions {
-  format: AVFormat
   isLive: boolean
   avpacketList: pointer<List<pointer<AVPacketRef>>>
   avpacketListMutex: pointer<Mutex>

@@ -10,9 +10,11 @@ import * as errorType from 'avutil/error'
 import { avbufferCreate } from 'avutil/util/avbuffer'
 import { NOPTS_VALUE } from 'avutil/constant'
 import * as logger from 'common/util/logger'
+import * as is from 'common/util/is'
+import compileResource from 'avutil/function/compileResource'
 
 export interface ResampleFilterNodeOptions extends AVFilterNodeOptions {
-  resource: WebAssemblyResource
+  resource: WebAssemblyResource | ArrayBuffer
   output: PCMParameters
 }
 
@@ -70,8 +72,12 @@ export default class ResampleFilterNode extends AVFilterNode {
         }
       }
       if (!this.resampler) {
+        let resource = this.options.resource
+        if (is.arrayBuffer(resource)) {
+          resource = await compileResource(resource)
+        }
         this.resampler = new Resampler({
-          resource: this.options.resource
+          resource
         })
 
         try {

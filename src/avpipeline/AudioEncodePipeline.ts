@@ -37,7 +37,6 @@ import IPCPort, { REQUEST, RpcMessage } from 'common/network/IPCPort'
 import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
 import * as logger from 'common/util/logger'
 import { IOError } from 'common/io/error'
-import * as is from 'common/util/is'
 import * as array from 'common/util/array'
 import * as error from 'avutil/error'
 import Sleep from 'common/timer/Sleep'
@@ -45,17 +44,19 @@ import { Rational } from 'avutil/struct/rational'
 import * as errorType from 'avutil/error'
 import isPointer from 'cheap/std/function/isPointer'
 import { Data } from 'common/types/type'
+import compileResource from 'avutil/function/compileResource'
 
 export interface AudioEncodeTaskOptions extends TaskOptions {
-  resource: WebAssemblyResource
+  resource: ArrayBuffer | WebAssemblyResource
   avpacketList: pointer<List<pointer<AVPacketRef>>>
   avpacketListMutex: pointer<Mutex>
   avframeList: pointer<List<pointer<AVFrameRef>>>
   avframeListMutex: pointer<Mutex>
 }
 
-type SelfTask = AudioEncodeTaskOptions & {
+type SelfTask = Omit<AudioEncodeTaskOptions, 'resource'> & {
   encoder: WasmAudioEncoder | WebAudioEncoder
+  resource: WebAssemblyResource
   avpacketCaches: pointer<AVPacketRef>[]
   parameters: pointer<AVCodecParameters>
   openReject?: (error: Error) => void
@@ -91,7 +92,7 @@ export default class AudioEncodePipeline extends Pipeline {
     })
   }
 
-  private createTask(options: AudioEncodeTaskOptions): number {
+  private async createTask(options: AudioEncodeTaskOptions): Promise<number> {
 
     assert(options.leftPort)
     assert(options.rightPort)
@@ -104,6 +105,7 @@ export default class AudioEncodePipeline extends Pipeline {
 
     const task: SelfTask = {
       ...options,
+      resource: await compileResource(options.resource),
       avpacketCaches,
       encoder: null,
       inputEnd: false,
@@ -113,9 +115,9 @@ export default class AudioEncodePipeline extends Pipeline {
       avpacketPool
     }
 
-    if (options.resource) {
+    if (task.resource) {
       task.encoder = new WasmAudioEncoder({
-        resource: options.resource,
+        resource: task.resource,
         onError: (error) => {
           logger.error(`audio encode error, taskId: ${options.taskId}, error: ${error}`)
           const task = this.tasks.get(options.taskId)

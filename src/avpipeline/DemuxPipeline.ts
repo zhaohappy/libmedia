@@ -52,6 +52,8 @@ import { AVStreamInterface } from 'avformat/AVStream'
 import { addAVPacketSideData, getAVPacketSideData } from 'avutil/util/avpacket'
 import { memcpy } from 'cheap/std/memory'
 import analyzeAVFormat from 'avutil/function/analyzeAVFormat'
+import { WebAssemblyResource } from 'cheap/webassembly/compiler'
+import compileResource from 'avutil/function/compileResource'
 
 export const STREAM_INDEX_ALL = -1
 
@@ -196,10 +198,12 @@ export default class DemuxPipeline extends Pipeline {
       if (!controlIPCPort) {
         return
       }
-      return controlIPCPort.request('getDecoderResource', {
+      const wasm: ArrayBuffer | WebAssemblyResource = await controlIPCPort.request('getDecoderResource', {
         codecId,
         mediaType
       })
+
+      return compileResource(wasm, mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO)
     }
 
     this.tasks.set(options.taskId, {

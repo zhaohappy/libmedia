@@ -50,9 +50,10 @@ import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 import support from 'common/util/support'
 import isPointer from 'cheap/std/function/isPointer'
 import { Data } from 'common/types/type'
+import compileResource from 'avutil/function/compileResource'
 
 export interface VideoDecodeTaskOptions extends TaskOptions {
-  resource: WebAssemblyResource
+  resource: ArrayBuffer | WebAssemblyResource
   enableHardware: boolean
   avpacketList: pointer<List<pointer<AVPacketRef>>>
   avpacketListMutex: pointer<Mutex>
@@ -61,7 +62,8 @@ export interface VideoDecodeTaskOptions extends TaskOptions {
   preferWebCodecs?: boolean
 }
 
-type SelfTask = VideoDecodeTaskOptions & {
+type SelfTask = Omit<VideoDecodeTaskOptions, 'resource'> & {
+  resource: WebAssemblyResource
   leftIPCPort: IPCPort
   rightIPCPort: IPCPort
 
@@ -176,7 +178,7 @@ export default class VideoDecodePipeline extends Pipeline {
     })
   }
 
-  private createTask(options: VideoDecodeTaskOptions): number {
+  private async createTask(options: VideoDecodeTaskOptions): Promise<number> {
 
     assert(options.leftPort)
     assert(options.rightPort)
@@ -189,6 +191,7 @@ export default class VideoDecodePipeline extends Pipeline {
 
     const task: SelfTask = {
       ...options,
+      resource: await compileResource(options.resource, true),
       leftIPCPort,
       rightIPCPort,
       softwareDecoder: null,
@@ -208,7 +211,7 @@ export default class VideoDecodePipeline extends Pipeline {
       avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex)
     }
 
-    task.softwareDecoder = options.resource
+    task.softwareDecoder = task.resource
         ? this.createWasmcodecDecoder(task, task.resource)
         : (support.videoDecoder ? this.createWebcodecDecoder(task, false) : null)
 
@@ -472,12 +475,21 @@ export default class VideoDecodePipeline extends Pipeline {
     }
   }
 
-  public async reopenDecoder(taskId: string, parameters: pointer<AVCodecParameters>, resource?: WebAssemblyResource,  wasmDecoderOptions?: Data) {
+  public async reopenDecoder(
+    taskId: string,
+    parameters: pointer<AVCodecParameters>,
+    resource?: string | ArrayBuffer | WebAssemblyResource,
+    wasmDecoderOptions?: Data
+  ) {
     const task = this.tasks.get(taskId)
     if (task) {
 
       if (wasmDecoderOptions) {
         task.wasmDecoderOptions = wasmDecoderOptions
+      }
+
+      if (resource) {
+        resource = await compileResource(resource, true)
       }
 
       let softwareDecoder: WasmVideoDecoder | WebVideoDecoder
@@ -487,7 +499,7 @@ export default class VideoDecodePipeline extends Pipeline {
       }
       else {
         softwareDecoder = resource
-          ? this.createWasmcodecDecoder(task, resource)
+          ? this.createWasmcodecDecoder(task, resource as WebAssemblyResource)
           : (support.videoDecoder ? this.createWebcodecDecoder(task, false) : null)
       }
 
@@ -522,6 +534,9 @@ export default class VideoDecodePipeline extends Pipeline {
         }
 
         task.parameters = parameters
+        if (resource) {
+          task.resource = resource as WebAssemblyResource
+        }
 
         if (task.targetDecoder === task.softwareDecoder) {
           try {

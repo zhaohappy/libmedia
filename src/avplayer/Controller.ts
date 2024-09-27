@@ -36,7 +36,7 @@ export interface ControllerObserver {
   onFirstVideoRenderedAfterUpdateCanvas: () => void
   onTimeUpdate: (pts: int64) => void
   onMSESeek: (time: number) => void
-  onGetDecoderResource: (mediaType: AVMediaType, codecId: AVCodecID) => Promise<WebAssemblyResource>
+  onGetDecoderResource: (mediaType: AVMediaType, codecId: AVCodecID) => Promise<WebAssemblyResource | string | ArrayBuffer>
   isPictureInPicture: () => boolean
 }
 

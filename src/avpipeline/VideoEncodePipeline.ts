@@ -37,6 +37,7 @@ import { IOError } from 'common/io/error'
 import { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
 import * as is from 'common/util/is'
 import * as array from 'common/util/array'
+import * as object from 'common/util/object'
 import Sleep from 'common/timer/Sleep'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
@@ -49,9 +50,11 @@ import WebVideoEncoder from 'avcodec/webcodec/VideoEncoder'
 import { Rational } from 'avutil/struct/rational'
 import isPointer from 'cheap/std/function/isPointer'
 import { Data } from 'common/types/type'
+import compileResource from 'avutil/function/compileResource'
 
 export interface VideoEncodeTaskOptions extends TaskOptions {
-  resource: WebAssemblyResource
+  resource: ArrayBuffer | WebAssemblyResource
+  resourceExtraData?: Data
   enableHardware: boolean
   avpacketList: pointer<List<pointer<AVPacketRef>>>
   avpacketListMutex: pointer<Mutex>
@@ -61,9 +64,10 @@ export interface VideoEncodeTaskOptions extends TaskOptions {
   gop: int32
 }
 
-type SelfTask = VideoEncodeTaskOptions & {
+type SelfTask = Omit<VideoEncodeTaskOptions, 'resource'> & {
   leftIPCPort: IPCPort
   rightIPCPort: IPCPort
+  resource: WebAssemblyResource
 
   softwareEncoder: WasmVideoEncoder | WebVideoEncoder
   softwareEncoderOpened: boolean
@@ -130,7 +134,7 @@ export default class VideoEncodePipeline extends Pipeline {
     })
   }
 
-  private createTask(options: VideoEncodeTaskOptions): number {
+  private async createTask(options: VideoEncodeTaskOptions): Promise<number> {
 
     assert(options.leftPort)
     assert(options.rightPort)
@@ -142,8 +146,15 @@ export default class VideoEncodePipeline extends Pipeline {
     const avframePool = new AVFramePoolImpl(accessof(options.avframeList), options.avframeListMutex)
     const avpacketPool = new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex)
 
+    const resource = await compileResource(options.resource, true)
+
+    if (options.resourceExtraData) {
+      object.extend(resource, options.resourceExtraData)
+    }
+
     const task: SelfTask = {
       ...options,
+      resource,
       leftIPCPort,
       rightIPCPort,
       softwareEncoder: null,
@@ -163,9 +174,9 @@ export default class VideoEncodePipeline extends Pipeline {
       avpacketPool
     }
 
-    task.softwareEncoder = options.resource
+    task.softwareEncoder = task.resource
       ? new WasmVideoEncoder({
-        resource: options.resource,
+        resource: task.resource,
         onError: (error) => {
           logger.error(`video encode error, taskId: ${options.taskId}, error: ${error}`)
           const task = this.tasks.get(options.taskId)
