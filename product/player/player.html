@@ -177,7 +177,7 @@
         fullscreenDom: document.body,
       })
 
-      if (typeof VideoDecoder === 'function' && false) {
+      if (typeof VideoDecoder === 'function' && (AVPlayer.Util.os.windows || AVPlayer.Util.os.mac || AVPlayer.Util.os.linux)) {
         const support = VideoDecoder.isConfigSupported({
           codec: 'avc1.640034',
           codedWidth: 3840,
@@ -275,7 +275,7 @@
       AVPlayer.setLogLevel(1)
     }
 
-    if (!(AVPlayer.util.os.windows || AVPlayer.util.os.mac || AVPlayer.util.os.linux)) {
+    if (!(AVPlayer.Util.os.windows || AVPlayer.Util.os.mac || AVPlayer.Util.os.linux)) {
       if (screen.orientation && screen.orientation.lock) {
         const button = document.querySelector('#button-fullscreen')
         button.onclick = () => {
