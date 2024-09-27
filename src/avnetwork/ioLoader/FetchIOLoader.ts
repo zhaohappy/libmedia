@@ -30,6 +30,7 @@ import { IOError } from 'common/io/error'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import * as logger from 'common/util/logger'
 import { Data } from 'common/types/type'
+import * as errorType from 'avutil/error'
 
 export interface FetchInfo {
   url: string
@@ -143,6 +144,8 @@ export default class FetchIOLoader extends IOLoader {
         this.endBytes = -1
       }
     }
+
+    return 0
   }
 
   private async openReader() {
@@ -283,6 +286,11 @@ export default class FetchIOLoader extends IOLoader {
   }
 
   public async seek(pos: int64) {
+
+    if (!this.contentLength) {
+      return errorType.OPERATE_NOT_SUPPORT
+    }
+
     await this.abort()
     this.receivedLength = Number(pos) - this.range.from
     this.startBytes = Number(pos)
@@ -293,6 +301,8 @@ export default class FetchIOLoader extends IOLoader {
     if (this.status === IOLoaderStatus.COMPLETE) {
       this.status = IOLoaderStatus.BUFFERING
     }
+
+    return 0
   }
 
   public async size() {

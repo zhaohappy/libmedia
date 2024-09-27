@@ -61,7 +61,7 @@ import browser from 'common/util/browser'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import Stats from 'avpipeline/struct/stats'
-import { memset, mapUint8Array } from 'cheap/std/memory'
+import { memset, mapUint8Array, mapSafeUint8Array } from 'cheap/std/memory'
 import createMessageChannel from 'avutil/function/createMessageChannel'
 import getVideoCodec from 'avcodec/function/getVideoCodec'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
@@ -89,6 +89,13 @@ import { Fn } from 'common/types/type'
 import { player_event_changed, player_event_changing, player_event_error, player_event_no_param, player_event_time } from './type'
 import compileResource from 'avutil/function/compileResource'
 import os from 'common/util/os'
+import IPCPort, { REQUEST, RpcMessage } from 'common/network/IPCPort'
+import * as errorType from 'avutil/error'
+import FetchIOLoader from 'avnetwork/ioLoader/FetchIOLoader'
+import FileIOLoader from 'avnetwork/ioLoader/FileIOLoader'
+import CustomIOLoader from 'avnetwork/ioLoader/CustomIOLoader'
+import HlsIOLoader from 'avnetwork/ioLoader/HlsIOLoader'
+import DashIOLoader from 'avnetwork/ioLoader/DashIOLoader'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -160,11 +167,11 @@ export interface AVPlayerOptions {
    */
   lowLatency?: boolean
   /**
-   * jitter buffer 最大值 lowLatency 模式下影响最高延时
+   * jitter buffer 最大值 lowLatency 模式下影响最高延时（秒）
    */
   jitterBufferMax?: float
   /**
-   * jitter buffer 最小值 lowLatency 模式下影响最低延时
+   * jitter buffer 最小值 lowLatency 模式下影响最低延时（秒）
    */
   jitterBufferMin?: float
   /**
@@ -175,11 +182,6 @@ export interface AVPlayerOptions {
    * 自定义查找播放流回调
    */
   findBestStream?: (streams: AVStreamInterface[], mediaType: AVMediaType) => AVStreamInterface
-
-  /**
-   * 调用方可以传入已经确认的 format
-   */
-  format?: AVFormat
 }
 
 export const AVPlayerSupportedCodecs = [
@@ -252,10 +254,18 @@ export const enum AVPlayerProgress {
 
 export default class AVPlayer extends Emitter implements ControllerObserver {
 
-  static util = {
+  static Util = {
     compile,
     browser,
     os
+  }
+
+  static IOLoader = {
+    CustomIOLoader,
+    FetchIOLoader,
+    FileIOLoader,
+    HlsIOLoader,
+    DashIOLoader
   }
 
   static AVFormat = AVFormat
@@ -290,7 +300,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private subTaskId: string
   private subtitleTaskId: string
   private ext: string
-  private source: string | File
+  private source: string | File | CustomIOLoader
+  private ioIPCPort: IPCPort
   private options: AVPlayerOptions
 
   private ioloader2DemuxerChannel: MessageChannel
@@ -900,7 +911,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @param source 媒体源，支持 url 和 文件
    * @param externalSubtitles 外挂字幕源
    */
-  public async load(source: string | File, externalSubtitles: ExternalSubtitle[] = []) {
+  public async load(source: string | File | CustomIOLoader, externalSubtitles: ExternalSubtitle[] = []) {
 
     logger.info(`call load, taskId: ${this.taskId}`)
 
@@ -938,7 +949,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           stats: addressof(this.stats)
         })
     }
-    else {
+    else if (source instanceof File) {
       this.options.isLive = false
       this.ext = source.name.split('.').pop()
       // 注册一个文件 io 任务
@@ -961,6 +972,79 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           stats: addressof(this.stats)
         })
     }
+    else if (source instanceof CustomIOLoader) {
+      this.ext = source.ext
+      this.ioIPCPort = new IPCPort(this.ioloader2DemuxerChannel.port1)
+      this.ioIPCPort.on(REQUEST, async (request: RpcMessage) => {
+        switch (request.method) {
+          case 'open': {
+            try {
+              const ret = await source.open()
+              if (ret < 0) {
+                logger.error(`custom loader open error, ${ret}, taskId: ${this.taskId}`)
+                this.ioIPCPort.reply(request, null, ret)
+                break
+              }
+              this.ioIPCPort.reply(request, ret)
+            }
+            catch (error) {
+              logger.error(`loader open error, ${error}, taskId: ${this.taskId}`)
+              this.ioIPCPort.reply(request, null, error)
+            }
+            break
+          }
+          case 'read': {
+            const pointer = request.params.pointer
+            const length = request.params.length
+            const ioloaderOptions = request.params.ioloaderOptions
+  
+            const buffer = mapSafeUint8Array(pointer, length)
+  
+            try {
+              const len = await source.read(buffer, ioloaderOptions)
+              this.stats.bufferReceiveBytes += static_cast<int64>(len)
+              this.ioIPCPort.reply(request, len)
+            }
+            catch (error) {
+              logger.error(`loader read error, ${error}, taskId: ${this.taskId}`)
+              this.ioIPCPort.reply(request, errorType.DATA_INVALID)
+            }
+  
+            break
+          }
+  
+          case 'seek': {
+            const pos = request.params.pos
+            const ioloaderOptions = request.params.ioloaderOptions
+  
+            assert(pos >= 0)
+  
+            try {
+              const ret = await source.seek(pos, ioloaderOptions)
+              if (ret < 0) {
+                logger.error(`custom loader seek error, ${ret}, taskId: ${this.taskId}`)
+                this.ioIPCPort.reply(request, null, ret)
+                break
+              }
+              this.ioIPCPort.reply(request, ret)
+            }
+            catch (error) {
+              logger.error(`loader seek error, ${error}, taskId: ${this.taskId}`)
+              this.ioIPCPort.reply(request, null, error)
+            }
+            break
+          }
+  
+          case 'size': {
+            this.ioIPCPort.reply(request, await source.size())
+            break
+          }
+        }
+      })
+    }
+    else {
+      logger.fatal('invalid source')
+    }
 
     if (ret < 0) {
       logger.fatal(`register io task failed, ret: ${ret}, taskId: ${this.taskId}`)
@@ -979,7 +1063,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             taskId: this.taskId,
             leftPort: this.ioloader2DemuxerChannel.port2,
             controlPort: this.controller.getDemuxerControlPort(),
-            format: this.options.format ?? Ext2Format[this.ext],
+            format: Ext2Format[this.ext],
             stats: addressof(this.stats),
             isLive: this.options.isLive,
             flags: IOFlags.SLICE,
@@ -993,7 +1077,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           taskId: this.subTaskId,
           mainTaskId: this.taskId,
           flags: IOFlags.SLICE,
-          format: this.options.format ?? Ext2Format[this.ext],
+          format: Ext2Format[this.ext],
           stats: addressof(this.stats),
           isLive: this.options.isLive,
           ioloaderOptions: {
@@ -1011,7 +1095,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             taskId: this.taskId,
             leftPort: this.ioloader2DemuxerChannel.port2,
             controlPort: this.controller.getDemuxerControlPort(),
-            format: this.options.format ?? Ext2Format[this.ext],
+            format: Ext2Format[this.ext],
             stats: addressof(this.stats),
             isLive: this.options.isLive,
             flags: IOFlags.SLICE,
@@ -1030,7 +1114,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           taskId: this.taskId,
           leftPort: this.ioloader2DemuxerChannel.port2,
           controlPort: this.controller.getDemuxerControlPort(),
-          format: this.options.format ?? Ext2Format[this.ext],
+          format: Ext2Format[this.ext],
           stats: addressof(this.stats),
           isLive: this.options.isLive,
           flags: this.isHls() ? IOFlags.SLICE : 0,
@@ -1048,7 +1132,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           taskId: this.subtitleTaskId,
           mainTaskId: this.taskId,
           flags: IOFlags.SLICE,
-          format: this.options.format ?? Ext2Format[this.ext],
+          format: Ext2Format[this.ext],
           stats: addressof(this.stats),
           isLive: this.options.isLive,
           ioloaderOptions: {
@@ -1136,7 +1220,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     if (this.options.isLive && this.options.lowLatency) {
-      const min = Math.max(await AVPlayer.IOThread.getMinBuffer(this.taskId), this.options.jitterBufferMin)
+      const min = Math.max(
+        this.source instanceof CustomIOLoader
+          ? this.source.minBuffer
+          : await AVPlayer.IOThread.getMinBuffer(this.taskId),
+        this.options.jitterBufferMin
+      )
       let max = this.options.jitterBufferMax
       if (max <= min) {
         max = min + ((this.isHls() || this.isDash()) ? min : 1)
@@ -2053,6 +2142,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
     if (AVPlayer.IOThread) {
       await AVPlayer.IOThread.unregisterTask(this.taskId)
+    }
+    if (this.ioIPCPort) {
+      await (this.source as CustomIOLoader).stop()
+      this.ioIPCPort.destroy()
+      this.ioIPCPort = null
     }
 
     for (let i = 0; i < this.externalSubtitleTasks.length; i++) {

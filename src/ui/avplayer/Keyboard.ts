@@ -248,11 +248,11 @@ export default class Keyboard {
 
     let source = this.player.getSource()
     let fileName = ''
-    if (source instanceof File) {
-      fileName = source.name
+    if (is.string(source)) {
+      fileName = source
     }
     else {
-      fileName = source
+      fileName = source.name
     }
 
     const list = fileName.split('.')

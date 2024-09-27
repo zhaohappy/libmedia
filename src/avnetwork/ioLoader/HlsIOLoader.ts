@@ -262,6 +262,8 @@ export default class HlsIOLoader extends IOLoader {
     if (this.mediaPlayList.segments.length && this.mediaPlayList.segments[0].map) {
       this.initLoaded = false
     }
+
+    return 0
   }
 
   private async checkNeedDecrypt(segment: Segment, sequence: number) {
@@ -435,6 +437,8 @@ export default class HlsIOLoader extends IOLoader {
     if (this.status === IOLoaderStatus.COMPLETE) {
       this.status = IOLoaderStatus.BUFFERING
     }
+
+    return 0
   }
 
   public async size() {

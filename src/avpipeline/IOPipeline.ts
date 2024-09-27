@@ -111,8 +111,13 @@ export default class IOPipeline extends Pipeline {
       switch (request.method) {
         case 'open': {
           try {
-            await ioLoader.open(options.info, options.range)
-            ipcPort.reply(request, {})
+            const ret = await ioLoader.open(options.info, options.range)
+            if (ret < 0) {
+              logger.error(`loader open error, ${ret}, taskId: ${options.taskId}`)
+              ipcPort.reply(request, null, ret)
+              break
+            }
+            ipcPort.reply(request, ret)
           }
           catch (error) {
             logger.error(`loader open error, ${error}, taskId: ${options.taskId}`)
@@ -150,8 +155,13 @@ export default class IOPipeline extends Pipeline {
           assert(pos >= 0)
 
           try {
-            await ioLoader.seek(pos, ioloaderOptions)
-            ipcPort.reply(request)
+            const ret = await ioLoader.seek(pos, ioloaderOptions)
+            if (ret < 0) {
+              logger.error(`loader seek error, ${ret}, taskId: ${options.taskId}`)
+              ipcPort.reply(request, null, ret)
+              break
+            }
+            ipcPort.reply(request, ret)
           }
           catch (error) {
             logger.error(`loader seek error, ${error}, taskId: ${options.taskId}`)
@@ -200,8 +210,8 @@ export default class IOPipeline extends Pipeline {
           return (task.ioLoader as DashIOLoader).hasAudio()
         }
       }
-      return false
     }
+    return false
   }
 
   public async hasVideo(taskId: string) {
@@ -212,8 +222,8 @@ export default class IOPipeline extends Pipeline {
           return (task.ioLoader as DashIOLoader).hasVideo()
         }
       }
-      return false
     }
+    return false
   }
 
   public async hasSubtitle(taskId: string) {
@@ -224,8 +234,8 @@ export default class IOPipeline extends Pipeline {
           return (task.ioLoader as DashIOLoader).hasSubtitle()
         }
       }
-      return false
     }
+    return false
   }
 
   public async getVideoList(taskId: string) {
@@ -239,10 +249,10 @@ export default class IOPipeline extends Pipeline {
           return (task.ioLoader as HlsIOLoader).getVideoList()
         }
       }
-      return {
-        list: [],
-        selectedIndex: 0
-      }
+    }
+    return {
+      list: [],
+      selectedIndex: 0
     }
   }
 
@@ -254,10 +264,10 @@ export default class IOPipeline extends Pipeline {
           return (task.ioLoader as DashIOLoader).getAudioList()
         }
       }
-      return {
-        list: [],
-        selectedIndex: 0
-      }
+    }
+    return {
+      list: [],
+      selectedIndex: 0
     }
   }
 
@@ -269,10 +279,10 @@ export default class IOPipeline extends Pipeline {
           return (task.ioLoader as DashIOLoader).getSubtitleList()
         }
       }
-      return {
-        list: [],
-        selectedIndex: 0
-      }
+    }
+    return {
+      list: [],
+      selectedIndex: 0
     }
   }
 
@@ -325,8 +335,8 @@ export default class IOPipeline extends Pipeline {
           return (task.ioLoader as HlsIOLoader).getMinBuffer()
         }
       }
-      return 0
     }
+    return 0
   }
 
   public async registerTask(options: IOTaskOptions): Promise<number> {

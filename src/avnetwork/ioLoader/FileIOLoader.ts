@@ -61,6 +61,8 @@ export default class FileIOLoader extends IOLoader {
     }
 
     this.status = IOLoaderStatus.BUFFERING
+
+    return 0
   }
 
   private async readBufferByReader(len: number) {
@@ -104,7 +106,6 @@ export default class FileIOLoader extends IOLoader {
   }
 
   public async seek(pos: int64) {
-    await this.abort()
     this.readPos = Number(pos)
     if (this.status === IOLoaderStatus.COMPLETE) {
       this.status = IOLoaderStatus.BUFFERING
@@ -116,12 +117,7 @@ export default class FileIOLoader extends IOLoader {
     return static_cast<int64>(this.info.file.size)
   }
 
-  public async abort() {
-
-  }
-
   public async stop() {
-    await this.abort()
     this.status = IOLoaderStatus.IDLE
   }
 }

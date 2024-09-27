@@ -93,7 +93,13 @@ import Controller, { ControllerObserver } from './Controller'
 import { AVFormatContextInterface } from 'avformat/AVFormatContext'
 import dump, { dumpCodecName, dumpTime } from 'avformat/dump'
 import { Data } from 'common/types/type'
+import os from 'common/util/os'
 import compileResource from 'avutil/function/compileResource'
+import CustomIOLoader from 'avnetwork/ioLoader/CustomIOLoader'
+import FetchIOLoader from 'avnetwork/ioLoader/FetchIOLoader'
+import FileIOLoader from 'avnetwork/ioLoader/FileIOLoader'
+import HlsIOLoader from 'avnetwork/ioLoader/HlsIOLoader'
+import DashIOLoader from 'avnetwork/ioLoader/DashIOLoader'
 
 export interface AVTranscoderOptions {
   getWasm: (type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codec?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
@@ -103,7 +109,7 @@ export interface AVTranscoderOptions {
 
 export interface TaskOptions {
   input: {
-    file: string | File | IOReader
+    file: string | File | CustomIOLoader
     format?: keyof (typeof Format2AVFormat)
     protocol?: 'hls' | 'dash'
   }
@@ -232,8 +238,18 @@ const defaultAVTranscoderOptions: Partial<AVTranscoderOptions> = {
 
 export default class AVTranscoder extends Emitter implements ControllerObserver {
 
-  static util = {
-    compile
+  static Util = {
+    compile,
+    browser,
+    os
+  }
+
+  static IOLoader = {
+    CustomIOLoader,
+    FetchIOLoader,
+    FileIOLoader,
+    HlsIOLoader,
+    DashIOLoader
   }
 
   static Resource: Map<string, WebAssemblyResource | ArrayBuffer> = new Map()
@@ -555,7 +571,13 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       ipcPort.on(REQUEST, async (request: RpcMessage) => {
         switch (request.method) {
           case 'open': {
-            ipcPort.reply(request, {})
+            const ret = await (task.options.input.file as CustomIOLoader).open()
+            if (ret < 0) {
+              logger.error(`custom loader open error, ${ret}, taskId: ${task.taskId}`)
+              ipcPort.reply(request, null, ret)
+              break
+            }
+            ipcPort.reply(request, ret)
             break
           }
           case 'read': {
@@ -568,7 +590,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             const buffer = mapSafeUint8Array(pointer, length)
   
             try {
-              const len = await (task.options.input.file as IOReader).readToBuffer(length, buffer)
+              const len = await (task.options.input.file as CustomIOLoader).read(length, buffer)
               task.stats.bufferReceiveBytes += static_cast<int64>(len)
               ipcPort.reply(request, len)
             }
@@ -586,8 +608,13 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             assert(pos >= 0)
   
             try {
-              await (task.options.input.file as IOReader).seek(pos)
-              ipcPort.reply(request)
+              const ret = await (task.options.input.file as CustomIOLoader).seek(pos)
+              if (ret < 0) {
+                logger.error(`custom loader seek error, ${ret}, taskId: ${task.taskId}`)
+                ipcPort.reply(request, null, ret)
+                break
+              }
+              ipcPort.reply(request, ret)
             }
             catch (error) {
               logger.error(`loader seek error, ${error}, taskId: ${task.taskId}`)
@@ -597,7 +624,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           }
   
           case 'size': {
-            ipcPort.reply(request, await (task.options.input.file as IOReader).fileSize())
+            ipcPort.reply(request, await (task.options.input.file as CustomIOLoader).size())
             break
           }
         }

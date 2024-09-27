@@ -1,6 +1,5 @@
-
 /*
- * libmedia error defined
+ * libmedia custom loader
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -24,20 +23,41 @@
  *
  */
 
-export const FORMAT_NOT_SUPPORT = -1
+import IOLoader from './IOLoader'
 
-export const DATA_INVALID = -2
+export default abstract class CustomIOLoader extends IOLoader {
 
-export const INVALID_ARGUMENT = -3
+  constructor() {
+    super()
+  }
 
-export const NO_MEMORY = -4
+  /**
+   * 源扩展名, 若无法自动分析出源的格式需要使用此数据获取默认的格式
+   */
+  get ext(): string {
+    throw new Error('need implemented ext getter')
+  }
 
-export const INVALID_OPERATE = -5
+  /**
+   * 源的名字, 主要用于日志打印, 可不传
+   */
+  get name(): string {
+    return 'CustomIOLoader.' + Math.random()
+  }
 
-export const EAGAIN = -6
+  /**
+   * 最小缓冲时长（秒）
+   * 
+   * 开启 jitter buffer 需要
+   */
+  get minBuffer(): number {
+    throw new Error('need implemented minBuffer getter')
+  }
 
-export const EOF = -7
-
-export const CODEC_NOT_SUPPORT = -8
-
-export const OPERATE_NOT_SUPPORT = -9
+  /**
+   * 打开自定义 ioloader
+   * 
+   * @returns 成功返回 0, 失败返回错误码（负值）
+   */
+  public abstract open(): Promise<int32>
+}

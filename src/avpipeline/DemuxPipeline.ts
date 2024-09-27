@@ -155,8 +155,7 @@ export default class DemuxPipeline extends Pipeline {
         params.ioloaderOptions = options.ioloaderOptions
       }
       try {
-        const len = await leftIPCPort.request<int32>('read', params)
-        return len
+        return leftIPCPort.request<int32>('read', params)
       }
       catch (error) {
         return IOError.INVALID_OPERATION
@@ -174,8 +173,7 @@ export default class DemuxPipeline extends Pipeline {
         if (options.ioloaderOptions) {
           params.ioloaderOptions = options.ioloaderOptions
         }
-        await leftIPCPort.request('seek', params)
-        return 0
+        return leftIPCPort.request<int32>('seek', params)
       }
       catch (error) {
         return IOError.INVALID_OPERATION
@@ -184,7 +182,7 @@ export default class DemuxPipeline extends Pipeline {
 
     ioReader.onSize = async () => {
       try {
-        return await leftIPCPort.request('size')
+        return leftIPCPort.request<int64>('size')
       }
       catch (error) {
         return static_cast<int64>(IOError.INVALID_OPERATION)
@@ -240,7 +238,12 @@ export default class DemuxPipeline extends Pipeline {
   public async openStream(taskId: string, maxProbeDuration: int32 = 3000) {
     const task = this.tasks.get(taskId)
     if (task) {
-      await task.leftIPCPort.request('open')
+      let ret = await task.leftIPCPort.request('open') as int32
+
+      if (ret < 0) {
+        logger.error(`open ioloader failed, ret: ${ret}`)
+        return ret
+      }
 
       let format: AVFormat
       try {

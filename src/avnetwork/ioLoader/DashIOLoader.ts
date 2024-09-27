@@ -227,7 +227,7 @@ export default class DashIOLoader extends IOLoader {
   public async open(info: FetchInfo, range: Range) {
 
     if (this.status !== IOLoaderStatus.IDLE) {
-      return
+      return errorType.INVALID_OPERATE
     }
 
     this.info = info
@@ -247,6 +247,8 @@ export default class DashIOLoader extends IOLoader {
     this.retryCount = 0
 
     await this.fetchMediaPlayList()
+
+    return 0
   }
 
   private async readResource(buffer: Uint8ArrayInterface, resource: Resource) {
@@ -409,6 +411,7 @@ export default class DashIOLoader extends IOLoader {
     if (this.status === IOLoaderStatus.COMPLETE) {
       this.status = IOLoaderStatus.BUFFERING
     }
+    return 0
   }
 
   public async size() {
