@@ -37,6 +37,7 @@ import FetchIOLoader from './FetchIOLoader'
 import { MPDMediaList } from 'avprotocol/dash/type'
 import getTimestamp from 'common/function/getTimestamp'
 import * as errorType from 'avutil/error'
+import { Data } from 'common/types/type'
 
 const FETCHED_HISTORY_LIST_MAX = 10
 
@@ -103,7 +104,7 @@ export default class DashIOLoader extends IOLoader {
       })
     }
 
-    const params: Partial<any> = {
+    const params: Data = {
       method: 'GET',
       headers: {},
       mode: 'cors',

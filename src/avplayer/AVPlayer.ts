@@ -1929,7 +1929,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             this.taskId,
             seekedTimestamp > timestamp ? seekedTimestamp : timestamp,
             maxQueueLength
-          ),
+          )
         ])
         await Promise.all([
           AVPlayer.AudioRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp),

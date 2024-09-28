@@ -38,6 +38,7 @@ import * as logger from 'common/util/logger'
 import * as urlUtil from 'common/util/url'
 import AESDecryptPipe from '../bsp/aes/AESDecryptPipe'
 import * as is from 'common/util/is'
+import { Data } from 'common/types/type'
 
 const FETCHED_HISTORY_LIST_MAX = 10
 
@@ -81,7 +82,7 @@ export default class HlsIOLoader extends IOLoader {
   private initLoaded: boolean
 
   private async fetchMasterPlayList() {
-    const params: Partial<any> = {
+    const params: Data = {
       method: 'GET',
       headers: {},
       mode: 'cors',
@@ -168,7 +169,7 @@ export default class HlsIOLoader extends IOLoader {
 
     this.mediaListUrl = url
 
-    const params: Partial<any> = {
+    const params: Data = {
       method: 'GET',
       headers: {},
       mode: 'cors',

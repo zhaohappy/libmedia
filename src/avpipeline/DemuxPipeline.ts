@@ -238,7 +238,7 @@ export default class DemuxPipeline extends Pipeline {
   public async openStream(taskId: string, maxProbeDuration: int32 = 3000) {
     const task = this.tasks.get(taskId)
     if (task) {
-      let ret = await task.leftIPCPort.request('open') as int32
+      let ret = await task.leftIPCPort.request<int32>('open')
 
       if (ret < 0) {
         logger.error(`open ioloader failed, ret: ${ret}`)
@@ -863,10 +863,13 @@ export default class DemuxPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       task.cacheAVPackets.forEach((list, streamIndex) => {
+
+        const codecType = task.formatContext.streams[streamIndex].codecpar.codecType
+
         const lastDts = list[list.length - 1].dts
         let i = list.length - 2
         for (i = list.length - 2; i >= 0; i--) {
-          if (list[i].flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
+          if ((list[i].flags & AVPacketFlags.AV_PKT_FLAG_KEY) || codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
             if (avRescaleQ(lastDts - list[i].dts, list[i].timeBase, AV_MILLI_TIME_BASE_Q) >= max) {
               break
             }
@@ -878,10 +881,10 @@ export default class DemuxPipeline extends Pipeline {
           })
 
           if (task.stats !== nullptr) {
-            if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+            if (codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
               task.stats.audioPacketQueueLength = list.length
             }
-            else if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+            else if (codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
               task.stats.videoPacketQueueLength = list.length
             }
           }
