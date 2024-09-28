@@ -28,7 +28,7 @@ import IOReader from 'common/io/IOReader'
 
 export default async function analyzeAVFormat(ioReader: IOReader, defaultFormat: AVFormat = AVFormat.UNKNOWN) {
   let signature = await ioReader.peekString(8)
-  if ( /^FLV/.test(signature)) {
+  if (/^FLV/.test(signature)) {
     return AVFormat.FLV
   }
   else if (/^DKIF/.test(signature)) {

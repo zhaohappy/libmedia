@@ -25,7 +25,7 @@
 
 import { Rational } from './rational'
 
-export enum AVSubtitleType {
+export const enum AVSubtitleType {
   SUBTITLE_NONE,
   /**
    * Plain text, the text field must be set by the decoder and is

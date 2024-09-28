@@ -115,11 +115,6 @@ export interface ExternalSubtitle {
    * 字幕标题
    */
   title?: string
-
-  /**
-   * 调用方可以传入已经确认的 format
-   */
-  format?: AVFormat
 }
 
 interface ExternalSubtitleTask extends ExternalSubtitle {
@@ -267,8 +262,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     HlsIOLoader,
     DashIOLoader
   }
-
-  static AVFormat = AVFormat
 
   static level: number = logger.INFO
 
@@ -849,7 +842,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       .invoke({
         taskId: taskId,
         leftPort: ioloader2DemuxerChannel.port2,
-        format: externalSubtitle.format ?? Ext2Format[ext],
+        format: Ext2Format[ext],
         stats: nullptr,
         isLive: false,
         flags: 0,

@@ -32,7 +32,7 @@ export const enum AVSeekFlags {
   TIMESTAMP = 16
 }
 
-export enum AVFormat {
+export const enum AVFormat {
   UNKNOWN = -1,
   FLV,
   MOV,
