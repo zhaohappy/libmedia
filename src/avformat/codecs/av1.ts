@@ -77,7 +77,7 @@ export const LevelCapabilities = [
 export const AV1LevelIdx = [20, 21, 22, 23, 30, 31, 32, 33, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63, 70, 71, 72, 73]
 
 export function getLevelByResolution(width: number, height: number, fps: number) {
-  const resolution = width * height;
+  const resolution = width * height
   for (const level of LevelCapabilities) {
     if (resolution <= level.maxResolution) {
       return level.level
@@ -461,8 +461,8 @@ export function generateExtradata(codecpar: pointer<AVCodecParameters>, buffer: 
 
   const header = splitOBU(buffer).find((buffer) => {
     return ((buffer[0] >>> 3) & 0x0f) === OBUType.SEQUENCE_HEADER
-  }) 
-  
+  })
+
   if (header) {
     const params = parseSequenceHeader(header)
     bitWriter.writeU(3, params.profile)

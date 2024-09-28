@@ -58,7 +58,7 @@ const Info: ComponentOptions = {
 
   methods: {
 
-    getStats: function(player: AVPlayer) {
+    getStats: function (player: AVPlayer) {
       const stats = player.getStats()
       this.set('list', [])
 

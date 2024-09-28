@@ -84,6 +84,7 @@ const eslintConfig = {
                 'reinterpret_cast',
                 'static_cast',
                 'aligned_alloc',
+                'atomic_bool',
 
                 '__webpack_exports__',
                 '__webpack_exports_process__',
@@ -143,7 +144,7 @@ const eslintConfig = {
          * 最大行字符 120
          */
 		'max-len': [2, {
-			code: 150,
+			code: 180,
 			ignoreRegExpLiterals: true,
 			ignoreTemplateLiterals: true,
 			ignoreUrls: true,

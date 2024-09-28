@@ -33,7 +33,7 @@ const Volume: ComponentOptions = {
   },
 
   watchers: {
-    volume: function(volume) {
+    volume: function (volume) {
       storage.set(storage.LOCAL_STORAGE_KEY_VOLUME, volume)
       const player = this.get('player') as AVPlayer
       player.setVolume(volume / 100)

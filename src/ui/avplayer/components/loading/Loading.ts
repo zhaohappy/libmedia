@@ -30,7 +30,7 @@ const Loading: ComponentOptions = {
   },
 
   methods: {
-    
+
   },
 
   afterMount() {

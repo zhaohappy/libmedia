@@ -93,7 +93,7 @@ export default class IHevcFormat extends IFormat {
     }
 
     this.slices = []
-  
+
     this.queue = []
     this.bitReader = new BitReader(500)
     this.naluReader = new NaluReader()
@@ -233,6 +233,7 @@ export default class IHevcFormat extends IFormat {
   }
 
   private computePoc(naluType: vvc.VVCNaluType, temporalId: number, ph: Uint8Array, sliceHeader: boolean) {
+    /* eslint-disable camelcase */
     this.bitReader.clear()
     this.bitReader.appendBuffer(ph.subarray(0, 500))
 
@@ -316,6 +317,7 @@ export default class IHevcFormat extends IFormat {
     ) {
       this.pocTid0 = this.poc
     }
+    /* eslint-enable camelcase */
   }
 
   @deasync
@@ -437,7 +439,7 @@ export default class IHevcFormat extends IFormat {
         if (ipFrameCount === 1
           || (this.naluType === vvc.VVCNaluType.kCRA_NUT
               || (next.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
-            )
+          )
             && this.queue.length
         ) {
           output()

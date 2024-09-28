@@ -51,7 +51,7 @@ export default function parsePES(pes: PES) {
 
     let pts: int64 = NOPTS_VALUE_BIGINT
     let dts: int64 = NOPTS_VALUE_BIGINT
-    
+
     while (true) {
       if (6 + offset >= data.length) {
         return
@@ -76,14 +76,14 @@ export default function parsePES(pes: PES) {
         + (data[8 + offset] & 0xFE) * 16384
         + (data[9 + offset] & 0xFF) * 128
         + (data[10 + offset] & 0xFE) / 2)
-      
+
       if (flags & 0x10) {
         dts = static_cast<int64>((data[11 + offset] & 0x0E) * 536870912
           + (data[12 + offset] & 0xFF) * 4194304
           + (data[13 + offset] & 0xFE) * 16384
           + (data[14 + offset] & 0xFF) * 128
           + (data[15 + offset] & 0xFE) / 2)
-        
+
         headerSize += 5
       }
       else {

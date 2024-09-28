@@ -21,5 +21,5 @@ export default class AVOutputNode {
   public addInputPeer(node: AVFilterNode | AVInputNode) {
     this.inputNode = node
   }
- 
+
 }

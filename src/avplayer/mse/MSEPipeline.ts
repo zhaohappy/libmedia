@@ -411,13 +411,13 @@ export default class MSEPipeline extends Pipeline {
           )
           || (task.video.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
               && hevc.isIDR(
-                  avpacket,
-                  task.video.codecpar.extradata
-                    ? (intread.r8(task.video.codecpar.extradata + 21) & 0x03 + 1)
-                    : 4
-                )
+                avpacket,
+                task.video.codecpar.extradata
+                  ? (intread.r8(task.video.codecpar.extradata + 21) & 0x03 + 1)
+                  : 4
               )
           )
+        )
       ) {
         if (avpacket.pts < pullQueue.lastPTS) {
           logger.warn(`got packet with pts ${avpacket.pts}, which is earlier then the last packet(${pullQueue.lastPTS}), try to fix it!`)

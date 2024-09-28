@@ -55,7 +55,7 @@ export function parse(text: string) {
 
   function add(p: P, start: string, end: string) {
     const pts = hhColonDDColonSSDotMill2Int64(start || p.begin)
-  
+
     let context = p.context || ''
     let region = p.region || 'Default'
 

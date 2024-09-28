@@ -262,7 +262,7 @@ export default class IH264Format extends IFormat {
           || type === h264.H264NaluType.kSliceDPB
           || type === h264.H264NaluType.kSliceDPC
           || type === h264.H264NaluType.kSliceIDR
-        )
+      )
         && isFirst
       ) {
         isFirst = false

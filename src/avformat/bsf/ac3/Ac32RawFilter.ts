@@ -75,7 +75,7 @@ export default class Ac32RawFilter extends AVBSFilter {
       const info = ac3.parseHeader(buffer.subarray(i))
 
       if (is.number(info)) {
-        logger.error(`parse ac3 header failed`)
+        logger.error('parse ac3 header failed')
         return errorType.DATA_INVALID
       }
 

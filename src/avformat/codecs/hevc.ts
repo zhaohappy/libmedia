@@ -701,6 +701,7 @@ export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
   }
 }
 
+/* eslint-disable camelcase */
 export interface HevcSPS {
   profile: number
   level: number

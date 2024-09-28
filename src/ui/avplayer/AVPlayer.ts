@@ -99,26 +99,26 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
   },
 
   events: {
-    error: function(event, data) {
+    error: function (event, data) {
       console.log('error', data.message)
       this.set('error', data.message)
     },
 
-    closeInfo: function() {
+    closeInfo: function () {
       this.set('showInfo', false)
     },
 
-    openSettings: function() {
+    openSettings: function () {
       this.set('showSettings', true)
     },
 
-    closeSettings: function() {
+    closeSettings: function () {
       this.set('showSettings', false)
     }
   },
 
   watchers: {
-    played: function(value) {
+    played: function (value) {
       if (value) {
         if (this.showBarTimer) {
           clearTimeout(this.showBarTimer)
@@ -131,7 +131,7 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
         }
       }
     },
-    folded: function(value) {
+    folded: function (value) {
       if (value) {
         if (this.showBarTimer) {
           clearTimeout(this.showBarTimer)
@@ -145,21 +145,21 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
   },
 
   computed: {
-    hasVideoTrack: function() {
+    hasVideoTrack: function () {
       const streams: AVStreamInterface[] = this.get('streams')
       return streams
         .filter((stream) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
         .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
         .length > 1
     },
-    hasAudioTrack: function() {
+    hasAudioTrack: function () {
       const streams: AVStreamInterface[] = this.get('streams')
       return streams
         .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO)
         .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
         .length > 1
     },
-    hasSubtitleTrack: function() {
+    hasSubtitleTrack: function () {
       const streams: AVStreamInterface[] = this.get('streams')
       const isLive = this.get('isLive')
       return !isLive && streams
@@ -167,7 +167,7 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
         .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
         .length > 0
     },
-    hasPip: function() {
+    hasPip: function () {
       const streams: AVStreamInterface[] = this.get('streams')
       return streams
         .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
@@ -181,9 +181,9 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
         .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
         .length > 0
         && streams
-        .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
-        .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
-        .length === 0
+          .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
+          .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
+          .length === 0
     }
   },
 

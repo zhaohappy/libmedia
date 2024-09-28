@@ -216,11 +216,11 @@ export default class Keyboard {
   }
 
   private actionNextFile() {
-    
+
   }
 
   private actionPrevFile() {
-    
+
   }
 
   private actionNextFrame() {
@@ -238,9 +238,9 @@ export default class Keyboard {
     const mimeString = base64Data.split(',')[0].split(':')[1].split(';')[0]
     const ab = new ArrayBuffer(byteString.length)
     const ia = new Uint8Array(ab)
-    
+
     for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
+      ia[i] = byteString.charCodeAt(i)
     }
 
     const blob = new Blob([ab], { type: mimeString })

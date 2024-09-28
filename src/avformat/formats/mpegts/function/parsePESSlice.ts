@@ -43,6 +43,6 @@ export default function parsePESSlice(queue: TSSliceQueue): PES {
   pes.streamType = queue.streamType
   pes.pos = queue.pos
   pes.randomAccessIndicator = queue.randomAccessIndicator
-  
+
   return pes
 }

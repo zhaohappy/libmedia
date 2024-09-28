@@ -27,7 +27,7 @@ export default class ScaleFilterNode extends AVFilterNode {
   }
 
   public async ready() {
-    
+
   }
 
   public async destroy() {
@@ -45,10 +45,6 @@ export default class ScaleFilterNode extends AVFilterNode {
       return
     }
 
-    if (avframe == null) {
-      debugger
-    }
-
     const width = isPointer(avframe) ? avframe.width : avframe.displayWidth
     const height = isPointer(avframe) ? avframe.height : avframe.displayHeight
     const format = isPointer(avframe) ? avframe.format : mapFormat(avframe.format)
@@ -61,7 +57,7 @@ export default class ScaleFilterNode extends AVFilterNode {
     ) {
 
       if (format === AVPixelFormat.AV_PIX_FMT_NONE) {
-        logger.error(`src avframe format not support`)
+        logger.error('src avframe format not support')
         outputs[0] = reinterpret_cast<pointer<AVFrame>>(errorType.FORMAT_NOT_SUPPORT)
         return
       }

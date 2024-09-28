@@ -362,5 +362,5 @@ export default class AssRender {
       this.resize()
     }
   }
-  
+
 }

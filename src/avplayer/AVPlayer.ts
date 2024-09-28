@@ -86,7 +86,7 @@ import isHdr from 'avutil/function/isHdr'
 import hasAlphaChannel from 'avutil/function/hasAlphaChannel'
 import SubtitleRender from './subtitle/SubtitleRender'
 import { Fn } from 'common/types/type'
-import { player_event_changed, player_event_changing, player_event_error, player_event_no_param, player_event_time } from './type'
+import { playerEventChanged, playerEventChanging, playerEventError, playerEventNoParam, playerEventTime } from './type'
 import compileResource from 'avutil/function/compileResource'
 import os from 'common/util/os'
 import IPCPort, { REQUEST, RpcMessage } from 'common/network/IPCPort'
@@ -178,7 +178,7 @@ export interface AVPlayerOptions {
    * 预加载 buffer 时长（秒）
    */
   preLoadTime?: int32
-  /***
+  /** *
    * 自定义查找播放流回调
    */
   findBestStream?: (streams: AVStreamInterface[], mediaType: AVMediaType) => AVStreamInterface
@@ -446,7 +446,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         // 目前 canvas 还不能渲染 hdr 视频，hdr 先使用 mse 播放
         // TODO 未来 canvas 支持 hdr 渲染之后去掉
         if (isHdr(videoStream.codecpar)) {
-          logger.info(`use mse because of hdr`)
+          logger.info('use mse because of hdr')
           return true
         }
         // 1080p 以上使用 mse
@@ -997,9 +997,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             const pointer = request.params.pointer
             const length = request.params.length
             const ioloaderOptions = request.params.ioloaderOptions
-  
+
             const buffer = mapSafeUint8Array(pointer, length)
-  
+
             try {
               const len = await source.read(buffer, ioloaderOptions)
               this.stats.bufferReceiveBytes += static_cast<int64>(len)
@@ -1009,16 +1009,16 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
               logger.error(`loader read error, ${error}, taskId: ${this.taskId}`)
               this.ioIPCPort.reply(request, errorType.DATA_INVALID)
             }
-  
+
             break
           }
-  
+
           case 'seek': {
             const pos = request.params.pos
             const ioloaderOptions = request.params.ioloaderOptions
-  
+
             assert(pos >= 0)
-  
+
             try {
               const ret = await source.seek(pos, ioloaderOptions)
               if (ret < 0) {
@@ -1034,7 +1034,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             }
             break
           }
-  
+
           case 'size': {
             this.ioIPCPort.reply(request, await source.size())
             break
@@ -1546,7 +1546,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             avframeList: addressof(this.GlobalData.avframeList),
             avframeListMutex: addressof(this.GlobalData.avframeListMutex)
           })
-        
+
         let ret = await AVPlayer.AudioDecoderThread.open(this.taskId, audioStream.codecpar)
         if (ret < 0) {
           logger.fatal(`cannot open audio ${dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} decoder`)
@@ -1733,7 +1733,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     if (this.subtitleRender && this.externalSubtitleTasks.length) {
       for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
-        const stream = this.formatContext.streams.find((s => s.id === this.externalSubtitleTasks[i].streamId))
+        const stream = this.formatContext.streams.find(((s) => s.id === this.externalSubtitleTasks[i].streamId))
         if (stream !== subtitleStream) {
           await AVPlayer.DemuxerThread.connectStreamTask.transfer(this.subtitleRender.getDemuxerPort(this.externalSubtitleTasks[i].taskId))
             .invoke(this.externalSubtitleTasks[i].taskId, stream.index, this.subtitleRender.getDemuxerPort(this.externalSubtitleTasks[i].taskId))
@@ -2538,7 +2538,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return this.status
   }
 
-   /**
+  /**
    * 是否播放了音频
    * 
    * @returns 
@@ -2760,7 +2760,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         this.status = this.lastStatus
         this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.id, this.selectedAudioStream.id])
-        
+
       }
       else {
         logger.error(`call selectAudio failed, id: ${id}, taskId: ${this.taskId}`)
@@ -2798,7 +2798,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.id, this.selectedSubtitleStream.id])
 
         this.subtitleRender.reopenDecoder(stream.codecpar)
-        
+
         const externalTask = this.externalSubtitleTasks.find((task) => {
           return task.streamId === stream.id
         })
@@ -3229,26 +3229,26 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     logger.info(`set log level: ${level}`)
   }
 
-  public on(event: typeof eventType.LOADING, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.LOADED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.PLAYING, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.PLAYED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.PAUSED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.STOPPED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.ENDED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.SEEKING, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.STOPPED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.CHANGING, listener: typeof player_event_changing, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.CHANGED, listener: typeof player_event_changed, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.RESUME, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.TIME, listener: typeof player_event_time, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.STREAM_UPDATE,listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.LOADING, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.LOADED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.PLAYING, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.PLAYED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.PAUSED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.STOPPED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.ENDED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.SEEKING, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.STOPPED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.CHANGING, listener: typeof playerEventChanging, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.CHANGED, listener: typeof playerEventChanged, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.RESUME, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.TIME, listener: typeof playerEventTime, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.STREAM_UPDATE, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
 
-  public on(event: typeof eventType.FIRST_AUDIO_RENDERED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.FIRST_VIDEO_RENDERED, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.FIRST_AUDIO_RENDERED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.FIRST_VIDEO_RENDERED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
 
-  public on(event: typeof eventType.ERROR, listener: typeof player_event_error, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.TIMEOUT, listener: typeof player_event_no_param, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.ERROR, listener: typeof playerEventError, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.TIMEOUT, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: string, listener: Fn, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: string, listener: Fn, options: Partial<EmitterOptions> = {}) {
     super.on(event, object.extend({

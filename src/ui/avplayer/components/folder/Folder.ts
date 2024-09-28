@@ -57,7 +57,7 @@ const Folder: ComponentOptions = {
       tipTop: 0,
       tipShow: false,
       root: [],
-      accept: musicExt.concat(movExt).map(i => '.' + i).join(', ')
+      accept: musicExt.concat(movExt).map((i) => '.' + i).join(', ')
     }
   },
 
@@ -125,7 +125,7 @@ const Folder: ComponentOptions = {
       }
       await addDir(dir)
       this.append('root', stack.pop())
-      
+
     },
 
     async addFile(handle: FileHandle) {
@@ -256,7 +256,7 @@ const Folder: ComponentOptions = {
             let targetNameList = target.name.split('.')
             targetNameList.pop()
             let targetName = targetNameList.join('.')
-            
+
             if (array.has(subtitleExt, ext)
               && fileName === targetName
             ) {
@@ -325,19 +325,19 @@ const Folder: ComponentOptions = {
         player.setIsLive(!!node.get('node.isLive'))
         player.load(node.get('node.source')).then(() => {
           player.play()
+            .catch((error) => {
+              this.fire('error', {
+                message: `${error}`
+              })
+            })
+          node.set('node.paused', false)
+          this.findSubtitle(node.get('node'))
+        })
           .catch((error) => {
             this.fire('error', {
               message: `${error}`
             })
           })
-          node.set('node.paused', false)
-          this.findSubtitle(node.get('node'))
-        })
-        .catch((error) => {
-          this.fire('error', {
-            message: `${error}`
-          })
-        })
         this.playNodeId = node.get('node.id')
         this.fire('playNode', node.get('node'))
       }
@@ -346,19 +346,19 @@ const Folder: ComponentOptions = {
           player.setIsLive(!!node.get('node.isLive'))
           player.load(node.get('node.source')).then(() => {
             player.play()
+              .catch((error) => {
+                this.fire('error', {
+                  message: `${error}`
+                })
+              })
+            node.set('node.paused', false)
+            this.findSubtitle(node.get('node'))
+          })
             .catch((error) => {
               this.fire('error', {
                 message: `${error}`
               })
             })
-            node.set('node.paused', false)
-            this.findSubtitle(node.get('node'))
-          })
-          .catch((error) => {
-            this.fire('error', {
-              message: `${error}`
-            })
-          })
           this.playNodeId = node.get('node.id')
           this.fire('playNode', node.get('node'))
         })
@@ -433,8 +433,8 @@ const Folder: ComponentOptions = {
             }
             list.push(handle)
           }
-          catch(error) {
-            logger.error(`load file handle error, ignore it`)
+          catch (error) {
+            logger.error('load file handle error, ignore it')
           }
         }
         if (list.length !== this.root.length) {

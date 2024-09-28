@@ -161,7 +161,7 @@ export default abstract class AVFilterNode {
             }
 
             await this.process(input, this.currentOutput)
-            
+
             input.forEach((frame) => {
               if (is.number(frame) && frame < 0) {
                 return
@@ -176,7 +176,16 @@ export default abstract class AVFilterNode {
               }
             })
 
-            port.reply(request, this.currentOutput[index], null, (isPointer(this.currentOutput[index]) || is.number(this.currentOutput[index])) ? null : [this.currentOutput[index]])
+            port.reply(
+              request,
+              this.currentOutput[index],
+              null,
+              (isPointer(this.currentOutput[index])
+                || is.number(this.currentOutput[index])
+              )
+                ? null
+                : [this.currentOutput[index]]
+            )
             this.consumedCount++
 
             if (this.pending.length) {
@@ -191,7 +200,16 @@ export default abstract class AVFilterNode {
             }
           }
           else if (this.consumedCount === this.outputCount - 1) {
-            port.reply(request, this.currentOutput[index], null, (isPointer(this.currentOutput[index]) || is.number(this.currentOutput[index])) ? null : [this.currentOutput[index]])
+            port.reply(
+              request,
+              this.currentOutput[index],
+              null,
+              (isPointer(this.currentOutput[index])
+                || is.number(this.currentOutput[index])
+              )
+                ? null
+                : [this.currentOutput[index]]
+            )
             this.consumedCount = 0
             this.currentOutput.length = 0
           }
@@ -202,7 +220,16 @@ export default abstract class AVFilterNode {
                 reject
               })
             })
-            port.reply(request, this.currentOutput[index], null, (isPointer(this.currentOutput[index]) || is.number(this.currentOutput[index])) ? null : [this.currentOutput[index]])
+            port.reply(
+              request,
+              this.currentOutput[index],
+              null,
+              (isPointer(this.currentOutput[index])
+                || is.number(this.currentOutput[index])
+              )
+                ? null
+                : [this.currentOutput[index]]
+            )
             this.consumedCount++
           }
         }
@@ -289,7 +316,7 @@ export default abstract class AVFilterNode {
     if (!nextInput) {
       throw new Error('next node all input has connected')
     }
-    
+
     output.port.connect(nextInput.port)
 
     this.outputConnectedMap.set(node, output.index)

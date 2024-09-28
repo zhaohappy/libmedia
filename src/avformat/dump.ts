@@ -129,7 +129,7 @@ function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix:
       const space = dumpKey(stringEnum.colorSpace2AVColorSpace, stream.codecpar.colorSpace, 'bt709')
       list.push(`${pixfmt}(${range}, ${space})`)
     }
-    
+
     const dar = {
       num: stream.codecpar.width * stream.codecpar.sampleAspectRatio.num,
       den: stream.codecpar.height * stream.codecpar.sampleAspectRatio.den
@@ -150,7 +150,7 @@ function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix:
       den: stream.timeBase.num
     })))} tbn`)
 
-   
+
   }
   else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE) {
     const codecName = dumpKey(stringEnum.SubtitleCodecString2CodecId, stream.codecpar.codecId)
@@ -238,7 +238,7 @@ function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix:
 function dumpAVFormatContextInterface(formatContext: AVFormatContextInterface, index: number, input: DumpIOInfo) {
   let dump = `${input.tag} #${index}, ${dumpKey(stringEnum.Format2AVFormat, formatContext.format)}, from '${input.from}':\n`
   if (Object.keys(formatContext.metadata).length) {
-    dump += `  Metadata:\n`
+    dump += '  Metadata:\n'
     object.each(formatContext.metadata, (value, key) => {
       if (!is.object(value) || !is.array(value)) {
         dump += `    ${key}: ${value}\n`

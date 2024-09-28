@@ -33,19 +33,19 @@ const Node: ComponentOptions = {
   },
 
   filters: {
-    isFolder: function(node) {
+    isFolder: function (node) {
       return node.type === 'folder'
     },
 
-    paddingStart: function(node) {
+    paddingStart: function (node) {
       return node.depth * 24
     },
 
-    isUrl: function(node) {
+    isUrl: function (node) {
       return is.string(node.source)
     },
 
-    isMusic: function(node) {
+    isMusic: function (node) {
       const ext = (node.source as File).name.split('.').pop()
       return array.has(musicExt, ext)
     }
@@ -87,7 +87,7 @@ const Node: ComponentOptions = {
   },
 
   components: {
-    
+
   }
 }
 

@@ -93,7 +93,7 @@ export default class IHevcFormat extends IFormat {
     }
 
     this.slices = []
-  
+
     this.queue = []
     this.bitReader = new BitReader(50)
     this.naluReader = new NaluReader()

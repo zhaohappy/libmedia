@@ -18,11 +18,11 @@ export default class RangeFilterNode extends AVFilterNode {
   }
 
   public async ready() {
-    
+
   }
 
   public async destroy() {
-    
+
   }
 
   public async process(inputs: (pointer<AVFrame> | VideoFrame)[], outputs: (pointer<AVFrame> | VideoFrame)[]) {

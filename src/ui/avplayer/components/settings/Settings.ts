@@ -84,7 +84,7 @@ const Settings: ComponentOptions = {
   },
 
   methods: {
-    close: function() {
+    close: function () {
       this.fire('closeSettings')
     }
   },

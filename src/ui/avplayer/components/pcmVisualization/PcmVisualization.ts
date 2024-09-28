@@ -49,11 +49,21 @@ function hslToRgb(h: number, s: number, l: number) {
   }
   else {
     const hue2rgb = function (p, q, t) {
-      if (t < 0) t += 1
-      if (t > 1) t -= 1
-      if (t < 1 / 6) return p + (q - p) * 6 * t
-      if (t < 1 / 3) return q
-      if (t < 1 / 2) return p + (q - p) * (2 / 3 - t) * 6
+      if (t < 0) {
+        t += 1
+      }
+      if (t > 1) {
+        t -= 1
+      }
+      if (t < 1 / 6) {
+        return p + (q - p) * 6 * t
+      }
+      if (t < 1 / 3) {
+        return q
+      }
+      if (t < 1 / 2) {
+        return p + (q - p) * (2 / 3 - t) * 6
+      }
       return p
     }
 
@@ -71,7 +81,9 @@ function hslToRgb(h: number, s: number, l: number) {
 // 色相插值函数
 function interpolateHue(hue: number, t: number) {
   let newHue = (hue + t) % 360
-  if (newHue < 0) newHue += 360
+  if (newHue < 0) {
+    newHue += 360
+  }
   return newHue
 }
 
@@ -109,7 +121,7 @@ class Drawer {
     context.clearRect(0, 0, width, height)
 
     const radius = Math.min(width / 2, height / 2) * (1 - 0.05 - this.OUTER_MAX_HEIGHT)
-    
+
     const outerPoints = []
     const lines = []
     const innerPoints = []
@@ -154,7 +166,7 @@ class Drawer {
 
     context.lineCap = 'round'
     context.lineWidth = 8
-    
+
     context.shadowBlur = 20
     context.shadowOffsetX = 0
     context.shadowOffsetY = 0
@@ -177,11 +189,11 @@ class Drawer {
       context.lineTo(lines[i].end.x, lines[i].end.y)
       context.stroke()
     }
-    
+
     context.lineWidth = 2
     for (let i = 0; i < innerPoints.length; i++) {
       let next = (i === innerPoints.length - 1) ? 0 : (i + 1)
-      const gradient = context.createLinearGradient(innerPoints[i].x, innerPoints[i].y, innerPoints[next].x, innerPoints[next].y) 
+      const gradient = context.createLinearGradient(innerPoints[i].x, innerPoints[i].y, innerPoints[next].x, innerPoints[next].y)
       gradient.addColorStop(0, color[i])
       gradient.addColorStop(1, color[next])
       context.strokeStyle = gradient

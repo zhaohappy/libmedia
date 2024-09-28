@@ -128,7 +128,7 @@ export default class ResampleFilterNode extends AVFilterNode {
       else {
         out.extendedData = addressof(out.data)
       }
-    
+
       for (let i = 0; i < Math.min(planes, AV_NUM_DATA_POINTERS); i++) {
         if (i === 0) {
           out.buf[i] = avbufferCreate(this.pcm.data[i], this.pcm.linesize * (planar ? this.pcm.channels : 1))
@@ -141,7 +141,7 @@ export default class ResampleFilterNode extends AVFilterNode {
         out.extendedData[i] = out.data[i] = this.pcm.data[i]
         this.pcm.data[i] = nullptr
       }
-    
+
       for (let i = 0; i < planes - AV_NUM_DATA_POINTERS; i++) {
         out.extendedData[i + AV_NUM_DATA_POINTERS] = this.pcm.data[i]
         this.pcm.data[i] = nullptr

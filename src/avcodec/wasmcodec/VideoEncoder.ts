@@ -152,7 +152,7 @@ export default class WasmVideoEncoder {
 
     timeBaseP.num = timeBase.num
     timeBaseP.den = timeBase.den
-    
+
     if (parameters.codecId === AVCodecID.AV_CODEC_ID_MPEG4 && parameters.bitFormat === BitFormat.AVCC) {
       this.encoder.call('encoder_set_flags', 1 << 22)
     }

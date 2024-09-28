@@ -32,14 +32,14 @@ const SubtitleTrack: ComponentOptions = {
       subtitleInfo: null,
       selectIndex: 0,
       style,
-      accept: subtitleExt.map(i => '.' + i).join(', '),
+      accept: subtitleExt.map((i) => '.' + i).join(', '),
       // @ts-ignore
       canUseFilePicker: typeof showOpenFilePicker === 'function'
     }
   },
 
   computed: {
-    list: function() {
+    list: function () {
       const player = this.get('player') as AVPlayer
       const stream: AVStreamInterface[] = this.get('streams')
       const subtitleInfo: IOLoaderSubtitleStreamInfo = this.get('subtitleInfo')
@@ -81,7 +81,7 @@ const SubtitleTrack: ComponentOptions = {
   },
 
   methods: {
-    change: function(index: number) {
+    change: function (index: number) {
       const old = this.get('selectIndex')
       if (old !== index) {
         const player = this.get('player') as AVPlayer
@@ -133,7 +133,7 @@ const SubtitleTrack: ComponentOptions = {
       })
     },
 
-    init: function(player: AVPlayer) {
+    init: function (player: AVPlayer) {
       if (player.isDash() || player.isHls()) {
         this.set('subtitleInfo', player.getSubtitleList())
       }

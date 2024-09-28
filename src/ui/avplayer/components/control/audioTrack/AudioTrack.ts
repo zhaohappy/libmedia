@@ -35,7 +35,7 @@ const AudioTrack: ComponentOptions = {
   },
 
   computed: {
-    list: function() {
+    list: function () {
       const player = this.get('player') as AVPlayer
       const stream: AVStreamInterface[] = this.get('streams')
       const audioInfo: IOLoaderAudioStreamInfo = this.get('audioInfo')
@@ -77,7 +77,7 @@ const AudioTrack: ComponentOptions = {
   },
 
   methods: {
-    change: function(index: number) {
+    change: function (index: number) {
       const old = this.get('selectIndex')
       if (old !== index) {
         const player = this.get('player') as AVPlayer
@@ -87,7 +87,7 @@ const AudioTrack: ComponentOptions = {
       }
     },
 
-    init: function(player: AVPlayer) {
+    init: function (player: AVPlayer) {
       if (player.isDash() || player.isHls()) {
         this.set('audioInfo', player.getAudioList())
       }

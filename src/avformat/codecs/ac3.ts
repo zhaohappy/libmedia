@@ -70,7 +70,8 @@ export const enum AC3PreferredStereoDownmixMode {
   AC3_DMIXMOD_NOTINDICATED = 0,
   AC3_DMIXMOD_LTRT,
   AC3_DMIXMOD_LORO,
-  AC3_DMIXMOD_DPLII // reserved value in A/52, but used by encoders to indicate DPL2
+  // reserved value in A/52, but used by encoders to indicate DPL2
+  AC3_DMIXMOD_DPLII
 }
 
 export const enum EAC3FrameType {
@@ -229,7 +230,7 @@ export function parseHeader(buf: Uint8ArrayInterface) {
     }
 
     const frameSizeCode = bitReader.readU(6)
-    if(frameSizeCode > 37) {
+    if (frameSizeCode > 37) {
       return -4
     }
 
@@ -256,7 +257,7 @@ export function parseHeader(buf: Uint8ArrayInterface) {
     info.srShift = Math.max(info.bitstreamId, 8) - 8
     info.sampleRate = AC3SampleRateTab[info.srCode] >> info.srShift
     info.bitrate = (AC3BitrateTab[info.ac3BitrateCode] * 1000) >> info.srShift
-    info.channels = AC3ChannelsTab[info.channelMode] + info.lfeOn;
+    info.channels = AC3ChannelsTab[info.channelMode] + info.lfeOn
     info.frameSize = AC3FrameSizeTab[frameSizeCode][info.srCode] * 2
     info.frameType = EAC3FrameType.EAC3_FRAME_TYPE_AC3_CONVERT
     info.substreamId = 0
@@ -265,20 +266,20 @@ export function parseHeader(buf: Uint8ArrayInterface) {
     /* Enhanced AC-3 */
     info.crc1 = 0
     info.frameType = bitReader.readU(2)
-    if(info.frameType == EAC3FrameType.EAC3_FRAME_TYPE_RESERVED) {
+    if (info.frameType == EAC3FrameType.EAC3_FRAME_TYPE_RESERVED) {
       return -5
     }
     info.substreamId = bitReader.readU(3)
 
     info.frameSize = (bitReader.readU(11) + 1) << 1
-    if(info.frameSize < AC3_HEADER_SIZE) {
+    if (info.frameSize < AC3_HEADER_SIZE) {
       return -6
     }
 
     info.srCode = bitReader.readU(2)
     if (info.srCode == 3) {
       const srCode2 = bitReader.readU(2)
-      if(srCode2 == 3) {
+      if (srCode2 == 3) {
         return -7
       }
       info.sampleRate = AC3SampleRateTab[srCode2] / 2

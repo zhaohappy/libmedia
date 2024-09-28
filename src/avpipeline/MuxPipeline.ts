@@ -369,7 +369,7 @@ export default class MuxPipeline extends Pipeline {
       logger.fatal('task not found')
     }
   }
-  
+
   public async unpause(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {

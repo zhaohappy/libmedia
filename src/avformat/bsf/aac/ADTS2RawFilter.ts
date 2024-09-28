@@ -66,7 +66,7 @@ export default class ADTS2RawFilter extends AVBSFilter {
 
     return 0
   }
-  
+
   public sendAVPacket(avpacket: pointer<AVPacket>): number {
     let i = 0
 
@@ -78,7 +78,7 @@ export default class ADTS2RawFilter extends AVBSFilter {
       const info = aac.parseADTSHeader(buffer.subarray(i))
 
       if (is.number(info)) {
-        logger.error(`AACADTSParser parse failed`)
+        logger.error('AACADTSParser parse failed')
         return errorType.DATA_INVALID
       }
 

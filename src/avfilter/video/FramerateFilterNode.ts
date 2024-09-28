@@ -41,7 +41,7 @@ export default class FramerateFilterNode extends AVFilterNode {
   }
 
   public async destroy() {
-    
+
   }
 
   public async process(inputs: (pointer<AVFrame> | VideoFrame)[], outputs: (pointer<AVFrame> | VideoFrame)[]) {

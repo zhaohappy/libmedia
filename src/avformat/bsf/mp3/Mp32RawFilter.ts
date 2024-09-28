@@ -83,7 +83,7 @@ export default class Mp32RawFilter extends AVBSFilter {
         logger.error(`found syncWord not 0xFFE, got: 0x${syncWord.toString(16)}`)
         return errorType.DATA_INVALID
       }
-      
+
       const ver = (buffer[1] >>> 3) & 0x03
       // const bitrateIndex = (buffer[2] & 0xF0) >>> 4
       const samplingFreqIndex = (buffer[2] & 0x0C) >>> 2

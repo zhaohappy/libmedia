@@ -66,7 +66,7 @@ function fixChromeConstraintSetFlagsBug(desc: Uint8Array) {
       .reverse()
       .join('')
 
-      desc[2] = parseInt(binaryString, 2)
+    desc[2] = parseInt(binaryString, 2)
   }
 }
 

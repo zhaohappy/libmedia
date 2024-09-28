@@ -52,7 +52,7 @@ const LoadingTip: ComponentOptions = {
   },
 
   methods: {
-    
+
   },
 
   afterMount() {

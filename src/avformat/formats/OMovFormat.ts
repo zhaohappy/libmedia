@@ -567,7 +567,7 @@ export default class OMovFormat extends OFormat {
     }
     else if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3
         || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_EAC3
-      )
+    )
       && (!this.context.ac3Info || !this.context.ac3Info.done)
     ) {
       this.handleEAC3(avpacket, stream)
@@ -741,7 +741,7 @@ export default class OMovFormat extends OFormat {
           timeBase = stream.timeBase
         }
       })
-      
+
       if (lastPts) {
         this.context.duration = avRescaleQ(lastPts, timeBase, { den: 1000, num: 1 })
       }

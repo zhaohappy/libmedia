@@ -180,7 +180,7 @@ export class AVFormatContext implements AVIFormatContext, AVOFormatContext {
 
   public privateData: Record<string, any>
   public processPrivateData: Record<string, any>
-  
+
   public iformat: IFormat
   public oformat: OFormat
 

@@ -69,7 +69,7 @@ export default class WebAudioEncoder {
   private async output(chunk: EncodedAudioChunk, metadata?: EncodedAudioChunkMetadata) {
 
     const avpacket = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
-    
+
     if (!this.extradata) {
       if (metadata?.decoderConfig?.description) {
         let buffer: Uint8Array
@@ -93,7 +93,7 @@ export default class WebAudioEncoder {
     avpacket.timeBase.num = this.timeBase.num
 
     this.pts += avpacket.duration
-    
+
     this.options.onReceivePacket(avpacket)
 
     const avframe = this.avframeCache.shift()

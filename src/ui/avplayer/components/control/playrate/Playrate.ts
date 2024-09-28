@@ -37,7 +37,7 @@ const Playrate: ComponentOptions = {
   },
 
   watchers: {
-    index: function(value) {
+    index: function (value) {
       storage.set(storage.LOCAL_STORAGE_KEY_PLAY_RATE, this.get('list')[value])
       const player = this.get('player') as AVPlayer
       player.setPlaybackRate(this.get('list')[value])
@@ -45,7 +45,7 @@ const Playrate: ComponentOptions = {
   },
 
   methods: {
-    change: function(index: number) {
+    change: function (index: number) {
       this.set('index', index)
     }
   },

@@ -212,8 +212,8 @@ export default class VideoDecodePipeline extends Pipeline {
     }
 
     task.softwareDecoder = task.resource
-        ? this.createWasmcodecDecoder(task, task.resource)
-        : (support.videoDecoder ? this.createWebcodecDecoder(task, false) : null)
+      ? this.createWasmcodecDecoder(task, task.resource)
+      : (support.videoDecoder ? this.createWebcodecDecoder(task, false) : null)
 
     if (!task.softwareDecoder) {
       logger.error('software decoder not support')
@@ -328,7 +328,7 @@ export default class VideoDecodePipeline extends Pipeline {
                       rightIPCPort.reply(request, errorType.CODEC_NOT_SUPPORT)
                       break
                     }
-                    
+
                     if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
                       ret = task.targetDecoder.decode(avpacket)
                       if (ret >= 0) {
@@ -470,7 +470,7 @@ export default class VideoDecodePipeline extends Pipeline {
           throw error
         }
       }
-      
+
       task.softwareDecoderOpened = true
     }
   }

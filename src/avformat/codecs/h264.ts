@@ -125,7 +125,7 @@ export const LevelCapabilities = [
 ]
 
 export function getLevelByResolution(width: number, height: number, fps: number) {
-  const resolution = width * height;
+  const resolution = width * height
   for (const level of LevelCapabilities) {
     if (resolution <= level.maxResolution && fps <= level.maxFrameRate) {
       return level.level

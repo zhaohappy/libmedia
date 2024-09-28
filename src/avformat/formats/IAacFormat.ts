@@ -412,7 +412,7 @@ export default class IAacFormat extends IFormat {
       if (this.latmFilter) {
         this.latmFilter.reset()
       }
-      
+
       const now = formatContext.ioReader.getPos()
 
       if (timestamp < 0n) {

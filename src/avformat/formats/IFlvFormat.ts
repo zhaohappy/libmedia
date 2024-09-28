@@ -318,7 +318,11 @@ export default class IFlvFormat extends IFormat {
             avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_END
           }
           else if (packetType === PacketTypeExt.PacketTypeCodedFrames || packetType === PacketTypeExt.PacketTypeCodedFramesX) {
-            if (packetType === PacketTypeExt.PacketTypeCodedFrames && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC)) {
+            if (packetType === PacketTypeExt.PacketTypeCodedFrames
+              && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+                || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+              )
+            ) {
               const ct = await formatContext.ioReader.readUint24()
               avpacket.pts = avpacket.dts + static_cast<int64>(ct)
               await this.readAVPacketData(formatContext, stream, avpacket, size - 8)
@@ -404,7 +408,11 @@ export default class IFlvFormat extends IFormat {
             avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_END
           }
           else if (packetType === PacketTypeExt.PacketTypeCodedFrames || packetType === PacketTypeExt.PacketTypeCodedFramesX) {
-            if (packetType === PacketTypeExt.PacketTypeCodedFrames && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC)) {
+            if (packetType === PacketTypeExt.PacketTypeCodedFrames
+              && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+                || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+              )
+            ) {
               const ct = await formatContext.ioReader.readUint24()
               avpacket.pts = avpacket.dts + static_cast<int64>(ct)
               await this.readAVPacketData(formatContext, stream, avpacket, size - 8)

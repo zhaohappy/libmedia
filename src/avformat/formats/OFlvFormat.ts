@@ -331,7 +331,7 @@ export default class OFlvFormat extends OFormat {
             )
             ? PacketTypeExt.PacketTypeCodedFrames
             : PacketTypeExt.PacketTypeCodedFramesX
-          
+
           oflv.writeTagHeader(
             formatContext.ioWriter,
             FlvTag.VIDEO,
@@ -340,7 +340,7 @@ export default class OFlvFormat extends OFormat {
             avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase)
           )
           oflv.writeVideoTagExtDataHeader(formatContext.ioWriter, stream, packetType, avpacket.flags)
-        
+
           flvEnhanced.writeCodecTagHeader(formatContext.ioWriter, stream.codecpar.codecId)
 
           if (packetType === PacketTypeExt.PacketTypeCodedFrames) {

@@ -35,7 +35,7 @@ export function parseFormat(fields: string[], format: string) {
   const items = format.match(/Format\s*:\s*(.*)/i)[1].split(/\s*,\s*/)
   const result: string[] = []
   for (let i = 0; i < items.length; i++) {
-    const field = fields.find(f => f.toLowerCase() === items[i].toLowerCase())
+    const field = fields.find((f) => f.toLowerCase() === items[i].toLowerCase())
     if (!field) {
       logger.warn(`not support ass field(${items[i]})`)
     }
@@ -100,7 +100,7 @@ export function parseStyle(styleFormat: string[], style: string) {
 
 export function parseEvent(formats: string[], event: string) {
   const [ , key, value ] = event.match(/^(\w+?)\s*:\s*(.*)/i)
-  
+
   let type: AssEventType = AssEventType.NONE
 
   switch (key) {
@@ -140,17 +140,17 @@ export function parseEvent(formats: string[], event: string) {
       case 'MarginR':
       case 'MarginV':
         result[fmt] = +fld
-        break;
+        break
       case 'Start':
       case 'End':
         result[fmt] = hhColonDDColonSSDotMill2Int64(fld)
-        break;
+        break
       case 'Effect':
         result[fmt] = parseEffect(fld)
-        break;
+        break
       case 'Text':
         result[fmt] = parseText(fld)
-        break;
+        break
       default:
         result[fmt] = fld
     }

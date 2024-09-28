@@ -162,7 +162,7 @@ export default class SubtitleRender {
     }
 
     this.createDecoder()
-    
+
     this.render = new AssRender(this.options.dom, {
       header: this.getAssHeader(this.options.codecpar),
       container: this.options.container,
@@ -289,7 +289,7 @@ export default class SubtitleRender {
     const currentPort = this.currentPort
     const avpacket = await this.leftPorts.get(this.currentPort).request<pointer<AVPacketRef>>('pull')
     if (avpacket === IOError.END) {
-      logger.debug(`SubtitleRender end`)
+      logger.debug('SubtitleRender end')
       this.decoder.flush()
       this.ended = true
     }
@@ -322,7 +322,7 @@ export default class SubtitleRender {
     }
     this.pulling = false
   }
-  
+
   public getDemuxerPort(taskId: string) {
     if (this.demuxer2SubtitleRenderChannels.has(taskId)) {
       return this.demuxer2SubtitleRenderChannels.get(taskId).port1

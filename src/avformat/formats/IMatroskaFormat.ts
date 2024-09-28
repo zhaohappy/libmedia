@@ -216,7 +216,7 @@ export default class IMatroskaFormat extends IFormat {
           stream.codecpar.bitsPerCodedSample = (track.codecPrivate.data[15] << 8) | track.codecPrivate.data[14]
           stream.codecpar.codecTag = (track.codecPrivate.data[19] << 24) |  (track.codecPrivate.data[18] << 16)
             | (track.codecPrivate.data[17] << 8) | track.codecPrivate.data[16]
-          
+
           stream.codecpar.codecId = riff.codecBmpTags[stream.codecpar.codecTag] || AVCodecID.AV_CODEC_ID_NONE
 
           if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_NONE) {
@@ -900,7 +900,7 @@ export default class IMatroskaFormat extends IFormat {
     while (true) {
       try {
         const now = formatContext.ioReader.getPos()
-        
+
         const id = await formatContext.ioReader.peekUint32()
 
         if (id === EBMLId.CLUSTER
@@ -916,7 +916,7 @@ export default class IMatroskaFormat extends IFormat {
           let count = 0
 
           await formatContext.ioReader.skip(4)
-          
+
           const length = await readVInt64(formatContext.ioReader, this.context.header.maxSizeLength)
 
           if (length === static_cast<int64>(errorType.DATA_INVALID)) {

@@ -78,11 +78,11 @@ export async function store(name: string, data: any) {
           name,
           data
         })
-    
-        request.onsuccess = function() {
+
+        request.onsuccess = function () {
           resolve()
         }
-        request.onerror = function(event) {
+        request.onerror = function (event) {
           reject(event)
         }
       }
@@ -91,11 +91,11 @@ export async function store(name: string, data: any) {
           name,
           data
         })
-    
-        request.onsuccess = function() {
+
+        request.onsuccess = function () {
           resolve()
         }
-        request.onerror = function(event) {
+        request.onerror = function (event) {
           reject(event)
         }
       }
@@ -104,6 +104,6 @@ export async function store(name: string, data: any) {
       reject(event)
     }
 
-    
+
   })
 }

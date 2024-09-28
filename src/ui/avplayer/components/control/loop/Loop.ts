@@ -30,7 +30,7 @@ const Loop: ComponentOptions = {
   },
 
   watchers: {
-    loop: function(value) {
+    loop: function (value) {
       const player = this.get('player') as AVPlayer
       player.setLoop(value)
       storage.set(storage.LOCAL_STORAGE_KEY_LOOP, value ? 1 : 0)

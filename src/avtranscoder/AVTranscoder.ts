@@ -132,7 +132,7 @@ export interface TaskOptions {
       /**
        * 输出宽度
        */
-      width?: number  
+      width?: number
       /**
        * 输出高度
        */
@@ -157,7 +157,7 @@ export interface TaskOptions {
        */
       pixfmt?: keyof (typeof PixfmtString2AVPixelFormat)
       /**
-       * 输出关键帧间隔(毫秒)
+       * 输出关键帧间隔（毫秒）
        */
       keyFrameInterval?: number
 
@@ -287,7 +287,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     this.options = object.extend({}, defaultAVTranscoderOptions, options)
 
     this.GlobalData = make(AVTranscoderGlobalData)
-    
+
     mutex.init(addressof(this.GlobalData.avpacketListMutex))
     mutex.init(addressof(this.GlobalData.avframeListMutex))
     this.tasks = new Map()
@@ -296,7 +296,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       this.report()
     }, 0, 1000)
 
-    logger.info(`create transcoder`)
+    logger.info('create transcoder')
   }
 
   private async getResource(type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codecId?: AVCodecID, mediaType?: AVMediaType) {
@@ -472,14 +472,14 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     if (task.ext) {
       return task.ext === 'm3u8' || task.ext === 'm3u'
     }
-    return task.options.input.protocol === 'hls' 
+    return task.options.input.protocol === 'hls'
   }
 
   private isDash(task: SelfTask) {
     if (task.ext) {
       return task.ext === 'mpd'
     }
-    return task.options.input.protocol === 'dash' 
+    return task.options.input.protocol === 'dash'
   }
 
   public async ready() {
@@ -495,7 +495,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     newStream.codecpar = avMallocz(sizeof(AVCodecParameters))
     copyCodecParameters(newStream.codecpar, stream.codecpar)
     newStream.timeBase = avMallocz(sizeof(Rational))
-    
+
     newStream.timeBase.den = stream.timeBase.den
     newStream.timeBase.num = stream.timeBase.num
 
@@ -583,12 +583,12 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           case 'read': {
             const pointer = request.params.pointer
             const length = request.params.length
-  
+
             assert(pointer)
             assert(length)
-  
+
             const buffer = mapSafeUint8Array(pointer, length)
-  
+
             try {
               const len = await (task.options.input.file as CustomIOLoader).read(length, buffer)
               task.stats.bufferReceiveBytes += static_cast<int64>(len)
@@ -598,15 +598,15 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
               logger.error(`loader read error, ${error}, taskId: ${task.taskId}`)
               ipcPort.reply(request, errorType.DATA_INVALID)
             }
-  
+
             break
           }
-  
+
           case 'seek': {
             const pos = request.params.pos
-  
+
             assert(pos >= 0)
-  
+
             try {
               const ret = await (task.options.input.file as CustomIOLoader).seek(pos)
               if (ret < 0) {
@@ -622,7 +622,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             }
             break
           }
-  
+
           case 'size': {
             ipcPort.reply(request, await (task.options.input.file as CustomIOLoader).size())
             break
@@ -674,7 +674,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     if (ret < 0) {
       logger.fatal(`register mux task failed, ret: ${ret}, taskId: ${task.taskId}`)
     }
-      
+
     let ioWriter: {
       write: (buffer: Uint8Array) => void
       appendBufferByPosition: (buffer: Uint8Array, pos: number) => void
@@ -1109,7 +1109,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           avframeList: addressof(this.GlobalData.avframeList),
           avframeListMutex: addressof(this.GlobalData.avframeListMutex),
         })
-      
+
       let encoderResource = await this.getResource('encoder', newStream.codecpar.codecId, newStream.codecpar.codecType)
       if (!encoderResource) {
         if (support.audioEncoder) {
@@ -1150,7 +1150,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         logger.error(`cannot open audio ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder`)
         return ret
       }
-      
+
       await this.MuxThread.addStream
         .transfer(encoder2MuxerChannel.port2)
         .invoke(task.taskId, newStream, encoder2MuxerChannel.port2)
@@ -1447,27 +1447,27 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             port: decoder2FilterChannel.port2
           }
           edges.push({
-            parent:framerateNode.id,
+            parent: framerateNode.id,
             child: scaleNode.id
           })
         }
       }
 
       await this.VideoFilterThread.registerTask
-      .transfer(decoder2FilterChannel.port2, filter2EncoderChannel.port1)
-      .invoke({
-        taskId: taskId,
-        graph: {
-          vertices,
-          edges
-        },
-        inputPorts: [input],
-        outputPorts: [output],
-        stats: addressof(task.stats),
-        avframeList: addressof(this.GlobalData.avframeList),
-        avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-      })
-      
+        .transfer(decoder2FilterChannel.port2, filter2EncoderChannel.port1)
+        .invoke({
+          taskId: taskId,
+          graph: {
+            vertices,
+            edges
+          },
+          inputPorts: [input],
+          outputPorts: [output],
+          stats: addressof(task.stats),
+          avframeList: addressof(this.GlobalData.avframeList),
+          avframeListMutex: addressof(this.GlobalData.avframeListMutex),
+        })
+
       let encoderResource = await this.getResource('encoder', newStream.codecpar.codecId, newStream.codecpar.codecType)
       if (!encoderResource) {
         if (support.videoEncoder) {
@@ -1520,12 +1520,12 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         })
 
       ret = await this.VideoEncoderThread.open(taskId, newStream.codecpar, { num: newStream.timeBase.num, den: newStream.timeBase.den }, wasmEncoderOptions)
-      
+
       if (ret < 0) {
         logger.error(`cannot open video ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder`)
         return ret
       }
-        
+
       await this.MuxThread.addStream.transfer(encoder2MuxerChannel.port2)
         .invoke(task.taskId, newStream, encoder2MuxerChannel.port2)
 
@@ -1581,7 +1581,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         avFree(task.streams[i].output.timeBase)
       }
     }
-    
+
     this.DemuxerThread.unregisterTask(task.taskId)
     if (task.subTaskId) {
       this.DemuxerThread.unregisterTask(task.subTaskId)

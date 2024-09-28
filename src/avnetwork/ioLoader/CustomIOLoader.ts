@@ -32,14 +32,14 @@ export default abstract class CustomIOLoader extends IOLoader {
   }
 
   /**
-   * 源扩展名, 若无法自动分析出源的格式需要使用此数据获取默认的格式
+   * 源扩展名， 若无法自动分析出源的格式需要使用此数据获取默认的格式
    */
   get ext(): string {
     throw new Error('need implemented ext getter')
   }
 
   /**
-   * 源的名字, 主要用于日志打印, 可不传
+   * 源的名字， 主要用于日志打印， 可不传
    */
   get name(): string {
     return 'CustomIOLoader.' + Math.random()

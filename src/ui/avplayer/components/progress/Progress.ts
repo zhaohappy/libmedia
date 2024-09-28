@@ -44,7 +44,7 @@ const Progress: ComponentOptions = {
   },
 
   computed: {
-    playedWidth: function() {
+    playedWidth: function () {
       const seekTime = this.get('seekTime')
       const currentTime = this.get('currentTime')
       const totalTime = this.get('totalTime')
@@ -56,7 +56,7 @@ const Progress: ComponentOptions = {
       }
     },
 
-    loadedWidth: function() {
+    loadedWidth: function () {
       const isFileSource = this.get('isFileSource')
       if (isFileSource) {
         return 0
@@ -64,9 +64,9 @@ const Progress: ComponentOptions = {
       return (this.get('currentTime') + this.get('loadedTime')) / this.get('totalTime') * 100
     },
 
-    hoverWidth: function() {
+    hoverWidth: function () {
       const hoverX = this.get('hoverX')
-      
+
       if (this.$refs && this.$refs['slider']) {
         const parentX = this.$refs['slider'].getBoundingClientRect().left
         let width = hoverX - parentX
@@ -81,7 +81,7 @@ const Progress: ComponentOptions = {
       return 0
     },
 
-    hoverTime: function() {
+    hoverTime: function () {
       const hoverWidth = this.get('hoverWidth')
       return Math.round(hoverWidth / 100 * this.get('totalTime'))
     }
@@ -104,7 +104,7 @@ const Progress: ComponentOptions = {
 
   methods: {
 
-    mousemove: function(event: MouseEvent) {
+    mousemove: function (event: MouseEvent) {
 
       if (!this.get('start')) {
         return
@@ -129,7 +129,7 @@ const Progress: ComponentOptions = {
       this.set('startX', event.screenX)
     },
 
-    mouseup: function() {
+    mouseup: function () {
       if (this.get('start')) {
         this.set('start', false)
         const player = this.get('player') as AVPlayer
@@ -141,21 +141,21 @@ const Progress: ComponentOptions = {
       }
     },
 
-    hoverEnter: function(event: CustomEvent) {
+    hoverEnter: function (event: CustomEvent) {
       this.set('hoverX', (event.originalEvent as MouseEvent).clientX)
       this.set('showTip', true)
     },
 
-    hoverMove: function(event: CustomEvent) {
+    hoverMove: function (event: CustomEvent) {
       this.set('hoverX', (event.originalEvent as MouseEvent).clientX)
     },
 
-    hoverLeave: function(event: CustomEvent) {
+    hoverLeave: function (event: CustomEvent) {
       this.set('hoverX', this.$refs['slider'].offsetLeft)
       this.set('showTip', false)
     },
 
-    hoverClick: function(event: CustomEvent) {
+    hoverClick: function (event: CustomEvent) {
       const player = this.get('player') as AVPlayer
 
       const status = player.getStatus()
@@ -170,7 +170,7 @@ const Progress: ComponentOptions = {
       this.set('currentTime', this.get('hoverTime'))
     },
 
-    indicatorDown: function(event: CustomEvent) {
+    indicatorDown: function (event: CustomEvent) {
       this.set('startX', (event.originalEvent as MouseEvent).screenX)
       this.set('start', true)
       this.set('seekTime', this.get('currentTime'))

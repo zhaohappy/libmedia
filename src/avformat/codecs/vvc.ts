@@ -91,6 +91,7 @@ export const enum VVCAPSType {
   kSCALING = 2
 }
 
+/* eslint-disable camelcase */
 function parsePTL(bitReader: BitReader) {
   const olsIdx = bitReader.readU(9)
   const numSublayers = bitReader.readU(3)
@@ -128,7 +129,7 @@ function parsePTL(bitReader: BitReader) {
     for (let j = numSublayers; j <= 8 && numSublayers > 1; ++j) {
       bitReader.readU(1)
     }
-    
+
     for (let j = numSublayers - 2; j >= 0; --j) {
       if (ptl_sublayer_present_mask & (1 << j)) {
         sublayerLevelIdc[j] = bitReader.readU(8)
@@ -166,6 +167,7 @@ function parsePTL(bitReader: BitReader) {
     avgFramerate
   }
 }
+/* eslint-enable camelcase */
 
 /**
  * 
@@ -275,7 +277,7 @@ export function extradata2VpsSpsPps(extradata: Uint8ArrayInterface) {
 }
 
 export function vpsSpsPps2Extradata(vpss: Uint8ArrayInterface[], spss: Uint8ArrayInterface[], ppss: Uint8ArrayInterface[]) {
-  
+
   const sps = spss[0]
   let ptl: Uint8Array
   if (sps) {
@@ -310,11 +312,11 @@ export function vpsSpsPps2Extradata(vpss: Uint8ArrayInterface[], spss: Uint8Arra
     }
 
     if (spsParams.spsMaxSublayersMinus1 + 1 > 1) {
-      let ptl_sublayer_level_present_flags = 0
+      let ptlSubLayerLevelPresentFlags = 0
       for (let i = spsParams.spsMaxSublayersMinus1 - 1; i >= 0; i--) {
-        ptl_sublayer_level_present_flags = (ptl_sublayer_level_present_flags << 1 | spsParams.ptlSublayerLevelPresentFlag[i])
+        ptlSubLayerLevelPresentFlags = (ptlSubLayerLevelPresentFlags << 1 | spsParams.ptlSublayerLevelPresentFlag[i])
       }
-      biWriter.writeU(spsParams.spsMaxSublayersMinus1, ptl_sublayer_level_present_flags)
+      biWriter.writeU(spsParams.spsMaxSublayersMinus1, ptlSubLayerLevelPresentFlags)
 
       for (let j = spsParams.spsMaxSublayersMinus1 + 1; j <= 8 && spsParams.spsMaxSublayersMinus1 > 0; ++j) {
         biWriter.writeU1(0)
@@ -804,6 +806,7 @@ export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
   }
 }
 
+/* eslint-disable camelcase */
 export interface VvcSPS {
   profile: number
   level: number
@@ -824,7 +827,7 @@ export interface VvcSPS {
   sps_poc_msb_cycle_flag: number
   sps_poc_msb_cycle_len_minus1: number
   sps_num_extra_ph_bytes: number
-    sps_extra_ph_bit_present_flag: number[]
+  sps_extra_ph_bit_present_flag: number[]
 }
 
 export function parseSPS(sps: Uint8ArrayInterface): VvcSPS {
@@ -910,7 +913,7 @@ export function parseSPS(sps: Uint8ArrayInterface): VvcSPS {
       for (let i = 0; i < ptl_num_sub_profiles; i++) {
         generalSubProfileIdc[i] = bitReader.readU(32)
       }
-    } 
+    }
   }
 
   // sps_gdr_enabled_flag
@@ -947,7 +950,7 @@ export function parseSPS(sps: Uint8ArrayInterface): VvcSPS {
     let sps_subpic_id_len = 0
     let sps_subpic_same_size_flag = 0
     let sps_independent_subpics_flag = 0
-     // sps_num_subpics_minus1
+    // sps_num_subpics_minus1
     if (sps_num_subpics_minus1 > 0) {
       sps_independent_subpics_flag = bitReader.readU1()
       sps_subpic_same_size_flag = bitReader.readU1()
@@ -975,7 +978,7 @@ export function parseSPS(sps: Uint8ArrayInterface): VvcSPS {
     sps_subpic_id_len = expgolomb.readUE(bitReader) + 1
     // sps_subpic_id_mapping_explicitly_signalled_flag
     if (bitReader.readU(1)) {
-       // sps_subpic_id_mapping_present_flag
+      // sps_subpic_id_mapping_present_flag
       if (bitReader.readU(1)) {
         for (let i = 0; i <= sps_num_subpics_minus1; i++) {
           // sps_subpic_id[i]

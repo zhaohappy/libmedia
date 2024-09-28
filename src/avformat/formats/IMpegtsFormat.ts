@@ -178,7 +178,7 @@ export default class IMpegtsFormat extends IFormat {
     if (pes.randomAccessIndicator || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
       avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
     }
-  
+
     const codecId = stream.codecpar.codecId
     if (codecId === AVCodecID.AV_CODEC_ID_H264
       || codecId === AVCodecID.AV_CODEC_ID_H265
@@ -186,19 +186,19 @@ export default class IMpegtsFormat extends IFormat {
     ) {
       avpacket.bitFormat = BitFormat.ANNEXB
     }
-  
+
     avpacket.streamIndex = stream.index
-  
+
     avpacket.dts = pes.dts
     avpacket.pts = pes.pts
     avpacket.pos = pes.pos
     avpacket.timeBase.den = 90000
     avpacket.timeBase.num = 1
-  
+
     if (stream.startTime === NOPTS_VALUE_BIGINT) {
       stream.startTime = avpacket.pts || avpacket.dts
     }
-  
+
     const payload = avMalloc(pes.payload.length)
     memcpyFromUint8Array(payload, pes.payload.length, pes.payload)
     addAVPacketData(avpacket, payload, pes.payload.length)

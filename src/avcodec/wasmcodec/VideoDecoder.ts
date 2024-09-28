@@ -146,7 +146,7 @@ export default class WasmVideoDecoder {
       ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, threadCount, this.decoderOptions)
       await this.decoder.childrenThreadReady()
     }
-    
+
     if (ret < 0) {
       logger.fatal(`open video decoder failed, ret: ${ret}`)
     }

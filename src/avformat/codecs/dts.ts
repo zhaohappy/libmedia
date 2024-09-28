@@ -65,7 +65,7 @@ export function parseHeader(buf: Uint8ArrayInterface) {
     channelIndex: 0,
     sampleRateIndex: 0,
     bitrateIndex: 0,
-    
+
     channels: 0,
     sampleRate: 0,
     bitrate: 0

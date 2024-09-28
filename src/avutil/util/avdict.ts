@@ -69,7 +69,7 @@ export function avDictGet(m: pointer<AVDictionary>, key: string, prev: pointer<A
   if (!m) {
     return nullptr
   }
-  
+
   let entry: pointer<AVDictionaryEntry> = prev
 
   if (!key) {
@@ -103,7 +103,7 @@ export function avDictSet(m: pointer<AVDictionary>, key: string, value: string, 
   if (flags & AVDictFlags.MULTIKEY) {
     tag = avDictGet(m, key, nullptr, flags)
   }
-  
+
   if (tag) {
     if (flags & AVDictFlags.DONT_OVERWRITE) {
       return 0

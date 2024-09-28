@@ -117,14 +117,14 @@ export default class IAssFormat extends IFormat {
     memcpyFromUint8Array(stream.codecpar.extradata, buffer.length, buffer)
 
     this.index = 0
-    
+
     let lastStartTs = 0n
 
     try {
       while (true) {
 
         const pos = formatContext.ioReader.getPos()
-        
+
         const line = (await formatContext.ioReader.readLine()).trim()
 
         if (/^;/.test(line) || /^Comment:/.test(line)) {

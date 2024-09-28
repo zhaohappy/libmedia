@@ -184,8 +184,8 @@ export default class IMpegpsFormat extends IFormat {
         continue
       }
 
-      const len = await formatContext.ioReader.readUint16() 
-      
+      const len = await formatContext.ioReader.readUint16()
+
       this.context.pes.pos = formatContext.ioReader.getPos() - 6n
       this.context.pes.streamId = startCode & 0xff
       this.context.pes.streamType = this.context.psmType[this.context.pes.streamId]
@@ -323,7 +323,7 @@ export default class IMpegpsFormat extends IFormat {
         break
       }
     }
-    
+
     const stream = formatContext.createStream()
     stream.codecpar.codecType = type
     stream.codecpar.codecId = codecId
@@ -518,7 +518,7 @@ export default class IMpegpsFormat extends IFormat {
     const payload = avMalloc(data.length)
     memcpyFromUint8Array(payload, data.length, data)
     addAVPacketData(avpacket, payload, data.length)
-    
+
     if (streamContext.filter) {
       let ret = 0
       ret = streamContext.filter.sendAVPacket(avpacket)
@@ -680,13 +680,13 @@ export default class IMpegpsFormat extends IFormat {
                           (this.context.pes.payload[i + offset] << 24)
                             | (this.context.pes.payload[i + offset + 1] << 16)
                             | (this.context.pes.payload[i + offset + 2] << 8)
-                            | this.context.pes.payload[i + offset +3]
+                            | this.context.pes.payload[i + offset + 3]
                         )
                         const ver = (this.context.pes.payload[i + offset + 1] >>> 3) & 0x03
                         const samplingFreqIndex = (this.context.pes.payload[i + offset + 2] & 0x0C) >>> 2
                         const sampleRate = mp3.getSampleRateByVersionIndex(ver, samplingFreqIndex)
                         let frameLength = mp3FrameHeader.getFrameLength(header, sampleRate)
-                        
+
                         if (frameLength
                           && (i + offset + frameLength < this.context.pes.payload.length - 2)
                           && this.context.pes.payload[i + offset + frameLength] === 0xff
@@ -720,7 +720,7 @@ export default class IMpegpsFormat extends IFormat {
                       while (true) {
 
                         const info = ac3.parseHeader(this.context.pes.payload.subarray(i + offset))
-                        
+
                         if (!is.number(info)
                           && (i + offset + info.frameSize < this.context.pes.payload.length - 2)
                           && this.context.pes.payload[i + offset + info.frameSize] === 0x0b
@@ -758,7 +758,7 @@ export default class IMpegpsFormat extends IFormat {
                       while (true) {
 
                         const info = dts.parseHeader(this.context.pes.payload.subarray(i + offset))
-                        
+
                         if (!is.number(info)
                           && (i + offset + info.frameSize < this.context.pes.payload.length - 4)
                           && this.context.pes.payload[i + offset + info.frameSize] === 0x7f

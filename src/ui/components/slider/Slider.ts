@@ -50,13 +50,13 @@ const Slider: ComponentOptions = {
   },
 
   methods: {
-    mousedown: function(event: CustomEvent) {
+    mousedown: function (event: CustomEvent) {
       this.set('startX', (event.originalEvent as MouseEvent).screenX)
       this.set('startY', (event.originalEvent as MouseEvent).screenY)
       this.set('start', true)
     },
 
-    mousemove: function(event: MouseEvent) {
+    mousemove: function (event: MouseEvent) {
 
       if (!this.get('start')) {
         return
@@ -90,7 +90,7 @@ const Slider: ComponentOptions = {
       this.set('startY', event.screenY)
     },
 
-    mouseup: function() {
+    mouseup: function () {
       if (this.get('start')) {
         this.set('start', false)
       }

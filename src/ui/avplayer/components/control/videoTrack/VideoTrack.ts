@@ -35,7 +35,7 @@ const VideoTrack: ComponentOptions = {
   },
 
   computed: {
-    list: function() {
+    list: function () {
       const player = this.get('player') as AVPlayer
       const stream: AVStreamInterface[] = this.get('streams')
       const videoInfo: IOLoaderVideoStreamInfo = this.get('videoInfo')
@@ -77,7 +77,7 @@ const VideoTrack: ComponentOptions = {
   },
 
   methods: {
-    change: function(index: number) {
+    change: function (index: number) {
       const old = this.get('selectIndex')
       if (old !== index) {
         const player = this.get('player') as AVPlayer
@@ -87,7 +87,7 @@ const VideoTrack: ComponentOptions = {
       }
     },
 
-    init: function(player: AVPlayer) {
+    init: function (player: AVPlayer) {
       if (player.isDash() || player.isHls()) {
         this.set('videoInfo', player.getVideoList())
       }

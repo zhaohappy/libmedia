@@ -13,27 +13,27 @@ type FirstConstructorParameter<T extends abstract new (...args: any) => any> =
 
 export type GraphNodeType = 'resampler' | 'scaler' | 'range' | 'framerate'
 
-type GraphNodeType2AVFilterConstructor<T extends GraphNodeType> = 
+type GraphNodeType2AVFilterConstructor<T extends GraphNodeType> =
   T extends 'resampler'
-  ? typeof ResampleFilterNode
-  : T extends 'scaler'
-  ? typeof ScaleFilterNode
-  : T extends 'range'
-  ? typeof RangeFilterNode
-  : T extends 'framerate'
-  ? typeof FramerateFilterNode
-  : never
+    ? typeof ResampleFilterNode
+    : T extends 'scaler'
+      ? typeof ScaleFilterNode
+      : T extends 'range'
+        ? typeof RangeFilterNode
+        : T extends 'framerate'
+          ? typeof FramerateFilterNode
+          : never
 
-type GraphNodeType2AVFilter<T extends GraphNodeType> = 
+type GraphNodeType2AVFilter<T extends GraphNodeType> =
   T extends 'resampler'
-  ? ResampleFilterNode
-  : T extends 'scaler'
-  ? ScaleFilterNode
-  : T extends 'range'
-  ? RangeFilterNode
-  : T extends 'framerate'
-  ? FramerateFilterNode
-  : never
+    ? ResampleFilterNode
+    : T extends 'scaler'
+      ? ScaleFilterNode
+      : T extends 'range'
+        ? RangeFilterNode
+        : T extends 'framerate'
+          ? FramerateFilterNode
+          : never
 
 type AVFilterGraphFilterOptions<T extends GraphNodeType> = FirstConstructorParameter<GraphNodeType2AVFilterConstructor<T>>
 
