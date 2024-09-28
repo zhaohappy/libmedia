@@ -1,62 +1,121 @@
-# npm run build-ffmpeg-util
-# npm run build-ffmpeg-util-atomic
-# npm run build-ffmpeg-util-simd
+sh ./build/build-ffmpeg-decoder.sh h264 0 0
+sh ./build/build-ffmpeg-decoder.sh hevc 0 0
+sh ./build/build-ffmpeg-decoder.sh vvc 0 0
+sh ./build/build-ffmpeg-decoder.sh av1 0 0
+sh ./build/build-ffmpeg-decoder.sh mpeg4 0 0
+sh ./build/build-ffmpeg-decoder.sh vp8 0 0
+sh ./build/build-ffmpeg-decoder.sh vp9 0 0
+sh ./build/build-ffmpeg-decoder.sh theora 0 0
+sh ./build/build-ffmpeg-decoder.sh aac 0 0
+sh ./build/build-ffmpeg-decoder.sh ac3 0 0
+sh ./build/build-ffmpeg-decoder.sh dca 0 0
+sh ./build/build-ffmpeg-decoder.sh eac3 0 0
+sh ./build/build-ffmpeg-decoder.sh mp3 0 0
+sh ./build/build-ffmpeg-decoder.sh opus 0 0
+sh ./build/build-ffmpeg-decoder.sh speex 0 0
+sh ./build/build-ffmpeg-decoder.sh flac 0 0
+sh ./build/build-ffmpeg-decoder.sh vorbis 0 0
+sh ./build/build-ffmpeg-decoder.sh pcm 0 0
 
-# npm run build-ffmpeg-decode-h264
-# npm run build-ffmpeg-decode-hevc
-# npm run build-ffmpeg-decode-vvc
-# npm run build-ffmpeg-decode-av1
-# npm run build-ffmpeg-decode-mpeg4
-# npm run build-ffmpeg-decode-vp8
-# npm run build-ffmpeg-decode-vp9
+sh ./build/build-ffmpeg-decoder.sh h264 0 1
+sh ./build/build-ffmpeg-decoder.sh hevc 0 1
+sh ./build/build-ffmpeg-decoder.sh vvc 0 1
+sh ./build/build-ffmpeg-decoder.sh av1 0 1
+sh ./build/build-ffmpeg-decoder.sh mpeg4 0 1
+sh ./build/build-ffmpeg-decoder.sh vp8 0 1
+sh ./build/build-ffmpeg-decoder.sh vp9 0 1
+sh ./build/build-ffmpeg-decoder.sh theora 0 1
+sh ./build/build-ffmpeg-decoder.sh aac 0 1
+sh ./build/build-ffmpeg-decoder.sh ac3 0 1
+sh ./build/build-ffmpeg-decoder.sh dca 0 1
+sh ./build/build-ffmpeg-decoder.sh eac3 0 1
+sh ./build/build-ffmpeg-decoder.sh mp3 0 1
+sh ./build/build-ffmpeg-decoder.sh opus 0 1
+sh ./build/build-ffmpeg-decoder.sh speex 0 1
+sh ./build/build-ffmpeg-decoder.sh flac 0 1
+sh ./build/build-ffmpeg-decoder.sh vorbis 0 1
+sh ./build/build-ffmpeg-decoder.sh pcm 0 1
 
-# npm run build-ffmpeg-decode-aac
-# npm run build-ffmpeg-decode-mp3
-# npm run build-ffmpeg-decode-opus
-# npm run build-ffmpeg-decode-speex
-# npm run build-ffmpeg-decode-flac
-# npm run build-ffmpeg-decode-vorbis
-# npm run build-ffmpeg-decode-pcm
+sh ./build/build-ffmpeg-decoder.sh h264 1 1
+sh ./build/build-ffmpeg-decoder.sh hevc 1 1
+sh ./build/build-ffmpeg-decoder.sh vvc 1 1
+sh ./build/build-ffmpeg-decoder.sh av1 1 1
+sh ./build/build-ffmpeg-decoder.sh mpeg4 1 1
+sh ./build/build-ffmpeg-decoder.sh vp8 1 1
+sh ./build/build-ffmpeg-decoder.sh vp9 1 1
+sh ./build/build-ffmpeg-decoder.sh theora 1 1
+sh ./build/build-ffmpeg-decoder.sh aac 1 1
+sh ./build/build-ffmpeg-decoder.sh ac3 1 1
+sh ./build/build-ffmpeg-decoder.sh dca 1 1
+sh ./build/build-ffmpeg-decoder.sh eac3 1 1
+sh ./build/build-ffmpeg-decoder.sh mp3 1 1
+sh ./build/build-ffmpeg-decoder.sh opus 1 1
+sh ./build/build-ffmpeg-decoder.sh speex 1 1
+sh ./build/build-ffmpeg-decoder.sh flac 1 1
+sh ./build/build-ffmpeg-decoder.sh vorbis 1 1
+sh ./build/build-ffmpeg-decoder.sh pcm 1 1
 
-# npm run build-ffmpeg-decode-h264-atomic
-# npm run build-ffmpeg-decode-hevc-atomic
-# npm run build-ffmpeg-decode-vvc-atomic
-# npm run build-ffmpeg-decode-av1-atomic
-# npm run build-ffmpeg-decode-mpeg4-atomic
-# npm run build-ffmpeg-decode-vp8-atomic
-# npm run build-ffmpeg-decode-vp9-atomic
 
-# npm run build-ffmpeg-decode-aac-atomic
-# npm run build-ffmpeg-decode-mp3-atomic
-# npm run build-ffmpeg-decode-opus-atomic
-# npm run build-ffmpeg-decode-speex-atomic
-# npm run build-ffmpeg-decode-flac-atomic
-# npm run build-ffmpeg-decode-vorbis-atomic
-# npm run build-ffmpeg-decode-pcm-atomic
 
-# npm run build-ffmpeg-decode-h264-simd
+sh ./build/build-ffmpeg-encoder.sh x264 0 0
+sh ./build/build-ffmpeg-encoder.sh openh264 0 0
+sh ./build/build-ffmpeg-encoder.sh kvazaar  0 0
+sh ./build/build-ffmpeg-encoder.sh mpeg4 0 0
+sh ./build/build-ffmpeg-encoder.sh vp8 0 0
+sh ./build/build-ffmpeg-encoder.sh vp9 0 0
+sh ./build/build-ffmpeg-encoder.sh theora 0 0
+sh ./build/build-ffmpeg-encoder.sh aac 0 0
+sh ./build/build-ffmpeg-encoder.sh ac3 0 0
+sh ./build/build-ffmpeg-encoder.sh dca 0 0
+sh ./build/build-ffmpeg-encoder.sh eac3 0 0
+sh ./build/build-ffmpeg-encoder.sh flac 0 0
+sh ./build/build-ffmpeg-encoder.sh opus 0 0
+sh ./build/build-ffmpeg-encoder.sh pcm 0 0
+sh ./build/build-ffmpeg-encoder.sh speex 0 0
+sh ./build/build-ffmpeg-encoder.sh vorbis 0 0
+sh ./build/build-ffmpeg-encoder.sh mp3lame 0 0
 
-# npm run build-ffmpeg-decode-hevc-simd
-# npm run build-ffmpeg-decode-vvc-simd
-# npm run build-ffmpeg-decode-av1-simd
-# npm run build-ffmpeg-decode-vp8-simd
-# npm run build-ffmpeg-decode-vp9-simd
+sh ./build/build-ffmpeg-encoder.sh x264 0 1
+sh ./build/build-ffmpeg-encoder.sh x265 0 1
+sh ./build/build-ffmpeg-encoder.sh openh264 0 1
+sh ./build/build-ffmpeg-encoder.sh kvazaar  0 1
+sh ./build/build-ffmpeg-encoder.sh mpeg4 0 1
+sh ./build/build-ffmpeg-encoder.sh av1 0 1
+sh ./build/build-ffmpeg-encoder.sh vp8 0 1
+sh ./build/build-ffmpeg-encoder.sh vp9 0 1
+sh ./build/build-ffmpeg-encoder.sh theora 0 1
+sh ./build/build-ffmpeg-encoder.sh aac 0 1
+sh ./build/build-ffmpeg-encoder.sh ac3 0 1
+sh ./build/build-ffmpeg-encoder.sh dca 0 1
+sh ./build/build-ffmpeg-encoder.sh eac3 0 1
+sh ./build/build-ffmpeg-encoder.sh flac 0 1
+sh ./build/build-ffmpeg-encoder.sh opus 0 1
+sh ./build/build-ffmpeg-encoder.sh pcm 0 1
+sh ./build/build-ffmpeg-encoder.sh speex 0 1
+sh ./build/build-ffmpeg-encoder.sh vorbis 0 1
+sh ./build/build-ffmpeg-encoder.sh mp3lame 0 1
 
-# npm run build-ffmpeg-encode-x264
-# npm run build-ffmpeg-encode-aac
-# npm run build-ffmpeg-encode-mp3lame
-# npm run build-ffmpeg-encode-mpeg4
+sh ./build/build-ffmpeg-encoder.sh x264 1 1
+sh ./build/build-ffmpeg-encoder.sh x265 1 1
+sh ./build/build-ffmpeg-encoder.sh openh264 1 1
+sh ./build/build-ffmpeg-encoder.sh kvazaar  1 1
+sh ./build/build-ffmpeg-encoder.sh mpeg4 1 1
+sh ./build/build-ffmpeg-encoder.sh av1 1 1
+sh ./build/build-ffmpeg-encoder.sh vp8 1 1
+sh ./build/build-ffmpeg-encoder.sh vp9 1 1
+sh ./build/build-ffmpeg-encoder.sh theora 1 1
+sh ./build/build-ffmpeg-encoder.sh aac 1 1
+sh ./build/build-ffmpeg-encoder.sh ac3 1 1
+sh ./build/build-ffmpeg-encoder.sh dca 1 1
+sh ./build/build-ffmpeg-encoder.sh eac3 1 1
+sh ./build/build-ffmpeg-encoder.sh flac 1 1
+sh ./build/build-ffmpeg-encoder.sh opus 1 1
+sh ./build/build-ffmpeg-encoder.sh pcm 1 1
+sh ./build/build-ffmpeg-encoder.sh speex 1 1
+sh ./build/build-ffmpeg-encoder.sh vorbis 1 1
+sh ./build/build-ffmpeg-encoder.sh mp3lame 1 1
 
-# npm run build-ffmpeg-encode-x264-atomic
-# npm run build-ffmpeg-encode-x265-atomic
-# npm run build-ffmpeg-encode-kvazaar-atomic
-# npm run build-ffmpeg-encode-aac-atomic
-# npm run build-ffmpeg-encode-mp3lame-atomic
-# npm run build-ffmpeg-encode-mpeg4-atomic
 
-npm run build-ffmpeg-encode-x264-simd
-npm run build-ffmpeg-encode-x265-simd
-npm run build-ffmpeg-encode-kvazaar-simd
-# npm run build-ffmpeg-encode-aac-simd
-npm run build-ffmpeg-encode-mp3lame-simd
-# npm run build-ffmpeg-encode-mpeg4-simd
+sh ./build/build-ffmpeg-util.sh 0 0
+sh ./build/build-ffmpeg-util.sh 0 1
+sh ./build/build-ffmpeg-util.sh 1 1
