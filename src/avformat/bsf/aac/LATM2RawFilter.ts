@@ -86,19 +86,19 @@ export default class LATM2RawFilter extends AVBSFilter {
 
     while (this.bitReader.remainingLength() >= 20) {
 
-      const now = this.bitReader.getPos()
+      const now = this.bitReader.getPointer()
 
       const info = aac.parseLATMHeader(null, this.bitReader)
 
       if (is.number(info)) {
         logger.error('AACLATMParser parse failed')
-        this.bitReader.clear()
+        this.bitReader.reset()
         return errorType.DATA_INVALID
       }
 
       if (info.framePayloadLength >= this.bitReader.remainingLength()) {
         this.bitReader.skipPadding()
-        this.bitReader.backToPos(now)
+        this.bitReader.setPointer(now)
         break
       }
 
@@ -183,7 +183,7 @@ export default class LATM2RawFilter extends AVBSFilter {
   }
 
   public reset(): number {
-    this.bitReader.clear()
+    this.bitReader.reset()
     return 0
   }
 }

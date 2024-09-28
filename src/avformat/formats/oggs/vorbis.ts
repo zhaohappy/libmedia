@@ -33,6 +33,7 @@ import IOWriter from 'common/io/IOWriterSync'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { PagePayload } from './OggPage'
 import IOReaderSync from 'common/io/IOReaderSync'
+import * as text from 'common/util/text'
 
 export class VorbisOggsIdPage implements PagePayload {
 
@@ -159,7 +160,7 @@ class UserComment {
 
   public write(ioWriter: IOWriter) {
     for (let i = 0; i < this.list.length; i++) {
-      const buffer = ioWriter.encodeString(this.list[i])
+      const buffer = text.encode(this.list[i])
       ioWriter.writeUint32(buffer.length)
       ioWriter.writeBuffer(buffer)
     }
@@ -230,7 +231,7 @@ export class VorbisOggsCommentPage implements PagePayload {
   public write(ioWriter: IOWriter) {
     ioWriter.writeString(this.signature)
 
-    const buffer = ioWriter.encodeString(this.vendorString)
+    const buffer = text.encode(this.vendorString)
     ioWriter.writeUint32(buffer.length)
     ioWriter.writeBuffer(buffer)
 

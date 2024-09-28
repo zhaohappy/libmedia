@@ -48,7 +48,7 @@ import { avQ2D, avQ2D2, avRescaleQ } from 'avutil/util/rational'
 import getTimestamp from 'common/function/getTimestamp'
 import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
-import SeekableWriteBufferQueue from 'common/io/SeekableWriteBufferQueue'
+import SeekableWriteBuffer from 'common/io/SeekableWriteBuffer'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
 import { mapUint8Array, memcpy } from 'cheap/std/memory'
 import { avFree, avMalloc } from 'avutil/util/mem'
@@ -92,7 +92,7 @@ interface MSEResource {
   oformatContext: AVOFormatContext
   oformat: OFormat
   ioWriter: IOWriter
-  bufferQueue: SeekableWriteBufferQueue
+  bufferQueue: SeekableWriteBuffer
   track: Track
   streamIndex: int32
   pullIPC: IPCPort
@@ -489,7 +489,7 @@ export default class MSEPipeline extends Pipeline {
         resource.track.updateTimestampOffset(static_cast<int32>(offset) / 1000)
         resource.timestampOffsetUpdated = true
       }
-      resource.bufferQueue.push(mapUint8Array(avpacket.data, avpacket.size).slice())
+      resource.bufferQueue.write(mapUint8Array(avpacket.data, avpacket.size).slice())
     }
     else {
       mux.writeAVPacket(resource.oformatContext, avpacket)
@@ -792,10 +792,10 @@ export default class MSEPipeline extends Pipeline {
         defaultBaseIsMoof: true
       })
 
-      const bufferQueue = new SeekableWriteBufferQueue()
+      const bufferQueue = new SeekableWriteBuffer()
 
       ioWriter.onFlush = (buffer) => {
-        bufferQueue.push(buffer.slice())
+        bufferQueue.write(buffer.slice())
         return 0
       }
 

@@ -130,7 +130,7 @@ export default class IH264Format extends IFormat {
 
       if (this.isFrameNalu(next)) {
         if (hasFrame) {
-          this.bitReader.clear()
+          this.bitReader.reset()
           this.bitReader.appendBuffer(next.subarray(next[2] === 1 ? 4 : 5, 10))
           const firstMbInSlice = expgolomb.readUE(this.bitReader)
           if (firstMbInSlice === 0) {
@@ -266,7 +266,7 @@ export default class IH264Format extends IFormat {
         && isFirst
       ) {
         isFirst = false
-        this.bitReader.clear()
+        this.bitReader.reset()
         this.bitReader.appendBuffer(n.subarray(n[2] === 1 ? 4 : 5, 50))
 
         // first_mb_in_slice

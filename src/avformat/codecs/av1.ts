@@ -427,7 +427,7 @@ export function splitOBU(buffer: Uint8ArrayInterface) {
   const list: Uint8ArrayInterface[] = []
 
   while (bitReader.remainingLength()) {
-    const now = bitReader.getPos()
+    const now = bitReader.getPointer()
     // obu_forbidden_bit
     bitReader.readU1()
     const type = bitReader.readU(4)
@@ -442,7 +442,7 @@ export function splitOBU(buffer: Uint8ArrayInterface) {
 
     const size = hasSizeFlag ? av1syntax.leb128(bitReader) : buffer.length - 1 - extensionFlag
 
-    const headerSize = bitReader.getPos() - now
+    const headerSize = bitReader.getPointer() - now
 
     list.push(buffer.subarray(now, now + headerSize + size))
 

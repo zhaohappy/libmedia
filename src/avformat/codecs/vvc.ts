@@ -235,7 +235,7 @@ export function extradata2VpsSpsPps(extradata: Uint8ArrayInterface) {
     const bitReader = new BitReader()
     bitReader.appendBuffer(extradata.subarray(1))
     parsePTL(bitReader)
-    bufferReader.skip(bitReader.getPos())
+    bufferReader.skip(bitReader.getPointer())
   }
 
   let vpss = []

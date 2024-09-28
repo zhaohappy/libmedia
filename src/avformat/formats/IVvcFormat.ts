@@ -234,7 +234,7 @@ export default class IHevcFormat extends IFormat {
 
   private computePoc(naluType: vvc.VVCNaluType, temporalId: number, ph: Uint8Array, sliceHeader: boolean) {
     /* eslint-disable camelcase */
-    this.bitReader.clear()
+    this.bitReader.reset()
     this.bitReader.appendBuffer(ph.subarray(0, 500))
 
     if (sliceHeader) {

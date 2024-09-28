@@ -276,7 +276,7 @@ export function parseLATMHeader(buffer: Uint8ArrayInterface, bitReader?: BitRead
     return value
   }
 
-  const now = bitReader.getPos()
+  const now = bitReader.getPointer()
 
   const info: AACLATMHeader = {
     syncWord: 0,
@@ -396,7 +396,7 @@ export function parseLATMHeader(buffer: Uint8ArrayInterface, bitReader?: BitRead
   }
 
   info.framePayloadLength = length
-  info.headerLength = bitReader.getPos() - now + (bitReader.getBitLeft() === 8 ? 0 : 1)
+  info.headerLength = bitReader.getPointer() - now + (bitReader.getBitLeft() === 8 ? 0 : 1)
 
   return info
 }

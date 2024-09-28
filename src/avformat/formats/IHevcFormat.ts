@@ -258,7 +258,7 @@ export default class IHevcFormat extends IFormat {
 
       if (type < hevc.HEVCNaluType.kSliceVPS && isFirst) {
         isFirst = false
-        this.bitReader.clear()
+        this.bitReader.reset()
         this.bitReader.appendBuffer(n.subarray(n[2] === 1 ? 5 : 6, 50))
 
         const firstSliceInPicFlag = this.bitReader.readU1()

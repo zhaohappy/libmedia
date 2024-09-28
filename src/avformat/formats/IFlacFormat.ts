@@ -325,7 +325,7 @@ export default class IFlacFormat extends IFormat {
         )
       }
 
-      this.context.bitReader.clear()
+      this.context.bitReader.reset()
       this.context.bitReader.appendBuffer(this.context.cacheBuffer.subarray(0, 16))
 
       if (decodeFrameHeader(this.context.bitReader, {}, true) < 0) {
@@ -357,7 +357,7 @@ export default class IFlacFormat extends IFormat {
         return IOError.END
       }
 
-      this.context.bitReader.clear()
+      this.context.bitReader.reset()
 
       if (this.context.cacheBuffer) {
         now = this.context.cachePos
@@ -417,7 +417,7 @@ export default class IFlacFormat extends IFormat {
         const word = await formatContext.ioReader.peekUint16()
         if (word === 0xfff9 || word === 0xfff8) {
           pos = formatContext.ioReader.getPos()
-          this.context.bitReader.clear()
+          this.context.bitReader.reset()
           this.context.bitReader.appendBuffer(await formatContext.ioReader.peekBuffer(16))
           if (!decodeFrameHeader(this.context.bitReader, {}, true)) {
             break

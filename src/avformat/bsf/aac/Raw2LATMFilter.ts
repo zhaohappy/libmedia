@@ -132,7 +132,7 @@ export default class Raw2LATMFilter extends AVBSFilter {
       return 0
     }
 
-    this.bitWriter.clear()
+    this.bitWriter.reset()
 
     const element = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
     if (element) {

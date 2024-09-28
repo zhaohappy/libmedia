@@ -51,7 +51,7 @@ export function getUtf8(reader: BitReader) {
 
 export function decodeFrameHeader(bitReader: BitReader, info: Partial<FrameInfo>, check: boolean = false) {
 
-  const start = bitReader.getPos()
+  const start = bitReader.getPointer()
 
   if ((bitReader.readU(15) & 0x7fff) != 0x7ffc) {
     !check && logger.error('invalid sync code')
@@ -127,7 +127,7 @@ export function decodeFrameHeader(bitReader: BitReader, info: Partial<FrameInfo>
     return errorType.DATA_INVALID
   }
 
-  const crc = crc8(bitReader.getBuffer().subarray(start, bitReader.getPos()))
+  const crc = crc8(bitReader.getBuffer().subarray(start, bitReader.getPointer()))
 
   if (crc !== bitReader.readU(8)) {
     !check && logger.error('header crc mismatch')
