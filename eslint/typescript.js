@@ -2,6 +2,47 @@
  * @file ts 配置，继承 js 配置
  */
 
+const ts = require('typescript')
+const nodeUtils = require('../node_modules/@typescript-eslint/typescript-estree/dist/node-utils')
+
+const nodeCanBeDecorated = nodeUtils.nodeCanBeDecorated
+
+nodeUtils.nodeCanBeDecorated = function(node) {
+    if (ts.isFunctionDeclaration(node)) {
+        let hasDeasync = false
+        let decoratorCount = 0
+        ts.visitNodes(node.modifiers, (node) => {
+            if (ts.isDecorator(node)) {
+                decoratorCount++
+                if (ts.isIdentifier(node.expression) && node.expression.escapedText === 'deasync') {
+                    hasDeasync = true
+                }
+            }
+        })
+        if (hasDeasync && decoratorCount === 1) {
+            return true
+        }
+        return false
+    }
+    else if (ts.isMethodDeclaration(node)) {
+        let hasDeasync = false
+        let decoratorCount = 0
+        ts.visitNodes(node.modifiers, (node) => {
+            if (ts.isDecorator(node)) {
+                decoratorCount++
+                if (ts.isIdentifier(node.expression) && node.expression.escapedText === 'deasync') {
+                    hasDeasync = true
+                }
+            }
+        })
+        if (hasDeasync && decoratorCount === 1) {
+            const { parent } = node;
+            return ts.isClassDeclaration(parent) || ts.isClassLike(parent)
+        }
+    }
+    return nodeCanBeDecorated(node)
+}
+
 const eslintConfig = {
 	env: {
 		es6: true,

@@ -33,7 +33,7 @@ export default abstract class IFormat {
   public type: AVFormat = AVFormat.UNKNOWN
 
   public onStreamAdd: (stream: Stream) => void
-  
+
   public abstract init(formatContext: AVIFormatContext): void
 
   public destroy(formatContext: AVIFormatContext): void {}

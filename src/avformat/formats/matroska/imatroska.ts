@@ -943,7 +943,7 @@ export async function readEbmlId(formatContext: AVIFormatContext, maxLen: number
     const next = await formatContext.ioReader.readUint8()
     value |= next
   }
-  return value 
+  return value
 }
 
 // @ts-ignore

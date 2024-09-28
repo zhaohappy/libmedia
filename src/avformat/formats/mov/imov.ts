@@ -374,7 +374,7 @@ export async function readMfra(
     const pos = ioReader.getPos()
     const size = await ioReader.readUint32()
     const type = await ioReader.readUint32()
-    
+
     if (type === mktag(BoxType.TFRA)) {
       const version = await ioReader.readUint8()
       await ioReader.skip(3)

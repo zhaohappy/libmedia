@@ -7,8 +7,7 @@ const eslintConfig = {
 		es6: true,
 		node: true,
 		browser: true,
-		worker: true,
-		amd: true
+		worker: true
 	},
 	plugins: [],
 	settings: {},
