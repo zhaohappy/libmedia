@@ -167,7 +167,7 @@
               return `../../dist/stretchpitch/stretchpitch${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
           }
         },
-        enableHardware: true,
+        enableHardware: !AVPlayer.Util.os.android,
         jitterBufferMax: 4,
         jitterBufferMin: 1,
         lowLatency: true,
