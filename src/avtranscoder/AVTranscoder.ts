@@ -311,8 +311,8 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
 
     if (wasmUrl) {
       let resource: WebAssemblyResource | ArrayBuffer
-      // safari 15 不支持将 WebAssembly.Module 传递到 worker 中
-      if (browser.safari && !browser.checkVersion(browser.majorVersion, '16', true) && (is.string(wasmUrl) || is.arrayBuffer(wasmUrl))) {
+      // safari 16 以下不支持将 WebAssembly.Module 传递到 worker 中
+      if (browser.safari && !browser.checkVersion(browser.version, '16.1', true) && (is.string(wasmUrl) || is.arrayBuffer(wasmUrl))) {
         if (is.string(wasmUrl)) {
           const params: Partial<any> = {
             method: 'GET',
