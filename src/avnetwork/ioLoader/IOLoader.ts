@@ -113,7 +113,7 @@ export default abstract class IOLoader {
    * 读取数据到缓冲区
    * 
    * @param buffer 可以放置数据的缓冲区，类 Uint8Array 结构
-   * @param options 一些配置 ( 比如 hls 和 dash 有相关配置项）
+   * @param options 一些配置（比如 hls 和 dash 有相关配置项）
    * 
    * @returns 返回写入的数据长度，失败返回错误码（负值）
    */
@@ -123,9 +123,9 @@ export default abstract class IOLoader {
    * seek 到指定位置
    * 
    * @param pos 位置
-   * @param options 一些配置 ( 比如 hls 和 dash 有相关配置项）
+   * @param options 一些配置（比如 hls 和 dash 有相关配置项）
    * 
-   * @returns 成功返回 0, 否则失败， 可以返回错误码（负值）
+   * @returns 成功返回 0, 否则失败，可以返回错误码（负值）
    */
   public abstract seek(pos: int64, options?: Data): Promise<int32>
 
