@@ -66,8 +66,8 @@ export default async function seekInBytes(
   }
 
   let bytes = getBytesByDuration(context.streams, duration, stream.timeBase)
-  // 最大到结尾往前 5 秒
-  const max = fileSize - getBytesByDuration(context.streams, 5000n, AV_MILLI_TIME_BASE_Q)
+  // 最大到结尾往前 10 秒
+  const max = fileSize - getBytesByDuration(context.streams, 10000n, AV_MILLI_TIME_BASE_Q)
   const length = getBytesByDuration(context.streams, 10000n, AV_MILLI_TIME_BASE_Q)
   if (bytes > max) {
     bytes = max
@@ -114,6 +114,8 @@ export default async function seekInBytes(
       }
     }
     else {
+      // 失败了重新 seek 回原来的位置
+      pos = NOPTS_VALUE_BIGINT
       break
     }
   }
