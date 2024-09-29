@@ -63,6 +63,14 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     },
     fullscreenDom: {
       type: 'object'
+    },
+    hasFolder: {
+      type: 'boolean',
+      value: true
+    },
+    hasHeader: {
+      type: 'boolean',
+      value: true
     }
   },
 
@@ -326,6 +334,10 @@ export interface AVPlayerUIOptions extends AVPlayerOptions {
   pauseStateUrl?: string
   errorStateUrl?: string
   fullscreenDom?: HTMLElement
+  ui?: {
+    hasFolder?: boolean
+    hasHeader?: boolean
+  }
 }
 
 export default class AVPlayerUI extends AVPlayer {
@@ -345,7 +357,9 @@ export default class AVPlayerUI extends AVPlayer {
         indicatorUrl: options.indicatorUrl,
         pauseStateUrl: options.pauseStateUrl,
         errorStateUrl: options.errorStateUrl,
-        fullscreenDom: options.fullscreenDom
+        fullscreenDom: options.fullscreenDom,
+        hasFolder: options.ui?.hasFolder,
+        hasHeader: options.ui?.hasHeader
       }
     }, AVPlayerUIComponentOptions))
 
