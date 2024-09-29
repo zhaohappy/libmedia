@@ -33,16 +33,12 @@ import Emitter, { EmitterOptions } from 'common/event/Emitter'
 import generateUUID from 'common/function/generateUUID'
 import * as is from 'common/util/is'
 import * as object from 'common/util/object'
-import { AVPacketRef } from 'avutil/struct/avpacket'
-import List from 'cheap/std/collection/List'
-import { AVFrameRef } from 'avutil/struct/avframe'
-import { Mutex } from 'cheap/thread/mutex'
 import compile, { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import { unrefAVFrame } from 'avutil/util/avframe'
 import { unrefAVPacket } from 'avutil/util/avpacket'
 import AudioRenderPipeline from 'avpipeline/AudioRenderPipeline'
 import VideoRenderPipeline from 'avpipeline/VideoRenderPipeline'
-import { AVFormat, AVSeekFlags } from 'avformat/avformat'
+import { AVSeekFlags } from 'avformat/avformat'
 import * as urlUtils from 'common/util/url'
 import * as cheapConfig from 'cheap/config'
 import { AVSampleFormat } from 'avutil/audiosamplefmt'
@@ -62,7 +58,7 @@ import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import Stats from 'avpipeline/struct/stats'
 import { memset, mapUint8Array, mapSafeUint8Array } from 'cheap/std/memory'
-import createMessageChannel from 'avutil/function/createMessageChannel'
+import createMessageChannel from './function/createMessageChannel'
 import getVideoCodec from 'avcodec/function/getVideoCodec'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
 import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
@@ -74,7 +70,6 @@ import * as mutex from 'cheap/thread/mutex'
 import * as bigint from 'common/util/bigint'
 import getMediaSource from './function/getMediaSource'
 import JitterBufferController from './JitterBufferController'
-import { JitterBuffer } from 'avpipeline/struct/jitter'
 import getAudioCodec from 'avcodec/function/getAudioCodec'
 import { IOFlags } from 'common/io/flags'
 import { Ext2Format, Ext2IOLoader, mediaType2AVMediaType } from 'avutil/stringEnum'
@@ -96,6 +91,12 @@ import FileIOLoader from 'avnetwork/ioLoader/FileIOLoader'
 import CustomIOLoader from 'avnetwork/ioLoader/CustomIOLoader'
 import HlsIOLoader from 'avnetwork/ioLoader/HlsIOLoader'
 import DashIOLoader from 'avnetwork/ioLoader/DashIOLoader'
+import { AVPlayerGlobalData } from './struct'
+import { serializeAVCodecParameters } from 'avutil/util/serialize'
+import IODemuxPipelineProxy from './worker/IODemuxPipelineProxy'
+import AudioPipelineProxy from './worker/AudioPipelineProxy'
+import VideoPipelineProxy from './worker/VideoPipelineProxy'
+import MSEPipelineProxy from './worker/MSEPipelineProxy'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -154,6 +155,10 @@ export interface AVPlayerOptions {
    */
   enableWebGPU?: boolean
   /**
+   * 是否启用 worker
+   */
+  enableWorker?: boolean
+  /**
    * 是否循环播放
    */
   loop?: boolean
@@ -211,20 +216,12 @@ export const AVPlayerSupportedCodecs = [
 const defaultAVPlayerOptions: Partial<AVPlayerOptions> = {
   enableHardware: true,
   enableWebGPU: true,
+  enableWorker: true,
   loop: false,
   jitterBufferMax: 10,
   jitterBufferMin: 4,
   lowLatency: false,
   preLoadTime: 4
-}
-
-@struct
-class AVPlayerGlobalData {
-  avpacketList: List<pointer<AVPacketRef>>
-  avframeList: List<pointer<AVFrameRef>>
-  avpacketListMutex: Mutex
-  avframeListMutex: Mutex
-  jitterBuffer: JitterBuffer
 }
 
 export const enum AVPlayerStatus {
@@ -270,6 +267,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   static VideoThreadReady: Promise<void>
   static MSEThreadReady: Promise<void>
 
+  static IODemuxProxy: IODemuxPipelineProxy
+  static AudioPipelineProxy: AudioPipelineProxy
+  static MSEPipelineProxy: MSEPipelineProxy
+
   // 下面的线程所有 AVPlayer 实例共享
   static IOThread: Thread<IOPipeline>
   static DemuxerThread: Thread<DemuxPipeline>
@@ -285,6 +286,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   // TODO 若需要同时播放大量视频，可以考虑实现一个 VideoDecoderThreadPool
   // 来根据各个视频规格做线程解码任务调度，降低系统线程切换开销，这里就不实现了
   private VideoDecoderThread: Thread<VideoDecodePipeline>
+  private VideoRenderThread: Thread<VideoRenderPipeline>
+  private VideoPipelineProxy: VideoPipelineProxy
 
   // AVPlayer 各个线程间共享的数据
   private GlobalData: AVPlayerGlobalData
@@ -327,7 +330,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private status: AVPlayerStatus
   private lastStatus: AVPlayerStatus
 
-  private stats: Stats
   private statsController: StatsController
   private jitterBufferController: JitterBufferController
 
@@ -353,12 +355,16 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.flipHorizontal = false
     this.flipVertical = false
 
-    this.stats = make(Stats)
-    this.statsController = new StatsController(addressof(this.stats))
+    this.GlobalData = make(AVPlayerGlobalData)
+
+    this.statsController = new StatsController(
+      addressof(this.GlobalData.stats),
+      !(cheapConfig.USE_THREADS || !support.worker || !this.options.enableWorker),
+      this
+    )
     this.externalSubtitleTasks = []
     this.lastSelectedInnerSubtitleStreamIndex = -1
 
-    this.GlobalData = make(AVPlayerGlobalData)
     mutex.init(addressof(this.GlobalData.avpacketListMutex))
     mutex.init(addressof(this.GlobalData.avframeListMutex))
 
@@ -373,10 +379,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       return static_cast<int64>((((this.video || this.audio)?.currentTime || 0) * 1000) as double)
     }
     if (this.selectedAudioStream) {
-      return this.stats.audioCurrentTime
+      return this.GlobalData.stats.audioCurrentTime
     }
     else if (this.selectedVideoStream) {
-      return this.stats.videoCurrentTime
+      return this.GlobalData.stats.videoCurrentTime
     }
     return 0n
   }
@@ -551,11 +557,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
     element.onwaiting = () => {
       if (this.audio === element) {
-        this.stats.audioStutter++
+        this.GlobalData.stats.audioStutter++
       }
       else {
-        this.stats.audioStutter++
-        this.stats.videoStutter++
+        this.GlobalData.stats.audioStutter++
+        this.GlobalData.stats.videoStutter++
       }
     }
     element.oncanplay = () => {
@@ -639,7 +645,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
           if (this.videoDecoder2VideoRenderChannel) {
             await this.VideoDecoderThread.resetTask(this.taskId)
-            await AVPlayer.VideoRenderThread.restart(this.taskId)
+            await this.VideoRenderThread.restart(this.taskId)
             this.videoEnded = false
           }
         }
@@ -809,7 +815,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             isLive: this.options.isLive
           },
           rightPort: ioloader2DemuxerChannel.port1,
-          stats: addressof(this.stats)
+          stats: addressof(this.GlobalData.stats)
         })
     }
     else {
@@ -830,7 +836,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             isLive: this.options.isLive
           },
           rightPort: ioloader2DemuxerChannel.port1,
-          stats: addressof(this.stats)
+          stats: addressof(this.GlobalData.stats)
         })
     }
 
@@ -914,10 +920,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.controller = new Controller(this)
     this.ioloader2DemuxerChannel = createMessageChannel()
 
-    memset(addressof(this.stats), 0, sizeof(Stats))
+    memset(addressof(this.GlobalData.stats), 0, sizeof(Stats))
     this.externalSubtitleTasks.length = 0
 
-    await AVPlayer.startDemuxPipeline()
+    await AVPlayer.startDemuxPipeline(this.options.enableWorker)
 
     let ret = 0
     if (is.string(source)) {
@@ -939,7 +945,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             isLive: this.options.isLive
           },
           rightPort: this.ioloader2DemuxerChannel.port1,
-          stats: addressof(this.stats)
+          stats: addressof(this.GlobalData.stats)
         })
     }
     else if (source instanceof File) {
@@ -962,7 +968,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             isLive: false
           },
           rightPort: this.ioloader2DemuxerChannel.port1,
-          stats: addressof(this.stats)
+          stats: addressof(this.GlobalData.stats)
         })
     }
     else if (source instanceof CustomIOLoader) {
@@ -995,7 +1001,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
             try {
               const len = await source.read(buffer, ioloaderOptions)
-              this.stats.bufferReceiveBytes += static_cast<int64>(len)
+              this.GlobalData.stats.bufferReceiveBytes += static_cast<int64>(len)
               this.ioIPCPort.reply(request, len)
             }
             catch (error) {
@@ -1057,7 +1063,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             leftPort: this.ioloader2DemuxerChannel.port2,
             controlPort: this.controller.getDemuxerControlPort(),
             format: Ext2Format[this.ext],
-            stats: addressof(this.stats),
+            stats: addressof(this.GlobalData.stats),
             isLive: this.options.isLive,
             flags: IOFlags.SLICE,
             ioloaderOptions: {
@@ -1071,7 +1077,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           mainTaskId: this.taskId,
           flags: IOFlags.SLICE,
           format: Ext2Format[this.ext],
-          stats: addressof(this.stats),
+          stats: addressof(this.GlobalData.stats),
           isLive: this.options.isLive,
           ioloaderOptions: {
             mediaType: 'video'
@@ -1089,7 +1095,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             leftPort: this.ioloader2DemuxerChannel.port2,
             controlPort: this.controller.getDemuxerControlPort(),
             format: Ext2Format[this.ext],
-            stats: addressof(this.stats),
+            stats: addressof(this.GlobalData.stats),
             isLive: this.options.isLive,
             flags: IOFlags.SLICE,
             ioloaderOptions: {
@@ -1108,7 +1114,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           leftPort: this.ioloader2DemuxerChannel.port2,
           controlPort: this.controller.getDemuxerControlPort(),
           format: Ext2Format[this.ext],
-          stats: addressof(this.stats),
+          stats: addressof(this.GlobalData.stats),
           isLive: this.options.isLive,
           flags: this.isHls() ? IOFlags.SLICE : 0,
           avpacketList: addressof(this.GlobalData.avpacketList),
@@ -1126,7 +1132,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           mainTaskId: this.taskId,
           flags: IOFlags.SLICE,
           format: Ext2Format[this.ext],
-          stats: addressof(this.stats),
+          stats: addressof(this.GlobalData.stats),
           isLive: this.options.isLive,
           ioloaderOptions: {
             mediaType: 'subtitle'
@@ -1184,10 +1190,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     formatContext.streams.forEach((stream) => {
       if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-        this.stats.audiocodec = getAudioCodec(stream.codecpar)
+        this.GlobalData.stats.audiocodec = getAudioCodec(stream.codecpar)
       }
       else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-        this.stats.videocodec = getVideoCodec(stream.codecpar)
+        this.GlobalData.stats.videocodec = getVideoCodec(stream.codecpar)
       }
     })
 
@@ -1205,7 +1211,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             this.formatContext.streams[i].duration = avRescaleQ(
               static_cast<int64>(duration),
               AV_MILLI_TIME_BASE_Q,
-              accessof(this.formatContext.streams[i].timeBase)
+              this.formatContext.streams[i].timeBase
             )
           }
         }
@@ -1224,8 +1230,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         max = min + ((this.isHls() || this.isDash()) ? min : 1)
       }
       this.jitterBufferController = new JitterBufferController({
-        stats: addressof(this.stats),
-        jitterBuffer: addressof(this.GlobalData.jitterBuffer),
+        stats: addressof(this.GlobalData.stats),
+        jitterBuffer: addressof(this.GlobalData.stats.jitterBuffer),
         lowLatencyStart: !(this.isHls() || this.isDash()),
         useMse: this.useMSE,
         max,
@@ -1251,7 +1257,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
                 AVPlayer.AudioRenderThread.setPlayTempo(this.taskId, rate)
               }
               if (this.videoDecoder2VideoRenderChannel) {
-                AVPlayer.VideoRenderThread.setPlayRate(this.taskId, rate)
+                this.VideoRenderThread.setPlayRate(this.taskId, rate)
               }
             }
           }
@@ -1306,8 +1312,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (this.status === AVPlayerStatus.PAUSED) {
 
       // 逐帧播放之后视频与音频相差可能过大，这里同步一下
-      if (this.selectedAudioStream && this.selectedVideoStream && (this.stats.videoCurrentTime - this.stats.audioCurrentTime > 400n)) {
-        await AVPlayer.AudioRenderThread.syncSeekTime(this.taskId, this.stats.videoCurrentTime)
+      if (this.selectedAudioStream && this.selectedVideoStream && (this.GlobalData.stats.videoCurrentTime - this.GlobalData.stats.audioCurrentTime > 400n)) {
+        await AVPlayer.AudioRenderThread.syncSeekTime(this.taskId, this.GlobalData.stats.videoCurrentTime)
       }
 
       if (defined(ENABLE_MSE) && this.useMSE) {
@@ -1325,7 +1331,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           promises.push(AVPlayer.AudioRenderThread.unpause(this.taskId))
         }
         if (this.videoDecoder2VideoRenderChannel) {
-          promises.push(AVPlayer.VideoRenderThread.unpause(this.taskId))
+          promises.push(this.VideoRenderThread.unpause(this.taskId))
         }
       }
       return Promise.all(promises).then(() => {
@@ -1349,7 +1355,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.videoEnded = true
 
     if (defined(ENABLE_MSE) && this.useMSE) {
-      await AVPlayer.startMSEPipeline()
+      await AVPlayer.startMSEPipeline(this.options.enableWorker)
 
       const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
       const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
@@ -1360,13 +1366,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await AVPlayer.MSEThread.registerTask.transfer(this.controller.getMuxerControlPort())
         .invoke({
           taskId: this.taskId,
-          stats: addressof(this.stats),
+          stats: addressof(this.GlobalData.stats),
           controlPort: this.controller.getMuxerControlPort(),
           isLive: this.options.isLive,
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
-          enableJitterBuffer: !!this.jitterBufferController,
-          jitterBuffer: addressof(this.GlobalData.jitterBuffer)
+          enableJitterBuffer: !!this.jitterBufferController
         })
 
       if (videoStream && options.video) {
@@ -1382,7 +1387,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           .invoke(
             this.taskId,
             videoStream.index,
-            videoStream.codecpar,
+            serializeAVCodecParameters(videoStream.codecpar),
             videoStream.timeBase,
             videoStream.startTime,
             this.demuxer2VideoDecoderChannel.port2
@@ -1400,7 +1405,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           .invoke(
             this.taskId,
             audioStream.index,
-            audioStream.codecpar,
+            serializeAVCodecParameters(audioStream.codecpar),
             audioStream.timeBase,
             audioStream.startTime,
             this.demuxer2AudioDecoderChannel.port2
@@ -1437,10 +1442,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (videoStream && options.video) {
         this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_VIDEO_DECODER, videoStream])
         this.selectedVideoStream = videoStream
-        await this.createVideoDecoderThread()
-        await AVPlayer.startVideoRenderPipeline()
 
-        videoStartTime = avRescaleQ(videoStream.startTime, accessof(videoStream.timeBase), AV_MILLI_TIME_BASE_Q)
+        await AVPlayer.startVideoRenderPipeline(this.options.enableWorker)
+        await this.createVideoDecoderThread(this.options.enableWorker)
+
+        videoStartTime = avRescaleQ(videoStream.startTime, videoStream.timeBase, AV_MILLI_TIME_BASE_Q)
 
         this.demuxer2VideoDecoderChannel = createMessageChannel()
         this.videoDecoder2VideoRenderChannel = createMessageChannel()
@@ -1468,7 +1474,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             resource,
             leftPort: this.demuxer2VideoDecoderChannel.port2,
             rightPort: this.videoDecoder2VideoRenderChannel.port1,
-            stats: addressof(this.stats),
+            stats: addressof(this.GlobalData.stats),
             enableHardware: this.options.enableHardware,
             avpacketList: addressof(this.GlobalData.avpacketList),
             avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
@@ -1477,7 +1483,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             preferWebCodecs: !isHdr(videoStream.codecpar) && !hasAlphaChannel(videoStream.codecpar)
           })
 
-        let ret = await this.VideoDecoderThread.open(this.taskId, videoStream.codecpar)
+        let ret = await this.VideoDecoderThread.open(this.taskId, serializeAVCodecParameters(videoStream.codecpar))
         if (ret < 0) {
           logger.fatal(`cannot open video ${dumpCodecName(videoStream.codecpar.codecType, videoStream.codecpar.codecId)} decoder`)
         }
@@ -1489,7 +1495,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (audioStream && options.audio) {
         this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_AUDIO_DECODER, audioStream])
         this.selectedAudioStream = audioStream
-        await AVPlayer.startAudioPipeline()
+        await AVPlayer.startAudioPipeline(this.options.enableWorker)
 
         if (AVPlayer.audioContext.state === 'suspended') {
           await Promise.race([
@@ -1498,7 +1504,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           ])
         }
 
-        audioStartTime = avRescaleQ(audioStream.startTime, accessof(audioStream.timeBase), AV_MILLI_TIME_BASE_Q)
+        audioStartTime = avRescaleQ(audioStream.startTime, audioStream.timeBase, AV_MILLI_TIME_BASE_Q)
 
         this.demuxer2AudioDecoderChannel = createMessageChannel()
         this.audioDecoder2AudioRenderChannel = createMessageChannel()
@@ -1529,7 +1535,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             resource,
             leftPort: this.demuxer2AudioDecoderChannel.port2,
             rightPort: this.audioDecoder2AudioRenderChannel.port1,
-            stats: addressof(this.stats),
+            stats: addressof(this.GlobalData.stats),
             timeBase: {
               num: audioStream.timeBase.num,
               den: audioStream.timeBase.den,
@@ -1540,7 +1546,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             avframeListMutex: addressof(this.GlobalData.avframeListMutex)
           })
 
-        let ret = await AVPlayer.AudioDecoderThread.open(this.taskId, audioStream.codecpar)
+        let ret = await AVPlayer.AudioDecoderThread.open(this.taskId, serializeAVCodecParameters(audioStream.codecpar))
         if (ret < 0) {
           logger.fatal(`cannot open audio ${dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} decoder`)
         }
@@ -1553,7 +1559,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (this.videoDecoder2VideoRenderChannel) {
         this.canvas = this.createCanvas()
         this.options.container.appendChild(this.canvas)
-        const canvas = (supportOffscreenCanvas() && cheapConfig.USE_THREADS && defined(ENABLE_THREADS))
+        const canvas = (supportOffscreenCanvas() && (cheapConfig.USE_THREADS && defined(ENABLE_THREADS) || support.worker))
           ? this.canvas.transferControlToOffscreen()
           : this.canvas
         const stream = this.formatContext.streams.find((stream) => {
@@ -1561,7 +1567,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         })
 
         // 注册一个视频渲染任务
-        await AVPlayer.VideoRenderThread.registerTask
+        await this.VideoRenderThread.registerTask
           .transfer(
             this.videoDecoder2VideoRenderChannel.port2,
             this.controller.getVideoRenderControlPort(),
@@ -1583,18 +1589,17 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             viewportWidth: this.options.container.offsetWidth,
             viewportHeight: this.options.container.offsetHeight,
             devicePixelRatio: devicePixelRatio,
-            stats: addressof(this.stats),
+            stats: addressof(this.GlobalData.stats),
             enableWebGPU: this.options.enableWebGPU,
             startPTS: stream.startTime,
             avframeList: addressof(this.GlobalData.avframeList),
             avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-            enableJitterBuffer: !!this.jitterBufferController && !this.audioDecoder2AudioRenderChannel,
-            jitterBuffer: addressof(this.GlobalData.jitterBuffer)
+            enableJitterBuffer: !!this.jitterBufferController && !this.audioDecoder2AudioRenderChannel
           })
 
         this.videoEnded = false
-        await AVPlayer.VideoRenderThread.setPlayRate(this.taskId, this.playRate)
-        promises.push(AVPlayer.VideoRenderThread.play(this.taskId))
+        await this.VideoRenderThread.setPlayRate(this.taskId, this.playRate)
+        promises.push(this.VideoRenderThread.play(this.taskId))
 
       }
       if (this.audioDecoder2AudioRenderChannel) {
@@ -1634,7 +1639,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             playChannels: playChannels,
             resamplerResource,
             stretchpitcherResource,
-            stats: addressof(this.stats),
+            stats: addressof(this.GlobalData.stats),
             timeBase: {
               num: stream.timeBase.num,
               den: stream.timeBase.den,
@@ -1642,8 +1647,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             startPTS: stream.startTime,
             avframeList: addressof(this.GlobalData.avframeList),
             avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-            enableJitterBuffer: !!this.jitterBufferController,
-            jitterBuffer: addressof(this.GlobalData.jitterBuffer)
+            enableJitterBuffer: !!this.jitterBufferController
           })
 
         // 创建一个音频源节点
@@ -1664,7 +1668,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
               this.onFirstAudioRendered()
             },
             onStutter: () => {
-              this.onStutter()
+              this.onAudioStutter()
             }
           },
           {
@@ -1818,7 +1822,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           promises.push(AVPlayer.AudioRenderThread.pause(this.taskId))
         }
         if (this.videoDecoder2VideoRenderChannel) {
-          promises.push(AVPlayer.VideoRenderThread.pause(this.taskId))
+          promises.push(this.VideoRenderThread.pause(this.taskId))
         }
       }
       return Promise.all(promises).then(() => {
@@ -1852,7 +1856,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     else {
       await Promise.all([
         AVPlayer.AudioRenderThread?.beforeSeek(this.taskId),
-        AVPlayer.VideoRenderThread?.beforeSeek(this.taskId)
+        this.VideoRenderThread?.beforeSeek(this.taskId)
       ])
     }
 
@@ -1918,7 +1922,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             seekedTimestamp > timestamp ? seekedTimestamp : timestamp,
             maxQueueLength
           ),
-          AVPlayer.VideoRenderThread?.syncSeekTime(
+          this.VideoRenderThread?.syncSeekTime(
             this.taskId,
             seekedTimestamp > timestamp ? seekedTimestamp : timestamp,
             maxQueueLength
@@ -1926,17 +1930,17 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         ])
         await Promise.all([
           AVPlayer.AudioRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp),
-          AVPlayer.VideoRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp),
+          this.VideoRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp),
         ])
       }
       else {
         await Promise.all([
           AVPlayer.AudioRenderThread?.syncSeekTime(this.taskId, NOPTS_VALUE_BIGINT, maxQueueLength),
-          AVPlayer.VideoRenderThread?.syncSeekTime(this.taskId, NOPTS_VALUE_BIGINT, maxQueueLength),
+          this.VideoRenderThread?.syncSeekTime(this.taskId, NOPTS_VALUE_BIGINT, maxQueueLength),
         ])
         await Promise.all([
           AVPlayer.AudioRenderThread?.afterSeek(this.taskId, NOPTS_VALUE_BIGINT),
-          AVPlayer.VideoRenderThread?.afterSeek(this.taskId, NOPTS_VALUE_BIGINT),
+          this.VideoRenderThread?.afterSeek(this.taskId, NOPTS_VALUE_BIGINT),
         ])
       }
       if (this.jitterBufferController) {
@@ -2009,8 +2013,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
          * 媒体类型
          */
         mediaType: dumpKey(mediaType2AVMediaType, stream.codecpar.codecType),
-        codecparProxy: accessof(stream.codecpar),
-        timeBaseProxy: accessof(stream.timeBase)
+        codecparProxy: accessof(stream.codecpar)
       }
     })
   }
@@ -2109,8 +2112,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.audioSourceNode.disconnect()
       this.audioSourceNode = null
     }
-    if (AVPlayer.VideoRenderThread) {
-      await AVPlayer.VideoRenderThread.unregisterTask(this.taskId)
+    if (this.VideoRenderThread) {
+      await this.VideoRenderThread.unregisterTask(this.taskId)
     }
     if (AVPlayer.AudioRenderThread) {
       await AVPlayer.AudioRenderThread.unregisterTask(this.taskId)
@@ -2219,7 +2222,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
       else {
         AVPlayer.AudioRenderThread?.setPlayTempo(this.taskId, this.playRate)
-        AVPlayer.VideoRenderThread?.setPlayRate(this.taskId, this.playRate)
+        this.VideoRenderThread?.setPlayRate(this.taskId, this.playRate)
         this.VideoDecoderThread?.setPlayRate(this.taskId, this.playRate)
       }
       logger.info(`player call setPlaybackRate, set ${this.playRate}, taskId: ${this.taskId}`)
@@ -2344,7 +2347,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.video.style['object-fit'] = ObjectFitMap[this.renderMode]
     }
     else {
-      AVPlayer.VideoRenderThread?.setRenderMode(this.taskId, mode)
+      this.VideoRenderThread?.setRenderMode(this.taskId, mode)
     }
     logger.info(`player call setRenderMode, mode: ${mode}, taskId: ${this.taskId}`)
   }
@@ -2374,7 +2377,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.video.style.transform = this.getVideoTransformContext()
     }
     else {
-      AVPlayer.VideoRenderThread?.setRenderRotate(this.taskId, angle)
+      this.VideoRenderThread?.setRenderRotate(this.taskId, angle)
     }
     logger.info(`player call setRotate, angle: ${angle}, taskId: ${this.taskId}`)
   }
@@ -2385,7 +2388,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.video.style.transform = this.getVideoTransformContext()
     }
     else {
-      AVPlayer.VideoRenderThread?.enableHorizontalFlip(this.taskId, enable)
+      this.VideoRenderThread?.enableHorizontalFlip(this.taskId, enable)
     }
     logger.info(`player call enableHorizontalFlip, enable: ${enable}, taskId: ${this.taskId}`)
   }
@@ -2396,7 +2399,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.video.style.transform = this.getVideoTransformContext()
     }
     else {
-      AVPlayer.VideoRenderThread?.enableVerticalFlip(this.taskId, enable)
+      this.VideoRenderThread?.enableVerticalFlip(this.taskId, enable)
     }
     logger.info(`player call enableVerticalFlip, enable: ${enable}, taskId: ${this.taskId}`)
   }
@@ -2472,7 +2475,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   public resize(width: number, height: number) {
     if (!this.useMSE) {
-      AVPlayer.VideoRenderThread?.resize(this.taskId, width, height)
+      this.VideoRenderThread?.resize(this.taskId, width, height)
     }
     logger.info(`player call resize, width: ${width}, height: ${height}, taskId: ${this.taskId}`)
   }
@@ -2658,7 +2661,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           await this.doSeek(this.currentTime, stream.index, {
             onBeforeSeek: async () => {
               await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedVideoStream.index)
-              await AVPlayer.MSEThread.reAddStream(this.taskId, stream.index, stream.codecpar, stream.timeBase, stream.startTime)
+              await AVPlayer.MSEThread.reAddStream(this.taskId, stream.index, serializeAVCodecParameters(stream.codecpar), stream.timeBase, stream.startTime)
             }
           })
         }
@@ -2668,7 +2671,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
               await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedVideoStream.index)
               await this.VideoDecoderThread.reopenDecoder(
                 this.taskId,
-                stream.codecpar,
+                serializeAVCodecParameters(stream.codecpar),
                 await this.getResource('decoder', stream.codecpar.codecId, AVMediaType.AVMEDIA_TYPE_VIDEO)
               )
             }
@@ -2726,7 +2729,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             await this.doSeek(this.currentTime, seekStreamId, {
               onBeforeSeek: async () => {
                 await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedAudioStream.index)
-                await AVPlayer.MSEThread.reAddStream(this.taskId, stream.index, stream.codecpar, stream.timeBase, stream.startTime)
+                await AVPlayer.MSEThread.reAddStream(this.taskId, stream.index, serializeAVCodecParameters(stream.codecpar), stream.timeBase, stream.startTime)
               }
             })
           }
@@ -2736,7 +2739,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
                 await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedAudioStream.index)
                 await AVPlayer.AudioDecoderThread.reopenDecoder(
                   this.taskId,
-                  stream.codecpar,
+                  serializeAVCodecParameters(stream.codecpar),
                   await this.getResource('decoder', stream.codecpar.codecId, AVMediaType.AVMEDIA_TYPE_AUDIO)
                 )
               }
@@ -2840,7 +2843,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   public async playNextFrame() {
     if (!this.useMSE && this.status === AVPlayerStatus.PAUSED && this.selectedVideoStream) {
-      await AVPlayer.VideoRenderThread.renderNextFrame(this.taskId)
+      await this.VideoRenderThread.renderNextFrame(this.taskId)
     }
   }
 
@@ -2906,7 +2909,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @returns 
    */
   public getStats() {
-    return this.stats
+    return this.GlobalData.stats
   }
 
   /**
@@ -2924,14 +2927,22 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     await this.stop()
-    unmake(this.stats)
-    this.stats = null
+
+    if (this.VideoPipelineProxy) {
+      await this.VideoDecoderThread.clear()
+      await this.VideoRenderThread.clear()
+      await this.VideoPipelineProxy.destroy()
+      this.VideoDecoderThread = null
+      this.VideoPipelineProxy = null
+    }
 
     if (this.VideoDecoderThread) {
       await this.VideoDecoderThread.clear()
       closeThread(this.VideoDecoderThread)
       this.VideoDecoderThread = null
     }
+
+    this.VideoRenderThread = null
 
     if (this.GlobalData) {
       this.GlobalData.avframeList.clear((avframe) => {
@@ -2975,7 +2986,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     const canvas = (supportOffscreenCanvas() && cheapConfig.USE_THREADS && defined(ENABLE_THREADS))
       ? this.updateCanvas.transferControlToOffscreen()
       : this.updateCanvas
-    AVPlayer.VideoRenderThread.updateCanvas
+    this.VideoRenderThread.updateCanvas
       .transfer(canvas as OffscreenCanvas)
       .invoke(this.taskId, canvas)
   }
@@ -3006,8 +3017,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   /**
    * @internal
    */
-  public onStutter() {
-    this.stats.audioStutter++
+  public onAudioStutter() {
+    if (this.status === AVPlayerStatus.PLAYED) {
+      this.GlobalData.stats.audioStutter++
+    }
+  }
+  public onVideoStutter() {
+    if (this.status === AVPlayerStatus.PLAYED) {
+      this.GlobalData.stats.videoStutter++
+    }
   }
 
   /**
@@ -3043,39 +3061,57 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
-  private async createVideoDecoderThread() {
+  private async createVideoDecoderThread(enableWorker: boolean = true) {
 
     if (this.VideoDecoderThread) {
       return
     }
 
-    this.VideoDecoderThread = await createThreadFromClass(VideoDecodePipeline, {
-      name: 'VideoDecoderThread',
-      disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
-    }).run()
-    this.VideoDecoderThread.setLogLevel(AVPlayer.level)
+    if (cheapConfig.USE_THREADS || !support.worker || !enableWorker || !supportOffscreenCanvas()) {
+      this.VideoDecoderThread = await createThreadFromClass(VideoDecodePipeline, {
+        name: 'VideoDecoderThread',
+      }).run()
+      this.VideoDecoderThread.setLogLevel(AVPlayer.level)
+      this.VideoRenderThread = AVPlayer.VideoRenderThread
+    }
+    else {
+      this.VideoPipelineProxy = new VideoPipelineProxy()
+      await this.VideoPipelineProxy.run()
+      this.VideoPipelineProxy.setLogLevel(AVPlayer.level)
+      this.VideoDecoderThread = this.VideoPipelineProxy.VideoDecodePipeline as Thread<VideoDecodePipeline>
+      this.VideoRenderThread = this.VideoPipelineProxy.VideoRenderPipeline as Thread<VideoRenderPipeline>
+    }
   }
 
-  static async startDemuxPipeline() {
+  static async startDemuxPipeline(enableWorker: boolean = true) {
     if (AVPlayer.DemuxThreadReady) {
       return AVPlayer.DemuxThreadReady
     }
 
     return AVPlayer.DemuxThreadReady = new Promise(async (resolve) => {
-      AVPlayer.IOThread = await createThreadFromClass(IOPipeline, {
-        name: 'IOThread'
-      }).run()
-      AVPlayer.IOThread.setLogLevel(AVPlayer.level)
+      if (cheapConfig.USE_THREADS || !support.worker || !enableWorker) {
+        AVPlayer.IOThread = await createThreadFromClass(IOPipeline, {
+          name: 'IOThread'
+        }).run()
+        AVPlayer.IOThread.setLogLevel(AVPlayer.level)
 
-      AVPlayer.DemuxerThread = await createThreadFromClass(DemuxPipeline, {
-        name: 'DemuxerThread'
-      }).run()
-      AVPlayer.DemuxerThread.setLogLevel(AVPlayer.level)
+        AVPlayer.DemuxerThread = await createThreadFromClass(DemuxPipeline, {
+          name: 'DemuxerThread'
+        }).run()
+        AVPlayer.DemuxerThread.setLogLevel(AVPlayer.level)
+      }
+      else {
+        AVPlayer.IODemuxProxy = new IODemuxPipelineProxy()
+        await AVPlayer.IODemuxProxy.run()
+        AVPlayer.IODemuxProxy.setLogLevel(AVPlayer.level)
+        AVPlayer.IOThread = AVPlayer.IODemuxProxy.IOPipeline as Thread<IOPipeline>
+        AVPlayer.DemuxerThread = AVPlayer.IODemuxProxy.DemuxPipeline as Thread<DemuxPipeline>
+      }
       resolve()
     })
   }
 
-  static async startAudioPipeline() {
+  static async startAudioPipeline(enableWorker: boolean = true) {
     if (AVPlayer.AudioThreadReady) {
       return AVPlayer.AudioThreadReady
     }
@@ -3092,48 +3128,66 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             : require.resolve('avrender/pcm/AudioSourceWorkletProcessor')
         )
       }
-      AVPlayer.AudioDecoderThread = await createThreadFromClass(AudioDecodePipeline, {
-        name: 'AudioDecoderThread',
-        disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
-      }).run()
-      AVPlayer.AudioDecoderThread.setLogLevel(AVPlayer.level)
 
-      AVPlayer.AudioRenderThread = await createThreadFromClass(AudioRenderPipeline, {
-        name: 'AudioRenderThread',
-        disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
-      }).run()
-      AVPlayer.AudioRenderThread.setLogLevel(AVPlayer.level)
+      if (cheapConfig.USE_THREADS || !support.worker || !enableWorker) {
+        AVPlayer.AudioDecoderThread = await createThreadFromClass(AudioDecodePipeline, {
+          name: 'AudioDecoderThread',
+        }).run()
+        AVPlayer.AudioDecoderThread.setLogLevel(AVPlayer.level)
+
+        AVPlayer.AudioRenderThread = await createThreadFromClass(AudioRenderPipeline, {
+          name: 'AudioRenderThread',
+        }).run()
+        AVPlayer.AudioRenderThread.setLogLevel(AVPlayer.level)
+      }
+      else {
+        AVPlayer.AudioPipelineProxy = new AudioPipelineProxy()
+        await AVPlayer.AudioPipelineProxy.run()
+        AVPlayer.AudioPipelineProxy.setLogLevel(AVPlayer.level)
+        AVPlayer.AudioDecoderThread = AVPlayer.AudioPipelineProxy.AudioDecodePipeline as Thread<AudioDecodePipeline>
+        AVPlayer.AudioRenderThread = AVPlayer.AudioPipelineProxy.AudioRenderPipeline as Thread<AudioRenderPipeline>
+      }
       resolve()
     })
   }
 
-  static async startVideoRenderPipeline() {
+  static async startVideoRenderPipeline(enableWorker: boolean = true) {
     if (AVPlayer.VideoThreadReady) {
       return AVPlayer.VideoThreadReady
     }
 
     return AVPlayer.VideoThreadReady = new Promise(async (resolve) => {
-      AVPlayer.VideoRenderThread = await createThreadFromClass(VideoRenderPipeline, {
-        name: 'VideoRenderThread',
-        disableWorker: !supportOffscreenCanvas()
-      }).run()
-      AVPlayer.VideoRenderThread.setLogLevel(AVPlayer.level)
+      if (cheapConfig.USE_THREADS || !support.worker || !enableWorker || !supportOffscreenCanvas()) {
+        AVPlayer.VideoRenderThread = await createThreadFromClass(VideoRenderPipeline, {
+          name: 'VideoRenderThread',
+          disableWorker: !supportOffscreenCanvas()
+        }).run()
+        AVPlayer.VideoRenderThread.setLogLevel(AVPlayer.level)
+      }
       resolve()
     })
   }
 
-  static async startMSEPipeline() {
+  static async startMSEPipeline(enableWorker: boolean = true) {
     if (defined(ENABLE_MSE)) {
       if (AVPlayer.MSEThreadReady) {
         return AVPlayer.MSEThreadReady
       }
-
       return AVPlayer.MSEThreadReady = new Promise(async (resolve) => {
-        AVPlayer.MSEThread = await createThreadFromClass(MSEPipeline, {
-          name: 'MSEThread',
-          disableWorker: !support.workerMSE
-        }).run()
-        AVPlayer.MSEThread.setLogLevel(AVPlayer.level)
+        if (cheapConfig.USE_THREADS || !support.worker || !enableWorker) {
+          AVPlayer.MSEThread = await createThreadFromClass(MSEPipeline, {
+            name: 'MSEThread',
+            disableWorker: !support.workerMSE,
+            dispatchToWorker: support.worker && !enableWorker && !cheapConfig.USE_THREADS
+          }).run()
+          AVPlayer.MSEThread.setLogLevel(AVPlayer.level)
+        }
+        else {
+          AVPlayer.MSEPipelineProxy = new MSEPipelineProxy()
+          await AVPlayer.MSEPipelineProxy.run()
+          AVPlayer.MSEPipelineProxy.setLogLevel(AVPlayer.level)
+          AVPlayer.MSEThread = AVPlayer.MSEPipelineProxy.MSEPipeline as Thread<MSEPipeline>
+        }
         resolve()
       })
     }
@@ -3142,11 +3196,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   /**
    * 提前运行所有管线
    */
-  static async startPipelines() {
-    await AVPlayer.startDemuxPipeline()
-    await AVPlayer.startAudioPipeline()
-    await AVPlayer.startVideoRenderPipeline()
-    await AVPlayer.startMSEPipeline()
+  static async startPipelines(enableWorker: boolean = true) {
+    await AVPlayer.startDemuxPipeline(enableWorker)
+    await AVPlayer.startAudioPipeline(enableWorker)
+    await AVPlayer.startVideoRenderPipeline(enableWorker)
+    await AVPlayer.startMSEPipeline(enableWorker)
     logger.info('AVPlayer pipelines started')
   }
 
@@ -3158,6 +3212,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await AVPlayer.VideoRenderThread.clear()
       closeThread(AVPlayer.VideoRenderThread)
     }
+
+    if (AVPlayer.AudioPipelineProxy) {
+      await AVPlayer.AudioRenderThread.clear()
+      await AVPlayer.AudioDecoderThread.clear()
+      await AVPlayer.AudioPipelineProxy.destroy()
+      AVPlayer.AudioRenderThread = null
+      AVPlayer.AudioDecoderThread = null
+    }
     if (AVPlayer.AudioRenderThread) {
       await AVPlayer.AudioRenderThread.clear()
       closeThread(AVPlayer.AudioRenderThread)
@@ -3165,6 +3227,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (AVPlayer.AudioDecoderThread) {
       await AVPlayer.AudioDecoderThread.clear()
       closeThread(AVPlayer.AudioDecoderThread)
+    }
+
+    if (AVPlayer.IODemuxProxy) {
+      await AVPlayer.DemuxerThread.clear()
+      await AVPlayer.IOThread.clear()
+      await AVPlayer.IODemuxProxy.destroy()
+      AVPlayer.DemuxerThread = null
+      AVPlayer.IOThread = null
     }
     if (AVPlayer.DemuxerThread) {
       await AVPlayer.DemuxerThread.clear()
@@ -3174,14 +3244,22 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await AVPlayer.IOThread.clear()
       closeThread(AVPlayer.IOThread)
     }
+
     if (defined(ENABLE_MSE)) {
+      if (AVPlayer.MSEPipelineProxy) {
+        await AVPlayer.MSEThread.clear()
+        AVPlayer.MSEPipelineProxy.destroy()
+        AVPlayer.MSEThread = null
+      }
       if (AVPlayer.MSEThread) {
         await AVPlayer.MSEThread.clear()
         closeThread(AVPlayer.MSEThread)
       }
     }
 
+    AVPlayer.AudioPipelineProxy = null
     AVPlayer.AudioDecoderThread = null
+    AVPlayer.IODemuxProxy = null
     AVPlayer.DemuxerThread = null
     AVPlayer.IOThread = null
     AVPlayer.audioContext = null

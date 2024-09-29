@@ -249,6 +249,9 @@
       <div id="useThreads">
         <el-checkbox v-model="useThreads">enable threads</el-checkbox>
       </div>
+      <div id="enableWorker">
+        <el-checkbox v-model="enableWorker">enable Worker</el-checkbox>
+      </div>
       <div id="useMse">
         <el-checkbox v-model="useMse">enable MSE</el-checkbox>
       </div>
@@ -489,6 +492,7 @@
       let useThreadsComponent;
       let enableSimdComponent;
       let enableWebcodecComponent;
+      let enableWorkerComponent;
       let useMseComponent;
       let loopComponent;
       let enableWebGPUComponent;
@@ -532,6 +536,12 @@
       }
 
       function loadPlayer(id) {
+
+        if (!AVPlayer.audioContext) {
+          AVPlayer.audioContext = new AudioContext()
+          AVPlayer.audioContext.createBufferSource()
+        }
+
         if (!player) {
           player = new AVPlayer({
             container: document.querySelector(id),
@@ -612,6 +622,7 @@
             },
             enableHardware: enableWebcodecComponent.enableHardwareAcceleration,
             enableWebGPU: enableWebGPUComponent.enableWebGPU,
+            enableWorker: enableWorkerComponent.enableWorker,
             loop: loopComponent.loop,
             jitterBufferMax: 4,
             jitterBufferMin: 1,
@@ -1204,6 +1215,15 @@
         data: function () {
           return {
             enableHardwareAcceleration: true
+          }
+        }
+      })
+
+      enableWorkerComponent = new Vue({
+        el: '#enableWorker',
+        data: function () {
+          return {
+            enableWorker: true
           }
         }
       })

@@ -24,6 +24,12 @@
  */
 
 @struct
+export class JitterBuffer {
+  min: int32
+  max: int32
+}
+
+@struct
 export default class Stats {
   /**
    * 音频通道数
@@ -208,6 +214,11 @@ export default class Stats {
    * 抖动指标
    */
   jitter: double
+
+  /**
+   * jitter buffer
+   */
+  jitterBuffer: JitterBuffer
 
   /**
    * 音频卡顿次数

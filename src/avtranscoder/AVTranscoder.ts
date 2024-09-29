@@ -88,7 +88,7 @@ import { AVSampleFormat } from 'avutil/audiosamplefmt'
 import { AVPixelFormat } from 'avutil/pixfmt'
 import getTimestamp from 'common/function/getTimestamp'
 import Timer from 'common/timer/Timer'
-import createMessageChannel from 'avutil/function/createMessageChannel'
+import createMessageChannel from './function/createMessageChannel'
 import Controller, { ControllerObserver } from './Controller'
 import { AVFormatContextInterface } from 'avformat/AVFormatContext'
 import dump, { dumpCodecName, dumpTime } from 'avformat/dump'
@@ -349,20 +349,20 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           const stream =  task.streams.find((s) => s.input.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
           dts = task.stats.lastVideoMuxDts - task.stats.firstVideoMuxDts
           if (stream.output) {
-            duration = avRescaleQ(stream.output.duration, accessof(stream.output.timeBase), AV_MILLI_TIME_BASE_Q)
+            duration = avRescaleQ(stream.output.duration, stream.output.timeBase, AV_MILLI_TIME_BASE_Q)
           }
           else {
-            duration = avRescaleQ(stream.input.duration, accessof(stream.input.timeBase), AV_MILLI_TIME_BASE_Q)
+            duration = avRescaleQ(stream.input.duration, stream.input.timeBase, AV_MILLI_TIME_BASE_Q)
           }
         }
         if (task.stats.lastAudioMuxDts && !dts) {
           const stream =  task.streams.find((s) => s.input.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO)
           dts = task.stats.lastAudioMuxDts - task.stats.firstAudioMuxDts
           if (stream.output) {
-            duration = avRescaleQ(stream.output.duration, accessof(stream.output.timeBase), AV_MILLI_TIME_BASE_Q)
+            duration = avRescaleQ(stream.output.duration, stream.output.timeBase, AV_MILLI_TIME_BASE_Q)
           }
           else {
-            duration = avRescaleQ(stream.input.duration, accessof(stream.input.timeBase), AV_MILLI_TIME_BASE_Q)
+            duration = avRescaleQ(stream.input.duration, stream.input.timeBase, AV_MILLI_TIME_BASE_Q)
           }
         }
 
@@ -494,7 +494,10 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     const newStream = object.extend({}, stream)
     newStream.codecpar = avMallocz(sizeof(AVCodecParameters))
     copyCodecParameters(newStream.codecpar, stream.codecpar)
-    newStream.timeBase = avMallocz(sizeof(Rational))
+    newStream.timeBase = {
+      den: 1,
+      num: 1
+    }
 
     newStream.timeBase.den = stream.timeBase.den
     newStream.timeBase.num = stream.timeBase.num
@@ -506,7 +509,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     }
 
     if (task.options.duration) {
-      newStream.duration = avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, accessof(newStream.timeBase))
+      newStream.duration = avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, newStream.timeBase)
     }
 
     newStream.metadata['encoder'] = `libmedia.js-${defined(VERSION)}`
@@ -885,7 +888,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             formatContext.streams[i].duration = avRescaleQ(
               static_cast<int64>(duration),
               AV_MILLI_TIME_BASE_Q,
-              accessof(formatContext.streams[i].timeBase)
+              formatContext.streams[i].timeBase
             )
           }
         }
@@ -1077,11 +1080,11 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       }
 
       if (task.options.start || task.options.duration) {
-        const start = avRescaleQ(static_cast<int64>(task.options.start || 0), AV_MILLI_TIME_BASE_Q, accessof(stream.timeBase))
+        const start = avRescaleQ(static_cast<int64>(task.options.start || 0), AV_MILLI_TIME_BASE_Q, stream.timeBase)
         const rangeNode = createGraphDesVertex('range', {
           start: start,
           end: task.options.duration
-            ? (avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, accessof(stream.timeBase)) + start)
+            ? (avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, stream.timeBase) + start)
             : -1n
         })
         vertices.push(rangeNode)
@@ -1318,8 +1321,8 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           den: 65535,
           num: 1
         }
-        newStream.startTime = avRescaleQ(newStream.startTime, accessof(newStream.timeBase), newTimebase)
-        newStream.duration = avRescaleQ(newStream.duration, accessof(newStream.timeBase), newTimebase)
+        newStream.startTime = avRescaleQ(newStream.startTime, newStream.timeBase, newTimebase)
+        newStream.duration = avRescaleQ(newStream.duration, newStream.timeBase, newTimebase)
         newStream.timeBase.den = newTimebase.den
         newStream.timeBase.num = newTimebase.num
       }
@@ -1398,11 +1401,11 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       }
 
       if (task.options.start || task.options.duration) {
-        const start = avRescaleQ(static_cast<int64>(task.options.start || 0), AV_MILLI_TIME_BASE_Q, accessof(stream.timeBase))
+        const start = avRescaleQ(static_cast<int64>(task.options.start || 0), AV_MILLI_TIME_BASE_Q, stream.timeBase)
         const rangeNode = createGraphDesVertex('range', {
           start: start,
           end: task.options.duration
-            ? (avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, accessof(stream.timeBase)) + start)
+            ? (avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, stream.timeBase) + start)
             : -1n
         })
         vertices.push(rangeNode)
@@ -1578,7 +1581,6 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       }
       if (task.streams[i].output) {
         freeCodecParameters(task.streams[i].output.codecpar)
-        avFree(task.streams[i].output.timeBase)
       }
     }
 

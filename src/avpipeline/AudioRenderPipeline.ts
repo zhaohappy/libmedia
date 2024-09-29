@@ -47,7 +47,6 @@ import { Rational } from 'avutil/struct/rational'
 import getTimestamp from 'common/function/getTimestamp'
 import { Timeout } from 'common/types/type'
 import Sleep from 'common/timer/Sleep'
-import { JitterBuffer } from './struct/jitter'
 import * as bigint from 'common/util/bigint'
 import compileResource from 'avutil/function/compileResource'
 
@@ -62,7 +61,6 @@ export interface AudioRenderTaskOptions extends TaskOptions {
   avframeList: pointer<List<pointer<AVFrameRef>>>
   avframeListMutex: pointer<Mutex>
   enableJitterBuffer: boolean
-  jitterBuffer: pointer<JitterBuffer>
 }
 
 type SelfTask = AudioRenderTaskOptions & {
@@ -347,7 +345,7 @@ export default class AudioRenderPipeline extends Pipeline {
 
       if (task.enableJitterBuffer) {
         let buffer = task.stats.audioPacketQueueLength / task.stats.audioEncodeFramerate * 1000
-        if (buffer <= task.jitterBuffer.min) {
+        if (buffer <= task.stats.jitterBuffer.min) {
           me.setPlayRate(task.taskId, 1)
         }
       }
@@ -572,7 +570,7 @@ export default class AudioRenderPipeline extends Pipeline {
 
       if (task.enableJitterBuffer) {
         let buffer = task.stats.audioPacketQueueLength / task.stats.audioEncodeFramerate * 1000
-        if (buffer <= task.jitterBuffer.min) {
+        if (buffer <= task.stats.jitterBuffer.min) {
           rate = 1
         }
       }

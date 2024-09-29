@@ -35,7 +35,7 @@ import OMovFormat from 'avformat/formats/OMovFormat'
 import { FragmentMode, MovMode } from 'avformat/formats/mov/mov'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { Rational } from 'avutil/struct/rational'
-import { copyCodecParameters } from 'avutil/util/codecparameters'
+import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
 import LoopTask from 'common/timer/LoopTask'
 import Track from 'avrender/track/Track'
 import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
@@ -44,14 +44,14 @@ import List from 'cheap/std/collection/List'
 import { Mutex } from 'cheap/thread/mutex'
 import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { avQ2D, avQ2D2, avRescaleQ } from 'avutil/util/rational'
+import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import getTimestamp from 'common/function/getTimestamp'
 import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
 import SeekableWriteBuffer from 'common/io/SeekableWriteBuffer'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
 import { mapUint8Array, memcpy } from 'cheap/std/memory'
-import { avFree, avMalloc } from 'avutil/util/mem'
+import { avFree, avMalloc, avMallocz } from 'avutil/util/mem'
 import browser from 'common/util/browser'
 import { milliSecond2Second } from 'avutil/util/common'
 import Sleep from 'common/timer/Sleep'
@@ -59,10 +59,12 @@ import { IOError } from 'common/io/error'
 import * as bigint from 'common/util/bigint'
 import mktag from 'avformat/function/mktag'
 import getMediaSource from '../function/getMediaSource'
-import { JitterBuffer } from 'avpipeline/struct/jitter'
 import * as intread from 'avutil/util/intread'
 import * as h264 from 'avformat/codecs/h264'
 import * as hevc from 'avformat/codecs/hevc'
+import { AVCodecParametersSerialize, AVPacketSerialize, unserializeAVCodecParameters, unserializeAVPacket } from 'avutil/util/serialize'
+import isPointer from 'cheap/std/function/isPointer'
+import * as is from 'common/util/is'
 
 const BUFFER_MIN = 0.5
 const BUFFER_MAX = 1
@@ -72,7 +74,6 @@ export interface MSETaskOptions extends TaskOptions {
   avpacketList: pointer<List<pointer<AVPacketRef>>>
   avpacketListMutex: pointer<Mutex>
   enableJitterBuffer: boolean
-  jitterBuffer: pointer<JitterBuffer>
 }
 
 interface PullQueue {
@@ -369,6 +370,18 @@ export default class MSEPipeline extends Pipeline {
     codecpar.extradataSize = extradataSize
   }
 
+  private async pullAVPacket_(task: SelfTask, leftIPCPort: IPCPort) {
+    const data = await leftIPCPort.request<pointer<AVPacketRef> | AVPacketSerialize>('pull')
+    if (is.number(data)) {
+      return data
+    }
+    else {
+      const avpacket = task.avpacketPool.alloc()
+      unserializeAVPacket(data, avpacket)
+      return avpacket
+    }
+  }
+
   private async pullAVPacket(resource: MSEResource, task: SelfTask): Promise<pointer<AVPacketRef>> {
 
     const pullQueue = resource.pullQueue
@@ -379,7 +392,7 @@ export default class MSEPipeline extends Pipeline {
 
     const avpacket = pullQueue.queue.length
       ? pullQueue.queue.shift()
-      : (await resource.pullIPC.request<pointer<AVPacketRef>>('pull'))
+      : (await this.pullAVPacket_(task, resource.pullIPC))
 
     if (avpacket < 0) {
       pullQueue.ended = true
@@ -423,7 +436,7 @@ export default class MSEPipeline extends Pipeline {
           logger.warn(`got packet with pts ${avpacket.pts}, which is earlier then the last packet(${pullQueue.lastPTS}), try to fix it!`)
           avpacket.pts = pullQueue.lastPTS + (avpacket.dts - pullQueue.lastDTS)
 
-          const next = await resource.pullIPC.request<pointer<AVPacketRef>>('pull')
+          const next = await this.pullAVPacket_(task, resource.pullIPC)
           if (next < 0) {
             pullQueue.ended = true
           }
@@ -435,7 +448,7 @@ export default class MSEPipeline extends Pipeline {
             // I 帧后面的的 P 帧 一定是下一个最短递增序列的最大 pts
             const max = next.pts
             while (true) {
-              const next2 = await resource.pullIPC.request<pointer<AVPacketRef>>('pull')
+              const next2 = await this.pullAVPacket_(task, resource.pullIPC)
               if (next2 < 0) {
                 pullQueue.ended = true
                 break
@@ -591,7 +604,7 @@ export default class MSEPipeline extends Pipeline {
             : 0
           )
 
-        if (buffer <= task.jitterBuffer.min) {
+        if (buffer <= task.stats.jitterBuffer.min) {
           this.setPlayRate(task.taskId, 1)
         }
       }
@@ -775,13 +788,21 @@ export default class MSEPipeline extends Pipeline {
   public async addStream(
     taskId: string,
     streamIndex: int32,
-    codecpar: pointer<AVCodecParameters>,
-    timeBase: pointer<Rational>,
+    parameters: pointer<AVCodecParameters> | AVCodecParametersSerialize,
+    timeBase: Rational,
     startPTS: int64,
     pullIPCPort: MessagePort
   ) {
     const task = this.tasks.get(taskId)
     if (task) {
+      const codecpar: pointer<AVCodecParameters> = avMallocz(sizeof(AVCodecParameters))
+      if (isPointer(parameters)) {
+        copyCodecParameters(codecpar, parameters)
+      }
+      else {
+        unserializeAVCodecParameters(parameters, codecpar)
+      }
+
       const ioWriter = new IOWriter(1024 * 1024)
       const oformatContext = createAVOFormatContext()
       const oformat = new OMovFormat({
@@ -813,7 +834,7 @@ export default class MSEPipeline extends Pipeline {
       const useSampleRateTimeBase = codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
         && codecpar.frameSize
         && !task.isLive
-        && avQ2D2(timeBase) > avQ2D({ num: 1, den: codecpar.sampleRate })
+        && avQ2D(timeBase) > avQ2D({ num: 1, den: codecpar.sampleRate })
 
       // 点播 frameSize 有并且时间基精度小于采样率精度则使用 sampleRate 作为时间基
       // 避免一些 mp4 ts 转为 flv 因为时间基精度损失导致的 pts 抖动
@@ -899,12 +920,21 @@ export default class MSEPipeline extends Pipeline {
   public async reAddStream(
     taskId: string,
     streamIndex: int32,
-    codecpar: pointer<AVCodecParameters>,
-    timeBase: pointer<Rational>,
+    parameters: pointer<AVCodecParameters> | AVCodecParametersSerialize,
+    timeBase: Rational,
     startPTS: int64
   ) {
     const task = this.tasks.get(taskId)
     if (task) {
+
+      const codecpar: pointer<AVCodecParameters> = avMallocz(sizeof(AVCodecParameters))
+      if (isPointer(parameters)) {
+        copyCodecParameters(codecpar, parameters)
+      }
+      else {
+        unserializeAVCodecParameters(parameters, codecpar)
+      }
+
       const resource = codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO ? task.audio : task.video
       if (resource) {
 
@@ -928,6 +958,9 @@ export default class MSEPipeline extends Pipeline {
         })
         resource.oformatContext.oformat = oformat
 
+        if (resource.codecpar) {
+          freeCodecParameters(resource.codecpar)
+        }
         resource.codecpar = codecpar
         resource.streamIndex = streamIndex
         resource.startPTS = startPTS
@@ -942,7 +975,7 @@ export default class MSEPipeline extends Pipeline {
         const useSampleRateTimeBase = codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
           && codecpar.frameSize
           && !task.isLive
-          && avQ2D2(timeBase) > avQ2D({ num: 1, den: codecpar.sampleRate })
+          && avQ2D(timeBase) > avQ2D({ num: 1, den: codecpar.sampleRate })
 
         // 点播 frameSize 有并且时间基精度小于采样率精度则使用 sampleRate 作为时间基
         // 避免一些 mp4 ts 转为 flv 因为时间基精度损失导致的 pts 抖动
@@ -962,6 +995,9 @@ export default class MSEPipeline extends Pipeline {
           })
           mux.writeHeader(resource.oformatContext)
         }
+      }
+      else {
+        freeCodecParameters(codecpar)
       }
     }
     else {
@@ -1350,7 +1386,7 @@ export default class MSEPipeline extends Pipeline {
             ? (task.stats.videoPacketQueueLength / task.stats.videoEncodeFramerate * 1000)
             : 0
           )
-        if (buffer && buffer <= task.jitterBuffer.min) {
+        if (buffer && buffer <= task.stats.jitterBuffer.min) {
           rate = 1
         }
       }
@@ -1482,6 +1518,9 @@ export default class MSEPipeline extends Pipeline {
           })
           task.audio.pullQueue.queue.length = 0
         }
+        if (task.audio.codecpar) {
+          freeCodecParameters(task.audio.codecpar)
+        }
       }
       if (task.video) {
         if (task.video.loop) {
@@ -1496,6 +1535,9 @@ export default class MSEPipeline extends Pipeline {
             task.avpacketPool.release(avpacket)
           })
           task.video.pullQueue.queue.length = 0
+        }
+        if (task.video.codecpar) {
+          freeCodecParameters(task.video.codecpar)
         }
       }
       if (task.controlIPCPort) {

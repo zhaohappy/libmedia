@@ -25,7 +25,7 @@
 
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import IPCPort, { REQUEST, RpcMessage } from 'common/network/IPCPort'
-import createMessageChannel from 'avutil/function/createMessageChannel'
+import createMessageChannel from './function/createMessageChannel'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 
 export interface ControllerObserver {

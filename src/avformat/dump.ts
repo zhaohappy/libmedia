@@ -251,8 +251,8 @@ function dumpAVFormatContextInterface(formatContext: AVFormatContextInterface, i
   let start = -1n
 
   formatContext.streams.forEach((stream) => {
-    const d = avRescaleQ(stream.duration, accessof(stream.timeBase), AV_MILLI_TIME_BASE_Q)
-    const s = avRescaleQ(stream.startTime, accessof(stream.timeBase), AV_MILLI_TIME_BASE_Q)
+    const d = avRescaleQ(stream.duration, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+    const s = avRescaleQ(stream.startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q)
 
     if (d > duration) {
       duration = d
@@ -286,7 +286,7 @@ export default function dump(formatContexts: (AVFormatContextInterface | AVIForm
           duration: stream.duration,
           startTime: stream.startTime,
           disposition: stream.disposition,
-          timeBase: addressof(stream.timeBase)
+          timeBase: stream.timeBase
         })
       }
       formatContext = {

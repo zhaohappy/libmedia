@@ -54,6 +54,10 @@ import { memcpy } from 'cheap/std/memory'
 import analyzeAVFormat from 'avutil/function/analyzeAVFormat'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import compileResource from 'avutil/function/compileResource'
+import isWorker from 'common/function/isWorker'
+import * as cheapConfig from 'cheap/config'
+import { serializeAVPacket } from 'avutil/util/serialize'
+import isPointer from 'cheap/std/function/isPointer'
 
 export const STREAM_INDEX_ALL = -1
 
@@ -468,7 +472,10 @@ export default class DemuxPipeline extends Pipeline {
           duration: stream.duration,
           startTime: stream.startTime,
           disposition: stream.disposition,
-          timeBase: addressof(stream.timeBase)
+          timeBase: {
+            den: stream.timeBase.den,
+            num: stream.timeBase.num
+          }
         })
       }
       return {
@@ -481,6 +488,22 @@ export default class DemuxPipeline extends Pipeline {
     else {
       logger.fatal('task not found')
     }
+  }
+
+  private replyAVPacket(task: SelfTask, ipcPort: IPCPort, request: RpcMessage, avpacket: pointer<AVPacketRef>) {
+    if (isWorker() && !cheapConfig.USE_THREADS && isPointer(avpacket)) {
+      const data = serializeAVPacket(avpacket)
+      const transfer = [data.data.buffer]
+      if (data.sideData.length) {
+        data.sideData.forEach((side) => {
+          transfer.push(side.data.buffer)
+        })
+      }
+      ipcPort.reply(request, data, null, transfer)
+      task.avpacketPool.release(avpacket)
+      return
+    }
+    ipcPort.reply(request, avpacket)
   }
 
   public async connectStreamTask(taskId: string, streamIndex: number, port: MessagePort) {
@@ -505,7 +528,7 @@ export default class DemuxPipeline extends Pipeline {
                   task.stats.videoPacketQueueLength--
                 }
               }
-              ipcPort.reply(request, avpacket)
+              this.replyAVPacket(task, ipcPort, request, avpacket)
             }
             else {
               if (task.demuxEnded) {
@@ -701,7 +724,7 @@ export default class DemuxPipeline extends Pipeline {
           }
 
           if (task.cacheRequests.has(streamIndex)) {
-            task.rightIPCPorts.get(streamIndex).reply(task.cacheRequests.get(streamIndex), avpacket)
+            this.replyAVPacket(task, task.rightIPCPorts.get(streamIndex), task.cacheRequests.get(streamIndex), avpacket)
             task.cacheRequests.delete(streamIndex)
           }
           else {
@@ -724,7 +747,7 @@ export default class DemuxPipeline extends Pipeline {
             else {
               if (task.rightIPCPorts.has(STREAM_INDEX_ALL)) {
                 if (task.cacheRequests.has(STREAM_INDEX_ALL)) {
-                  task.rightIPCPorts.get(STREAM_INDEX_ALL).reply(task.cacheRequests.get(STREAM_INDEX_ALL), avpacket)
+                  this.replyAVPacket(task, task.rightIPCPorts.get(STREAM_INDEX_ALL), task.cacheRequests.get(STREAM_INDEX_ALL), avpacket)
                   task.cacheRequests.delete(STREAM_INDEX_ALL)
                 }
                 else {

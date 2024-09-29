@@ -26,6 +26,10 @@
 import Stats from 'avpipeline/struct/stats'
 import Timer from 'common/timer/Timer'
 
+export interface StatsControllerObserver {
+  onVideoStutter: () => void
+}
+
 export default class StatsController {
 
   private stats: pointer<Stats>
@@ -43,8 +47,13 @@ export default class StatsController {
 
   private bufferReceiveBytes: int64
 
-  constructor(stats: pointer<Stats>) {
+  private observer: StatsControllerObserver
+  private isWorkerMain: boolean
+
+  constructor(stats: pointer<Stats>, isWorkerMain: boolean, observer: StatsControllerObserver) {
     this.stats = stats
+    this.observer = observer
+    this.isWorkerMain = isWorkerMain
     this.timer = new Timer(this.onTimer.bind(this), 1000, 1000)
   }
 
@@ -69,10 +78,12 @@ export default class StatsController {
   }
 
   private onTimer() {
-    this.stats.audioFrameDecodeIntervalMax = 0
-    this.stats.audioFrameRenderIntervalMax = 0
-    this.stats.videoFrameDecodeIntervalMax = 0
-    this.stats.videoFrameRenderIntervalMax = 0
+    if (!this.isWorkerMain) {
+      this.stats.audioFrameDecodeIntervalMax = 0
+      this.stats.audioFrameRenderIntervalMax = 0
+      this.stats.videoFrameDecodeIntervalMax = 0
+      this.stats.videoFrameRenderIntervalMax = 0
+    }
 
     this.stats.videoRenderFramerate = static_cast<int32>(this.stats.videoFrameRenderCount - this.videoFrameRenderCount)
     this.stats.videoDecodeFramerate = static_cast<int32>(this.stats.videoFrameDecodeCount - this.videoFrameDecodeCount)
@@ -88,7 +99,7 @@ export default class StatsController {
         || this.stats.videoFrameRenderIntervalMax > 6 * 1000 / this.stats.videoEncodeFramerate
       )
     ) {
-      this.stats.videoStutter++
+      this.observer.onVideoStutter()
     }
 
     this.reset()

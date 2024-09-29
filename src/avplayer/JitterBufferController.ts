@@ -23,8 +23,7 @@
  *
  */
 
-import { JitterBuffer } from 'avpipeline/struct/jitter'
-import Stats from 'avpipeline/struct/stats'
+import Stats, { JitterBuffer } from 'avpipeline/struct/stats'
 import Timer from 'common/timer/Timer'
 import WorkerTimer from 'common/timer/WorkerTimer'
 
@@ -38,12 +37,12 @@ export interface ControllerObserver {
 }
 
 export interface JitterBufferControllerOptions {
-  stats: pointer<Stats>,
-  jitterBuffer: pointer<JitterBuffer>,
-  lowLatencyStart: boolean,
-  useMse: boolean,
-  max: float,
-  min: float,
+  stats: pointer<Stats>
+  jitterBuffer: pointer<JitterBuffer>
+  lowLatencyStart: boolean
+  useMse: boolean
+  max: float
+  min: float
   observer: ControllerObserver
 }
 

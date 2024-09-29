@@ -175,6 +175,10 @@
         pauseStateUrl: '../../src/ui/avplayer/img/state.svg',
         errorStateUrl: '../../src/ui/avplayer/img/error.svg',
         fullscreenDom: document.body,
+        ui: {
+          hasFolder: true,
+          hasHeader: true
+        }
       })
 
       if (typeof VideoDecoder === 'function' && (AVPlayer.Util.os.windows || AVPlayer.Util.os.mac || AVPlayer.Util.os.linux)) {

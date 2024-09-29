@@ -51,6 +51,9 @@ import support from 'common/util/support'
 import isPointer from 'cheap/std/function/isPointer'
 import { Data } from 'common/types/type'
 import compileResource from 'avutil/function/compileResource'
+import { AVCodecParametersSerialize, AVPacketSerialize, unserializeAVCodecParameters, unserializeAVPacket } from 'avutil/util/serialize'
+import { avMallocz } from 'avutil/util/mem'
+import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
 
 export interface VideoDecodeTaskOptions extends TaskOptions {
   resource: ArrayBuffer | WebAssemblyResource
@@ -178,6 +181,18 @@ export default class VideoDecodePipeline extends Pipeline {
     })
   }
 
+  private async pullAVPacket(task: SelfTask, leftIPCPort: IPCPort) {
+    const data = await leftIPCPort.request<pointer<AVPacketRef> | AVPacketSerialize>('pull')
+    if (is.number(data)) {
+      return data
+    }
+    else {
+      const avpacket = task.avpacketPool.alloc()
+      unserializeAVPacket(data, avpacket)
+      return avpacket
+    }
+  }
+
   private async createTask(options: VideoDecodeTaskOptions): Promise<number> {
 
     assert(options.leftPort)
@@ -249,7 +264,7 @@ export default class VideoDecodePipeline extends Pipeline {
                 task.decoderReady = null
               }
 
-              const avpacket = await leftIPCPort.request<pointer<AVPacketRef>>('pull')
+              const avpacket = await this.pullAVPacket(task, leftIPCPort)
 
               if (avpacket === IOError.END) {
                 if (task.targetDecoder === task.hardwareDecoder) {
@@ -477,12 +492,23 @@ export default class VideoDecodePipeline extends Pipeline {
 
   public async reopenDecoder(
     taskId: string,
-    parameters: pointer<AVCodecParameters>,
+    parameters: AVCodecParametersSerialize | pointer<AVCodecParameters>,
     resource?: string | ArrayBuffer | WebAssemblyResource,
     wasmDecoderOptions?: Data
   ) {
     const task = this.tasks.get(taskId)
     if (task) {
+      const codecpar: pointer<AVCodecParameters> = avMallocz(sizeof(AVCodecParameters))
+      if (isPointer(parameters)) {
+        copyCodecParameters(codecpar, parameters)
+      }
+      else {
+        unserializeAVCodecParameters(parameters, codecpar)
+      }
+      if (task.parameters) {
+        freeCodecParameters(task.parameters)
+      }
+      task.parameters = codecpar
 
       if (wasmDecoderOptions) {
         task.wasmDecoderOptions = wasmDecoderOptions
@@ -494,7 +520,7 @@ export default class VideoDecodePipeline extends Pipeline {
 
       let softwareDecoder: WasmVideoDecoder | WebVideoDecoder
 
-      if (task.preferWebCodecs && support.videoDecoder && WebVideoDecoder.isSupported(parameters, false)) {
+      if (task.preferWebCodecs && support.videoDecoder && WebVideoDecoder.isSupported(codecpar, false)) {
         softwareDecoder = this.createWebcodecDecoder(task, false)
       }
       else {
@@ -521,7 +547,7 @@ export default class VideoDecodePipeline extends Pipeline {
 
         if (task.hardwareDecoder) {
           try {
-            await task.hardwareDecoder.open(parameters)
+            await task.hardwareDecoder.open(codecpar)
 
             logger.debug(`reopen video hardware decoder, taskId: ${task.taskId}`)
           }
@@ -533,7 +559,6 @@ export default class VideoDecodePipeline extends Pipeline {
           }
         }
 
-        task.parameters = parameters
         if (resource) {
           task.resource = resource as WebAssemblyResource
         }
@@ -558,13 +583,26 @@ export default class VideoDecodePipeline extends Pipeline {
     logger.fatal('task not found')
   }
 
-  public async open(taskId: string, parameters: pointer<AVCodecParameters>,  wasmDecoderOptions: Data = {}) {
+  public async open(taskId: string, parameters: AVCodecParametersSerialize | pointer<AVCodecParameters>,  wasmDecoderOptions: Data = {}) {
     const task = this.tasks.get(taskId)
     if (task) {
       task.wasmDecoderOptions = wasmDecoderOptions
+
+      const codecpar: pointer<AVCodecParameters> = avMallocz(sizeof(AVCodecParameters))
+      if (isPointer(parameters)) {
+        copyCodecParameters(codecpar, parameters)
+      }
+      else {
+        unserializeAVCodecParameters(parameters, codecpar)
+      }
+      if (task.parameters) {
+        freeCodecParameters(task.parameters)
+      }
+      task.parameters = codecpar
+
       if (task.preferWebCodecs
         && support.videoDecoder
-        && WebVideoDecoder.isSupported(parameters, false)
+        && WebVideoDecoder.isSupported(codecpar, false)
         && task.softwareDecoder instanceof WasmVideoDecoder
       ) {
         task.softwareDecoder.close()
@@ -579,7 +617,7 @@ export default class VideoDecodePipeline extends Pipeline {
         task.openReject = resolve
         if (task.hardwareDecoder) {
           try {
-            await task.hardwareDecoder.open(parameters)
+            await task.hardwareDecoder.open(codecpar)
           }
           catch (error) {
             logger.error(`cannot open hardware decoder, ${error}`)
@@ -588,8 +626,6 @@ export default class VideoDecodePipeline extends Pipeline {
             task.targetDecoder = task.softwareDecoder
           }
         }
-
-        task.parameters = parameters
 
         if (task.targetDecoder === task.softwareDecoder) {
           try {
@@ -707,6 +743,9 @@ export default class VideoDecodePipeline extends Pipeline {
           frame.close()
         }
       })
+      if (task.parameters) {
+        freeCodecParameters(task.parameters)
+      }
       this.tasks.delete(taskId)
     }
   }

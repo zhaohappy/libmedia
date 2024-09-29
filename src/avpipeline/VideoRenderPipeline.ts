@@ -57,7 +57,6 @@ import WebGPUYUV8Render from 'avrender/image/WebGPUYUV8Render'
 import WebGPURGB8Render from 'avrender/image/WebGPURGB8Render'
 import WebGPUYUV16Render from 'avrender/image/WebGPUYUV16Render'
 import isWorker from 'common/function/isWorker'
-import { JitterBuffer } from './struct/jitter'
 import nextTick from 'common/function/nextTick'
 import isPointer from 'cheap/std/function/isPointer'
 
@@ -109,7 +108,6 @@ export interface VideoRenderTaskOptions extends TaskOptions {
   avframeList: pointer<List<pointer<AVFrameRef>>>
   avframeListMutex: pointer<Mutex>
   enableJitterBuffer: boolean
-  jitterBuffer: pointer<JitterBuffer>
 }
 
 type SelfTask = VideoRenderTaskOptions & {
@@ -581,7 +579,7 @@ export default class VideoRenderPipeline extends Pipeline {
 
         if (task.enableJitterBuffer) {
           let buffer = task.stats.videoPacketQueueLength / task.stats.videoEncodeFramerate * 1000
-          if (buffer <= task.jitterBuffer.min) {
+          if (buffer <= task.stats.jitterBuffer.min) {
             me.setPlayRate(task.taskId, 1)
           }
         }
@@ -762,7 +760,7 @@ export default class VideoRenderPipeline extends Pipeline {
     if (task) {
       if (task.enableJitterBuffer) {
         let buffer = task.stats.videoPacketQueueLength / task.stats.videoEncodeFramerate * 1000
-        if (buffer <= task.jitterBuffer.min) {
+        if (buffer <= task.stats.jitterBuffer.min) {
           rate = 1
         }
       }
@@ -848,6 +846,8 @@ export default class VideoRenderPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       task.skipRender = skip
+      task.stats.videoFrameRenderIntervalMax = 0
+      task.lastRenderTimestamp = getTimestamp()
     }
   }
 

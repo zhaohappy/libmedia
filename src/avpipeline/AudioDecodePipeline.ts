@@ -48,6 +48,11 @@ import { AV_TIME_BASE_Q } from 'avutil/constant'
 import * as errorType from 'avutil/error'
 import { Data } from 'common/types/type'
 import compileResource from 'avutil/function/compileResource'
+import isPointer from 'cheap/std/function/isPointer'
+import { AVCodecParametersSerialize, AVPacketSerialize, unserializeAVCodecParameters, unserializeAVPacket } from 'avutil/util/serialize'
+import { avMallocz } from 'avutil/util/mem'
+import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
+import * as is from 'common/util/is'
 
 export interface AudioDecodeTaskOptions extends TaskOptions {
   resource: ArrayBuffer | WebAssemblyResource
@@ -137,6 +142,18 @@ export default class AudioDecodePipeline extends Pipeline {
     })
   }
 
+  private async pullAVPacket(task: SelfTask, leftIPCPort: IPCPort) {
+    const data = await leftIPCPort.request<pointer<AVPacketRef> | AVPacketSerialize>('pull')
+    if (is.number(data)) {
+      return data
+    }
+    else {
+      const avpacket = task.avpacketPool.alloc()
+      unserializeAVPacket(data, avpacket)
+      return avpacket
+    }
+  }
+
   private async createTask(options: AudioDecodeTaskOptions): Promise<number> {
 
     assert(options.leftPort)
@@ -187,7 +204,7 @@ export default class AudioDecodePipeline extends Pipeline {
                 break
               }
 
-              const avpacket = await leftIPCPort.request<pointer<AVPacketRef>>('pull')
+              const avpacket = await this.pullAVPacket(task, leftIPCPort)
 
               if (avpacket === IOError.END) {
                 await task.decoder.flush()
@@ -232,15 +249,25 @@ export default class AudioDecodePipeline extends Pipeline {
     return 0
   }
 
-  public async open(taskId: string, parameters: pointer<AVCodecParameters>, wasmDecoderOptions: Data = {}) {
+  public async open(taskId: string, parameters: AVCodecParametersSerialize | pointer<AVCodecParameters>, wasmDecoderOptions: Data = {}) {
     const task = this.tasks.get(taskId)
     if (task) {
       task.wasmDecoderOptions = wasmDecoderOptions
+      const codecpar: pointer<AVCodecParameters> = avMallocz(sizeof(AVCodecParameters))
+      if (isPointer(parameters)) {
+        copyCodecParameters(codecpar, parameters)
+      }
+      else {
+        unserializeAVCodecParameters(parameters, codecpar)
+      }
+      if (task.parameters) {
+        freeCodecParameters(task.parameters)
+      }
+      task.parameters = codecpar
       return new Promise<number>(async (resolve, reject) => {
         task.openReject = resolve
         try {
-          await task.decoder.open(parameters, task.wasmDecoderOptions)
-          task.parameters = parameters
+          await task.decoder.open(codecpar, task.wasmDecoderOptions)
         }
         catch (error) {
           logger.error(`open audio decoder failed, error: ${error}`)
@@ -255,7 +282,7 @@ export default class AudioDecodePipeline extends Pipeline {
 
   public async reopenDecoder(
     taskId: string,
-    parameters: pointer<AVCodecParameters>,
+    parameters: AVCodecParametersSerialize | pointer<AVCodecParameters>,
     resource?: string | ArrayBuffer | WebAssemblyResource,
     wasmDecoderOptions?: Data
   ) {
@@ -264,6 +291,17 @@ export default class AudioDecodePipeline extends Pipeline {
       if (wasmDecoderOptions) {
         task.wasmDecoderOptions = wasmDecoderOptions
       }
+      const codecpar: pointer<AVCodecParameters> = avMallocz(sizeof(AVCodecParameters))
+      if (isPointer(parameters)) {
+        copyCodecParameters(codecpar, parameters)
+      }
+      else {
+        unserializeAVCodecParameters(parameters, codecpar)
+      }
+      if (task.parameters) {
+        freeCodecParameters(task.parameters)
+      }
+      task.parameters = codecpar
       let decoder: WasmAudioDecoder | WebAudioDecoder
       if (resource) {
         resource = await compileResource(resource)
@@ -275,8 +313,7 @@ export default class AudioDecodePipeline extends Pipeline {
       return new Promise<number>(async (resolve, reject) => {
         task.openReject = resolve
         try {
-          await decoder.open(parameters)
-          task.parameters = parameters
+          await decoder.open(codecpar)
           if (resource) {
             task.resource = resource as WebAssemblyResource
           }
@@ -329,6 +366,9 @@ export default class AudioDecodePipeline extends Pipeline {
       task.frameCaches.forEach((frame) => {
         task.avframePool.release(frame)
       })
+      if (task.parameters) {
+        freeCodecParameters(task.parameters)
+      }
       this.tasks.delete(taskId)
     }
   }
