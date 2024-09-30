@@ -786,7 +786,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     const taskId = generateUUID()
 
-    const ioloader2DemuxerChannel = createMessageChannel()
+    const ioloader2DemuxerChannel = createMessageChannel(this.options.enableWorker)
 
     const externalSubtitleTask: ExternalSubtitleTask = object.extend({
       taskId,
@@ -917,8 +917,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.status = AVPlayerStatus.LOADING
     this.fire(eventType.LOADING)
 
-    this.controller = new Controller(this)
-    this.ioloader2DemuxerChannel = createMessageChannel()
+    this.controller = new Controller(this, this.options.enableWorker)
+    this.ioloader2DemuxerChannel = createMessageChannel(this.options.enableWorker)
 
     memset(addressof(this.GlobalData.stats), 0, sizeof(Stats))
     this.externalSubtitleTasks.length = 0
@@ -1381,7 +1381,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         hasVideo = true
         this.selectedVideoStream = videoStream
         this.videoEnded = false
-        this.demuxer2VideoDecoderChannel = createMessageChannel()
+        this.demuxer2VideoDecoderChannel = createMessageChannel(this.options.enableWorker)
         await AVPlayer.DemuxerThread.connectStreamTask
           .transfer(this.demuxer2VideoDecoderChannel.port1)
           .invoke(this.subTaskId || this.taskId, videoStream.index, this.demuxer2VideoDecoderChannel.port1)
@@ -1399,7 +1399,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_AUDIO_DECODER, audioStream])
         this.selectedAudioStream = audioStream
         this.audioEnded = false
-        this.demuxer2AudioDecoderChannel = createMessageChannel()
+        this.demuxer2AudioDecoderChannel = createMessageChannel(this.options.enableWorker)
         await AVPlayer.DemuxerThread.connectStreamTask
           .transfer(this.demuxer2AudioDecoderChannel.port1)
           .invoke(this.taskId, audioStream.index, this.demuxer2AudioDecoderChannel.port1)
@@ -1450,8 +1450,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         videoStartTime = avRescaleQ(videoStream.startTime, videoStream.timeBase, AV_MILLI_TIME_BASE_Q)
 
-        this.demuxer2VideoDecoderChannel = createMessageChannel()
-        this.videoDecoder2VideoRenderChannel = createMessageChannel()
+        this.demuxer2VideoDecoderChannel = createMessageChannel(this.options.enableWorker)
+        this.videoDecoder2VideoRenderChannel = createMessageChannel(this.options.enableWorker)
 
         let resource = await this.getResource('decoder', videoStream.codecpar.codecId, videoStream.codecpar.codecType)
         if (!resource) {
@@ -1510,8 +1510,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         audioStartTime = avRescaleQ(audioStream.startTime, audioStream.timeBase, AV_MILLI_TIME_BASE_Q)
 
-        this.demuxer2AudioDecoderChannel = createMessageChannel()
-        this.audioDecoder2AudioRenderChannel = createMessageChannel()
+        this.demuxer2AudioDecoderChannel = createMessageChannel(this.options.enableWorker)
+        this.audioDecoder2AudioRenderChannel = createMessageChannel(this.options.enableWorker)
 
         let resource = await this.getResource('decoder', audioStream.codecpar.codecId, audioStream.codecpar.codecType)
 

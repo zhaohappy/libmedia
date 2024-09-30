@@ -27,8 +27,8 @@ import * as cheapConfig from 'cheap/config'
 import FakeMessageChannel from 'common/network/FakeMessageChannel'
 import support from 'common/util/support'
 
-export default function createMessageChannel() {
-  if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS) || support.worker) {
+export default function createMessageChannel(enableWorker: boolean) {
+  if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS) || support.worker && enableWorker) {
     return new MessageChannel()
   }
   return new FakeMessageChannel() as any as MessageChannel

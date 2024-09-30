@@ -58,12 +58,12 @@ export default class Controller {
   private timeUpdateListenType: AVMediaType
   private enableAudioVideoSync: boolean
 
-  constructor(observer: ControllerObserver) {
+  constructor(observer: ControllerObserver, enableWorker: boolean) {
     this.observer = observer
-    this.videoRenderControlChannel = createMessageChannel()
-    this.audioRenderControlChannel = createMessageChannel()
-    this.muxerControlChannel = createMessageChannel()
-    this.demuxerControlChannel = createMessageChannel()
+    this.videoRenderControlChannel = createMessageChannel(enableWorker)
+    this.audioRenderControlChannel = createMessageChannel(enableWorker)
+    this.muxerControlChannel = createMessageChannel(enableWorker)
+    this.demuxerControlChannel = createMessageChannel(enableWorker)
 
     this.videoRenderControlIPCPort = new IPCPort(this.videoRenderControlChannel.port2)
     this.audioRenderControlIPCPort = new IPCPort(this.audioRenderControlChannel.port2)
