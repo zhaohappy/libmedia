@@ -7,6 +7,8 @@ import * as eventType from 'avplayer/eventType'
 import * as is from 'common/util/is'
 import * as array from 'common/util/array'
 import * as url from 'common/util/url'
+import os from 'common/util/os'
+import browser from 'common/util/browser'
 
 import Progress from './components/progress/Progress'
 import Play from './components/control/play/Play'
@@ -224,6 +226,9 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     },
 
     playClick(container: boolean) {
+      if (os.ios || os.android || os.harmony && os.mobile) {
+        return
+      }
       if (this.$refs['play'] && ((!this.get('showMenu') && this.get('showBar')) || !container)) {
         this.$refs['play'].playClick()
       }
