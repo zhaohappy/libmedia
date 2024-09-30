@@ -1357,6 +1357,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (defined(ENABLE_MSE) && this.useMSE) {
       await AVPlayer.startMSEPipeline(this.options.enableWorker)
 
+      AVPlayer.MSEThread.setPlayRate(this.taskId, this.playRate)
+
       const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
       const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
 
@@ -1491,6 +1493,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         await AVPlayer.DemuxerThread.connectStreamTask
           .transfer(this.demuxer2VideoDecoderChannel.port1)
           .invoke(this.subTaskId || this.taskId, videoStream.index, this.demuxer2VideoDecoderChannel.port1)
+
+        this.VideoDecoderThread.setPlayRate(this.taskId, this.playRate)
       }
       if (audioStream && options.audio) {
         this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_AUDIO_DECODER, audioStream])
@@ -1598,9 +1602,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           })
 
         this.videoEnded = false
-        await this.VideoRenderThread.setPlayRate(this.taskId, this.playRate)
+        this.VideoRenderThread.setPlayRate(this.taskId, this.playRate)
         promises.push(this.VideoRenderThread.play(this.taskId))
-
       }
       if (this.audioDecoder2AudioRenderChannel) {
 
@@ -1674,7 +1677,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           {
             numberOfInputs: 1,
             numberOfOutputs: 1,
-            outputChannelCount: [playChannels]
+            outputChannelCount: [playChannels],
+            isMainWorker: !!AVPlayer.AudioPipelineProxy
           }
         )
 
@@ -1688,7 +1692,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           })
         }
 
-        await AVPlayer.AudioRenderThread.setPlayTempo(this.taskId, this.playRate)
+        AVPlayer.AudioRenderThread.setPlayTempo(this.taskId, this.playRate)
 
         this.gainNode = AVPlayer.audioContext.createGain()
         this.gainNode.connect(AVPlayer.audioContext.destination)
@@ -2212,7 +2216,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (!this.options.isLive) {
       this.playRate = restrain(rate, 0.5, 2)
       if (defined(ENABLE_MSE) && this.useMSE) {
-        AVPlayer.MSEThread.setPlayRate(this.taskId, this.playRate)
+        AVPlayer.MSEThread?.setPlayRate(this.taskId, this.playRate)
         if (this.video) {
           this.video.playbackRate = this.playRate
         }
@@ -3177,8 +3181,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         if (cheapConfig.USE_THREADS || !support.worker || !enableWorker) {
           AVPlayer.MSEThread = await createThreadFromClass(MSEPipeline, {
             name: 'MSEThread',
-            disableWorker: !support.workerMSE,
-            dispatchToWorker: support.worker && !enableWorker && !cheapConfig.USE_THREADS
+            disableWorker: !support.workerMSE
           }).run()
           AVPlayer.MSEThread.setLogLevel(AVPlayer.level)
         }

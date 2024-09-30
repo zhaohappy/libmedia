@@ -32,14 +32,20 @@ import { Data } from 'common/types/type'
 import * as logger from 'common/util/logger'
 import * as cheapConfig from 'cheap/config'
 import os from 'common/util/os'
+import * as is from 'common/util/is'
+import { memcpyFromUint8Array } from 'cheap/std/memory'
 
 const BUFFER_LENGTH = (os.windows || os.mac || os.linux) ? 20 : 30
+
+export interface AudioSourceBufferNodeOptions extends AudioWorkletNodeOptions {
+  isMainWorker?: boolean
+}
 
 export default class AudioSourceBufferNode {
 
   private context: AudioContext
   private observer: AudioWorkletNodeObserver
-  private options: AudioWorkletNodeOptions
+  private options: AudioSourceBufferNodeOptions
 
   private pullIPC: IPCPort
 
@@ -60,7 +66,7 @@ export default class AudioSourceBufferNode {
 
   private firstRendered: boolean
 
-  constructor(context: AudioContext, observer: AudioWorkletNodeObserver, options: AudioWorkletNodeOptions = {}) {
+  constructor(context: AudioContext, observer: AudioWorkletNodeObserver, options: AudioSourceBufferNodeOptions = {}) {
     this.context = context
     this.observer = observer
     this.options = options
@@ -86,13 +92,9 @@ export default class AudioSourceBufferNode {
         this.pause = false
         this.firstRendered = false
 
-        await this.pullIPC.request('pull', {
-          buffer: this.buffer
-        })
+        await this.pullInterval()
         this.buffering()
-        await this.pullIPC.request('pull', {
-          buffer: this.buffer
-        })
+        await this.pullInterval()
 
         this.buffered = true
 
@@ -180,11 +182,31 @@ export default class AudioSourceBufferNode {
     avFree(buffer)
   }
 
+  private async pullInterval() {
+    let ret = 0
+    if (this.options.isMainWorker) {
+      const buffer: ArrayBuffer | number = await this.pullIPC.request('pullBuffer', {
+        nbSamples: BUFFER_LENGTH * 128
+      })
+      if (is.arrayBuffer(buffer)) {
+        ret = 0
+        memcpyFromUint8Array(this.buffer.data[0], buffer.byteLength, new Uint8Array(buffer))
+      }
+      else {
+        ret = buffer
+      }
+    }
+    else {
+      ret = await this.pullIPC.request<number>('pull', {
+        buffer: this.buffer
+      })
+    }
+    return ret
+  }
+
   private async pull() {
     this.buffered = false
-    const ret = await this.pullIPC.request<number>('pull', {
-      buffer: this.buffer
-    })
+    const ret = await this.pullInterval()
     if (ret < 0) {
       this.ended = true
     }

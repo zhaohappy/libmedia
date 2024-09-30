@@ -181,7 +181,7 @@ export default class VideoDecodePipeline extends Pipeline {
     })
   }
 
-  private async pullAVPacket(task: SelfTask, leftIPCPort: IPCPort) {
+  private async pullAVPacketInternal(task: SelfTask, leftIPCPort: IPCPort) {
     const data = await leftIPCPort.request<pointer<AVPacketRef> | AVPacketSerialize>('pull')
     if (is.number(data)) {
       return data
@@ -264,7 +264,7 @@ export default class VideoDecodePipeline extends Pipeline {
                 task.decoderReady = null
               }
 
-              const avpacket = await this.pullAVPacket(task, leftIPCPort)
+              const avpacket = await this.pullAVPacketInternal(task, leftIPCPort)
 
               if (avpacket === IOError.END) {
                 if (task.targetDecoder === task.hardwareDecoder) {

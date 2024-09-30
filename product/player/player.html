@@ -171,6 +171,7 @@
         jitterBufferMax: 4,
         jitterBufferMin: 1,
         lowLatency: true,
+        enableWorker: true,
         indicatorUrl: '../../src/ui/avplayer/img/indicator.svg',
         pauseStateUrl: '../../src/ui/avplayer/img/state.svg',
         errorStateUrl: '../../src/ui/avplayer/img/error.svg',
@@ -296,6 +297,15 @@
           }
           else if (window.orientation === 90 || window.orientation === -90) {
             document.querySelector('.button-fullscreen-mask').style.display = 'none'
+          }
+        })
+
+        document.addEventListener('fullscreenchange', () => {
+          if (document.fullscreenElement) {
+            document.querySelector('.button-fullscreen-mask').style.display = 'none'
+          }
+          else {
+            document.querySelector('.button-fullscreen-mask').style.display = 'block'
           }
         })
 

@@ -370,7 +370,7 @@ export default class MSEPipeline extends Pipeline {
     codecpar.extradataSize = extradataSize
   }
 
-  private async pullAVPacket_(task: SelfTask, leftIPCPort: IPCPort) {
+  private async pullAVPacketInternal(task: SelfTask, leftIPCPort: IPCPort) {
     const data = await leftIPCPort.request<pointer<AVPacketRef> | AVPacketSerialize>('pull')
     if (is.number(data)) {
       return data
@@ -392,7 +392,7 @@ export default class MSEPipeline extends Pipeline {
 
     const avpacket = pullQueue.queue.length
       ? pullQueue.queue.shift()
-      : (await this.pullAVPacket_(task, resource.pullIPC))
+      : (await this.pullAVPacketInternal(task, resource.pullIPC))
 
     if (avpacket < 0) {
       pullQueue.ended = true
@@ -436,7 +436,7 @@ export default class MSEPipeline extends Pipeline {
           logger.warn(`got packet with pts ${avpacket.pts}, which is earlier then the last packet(${pullQueue.lastPTS}), try to fix it!`)
           avpacket.pts = pullQueue.lastPTS + (avpacket.dts - pullQueue.lastDTS)
 
-          const next = await this.pullAVPacket_(task, resource.pullIPC)
+          const next = await this.pullAVPacketInternal(task, resource.pullIPC)
           if (next < 0) {
             pullQueue.ended = true
           }
@@ -448,7 +448,7 @@ export default class MSEPipeline extends Pipeline {
             // I 帧后面的的 P 帧 一定是下一个最短递增序列的最大 pts
             const max = next.pts
             while (true) {
-              const next2 = await this.pullAVPacket_(task, resource.pullIPC)
+              const next2 = await this.pullAVPacketInternal(task, resource.pullIPC)
               if (next2 < 0) {
                 pullQueue.ended = true
                 break
@@ -1401,9 +1401,6 @@ export default class MSEPipeline extends Pipeline {
           task.video.loop.resetInterval()
         }
       }
-    }
-    else {
-      logger.fatal('task not found')
     }
   }
 
