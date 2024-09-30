@@ -27,7 +27,7 @@
 import IOPipeline from 'avpipeline/IOPipeline'
 import DemuxPipeline from 'avpipeline/DemuxPipeline'
 import * as is from 'common/util/is'
-import { AVPlayerGlobalData } from 'avplayer/struct'
+import { AVPlayerGlobalData } from '../struct'
 import * as logger from 'common/util/logger'
 import { AVStreamInterface } from 'avformat/AVStream'
 import { serializeAVCodecParameters } from 'avutil/util/serialize'

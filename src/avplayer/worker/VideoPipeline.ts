@@ -25,7 +25,7 @@
  */
 
 import * as is from 'common/util/is'
-import { AVPlayerGlobalData } from 'avplayer/struct'
+import { AVPlayerGlobalData } from '../struct'
 import * as logger from 'common/util/logger'
 import VideoDecodePipeline from 'avpipeline/VideoDecodePipeline'
 import VideoRenderPipeline from 'avpipeline/VideoRenderPipeline'

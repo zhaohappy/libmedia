@@ -25,7 +25,7 @@
  */
 
 import * as is from 'common/util/is'
-import { AVPlayerGlobalData } from 'avplayer/struct'
+import { AVPlayerGlobalData } from '../struct'
 import * as logger from 'common/util/logger'
 import { unrefAVFrame } from 'avutil/util/avframe'
 import { unrefAVPacket } from 'avutil/util/avpacket'
@@ -33,7 +33,7 @@ import * as mutex from 'cheap/thread/mutex'
 import IPCPort, { NOTIFY, RpcMessage } from 'common/network/IPCPort'
 import Timer from 'common/timer/Timer'
 import * as object from 'common/util/object'
-import MSEPipeline from 'avplayer/mse/MSEPipeline'
+import MSEPipeline from '../mse/MSEPipeline'
 
 export default class MSEPipelineWorker {
 

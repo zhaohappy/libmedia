@@ -569,7 +569,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           stats: addressof(stats)
         })
     }
-    else {
+    else if (taskOptions.input.file instanceof CustomIOLoader) {
       const ipcPort = task.inputIPCPort = new IPCPort(ioloader2DemuxerChannel.port1)
       ipcPort.on(REQUEST, async (request: RpcMessage) => {
         switch (request.method) {
@@ -633,6 +633,10 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         }
       })
     }
+    else {
+      logger.fatal('invalid source')
+    }
+
 
     if (ext) {
       task.ext = ext

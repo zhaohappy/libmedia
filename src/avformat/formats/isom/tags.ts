@@ -23,7 +23,7 @@
  *
  */
 
-import mktagle from 'avformat/function/mktagle'
+import mktagle from '../../function/mktagle'
 import { AVCodecID } from 'avutil/codec'
 
 export const codecMovVideoTags: Record<int32, AVCodecID> = {

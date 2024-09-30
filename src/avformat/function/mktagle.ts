@@ -25,7 +25,7 @@
 
 import * as logger from 'common/util/logger'
 
-export default function mktagLe(tag: string): number {
+export default function mktagle(tag: string): number {
   if (tag.length !== 4) {
     logger.warn(`tag length is not 4, tag: ${tag}`)
   }

@@ -23,16 +23,15 @@
  *
  */
 
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import AVPacket from 'avutil/struct/avpacket'
-import { Rational } from 'avutil/struct/rational'
+import { AVCodecID, AVMediaType, AVPacketSideDataType } from '../codec'
+import AVPacket from '../struct/avpacket'
+import { Rational } from '../struct/rational'
 import { mapUint8Array, memcpyFromUint8Array, memset } from 'cheap/std/memory'
 import { addAVPacketData, addAVPacketSideData, addSideData, createAVPacket, freeAVPacketSideData, getAVPacketData } from './avpacket'
 import { avFree, avMalloc } from './mem'
-import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVFieldOrder, AVPixelFormat } from 'avutil/pixfmt'
-import { AVChannelOrder, AVSampleFormat } from 'avutil/audiosamplefmt'
-import { AVChannelLayout } from 'avutil/struct/audiosample'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVFieldOrder, AVPixelFormat } from '../pixfmt'
+import { AVChannelOrder, AVSampleFormat } from '../audiosamplefmt'
+import AVCodecParameters from '../struct/avcodecparameters'
 
 export interface AVPacketSerialize {
   pts: int64

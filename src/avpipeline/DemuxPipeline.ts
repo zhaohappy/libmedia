@@ -50,7 +50,7 @@ import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/co
 import * as bigint from 'common/util/bigint'
 import { AVStreamInterface } from 'avformat/AVStream'
 import { addAVPacketSideData, getAVPacketSideData } from 'avutil/util/avpacket'
-import { memcpy } from 'cheap/std/memory'
+import { memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
 import analyzeAVFormat from 'avutil/function/analyzeAVFormat'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import compileResource from 'avutil/function/compileResource'
@@ -58,6 +58,7 @@ import isWorker from 'common/function/isWorker'
 import * as cheapConfig from 'cheap/config'
 import { serializeAVPacket } from 'avutil/util/serialize'
 import isPointer from 'cheap/std/function/isPointer'
+import * as is from 'common/util/is'
 
 export const STREAM_INDEX_ALL = -1
 
@@ -159,7 +160,13 @@ export default class DemuxPipeline extends Pipeline {
         params.ioloaderOptions = options.ioloaderOptions
       }
       try {
-        return leftIPCPort.request<int32>('read', params)
+        const result = await leftIPCPort.request<int32 | Uint8Array>('read', params)
+        if (is.number(result)) {
+          return result
+        }
+        assert(result.length <= params.length)
+        memcpyFromUint8Array(params.pointer, result.length, result)
+        return result.length
       }
       catch (error) {
         return IOError.INVALID_OPERATION
