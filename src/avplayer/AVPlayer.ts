@@ -3178,7 +3178,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         return AVPlayer.MSEThreadReady
       }
       return AVPlayer.MSEThreadReady = new Promise(async (resolve) => {
-        if (cheapConfig.USE_THREADS || !support.worker || !enableWorker) {
+        if (cheapConfig.USE_THREADS || !support.worker || !enableWorker || !support.workerMSE) {
           AVPlayer.MSEThread = await createThreadFromClass(MSEPipeline, {
             name: 'MSEThread',
             disableWorker: !support.workerMSE

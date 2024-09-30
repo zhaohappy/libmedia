@@ -153,14 +153,16 @@ export default abstract class ImageRender {
   }
 
   public viewport(width: number, height: number): void {
-    const devicePixelRatio = this.options.devicePixelRatio
-    this.canvasWidth = width
-    this.canvasHeight = height
-    this.canvas.width = width * devicePixelRatio
-    this.canvas.height = height * devicePixelRatio
+    if (this.canvasWidth !== width || this.canvasHeight !== height) {
+      const devicePixelRatio = this.options.devicePixelRatio
+      this.canvasWidth = width
+      this.canvasHeight = height
+      this.canvas.width = width * devicePixelRatio
+      this.canvas.height = height * devicePixelRatio
 
-    if (this.videoWidth && this.videoHeight) {
-      this.layout()
+      if (this.videoWidth && this.videoHeight) {
+        this.layout()
+      }
     }
   }
 
