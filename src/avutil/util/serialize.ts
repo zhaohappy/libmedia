@@ -140,7 +140,7 @@ export function unserializeAVPacket(serialize: AVPacketSerialize, avpacket: poin
     for (let i = 0; i < serialize.sideData.length; i++) {
       const data = avMalloc(serialize.sideData[i].data.length)
       memcpyFromUint8Array(data, serialize.sideData[i].data.length, serialize.sideData[i].data)
-      addAVPacketSideData(avpacket, data, serialize.sideData[i].type, serialize.sideData[i].data.length)
+      addAVPacketSideData(avpacket, serialize.sideData[i].type, data, serialize.sideData[i].data.length)
     }
   }
   else {
@@ -231,7 +231,7 @@ export function unserializeAVCodecParameters(serialize: AVCodecParametersSeriali
     for (let i = 0; i < serialize.codedSideData.length; i++) {
       const data = avMalloc(serialize.codedSideData[i].data.length)
       memcpyFromUint8Array(data, serialize.codedSideData[i].data.length, serialize.codedSideData[i].data)
-      addSideData(addressof(codecpar.codedSideData), addressof(codecpar.nbCodedSideData), serialize.codedSideData[i].type, serialize.codedSideData[i].data.length, data)
+      addSideData(addressof(codecpar.codedSideData), addressof(codecpar.nbCodedSideData), serialize.codedSideData[i].type, data, serialize.codedSideData[i].data.length)
     }
   }
   else {

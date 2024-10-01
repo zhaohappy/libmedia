@@ -80,7 +80,7 @@ import * as array from 'common/util/array'
 import isHdr from 'avutil/function/isHdr'
 import hasAlphaChannel from 'avutil/function/hasAlphaChannel'
 import SubtitleRender from './subtitle/SubtitleRender'
-import { Fn } from 'common/types/type'
+import { Data, Fn } from 'common/types/type'
 import { playerEventChanged, playerEventChanging, playerEventError, playerEventNoParam, playerEventTime } from './type'
 import compileResource from 'avutil/function/compileResource'
 import os from 'common/util/os'
@@ -713,7 +713,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       // safari 16 以下不支持将 WebAssembly.Module 传递到 worker 中
       if (browser.safari && !browser.checkVersion(browser.version, '16.1', true) && (is.string(wasmUrl) || is.arrayBuffer(wasmUrl))) {
         if (is.string(wasmUrl)) {
-          const params: Partial<any> = {
+          const params: Data = {
             method: 'GET',
             headers: {},
             mode: 'cors',
