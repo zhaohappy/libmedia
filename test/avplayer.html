@@ -516,6 +516,52 @@
       const video = document.querySelector('#video')
       const audio = document.querySelector('#audio')
 
+
+      class MyIOLoader extends AVPlayer.IOLoader.CustomIOLoader {
+
+        get ext() {
+          return this.file.name.split('.').pop()
+        }
+
+        get name() {
+          return this.file.name
+        }
+
+        constructor(file) {
+          super()
+          this.file = file
+          this.loader = new AVPlayer.IOLoader.FileIOLoader()
+        }
+
+        async open() {
+          return this.loader.open(
+            {
+              file: this.file
+            },
+            {
+              from: 0,
+              to: -1
+            }
+          )
+        }
+
+        async read(buffer) {
+          return this.loader.read(buffer)
+        }
+
+        async seek(pos) {
+          return this.loader.seek(pos)
+        }
+
+        async size() {
+          return this.loader.size()
+        }
+
+        async stop() {
+          return this.loader.stop()
+        }
+      }
+
       let statsTimer;
 
       let url = ''
