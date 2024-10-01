@@ -200,9 +200,7 @@ export default class SubtitleRender {
   private getAssHeader(codecpar: pointer<AVCodecParameters>) {
     let header = ''
     if (codecpar.codecId === AVCodecID.AV_CODEC_ID_ASS && codecpar.extradataSize) {
-      // TODO 这里不拷贝会偶现 ‘The provided ArrayBufferView value must not be shared’ 错误
-      // 暂时未找到原因，需要进一步确认
-      header = text.decode(mapUint8Array(codecpar.extradata, codecpar.extradataSize).slice())
+      header = text.decode(mapUint8Array(codecpar.extradata, codecpar.extradataSize))
       const lines = header.split(/\r?\n/)
       let hasEvent = false
       for (let i = 0; i < lines.length; i++) {

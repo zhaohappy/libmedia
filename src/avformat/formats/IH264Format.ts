@@ -99,6 +99,15 @@ export default class IH264Format extends IFormat {
     this.naluReader = new NaluReader()
   }
 
+  public destroy(formatContext: AVIFormatContext): void {
+    if (this.queue.length) {
+      for (let i = 0; i < this.queue.length; i++) {
+        destroyAVPacket(this.queue[i].avpacket)
+      }
+      this.queue.length = 0
+    }
+  }
+
   private isFrameNalu(data: Uint8Array) {
     const type = data[(data[2] === 1 ? 3 : 4)] & 0x1f
     return type === h264.H264NaluType.kSliceNonIDR

@@ -299,6 +299,11 @@ export default class AudioRenderPipeline extends Pipeline {
           if (!task.useStretchpitcher) {
             let pcmBuffer = me.avPCMBufferPool.alloc()
 
+            if (pcmBuffer.data) {
+              avFreep(addressof(pcmBuffer.data[0]))
+              avFreep(reinterpret_cast<pointer<pointer<void>>>(addressof(pcmBuffer.data)))
+            }
+
             pcmBuffer.nbSamples = audioFrame.nbSamples
             pcmBuffer.maxnbSamples = audioFrame.nbSamples
             pcmBuffer.sampleRate = audioFrame.sampleRate
