@@ -323,7 +323,7 @@ export default class IFlvFormat extends IFormat {
                 || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
               )
             ) {
-              const ct = await formatContext.ioReader.readUint24()
+              const ct: int32 = await formatContext.ioReader.readInt24()
               avpacket.pts = avpacket.dts + static_cast<int64>(ct)
               await this.readAVPacketData(formatContext, stream, avpacket, size - 8)
             }
@@ -339,7 +339,7 @@ export default class IFlvFormat extends IFormat {
           ) {
             avpacket.bitFormat = BitFormat.AVCC
             const packetType = await formatContext.ioReader.readUint8()
-            const ct = await formatContext.ioReader.readUint24()
+            const ct: int32 = await formatContext.ioReader.readInt24()
 
             avpacket.pts = avpacket.dts + static_cast<int64>(ct)
 
@@ -413,7 +413,7 @@ export default class IFlvFormat extends IFormat {
                 || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
               )
             ) {
-              const ct = await formatContext.ioReader.readUint24()
+              const ct: int32 = await formatContext.ioReader.readInt24()
               avpacket.pts = avpacket.dts + static_cast<int64>(ct)
               await this.readAVPacketData(formatContext, stream, avpacket, size - 8)
             }
@@ -432,7 +432,7 @@ export default class IFlvFormat extends IFormat {
           ) {
             avpacket.bitFormat = BitFormat.AVCC
             const packetType = await formatContext.ioReader.readUint8()
-            const ct = await formatContext.ioReader.readUint24()
+            const ct: int32 = await formatContext.ioReader.readInt24()
 
             avpacket.pts = avpacket.dts + static_cast<int64>(ct)
 

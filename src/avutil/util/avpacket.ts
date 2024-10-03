@@ -64,7 +64,7 @@ export function hasAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPacketS
   return false
 }
 
-export function addSideData(psd: pointer<pointer<AVPacketSideData>>, pnbSd: pointer<int32>, type: AVPacketSideDataType, data: pointer<uint8>, length: size) {
+export function addSideData(psd: pointer<pointer<AVPacketSideData>>, pnbSd: pointer<int32>, type: AVPacketSideDataType, data: pointer<void>, length: size) {
   const sideDataElems = accessof(pnbSd)
   const sideData = accessof(psd)
   for (let i = 0; i < sideDataElems; i++) {
@@ -105,7 +105,7 @@ export function newSideData(psd: pointer<pointer<AVPacketSideData>>, pnbSd: poin
   return addSideData(psd, pnbSd, type, data, size)
 }
 
-export function addAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPacketSideDataType, data: pointer<uint8>, length: size) {
+export function addAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPacketSideDataType, data: pointer<void>, length: size) {
   addSideData(addressof(avpacket.sideData), addressof(avpacket.sideDataElems), type, data, length)
 }
 
