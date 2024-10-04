@@ -46,12 +46,12 @@ export default abstract class CustomIOLoader {
   }
 
   /**
-   * 最小缓冲时长（秒）
+   * 最小缓冲时长默认 4（秒）
    * 
    * 开启 jitter buffer 需要
    */
   get minBuffer(): number {
-    throw new Error('need implemented minBuffer getter')
+    return 4
   }
 
   /**
