@@ -32,6 +32,8 @@ export interface FileInfo {
   file: File
 }
 
+const hasArrayBuffer = is.func(Blob.prototype.arrayBuffer)
+
 export default class FileIOLoader extends IOLoader {
 
   private info: FileInfo
@@ -84,12 +86,12 @@ export default class FileIOLoader extends IOLoader {
 
   public async read(buffer: Uint8ArrayInterface) {
     if (this.readPos >= this.endPos) {
-      this.status === IOLoaderStatus.COMPLETE
+      this.status = IOLoaderStatus.COMPLETE
       return IOError.END
     }
     const len = Math.min(buffer.length, this.endPos - this.readPos)
 
-    if (is.func(Blob.prototype.arrayBuffer)) {
+    if (hasArrayBuffer) {
       buffer.set(new Uint8Array(await (this.info.file.slice(this.readPos, this.readPos + len).arrayBuffer())), 0)
     }
     else {
