@@ -24,7 +24,7 @@
  */
 
 import { AVCodecID } from 'avutil/codec'
-import { CodecId2String } from '../codec/codec'
+import { CodecId2MimeType } from 'avutil/stringEnum'
 import { H264Profile } from 'avformat/codecs/h264'
 import * as av1 from 'avformat/codecs/av1'
 import * as vp8 from 'avformat/codecs/vp8'
@@ -44,7 +44,7 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
     extradata = mapUint8Array(codecpar.extradata, codecpar.extradataSize)
   }
 
-  let entry = CodecId2String[codecId]
+  let entry = CodecId2MimeType[codecId]
   let codec = ''
 
   if (codecId === AVCodecID.AV_CODEC_ID_H264) {

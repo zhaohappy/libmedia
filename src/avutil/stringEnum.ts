@@ -5,6 +5,24 @@ import { AVSampleFormat } from './audiosamplefmt'
 import { AVDisposition } from 'avformat/AVStream'
 import { IOType } from 'avpipeline/IOPipeline'
 
+export const CodecId2MimeType = {
+  [AVCodecID.AV_CODEC_ID_MP3]: 'mp3',
+  [AVCodecID.AV_CODEC_ID_AAC]: 'mp4a.40',
+  [AVCodecID.AV_CODEC_ID_VORBIS]: 'vorbis',
+  [AVCodecID.AV_CODEC_ID_FLAC]: 'flac',
+  [AVCodecID.AV_CODEC_ID_OPUS]: 'opus',
+  [AVCodecID.AV_CODEC_ID_PCM_MULAW]: 'ulaw',
+  [AVCodecID.AV_CODEC_ID_PCM_ALAW]: 'alaw',
+
+  [AVCodecID.AV_CODEC_ID_AV1]: 'av01',
+  [AVCodecID.AV_CODEC_ID_H264]: 'avc1',
+  [AVCodecID.AV_CODEC_ID_HEVC]: 'hev1',
+  [AVCodecID.AV_CODEC_ID_VVC]: 'vvc1',
+  [AVCodecID.AV_CODEC_ID_VP8]: 'vp8',
+  [AVCodecID.AV_CODEC_ID_VP9]: 'vp09',
+  [AVCodecID.AV_CODEC_ID_MPEG4]: 'mp4v'
+}
+
 export const Ext2Format: Record<string, AVFormat> = {
   'flv': AVFormat.FLV,
   'mp4': AVFormat.MOV,

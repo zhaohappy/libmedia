@@ -39,7 +39,6 @@ import { Mutex } from 'cheap/thread/mutex'
 import compile, { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import { AVFormat, AVSeekFlags } from 'avformat/avformat'
 import * as urlUtils from 'common/util/url'
-import * as cheapConfig from 'cheap/config'
 import * as logger from 'common/util/logger'
 import support from 'common/util/support'
 import browser from 'common/util/browser'
@@ -51,7 +50,6 @@ import * as mutex from 'cheap/thread/mutex'
 import { IOFlags } from 'common/io/flags'
 import AudioEncodePipeline from 'avpipeline/AudioEncodePipeline'
 import VideoEncodePipeline from 'avpipeline/VideoEncodePipeline'
-import IOReader from 'common/io/IOReader'
 import { AudioCodecString2CodecId, Ext2Format, Ext2IOLoader,
   Format2AVFormat, PixfmtString2AVPixelFormat, SampleFmtString2SampleFormat,
   VideoCodecString2CodecId
@@ -66,7 +64,6 @@ import getAudioCodec from 'avcodec/function/getAudioCodec'
 import { avFree, avMalloc, avMallocz } from 'avutil/util/mem'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
-import { Rational } from 'avutil/struct/rational'
 import SafeFileIO from 'common/io/SafeFileIO'
 import Emitter from 'common/event/Emitter'
 import * as eventType from './eventType'
@@ -314,7 +311,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       // safari 16 以下不支持将 WebAssembly.Module 传递到 worker 中
       if (browser.safari && !browser.checkVersion(browser.version, '16.1', true) && (is.string(wasmUrl) || is.arrayBuffer(wasmUrl))) {
         if (is.string(wasmUrl)) {
-          const params: Partial<any> = {
+          const params: Partial<Data> = {
             method: 'GET',
             headers: {},
             mode: 'cors',
