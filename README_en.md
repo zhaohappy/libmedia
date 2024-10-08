@@ -29,7 +29,7 @@ libmedia is designed to run on multi-threads, but can fallback to running on the
 - ```avrender``` Audio and video rendering (8bit, 10bit, HDR, audioWorklet, WebGL, WebGPU)
 - ```avpipeline``` Media task processing pipeline for multi-threaded parallel processing tasks
 
-### Multi-threaded
+### Multi-threads
 
 libmedia supports multi-threading, but the page needs to use SharedArrayBuffer. You can add the following two response headers to the response header of the top-level document to enable use of SharedArrayBuffer:
 
