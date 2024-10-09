@@ -77,7 +77,7 @@ export function dumpFormatName(format: AVFormat) {
   return dumpKey(stringEnum.Format2AVFormat, format)
 }
 
-function dumpProfileName(codecId: AVCodecID, profile: int32) {
+export function dumpProfileName(codecId: AVCodecID, profile: int32) {
   switch (codecId) {
     case AVCodecID.AV_CODEC_ID_AAC:
       return aac.AACProfile2Name[profile] || 'LC'
@@ -94,7 +94,7 @@ function dumpProfileName(codecId: AVCodecID, profile: int32) {
   }
 }
 
-function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix: string) {
+export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix: string) {
   const mediaType = dumpKey(stringEnum.mediaType2AVMediaType, stream.codecpar.codecType)
 
   const list = []
@@ -235,7 +235,7 @@ function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix:
   return dump
 }
 
-function dumpAVFormatContextInterface(formatContext: AVFormatContextInterface, index: number, input: DumpIOInfo) {
+export function dumpAVFormatContextInterface(formatContext: AVFormatContextInterface, index: number, input: DumpIOInfo) {
   let dump = `${input.tag} #${index}, ${dumpKey(stringEnum.Format2AVFormat, formatContext.format)}, from '${input.from}':\n`
   if (Object.keys(formatContext.metadata).length) {
     dump += '  Metadata:\n'
