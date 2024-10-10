@@ -32,6 +32,7 @@ import { Thread, closeThread, createThreadFromClass } from 'cheap/thread/thread'
 import generateUUID from 'common/function/generateUUID'
 import * as is from 'common/util/is'
 import * as object from 'common/util/object'
+import * as array from 'common/util/array'
 import { AVPacketRef } from 'avutil/struct/avpacket'
 import List from 'cheap/std/collection/List'
 import { AVFrameRef } from 'avutil/struct/avframe'
@@ -100,7 +101,6 @@ import DashIOLoader from 'avnetwork/ioLoader/DashIOLoader'
 
 export interface AVTranscoderOptions {
   getWasm: (type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codec?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
-  enableHardware?: boolean
   onprogress?: (taskId: string, progress: number) => void
 }
 
@@ -157,6 +157,11 @@ export interface TaskOptions {
        * 输出关键帧间隔（毫秒）
        */
       keyFrameInterval?: number
+
+      /**
+       * 是否启动硬件编码
+       */
+      enableHardware?: boolean
 
       profile?: number
       level?: number
@@ -230,7 +235,6 @@ class AVTranscoderGlobalData {
 }
 
 const defaultAVTranscoderOptions: Partial<AVTranscoderOptions> = {
-  enableHardware: true
 }
 
 export default class AVTranscoder extends Emitter implements ControllerObserver {
@@ -1356,7 +1360,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           leftPort: demuxer2DecoderChannel.port2,
           rightPort: decoder2FilterChannel.port1,
           stats: addressof(task.stats),
-          enableHardware: this.options.enableHardware,
+          enableHardware: !!videoConfig.enableHardware,
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           avframeList: addressof(this.GlobalData.avframeList),
@@ -1515,12 +1519,13 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           leftPort: filter2EncoderChannel.port2,
           rightPort: encoder2MuxerChannel.port1,
           stats: addressof(task.stats),
-          enableHardware: this.options.enableHardware,
+          enableHardware: !!videoConfig.enableHardware,
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           avframeList: addressof(this.GlobalData.avframeList),
           avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-          gop: static_cast<int32>(avQ2D(newStream.codecpar.framerate) * (videoConfig?.keyFrameInterval ?? 5000) / 1000)
+          gop: static_cast<int32>(avQ2D(newStream.codecpar.framerate) * (videoConfig?.keyFrameInterval ?? 5000) / 1000),
+          preferWebCodecs: array.has([AVCodecID.AV_CODEC_ID_AV1, AVCodecID.AV_CODEC_ID_VP9, AVCodecID.AV_CODEC_ID_VP8], newStream.codecpar.codecId)
         })
 
       ret = await this.VideoEncoderThread.open(taskId, newStream.codecpar, { num: newStream.timeBase.num, den: newStream.timeBase.den }, wasmEncoderOptions)

@@ -62,6 +62,7 @@ export interface VideoEncodeTaskOptions extends TaskOptions {
   avframeListMutex: pointer<Mutex>
 
   gop: int32
+  preferWebCodecs?: boolean
 }
 
 type SelfTask = Omit<VideoEncodeTaskOptions, 'resource'> & {
@@ -174,24 +175,30 @@ export default class VideoEncodePipeline extends Pipeline {
       avpacketPool
     }
 
-    task.softwareEncoder = task.resource
-      ? new WasmVideoEncoder({
-        resource: task.resource,
-        onError: (error) => {
-          logger.error(`video encode error, taskId: ${options.taskId}, error: ${error}`)
-          const task = this.tasks.get(options.taskId)
-          if (task.openReject) {
-            task.openReject(error)
-            task.openReject = null
-          }
-        },
-        onReceiveAVPacket(avpacket) {
-          task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
-          task.stats.videoPacketEncodeCount++
-        },
-        avpacketPool
-      })
-      : (support.videoEncoder ? this.createWebcodecEncoder(task, false) : null)
+    task.softwareEncoder = (support.videoEncoder
+      && WebVideoEncoder.isSupported(task.parameters, false)
+      && (task.preferWebCodecs || !task.resource)
+    )
+      ? this.createWebcodecEncoder(task, false)
+      : (task.resource
+        ? new WasmVideoEncoder({
+          resource: task.resource,
+          onError: (error) => {
+            logger.error(`video encode error, taskId: ${options.taskId}, error: ${error}`)
+            const task = this.tasks.get(options.taskId)
+            if (task.openReject) {
+              task.openReject(error)
+              task.openReject = null
+            }
+          },
+          onReceiveAVPacket(avpacket) {
+            task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
+            task.stats.videoPacketEncodeCount++
+          },
+          avpacketPool
+        })
+        : null
+      )
 
     if (!task.softwareEncoder) {
       logger.error('software encoder not support')
@@ -208,6 +215,8 @@ export default class VideoEncodePipeline extends Pipeline {
 
     const caches: (pointer<AVFrameRef> | VideoFrame)[] = []
 
+    let pullPadding = false
+
     async function pullAVFrame() {
       if (!task.inputEnd) {
         if (!caches.length) {
@@ -217,12 +226,14 @@ export default class VideoEncodePipeline extends Pipeline {
           }
           caches.push(avframe)
         }
-        if (caches.length < 4) {
+        if (caches.length < 4 && !pullPadding) {
+          pullPadding = true
           leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull').then((avframe) => {
             if (is.number(avframe) && avframe < 0) {
               task.inputEnd = true
             }
             caches.push(avframe)
+            pullPadding = false
           })
         }
       }
