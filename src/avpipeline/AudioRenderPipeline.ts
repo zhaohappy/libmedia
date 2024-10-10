@@ -186,9 +186,7 @@ export default class AudioRenderPipeline extends Pipeline {
       stretchpitcher.setRate(task.playRate)
     }
 
-    const me = this
-
-    async function pullNewAudioFrame() {
+    const pullNewAudioFrame = async () => {
       let audioFrame: pointer<AVFrameRef>
       if (task.paddingAVFrame) {
         audioFrame = task.paddingAVFrame
@@ -274,10 +272,11 @@ export default class AudioRenderPipeline extends Pipeline {
             )
           }
 
-          let pcmBuffer = me.avPCMBufferPool.alloc()
+          let pcmBuffer = this.avPCMBufferPool.alloc()
           let ret = task.resampler.resample(audioFrame.extendedData, pcmBuffer, audioFrame.nbSamples)
           if (ret < 0) {
             logger.error(`resample error, ret: ${ret}, taskId: ${task.taskId}`)
+            this.avPCMBufferPool.release(pcmBuffer)
             return ret
           }
           if (!task.useStretchpitcher) {
@@ -292,12 +291,12 @@ export default class AudioRenderPipeline extends Pipeline {
                 pcmBuffer.nbSamples
               )
             }
-            me.avPCMBufferPool.release(pcmBuffer)
+            this.avPCMBufferPool.release(pcmBuffer)
           }
         }
         else {
           if (!task.useStretchpitcher) {
-            let pcmBuffer = me.avPCMBufferPool.alloc()
+            let pcmBuffer = this.avPCMBufferPool.alloc()
 
             if (pcmBuffer.data) {
               avFreep(addressof(pcmBuffer.data[0]))
@@ -339,7 +338,7 @@ export default class AudioRenderPipeline extends Pipeline {
       return 0
     }
 
-    async function receiveToPCMBuffer(pcmBuffer: pointer<AVPCMBuffer>): Promise<number> {
+    const receiveToPCMBuffer = async (pcmBuffer: pointer<AVPCMBuffer>) => {
       let receive = 0
 
       if (task.seeking) {
@@ -351,7 +350,7 @@ export default class AudioRenderPipeline extends Pipeline {
       if (task.enableJitterBuffer) {
         let buffer = task.stats.audioPacketQueueLength / task.stats.audioEncodeFramerate * 1000
         if (buffer <= task.stats.jitterBuffer.min) {
-          me.setPlayRate(task.taskId, 1)
+          this.setPlayRate(task.taskId, 1)
         }
       }
 
@@ -404,7 +403,7 @@ export default class AudioRenderPipeline extends Pipeline {
                 task.avframePool.release(task.waitAVFrame)
                 task.waitAVFrame = nullptr
               }
-              me.avPCMBufferPool.release(task.waitPCMBuffer)
+              this.avPCMBufferPool.release(task.waitPCMBuffer)
               task.waitPCMBuffer = nullptr
             }
           }

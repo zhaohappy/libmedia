@@ -456,8 +456,6 @@ export default class VideoRenderPipeline extends Pipeline {
         task.frontFrame = nullptr
       }
 
-      const me = this
-
       await this.createRender(task, task.backFrame)
 
       task.firstPTS = avRescaleQ(
@@ -580,7 +578,7 @@ export default class VideoRenderPipeline extends Pipeline {
         if (task.enableJitterBuffer) {
           let buffer = task.stats.videoPacketQueueLength / task.stats.videoEncodeFramerate * 1000
           if (buffer <= task.stats.jitterBuffer.min) {
-            me.setPlayRate(task.taskId, 1)
+            this.setPlayRate(task.taskId, 1)
           }
         }
 
