@@ -28,6 +28,7 @@ import IOWriter from 'common/io/IOWriterSync'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import IOReaderSync from 'common/io/IOReaderSync'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import * as text from 'common/util/text'
 
 export interface PagePayload {
   signature: string
@@ -35,6 +36,34 @@ export interface PagePayload {
   write(ioWriter: IOWriter): void
   setCodec(codecpar: AVCodecParameters): void
   streamIndex: number
+}
+
+class UserComment {
+
+  public list: string[]
+
+  constructor() {
+    this.list = []
+  }
+
+  public read(ioReader: IOReaderSync, count: number) {
+    for (let i = 0; i < count; i++) {
+      const length = ioReader.readUint32()
+      this.list.push(ioReader.readString(length))
+    }
+  }
+
+  public write(ioWriter: IOWriter) {
+    for (let i = 0; i < this.list.length; i++) {
+      const buffer = text.encode(this.list[i])
+      ioWriter.writeUint32(buffer.length)
+      ioWriter.writeBuffer(buffer)
+    }
+  }
+
+  public addComment(comment: string) {
+    this.list.push(comment)
+  }
 }
 
 export class OggPage {
@@ -53,7 +82,7 @@ export class OggPage {
    * 
    * - 0x01：本页媒体编码数据与前一页属于同一个逻辑流的同一个 packet，若此位没有设，表示本页是以一个新的 packet 开始的；
    * - 0x02：表示该页为逻辑流的第一页，bos 标识，如果此位未设置，那表示不是第一页；
-   * - 0x04：表示该页位逻辑流的最后一页，eos 标识，如果此位未设置，那表示本页不是最后一页；
+   * - 0x04：表示该页为逻辑流的最后一页，eos 标识，如果此位未设置，那表示本页不是最后一页；
    */
   public headerTypeFlag: number
 
@@ -96,6 +125,8 @@ export class OggPage {
 
   public payload: Uint8Array
 
+  public pos: int64
+
   constructor() {
     this.reset()
   }
@@ -110,11 +141,13 @@ export class OggPage {
     this.crcCheckSum = 0
     this.numberPageSegments = 0
     this.segmentTable = []
+    this.pos = 0n
   }
 
 
   @deasync
   public async read(ioReader: IOReader) {
+    this.pos = ioReader.getPos()
     await this.readPageHeader(ioReader)
 
     const length = this.segmentTable.reduce((prev, len) => {
@@ -146,6 +179,7 @@ export class OggPage {
   }
 
   public write(ioWriter: IOWriter) {
+    this.pos = ioWriter.getPos()
     ioWriter.writeString(this.capturePattern)
     ioWriter.writeUint8(this.streamStructureVersion)
     ioWriter.writeUint8(this.headerTypeFlag)
@@ -155,7 +189,7 @@ export class OggPage {
     ioWriter.writeUint32(this.crcCheckSum)
 
     if (this.payload) {
-      this.numberPageSegments = Math.ceil(this.payload.length / 255)
+      this.numberPageSegments = Math.floor(this.payload.length / 255) + 1
       const last = this.payload.length % 255
 
       ioWriter.writeUint8(this.numberPageSegments)
@@ -169,5 +203,65 @@ export class OggPage {
     else {
       ioWriter.writeUint8(0)
     }
+  }
+}
+
+export class OggsCommentPage implements PagePayload {
+
+  public streamIndex: number
+
+  /**
+   * 8 bytes Magic Signature: OpusTags
+   */
+  public signature: string
+
+  /**
+   * 4 bytes unsigned
+   */
+  public vendorStringLength: number
+
+  /**
+   * 长度由 Vendor String Length 指定， utf-8 编码
+   */
+  public vendorString: string
+
+  /**
+   * 4 bytes unsigned, 该字段指示用户提供的注释数。它可能表示用户提供的评论为零，在这种情况下数据包中没有其他字段。
+   * 一定不要表示评论太多，以至于评论字符串长度将需要比其余的可用数据更多的数据数据包
+   */
+  public userCommentListLength: number
+
+  public comments: UserComment
+
+  constructor() {
+    this.vendorString = defined(VERSION)
+    this.vendorStringLength = this.vendorString.length
+    this.userCommentListLength = 0
+    this.comments = new UserComment()
+  }
+
+  public read(ioReader: IOReaderSync) {
+    this.vendorStringLength = ioReader.readUint32()
+    this.vendorString = ioReader.readString(this.vendorStringLength)
+    this.userCommentListLength = ioReader.readUint32()
+    if (this.userCommentListLength) {
+      this.comments.read(ioReader, this.userCommentListLength)
+    }
+  }
+
+  public write(ioWriter: IOWriter) {
+    const buffer = text.encode(this.vendorString)
+    ioWriter.writeUint32(buffer.length)
+    ioWriter.writeBuffer(buffer)
+
+    ioWriter.writeUint32(this.comments.list.length)
+    this.comments.write(ioWriter)
+  }
+
+  public addComment(comment: string) {
+    this.comments.addComment(comment)
+  }
+
+  public setCodec(codecpar: AVCodecParameters) {
   }
 }

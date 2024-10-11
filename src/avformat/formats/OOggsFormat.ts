@@ -28,12 +28,17 @@ import Stream from '../AVStream'
 import { AVOFormatContext } from '../AVFormatContext'
 import AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
-import { OggPage, PagePayload } from './oggs/OggPage'
-import { AVMediaType } from 'avutil/codec'
+import { OggPage, OggsCommentPage, PagePayload } from './oggs/OggPage'
+import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { AVFormat } from '../avformat'
 import * as logger from 'common/util/logger'
 import { getAVPacketData } from 'avutil/util/avpacket'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { OpusOggsCommentPage, OpusOggsIdPage } from './oggs/opus'
+import { VorbisOggsCommentPage, VorbisOggsIdPage } from './oggs/vorbis'
+import { mapUint8Array } from 'cheap/std/memory'
+import IOReaderSync from 'common/io/IOReaderSync'
+import * as errorType from 'avutil/error'
 
 const PAGE_MAX = 255 * 255
 
@@ -123,7 +128,6 @@ export default class OOggFormat extends OFormat {
       const isLast = offset + len === realLength
       const isStart = offset === 0
 
-
       this.page.reset()
       this.page.serialNumber = stream.index
       if (!isLast) {
@@ -138,7 +142,7 @@ export default class OOggFormat extends OFormat {
 
       if (!isStart) {
         // 与前一页属于同一个 packet
-        this.page.headerTypeFlag != 0x01
+        this.page.headerTypeFlag |= 0x01
       }
 
       this.page.payload = payload
@@ -166,6 +170,133 @@ export default class OOggFormat extends OFormat {
   }
 
   public writeHeader(formatContext: AVOFormatContext): number {
+
+    if (!this.headerPagesPayload.length) {
+      const stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_AUDIO)
+      if (stream) {
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_OPUS) {
+          const idPage = new OpusOggsIdPage()
+          const commentPage = new OpusOggsCommentPage()
+          idPage.streamIndex = stream.index
+          idPage.setCodec(stream.codecpar)
+          commentPage.streamIndex = stream.index
+          this.headerPagesPayload = [
+            idPage,
+            commentPage
+          ]
+        }
+        else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VORBIS) {
+
+          if (!stream.codecpar.extradataSize) {
+            return errorType.DATA_INVALID
+          }
+
+          const idPage = new VorbisOggsIdPage()
+          const commentPage = new VorbisOggsCommentPage()
+          idPage.setCodec(stream.codecpar)
+          idPage.streamIndex = stream.index
+          commentPage.streamIndex = stream.index
+
+          this.cacheWriter.reset()
+          idPage.write(this.cacheWriter)
+          this.writePage(stream, formatContext.ioWriter, this.cacheWriter.getBuffer().slice(), 2)
+
+          this.cacheWriter.reset()
+          commentPage.write(this.cacheWriter)
+          this.writePage(stream, formatContext.ioWriter, this.cacheWriter.getBuffer().slice(), 0)
+
+          const extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+
+          let ioReader = new IOReaderSync(extradata.length, true)
+          ioReader.appendBuffer(extradata)
+
+          if (ioReader.peekUint16() === 30) {
+            for (let i = 0; i < 3; i++) {
+              const len = ioReader.readUint16()
+              if (i === 2) {
+                this.writePage(stream, formatContext.ioWriter, ioReader.readBuffer(len), 0)
+              }
+              else {
+                ioReader.skip(len)
+              }
+            }
+          }
+          else if (ioReader.peekUint8() === 0x02) {
+            ioReader.skip(1)
+            const headerLen: number[] = []
+            for (let i = 0; i < 2; i++) {
+              let len = 0
+              while (ioReader.peekUint8() === 0xff) {
+                len += 0xff
+                ioReader.skip(1)
+              }
+              len += ioReader.readUint8()
+              headerLen[i] = len
+            }
+            ioReader.skip(headerLen[0])
+            ioReader.skip(headerLen[1])
+            this.writePage(stream, formatContext.ioWriter, ioReader.readBuffer(ioReader.remainingLength()), 0)
+          }
+          else {
+            return errorType.DATA_INVALID
+          }
+        }
+        else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_FLAC) {
+          if (stream.codecpar.extradataSize < 34) {
+            return errorType.DATA_INVALID
+          }
+
+          this.cacheWriter.setEndian(true)
+
+          this.cacheWriter.reset()
+          this.cacheWriter.writeUint8(0x7f)
+          this.cacheWriter.writeString('FLAC')
+          this.cacheWriter.writeUint8(1)
+          this.cacheWriter.writeUint8(0)
+          this.cacheWriter.writeUint16(1)
+          this.cacheWriter.writeString('fLaC')
+          this.cacheWriter.writeUint8(0)
+          this.cacheWriter.writeUint24(34)
+          this.cacheWriter.writeBuffer(mapUint8Array(stream.codecpar.extradata, 34))
+
+          this.cacheWriter.setEndian(false)
+          this.writePage(stream, formatContext.ioWriter, this.cacheWriter.getBuffer().slice(), 2)
+
+          const commentPage = new OggsCommentPage()
+          commentPage.streamIndex = stream.index
+
+          this.cacheWriter.setEndian(true)
+          this.cacheWriter.reset()
+          this.cacheWriter.writeUint8(0x84)
+          this.cacheWriter.writeUint24(0)
+          this.cacheWriter.setEndian(false)
+          commentPage.write(this.cacheWriter)
+          this.cacheWriter.setEndian(true)
+
+          const pos = this.cacheWriter.getPointer()
+          this.cacheWriter.seekInline(1)
+          this.cacheWriter.writeUint24(pos - 4)
+          this.cacheWriter.setEndian(false)
+          this.cacheWriter.seekInline(pos)
+          this.writePage(stream, formatContext.ioWriter, this.cacheWriter.getBuffer().slice(), 0)
+        }
+        else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_SPEEX) {
+          if (!stream.codecpar.extradataSize) {
+            return errorType.DATA_INVALID
+          }
+          this.cacheWriter.reset()
+          this.cacheWriter.writeBuffer(mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+          this.writePage(stream, formatContext.ioWriter, this.cacheWriter.getBuffer().slice(), 2)
+
+          const commentPage = new OggsCommentPage()
+          commentPage.streamIndex = stream.index
+          this.cacheWriter.reset()
+          commentPage.write(this.cacheWriter)
+          this.writePage(stream, formatContext.ioWriter, this.cacheWriter.getBuffer().slice(), 0)
+        }
+      }
+    }
+
     if (this.headerPagesPayload) {
       for (let i = 0; i < this.headerPagesPayload.length; i++) {
 

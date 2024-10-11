@@ -158,7 +158,10 @@ export const OFormatSupportedCodecs: Record<Exclude<AVFormat, AVFormat.UNKNOWN>,
     AVCodecID.AV_CODEC_ID_VVC
   ],
   [AVFormat.OGGS]: [
-    AVCodecID.AV_CODEC_ID_VORBIS
+    AVCodecID.AV_CODEC_ID_VORBIS,
+    AVCodecID.AV_CODEC_ID_OPUS,
+    AVCodecID.AV_CODEC_ID_FLAC,
+    AVCodecID.AV_CODEC_ID_SPEEX
   ],
   [AVFormat.WAV]: [],
   [AVFormat.WEBVTT]: [AVCodecID.AV_CODEC_ID_WEBVTT],

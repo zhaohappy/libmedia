@@ -31,9 +31,8 @@
 
 import IOWriter from 'common/io/IOWriterSync'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { PagePayload } from './OggPage'
+import { OggsCommentPage, PagePayload } from './OggPage'
 import IOReaderSync from 'common/io/IOReaderSync'
-import * as text from 'common/util/text'
 
 export class VorbisOggsIdPage implements PagePayload {
 
@@ -94,14 +93,16 @@ export class VorbisOggsIdPage implements PagePayload {
    */
   public framingFlag: number
 
-  constructor() {
-    this.signature = 'vorbis'
+  constructor(signature: string = 'vorbis') {
+    this.signature = signature
     this.version = 0
     this.channels = 1
     this.sampleRate = 48000
     this.bitrateMaximum = 0
     this.bitrateNominal = 0
     this.bitrateMinimum = 0
+    this.blocksize0 = 2048
+    this.blocksize1 = 256
   }
 
   public read(ioReader: IOReaderSync) {
@@ -143,102 +144,40 @@ export class VorbisOggsIdPage implements PagePayload {
   }
 }
 
-class UserComment {
-
-  public list: string[]
-
-  constructor() {
-    this.list = []
-  }
-
-  public read(ioReader: IOReaderSync, count: number) {
-    for (let i = 0; i < count; i++) {
-      const length = ioReader.readUint32()
-      this.list.push(ioReader.readString(length))
-    }
-  }
-
-  public write(ioWriter: IOWriter) {
-    for (let i = 0; i < this.list.length; i++) {
-      const buffer = text.encode(this.list[i])
-      ioWriter.writeUint32(buffer.length)
-      ioWriter.writeBuffer(buffer)
-    }
-  }
-
-  public addComment(comment: string) {
-    this.list.push(comment)
-  }
-}
-
-export class VorbisOggsCommentPage implements PagePayload {
-
-  public streamIndex: number
-
+export class VorbisOggsCommentPage extends OggsCommentPage {
   /**
    * 8 bits packet_type 
    */
   public packetType: number
 
   /**
-   * 8 bytes Magic Signature: OpusTags
-   */
-  public signature: string
-
-  /**
-   * 4 bytes unsigned
-   */
-  public vendorStringLength: number
-
-  /**
-   * 长度由 Vendor String Length 指定， utf-8 编码
-   */
-  public vendorString: string
-
-  /**
-   * 4 bytes unsigned, 该字段指示用户提供的注释数。它可能表示用户提供的评论为零，在这种情况下数据包中没有其他字段。
-   * 一定不要表示评论太多，以至于评论字符串长度将需要比其余的可用数据更多的数据数据包
-   */
-  public userCommentListLength: number
-
-  public comments: UserComment
-
-  /**
    * 1 bit
    */
   public framingFlag: number
 
-  constructor() {
-    this.signature = 'vorbis'
-    this.vendorString = defined(VERSION)
-    this.vendorStringLength = this.vendorString.length
-    this.userCommentListLength = 0
-    this.comments = new UserComment()
+  constructor(signature: string = 'vorbis') {
+    super()
+    this.signature = signature
+    this.packetType = 0x01
+    this.framingFlag = 0x01
   }
 
   public read(ioReader: IOReaderSync) {
     this.packetType = ioReader.readUint8()
     this.signature = ioReader.readString(6)
-    this.vendorStringLength = ioReader.readUint32()
-    this.vendorString = ioReader.readString(this.vendorStringLength)
-    this.userCommentListLength = ioReader.readUint32()
-    if (this.userCommentListLength) {
-      this.comments.read(ioReader, this.userCommentListLength)
+    super.read(ioReader)
+    if (this.signature === 'vorbis') {
+      this.framingFlag = ioReader.readUint8()
     }
-    this.framingFlag = ioReader.readUint8()
   }
 
   public write(ioWriter: IOWriter) {
+    ioWriter.writeUint8(this.packetType)
     ioWriter.writeString(this.signature)
-
-    const buffer = text.encode(this.vendorString)
-    ioWriter.writeUint32(buffer.length)
-    ioWriter.writeBuffer(buffer)
-
-    ioWriter.writeUint32(this.comments.list.length)
-    this.comments.write(ioWriter)
-
-    ioWriter.writeUint8(0x01)
+    super.write(ioWriter)
+    if (this.signature === 'vorbis') {
+      ioWriter.writeUint8(this.framingFlag)
+    }
   }
 
   public addComment(comment: string) {
