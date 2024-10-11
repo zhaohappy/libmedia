@@ -1657,7 +1657,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         }
 
         if (ret < 0) {
-          throw new Error(`config transcode error, ret: ${ret}`)
+          logger.fatal(`config transcode error, ret: ${ret}`)
         }
       }
 
@@ -1709,7 +1709,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
 
       if (ret < 0) {
         await this.clearTask(task)
-        throw new Error(`start transcode error, ret ${ret}`)
+        logger.fatal(`start transcode error, ret ${ret}`)
       }
 
       const streams = task.streams
@@ -1759,7 +1759,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
 
       if (ret < 0) {
         await this.clearTask(task)
-        throw new Error(`start transcode error, ret ${ret}`)
+        logger.fatal(`start transcode error, ret ${ret}`)
       }
 
       task.startTime = getTimestamp()
