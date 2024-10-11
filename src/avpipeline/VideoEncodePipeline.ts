@@ -135,6 +135,24 @@ export default class VideoEncodePipeline extends Pipeline {
     })
   }
 
+  private createWasmcodecEncoder(task: SelfTask, resource: WebAssemblyResource) {
+    return new WasmVideoEncoder({
+      resource: task.resource,
+      onError: (error) => {
+        logger.error(`video encode error, taskId: ${task.taskId}, error: ${error}`)
+        if (task.openReject) {
+          task.openReject(error)
+          task.openReject = null
+        }
+      },
+      onReceiveAVPacket(avpacket) {
+        task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
+        task.stats.videoPacketEncodeCount++
+      },
+      avpacketPool: task.avpacketPool
+    })
+  }
+
   private async createTask(options: VideoEncodeTaskOptions): Promise<number> {
 
     assert(options.leftPort)
@@ -175,30 +193,9 @@ export default class VideoEncodePipeline extends Pipeline {
       avpacketPool
     }
 
-    task.softwareEncoder = (support.videoEncoder
-      && WebVideoEncoder.isSupported(task.parameters, false)
-      && (task.preferWebCodecs || !task.resource)
-    )
-      ? this.createWebcodecEncoder(task, false)
-      : (task.resource
-        ? new WasmVideoEncoder({
-          resource: task.resource,
-          onError: (error) => {
-            logger.error(`video encode error, taskId: ${options.taskId}, error: ${error}`)
-            const task = this.tasks.get(options.taskId)
-            if (task.openReject) {
-              task.openReject(error)
-              task.openReject = null
-            }
-          },
-          onReceiveAVPacket(avpacket) {
-            task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
-            task.stats.videoPacketEncodeCount++
-          },
-          avpacketPool
-        })
-        : null
-      )
+    task.softwareEncoder = task.resource
+      ? this.createWasmcodecEncoder(task, task.resource)
+      : (support.videoEncoder ? this.createWebcodecEncoder(task, false) : null)
 
     if (!task.softwareEncoder) {
       logger.error('software encoder not support')
@@ -215,25 +212,28 @@ export default class VideoEncodePipeline extends Pipeline {
 
     const caches: (pointer<AVFrameRef> | VideoFrame)[] = []
 
-    let pullPadding = false
+    let pullPadding: Promise<any>
+    const MAX = 4
 
     async function pullAVFrame() {
       if (!task.inputEnd) {
         if (!caches.length) {
+          if (pullPadding) {
+            await pullPadding
+          }
           const avframe = await leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
           if (is.number(avframe) && avframe < 0) {
             task.inputEnd = true
           }
           caches.push(avframe)
         }
-        if (caches.length < 4 && !pullPadding) {
-          pullPadding = true
-          leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull').then((avframe) => {
+        if (caches.length < MAX && !pullPadding) {
+          pullPadding = leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull').then((avframe) => {
             if (is.number(avframe) && avframe < 0) {
               task.inputEnd = true
             }
             caches.push(avframe)
-            pullPadding = false
+            pullPadding = null
           })
         }
       }
@@ -269,14 +269,34 @@ export default class VideoEncodePipeline extends Pipeline {
                   : task.targetEncoder.encode(avframe, task.gopCounter === 0)
                 if (ret < 0) {
                   task.stats.videoEncodeErrorFrameCount++
-                  if (task.targetEncoder === task.hardwareEncoder && task.softwareEncoder) {
-                    task.targetEncoder = task.softwareEncoder
-                    task.hardwareEncoder.close()
-                    task.hardwareEncoder = null
-                    task.gopCounter = 0
-                    await this.openSoftwareEncoder(task)
+                  if (task.targetEncoder instanceof WebVideoEncoder && task.softwareEncoder) {
 
-                    logger.warn(`video encode error width hardware, taskId: ${task.taskId}, error: ${ret}, try to fallback to software encode`)
+                    logger.warn(`video encode error from hardware, taskId: ${task.taskId}, error: ${ret}, try to fallback to software decoder`)
+
+                    if (task.targetEncoder === task.hardwareEncoder) {
+                      task.hardwareEncoder.close()
+                      task.hardwareEncoder = null
+                    }
+                    else if (task.resource) {
+                      task.softwareEncoder.close()
+                      task.softwareEncoder = this.createWasmcodecEncoder(task, task.resource)
+                    }
+                    else {
+                      logger.error(`cannot fallback to wasm video encoder because of resource not found , taskId: ${options.taskId}`)
+                      rightIPCPort.reply(request, errorType.CODEC_NOT_SUPPORT)
+                      break
+                    }
+                    try {
+                      await this.openSoftwareEncoder(task)
+                      task.targetEncoder = task.softwareEncoder
+                    }
+                    catch (error) {
+                      logger.error(`video software encoder open error, taskId: ${options.taskId}`)
+                      rightIPCPort.reply(request, errorType.CODEC_NOT_SUPPORT)
+                      break
+                    }
+
+                    task.gopCounter = 0
 
                     ret = task.targetEncoder instanceof WasmVideoEncoder
                       ? await task.targetEncoder.encodeAsync(avframe, task.gopCounter === 0)
@@ -372,7 +392,24 @@ export default class VideoEncodePipeline extends Pipeline {
       if (isWorker()) {
         threadCount = Math.max(threadCount, navigator.hardwareConcurrency)
       }
-      await task.softwareEncoder.open(parameters, task.timeBase, threadCount, task.wasmEncoderOptions)
+      try {
+        await task.softwareEncoder.open(parameters, task.timeBase, threadCount, task.wasmEncoderOptions)
+      }
+      catch (error) {
+        if ((task.softwareEncoder instanceof WebVideoEncoder) && task.resource) {
+
+          logger.warn(`webcodecs software encoder open failed, ${error}, try to fallback to wasm software encoder`)
+
+          task.softwareEncoder.close()
+          task.softwareEncoder = this.createWasmcodecEncoder(task, task.resource)
+          await task.softwareEncoder.open(parameters, task.timeBase, threadCount, task.wasmEncoderOptions)
+          task.targetEncoder = task.softwareEncoder
+        }
+        else {
+          throw error
+        }
+      }
+
       task.softwareEncoderOpened = true
       if (task.softwareEncoder instanceof WasmVideoEncoder) {
         task.firstEncoded = false
@@ -380,15 +417,29 @@ export default class VideoEncodePipeline extends Pipeline {
     }
   }
 
-  public async open(taskId: string, parameters: pointer<AVCodecParameters>, timeBase: Rational, wasmEncoderOptions: Data = {}) {
+  public async open(taskId: string, codecpar: pointer<AVCodecParameters>, timeBase: Rational, wasmEncoderOptions: Data = {}) {
     const task = this.tasks.get(taskId)
     if (task) {
       task.wasmEncoderOptions = wasmEncoderOptions
+
+      if (task.preferWebCodecs
+        && support.videoEncoder
+        && WebVideoEncoder.isSupported(codecpar, false)
+        && task.softwareEncoder instanceof WasmVideoEncoder
+      ) {
+        task.softwareEncoder.close()
+        const softwareEncoder = this.createWebcodecEncoder(task, false)
+        if (task.softwareEncoder === task.targetEncoder) {
+          task.targetEncoder = softwareEncoder
+        }
+        task.softwareEncoder = softwareEncoder
+      }
+
       return new Promise<number>(async (resolve, reject) => {
         task.openReject = reject
         if (task.hardwareEncoder) {
           try {
-            await task.hardwareEncoder.open(parameters, timeBase)
+            await task.hardwareEncoder.open(codecpar, timeBase)
           }
           catch (error) {
             logger.error(`cannot open hardware encoder, ${error}`)
@@ -398,7 +449,7 @@ export default class VideoEncodePipeline extends Pipeline {
           }
         }
 
-        task.parameters = parameters
+        task.parameters = codecpar
         task.timeBase = timeBase
 
         if (task.targetEncoder === task.softwareEncoder) {
