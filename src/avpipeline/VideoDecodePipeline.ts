@@ -318,7 +318,7 @@ export default class VideoDecodePipeline extends Pipeline {
                   // 硬解或者 webcodecs 软解失败
                   if ((task.targetDecoder instanceof WebVideoDecoder) && task.softwareDecoder) {
 
-                    logger.warn(`video decode error width hardware, taskId: ${task.taskId}, error: ${ret}, try to fallback to software decoder`)
+                    logger.warn(`video decode error from hardware, taskId: ${task.taskId}, error: ${ret}, try to fallback to software decoder`)
 
                     if (task.targetDecoder === task.hardwareDecoder) {
                       task.hardwareDecoder.close()
