@@ -32,7 +32,7 @@
       <el-radio v-model="radio" label="mp4">mp4</el-radio>
       <el-radio v-model="radio" label="ts">mpegts</el-radio>
       <el-radio v-model="radio" label="mkv">matroska</el-radio>
-      <el-radio v-model="radio" label="oggs">oggs</el-radio>
+      <el-radio v-model="radio" label="ogg">ogg</el-radio>
       <el-radio v-model="radio" label="mp3">mp3</el-radio>
     </div>
   </div>
@@ -126,7 +126,7 @@
   <br>
 
   <input id="file" type="file" />
-  <button onclick="openWriteFile()">打开写文件</button>
+  <button onclick="openWriteFile()">open output file</button>
 
   <textarea name="logcatbox" class="logcatBox" rows="10" readonly style="display: block; margin-top: 20px; width: 800px;"></textarea>
 
@@ -476,7 +476,7 @@
       const file = document.querySelector('#file').files[0]
 
       if (!file) {
-        alert('请先打开输入文件')
+        alert('open input file first')
         return
       }
 
