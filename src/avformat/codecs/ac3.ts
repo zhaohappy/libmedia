@@ -175,7 +175,7 @@ const EAC3Blocks = [
 const AC3_HEADER_SIZE = 7
 
 export function parseHeader(buf: Uint8ArrayInterface) {
-  const bitReader = new BitReader(size)
+  const bitReader = new BitReader(buf.length)
   bitReader.appendBuffer(buf)
 
   const info: AC3HeaderInfo = {
@@ -208,7 +208,7 @@ export function parseHeader(buf: Uint8ArrayInterface) {
     return -1
   }
 
-  info.bitstreamId = bitReader.readU(29) & 0x1f
+  info.bitstreamId = bitReader.peekU(29) & 0x1f
 
   if (info.bitstreamId > 16) {
     return -2
@@ -297,9 +297,9 @@ export function parseHeader(buf: Uint8ArrayInterface) {
     info.bitrate = 8 * info.frameSize * info.sampleRate / (info.numBlocks * 256)
     info.channels = AC3ChannelsTab[info.channelMode] + info.lfeOn
   }
-  info.channelLayout = static_cast<uint64>(AC3ChannelLayout[info.channelMode])
+  info.channelLayout = static_cast<uint64>(AC3ChannelLayout[info.channelMode] as uint32)
   if (info.lfeOn) {
-    info.channelLayout |= static_cast<uint64>(AV_CH_LAYOUT.AV_CH_LOW_FREQUENCY)
+    info.channelLayout |= static_cast<uint64>(AV_CH_LAYOUT.AV_CH_LOW_FREQUENCY as uint32)
   }
 
   return info
