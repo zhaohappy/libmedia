@@ -76,10 +76,12 @@ export interface MpegpsContext {
   imkhCctv: boolean
   sofdec: boolean
   ioEnded: boolean
+  paddingPES: PES
 }
 
 export interface MpegpsStreamContext {
   streamId: number
   streamType: number
   filter: AVBSFilter
+  paddingPES: PES
 }

@@ -79,7 +79,8 @@ export const VideoCodecString2CodecId = {
   'vp9': AVCodecID.AV_CODEC_ID_VP9,
   'vp8': AVCodecID.AV_CODEC_ID_VP8,
   'mpeg4': AVCodecID.AV_CODEC_ID_MPEG4,
-  'theora': AVCodecID.AV_CODEC_ID_THEORA
+  'theora': AVCodecID.AV_CODEC_ID_THEORA,
+  'mpeg2video': AVCodecID.AV_CODEC_ID_MPEG2VIDEO
 }
 
 export const AudioCodecString2CodecId = {
@@ -154,6 +155,7 @@ export const Format2AVFormat: Record<string, AVFormat> = {
   'mov': AVFormat.MOV,
   'ts': AVFormat.MPEGTS,
   'mpegts': AVFormat.MPEGTS,
+  'mpeg': AVFormat.MPEGPS,
   'ivf': AVFormat.IVF,
   'ogg': AVFormat.OGGS,
   'opus': AVFormat.OGGS,

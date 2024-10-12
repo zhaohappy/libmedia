@@ -44,7 +44,7 @@ import { AVFormat, AVSeekFlags } from '../avformat'
 import { addAVPacketData, createAVPacket, deleteAVPacketSideData,
   destroyAVPacket, getAVPacketData, getAVPacketSideData
 } from 'avutil/util/avpacket'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import AVStream from '../AVStream'
 import seekInBytes from '../function/seekInBytes'
 import { avRescaleQ } from 'avutil/util/rational'
@@ -55,10 +55,13 @@ import * as hevc from '../codecs/hevc'
 import * as vvc from '../codecs/vvc'
 import * as aac from '../codecs/aac'
 import * as opus from '../codecs/opus'
+import * as ac3 from '../codecs/ac3'
+import * as dts from '../codecs/dts'
 import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import { avMalloc } from 'avutil/util/mem'
 import { memcpy, mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { BitFormat } from '../codecs/h264'
+import * as is from 'common/util/is'
 
 export default class IMpegtsFormat extends IFormat {
 
@@ -294,6 +297,26 @@ export default class IMpegtsFormat extends IFormat {
           vvc.parseAnnexbExtraData(avpacket, true)
           this.checkExtradata(avpacket, stream)
           stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+        }
+      }
+      else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_EAC3
+      ) {
+        if (stream.codecpar.sampleRate === NOPTS_VALUE) {
+          const info = ac3.parseHeader(getAVPacketData(avpacket))
+          if (!is.number(info)) {
+            stream.codecpar.sampleRate = reinterpret_cast<int32>(info.sampleRate)
+            stream.codecpar.chLayout.nbChannels = reinterpret_cast<int32>(info.channels)
+          }
+        }
+      }
+      else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_DTS) {
+        if (stream.codecpar.sampleRate === NOPTS_VALUE) {
+          const info = dts.parseHeader(getAVPacketData(avpacket))
+          if (!is.number(info)) {
+            stream.codecpar.sampleRate = reinterpret_cast<int32>(info.sampleRate)
+            stream.codecpar.chLayout.nbChannels = reinterpret_cast<int32>(info.channels)
+          }
         }
       }
     }

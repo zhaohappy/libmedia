@@ -43,12 +43,15 @@ import AVStream from '../AVStream'
 import seekInBytes from '../function/seekInBytes'
 import { avRescaleQ } from 'avutil/util/rational'
 import * as array from 'common/util/array'
+import * as object from 'common/util/object'
 import * as mp3 from '../codecs/mp3'
 import * as h264 from '../codecs/h264'
 import * as hevc from '../codecs/hevc'
 import * as vvc from '../codecs/vvc'
 import * as aac from '../codecs/aac'
 import * as opus from '../codecs/opus'
+import * as ac3 from '../codecs/ac3'
+import * as dts from '../codecs/dts'
 import * as mpegvideo from '../codecs/mpegvideo'
 import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import { avMalloc } from 'avutil/util/mem'
@@ -61,8 +64,6 @@ import Mp32RawFilter from '../bsf/mp3/Mp32RawFilter'
 import { FrameHeader } from './mp3/frameHeader'
 import * as mp3FrameHeader from '../formats/mp3/frameHeader'
 import { IOFlags } from 'common/io/flags'
-import * as ac3 from '../codecs/ac3'
-import * as dts from '../codecs/dts'
 import * as is from 'common/util/is'
 import Ac32RawFilter from '../bsf/ac3/Ac32RawFilter'
 import Dts2RawFilter from '../bsf/dts/Dts2RawFilter'
@@ -85,7 +86,8 @@ export default class IMpegpsFormat extends IFormat {
       lastPtsMap: new Map(),
       imkhCctv: false,
       sofdec: false,
-      ioEnded: false
+      ioEnded: false,
+      paddingPES: null
     }
   }
 
@@ -283,7 +285,7 @@ export default class IMpegpsFormat extends IFormat {
           default: {
             if (startCode >= 0x1e0 && startCode <= 0x1ef) {
               type = AVMediaType.AVMEDIA_TYPE_VIDEO
-              codecId = AVCodecID.AV_CODEC_ID_CAVS
+              codecId = AVCodecID.AV_CODEC_ID_MPEG2VIDEO
             }
             else if (startCode >= 0x1c0 && startCode <= 0x1df) {
               type = AVMediaType.AVMEDIA_TYPE_AUDIO
@@ -333,7 +335,8 @@ export default class IMpegpsFormat extends IFormat {
     const context: MpegpsStreamContext = stream.privData = {
       streamId,
       streamType,
-      filter: null
+      filter: null,
+      paddingPES: null
     }
 
     if (codecId === AVCodecID.AV_CODEC_ID_PCM_ALAW
@@ -531,8 +534,7 @@ export default class IMpegpsFormat extends IFormat {
       ret = streamContext.filter.receiveAVPacket(avpacket)
 
       if (ret < 0) {
-        logger.error('receive avpacket from bsf failed')
-        return errorType.DATA_INVALID
+        return ret
       }
 
       avpacket.timeBase.den = 90000
@@ -595,12 +597,357 @@ export default class IMpegpsFormat extends IFormat {
         }
       }
     }
+    return 0
+  }
+
+  private getMpegVideoNextFrame(offset: number, payload: Uint8Array, stream: AVStream) {
+    while (true) {
+      const next = nalu.getNextNaluStart(payload, offset)
+      if (next.offset >= 0) {
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+            && next.startCode === 4
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG2VIDEO
+            && next.startCode === 3
+            && (next.offset + 3 < payload.length)
+            && (payload[next.offset + 3] < 0x01
+              || payload[next.offset + 3] > 0xaf
+            )
+            && payload[next.offset + 3] !== 0xb5
+        ) {
+          return payload[next.offset + 3] === 0xb7 ? (next.offset + 4) : next.offset
+        }
+        else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG2VIDEO
+          && next.startCode === 4
+          && (next.offset + 4 < payload.length)
+          && (payload[next.offset + 4] < 0x01
+            || payload[next.offset + 4] > 0xaf
+          )
+          && payload[next.offset + 4] !== 0xb5
+        ) {
+          return payload[next.offset + 4] === 0xb7 ? (next.offset + 5) : (next.offset + 1)
+        }
+        offset = next.offset + 3
+      }
+      else {
+        return -1
+      }
+    }
+  }
+
+  private getMpegAudioNextFrame(payload: Uint8Array, stream: AVStream) {
+    let first = 0
+    let end = 2
+    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3) {
+      first = 0x0b
+    }
+    else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3) {
+      first = 0xff
+    }
+    else {
+      first = 0x7f
+      end = 4
+    }
+    for (let i = 0; i < payload.length - end; i++) {
+      if (payload[i] === first ) {
+        const second = payload[i + 1]
+
+        const max = 2
+
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3 && ((second & 0xe0) === 0xe0)) {
+          if (i !== 0) {
+
+            let count = 0
+            let offset = 0
+
+            while (true) {
+              const header = new FrameHeader()
+              mp3FrameHeader.parse(
+                header,
+                (payload[i + offset] << 24)
+                  | (payload[i + offset + 1] << 16)
+                  | (payload[i + offset + 2] << 8)
+                  | payload[i + offset + 3]
+              )
+              const ver = (payload[i + offset + 1] >>> 3) & 0x03
+              const samplingFreqIndex = (payload[i + offset + 2] & 0x0C) >>> 2
+              const sampleRate = mp3.getSampleRateByVersionIndex(ver, samplingFreqIndex)
+              let frameLength = mp3FrameHeader.getFrameLength(header, sampleRate)
+
+              if (frameLength
+                && (i + offset + frameLength < payload.length - 2)
+                && payload[i + offset + frameLength] === 0xff
+                && (payload[i + offset + frameLength + 1] & 0xe0) === 0xe0
+              ) {
+                count++
+                offset += frameLength
+                if (count === max) {
+                  break
+                }
+              }
+              else {
+                break
+              }
+            }
+            if (count === max) {
+              return i
+            }
+            else {
+              continue
+            }
+          }
+          break
+        }
+        else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3 && second === 0x77) {
+          if (i !== 0) {
+
+            let count = 0
+            let offset = 0
+
+            while (true) {
+
+              const info = ac3.parseHeader(payload.subarray(i + offset))
+
+              if (!is.number(info)
+                && (i + offset + info.frameSize < payload.length - 2)
+                && payload[i + offset + info.frameSize] === 0x0b
+                && payload[i + offset + info.frameSize + 1] === 0x77
+              ) {
+                count++
+                offset += info.frameSize
+                if (count === max) {
+                  break
+                }
+              }
+              else {
+                break
+              }
+            }
+            if (count === max) {
+              return i
+            }
+            else {
+              continue
+            }
+          }
+          break
+        }
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_DTS
+          && second === 0xfe
+          && payload[i + 2] === 0x80
+          && payload[i + 3] === 0x81
+        ) {
+          if (i !== 0) {
+
+            let count = 0
+            let offset = 0
+
+            while (true) {
+
+              const info = dts.parseHeader(payload.subarray(i + offset))
+
+              if (!is.number(info)
+                && (i + offset + info.frameSize < payload.length - 4)
+                && payload[i + offset + info.frameSize] === 0x7f
+                && payload[i + offset + info.frameSize + 1] === 0xfe
+                && payload[i + offset + info.frameSize + 2] === 0x80
+                && payload[i + offset + info.frameSize + 3] === 0x81
+              ) {
+                count++
+                offset += info.frameSize
+                if (count === max) {
+                  break
+                }
+              }
+              else {
+                break
+              }
+            }
+            if (count === max) {
+              return i
+            }
+            else {
+              continue
+            }
+          }
+          break
+        }
+      }
+    }
+
+    return -1
   }
 
   @deasync
   private async readAVPacket_(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
+
+    const handlePES = (context: MpegpsStreamContext, stream: AVStream) => {
+      let slice = this.context.slices.get(context.streamId)
+      if (!slice) {
+        slice = {
+          pts: -1n,
+          dts: -1n,
+          pos: -1n,
+          buffers: []
+        }
+        this.context.slices.set(context.streamId, slice)
+      }
+
+      if (this.context.pes.dts === NOPTS_VALUE_BIGINT || !slice.buffers.length) {
+        if (this.context.pes.dts !== NOPTS_VALUE_BIGINT) {
+          slice.dts = this.context.pes.dts
+          slice.pts = this.context.pes.pts
+          slice.pos = this.context.pes.pos
+          // 剔除前一个包的数据
+          if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+            const offset = this.getMpegVideoNextFrame(0, this.context.pes.payload, stream)
+
+            if (offset > 0) {
+              this.context.pes.payload = this.context.pes.payload.subarray(offset)
+            }
+            // need next pes
+            else if (offset < 0) {
+              context.paddingPES = object.extend({}, this.context.pes)
+              return true
+            }
+          }
+          else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_DTS
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3
+          ) {
+            const offset = this.getMpegAudioNextFrame(this.context.pes.payload, stream)
+            if (offset > 0) {
+              this.context.pes.payload = this.context.pes.payload.subarray(offset)
+            }
+          }
+        }
+        slice.buffers.push(this.context.pes.payload)
+        return true
+      }
+      else {
+        let ret = 0
+        if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+          let offset = this.getMpegVideoNextFrame(0, this.context.pes.payload, stream)
+          if (offset > 0) {
+            slice.buffers.push(this.context.pes.payload.subarray(0, offset))
+            this.context.pes.payload = this.context.pes.payload.subarray(offset)
+          }
+          // need next pes
+          else if (offset < 0) {
+            context.paddingPES = object.extend({}, this.context.pes)
+            return true
+          }
+        }
+        // mpeg1/mpeg2 可能有多个帧
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG2VIDEO) {
+          let payload = concatTypeArray(Uint8Array, slice.buffers)
+          const list: Uint8Array[] = []
+          while (true) {
+            let offset = 0
+            let pos = 0
+            let hasPic = false
+            while (true) {
+              const next = this.getMpegVideoNextFrame(pos, payload, stream)
+              if (next >= 0) {
+                if (hasPic) {
+                  offset = next
+                  break
+                }
+                const type = payload[next + 3]
+                if (type === 0x00) {
+                  hasPic = true
+                }
+                pos = next + 3
+              }
+              else {
+                break
+              }
+            }
+            if (offset > 0) {
+              list.push(payload.subarray(0, offset))
+              payload = payload.subarray(offset)
+            }
+            else {
+              break
+            }
+          }
+          list.push(payload)
+          if (list.length > 1) {
+            const dtsDelta = (this.context.pes.dts - slice.dts) / static_cast<int64>(list.length)
+            const ptsDelta = (this.context.pes.pts - slice.pts) / static_cast<int64>(list.length)
+            for (let i = 0; i < list.length; i++) {
+              slice.buffers.length = 0
+              slice.buffers.push(list[i])
+              slice.dts += dtsDelta * static_cast<int64>(i)
+              slice.pts += ptsDelta * static_cast<int64>(i)
+              if (i === 0) {
+                this.parseSlice(slice, formatContext, avpacket, stream)
+              }
+              else {
+                const cache = createAVPacket()
+                this.parseSlice(slice, formatContext, cache, stream)
+                formatContext.interval.packetBuffer.push(cache)
+              }
+            }
+          }
+          else {
+            slice.buffers = list
+            this.parseSlice(slice, formatContext, avpacket, stream)
+          }
+        }
+        else {
+          ret = this.parseSlice(slice, formatContext, avpacket, stream)
+        }
+
+        slice.buffers.length = 0
+
+        if (this.context.paddingPES) {
+          // 更新 this.context.paddingPES 为下一帧数据的开始位置
+          this.context.paddingPES.payload = this.context.pes.payload
+        }
+        else {
+          slice.buffers.push(this.context.pes.payload)
+          slice.dts = this.context.pes.dts
+          slice.pts = this.context.pes.pts
+          slice.pos = this.context.pes.pos
+        }
+        if (ret === errorType.EOF) {
+          return true
+        }
+        return false
+      }
+    }
+
     while (true) {
-      const startCode = await this.readPES(formatContext)
+      let startCode = 0
+      if (this.context.paddingPES) {
+        this.context.pes = this.context.paddingPES
+        this.context.paddingPES = null
+      }
+      else {
+        startCode = await this.readPES(formatContext)
+        parsePES(this.context.pes)
+
+        if (startCode === mpegps.MpegpsStartCode.PRIVATE_STREAM_1) {
+          startCode = this.context.pes.payload[0]
+          if (startCode === 0x0b) {
+            if (this.context.pes.payload[1] === 0x77) {
+              startCode = 0x80
+            }
+            else {
+              this.context.pes.payload = this.context.pes.payload.subarray(1)
+            }
+          }
+          else {
+            if (startCode >= 0x80 && startCode <= 0xcf) {
+              this.context.pes.payload = this.context.pes.payload.subarray(4)
+            }
+            else {
+              this.context.pes.payload = this.context.pes.payload.subarray(1)
+            }
+          }
+          this.context.pes.streamId = startCode & 0xff
+        }
+      }
 
       let stream = formatContext.streams.find(((stream) => {
         const context = stream.privData as MpegpsStreamContext
@@ -615,202 +962,29 @@ export default class IMpegpsFormat extends IFormat {
 
         const context = stream.privData as MpegpsStreamContext
 
-        parsePES(this.context.pes)
-
         if (!this.context.pes.payload) {
           continue
         }
-
-        let slice = this.context.slices.get(context.streamId)
-        if (!slice) {
-          slice = {
-            pts: -1n,
-            dts: -1n,
-            pos: -1n,
-            buffers: []
+        // 当前流有 paddingPES 需要合并
+        // 出现在 0x000001 在 paddingPES 的最后位置
+        if (context.paddingPES) {
+          context.paddingPES.payload = concatTypeArray(Uint8Array, [context.paddingPES.payload, this.context.pes.payload])
+          if (this.context.pes.dts === NOPTS_VALUE_BIGINT) {
+            this.context.pes = context.paddingPES
+            context.paddingPES = null
           }
-          this.context.slices.set(context.streamId, slice)
+          else {
+            // 新的帧先放到 this.context 下面，下一次处理
+            this.context.paddingPES = this.context.pes
+            this.context.pes = context.paddingPES
+            context.paddingPES = null
+          }
         }
 
-        if (this.context.pes.dts === NOPTS_VALUE_BIGINT || !slice.buffers.length) {
-          if (this.context.pes.dts !== NOPTS_VALUE_BIGINT) {
-            slice.dts = this.context.pes.dts
-            slice.pts = this.context.pes.pts
-            slice.pos = this.context.pes.pos
-
-            // 剔除前一个包的数据
-            if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-              const next = nalu.getNextNaluStart(this.context.pes.payload, 0)
-              if (next.offset > 3) {
-                this.context.pes.payload = this.context.pes.payload.subarray(next.offset)
-              }
-            }
-            else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3
-              || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_DTS
-              || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3
-            ) {
-              let first = 0
-              let end = 2
-              if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3) {
-                first = 0x0b
-              }
-              else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3) {
-                first = 0xff
-              }
-              else {
-                first = 0x7f
-                end = 4
-              }
-              for (let i = 0; i < this.context.pes.payload.length - end; i++) {
-                if (this.context.pes.payload[i] === first ) {
-                  const second = this.context.pes.payload[i + 1]
-
-                  const max = 2
-
-                  if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3 && ((second & 0xe0) === 0xe0)) {
-                    if (i !== 0) {
-
-                      let count = 0
-                      let offset = 0
-
-                      while (true) {
-                        const header = new FrameHeader()
-                        mp3FrameHeader.parse(
-                          header,
-                          (this.context.pes.payload[i + offset] << 24)
-                            | (this.context.pes.payload[i + offset + 1] << 16)
-                            | (this.context.pes.payload[i + offset + 2] << 8)
-                            | this.context.pes.payload[i + offset + 3]
-                        )
-                        const ver = (this.context.pes.payload[i + offset + 1] >>> 3) & 0x03
-                        const samplingFreqIndex = (this.context.pes.payload[i + offset + 2] & 0x0C) >>> 2
-                        const sampleRate = mp3.getSampleRateByVersionIndex(ver, samplingFreqIndex)
-                        let frameLength = mp3FrameHeader.getFrameLength(header, sampleRate)
-
-                        if (frameLength
-                          && (i + offset + frameLength < this.context.pes.payload.length - 2)
-                          && this.context.pes.payload[i + offset + frameLength] === 0xff
-                          && (this.context.pes.payload[i + offset + frameLength + 1] & 0xe0) === 0xe0
-                        ) {
-                          count++
-                          offset += frameLength
-                          if (count === max) {
-                            break
-                          }
-                        }
-                        else {
-                          break
-                        }
-                      }
-                      if (count === max) {
-                        this.context.pes.payload = this.context.pes.payload.subarray(i)
-                      }
-                      else {
-                        continue
-                      }
-                    }
-                    break
-                  }
-                  else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3 && second === 0x77) {
-                    if (i !== 0) {
-
-                      let count = 0
-                      let offset = 0
-
-                      while (true) {
-
-                        const info = ac3.parseHeader(this.context.pes.payload.subarray(i + offset))
-
-                        if (!is.number(info)
-                          && (i + offset + info.frameSize < this.context.pes.payload.length - 2)
-                          && this.context.pes.payload[i + offset + info.frameSize] === 0x0b
-                          && this.context.pes.payload[i + offset + info.frameSize + 1] === 0x77
-                        ) {
-                          count++
-                          offset += info.frameSize
-                          if (count === max) {
-                            break
-                          }
-                        }
-                        else {
-                          break
-                        }
-                      }
-                      if (count === max) {
-                        this.context.pes.payload = this.context.pes.payload.subarray(i)
-                      }
-                      else {
-                        continue
-                      }
-                    }
-                    break
-                  }
-                  if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_DTS
-                    && second === 0xfe
-                    && this.context.pes.payload[i + 2] === 0x80
-                    && this.context.pes.payload[i + 3] === 0x81
-                  ) {
-                    if (i !== 0) {
-
-                      let count = 0
-                      let offset = 0
-
-                      while (true) {
-
-                        const info = dts.parseHeader(this.context.pes.payload.subarray(i + offset))
-
-                        if (!is.number(info)
-                          && (i + offset + info.frameSize < this.context.pes.payload.length - 4)
-                          && this.context.pes.payload[i + offset + info.frameSize] === 0x7f
-                          && this.context.pes.payload[i + offset + info.frameSize + 1] === 0xfe
-                          && this.context.pes.payload[i + offset + info.frameSize + 2] === 0x80
-                          && this.context.pes.payload[i + offset + info.frameSize + 3] === 0x81
-                        ) {
-                          count++
-                          offset += info.frameSize
-                          if (count === max) {
-                            break
-                          }
-                        }
-                        else {
-                          break
-                        }
-                      }
-                      if (count === max) {
-                        this.context.pes.payload = this.context.pes.payload.subarray(i)
-                      }
-                      else {
-                        continue
-                      }
-                    }
-                    break
-                  }
-                }
-              }
-            }
-          }
-          slice.buffers.push(this.context.pes.payload)
+        if (handlePES(context, stream)) {
           continue
         }
-        else {
-          if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-            const next = nalu.getNextNaluStart(this.context.pes.payload, 0)
-            if (next.offset > 3) {
-              slice.buffers.push(this.context.pes.payload.subarray(0, next.offset))
-              this.context.pes.payload = this.context.pes.payload.subarray(next.offset)
-            }
-          }
-
-          this.parseSlice(slice, formatContext, avpacket, stream)
-
-          slice.buffers.length = 0
-          slice.buffers.push(this.context.pes.payload)
-          slice.dts = this.context.pes.dts
-          slice.pts = this.context.pes.pts
-          slice.pos = this.context.pes.pos
-
-          return 0
-        }
+        return 0
       }
     }
   }
