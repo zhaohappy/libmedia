@@ -72,6 +72,12 @@ export default class Dts2RawFilter extends AVBSFilter {
 
     while (i < buffer.length) {
 
+      if (i > buffer.length - 6) {
+        this.cache = buffer.subarray(i)
+        this.lastDts = lastDts
+        return 0
+      }
+
       const info = dts.parseHeader(buffer.subarray(i))
 
       if (is.number(info)) {
@@ -92,11 +98,11 @@ export default class Dts2RawFilter extends AVBSFilter {
       if (i + frameLength > buffer.length) {
         this.cache = buffer.subarray(i)
         this.lastDts = lastDts
-        break
+        return 0
       }
 
       const duration = avRescaleQ(
-        static_cast<int64>(1536 / info.sampleRate * AV_TIME_BASE),
+        static_cast<int64>(((info.sampleBlock * dts.DTS_PCMBLOCK_SAMPLES) / info.sampleRate * AV_TIME_BASE) as double),
         AV_TIME_BASE_Q,
         this.inTimeBase
       )

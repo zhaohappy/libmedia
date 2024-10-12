@@ -72,6 +72,12 @@ export default class Ac32RawFilter extends AVBSFilter {
 
     while (i < buffer.length) {
 
+      if (i > buffer.length - 10) {
+        this.cache = buffer.subarray(i)
+        this.lastDts = lastDts
+        return 0
+      }
+
       const info = ac3.parseHeader(buffer.subarray(i))
 
       if (is.number(info)) {
@@ -92,7 +98,7 @@ export default class Ac32RawFilter extends AVBSFilter {
       if (i + frameLength > buffer.length) {
         this.cache = buffer.subarray(i)
         this.lastDts = lastDts
-        break
+        return 0
       }
 
       const duration = avRescaleQ(
