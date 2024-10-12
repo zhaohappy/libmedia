@@ -301,6 +301,9 @@
                   }
 
                   switch (codecId) {
+                    // mpeg1/2
+                    case 2:
+                      return `../dist/decode/mpeg2video.wasm`
                     // H264
                     case 27:
                       return '../dist/decode/h264-simd.wasm'

@@ -601,6 +601,9 @@
                   }
 
                   switch (codecId) {
+                    // mpeg1/2
+                    case 2:
+                      return `../dist/decode/mpeg2video${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                     // H264
                     case 27:
                       return `../dist/decode/h264${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
@@ -1269,7 +1272,7 @@
         el: '#enableWorker',
         data: function () {
           return {
-            enableWorker: true
+            enableWorker: false
           }
         }
       })

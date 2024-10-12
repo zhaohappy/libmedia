@@ -105,6 +105,9 @@
               }
 
               switch (codecId) {
+                // mpeg1/2
+                case 2:
+                  return `../dist/decode/mpeg2video${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
                 // H264
                 case 27:
                   return `../../dist/decode/h264${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
