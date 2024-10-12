@@ -104,6 +104,8 @@ Codecs are compiled into separate wasm modules, the decoders are in the ```dist/
 | av1         | ✅         | ✅          | ✅          | ✅                 |
 | vp8         | ✅         | ✅          | ✅          | ✅                 |
 | vp9         | ✅         | ✅          | ✅          | ✅                 |
+| mpeg1       | ✅         | ✅          | ✅          | ❌                 |
+| mpeg2       | ✅         | ✅          | ✅          | ❌                 |
 | mpeg4       | ✅         | ✅          | ✅          | ❌                 |
 | theora      | ✅         | ✅          | ✅          | ❌                 |
 | aac         | ✅         | ✅          | ✅          | ✅                 |
