@@ -6,6 +6,7 @@ sh ./build/build-decoder.sh mpeg4 0 0
 sh ./build/build-decoder.sh vp8 0 0
 sh ./build/build-decoder.sh vp9 0 0
 sh ./build/build-decoder.sh theora 0 0
+sh ./build/build-decoder.sh mpeg2video 0 0
 sh ./build/build-decoder.sh aac 0 0
 sh ./build/build-decoder.sh ac3 0 0
 sh ./build/build-decoder.sh dca 0 0
@@ -25,6 +26,7 @@ sh ./build/build-decoder.sh mpeg4 0 1
 sh ./build/build-decoder.sh vp8 0 1
 sh ./build/build-decoder.sh vp9 0 1
 sh ./build/build-decoder.sh theora 0 1
+sh ./build/build-decoder.sh mpeg2video 0 1
 sh ./build/build-decoder.sh aac 0 1
 sh ./build/build-decoder.sh ac3 0 1
 sh ./build/build-decoder.sh dca 0 1
@@ -44,6 +46,7 @@ sh ./build/build-decoder.sh mpeg4 1 1
 sh ./build/build-decoder.sh vp8 1 1
 sh ./build/build-decoder.sh vp9 1 1
 sh ./build/build-decoder.sh theora 1 1
+sh ./build/build-decoder.sh mpeg2video 1 1
 sh ./build/build-decoder.sh aac 1 1
 sh ./build/build-decoder.sh ac3 1 1
 sh ./build/build-decoder.sh dca 1 1
