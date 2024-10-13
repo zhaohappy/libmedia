@@ -148,7 +148,7 @@ export default class IOggFormat extends IFormat {
     }
 
     let len = 0
-    while (true && this.curSegIndex < this.page.segmentTable.length) {
+    while (this.curSegIndex < this.page.segmentTable.length) {
       const next = this.page.segmentTable[this.curSegIndex++]
       len += next
       if (next !== 255) {
@@ -179,6 +179,11 @@ export default class IOggFormat extends IFormat {
   }
 
   private async createStream(formatContext: AVIFormatContext, payload: Uint8Array) {
+
+    if (payload.length < 8) {
+      return 0
+    }
+
     let ioReader = new IOReaderSync(payload.length, false)
     ioReader.appendBuffer(payload)
 
