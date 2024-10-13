@@ -257,6 +257,7 @@ export default class IMatroskaFormat extends IFormat {
                 break
               }
             }
+            // add the default Events Format
             lines.push('[Events]')
             lines.push('Format: ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text')
             codecPrivateData = text.encode(lines.join('\n'))
@@ -669,7 +670,7 @@ export default class IMatroskaFormat extends IFormat {
             offset = header.length
             break
           default:
-            throw new Error(`not support compression stream, algo: ${compression.compression.algo}`)
+            logger.fatal(`not support compression stream, algo: ${compression.compression.algo}`)
         }
 
       }

@@ -143,6 +143,7 @@ export default class IAacFormat extends IFormat {
         stream.timeBase
       )
     }
+    // LATM
     else if (signature[0] === 0x56 && (signature[1] & 0xe0) === 0xe0) {
       this.frameType = FrameType.LATM
       const stream = formatContext.createStream()
