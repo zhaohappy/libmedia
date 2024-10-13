@@ -67,6 +67,7 @@ import { IOFlags } from 'common/io/flags'
 import * as is from 'common/util/is'
 import Ac32RawFilter from '../bsf/ac3/Ac32RawFilter'
 import Dts2RawFilter from '../bsf/dts/Dts2RawFilter'
+import ADTS2RawFilter from '../bsf/aac/ADTS2RawFilter'
 
 export default class IMpegpsFormat extends IFormat {
 
@@ -356,6 +357,9 @@ export default class IMpegpsFormat extends IFormat {
     }
     else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_DTS) {
       context.filter = new Dts2RawFilter()
+    }
+    else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
+      context.filter = new ADTS2RawFilter()
     }
     if (context.filter) {
       context.filter.init(addressof(stream.codecpar), addressof(stream.timeBase))
