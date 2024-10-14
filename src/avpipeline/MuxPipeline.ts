@@ -159,9 +159,9 @@ export default class MuxPipeline extends Pipeline {
             return errorType.FORMAT_NOT_SUPPORT
           }
           break
-        case AVFormat.OGGS:
+        case AVFormat.OGG:
           if (defined(ENABLE_MUXER_OGGS)) {
-            oformat = new ((await import('avformat/formats/OOggsFormat')).default)
+            oformat = new ((await import('avformat/formats/OOggFormat')).default)
           }
           else {
             logger.error('oggs format not support, maybe you can rebuild avmedia')

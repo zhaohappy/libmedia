@@ -313,9 +313,9 @@ export default class DemuxPipeline extends Pipeline {
             return errorType.FORMAT_NOT_SUPPORT
           }
           break
-        case AVFormat.OGGS:
+        case AVFormat.OGG:
           if (defined(ENABLE_DEMUXER_OGGS)) {
-            iformat = new ((await import('avformat/formats/IOggsFormat')).default)
+            iformat = new ((await import('avformat/formats/IOggFormat')).default)
           }
           else {
             logger.error('oggs format not support, maybe you can rebuild avmedia')

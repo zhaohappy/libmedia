@@ -26,11 +26,11 @@
 import AVStream from '../AVStream'
 import { AVIFormatContext } from '../AVFormatContext'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
-import { OggPage, OggsCommentPage, PagePayload } from './oggs/OggPage'
+import { OggPage, OggsCommentPage, PagePayload } from './ogg/OggPage'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
-import { OpusOggsIdPage, OpusOggsCommentPage } from './oggs/opus'
-import { VorbisOggsIdPage, VorbisOggsCommentPage } from './oggs/vorbis'
+import { OpusOggsIdPage, OpusOggsCommentPage } from './ogg/opus'
+import { VorbisOggsIdPage, VorbisOggsCommentPage } from './ogg/vorbis'
 import * as errorType from 'avutil/error'
 import concatTypeArray from 'common/function/concatTypeArray'
 import IFormat from './IFormat'
@@ -54,7 +54,7 @@ interface IOggFormatPrivateData {
 
 export default class IOggFormat extends IFormat {
 
-  public type: AVFormat = AVFormat.OGGS
+  public type: AVFormat = AVFormat.OGG
 
   public headerPagesPayload: PagePayload[]
 

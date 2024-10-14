@@ -28,14 +28,14 @@ import Stream from '../AVStream'
 import { AVOFormatContext } from '../AVFormatContext'
 import AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
-import { OggPage, OggsCommentPage, PagePayload } from './oggs/OggPage'
+import { OggPage, OggsCommentPage, PagePayload } from './ogg/OggPage'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { AVFormat } from '../avformat'
 import * as logger from 'common/util/logger'
 import { getAVPacketData } from 'avutil/util/avpacket'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { OpusOggsCommentPage, OpusOggsIdPage } from './oggs/opus'
-import { VorbisOggsCommentPage, VorbisOggsIdPage } from './oggs/vorbis'
+import { OpusOggsCommentPage, OpusOggsIdPage } from './ogg/opus'
+import { VorbisOggsCommentPage, VorbisOggsIdPage } from './ogg/vorbis'
 import { mapUint8Array } from 'cheap/std/memory'
 import IOReaderSync from 'common/io/IOReaderSync'
 import * as errorType from 'avutil/error'
@@ -58,7 +58,7 @@ interface OggsStreamPrivData {
 
 export default class OOggFormat extends OFormat {
 
-  public type: AVFormat = AVFormat.OGGS
+  public type: AVFormat = AVFormat.OGG
 
   private checksumTable: number[]
 

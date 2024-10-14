@@ -157,7 +157,7 @@ export const OFormatSupportedCodecs: Record<Exclude<AVFormat, AVFormat.UNKNOWN>,
     AVCodecID.AV_CODEC_ID_HEVC,
     AVCodecID.AV_CODEC_ID_VVC
   ],
-  [AVFormat.OGGS]: [
+  [AVFormat.OGG]: [
     AVCodecID.AV_CODEC_ID_VORBIS,
     AVCodecID.AV_CODEC_ID_OPUS,
     AVCodecID.AV_CODEC_ID_FLAC,

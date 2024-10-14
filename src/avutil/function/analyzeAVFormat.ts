@@ -38,7 +38,7 @@ export default async function analyzeAVFormat(ioReader: IOReader, defaultFormat:
     return AVFormat.MP4
   }
   else if (/^OggS/.test(signature)) {
-    return AVFormat.OGGS
+    return AVFormat.OGG
   }
   else if (/^ID3/.test(signature)) {
     return AVFormat.MP3

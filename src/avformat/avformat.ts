@@ -40,7 +40,7 @@ export const enum AVFormat {
   M4A = MOV,
   MPEGTS,
   MPEGPS,
-  OGGS,
+  OGG,
   IVF,
   MATROSKA,
   WEBM,
