@@ -37,7 +37,7 @@ import { videoFrame2AVFrame } from 'avutil/function/videoFrame2AVFrame'
 import { createAVFrame, destroyAVFrame, unrefAVFrame } from 'avutil/util/avframe'
 import { mapUint8Array } from 'cheap/std/memory'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import { avQ2D, avRescaleQ } from 'avutil/util/rational'
+import { avQ2D } from 'avutil/util/rational'
 import AVBSFilter from 'avformat/bsf/AVBSFilter'
 import Annexb2AvccFilter from 'avformat/bsf/h2645/Annexb2AvccFilter'
 import support from 'common/util/support'
@@ -49,8 +49,7 @@ import { Data } from 'common/types/type'
 import * as object from 'common/util/object'
 import * as dict from 'avutil/util/avdict'
 import * as is from 'common/util/is'
-import { avMallocz, avRealloc } from 'avutil/util/mem'
-import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
+import { avMallocz } from 'avutil/util/mem'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
