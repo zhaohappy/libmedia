@@ -184,7 +184,7 @@ export default class WebVideoEncoder {
 
     // webcodecs 目前还不支持 hdr
     if (!descriptor || descriptor.comp[0].depth > 8) {
-      throw new Error(`format ${parameters.format} not support`)
+      logger.fatal(`format ${parameters.format} not support`)
     }
 
     const config: VideoEncoderConfig = {
@@ -210,7 +210,7 @@ export default class WebVideoEncoder {
     const support = await VideoEncoder.isConfigSupported(config)
 
     if (!support.supported) {
-      throw new Error('not support')
+      logger.fatal('not support')
     }
 
     if (this.encoder && this.encoder.state !== 'closed') {
