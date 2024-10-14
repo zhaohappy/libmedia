@@ -26,12 +26,12 @@
 import * as mpegts from './mpegts'
 import { IOError } from 'common/io/error'
 import analyzeTSLength from './function/analyzeTSLength'
-import { midPred } from './function/midPred'
 import { MpegtsContext } from './type'
 import * as logger from 'common/util/logger'
 import { TSPacket } from './struct'
 import parseAdaptationField from './function/parseAdaptationField'
 import IOReader from 'common/io/IOReader'
+import median from 'common/math/median'
 
 // @ts-ignore
 @deasync
@@ -51,7 +51,7 @@ export async function getPacketSize(ioReader: IOReader): Promise<number> {
     const dvhsScore = analyzeTSLength(buffer, mpegts.TS_DVHS_PACKET_SIZE, false)
     const fecScore = analyzeTSLength(buffer, mpegts.TS_FEC_PACKET_SIZE, false)
 
-    let margin = midPred(score, fecScore, dvhsScore)
+    let margin = median([score, fecScore, dvhsScore])
 
     if (buffer.length < mpegts.PROBE_PACKET_MAX_BUF) {
       margin += mpegts.PROBE_PACKET_MARGIN
