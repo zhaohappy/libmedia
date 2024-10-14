@@ -52,7 +52,7 @@ export async function readSEI(avpacket: pointer<AVPacket>, stream: AVStream) {
       nalus.forEach((nalu) => {
         const type = (nalu[0] >>> 1) & 0x3f
         if (type === hevc.HEVCNaluType.kSliceSEI_PREFIX || hevc.HEVCNaluType.kSliceSEI_SUFFIX) {
-          const bufferReader = new BufferReader(nalu.subarray(1))
+          const bufferReader = new BufferReader(nalu.subarray(2))
           const payloadType = readSEINumber(bufferReader)
           const payloadSize = readSEINumber(bufferReader)
           const payload = bufferReader.readBuffer(payloadSize)
