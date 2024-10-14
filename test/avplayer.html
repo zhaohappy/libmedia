@@ -246,14 +246,11 @@
       <div id="enableWebcodec">
         <el-checkbox v-model="enableHardwareAcceleration">enable hardwareAcceleration</el-checkbox>
       </div>
-      <div id="useThreads">
-        <el-checkbox v-model="useThreads">enable threads</el-checkbox>
-      </div>
       <div id="enableWorker">
         <el-checkbox v-model="enableWorker">enable Worker</el-checkbox>
       </div>
       <div id="useMse">
-        <el-checkbox v-model="useMse">enable MSE</el-checkbox>
+        <el-checkbox v-model="useMse">use MSE</el-checkbox>
       </div>
       <div id="enableWebGPU">
         <el-checkbox v-model="enableWebGPU">enable WebGPU</el-checkbox>
@@ -489,7 +486,6 @@
       let slider;
       let urlComponent;
       let isLiveComponent;
-      let useThreadsComponent;
       let enableSimdComponent;
       let enableWebcodecComponent;
       let enableWorkerComponent;
@@ -1203,15 +1199,6 @@
         data: function () {
           return {
             isLive: false
-          }
-        }
-      })
-
-      useThreadsComponent = new Vue({
-        el: '#useThreads',
-        data: function () {
-          return {
-            useThreads: true
           }
         }
       })
