@@ -108,7 +108,7 @@ export function splitNaluByLength<T extends Uint8ArrayInterface>(buffer: T, nalu
 export function joinNaluByStartCode(nalus: Uint8ArrayInterface[], output?: Uint8Array, slice: boolean = false): Uint8Array {
   if (!output) {
     let length = nalus.reduce((prev, nalu, index) => {
-      return prev + ((index && slice) ? 3 : 4) + nalu.length
+      return prev + ((index || slice) ? 3 : 4) + nalu.length
     }, 0)
     output = new Uint8Array(length)
   }
@@ -118,7 +118,7 @@ export function joinNaluByStartCode(nalus: Uint8ArrayInterface[], output?: Uint8
   array.each(nalus, (nalu, index) => {
     bufferWriter.writeUint8(0x00)
     bufferWriter.writeUint8(0x00)
-    if (!index && slice) {
+    if (!index && !slice) {
       bufferWriter.writeUint8(0x00)
     }
     bufferWriter.writeUint8(0x01)
