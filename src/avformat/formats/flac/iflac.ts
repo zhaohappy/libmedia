@@ -28,7 +28,7 @@ import { FrameInfo } from './type'
 import * as errorType from 'avutil/error'
 import * as logger from 'common/util/logger'
 import { BlockSizeTable, FLAC_MAX_CHANNELS, FlacCHMode, SampleRateTable, SampleSizeTable } from './flac'
-import crc8 from 'avutil/function/crc8'
+import crc8 from 'common/math/crc8'
 
 export function getUtf8(reader: BitReader) {
   let value = static_cast<int64>(reader.readU(8))

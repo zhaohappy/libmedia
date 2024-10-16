@@ -178,7 +178,7 @@ export interface AVPlayerOptions {
    * 预加载 buffer 时长（秒）
    */
   preLoadTime?: int32
-  /** *
+  /**
    * 自定义查找播放流回调
    */
   findBestStream?: (streams: AVStreamInterface[], mediaType: AVMediaType) => AVStreamInterface
