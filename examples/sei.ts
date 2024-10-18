@@ -12,7 +12,7 @@ import * as hevc from 'avformat/codecs/hevc'
 import * as h264 from 'avformat/codecs/h264'
 import * as naluUtil from 'avutil/util/nalu'
 
-export async function readSEI(avpacket: pointer<AVPacket>, stream: AVStream) {
+export function readSEI(avpacket: pointer<AVPacket>, stream: AVStream) {
 
   function readSEINumber(bufferReader: BufferReader) {
     let value = 0
@@ -64,7 +64,7 @@ export async function readSEI(avpacket: pointer<AVPacket>, stream: AVStream) {
 }
 
 // h264 for example
-export async function writeSEI(avpacket: pointer<AVPacket>, stream: AVStream, payloadType: number, payload: Uint8Array) {
+export function writeSEI(avpacket: pointer<AVPacket>, stream: AVStream, payloadType: number, payload: Uint8Array) {
   const nalus = avpacket.bitFormat === h264.BitFormat.ANNEXB
     ? naluUtil.splitNaluByStartCode(getAVPacketData(avpacket))
     : naluUtil.splitNaluByLength(getAVPacketData(avpacket), stream.metadata.naluLengthSizeMinusOne || 3)
@@ -83,7 +83,7 @@ export async function writeSEI(avpacket: pointer<AVPacket>, stream: AVStream, pa
   pushSEINumber(header, payload.length)
   const sei = new Uint8Array(header.length + payload.byteLength)
   sei.set(header, 0)
-  sei.set(new Uint8Array(payload), header.length)
+  sei.set(payload, header.length)
 
   const type = nalus[0][0] & 0x1f
 
