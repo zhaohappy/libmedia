@@ -73,7 +73,7 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions) {
     super(canvas, options)
 
-    this.hdrMetadata = make(HdrMetadata)
+    this.hdrMetadata = make<HdrMetadata>()
     this.hdrMetadata.multiplier = 1.0
   }
 

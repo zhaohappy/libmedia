@@ -105,7 +105,7 @@ export default class AVStream {
 
   privData: any = null
 
-  codecpar: AVCodecParameters = make(AVCodecParameters, new AVCodecParameters())
+  codecpar: AVCodecParameters = make<AVCodecParameters>(new AVCodecParameters())
 
   /**
    * An array of side data that applies to the whole stream (i.e. the
@@ -173,7 +173,7 @@ export default class AVStream {
    *           written into the file (which may or may not be related to the
    *           user-provided one, depending on the format).
    */
-  timeBase: Rational = make(Rational)
+  timeBase: Rational = make<Rational>()
 
   /**
    * 帧索引，可用于 seek

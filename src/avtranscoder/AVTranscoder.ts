@@ -287,7 +287,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     super(true)
     this.options = object.extend({}, defaultAVTranscoderOptions, options)
 
-    this.GlobalData = make(AVTranscoderGlobalData)
+    this.GlobalData = make<AVTranscoderGlobalData>()
 
     mutex.init(addressof(this.GlobalData.avpacketListMutex))
     mutex.init(addressof(this.GlobalData.avframeListMutex))
@@ -1622,7 +1622,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     }
 
     const taskId = generateUUID()
-    const stats = make(Stats)
+    const stats = make<Stats>()
     const task: SelfTask = {
       taskId,
       startTime: 0,

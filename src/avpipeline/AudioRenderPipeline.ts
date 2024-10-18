@@ -116,8 +116,8 @@ export default class AudioRenderPipeline extends Pipeline {
 
   constructor() {
     super()
-    this.avPCMBufferList = make(List<pointer<AVPCMBufferRef>>)
-    this.avPCMBufferListMutex = make(Mutex)
+    this.avPCMBufferList = make<List<pointer<AVPCMBufferRef>>>()
+    this.avPCMBufferListMutex = make<Mutex>()
     this.avPCMBufferPool = new AVPCMBufferPoolImpl(this.avPCMBufferList, addressof(this.avPCMBufferListMutex))
   }
 
@@ -523,7 +523,7 @@ export default class AudioRenderPipeline extends Pipeline {
               avFreep(reinterpret_cast<pointer<pointer<void>>>(addressof(task.outPCMBuffer.data)))
               unmake(task.outPCMBuffer)
             }
-            task.outPCMBuffer = make(AVPCMBuffer)
+            task.outPCMBuffer = make<AVPCMBuffer>()
             task.outPCMBuffer.data = reinterpret_cast<pointer<pointer<uint8>>>(avMalloc(sizeof(pointer) * task.playChannels))
             const data = avMallocz(nbSamples * sizeof(float) * task.playChannels)
             for (let i = 0; i < task.playChannels; i++) {

@@ -50,7 +50,7 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGLRenderOptions) {
     super(canvas, options)
 
-    this.hdrMetadata = make(HdrMetadata)
+    this.hdrMetadata = make<HdrMetadata>()
     this.hdrMetadata.multiplier = 1.0
   }
 

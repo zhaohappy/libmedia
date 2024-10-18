@@ -51,7 +51,7 @@ export default class MSEPipelineWorker {
   }
 
   private createGlobalData(taskId: string) {
-    const data = make(AVPlayerGlobalData)
+    const data = make<AVPlayerGlobalData>()
     mutex.init(addressof(data.avpacketListMutex))
     mutex.init(addressof(data.avframeListMutex))
     this.globalDataMap.set(taskId, data)

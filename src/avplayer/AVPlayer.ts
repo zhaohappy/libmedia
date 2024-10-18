@@ -355,7 +355,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.flipHorizontal = false
     this.flipVertical = false
 
-    this.GlobalData = make(AVPlayerGlobalData)
+    this.GlobalData = make<AVPlayerGlobalData>()
 
     this.statsController = new StatsController(
       addressof(this.GlobalData.stats),
