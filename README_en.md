@@ -8,7 +8,7 @@ English | [中文](README.md)
  
 libmedia is a tool library for processing multimedia content (such as audio, video, subtitles) on the web platform.
 
-libmedia has typescript module and webAssembly module, and the design concept is all things dominated by typescript module; we implemented the module of media demux and mux in typescript, so that we can use asynchronous IO to process stream from anywhere. This allows the entire system to run on a non-SharedArrayBuffer environment.
+libmedia has typescript module and webAssembly module, and the design concept is all things dominated by typescript module; we implemented the module of media demux and mux in typescript, so that we can use asynchronous IO to process stream from anywhere. This allows the entire system to run on a non-SharedArrayBuffer or non-Worker environment.
 
 The decoding and encoding modules are put into the webAssembly module. These modules can be compiled from the libavcodec module of FFmpeg, and each decoder and encoder is compiled into a separate wasm module to solve the problem of too large of compiled c/c++ product. When using it, you only need to load the modules you want to use. At the same time, the codec module also can use web's WebCodecs.
 
@@ -41,7 +41,7 @@ if multi-threading is not supported, it will fall back to running on the main th
 
 ### Tools
 
-- AVPlayer is libmedia's audio and video player implementation, supporting soft decoding, hard decoding, and MSE; it supports multiple encapsulation protocols and multiple encoding formats.
+- AVPlayer is libmedia's audio and video player implementation, supporting software decoding, hardware decoding, and MSE; it supports multiple encapsulation protocols and multiple encoding formats.
 [online demo](https://zhaohappy.github.io/libmedia/test/avplayer.html)
 [online player](https://zhaohappy.github.io/libmedia/product/player/player.html)
 
@@ -80,7 +80,7 @@ if multi-threading is not supported, it will fall back to running on the main th
 
 Codecs are compiled into separate wasm modules, the decoders are in the ```dist/decode``` directory, and the encoders are in the ```dist/encode``` directory. There are three versions of the encoding and decoding wasm module: baseline, atomic, and simd. The baseline version's instruction set corresponds to the MVP version of WebAssembly, but it needs to support Mutable Globals, with the highest compatibility and the lowest performance; atomic version add the atomic operation instruction set and Bulk memory instruction set; simd version add the simd vector acceleration instruction set, has the highest performance. The current simd version is automatically optimized by the compiler, and different codecs have different effects (currently I have not seen any codec projects has optimized for the wasm simd instruction set. If you want higher acceleration effects, you may want to optimize by yourself).
 
-#### Compatibility support status of three versions
+#### Compatibility support status of three versions and Webcodecs
 
 | environment    | baseline     | atomic     | simd         | webcodecs            |
 | -----------    | -----------  |----------- | -----------  | -----------          |
@@ -272,7 +272,7 @@ edp webserver start --port=9000
 
 ```
 
-To debug the code in multi-threaded Worker from source, set the ```ENABLE_THREADS_SPLIT``` macro in ```tsconfig.json``` to ```true``` and recompile
+To debug the code in multi-threaded Worker from source, set the ```ENABLE_THREADS_SPLIT``` macro in ```tsconfig.json``` to ```true``` and recompile.
 
 ```json
 {
