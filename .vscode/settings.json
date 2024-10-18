@@ -133,6 +133,7 @@
         "datasize",
         "deasync",
         "Decryptor",
+        "deleter",
         "Demux",
         "demuxer",
         "demuxing",
