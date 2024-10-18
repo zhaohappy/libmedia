@@ -19,7 +19,7 @@ libmedia is designed to run on multi-threads, but can fallback to running on the
 
 ### Libraries
 
-- ```avformat``` video and audio format libraries(flv、mp4、mpegts、matroska、oggs、mp3)
+- ```avformat``` video and audio format libraries(flv、mp4、mpegts、matroska、ogg、mp3)
 - avcodec Audio and video codec library, mainly Wasm compiled by C/C++ (FFmpeg and other codec projects) and Web platform standard WebCodecs
 - ```audioresample``` Audio resampling (compiled by FFmpeg audio resampling module)
 - ```audiostretchpitch``` Audio speed change and pitch change processing (compiled by soundtouch)
@@ -64,7 +64,7 @@ if multi-threading is not supported, it will fall back to running on the main th
 | hevc     | ✅       | ❌        |
 | vvc      | ✅       | ❌        |
 | mp3      | ✅       | ✅        |
-| oggs     | ✅       | ✅        |
+| ogg      | ✅       | ✅        |
 | ivf      | ✅       | ✅        |
 | aac      | ✅       | ❌        |
 | flac     | ✅       | ❌        |

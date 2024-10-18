@@ -20,7 +20,7 @@ libmedia 是设计在多线程上的，只是可以回退到单线程上运行�
 
 ### 库
 
-- ```avformat``` 音视频封装解封装库（flv、mp4、mpegts、matroska、oggs、mp3）
+- ```avformat``` 音视频封装解封装库（flv、mp4、mpegts、matroska、ogg、mp3）
 - ```avcodec``` 音视频编解码库，主要是 C/C++(FFmpeg 和其他编解码项目) 编译的 Wasm 和 Web 平台标准 WebCodecs
 - ```audioresample``` 音频重采样（FFmpeg 音频重采样模块编译）
 - ```audiostretchpitch``` 音频变速、变调处理（soundtouch 编译）
@@ -65,7 +65,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | hevc 裸流 | ✅       | ❌        |
 | vvc  裸流 | ✅       | ❌        |
 | mp3      | ✅       | ✅        |
-| oggs     | ✅       | ✅        |
+| ogg      | ✅       | ✅        |
 | ivf      | ✅       | ✅        |
 | aac      | ✅       | ❌        |
 | flac     | ✅       | ❌        |
