@@ -3,11 +3,10 @@ import { ComponentOptions } from 'yox'
 import * as is from 'common/util/is'
 import * as array from 'common/util/array'
 import template from './Node.hbs'
-import CustomEvent from 'common/event/CustomEvent'
 
-export const musicExt: string[] = ['mp3', 'aac', 'flac', 'oggs', 'ogg', 'wav', 'm4a', 'mka', 'opus']
+export const musicExt: string[] = ['mp3', 'aac', 'flac', 'ogg', 'ogg', 'wav', 'm4a', 'mka', 'opus']
 export const movExt: string[] = ['mp4', 'webm', 'mkv', 'flv', 'ts', 'mov', 'm4s', 'h264', '264', 'avc',
-  'h265', '265', 'hevc', 'h266', '266', 'vvc', 'ivf'
+  'h265', '265', 'hevc', 'h266', '266', 'vvc', 'ivf', 'mpeg'
 ]
 export const subtitleExt: string[] = ['ass', 'ssa', 'vvt', 'srt', 'xml', 'ttml']
 
