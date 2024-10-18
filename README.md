@@ -9,7 +9,7 @@ libmedia
  
 libmedia 是一个用于在 Web 平台上处理多媒体内容（如音频、视频、字幕）的工具库。
 
-libmedia 有 TypeScript 模块和 WebAssembly 模块，并且设计理念上以 TypeScript 模块为主导；我们将音视频的封装解封装层放在 TypeScript 模块实现，这样就能使用异步 IO 来处理各种来源的流，可以让整个系统在非 SharedArrayBuffer 和 Worker 环境上运行；
+libmedia 有 TypeScript 模块和 WebAssembly 模块，并且设计理念上以 TypeScript 模块为主导；我们将音视频的封装解封装层放在 TypeScript 模块实现，这样就能使用异步 IO 来处理各种来源的流，可以让整个系统在非 SharedArrayBuffer 和非 Worker 环境上运行；
 
 解码编码模块放入 WebAssembly 模块中，这些模块可以从 FFmpeg 的 libavcodec 模块中编译而来，并且将每种解码器和编码器编译成单独的 wasm 模块，解决编译产物太大的问题，使用的时候只需要去加载要使用的模块。同时编解码模块可以使用 WebCodecs。
 
