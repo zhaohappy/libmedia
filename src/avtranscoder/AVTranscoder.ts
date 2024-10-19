@@ -513,7 +513,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       newStream.duration = avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, newStream.timeBase)
     }
 
-    newStream.metadata['encoder'] = `libmedia.js-${defined(VERSION)}`
+    newStream.metadata['encoder'] = `libmedia-${defined(VERSION)}`
 
     return newStream
   }
@@ -878,11 +878,6 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     if (subTaskId) {
       task.subTaskId = subTaskId
     }
-
-    logger.info('\n' + dump([formatContext], [{
-      from: is.string(task.options.input.file) ? task.options.input.file : (task.options.input.file instanceof File ? task.options.input.file.name : 'ioReader'),
-      tag: 'Input'
-    }]))
 
     if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
       // m3u8 和 dash 的 duration 来自于协议本身
@@ -1668,7 +1663,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         chapters: []
       }
 
-      let mappingDump = '\nStream mapping:\n'
+      let mappingDump = ''
       task.streams.forEach((stream) => {
         if (stream.output) {
           oformatContext.streams.push(stream.output)
@@ -1682,11 +1677,20 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             dumpCodecName(stream.input.codecpar.codecType, stream.input.codecpar.codecId)} -> copy)\n`
         }
       })
-      logger.info(mappingDump)
-      logger.info('\n' + dump([oformatContext], [{
-        from: task.options.output.file instanceof FileSystemFileHandle ? task.options.output.file.name : 'IOWriter',
-        tag: 'Output'
-      }]))
+      logger.info(
+        `\nAVTranscoder version ${defined(VERSION)} Copyright (c) 2024-present the libmedia developers\n`
+        + dump([formatContext], [{
+            from: is.string(task.options.input.file) ? task.options.input.file : (task.options.input.file instanceof File ? task.options.input.file.name : 'ioReader'),
+            tag: 'Input'
+          }]
+        )
+        + mappingDump
+        + '\n'
+        + dump([oformatContext], [{
+          from: task.options.output.file instanceof FileSystemFileHandle ? task.options.output.file.name : 'IOWriter',
+          tag: 'Output'
+        }])
+      )
 
       this.tasks.set(taskId, task)
       return taskId

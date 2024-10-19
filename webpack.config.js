@@ -1,6 +1,16 @@
 const path = require('path');
 const ts = require('typescript');
+const { execSync } = require('child_process');
 const CheapPlugin = require('./src/cheap/build/webpack/plugin/CheapPlugin');
+
+function getVersion() {
+  try {
+    return execSync('git describe --tags').toString().trim();
+  }
+  catch (error) {
+    return 'n0.0.1';
+  }
+}
 
 module.exports = (env) => {
 
@@ -264,7 +274,10 @@ module.exports = (env) => {
           {
             file: path.resolve(__dirname, 'src/avpipeline/IOPipeline.ts')
           }
-        ]
+        ],
+        defined: {
+          VERSION: getVersion()
+        }
       })
     );
   }
