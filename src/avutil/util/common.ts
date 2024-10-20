@@ -40,7 +40,3 @@ export function milliSecond2Second(time: int64) {
   const decimal = time - integer * 1000n
   return Number(integer) + Number(decimal) / 1000
 }
-
-export function alignFunc(value: int32, alignment: int32) {
-  return (value + alignment - 1) & ~(alignment - 1)
-}

@@ -26,7 +26,7 @@
 import { memset } from 'cheap/std/memory'
 import { AVSampleFormat } from '../audiosamplefmt'
 import { INT32_MAX } from '../constant'
-import { alignFunc } from '../util/common'
+import alignFunc from 'common/math/align'
 import { avFree, avMalloc } from '../util/mem'
 import { AVSampleFormatDescriptors } from '../sampleFormatDescriptor'
 

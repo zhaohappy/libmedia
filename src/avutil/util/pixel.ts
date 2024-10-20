@@ -29,8 +29,8 @@ import * as errorType from '../error'
 import { INT32_MAX } from '../constant'
 import { memset } from 'cheap/std/memory'
 import * as stack from 'cheap/stack'
-import { alignFunc } from '../util/common'
 import { avFree, avMalloc } from './mem'
+import alignFunc from 'common/math/align'
 
 export function chromaLocation2Pos(pos: AVChromaLocation) {
   if (pos <= AVChromaLocation.AVCHROMA_LOC_UNSPECIFIED || pos >= AVChromaLocation.AVCHROMA_LOC_NB) {

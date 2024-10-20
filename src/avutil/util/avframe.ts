@@ -37,8 +37,8 @@ import { AVBufferRef } from '../struct/avbuffer'
 import * as errorType from '../error'
 import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
 import * as stack from 'cheap/stack'
-import { alignFunc } from '../util/common'
 import { pixelFillLinesizes, pixelFillPlaneSizes, pixelFillPointer } from './pixel'
+import alignFunc from 'common/math/align'
 
 export function createAVFrame(): pointer<AVFrame> {
   const frame: pointer<AVFrame> = avMallocz(sizeof(AVFrame))
