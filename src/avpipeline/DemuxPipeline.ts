@@ -41,7 +41,7 @@ import { Mutex } from 'cheap/thread/mutex'
 import * as logger from 'common/util/logger'
 import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
 import { IOError } from 'common/io/error'
-import { AVMediaType, AVPacketSideDataType } from 'avutil/codec'
+import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import LoopTask from 'common/timer/LoopTask'
 import { IOFlags } from 'common/io/flags'
 import * as array from 'common/util/array'
@@ -49,7 +49,7 @@ import { avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as bigint from 'common/util/bigint'
 import { AVStreamInterface } from 'avformat/AVStream'
-import { addAVPacketSideData, getAVPacketSideData } from 'avutil/util/avpacket'
+import { addAVPacketSideData, getAVPacketData, getAVPacketSideData } from 'avutil/util/avpacket'
 import { memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
 import analyzeAVFormat from 'avutil/function/analyzeAVFormat'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
@@ -59,6 +59,9 @@ import * as cheapConfig from 'cheap/config'
 import { serializeAVPacket } from 'avutil/util/serialize'
 import isPointer from 'cheap/std/function/isPointer'
 import * as is from 'common/util/is'
+import * as h264 from 'avformat/codecs/h264'
+import * as hevc from 'avformat/codecs/hevc'
+import * as vvc from 'avformat/codecs/vvc'
 
 export const STREAM_INDEX_ALL = -1
 
@@ -892,23 +895,95 @@ export default class DemuxPipeline extends Pipeline {
   public async croppingAVPacketQueue(taskId: string, max: int64) {
     const task = this.tasks.get(taskId)
     if (task) {
+
+      let croppingMax = max
+
+      const indexes: Map<number, number> = new Map()
+
+      function hasSps(avpacket: pointer<AVPacketRef>, codecId: AVCodecID) {
+        if (!(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)) {
+          return false
+        }
+        let hasNewSps = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA) !== nullptr
+        if (!hasNewSps && avpacket.bitFormat === h264.BitFormat.ANNEXB) {
+          if (codecId === AVCodecID.AV_CODEC_ID_H264) {
+            hasNewSps = !!h264.annexbExtradata2AvccExtradata(getAVPacketData(avpacket))
+          }
+          else if (codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+            hasNewSps = !!hevc.annexbExtradata2AvccExtradata(getAVPacketData(avpacket))
+          }
+          else if (codecId === AVCodecID.AV_CODEC_ID_VVC) {
+            hasNewSps = !!vvc.annexbExtradata2AvccExtradata(getAVPacketData(avpacket))
+          }
+        }
+        return hasNewSps
+      }
+
+      // 先处理视频
       task.cacheAVPackets.forEach((list, streamIndex) => {
-
         const codecType = task.formatContext.streams[streamIndex].codecpar.codecType
+        const codecId = task.formatContext.streams[streamIndex].codecpar.codecId
+        if (codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+          const lastDts = list[list.length - 1].dts
+          let i = list.length - 2
+          for (i = list.length - 2; i >= 0; i--) {
+            if ((list[i].flags & AVPacketFlags.AV_PKT_FLAG_KEY)) {
+              if (avRescaleQ(lastDts - list[i].dts, list[i].timeBase, AV_MILLI_TIME_BASE_Q) >= max) {
+                croppingMax = bigint.max(croppingMax, avRescaleQ(lastDts - list[i].dts, list[i].timeBase, AV_MILLI_TIME_BASE_Q))
+                break
+              }
+            }
+          }
+          if (codecId === AVCodecID.AV_CODEC_ID_H264
+            || codecId === AVCodecID.AV_CODEC_ID_HEVC
+            || codecId === AVCodecID.AV_CODEC_ID_VVC
+          ) {
+            if (i > 0 && !hasSps(list[i], codecId)) {
+              for (let j = i - 1; j > 0; j--) {
+                if ((list[j].flags & AVPacketFlags.AV_PKT_FLAG_KEY)) {
+                  // 前面有新的 sps，裁剪到最新的 sps 处
+                  if (hasSps(list[j], codecId)) {
+                    croppingMax = bigint.max(croppingMax, avRescaleQ(lastDts - list[j].dts, list[j].timeBase, AV_MILLI_TIME_BASE_Q))
+                    i = j
+                    break
+                  }
+                }
+              }
+            }
+          }
+          if (i > 0) {
+            indexes.set(streamIndex, i)
+          }
+        }
+      })
 
-        const lastDts = list[list.length - 1].dts
-        let i = list.length - 2
-        for (i = list.length - 2; i >= 0; i--) {
-          if ((list[i].flags & AVPacketFlags.AV_PKT_FLAG_KEY) || codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-            if (avRescaleQ(lastDts - list[i].dts, list[i].timeBase, AV_MILLI_TIME_BASE_Q) >= max) {
+      // 再处理非视频，裁剪到视频处
+      task.cacheAVPackets.forEach((list, streamIndex) => {
+        const codecType = task.formatContext.streams[streamIndex].codecpar.codecType
+        if (codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO) {
+          const lastDts = list[list.length - 1].dts
+          let i = list.length - 2
+          for (i = list.length - 2; i >= 0; i--) {
+            // 使用视频的裁剪时间
+            if (avRescaleQ(lastDts - list[i].dts, list[i].timeBase, AV_MILLI_TIME_BASE_Q) >= croppingMax) {
               break
             }
           }
+          if (i >= 0) {
+            indexes.set(streamIndex, i)
+          }
         }
-        if (i > 0) {
-          list.splice(0, i).forEach((avpacket) => {
+      })
+      // 判断所有流是否都支持裁剪
+      if (indexes.size === task.cacheAVPackets.size) {
+        indexes.forEach((index, streamIndex) => {
+
+          const list = task.cacheAVPackets.get(streamIndex)
+          list.splice(0, index).forEach((avpacket) => {
             task.avpacketPool.release(avpacket)
           })
+
+          const codecType = task.formatContext.streams[streamIndex].codecpar.codecType
 
           if (task.stats !== nullptr) {
             if (codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
@@ -918,8 +993,8 @@ export default class DemuxPipeline extends Pipeline {
               task.stats.videoPacketQueueLength = list.length
             }
           }
-        }
-      })
+        })
+      }
     }
   }
 
