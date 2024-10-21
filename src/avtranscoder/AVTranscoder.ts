@@ -1677,20 +1677,17 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             dumpCodecName(stream.input.codecpar.codecType, stream.input.codecpar.codecId)} -> copy)\n`
         }
       })
-      logger.info(
-        `\nAVTranscoder version ${defined(VERSION)} Copyright (c) 2024-present the libmedia developers\n`
+      logger.info(`\nAVTranscoder version ${defined(VERSION)} Copyright (c) 2024-present the libmedia developers\n`
         + dump([formatContext], [{
-            from: is.string(task.options.input.file) ? task.options.input.file : (task.options.input.file instanceof File ? task.options.input.file.name : 'ioReader'),
-            tag: 'Input'
-          }]
-        )
+          from: is.string(task.options.input.file) ? task.options.input.file : (task.options.input.file instanceof File ? task.options.input.file.name : 'ioReader'),
+          tag: 'Input'
+        }])
         + mappingDump
         + '\n'
         + dump([oformatContext], [{
           from: task.options.output.file instanceof FileSystemFileHandle ? task.options.output.file.name : 'IOWriter',
           tag: 'Output'
-        }])
-      )
+        }]))
 
       this.tasks.set(taskId, task)
       return taskId
