@@ -129,6 +129,7 @@ type SelfTask = VideoRenderTaskOptions & {
   loop: LoopTask
   render: ImageRender
   renderRedyed: boolean
+  renderRecreateCount: number
 
   adjust: AdjustStatus
   adjustDiff: int64
@@ -201,6 +202,7 @@ export default class VideoRenderPipeline extends Pipeline {
       firstRendered: false,
       canvasUpdated: false,
       renderCreating: false,
+      renderRecreateCount: 0,
 
       pauseTimestamp: 0,
       pauseCurrentPts: 0n,
@@ -412,7 +414,7 @@ export default class VideoRenderPipeline extends Pipeline {
       task.render.clear()
     }
     catch (error) {
-      if (task.render instanceof WebGPURender) {
+      if (task.render instanceof WebGPURender && !fallback) {
         disableWebGPU = true
         task.renderCreating = false
         logger.warn('not support webgpu render, try to fallback to webgl render')
@@ -421,12 +423,17 @@ export default class VideoRenderPipeline extends Pipeline {
       else if (fallback) {
         task.renderCreating = false
         logger.warn('canvas context lost after fallback, wait for recreate canvas')
-        task.controlIPCPort.notify('updateCanvas')
-        return
+        if (task.renderRecreateCount < 3) {
+          task.renderRecreateCount++
+          task.controlIPCPort.notify('updateCanvas')
+          return
+        }
+        throw error
       }
     }
     task.renderRedyed = true
     task.renderCreating = false
+    task.renderRecreateCount = 0
   }
 
   public async play(taskId: string) {
