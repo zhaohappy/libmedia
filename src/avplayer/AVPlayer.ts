@@ -1564,7 +1564,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (this.videoDecoder2VideoRenderChannel) {
         this.canvas = this.createCanvas()
         this.options.container.appendChild(this.canvas)
-        const canvas = (supportOffscreenCanvas() && (cheapConfig.USE_THREADS && defined(ENABLE_THREADS) || support.worker))
+        const canvas = (supportOffscreenCanvas()
+            && (cheapConfig.USE_THREADS
+                && defined(ENABLE_THREADS)
+              || support.worker
+                && this.options.enableWorker
+            )
+        )
           ? this.canvas.transferControlToOffscreen()
           : this.canvas
         const stream = this.formatContext.streams.find((stream) => {
@@ -2988,7 +2994,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   public onCanvasUpdated(): void {
     this.updateCanvas = this.createCanvas()
-    const canvas = (supportOffscreenCanvas() && cheapConfig.USE_THREADS && defined(ENABLE_THREADS))
+    const canvas = (supportOffscreenCanvas()
+        && (cheapConfig.USE_THREADS
+            && defined(ENABLE_THREADS)
+          || support.worker
+            && this.options.enableWorker
+        )
+    )
       ? this.updateCanvas.transferControlToOffscreen()
       : this.updateCanvas
     this.VideoRenderThread.updateCanvas
