@@ -36,7 +36,7 @@ import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import { MetaDataBlockType } from './flac/flac'
-import { FlacContext } from './flac/type'
+import { FlacContext, FrameInfo } from './flac/type'
 import { decodeFrameHeader } from './flac/iflac'
 import BitReader from 'common/io/BitReader'
 import concatTypeArray from 'common/function/concatTypeArray'
@@ -287,8 +287,7 @@ export default class IFlacFormat extends IFormat {
 
       let i = buffers.length ? 0 : 2
 
-      // 根据规范 isVarSize 是不能变的，但发现某些文件中间的某一帧变了，这里将强行指定到第一个帧的值来判断
-      const sync = this.context.isVarSize < 0 ? [0xf8, 0xf9] : ( this.context.isVarSize ? [0xf9] : [0xf8])
+      const sync = this.context.isVarSize < 0 ? [0xf8, 0xf9] : (this.context.isVarSize ? [0xf9] : [0xf8])
 
       for (; i < this.context.cacheBuffer.length - 2; i++) {
         if (this.context.cacheBuffer[i] === 0xff && array.has(sync, this.context.cacheBuffer[i + 1])) {
@@ -328,7 +327,12 @@ export default class IFlacFormat extends IFormat {
       this.context.bitReader.reset()
       this.context.bitReader.appendBuffer(this.context.cacheBuffer.subarray(0, 16))
 
-      if (decodeFrameHeader(this.context.bitReader, {}, true) < 0) {
+      const info: Partial<FrameInfo> = {}
+      // 检查下一帧的数据是否合法，不合法说明和前面的是同一帧数据
+      if (decodeFrameHeader(this.context.bitReader, info, true) < 0
+        || info.sampleRate !== this.context.frameInfo.sampleRate
+        || info.channels !== this.context.frameInfo.channels
+      ) {
         buffers.push(this.context.cacheBuffer.subarray(0, 2))
         this.context.cachePos += 2n
         this.context.cacheBuffer = this.context.cacheBuffer.subarray(2)
