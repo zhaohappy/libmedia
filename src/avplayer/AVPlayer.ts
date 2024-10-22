@@ -255,9 +255,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   static IOLoader = {
     CustomIOLoader,
     FetchIOLoader,
-    FileIOLoader,
-    HlsIOLoader,
-    DashIOLoader
+    FileIOLoader
   }
 
   static level: number = logger.INFO
@@ -1198,11 +1196,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
     })
 
-    logger.info(`\nAVPlayer version ${defined(VERSION)} Copyright (c) 2024-present the libmedia developers\n` + dump([formatContext], [{
-      from: is.string(source) ? source : source.name,
-      tag: 'Input'
-    }]))
-
     if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
       // m3u8 和 dash 的 duration 来自于协议本身
       if (this.isHls() || this.isDash()) {
@@ -1265,6 +1258,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
       })
     }
+
+    logger.info(`\nAVPlayer version ${defined(VERSION)} Copyright (c) 2024-present the libmedia developers\n` + dump([formatContext], [{
+      from: is.string(source) ? source : source.name,
+      tag: 'Input'
+    }]))
 
     this.status = AVPlayerStatus.LOADED
 
