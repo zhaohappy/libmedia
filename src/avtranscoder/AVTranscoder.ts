@@ -248,9 +248,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
   static IOLoader = {
     CustomIOLoader,
     FetchIOLoader,
-    FileIOLoader,
-    HlsIOLoader,
-    DashIOLoader
+    FileIOLoader
   }
 
   static Resource: Map<string, WebAssemblyResource | ArrayBuffer> = new Map()
