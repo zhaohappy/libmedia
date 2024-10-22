@@ -113,6 +113,13 @@ export default class IMpegtsFormat extends IFormat {
 
       this.context.tsPacketSize = packetSize
 
+      // 码流可能存在一些非 ts packet 数据，跳过
+      if (this.context.tsPacketSize !== mpegts.TS_DVHS_PACKET_SIZE
+        && (await formatContext.ioReader.peekUint8() !== 0x47)
+      ) {
+        await this.syncTSPacket(formatContext, false)
+      }
+
       while ((!this.context.hasPAT || !this.context.hasPMT)) {
         const tsPacket = await impegts.parserTSPacket(formatContext.ioReader, this.context)
 
@@ -366,6 +373,18 @@ export default class IMpegtsFormat extends IFormat {
     else {
       try {
         while (true) {
+          // 码流可能存在一些非 ts packet 数据，跳过
+          if (this.context.tsPacketSize !== mpegts.TS_DVHS_PACKET_SIZE
+            && (await formatContext.ioReader.peekUint8() !== 0x47)
+          ) {
+            // 将剩余缓冲区移动到头部，方便 syncTSPacket 往回 seek
+            // m3u8 切片是不支持通过字节位置 seek 的
+            try {
+              await formatContext.ioReader.flush()
+            }
+            catch (e) {}
+            await this.syncTSPacket(formatContext, false)
+          }
           const tsPacket = await impegts.parserTSPacket(formatContext.ioReader, this.context)
           if (!tsPacket.payload) {
             continue
@@ -473,7 +492,7 @@ export default class IMpegtsFormat extends IFormat {
   }
 
   @deasync
-  private async syncTSPacket(formatContext: AVIFormatContext) {
+  private async syncTSPacket(formatContext: AVIFormatContext, syncPES: boolean = true) {
     let pos: int64 = NOPTS_VALUE_BIGINT
 
     const analyzeCount = 10
@@ -521,21 +540,23 @@ export default class IMpegtsFormat extends IFormat {
     if (pos !== NOPTS_VALUE_BIGINT) {
       // 移动到 ts packet 的开始
       await formatContext.ioReader.seek(pos)
-      while (true) {
-        const tsPacket = await impegts.parserTSPacket(formatContext.ioReader, this.context)
-        // 移动到下一个 pes 的开始
-        if (tsPacket.payloadUnitStartIndicator) {
-          // 返回到上一个 ts packet 的开始
-          await formatContext.ioReader.seek(pos)
-          formatContext.streams.forEach((stream) => {
-            let pesSliceQueue = this.context.tsSliceQueueMap.get((stream.privData as MpegtsStreamContext).pid)
-            if (pesSliceQueue) {
-              clearTSSliceQueue(pesSliceQueue)
-            }
-          })
-          break
+      if (syncPES) {
+        while (true) {
+          const tsPacket = await impegts.parserTSPacket(formatContext.ioReader, this.context)
+          // 移动到下一个 pes 的开始
+          if (tsPacket.payloadUnitStartIndicator) {
+            // 返回到上一个 ts packet 的开始
+            await formatContext.ioReader.seek(pos)
+            formatContext.streams.forEach((stream) => {
+              let pesSliceQueue = this.context.tsSliceQueueMap.get((stream.privData as MpegtsStreamContext).pid)
+              if (pesSliceQueue) {
+                clearTSSliceQueue(pesSliceQueue)
+              }
+            })
+            break
+          }
+          pos = formatContext.ioReader.getPos()
         }
-        pos = formatContext.ioReader.getPos()
       }
     }
   }
