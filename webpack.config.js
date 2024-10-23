@@ -253,23 +253,13 @@ module.exports = (env) => {
         env: 'browser',
         projectPath: __dirname,
         exclude: /__test__/,
+        // 配置线程模块中有动态导入的模块，需要给动态导入的模块重新处理依赖，因为线程模块可能没有动态导入模块的依赖模块
         threadFiles: [
           {
-            file: path.resolve(__dirname, 'src/avpipeline/DemuxPipeline.ts'),
-            include: [
-              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/function/concatTypeArray.ts') : null,
-              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/io/StreamReader.ts') : null,
-              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/io/BufferReader.ts') : null
-            ]
+            file: path.resolve(__dirname, 'src/avpipeline/DemuxPipeline.ts')
           },
           {
-            file: path.resolve(__dirname, 'src/avpipeline/MuxPipeline.ts'),
-            include: [
-              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/avformat/codecs/h264.ts') : null,
-              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/io/StreamReader.ts') : null,
-              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/io/BufferReader.ts') : null,
-              configFile.config.cheap.defined.DEBUG ? path.resolve(__dirname, 'src/common/function/concatTypeArray.ts') : null
-            ]
+            file: path.resolve(__dirname, 'src/avpipeline/MuxPipeline.ts')
           },
           {
             file: path.resolve(__dirname, 'src/avpipeline/IOPipeline.ts')
