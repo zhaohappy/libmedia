@@ -452,27 +452,35 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
     ) {
       if (this.yTexture) {
         this.yTexture.destroy()
+        this.yTexture = null
       }
       if (this.uTexture) {
         this.uTexture.destroy()
+        this.uTexture = null
       }
       if (this.vTexture) {
         this.vTexture.destroy()
+        this.vTexture = null
       }
       if (this.aTexture) {
         this.aTexture.destroy()
+        this.aTexture = null
       }
       if (this.inputYTexture) {
         this.inputYTexture.destroy()
+        this.inputYTexture = null
       }
       if (this.inputUTexture) {
         this.inputUTexture.destroy()
+        this.inputUTexture = null
       }
       if (this.inputVTexture) {
         this.inputVTexture.destroy()
+        this.inputVTexture = null
       }
       if (this.inputATexture) {
         this.inputATexture.destroy()
+        this.inputATexture = null
       }
 
       this.yTexture = this.device.createTexture({

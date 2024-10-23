@@ -105,15 +105,19 @@ export default class WebGPUYUV8Render extends WebGPUYUVRender {
     ) {
       if (this.yTexture) {
         this.yTexture.destroy()
+        this.yTexture = null
       }
       if (this.uTexture) {
         this.uTexture.destroy()
+        this.uTexture = null
       }
       if (this.vTexture) {
         this.vTexture.destroy()
+        this.vTexture = null
       }
       if (this.aTexture) {
         this.aTexture.destroy()
+        this.aTexture = null
       }
 
       this.yTexture = this.device.createTexture({
