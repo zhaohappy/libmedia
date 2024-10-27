@@ -24,7 +24,7 @@
  */
 
 import Sleep from 'common/timer/Sleep'
-import IOLoader, { IOLoaderStatus, IOLoaderVideoStreamInfo, Range } from './IOLoader'
+import IOLoader, { IOLoaderStatus, IOLoaderVideoStreamInfo } from './IOLoader'
 import * as object from 'common/util/object'
 import { IOError } from 'common/io/error'
 import { Uint8ArrayInterface } from 'common/io/interface'
@@ -38,7 +38,7 @@ import * as logger from 'common/util/logger'
 import * as urlUtil from 'common/util/url'
 import AESDecryptPipe from '../bsp/aes/AESDecryptPipe'
 import * as is from 'common/util/is'
-import { Data } from 'common/types/type'
+import { Data, Range } from 'common/types/type'
 
 const FETCHED_HISTORY_LIST_MAX = 10
 

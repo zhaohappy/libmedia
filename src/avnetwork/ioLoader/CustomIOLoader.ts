@@ -75,6 +75,17 @@ export default abstract class CustomIOLoader {
   public abstract read(buffer: Uint8ArrayInterface, options?: Data): Promise<int32>
 
   /**
+   * 写出数据，一些协议如 rtmp、rtsp 需要与服务器交互数据
+   * 
+   * @param buffer 要写出的数据，类 Uint8Array 结构
+   * 
+   * @returns 成功返回 0，失败返回错误码（负值）
+   */
+  public write(buffer: Uint8ArrayInterface): Promise<int32> {
+    throw new Error('need implemented write function')
+  }
+
+  /**
    * seek 到指定位置
    * 
    * @param pos 位置

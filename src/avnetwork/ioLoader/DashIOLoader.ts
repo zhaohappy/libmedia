@@ -25,7 +25,7 @@
 
 import Sleep from 'common/timer/Sleep'
 import IOLoader, { IOLoaderAudioStreamInfo, IOLoaderStatus,
-  IOLoaderSubtitleStreamInfo, IOLoaderVideoStreamInfo, Range
+  IOLoaderSubtitleStreamInfo, IOLoaderVideoStreamInfo
 } from './IOLoader'
 import * as object from 'common/util/object'
 import { IOError } from 'common/io/error'
@@ -37,7 +37,7 @@ import FetchIOLoader from './FetchIOLoader'
 import { MPDMediaList } from 'avprotocol/dash/type'
 import getTimestamp from 'common/function/getTimestamp'
 import * as errorType from 'avutil/error'
-import { Data } from 'common/types/type'
+import { Data, Range } from 'common/types/type'
 
 const FETCHED_HISTORY_LIST_MAX = 10
 

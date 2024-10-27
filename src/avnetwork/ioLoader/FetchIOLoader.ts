@@ -24,13 +24,13 @@
  */
 
 import Sleep from 'common/timer/Sleep'
-import IOLoader, { IOLoaderOptions, IOLoaderStatus, Range } from './IOLoader'
+import IOLoader, { IOLoaderOptions, IOLoaderStatus } from './IOLoader'
 import * as object from 'common/util/object'
 import { IOError } from 'common/io/error'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import * as logger from 'common/util/logger'
-import { Data } from 'common/types/type'
 import * as errorType from 'avutil/error'
+import { Data, Range } from 'common/types/type'
 
 export interface FetchInfo {
   url: string
@@ -67,8 +67,72 @@ export default class FetchIOLoader extends IOLoader {
 
   private buffers: Uint8Array[]
 
+  private supportRange: boolean
+
   constructor(options: FetchIOLoaderOptions = {}) {
     super(options)
+  }
+
+  private async getTotalSize(method: string, headers: Data = {}) {
+    const params: RequestInit = {
+      method: method,
+      headers: {},
+      mode: 'cors',
+      cache: 'default',
+      referrerPolicy: 'no-referrer-when-downgrade'
+    }
+    if (this.info.headers) {
+      object.each(this.info.headers, (value, key) => {
+        params.headers[key] = value
+      })
+    }
+
+    object.each(headers, (value, key) => {
+      params.headers[key] = value
+    })
+
+    if (this.info.withCredentials) {
+      params.credentials = 'include'
+    }
+
+    if (this.info.referrerPolicy) {
+      params.referrerPolicy = this.info.referrerPolicy as ReferrerPolicy
+    }
+    if (AbortController) {
+      this.abortController = new AbortController()
+      params.signal = this.abortController.signal
+    }
+
+    try {
+      const res = await fetch(this.info.url, params)
+      if (res.ok && (res.status >= 200 && res.status <= 299)) {
+        if (this.abortController) {
+          this.abortController.abort()
+          this.abortController = null
+        }
+
+        const acceptRanges = res.headers.get('Accept-Ranges')
+        if (acceptRanges) {
+          if (acceptRanges.indexOf('bytes') === -1) {
+            this.supportRange = false
+          }
+        }
+
+        const contentRange = res.headers.get('Content-Range')
+        if (contentRange) {
+          const size = contentRange.split('/')[1]
+          if (size) {
+            return parseInt(size)
+          }
+        }
+        const lengthHeader = res.headers.get('X-Content-Length') || res.headers.get('Content-Length')
+        if (lengthHeader != null) {
+          return parseInt(lengthHeader)
+        }
+      }
+    }
+    catch (error) {}
+    return 0
   }
 
   public async open(info: FetchInfo, range: Range) {
@@ -90,6 +154,7 @@ export default class FetchIOLoader extends IOLoader {
     this.endBytes = -1
     this.receivedLength = 0
     this.buffers = []
+    this.supportRange = true
 
     if (this.range && !this.options.isLive) {
       this.startBytes = this.range.from ?? 0
@@ -98,58 +163,36 @@ export default class FetchIOLoader extends IOLoader {
     this.status = IOLoaderStatus.CONNECTING
 
     if (!this.options.isLive && !this.options.disableSegment) {
-      const params: Data = {
-        method: 'HEAD',
-        headers: {},
-        mode: 'cors',
-        cache: 'default',
-        referrerPolicy: 'no-referrer-when-downgrade'
-      }
-      if (this.info.headers) {
-        object.each(this.info.headers, (value, key) => {
-          params.headers[key] = value
+      let totalSize = await this.getTotalSize('HEAD')
+      if (!totalSize) {
+        totalSize = await this.getTotalSize('Get', {
+          range: 'bytes=0-1'
         })
       }
-
-      if (this.info.withCredentials) {
-        params.credentials = 'include'
+      if (totalSize <= 2) {
+        totalSize = 0
       }
-
-      if (this.info.referrerPolicy) {
-        params.referrerPolicy = this.info.referrerPolicy
-      }
-      if (AbortController) {
-        this.abortController = new AbortController()
-        params.signal = this.abortController.signal
-      }
-
-      try {
-        const res = await fetch(this.info.url, params)
-        if (res.ok && (res.status >= 200 && res.status <= 299)) {
-          const lengthHeader = res.headers.get('X-Content-Length') || res.headers.get('Content-Length')
-          if (lengthHeader != null) {
-            this.contentLength = parseInt(lengthHeader)
-            if (this.range.to < 0) {
-              this.eofIndex = this.contentLength + this.range.to
-            }
-          }
+      if (totalSize) {
+        this.contentLength = totalSize
+        if (this.range.to < 0) {
+          this.eofIndex = this.contentLength + this.range.to
+        }
+        if (this.supportRange) {
           this.endBytes = Math.min(this.startBytes + this.options.preload - 1, this.eofIndex)
-          this.status = IOLoaderStatus.BUFFERING
-        }
-        else {
-          this.endBytes = -1
         }
       }
-      catch (error) {
+      else {
         this.endBytes = -1
       }
     }
+
+    this.status = IOLoaderStatus.BUFFERING
 
     return 0
   }
 
   private async openReader() {
-    const params: Data = {
+    const params: RequestInit = {
       method: 'GET',
       headers: {},
       mode: 'cors',
@@ -170,7 +213,7 @@ export default class FetchIOLoader extends IOLoader {
     }
 
     if (this.info.referrerPolicy) {
-      params.referrerPolicy = this.info.referrerPolicy
+      params.referrerPolicy = this.info.referrerPolicy as ReferrerPolicy
     }
 
     if (this.abortController) {
@@ -254,6 +297,7 @@ export default class FetchIOLoader extends IOLoader {
 
         if (this.abortController) {
           this.abortController.abort()
+          this.abortController = null
         }
 
         this.reader = null
@@ -287,7 +331,7 @@ export default class FetchIOLoader extends IOLoader {
 
   public async seek(pos: int64) {
 
-    if (!this.contentLength) {
+    if (!this.supportRange) {
       return errorType.OPERATE_NOT_SUPPORT
     }
 
@@ -319,6 +363,7 @@ export default class FetchIOLoader extends IOLoader {
     await this.reader.cancel()
     if (this.abortController) {
       this.abortController.abort()
+      this.abortController = null
     }
     this.reader = null
   }

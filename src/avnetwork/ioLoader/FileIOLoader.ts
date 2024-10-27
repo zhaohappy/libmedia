@@ -23,10 +23,11 @@
  *
  */
 
-import IOLoader, { IOLoaderStatus, Range } from './IOLoader'
+import IOLoader, { IOLoaderStatus } from './IOLoader'
 import { IOError } from 'common/io/error'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import * as is from 'common/util/is'
+import { Range } from 'common/types/type'
 
 export interface FileInfo {
   file: File
