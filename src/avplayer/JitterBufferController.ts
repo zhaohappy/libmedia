@@ -163,10 +163,10 @@ export default class JitterBufferController {
         : 0
       )
 
-    if ((buffer < (this.options.jitterBuffer.min >> 1)) && buffer < 2) {
+    if ((buffer < (this.options.jitterBuffer.min >> 1)) && buffer < 2000) {
       this.setPlayRate(0.8)
     }
-    else if ((buffer < this.options.jitterBuffer.min - BUFFER_STEP) && buffer < 2) {
+    else if ((buffer < this.options.jitterBuffer.min - BUFFER_STEP) && buffer < 2000) {
       this.setPlayRate(0.95)
     }
     else if (buffer > this.options.jitterBuffer.max + BUFFER_STEP) {
