@@ -31,8 +31,9 @@ import AVPacket from 'avutil/struct/avpacket'
 import OFormat from './formats/OFormat'
 import IFormat from './formats/IFormat'
 
-import IOWriter from 'common/io/IOWriterSync'
+import IOWriterSync from 'common/io/IOWriterSync'
 import IOReader from 'common/io/IOReader'
+import IOWriter from 'common/io/IOWriter'
 import IOReaderSync from 'common/io/IOReaderSync'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import { AVFormat } from './avformat'
@@ -90,50 +91,6 @@ export interface AVIFormatContext {
   iformat: IFormat
 
   ioReader: IOReader
-
-  errorFlag: number
-
-  interval: AVFormatContextInterval
-
-  streamIndex: number
-
-  getStreamById(id: number): AVStream
-
-  getStreamByIndex(index: number): AVStream
-
-  getStreamByMediaType(mediaType: AVMediaType): AVStream
-
-  createStream(): AVStream
-
-  addStream(stream: AVStream): void
-
-  removeStream(stream: AVStream): void
-
-  removeStreamById(id: number): void
-
-  removeStreamByIndex(index: number): void
-
-  destroy(): void
-
-  getDecoderResource: (mediaType: AVMediaType, codecId: AVCodecID) => Promise<WebAssemblyResource> | WebAssemblyResource
-}
-
-export interface AVOFormatContext {
-
-  metadataHeaderPadding: int32
-
-  metadata: Record<string, any>
-  streams: AVStream[]
-
-  options: Record<string, any>
-  chapters: AVChapter[]
-
-  privateData: Record<string, any>
-  processPrivateData: Record<string, any>
-
-  format: AVFormat
-  oformat: OFormat
-
   ioWriter: IOWriter
 
   errorFlag: number
@@ -158,7 +115,52 @@ export interface AVOFormatContext {
 
   removeStreamByIndex(index: number): void
 
-  destroy(): void
+  destroy(): Promise<void>
+
+  getDecoderResource: (mediaType: AVMediaType, codecId: AVCodecID) => Promise<WebAssemblyResource> | WebAssemblyResource
+}
+
+export interface AVOFormatContext {
+
+  metadataHeaderPadding: int32
+
+  metadata: Record<string, any>
+  streams: AVStream[]
+
+  options: Record<string, any>
+  chapters: AVChapter[]
+
+  privateData: Record<string, any>
+  processPrivateData: Record<string, any>
+
+  format: AVFormat
+  oformat: OFormat
+
+  ioWriter: IOWriterSync
+
+  errorFlag: number
+
+  interval: AVFormatContextInterval
+
+  streamIndex: number
+
+  getStreamById(id: number): AVStream
+
+  getStreamByIndex(index: number): AVStream
+
+  getStreamByMediaType(mediaType: AVMediaType): AVStream
+
+  createStream(): AVStream
+
+  addStream(stream: AVStream): void
+
+  removeStream(stream: AVStream): void
+
+  removeStreamById(id: number): void
+
+  removeStreamByIndex(index: number): void
+
+  destroy(): Promise<void>
 }
 
 export interface AVFormatContextInterface {
@@ -186,8 +188,8 @@ export class AVFormatContext implements AVIFormatContext, AVOFormatContext {
 
   // @ts-ignore
   public ioReader: IOReader | IOReaderSync
-
-  public ioWriter: IOWriter
+  // @ts-ignore
+  public ioWriter: IOWriter | IOWriterSync
 
   public errorFlag: number
 
@@ -282,13 +284,13 @@ export class AVFormatContext implements AVIFormatContext, AVOFormatContext {
     }
   }
 
-  public destroy() {
+  public async destroy() {
 
     if (this.oformat) {
-      this.oformat.destroy(this)
+      this.oformat.destroy(this as AVOFormatContext)
     }
     if (this.iformat) {
-      this.iformat.destroy(this as AVIFormatContext)
+      await this.iformat.destroy(this as AVIFormatContext)
     }
 
     if (this.interval.packetBuffer.length) {

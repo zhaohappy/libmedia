@@ -42,6 +42,8 @@ export const enum AVFormat {
   MPEGPS,
   OGG,
   IVF,
+  RTSP,
+  RTMP,
   MATROSKA,
   WEBM,
   AVI,

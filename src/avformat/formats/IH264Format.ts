@@ -99,7 +99,7 @@ export default class IH264Format extends IFormat {
     this.naluReader = new NaluReader()
   }
 
-  public destroy(formatContext: AVIFormatContext): void {
+  public async destroy(formatContext: AVIFormatContext) {
     if (this.queue.length) {
       for (let i = 0; i < this.queue.length; i++) {
         destroyAVPacket(this.queue[i].avpacket)

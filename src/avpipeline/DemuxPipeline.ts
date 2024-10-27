@@ -30,6 +30,7 @@ import IPCPort from 'common/network/IPCPort'
 import { REQUEST, RpcMessage } from 'common/network/IPCPort'
 import { AVFormatContextInterface, AVIFormatContext, createAVIFormatContext } from 'avformat/AVFormatContext'
 import IOReader from 'common/io/IOReader'
+import IOWriter from 'common/io/IOWriter'
 import IFormat from 'avformat/formats/IFormat'
 import * as demux from 'avformat/demux'
 import { AVFormat } from 'avformat/avformat'
@@ -62,6 +63,7 @@ import * as is from 'common/util/is'
 import * as h264 from 'avformat/codecs/h264'
 import * as hevc from 'avformat/codecs/hevc'
 import * as vvc from 'avformat/codecs/vvc'
+import { IRtspFormatOptions } from 'avformat/formats/IRtspFormat'
 
 export const STREAM_INDEX_ALL = -1
 
@@ -70,6 +72,7 @@ export interface DemuxTaskOptions extends TaskOptions {
   bufferLength?: number
   isLive?: boolean
   ioloaderOptions?: Data
+  formatOptions?: Data
   mainTaskId?: string
   avpacketList: pointer<List<pointer<AVPacketRef>>>
   avpacketListMutex: pointer<Mutex>
@@ -83,7 +86,8 @@ type SelfTask = DemuxTaskOptions & {
 
   formatContext: AVIFormatContext
   ioReader: IOReader
-  buffer: pointer<uint8>
+  iBuffer: pointer<uint8>
+  oBuffer: pointer<uint8>
 
   cacheAVPackets: Map<number, pointer<AVPacketRef>[]>
   cacheRequests: Map<number, RpcMessage>
@@ -131,14 +135,20 @@ export default class DemuxPipeline extends Pipeline {
 
     const bufferLength = options.bufferLength || 1 * 1024 * 1024
 
-    const buf = avMalloc(bufferLength)
-
-    if (!buf) {
+    const iBuf = avMalloc(bufferLength)
+    if (!iBuf) {
+      return errorType.NO_MEMORY
+    }
+    const oBuf = avMalloc(bufferLength)
+    if (!oBuf) {
       return errorType.NO_MEMORY
     }
 
-    const buffer = new SafeUint8Array(buf, bufferLength)
-    const ioReader = new IOReader(bufferLength, true, buffer)
+    const iBuffer = new SafeUint8Array(iBuf, bufferLength)
+    const ioReader = new IOReader(bufferLength, true, iBuffer)
+
+    const oBuffer = new SafeUint8Array(oBuf, bufferLength)
+    const ioWriter = new IOWriter(bufferLength, true, oBuffer)
 
     if (!options.isLive) {
       ioReader.flags |= IOFlags.SEEKABLE
@@ -149,10 +159,10 @@ export default class DemuxPipeline extends Pipeline {
 
     ioReader.onFlush = async (buffer) => {
 
-      assert(buffer.byteOffset >= buf && buffer.byteOffset < buf + bufferLength)
+      assert(buffer.byteOffset >= iBuf && buffer.byteOffset < iBuf + bufferLength)
 
       const params: {
-        pointer: pointer<uint8>,
+        pointer: pointer<uint8>
         length: int32
         ioloaderOptions?: Data
       } = {
@@ -203,8 +213,27 @@ export default class DemuxPipeline extends Pipeline {
       }
     }
 
+    ioWriter.onFlush = async (buffer) => {
+      assert(buffer.byteOffset >= oBuf && buffer.byteOffset < oBuf + bufferLength)
+
+      const params: {
+        pointer: pointer<uint8>
+        length: int32
+      } = {
+        pointer: reinterpret_cast<pointer<uint8>>(buffer.byteOffset),
+        length: buffer.length
+      }
+      try {
+        return await leftIPCPort.request<int32>('write', params)
+      }
+      catch (error) {
+        return IOError.INVALID_OPERATION
+      }
+    }
+
     const formatContext = createAVIFormatContext()
     formatContext.ioReader = ioReader
+    formatContext.ioWriter = ioWriter
 
     formatContext.getDecoderResource = async (mediaType, codecId) => {
       if (!controlIPCPort) {
@@ -227,7 +256,8 @@ export default class DemuxPipeline extends Pipeline {
 
       formatContext,
       ioReader,
-      buffer: buf,
+      iBuffer: iBuf,
+      oBuffer: oBuf,
 
       cacheAVPackets: new Map(),
       cacheRequests: new Map(),
@@ -261,8 +291,13 @@ export default class DemuxPipeline extends Pipeline {
 
       let format: AVFormat
       try {
-        format = await analyzeAVFormat(task.ioReader, task.format)
-        task.format = format
+        if (task.format !== AVFormat.RTSP && task.format !== AVFormat.RTMP) {
+          format = await analyzeAVFormat(task.ioReader, task.format)
+          task.format = format
+        }
+        else {
+          format = task.format
+        }
       }
       catch (error) {
         return errorType.DATA_INVALID
@@ -434,6 +469,15 @@ export default class DemuxPipeline extends Pipeline {
             return errorType.FORMAT_NOT_SUPPORT
           }
           break
+        case AVFormat.RTSP:
+          if (defined(ENABLE_PROTOCOL_RTSP)) {
+            iformat = new (((await import('avformat/formats/IRtspFormat')).default))(task.formatOptions as IRtspFormatOptions)
+          }
+          else {
+            logger.error('vvc format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
         default:
           logger.error('format not support')
           return errorType.FORMAT_NOT_SUPPORT
@@ -464,11 +508,15 @@ export default class DemuxPipeline extends Pipeline {
     }
   }
 
-  public async analyzeStreams(taskId: string): Promise<AVFormatContextInterface> {
+  public async analyzeStreams(taskId: string): Promise<AVFormatContextInterface | int32> {
     const task = this.tasks.get(taskId)
     if (task) {
 
-      await demux.analyzeStreams(task.formatContext)
+      let ret = await demux.analyzeStreams(task.formatContext)
+
+      if (ret) {
+        return ret
+      }
 
       const streams: AVStreamInterface[] = []
       for (let i = 0; i < task.formatContext.streams.length; i++) {
@@ -1012,14 +1060,6 @@ export default class DemuxPipeline extends Pipeline {
         await task.loop.stopBeforeNextTick()
         task.loop.destroy()
       }
-      task.leftIPCPort.destroy()
-      task.rightIPCPorts.forEach((ipcPort) => {
-        ipcPort.destroy()
-      })
-      task.rightIPCPorts.clear()
-      task.formatContext.destroy()
-
-      avFree(task.buffer)
 
       task.cacheAVPackets.forEach((list) => {
         list.forEach((avpacket) => {
@@ -1027,6 +1067,22 @@ export default class DemuxPipeline extends Pipeline {
         })
       })
 
+      await task.formatContext.destroy()
+
+      task.leftIPCPort.destroy()
+      task.rightIPCPorts.forEach((ipcPort) => {
+        ipcPort.destroy()
+      })
+      task.rightIPCPorts.clear()
+
+      if (task.iBuffer) {
+        avFree(task.iBuffer)
+        task.iBuffer = nullptr
+      }
+      if (task.oBuffer) {
+        avFree(task.oBuffer)
+        task.oBuffer = nullptr
+      }
       this.tasks.delete(taskId)
     }
   }

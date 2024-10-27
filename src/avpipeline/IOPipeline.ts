@@ -23,10 +23,10 @@
  *
  */
 
-import { Data } from 'common/types/type'
+import { Data, Range } from 'common/types/type'
 import Pipeline, { TaskOptions } from './Pipeline'
 import FetchIOLoader from 'avnetwork/ioLoader/FetchIOLoader'
-import IOLoader, { IOLoaderOptions, Range } from 'avnetwork/ioLoader/IOLoader'
+import IOLoader, { IOLoaderOptions } from 'avnetwork/ioLoader/IOLoader'
 import * as errorType from 'avutil/error'
 import IPCPort from 'common/network/IPCPort'
 import { REQUEST, RpcMessage } from 'common/network/IPCPort'
@@ -35,10 +35,14 @@ import FileIOLoader from 'avnetwork/ioLoader/FileIOLoader'
 import * as logger from 'common/util/logger'
 import DashIOLoader from 'avnetwork/ioLoader/DashIOLoader'
 import HlsIOLoader from 'avnetwork/ioLoader/HlsIOLoader'
+import WebSocketIOLoader from 'avnetwork/ioLoader/WebSocketIOLoader'
+import WebTransportIOLoader from 'avnetwork/ioLoader/WebTransportIOLoader'
 
 export const enum IOType {
   Fetch,
   File,
+  WEBSOCKET,
+  WEBTRANSPORT,
   HLS,
   DASH
 }
@@ -72,6 +76,12 @@ export default class IOPipeline extends Pipeline {
         break
       case IOType.File:
         ioLoader = new FileIOLoader(options.options)
+        break
+      case IOType.WEBSOCKET:
+        ioLoader = new WebSocketIOLoader(options.options)
+        break
+      case IOType.WEBTRANSPORT:
+        ioLoader = new WebTransportIOLoader(options.options)
         break
       case IOType.HLS:
         if (defined(ENABLE_PROTOCOL_HLS)) {
@@ -142,6 +152,28 @@ export default class IOPipeline extends Pipeline {
           }
           catch (error) {
             logger.error(`loader read error, ${error}, taskId: ${options.taskId}`)
+            ipcPort.reply(request, errorType.DATA_INVALID)
+          }
+
+          break
+        }
+
+        case 'write': {
+          const pointer = request.params.pointer
+          const length = request.params.length
+
+          assert(pointer)
+          assert(length)
+
+          const buffer = mapSafeUint8Array(pointer, length)
+
+          try {
+            const ret = await ioLoader.write(buffer)
+            task.stats.bufferSendBytes += static_cast<int64>(length as int32)
+            ipcPort.reply(request, ret)
+          }
+          catch (error) {
+            logger.error(`loader write error, ${error}, taskId: ${options.taskId}`)
             ipcPort.reply(request, errorType.DATA_INVALID)
           }
 

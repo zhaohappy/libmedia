@@ -403,7 +403,7 @@ export default class MuxPipeline extends Pipeline {
         }
         stream.pullIPC.destroy()
       })
-      task.formatContext.destroy()
+      await task.formatContext.destroy()
       this.tasks.delete(taskId)
     }
   }

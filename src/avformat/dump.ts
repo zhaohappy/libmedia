@@ -1,5 +1,5 @@
 import { AVFormatContext, AVFormatContextInterface, AVIFormatContext, AVOFormatContext } from './AVFormatContext'
-import { AVDisposition, AVStreamInterface } from './AVStream'
+import AVStream, { AVDisposition, AVStreamInterface } from './AVStream'
 import * as object from 'common/util/object'
 import * as stringEnum from 'avutil/stringEnum'
 import * as is from 'common/util/is'
@@ -276,7 +276,7 @@ export default function dump(formatContexts: (AVFormatContextInterface | AVIForm
     if (formatContext instanceof AVFormatContext) {
       const streams: AVStreamInterface[] = []
       for (let i = 0; i < formatContext.streams.length; i++) {
-        const stream = formatContext.streams[i]
+        const stream = formatContext.streams[i] as AVStream
         streams.push({
           index: stream.index,
           id: stream.id,

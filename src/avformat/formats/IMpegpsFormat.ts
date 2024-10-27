@@ -99,8 +99,7 @@ export default class IMpegpsFormat extends IFormat {
     this.cacheAVPacket = nullptr
   }
 
-  public destroy(formatContext: AVIFormatContext): void {
-    super.destroy(formatContext)
+  public async destroy(formatContext: AVIFormatContext) {
     if (this.cacheAVPacket) {
       destroyAVPacket(this.cacheAVPacket)
       this.cacheAVPacket = nullptr

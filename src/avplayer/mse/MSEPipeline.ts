@@ -1503,7 +1503,7 @@ export default class MSEPipeline extends Pipeline {
     if (task) {
       if (task.audio) {
         if (task.audio.loop) {
-          task.audio.oformatContext.destroy()
+          await task.audio.oformatContext.destroy()
           task.audio.loop.destroy()
         }
         if (task.audio.pullIPC) {
@@ -1521,7 +1521,7 @@ export default class MSEPipeline extends Pipeline {
       }
       if (task.video) {
         if (task.video.loop) {
-          task.video.oformatContext.destroy()
+          await task.video.oformatContext.destroy()
           task.video.loop.destroy()
         }
         if (task.video.pullIPC) {

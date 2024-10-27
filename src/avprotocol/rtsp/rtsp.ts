@@ -1,5 +1,5 @@
 /*
- * libmedia constant
+ * libmedia rtsp message
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -23,42 +23,26 @@
  *
  */
 
-import { Rational } from './struct/rational'
+export const enum RtspStreamingMode {
+  TRANSPORT_UNKNOWN,
+  // (RTP/AVP), RTP Over UDP, 
+  TRANSPORT_UDP,
+  // (RTP/AVP/TCP), RTP Over RTSP / RTP, RTSP 交错传输方式 
+  TRANSPORT_TCP,
+  // HTTP 隧道穿透传输方式。
+  TRANSPORT_HTTP
+}
 
-export const NOPTS_VALUE_BIGINT: int64 = -1n
-
-export const NOPTS_VALUE: int32 = -1
-
-export const AV_TIME_BASE: int32 = 1000000
-
-export const AV_MILLI_TIME_BASE: int32 = 1000
-
-export const NTP_OFFSET = 2208988800n
-export const NTP_OFFSET_US = (NTP_OFFSET * 1000000n)
-
-/**
- * 微秒时间基
- */
-export const AV_TIME_BASE_Q = new Rational({den: AV_TIME_BASE, num: 1})
-
-/**
- * 毫秒时间基
- */
-export const AV_MILLI_TIME_BASE_Q = new Rational({den: AV_MILLI_TIME_BASE, num: 1})
-
-/**
- * 秒时间基
- */
-export const AV_TIME_BASE1_Q = new Rational({den: 1, num: 1})
-
-export const INT8_MAX: int8 = 127
-export const INT16_MAX: int16 = 32767
-export const INT32_MAX: int32 = 2147483647
-
-export const INT8_MIN: int8  = -128
-export const INT16_MIN: int16 = -32768
-export const INT32_MIN: int32 = -INT32_MAX - 1
-
-export const UINT8_MAX: uint8 = 255
-export const UINT16_MAX: uint16 = 65535
-export const UINT32_MAX: uint32 = 4294967295
+export const enum RtspMethod {
+  OPTIONS = 'OPTIONS',
+  DESCRIBE = 'DESCRIBE',
+  SETUP = 'SETUP',
+  PLAY = 'PLAY',
+  PAUSE = 'PAUSE',
+  TEARDOWN = 'TEARDOWN',
+  GET_PARAMETER = 'GET_PARAMETER',
+  SET_PARAMETER = 'SET_PARAMETER',
+  ANNOUNCE = 'ANNOUNCE',
+  REDIRECT = 'REDIRECT',
+  RECORD = 'RECORD'
+}

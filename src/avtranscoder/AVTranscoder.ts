@@ -604,6 +604,28 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             break
           }
 
+          case 'write': {
+            const pointer = request.params.pointer
+            const length = request.params.length
+
+            assert(pointer)
+            assert(length)
+
+            const buffer = mapSafeUint8Array(pointer, length)
+
+            try {
+              const ret = await (task.options.input.file as CustomIOLoader).write(buffer)
+              task.stats.bufferSendBytes += static_cast<int64>(length)
+              ipcPort.reply(request, ret)
+            }
+            catch (error) {
+              logger.error(`loader write error, ${error}, taskId: ${task.taskId}`)
+              ipcPort.reply(request, errorType.DATA_INVALID)
+            }
+
+            break
+          }
+
           case 'seek': {
             const pos = request.params.pos
 
@@ -857,8 +879,12 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       logger.fatal(`open stream failed, ret: ${ret}, taskId: ${taskId}`)
     }
     let formatContext = await this.DemuxerThread.analyzeStreams(taskId)
-    if (is.number(formatContext) || !formatContext.streams.length) {
+    if (is.number(formatContext)) {
       logger.fatal(`analyze stream failed, ret: ${formatContext}`)
+      return
+    }
+    else if (!formatContext.streams.length) {
+      logger.fatal('not found any stream')
     }
 
     if (defined(ENABLE_PROTOCOL_DASH) && subTaskId) {
@@ -867,8 +893,12 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         logger.fatal(`open stream failed, ret: ${ret}, taskId: ${taskId}`)
       }
       const subFormatContext = await this.DemuxerThread.analyzeStreams(subTaskId)
-      if (is.number(subFormatContext) || !subFormatContext.streams.length) {
+      if (is.number(subFormatContext)) {
         logger.fatal(`analyze stream failed, ret: ${subFormatContext}`)
+        return
+      }
+      else if (!subFormatContext.streams.length) {
+        logger.fatal('not found any stream')
       }
       formatContext.streams = formatContext.streams.concat(subFormatContext.streams)
     }

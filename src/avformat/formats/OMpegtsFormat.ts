@@ -101,7 +101,7 @@ export default class OMpegtsFormat extends OFormat {
     return 0
   }
 
-  public destroy(context: AVOFormatContext): void {
+  public async destroy(context: AVOFormatContext) {
     super.destroy(context)
     array.each(context.streams, (stream) => {
       const streamContext = stream.privData as MpegtsStreamContext

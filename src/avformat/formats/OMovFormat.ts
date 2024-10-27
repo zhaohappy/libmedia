@@ -95,8 +95,7 @@ export default class OMovFormat extends OFormat {
     return 0
   }
 
-  public destroy(formatContext: AVOFormatContext): void {
-    super.destroy(formatContext)
+  public async destroy(formatContext: AVOFormatContext) {
     if (this.annexb2AvccFilter) {
       this.annexb2AvccFilter.destroy()
       this.annexb2AvccFilter = null

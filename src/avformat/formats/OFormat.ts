@@ -34,7 +34,7 @@ export default abstract class OFormat {
 
   public abstract init(formatContext: AVOFormatContext): number
 
-  public destroy(formatContext: AVOFormatContext): void {}
+  public async destroy(formatContext: AVOFormatContext) {}
 
   public abstract writeHeader(formatContext: AVOFormatContext): number
 
@@ -170,5 +170,35 @@ export const OFormatSupportedCodecs: Record<Exclude<AVFormat, AVFormat.UNKNOWN>,
   [AVFormat.TTML]: [AVCodecID.AV_CODEC_ID_TTML],
   [AVFormat.H264]: [AVCodecID.AV_CODEC_ID_H264],
   [AVFormat.HEVC]: [AVCodecID.AV_CODEC_ID_HEVC],
-  [AVFormat.VVC]: [AVCodecID.AV_CODEC_ID_VVC]
+  [AVFormat.VVC]: [AVCodecID.AV_CODEC_ID_VVC],
+  [AVFormat.RTSP]: [
+    AVCodecID.AV_CODEC_ID_OPUS,
+    AVCodecID.AV_CODEC_ID_AAC,
+    AVCodecID.AV_CODEC_ID_MP3,
+    AVCodecID.AV_CODEC_ID_PCM_ALAW,
+    AVCodecID.AV_CODEC_ID_PCM_MULAW,
+    AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+    AVCodecID.AV_CODEC_ID_MPEG4,
+    AVCodecID.AV_CODEC_ID_H264,
+    AVCodecID.AV_CODEC_ID_HEVC,
+    AVCodecID.AV_CODEC_ID_VP8,
+    AVCodecID.AV_CODEC_ID_VP9,
+    AVCodecID.AV_CODEC_ID_AV1
+  ],
+  [AVFormat.RTMP]: [
+    AVCodecID.AV_CODEC_ID_MP3,
+    AVCodecID.AV_CODEC_ID_AAC,
+    AVCodecID.AV_CODEC_ID_SPEEX,
+    AVCodecID.AV_CODEC_ID_ADPCM_SWF,
+    AVCodecID.AV_CODEC_ID_NELLYMOSER,
+    AVCodecID.AV_CODEC_ID_PCM_ALAW,
+    AVCodecID.AV_CODEC_ID_PCM_MULAW,
+
+    AVCodecID.AV_CODEC_ID_MPEG4,
+    AVCodecID.AV_CODEC_ID_H264,
+    AVCodecID.AV_CODEC_ID_HEVC,
+    AVCodecID.AV_CODEC_ID_AV1,
+    AVCodecID.AV_CODEC_ID_VP9,
+    AVCodecID.AV_CODEC_ID_VVC
+  ]
 }

@@ -127,7 +127,8 @@ export default class RTPFrameQueue {
           const type = (this.queue[0].payload[0] >>> 1) & 0x3f
           switch (type) {
             case 48:
-              for (let i = RTP_HEVC_PAYLOAD_HEADER_SIZE + (this.payloadContext.usingDonlField ? RTP_HEVC_DONL_FIELD_SIZE : 0); i < this.queue[0].payload.length - RTP_HEVC_PAYLOAD_HEADER_SIZE;) {
+              let i = RTP_HEVC_PAYLOAD_HEADER_SIZE + (this.payloadContext.usingDonlField ? RTP_HEVC_DONL_FIELD_SIZE : 0)
+              for (; i < this.queue[0].payload.length - RTP_HEVC_PAYLOAD_HEADER_SIZE;) {
                 const size = (this.queue[0].payload[i] << 8) | this.queue[0].payload[i + 1]
                 const type = (this.queue[0].payload[i + 2] >>> 1) & 0x3f
                 if (type === hevc.HEVCNaluType.kSlicePPS

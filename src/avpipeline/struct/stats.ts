@@ -153,6 +153,10 @@ export default class Stats {
    */
   bufferReceiveBytes: int64
   /**
+   * buffer 发送总字节数
+   */
+  bufferSendBytes: int64
+  /**
    * buffer 总输出字节数
    * 
    */

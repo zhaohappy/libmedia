@@ -218,8 +218,8 @@ const defaultAVPlayerOptions: Partial<AVPlayerOptions> = {
   enableWebGPU: true,
   enableWorker: true,
   loop: false,
-  jitterBufferMax: 10,
-  jitterBufferMin: 4,
+  jitterBufferMax: 4,
+  jitterBufferMin: 1,
   lowLatency: false,
   preLoadTime: 4
 }
@@ -860,8 +860,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       logger.fatal(`open external subtitle failed, ret: ${ret}, taskId: ${taskId}`)
     }
     let formatContext = await AVPlayer.DemuxerThread.analyzeStreams(taskId)
-    if (is.number(formatContext) || !formatContext.streams.length) {
+    if (is.number(formatContext)) {
       logger.fatal(`analyze stream failed, ret: ${formatContext}`)
+      return
+    }
+    else if (!formatContext.streams.length) {
+      logger.fatal('not found any stream')
     }
 
     const stream = formatContext.streams[0]
@@ -926,14 +930,41 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     let ret = 0
     if (is.string(source)) {
-      this.ext = urlUtils.parse(source).file.split('.').pop()
+      let url = source
+      let type: IOType
+
+      if (defined(ENABLE_PROTOCOL_RTSP) && /^rtsp/.test(source)
+        || defined(ENABLE_PROTOCOL_RTMP) && /^rtmp/.test(source)
+      ) {
+        if (defined(ENABLE_PROTOCOL_RTSP) && /^rtsp/.test(source)) {
+          this.ext = 'rtsp'
+        }
+        else if (defined(ENABLE_PROTOCOL_RTMP) && /^rtmp/.test(source)) {
+          this.ext = 'rtmp'
+        }
+        type = IOType.WEBSOCKET
+        const protocol = urlUtils.parse(source).protocol
+        const subProtocol = protocol.split('+')[1] || 'wss'
+        if (subProtocol === 'wss' || subProtocol === 'ws') {
+          type = IOType.WEBSOCKET
+        }
+        else if (subProtocol === 'webtransport') {
+          type = IOType.WEBTRANSPORT
+        }
+        url = url.replace(/^\S+:\/\//, subProtocol + '://')
+      }
+      else {
+        this.ext = urlUtils.parse(source).file.split('.').pop()
+        type = Ext2IOLoader[this.ext] ?? IOType.Fetch
+      }
+
       // 注册一个 url io 任务
       ret = await AVPlayer.IOThread.registerTask
         .transfer(this.ioloader2DemuxerChannel.port1)
         .invoke({
-          type: Ext2IOLoader[this.ext] ?? IOType.Fetch,
+          type,
           info: {
-            url: source
+            url
           },
           range: {
             from: -1,
@@ -1005,6 +1036,28 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             }
             catch (error) {
               logger.error(`loader read error, ${error}, taskId: ${this.taskId}`)
+              this.ioIPCPort.reply(request, errorType.DATA_INVALID)
+            }
+
+            break
+          }
+
+          case 'write': {
+            const pointer = request.params.pointer
+            const length = request.params.length
+
+            assert(pointer)
+            assert(length)
+
+            const buffer = mapSafeUint8Array(pointer, length)
+
+            try {
+              const ret = await source.write(buffer)
+              this.GlobalData.stats.bufferSendBytes += static_cast<int64>(length)
+              this.ioIPCPort.reply(request, ret)
+            }
+            catch (error) {
+              logger.error(`loader write error, ${error}, taskId: ${this.taskId}`)
               this.ioIPCPort.reply(request, errorType.DATA_INVALID)
             }
 
@@ -1106,6 +1159,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
     }
     else {
+      const formatOptions: Data = {}
+      if (defined(ENABLE_PROTOCOL_RTSP) && this.ext === 'rtsp'
+        || defined(ENABLE_PROTOCOL_RTMP) && this.ext === 'rtmp'
+      ) {
+        formatOptions.uri = (source as string).replace(/^\S+:\/\//, this.ext + '://')
+      }
       await AVPlayer.DemuxerThread.registerTask
         .transfer(this.ioloader2DemuxerChannel.port2, this.controller.getDemuxerControlPort())
         .invoke({
@@ -1113,6 +1172,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           leftPort: this.ioloader2DemuxerChannel.port2,
           controlPort: this.controller.getDemuxerControlPort(),
           format: Ext2Format[this.ext],
+          formatOptions,
           stats: addressof(this.GlobalData.stats),
           isLive: this.options.isLive,
           flags: this.isHls() ? IOFlags.SLICE : 0,
@@ -1152,8 +1212,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.fire(eventType.PROGRESS, [AVPlayerProgress.ANALYZE_FILE, this.ext])
 
     let formatContext = await AVPlayer.DemuxerThread.analyzeStreams(this.taskId)
-    if (is.number(formatContext) || !formatContext.streams.length) {
+    if (is.number(formatContext)) {
       logger.fatal(`analyze stream failed, ret: ${formatContext}`)
+      return
+    }
+    else if (!formatContext.streams.length) {
+      logger.fatal('not found any stream')
     }
 
     if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
@@ -1162,8 +1226,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         logger.fatal(`open stream failed, ret: ${ret}, taskId: ${this.subTaskId}`)
       }
       const subFormatContext = await AVPlayer.DemuxerThread.analyzeStreams(this.subTaskId)
-      if (is.number(subFormatContext) || !subFormatContext.streams.length) {
+      if (is.number(subFormatContext)) {
         logger.fatal(`analyze stream failed, ret: ${subFormatContext}`)
+        return
+      }
+      else if (!subFormatContext.streams.length) {
+        logger.fatal('not found any stream')
       }
       formatContext.streams = formatContext.streams.concat(subFormatContext.streams)
     }
@@ -1174,8 +1242,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         logger.fatal(`open subtitle stream failed, ret: ${ret}, taskId: ${this.subtitleTaskId}`)
       }
       const subFormatContext = await AVPlayer.DemuxerThread.analyzeStreams(this.subtitleTaskId)
-      if (is.number(subFormatContext) || !subFormatContext.streams.length) {
+      if (is.number(subFormatContext)) {
         logger.fatal(`analyze subtitle stream failed, ret: ${subFormatContext}`)
+        return
+      }
+      else if (!subFormatContext.streams.length) {
+        logger.fatal('not found any stream')
       }
       formatContext.streams = formatContext.streams.concat(subFormatContext.streams)
     }
@@ -1748,9 +1820,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     let minQueueLength = 10
-    if (is.string(this.source) && !this.options.isLive) {
+    if (is.string(this.source)) {
+      const preLoadTime = this.options.isLive ? this.options.jitterBufferMin : this.options.preLoadTime
       this.formatContext.streams.forEach((stream) => {
-        minQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate) * this.options.preLoadTime), minQueueLength)
+        minQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate) * preLoadTime), minQueueLength)
       })
     }
     promises.push(AVPlayer.DemuxerThread.startDemux(this.taskId, this.options.isLive, minQueueLength))

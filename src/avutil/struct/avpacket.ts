@@ -76,6 +76,12 @@ export class AVPacketSideData {
   type: AVPacketSideDataType = AVPacketSideDataType.AV_PKT_DATA_UNKNOWN
 }
 
+@struct
+export class AVProducerReferenceTime {
+  wallclock: int64
+  flags: int32
+}
+
 
 /**
  * FFmpeg AVPacket 定义

@@ -8,7 +8,6 @@ import * as is from 'common/util/is'
 import * as array from 'common/util/array'
 import * as url from 'common/util/url'
 import os from 'common/util/os'
-import browser from 'common/util/browser'
 
 import Progress from './components/progress/Progress'
 import Play from './components/control/play/Play'

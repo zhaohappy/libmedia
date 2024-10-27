@@ -58,7 +58,9 @@ export const Ext2Format: Record<string, AVFormat> = {
   '266': AVFormat.VVC,
   'vvc': AVFormat.VVC,
   'mpeg': AVFormat.MPEGPS,
-  'mpg': AVFormat.MPEGPS
+  'mpg': AVFormat.MPEGPS,
+  'rtsp': AVFormat.RTSP,
+  'rtmp': AVFormat.RTMP
 }
 
 export const Ext2IOLoader: Record<string, IOType> = {
@@ -172,7 +174,9 @@ export const Format2AVFormat: Record<string, AVFormat> = {
   'wav': AVFormat.WAV,
   'raw_h264': AVFormat.H264,
   'raw_h265': AVFormat.HEVC,
-  'raw_vvc': AVFormat.VVC
+  'raw_vvc': AVFormat.VVC,
+  'rtsp': AVFormat.RTSP,
+  'rtmp': AVFormat.RTMP
 }
 
 export const colorRange2AVColorRange: Record<string, AVColorRange> = {

@@ -310,7 +310,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
       }
     }
 
-    if ((avpacket.dts - stream.startTime) > avRescaleQ(
+    if ((avpacket.dts - stream.firstDTS) > avRescaleQ(
       static_cast<int64>((formatContext.options as DemuxOptions).maxAnalyzeDuration),
       AV_MILLI_TIME_BASE_Q,
       stream.timeBase

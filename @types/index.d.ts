@@ -29,6 +29,10 @@ declare const ENABLE_PROTOCOL_HLS: boolean
 
 declare const ENABLE_PROTOCOL_DASH: boolean
 
+declare const ENABLE_PROTOCOL_RTSP: boolean
+
+declare const ENABLE_PROTOCOL_RTMP: boolean
+
 declare const ENABLE_DEMUXER_MPEGTS: boolean
 
 declare const ENABLE_DEMUXER_MPEGPS: bool

@@ -78,6 +78,10 @@
       "ENABLE_PROTOCOL_HLS": true,
       // 开启支持 dash 协议
       "ENABLE_PROTOCOL_DASH": true,
+      // 开启支持 rtsp 协议
+      "ENABLE_PROTOCOL_RTSP": true,
+      // 开启支持 rtmp 协议
+      "ENABLE_PROTOCOL_RTMP": true,
 
       // 开启支持 mpegts 解封装格式
       "ENABLE_DEMUXER_MPEGTS": true,

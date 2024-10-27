@@ -68,7 +68,7 @@ export default class IAacFormat extends IFormat {
     this.currentPts = 0n
   }
 
-  public destroy(formatContext: AVIFormatContext): void {
+  public async destroy(formatContext: AVIFormatContext) {
     if (this.latmFilter) {
       this.latmFilter.destroy()
       this.latmFilter = null

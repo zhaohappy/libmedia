@@ -36,7 +36,7 @@ export default abstract class IFormat {
 
   public abstract init(formatContext: AVIFormatContext): void
 
-  public destroy(formatContext: AVIFormatContext): void {}
+  public async destroy(formatContext: AVIFormatContext): Promise<void> {}
 
   public abstract getAnalyzeStreamsCount(): number
   // @ts-ignore
