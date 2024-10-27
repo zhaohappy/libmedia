@@ -51,7 +51,9 @@ const Play: ComponentOptions = {
       }
       else {
         if (player.getStatus() === AVPlayerStatus.STOPPED) {
-          player.load(player.getSource(), player.getExternalSubtitle()).then(() => {
+          player.load(player.getSource(), {
+            externalSubtitles: player.getExternalSubtitle()
+          }).then(() => {
             player.play()
           })
         }

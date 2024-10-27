@@ -913,7 +913,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @param source 媒体源，支持 url 和 文件
    * @param externalSubtitles 外挂字幕源
    */
-  public async load(source: string | File | CustomIOLoader, externalSubtitles: ExternalSubtitle[] = []) {
+  public async load(source: string | File | CustomIOLoader, options: {
+    externalSubtitles?: ExternalSubtitle[]
+    ext?: string
+  } = {}) {
 
     logger.info(`call load, taskId: ${this.taskId}`)
 
@@ -954,7 +957,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         url = url.replace(/^\S+:\/\//, subProtocol + '://')
       }
       else {
-        this.ext = urlUtils.parse(source).file.split('.').pop()
+        this.ext = options.ext || urlUtils.parse(source).file.split('.').pop()
         type = Ext2IOLoader[this.ext] ?? IOType.Fetch
       }
 
@@ -1255,8 +1258,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.formatContext = formatContext
     this.source = source
 
-    for (let i = 0; i < externalSubtitles.length; i++) {
-      await this.loadExternalSubtitle(externalSubtitles[i])
+    if (options.externalSubtitles) {
+      for (let i = 0; i < options.externalSubtitles.length; i++) {
+        await this.loadExternalSubtitle(options.externalSubtitles[i])
+      }
     }
 
     formatContext.streams.forEach((stream) => {
