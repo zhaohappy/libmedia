@@ -33,6 +33,7 @@ import { PixelFormatDescriptorsMap } from 'avutil/pixelFormatDescriptor'
 import { avQ2D } from 'avutil/util/rational'
 import { AVChromaLocation, AVColorRange } from 'avutil/pixfmt'
 import BufferWriter from 'common/io/BufferWriter'
+import AVPacket from 'avutil/struct/avpacket'
 
 export const enum VP9Profile {
   Profile0,
@@ -184,4 +185,20 @@ export function generateExtradata(codecpar: pointer<AVCodecParameters>) {
   ioWriter.writeUint8(codecpar.colorSpace)
   ioWriter.writeUint16(0)
   return ioWriter.getWroteBuffer()
+}
+
+export function isIDR(avpacket: pointer<AVPacket>) {
+  const first = accessof(avpacket.data)
+
+  const version = (first >>> 5) & 0x01
+  const high = (first >>> 4) & 0x01
+  const profile = (high << 1) + version
+
+  const showExistingFrame = (first >>> (profile === VP9Profile.Profile3 ? 2 : 3)) & 0x01
+
+  if (showExistingFrame) {
+    return false
+  }
+
+  return !((first >>> (profile === VP9Profile.Profile3 ? 1 : 2)) & 0x01)
 }

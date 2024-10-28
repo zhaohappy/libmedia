@@ -25,6 +25,7 @@
 
 import AVStream from '../AVStream'
 import { AVPacketSideDataType } from 'avutil/codec'
+import AVPacket from 'avutil/struct/avpacket'
 import BitReader from 'common/io/BitReader'
 import { Uint8ArrayInterface } from 'common/io/interface'
 
@@ -73,4 +74,9 @@ export function parseExtraData(extradata: Uint8ArrayInterface) {
     colorTrc,
     colorSpace
   }
+}
+
+export function isIDR(avpacket: pointer<AVPacket>) {
+  const first = accessof(avpacket.data)
+  return !(first >>> 7)
 }
