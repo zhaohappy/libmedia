@@ -31,7 +31,7 @@ import { IOError } from 'common/io/error'
 import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
 import { AVFormat } from '../avformat'
-import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
+import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData, addAVPacketSideData, createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
 import AVStream from '../AVStream'
@@ -39,10 +39,11 @@ import RtspSession from 'avprotocol/rtsp/RtspSession'
 import * as sdp from 'avprotocol/libsdp/libsdp'
 import * as ntpUtil from 'avutil/util/ntp'
 import * as array from 'common/util/array'
+import * as vp9 from '../codecs/vp9'
 
 import * as mp3 from '../codecs/mp3'
 import { RtspStreamingMode } from 'avprotocol/rtsp/rtsp'
-import { HEVCPayloadContext, Mpeg4PayloadContext, RTPCodecName2AVCodeId, RTPOpusConfig2FrameSize, StaticRTPPayloadCodec } from 'avprotocol/rtp/rtp'
+import { HEVCPayloadContext, Mpeg4PayloadContext, RTPCodecName2AVCodeId, StaticRTPPayloadCodec } from 'avprotocol/rtp/rtp'
 import { Data } from 'common/types/type'
 import RTPFrameQueue from 'avprotocol/rtp/RTPFrameQueue'
 import * as depacketizer from 'avprotocol/rtp/depacketizer'
@@ -576,6 +577,30 @@ export default class IRtspFormat extends IFormat {
                   stream.codecpar.profile = mp3.getProfileByLayer(layer)
                 }
                 handleSingleAudioFrameWithFilter(frame, pts)
+              }
+              else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP8) {
+                const { payload, isKey } = depacketizer.vp8(packets)
+                if (!isKey && !this.context.canOutputPacket) {
+                  context.currentDTS = pts
+                  continue
+                }
+                handleVideoFrame(payload, isKey, pts)
+              }
+              else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9) {
+                const { payload, isKey } = depacketizer.vp9(packets)
+                if (!isKey && !this.context.canOutputPacket) {
+                  context.currentDTS = pts
+                  continue
+                }
+                handleVideoFrame(payload, isKey, pts)
+              }
+              else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1) {
+                const { payload, isKey } = depacketizer.av1(packets)
+                if (!isKey && !this.context.canOutputPacket) {
+                  context.currentDTS = pts
+                  continue
+                }
+                handleVideoFrame(payload, isKey, pts)
               }
             }
             if (firstGot) {
