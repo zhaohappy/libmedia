@@ -162,17 +162,17 @@ export default class RTPFrameQueue {
           }
         }
         else if (this.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP8) {
-          if ((this.queue[0].payload[0] & 0x10) !== 0) {
+          if (this.queue[0].payload[0] & 0x10) {
             return true
           }
         }
         else if (this.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9) {
-          if ((this.queue[0].payload[0] & 0x08) === 1) {
+          if (this.queue[0].payload[0] & 0x08) {
             return true
           }
         }
         else if (this.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1) {
-          if ((this.queue[0].payload[0] & 0x01) === 1) {
+          if (this.queue[0].payload[0] & 0x01) {
             return true
           }
         }

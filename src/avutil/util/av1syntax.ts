@@ -60,12 +60,10 @@ export function le(bitReader: BitReader, n: number) {
 
 export function leb128(bitReader: BitReader) {
   let value = 0
-  let Leb128Bytes = 0
   for (let i = 0; i < 8; i++ ) {
-    let leb128Byte_ = f(bitReader, 8)
-    value |= ((leb128Byte_ & 0x7f) << (i * 7))
-    Leb128Bytes += 1
-    if (!(leb128Byte_ & 0x80)) {
+    let next = f(bitReader, 8)
+    value |= ((next & 0x7f) << (i * 7))
+    if (!(next & 0x80)) {
       break
     }
   }

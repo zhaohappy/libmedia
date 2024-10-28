@@ -185,15 +185,3 @@ export const StaticRTPPayloadCodec: RTPPayloadCodec[] = [
     encoding: -1
   }
 ]
-
-export const RTPOpusConfig2FrameSize = [
-  10, 20, 40, 60,
-  10, 20, 40, 60,
-  10, 20, 40, 60,
-  10, 20,
-  10, 20,
-  2.5, 5, 10, 20,
-  2.5, 5, 10, 20,
-  2.5, 5, 10, 20,
-  2.5, 5, 10, 20
-]

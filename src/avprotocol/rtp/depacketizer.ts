@@ -30,6 +30,8 @@ import concatTypeArray from 'common/function/concatTypeArray'
 import BitReader from 'common/io/BitReader'
 import * as h264Util from 'avformat/codecs/h264'
 import * as hevcUtil from 'avformat/codecs/hevc'
+import * as av1Util from 'avformat/codecs/av1'
+import * as vp9Util from 'avformat/codecs/vp9'
 import { RTPPacket } from './RTPPacket'
 import { AVMediaType } from 'avutil/codec'
 
@@ -259,7 +261,216 @@ export function mpeg4(rtps: RTPPacket[], context: Mpeg4PayloadContext) {
 }
 
 export function vp8(rtps: RTPPacket[]) {
+  const buffers: Uint8Array[] = []
+  let isKey = false
 
+  for (let i = 0; i < rtps.length; i++) {
+    const X = rtps[i].payload[0] >>> 7
+    const S = (rtps[i].payload[0] >>> 4) & 0x01
+    const PID = rtps[i].payload[0] & 0x07
+
+    let offset = 1
+
+    if (X) {
+      const I = rtps[i].payload[offset] >>> 7
+      const L = (rtps[i].payload[offset] >>> 6) & 0x01
+      const T = (rtps[i].payload[offset] >>> 5) & 0x01
+      const K = (rtps[i].payload[offset] >>> 4) & 0x01
+      offset++
+      // PictureID
+      if (I) {
+        // 7bit
+        const M = rtps[i].payload[offset++] >>> 7
+        // 15 bit
+        if (M) {
+          offset++
+        }
+      }
+      // TL0PICIDX
+      if (L) {
+        offset++
+      }
+
+      if (T || K) {
+        offset++
+      }
+      if (S && PID === 0 && !(rtps[i].payload[offset] & 0x01)) {
+        isKey = true
+      }
+      buffers.push(rtps[i].payload.subarray(offset))
+    }
+  }
+  if (buffers.length === 1) {
+    return {
+      payload: buffers[0],
+      isKey
+    }
+  }
+  return {
+    payload: concatTypeArray(Uint8Array, buffers),
+    isKey
+  }
+}
+
+// https://datatracker.ietf.org/doc/draft-uberti-payload-vp9/00/
+export function vp9(rtps: RTPPacket[]) {
+  const buffers: Uint8Array[] = []
+
+  let isKey = false
+
+  for (let i = 0; i < rtps.length; i++) {
+    const I = rtps[i].payload[0] >>> 7
+    const L = (rtps[i].payload[0] >>> 5) & 0x01
+    const F = (rtps[i].payload[0] >>> 4) & 0x01
+    const B = (rtps[i].payload[0] >>> 3) & 0x01
+    const V = (rtps[i].payload[0] >>> 1) & 0x01
+
+    let offset = 1
+
+    // PictureID
+    if (I) {
+      // 7bit
+      const M = rtps[i].payload[offset++] >>> 7
+      // 15 bit
+      if (M) {
+        offset++
+      }
+    }
+
+    let R = 0
+
+    if (L) {
+      if (F) {
+        R = rtps[i].payload[offset] & 0x03
+      }
+      offset++
+    }
+
+    if (F) {
+      for (let i = 0; i < R; i++) {
+        if (rtps[i].payload[offset] & 0x10) {
+          offset += 2
+        }
+        else {
+          offset += 1
+        }
+      }
+    }
+
+    if (V) {
+      const ns = rtps[i].payload[offset] >> 5
+      const y = !!(rtps[i].payload[offset] & 0x10)
+      const g = !!(rtps[i].payload[offset] & 0x08)
+      offset++
+      if (ns > 0) {
+        logger.fatal('VP9 scalability structure with multiple layers')
+      }
+      if (y) {
+        for (i = 0; i < ns + 1; i++) {
+          offset += 4
+        }
+      }
+      if (g) {
+        const ng = rtps[i].payload[offset++]
+        for (i = 0; i < ng; i++) {
+          const r = (rtps[i].payload[offset] >> 2) & 0x03
+          offset++
+          for (let j = 0; j < r; j++) {
+            offset++
+          }
+        }
+      }
+    }
+
+    if (B) {
+      const first = rtps[i].payload[offset]
+      const version = (first >>> 5) & 0x01
+      const high = (first >>> 4) & 0x01
+      const profile = (high << 1) + version
+      const showExistingFrame = (first >>> (profile === vp9Util.VP9Profile.Profile3 ? 2 : 3)) & 0x01
+      if (showExistingFrame) {
+        isKey = false
+      }
+      else {
+        isKey = !((first >>> (profile === vp9Util.VP9Profile.Profile3 ? 1 : 2)) & 0x01)
+      }
+    }
+    buffers.push(rtps[i].payload.subarray(offset))
+  }
+  if (buffers.length === 1) {
+    return {
+      isKey,
+      payload: buffers[0]
+    }
+  }
+  return {
+    isKey,
+    payload: concatTypeArray(Uint8Array, buffers)
+  }
+}
+
+export function av1(rtps: RTPPacket[]) {
+  const buffers: Uint8Array[] = []
+  let isKey = false
+
+  function leb128(buffer: Uint8Array, offset: number) {
+    let value = 0
+    for (let i = 0; i < 8; i++ ) {
+      let next = buffer[offset++]
+      value |= ((next & 0x7f) << (i * 7))
+      if (!(next & 0x80)) {
+        break
+      }
+    }
+    return {
+      value,
+      offset
+    }
+  }
+
+  for (let i = 0; i < rtps.length; i++) {
+    const W = (rtps[i].payload[0] >>> 4) & 0x03
+    let offset = 1
+    if (W) {
+      for (let i = 0; i < W - 1; i++) {
+        const result = leb128(rtps[i].payload, offset)
+        offset = result.offset
+        const type = (rtps[i].payload[offset] >>> 3) & 0x0f
+        if (type === av1Util.OBUType.SEQUENCE_HEADER) {
+          isKey = true
+        }
+        buffers.push(rtps[i].payload.subarray(offset, offset + result.value))
+        offset += result.value
+      }
+      const type = (rtps[i].payload[offset] >>> 3) & 0x0f
+      if (type === av1Util.OBUType.SEQUENCE_HEADER) {
+        isKey = true
+      }
+      buffers.push(rtps[i].payload.subarray(offset))
+    }
+    else {
+      while (offset < rtps[i].payload.length - 1) {
+        const result = leb128(rtps[i].payload, offset)
+        offset = result.offset
+        const type = (rtps[i].payload[offset] >>> 3) & 0x0f
+        if (type === av1Util.OBUType.SEQUENCE_HEADER) {
+          isKey = true
+        }
+        buffers.push(rtps[i].payload.subarray(offset, offset + result.value))
+        offset += result.value
+      }
+    }
+  }
+  if (buffers.length === 1) {
+    return {
+      payload: buffers[0],
+      isKey
+    }
+  }
+  return {
+    payload: concatTypeArray(Uint8Array, buffers),
+    isKey
+  }
 }
 
 export function mpeg12(rtps: RTPPacket[], mediaType: AVMediaType) {
