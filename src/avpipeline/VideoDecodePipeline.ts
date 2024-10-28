@@ -114,7 +114,7 @@ export default class VideoDecodePipeline extends Pipeline {
     super()
   }
 
-  private createWebcodecDecoder(task: SelfTask, enableHardwareAcceleration: boolean = true) {
+  private createWebCodecDecoder(task: SelfTask, enableHardwareAcceleration: boolean = true) {
     return new WebVideoDecoder({
       onError: (error) => {
         if (task.hardwareRetryCount > 3 || !task.firstDecoded) {
@@ -228,7 +228,7 @@ export default class VideoDecodePipeline extends Pipeline {
 
     task.softwareDecoder = task.resource
       ? this.createWasmcodecDecoder(task, task.resource)
-      : (support.videoDecoder ? this.createWebcodecDecoder(task, false) : null)
+      : (support.videoDecoder ? this.createWebCodecDecoder(task, false) : null)
 
     if (!task.softwareDecoder) {
       logger.error('software decoder not support')
@@ -236,7 +236,7 @@ export default class VideoDecodePipeline extends Pipeline {
     }
 
     if (support.videoDecoder && options.enableHardware) {
-      task.hardwareDecoder = this.createWebcodecDecoder(task)
+      task.hardwareDecoder = this.createWebCodecDecoder(task)
     }
 
     task.targetDecoder = task.hardwareDecoder || task.softwareDecoder
@@ -521,16 +521,16 @@ export default class VideoDecodePipeline extends Pipeline {
       let softwareDecoder: WasmVideoDecoder | WebVideoDecoder
 
       if (task.preferWebCodecs && support.videoDecoder && WebVideoDecoder.isSupported(codecpar, false)) {
-        softwareDecoder = this.createWebcodecDecoder(task, false)
+        softwareDecoder = this.createWebCodecDecoder(task, false)
       }
       else {
         softwareDecoder = resource
           ? this.createWasmcodecDecoder(task, resource as WebAssemblyResource)
-          : (support.videoDecoder ? this.createWebcodecDecoder(task, false) : null)
+          : (support.videoDecoder ? this.createWebCodecDecoder(task, false) : null)
       }
 
       let hardwareDecoder: WebVideoDecoder = (support.videoDecoder && task.enableHardware)
-        ? this.createWebcodecDecoder(task, true)
+        ? this.createWebCodecDecoder(task, true)
         : null
       return new Promise<number>(async (resolve, reject) => {
         task.openReject = resolve
@@ -606,7 +606,7 @@ export default class VideoDecodePipeline extends Pipeline {
         && task.softwareDecoder instanceof WasmVideoDecoder
       ) {
         task.softwareDecoder.close()
-        const softwareDecoder = this.createWebcodecDecoder(task, false)
+        const softwareDecoder = this.createWebCodecDecoder(task, false)
         if (task.softwareDecoder === task.targetDecoder) {
           task.targetDecoder = softwareDecoder
         }
@@ -696,7 +696,7 @@ export default class VideoDecodePipeline extends Pipeline {
       // webcodec flush 有可能会卡主，这里重新创建解码器
       else if (task.targetDecoder === task.hardwareDecoder) {
         task.hardwareDecoder.close()
-        task.hardwareDecoder = this.createWebcodecDecoder(task)
+        task.hardwareDecoder = this.createWebCodecDecoder(task)
         await task.hardwareDecoder.open(task.parameters)
         task.targetDecoder = task.hardwareDecoder
       }
