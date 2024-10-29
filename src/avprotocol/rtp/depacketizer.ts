@@ -1,5 +1,5 @@
 /*
- * libmedia rtp depacker
+ * libmedia rtp depacketizer
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -208,54 +208,71 @@ export function mpeg4(rtps: RTPPacket[], context: Mpeg4PayloadContext) {
   const bitReader: BitReader = new BitReader(RTP_MAX_PACKET_LENGTH)
   for (let i = 0; i < rtps.length; i++) {
     const payload =  rtps[i].payload
-    if (payload.length < 2) {
-      logger.error('invalid mpeg4 payload length')
-      return
-    }
-    const auHeadersLength = (payload[0] << 8) | payload[1]
-    if (auHeadersLength > RTP_MAX_PACKET_LENGTH) {
-      logger.error('invalid mpeg4 payload au header length')
-      return
-    }
-    const auHeadersLengthBytes = ((auHeadersLength + 7) / 8) >>> 0
-    if (payload.length - 2 < auHeadersLengthBytes) {
-      logger.error('invalid mpeg4 payload au length')
-      return
-    }
-    const auHeaderSize = context.sizeLength + context.indexLength
-
-    // Wrong if optional additional sections are present (cts, dts etc...)
-    if ((auHeadersLength % auHeaderSize) !== 0) {
-      logger.error('not support mpeg4 payload au format')
-      return
-    }
-
-    const nbAuHeaders = auHeadersLength / auHeaderSize
-    const sizes: number[] = []
-    const indexes: number[] = []
-    bitReader.reset()
-    bitReader.appendBuffer(payload.subarray(2))
-    for (let j = 0; j < nbAuHeaders; j++) {
-      sizes.push(bitReader.readU(context.sizeLength))
-      indexes.push(bitReader.readU(context.indexLength))
-    }
-    if (sizes.length === 1 && sizes[0] + auHeadersLengthBytes + 2 > payload.length) {
-      buffers.push(payload.subarray(2 + auHeadersLengthBytes))
-    }
-    else if (sizes.length > 1) {
-      let offset = auHeadersLengthBytes + 2
-      for (let j = 0; j < sizes.length; j++) {
-        if (!indexes[j] && buffers.length) {
-          frames.push(concatTypeArray(Uint8Array, buffers))
-          buffers.length = 0
+    if (context.latm) {
+      let offset = 0
+      while (offset < payload.length) {
+        let length = 0
+        while (true) {
+          const tmp = payload[offset++]
+          length += tmp
+          if (tmp !== 0xff) {
+            break
+          }
         }
-        frames.push(payload.subarray(offset, offset + sizes[j]))
-        offset += sizes[j]
+        frames.push(payload.subarray(offset, offset + length))
+        offset += length
+      }
+    }
+    else {
+      if (payload.length < 2) {
+        logger.error('invalid mpeg4 payload length')
+        return
+      }
+      const auHeadersLength = (payload[0] << 8) | payload[1]
+      if (auHeadersLength > RTP_MAX_PACKET_LENGTH) {
+        logger.error('invalid mpeg4 payload au header length')
+        return
+      }
+      const auHeadersLengthBytes = ((auHeadersLength + 7) / 8) >>> 0
+      if (payload.length - 2 < auHeadersLengthBytes) {
+        logger.error('invalid mpeg4 payload au length')
+        return
+      }
+      const auHeaderSize = context.sizeLength + context.indexLength
+
+      // Wrong if optional additional sections are present (cts, dts etc...)
+      if ((auHeadersLength % auHeaderSize) !== 0) {
+        logger.error('not support mpeg4 payload au format')
+        return
+      }
+
+      const nbAuHeaders = auHeadersLength / auHeaderSize
+      const sizes: number[] = []
+      const indexes: number[] = []
+      bitReader.reset()
+      bitReader.appendBuffer(payload.subarray(2))
+      for (let j = 0; j < nbAuHeaders; j++) {
+        sizes.push(bitReader.readU(context.sizeLength))
+        indexes.push(bitReader.readU(context.indexLength))
+      }
+      if (sizes.length === 1 && sizes[0] + auHeadersLengthBytes + 2 > payload.length) {
+        buffers.push(payload.subarray(2 + auHeadersLengthBytes))
+      }
+      else if (sizes.length > 1) {
+        let offset = auHeadersLengthBytes + 2
+        for (let j = 0; j < sizes.length; j++) {
+          if (!indexes[j] && buffers.length) {
+            frames.push(concatTypeArray(Uint8Array, buffers))
+            buffers.length = 0
+          }
+          frames.push(payload.subarray(offset, offset + sizes[j]))
+          offset += sizes[j]
+        }
       }
     }
   }
   if (buffers.length) {
-    frames.push(concatTypeArray(Uint8Array, buffers))
+    frames.push(buffers.length === 1 ? buffers[0] : concatTypeArray(Uint8Array, buffers))
   }
   return frames
 }

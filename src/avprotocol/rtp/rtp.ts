@@ -52,6 +52,8 @@ export interface Mpeg4PayloadContext {
   objectType: number
   config: string
   mode: string
+  cpresent: number
+  latm: boolean
 }
 
 export interface RTPPayloadCodec {
@@ -82,9 +84,10 @@ export const RTPCodecName2AVCodeId = {
   'speex': AVCodecID.AV_CODEC_ID_SPEEX,
   'vorbis': AVCodecID.AV_CODEC_ID_VORBIS,
   'theora': AVCodecID.AV_CODEC_ID_THEORA,
-  'MP4A-LATM': AVCodecID.AV_CODEC_ID_AAC,
+  'MP4A-LATM': AVCodecID.AV_CODEC_ID_AAC_LATM,
   'MP4V-ES': AVCodecID.AV_CODEC_ID_MPEG4,
-  'mpeg4-generic': AVCodecID.AV_CODEC_ID_AAC
+  'mpeg4-generic': AVCodecID.AV_CODEC_ID_AAC,
+  'ac3': AVCodecID.AV_CODEC_ID_AC3
 }
 
 export const StaticRTPPayloadCodec: RTPPayloadCodec[] = [
@@ -135,14 +138,6 @@ export const StaticRTPPayloadCodec: RTPPayloadCodec[] = [
     codecId: AVCodecID.AV_CODEC_ID_PCM_S16BE,
     rate: 44100,
     encoding: 1
-  },
-  {
-    payload: 14,
-    name: 'MPA',
-    codecType: AVMediaType.AVMEDIA_TYPE_AUDIO,
-    codecId: AVCodecID.AV_CODEC_ID_MP2,
-    rate: -1,
-    encoding: -1
   },
   {
     payload: 14,

@@ -34,19 +34,25 @@ import * as aac from 'avformat/codecs/aac'
 import * as naluUtil from 'avutil/util/nalu'
 import { Data } from 'common/types/type'
 import AVStream from 'avformat/AVStream'
+import BitReader from 'common/io/BitReader'
+import * as logger from 'common/util/logger'
 
-export function parseH264Fmtp(stream: AVStream, config: string) {
-  stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
-  const context: Partial<H264PayloadContext> = {}
+function eachConfig(config: string, callback: (key: string, value: string) => void) {
   const list = config.split(';')
   for (let i = 0; i < list.length; i++) {
     const item = list[i]
     const l2 = item.split('=')
-
     const key = l2[0].trim()
     l2.shift()
     const value = l2.join('=').trim()
+    callback(key, value)
+  }
+}
 
+export function parseH264Fmtp(stream: AVStream, config: string) {
+  stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+  const context: Partial<H264PayloadContext> = {}
+  eachConfig(config, (key, value) => {
     switch (key) {
       case 'profile-level-id':
         context.profile = +('0x' + value.substring(0, 2))
@@ -66,25 +72,17 @@ export function parseH264Fmtp(stream: AVStream, config: string) {
         h264.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
         break
     }
-  }
+  })
   return context
 }
 
 export function parseHevcFmtp(stream: AVStream, config: string) {
   const context: Partial<HEVCPayloadContext> = {}
-  const list = config.split(';')
 
   const nalus: Uint8Array[] = []
   stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
 
-  for (let i = 0; i < list.length; i++) {
-    const item = list[i]
-    const l2 = item.split('=')
-
-    const key = l2[0].trim()
-    l2.shift()
-    const value = l2.join('=').trim()
-
+  eachConfig(config, (key, value) => {
     switch (key) {
       case 'profile-id':
         context.profile = +value
@@ -96,7 +94,7 @@ export function parseHevcFmtp(stream: AVStream, config: string) {
         nalus.push(base64.base64ToUint8Array(value))
         break
     }
-  }
+  })
 
   if (nalus.length) {
     const extradata = hevc.annexbExtradata2AvccExtradata(naluUtil.joinNaluByStartCode(nalus))
@@ -111,15 +109,7 @@ export function parseHevcFmtp(stream: AVStream, config: string) {
 export function parseMpeg4Fmtp(stream: AVStream, config: string) {
   const context: Partial<Mpeg4PayloadContext> = {}
 
-  const list = config.split(';')
-  for (let i = 0; i < list.length; i++) {
-    const item = list[i]
-    const l2 = item.split('=')
-
-    const key = l2[0].trim().toLocaleLowerCase()
-    l2.shift()
-    const value = l2.join('=').trim()
-
+  eachConfig(config, (key, value) => {
     switch (key) {
       case 'streamtype':
         context.streamType = +value
@@ -140,19 +130,72 @@ export function parseMpeg4Fmtp(stream: AVStream, config: string) {
         context.indexDeltaLength = +value
         break
       case 'config':
+        context.config = value
         stream.codecpar.extradata = avMalloc(value.length / 2)
         stream.codecpar.extradataSize = value.length / 2
         const buffer = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
         let offset = 0
-        for (let j = 0; j < value.length; j += 2) {
-          buffer[offset++] = +('0x' + value.substring(j, j + 2))
+        for (let i = 0; i < value.length; i += 2) {
+          buffer[offset++] = +('0x' + value.substring(i, i + 2))
         }
         if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
           aac.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
         }
         break
     }
+  })
+
+  return context
+}
+
+export function parseAacLatmFmtp(stream: AVStream, config: string) {
+  const context: Partial<Mpeg4PayloadContext> = {
+    latm: true
   }
+
+  // change codec from AV_CODEC_ID_AAC_LATM to AV_CODEC_ID_AAC
+  stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_AAC
+
+  eachConfig(config, (key, value) => {
+    switch (key) {
+      case 'profile-level-id':
+        context.profileLevelId = +value
+        break
+      case 'cpresent':
+        context.cpresent = +value
+        break
+      case 'config':
+        context.config = value
+        const config = new Uint8Array(value.length / 2)
+        let offset = 0
+        for (let i = 0; i < value.length; i += 2) {
+          config[offset++] = +('0x' + value.substring(i, i + 2))
+        }
+        const bitReader = new BitReader(config.length)
+        bitReader.appendBuffer(config)
+        const audioMuxVersion = bitReader.readU1()
+        const sameTimeFraming = bitReader.readU1()
+        bitReader.skip(6)
+        const numPrograms = bitReader.readU(4)
+        const numLayers = bitReader.readU(3)
+        if (audioMuxVersion != 0
+          || sameTimeFraming != 1
+          || numPrograms != 0
+          || numLayers != 0
+        ) {
+          logger.fatal('LATM config not support')
+        }
+
+        stream.codecpar.extradata = avMalloc(2)
+        stream.codecpar.extradataSize = 2
+        const buffer = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+        buffer[0] = bitReader.readU(8)
+        buffer[1] = bitReader.readU(8)
+        aac.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+        break
+    }
+  })
+
   return context
 }
 
@@ -160,5 +203,6 @@ export const CodecIdFmtpHandler: Partial<Record<AVCodecID, (stream: AVStream, co
   [AVCodecID.AV_CODEC_ID_H264]: parseH264Fmtp,
   [AVCodecID.AV_CODEC_ID_HEVC]: parseHevcFmtp,
   [AVCodecID.AV_CODEC_ID_AAC]: parseMpeg4Fmtp,
+  [AVCodecID.AV_CODEC_ID_AAC_LATM]: parseAacLatmFmtp,
   [AVCodecID.AV_CODEC_ID_MPEG4]: parseMpeg4Fmtp
 }
