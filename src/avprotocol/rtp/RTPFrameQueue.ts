@@ -34,6 +34,9 @@ import { RTP_HEVC_DOND_FIELD_SIZE, RTP_HEVC_DONL_FIELD_SIZE, RTP_HEVC_PAYLOAD_HE
 
 const UINT16_MID = UINT16_MAX >>> 1
 
+/**
+ * TODO 支持 nack
+ */
 export default class RTPFrameQueue {
 
   private queue: RTPPacket[]
@@ -42,7 +45,6 @@ export default class RTPFrameQueue {
 
   private codecpar: pointer<AVCodecParameters>
 
-  private firstKeyFramePopped: boolean
   private currentSeqStart: number
   private readyPos: number
   private maskerQueue: number[]
@@ -52,8 +54,7 @@ export default class RTPFrameQueue {
     this.codecpar = codecpar
     this.queue = []
     this.frameQueue = []
-    this.firstKeyFramePopped = false
-    this.currentSeqStart = 0
+    this.currentSeqStart = -1
     this.readyPos = 0
     this.maskerQueue = []
     this.payloadContext = payloadContext
@@ -66,7 +67,7 @@ export default class RTPFrameQueue {
    * @param end 
    * @returns 
    */
-  private judeSeqIncreaseOne(start: number, end: number) {
+  private isSeqIncreaseOne(start: number, end: number) {
     return start + 1 === end
       || start === UINT16_MAX
       && end === 0
@@ -85,8 +86,8 @@ export default class RTPFrameQueue {
   }
 
   private isFirstStart() {
-    if (this.firstKeyFramePopped) {
-      return this.judeSeqIncreaseOne(this.currentSeqStart, this.queue[0].header.sequence)
+    if (this.currentSeqStart > -1) {
+      return this.isSeqIncreaseOne(this.currentSeqStart, this.queue[0].header.sequence)
     }
     else {
       if (this.queue.length > 5) {
@@ -116,9 +117,9 @@ export default class RTPFrameQueue {
                 return true
               }
               break
-            case h264.H264NaluType.kSliceIDR:
+            // case h264.H264NaluType.kSliceIDR:
             case h264.H264NaluType.kSliceSPS:
-            case h264.H264NaluType.kSlicePPS:
+            // case h264.H264NaluType.kSlicePPS:
             case h264.H264NaluType.kSliceAUD:
               return true
           }
@@ -152,11 +153,11 @@ export default class RTPFrameQueue {
                 return true
               }
               break
-            case hevc.HEVCNaluType.kSlicePPS:
-            case hevc.HEVCNaluType.kSliceSPS:
+            // case hevc.HEVCNaluType.kSlicePPS:
+            // case hevc.HEVCNaluType.kSliceSPS:
             case hevc.HEVCNaluType.kSliceVPS:
-            case hevc.HEVCNaluType.kSliceIDR_N_LP:
-            case hevc.HEVCNaluType.kSliceIDR_W_RADL:
+            // case hevc.HEVCNaluType.kSliceIDR_N_LP:
+            // case hevc.HEVCNaluType.kSliceIDR_W_RADL:
             case hevc.HEVCNaluType.kSliceAUD:
               return true
           }
@@ -193,15 +194,35 @@ export default class RTPFrameQueue {
     }
   }
 
+  private check() {
+    // 移动已就绪指针并且保存 masker 索引
+    for (; this.readyPos < this.queue.length - 1;) {
+      if (this.isSeqIncreaseOne(this.queue[this.readyPos].header.sequence, this.queue[this.readyPos + 1].header.sequence)) {
+        this.readyPos++
+        if (this.queue[this.readyPos].header.masker
+          || this.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_ALAW
+          || this.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_MULAW
+          || this.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3
+          || this.codecpar.codecId === AVCodecID.AV_CODEC_ID_ADPCM_G722
+          || this.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_S16BE
+        ) {
+          this.maskerQueue.push(this.readyPos)
+        }
+      }
+      else {
+        break
+      }
+    }
+  }
+
   public push(packet: RTPPacket) {
 
     // 已经输出帧之前的包直接忽略
-    if (packet.header.sequence < this.currentSeqStart
-      && (this.currentSeqStart - packet.header.sequence) < UINT16_MID
-    ) {
+    if (this.currentSeqStart > -1 && this.seqAMoreThenB(this.currentSeqStart, packet.header.sequence)) {
       return
     }
 
+    // 第一个直接 push 返回
     if (!this.queue.length) {
       this.queue.push(packet)
       if (packet.header.masker) {
@@ -210,43 +231,36 @@ export default class RTPFrameQueue {
       return
     }
 
-    const check = () => {
-      // 移动已就绪指针
-      for (; this.readyPos < this.queue.length - 1;) {
-        if (this.judeSeqIncreaseOne(this.queue[this.readyPos].header.sequence, this.queue[this.readyPos + 1].header.sequence)) {
-          this.readyPos++
-          if (this.queue[this.readyPos].header.masker
-            || this.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_ALAW
-            || this.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_MULAW
-            || this.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3
-            || this.codecpar.codecId === AVCodecID.AV_CODEC_ID_ADPCM_G722
-            || this.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_S16BE
-          ) {
-            this.maskerQueue.push(this.readyPos)
+    let added = false
+
+    // seq 比队列中的第一个包小，插入到队首并重新处理 readyPos 和 maskerQueue
+    if (this.seqAMoreThenB(this.queue[0].header.sequence, packet.header.sequence)) {
+      this.queue.unshift(packet)
+      this.readyPos = 0
+      this.maskerQueue.length = 0
+      added = true
+      this.check()
+    }
+    else {
+      // 从 readyPos 开始查找当前的包需要插入的位置
+      for (let i = this.readyPos; i < this.queue.length; i++) {
+        if (this.seqAMoreThenB(this.queue[i].header.sequence, packet.header.sequence) ) {
+          this.queue.splice(i, 0, packet)
+          added = true
+          // 插入在当前的 readyPos 后一个位置，检查是否可以移动 readyPos 指针
+          if (i === this.readyPos + 1) {
+            this.check()
           }
-        }
-        else {
           break
         }
-      }
-    }
-    let added = false
-    // 从 readyPos 开始查找当前的包的插入位置
-    for (let i = this.readyPos; i < this.queue.length; i++) {
-      if (this.seqAMoreThenB(this.queue[i].header.sequence, packet.header.sequence) ) {
-        this.queue.splice(i, 0, packet)
-        added = true
-        if (i === this.readyPos + 1) {
-          check()
-        }
-        break
       }
     }
     // 没找到插入点，插入到最后
     if (!added) {
       this.queue.push(packet)
+      // 插入在当前的 readyPos 后一个位置，检查是否可以移动 readyPos 指针
       if (this.readyPos + 2 === this.queue.length) {
-        check()
+        this.check()
       }
     }
     let offset = 0
@@ -256,7 +270,6 @@ export default class RTPFrameQueue {
       const packets = this.queue.slice(offset, makerPos)
       this.frameQueue.push(packets)
       offset = makerPos
-      this.firstKeyFramePopped = true
       this.currentSeqStart = packets[packets.length - 1].header.sequence
     }
     if (offset) {
