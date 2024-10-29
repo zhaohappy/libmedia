@@ -39,7 +39,8 @@ import RtspSession from 'avprotocol/rtsp/RtspSession'
 import * as sdp from 'avprotocol/libsdp/libsdp'
 import * as ntpUtil from 'avutil/util/ntp'
 import * as array from 'common/util/array'
-import * as vp9 from '../codecs/vp9'
+import * as mpeg4 from '../codecs/mpeg4'
+import * as mpegvideo from '../codecs/mpegvideo'
 
 import * as mp3 from '../codecs/mp3'
 import { RtspStreamingMode } from 'avprotocol/rtsp/rtsp'
@@ -375,7 +376,7 @@ export default class IRtspFormat extends IFormat {
 
           const packet = parseRTPPacket(data)
 
-          let stream = formatContext.streams.find((stream) => {
+          const stream = formatContext.streams.find((stream) => {
             const context = stream.privData as RtspStreamContext
             return context.ssrc === packet.header.ssrc
               || context.interleaved === interleaved
@@ -560,6 +561,16 @@ export default class IRtspFormat extends IFormat {
                 const frames = depacketizer.mpeg4(packets, (stream.privData as RtspStreamContext).payloadContext as Mpeg4PayloadContext)
                 handleMultiAudioFrames(frames, pts, 1024n)
               }
+              else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4) {
+                const frame = depacketizer.concat(packets)
+                const byte = frame[4]
+                const isKey = (byte >>> 6) === mpeg4.Mpeg4PictureType.I
+                if (!isKey && !this.context.canOutputPacket) {
+                  context.currentDTS = pts
+                  continue
+                }
+                handleVideoFrame(frame, isKey, pts)
+              }
               else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_ALAW
                 || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_MULAW
                 || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_ADPCM_G722
@@ -577,6 +588,15 @@ export default class IRtspFormat extends IFormat {
                   stream.codecpar.profile = mp3.getProfileByLayer(layer)
                 }
                 handleSingleAudioFrameWithFilter(frame, pts)
+              }
+              else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG2VIDEO) {
+                const frame = depacketizer.mpeg12(packets, stream.codecpar.codecType)
+                const isKey = ((frame[5] >> 3) & 7) === mpegvideo.MpegVideoPictureType.I
+                if (!isKey && !this.context.canOutputPacket) {
+                  context.currentDTS = pts
+                  continue
+                }
+                handleVideoFrame(frame, isKey, pts)
               }
               else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP8) {
                 const { payload, isKey } = depacketizer.vp8(packets)
