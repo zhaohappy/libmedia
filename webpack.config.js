@@ -78,8 +78,6 @@ module.exports = (env) => {
     return;
   }
 
-  const configFile = ts.readConfigFile(path.resolve(__dirname, './tsconfig.json'), ts.sys.readFile);
-
   const config = {
     stats: {
       assets: false,
