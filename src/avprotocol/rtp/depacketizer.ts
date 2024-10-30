@@ -508,6 +508,33 @@ export function mpeg12(rtps: RTPPacket[], mediaType: AVMediaType) {
   return concatTypeArray(Uint8Array, buffers)
 }
 
+export function ac3(rtps: RTPPacket[]) {
+  const frames: Uint8Array[] = []
+  const buffers: Uint8Array[] = []
+  for (let i = 0; i < rtps.length; i++) {
+    const payload = rtps[i].payload
+    const ft = payload[0] & 0x03
+    switch (ft) {
+      case 0:
+        frames.push(payload.subarray(2))
+        break
+      case 1:
+      case 2:
+        buffers.push(payload.subarray(2))
+        break
+      case 3:
+        buffers.push(payload.subarray(2))
+        frames.push(concatTypeArray(Uint8Array, buffers))
+        buffers.length = 0
+        break
+    }
+  }
+  if (frames.length === 1) {
+    return frames[0]
+  }
+  return concatTypeArray(Uint8Array, frames)
+}
+
 export function concat(rtps: RTPPacket[]) {
 
   if (rtps.length === 1) {

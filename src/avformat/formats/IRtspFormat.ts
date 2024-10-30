@@ -59,6 +59,7 @@ import { parseRTCPSendReport } from 'avprotocol/rtcp/parser'
 import AVBSFilter from '../bsf/AVBSFilter'
 import Mp32RawFilter from 'avformat/bsf/mp3/Mp32RawFilter'
 import { CodecIdFmtpHandler } from 'avprotocol/rtp/fmtp'
+import Ac32RawFilter from 'avformat/bsf/ac3/Ac32RawFilter'
 
 export interface IRtspFormatOptions {
   uri: string
@@ -261,6 +262,9 @@ export default class IRtspFormat extends IFormat {
 
         if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3) {
           context.filter = new Mp32RawFilter()
+        }
+        else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3) {
+          context.filter = new Ac32RawFilter()
         }
 
         if (context.filter) {
@@ -587,6 +591,10 @@ export default class IRtspFormat extends IFormat {
                   const layer = (frame[1] & 0x06) >> 1
                   stream.codecpar.profile = mp3.getProfileByLayer(layer)
                 }
+                handleSingleAudioFrameWithFilter(frame, pts)
+              }
+              else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3) {
+                const frame = depacketizer.ac3(packets)
                 handleSingleAudioFrameWithFilter(frame, pts)
               }
               else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG2VIDEO) {
