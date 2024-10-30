@@ -80,10 +80,11 @@ const eslintConfig = {
                 'atomic_int32',
                 'atomic_uint64',
                 'atomic_int64',
+                'atomic_bool',
                 'reinterpret_cast',
                 'static_cast',
                 'aligned_alloc',
-                'atomic_bool',
+                'make_shared_ptr',
 
                 '__webpack_exports__',
                 '__webpack_exports_process__',
