@@ -107,7 +107,7 @@ export default class WasmAudioDecoder {
     }
     else {
       ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, 1, this.decoderOptions)
-      await this.decoder.childrenThreadReady()
+      await this.decoder.childThreadsReady()
     }
     if (ret < 0) {
       logger.fatal(`open audio decoder failed, ret: ${ret}`)

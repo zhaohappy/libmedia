@@ -144,14 +144,13 @@ export default class WasmVideoDecoder {
     }
     else {
       ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, threadCount, this.decoderOptions)
-      await this.decoder.childrenThreadReady()
+      await this.decoder.childThreadsReady()
     }
 
     if (ret < 0) {
       logger.fatal(`open video decoder failed, ret: ${ret}`)
     }
     this.parameters = parameters
-    await this.decoder.childrenThreadReady()
   }
 
   public decode(avpacket: pointer<AVPacket>) {

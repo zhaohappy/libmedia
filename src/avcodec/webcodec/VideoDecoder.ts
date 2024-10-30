@@ -65,6 +65,7 @@ export default class WebVideoDecoder {
     this.inputQueue = []
     this.outputQueue = []
 
+    // safari 输出帧在有 B 帧的情况下没有按 pts 排序递增输出，这里需要进行排序输出
     this.sort = browser.safari
   }
 

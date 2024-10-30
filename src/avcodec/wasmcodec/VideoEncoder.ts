@@ -178,7 +178,7 @@ export default class WasmVideoEncoder {
     }
     else {
       ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, threadCount, this.encoderOptions)
-      await this.encoder.childrenThreadReady()
+      await this.encoder.childThreadsReady()
     }
 
     stack.free(sizeof(Rational))

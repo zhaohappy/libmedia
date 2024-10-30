@@ -238,7 +238,7 @@ export default class WasmAudioEncoder {
     }
     else {
       ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, 1, this.encoderOptions)
-      await this.encoder.childrenThreadReady()
+      await this.encoder.childThreadsReady()
     }
 
     this.frameSize = this.encoder.call<int32>('encoder_get_framesize_size')
@@ -248,7 +248,6 @@ export default class WasmAudioEncoder {
     if (ret < 0) {
       logger.fatal(`open audio encoder failed, ret: ${ret}`)
     }
-    await this.encoder.childrenThreadReady()
 
     this.parameters = parameters
     this.timeBase = timeBase
