@@ -33,20 +33,13 @@ import { Uint8ArrayInterface } from 'common/io/interface'
 import * as logger from 'common/util/logger'
 
 import dashParser from 'avprotocol/dash/parser'
-import FetchIOLoader from './FetchIOLoader'
+import FetchIOLoader, { FetchInfo } from './FetchIOLoader'
 import { MPDMediaList } from 'avprotocol/dash/type'
 import getTimestamp from 'common/function/getTimestamp'
 import * as errorType from 'avutil/error'
 import { Data, Range } from 'common/types/type'
 
 const FETCHED_HISTORY_LIST_MAX = 10
-
-export interface FetchInfo {
-  url: string
-  headers?: Object
-  withCredentials?: boolean
-  referrerPolicy?: string
-}
 
 type MediaType = 'audio' | 'video' | 'subtitle'
 
@@ -111,18 +104,18 @@ export default class DashIOLoader extends IOLoader {
       cache: 'default',
       referrerPolicy: 'no-referrer-when-downgrade'
     }
-    if (this.info.headers) {
-      object.each(this.info.headers, (value, key) => {
+    if (this.info.httpOptions?.headers) {
+      object.each(this.info.httpOptions.headers, (value, key) => {
         params.headers[key] = value
       })
     }
 
-    if (this.info.withCredentials) {
-      params.credentials = 'include'
+    if (this.info.httpOptions?.credentials) {
+      params.credentials = this.info.httpOptions.credentials
     }
 
-    if (this.info.referrerPolicy) {
-      params.referrerPolicy = this.info.referrerPolicy
+    if (this.info.httpOptions?.referrerPolicy) {
+      params.referrerPolicy = this.info.httpOptions.referrerPolicy
     }
 
     try {
@@ -310,9 +303,9 @@ export default class DashIOLoader extends IOLoader {
       resource.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
 
       await resource.loader.open(
-        {
+        object.extend({}, this.info, {
           url: resource.currentUri
-        },
+        }),
         {
           from: 0,
           to: -1
@@ -324,9 +317,9 @@ export default class DashIOLoader extends IOLoader {
       resource.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
       if (resource.initSegmentPadding) {
         await resource.loader.open(
-          {
+          object.extend({}, this.info, {
             url: resource.initSegmentPadding
-          },
+          }),
           {
             from: 0,
             to: -1
@@ -337,9 +330,9 @@ export default class DashIOLoader extends IOLoader {
       }
       else {
         await resource.loader.open(
-          {
+          object.extend({}, this.info, {
             url: resource.segments[resource.segmentIndex]
-          },
+          }),
           {
             from: 0,
             to: -1

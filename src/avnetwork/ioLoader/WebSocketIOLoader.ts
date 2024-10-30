@@ -35,6 +35,8 @@ export interface WebSocketInfo {
 
 export default class WebSocketIOLoader extends SocketIOLoader {
 
+  protected info: WebSocketInfo
+
   protected socket: WebSocket
 
   public async send(buffer: Uint8ArrayInterface): Promise<int32> {
@@ -45,6 +47,7 @@ export default class WebSocketIOLoader extends SocketIOLoader {
     return IOError.INVALID_OPERATION
   }
   public open(info: WebSocketInfo): Promise<int32> {
+    this.info = info
     this.status = IOLoaderStatus.CONNECTING
     return new Promise<int32>((resolve) => {
       this.socket = new WebSocket(info.url)

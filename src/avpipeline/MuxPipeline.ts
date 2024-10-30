@@ -160,7 +160,7 @@ export default class MuxPipeline extends Pipeline {
           }
           break
         case AVFormat.OGG:
-          if (defined(ENABLE_MUXER_OGGS)) {
+          if (defined(ENABLE_MUXER_OGG)) {
             oformat = new ((await import('avformat/formats/OOggFormat')).default)
           }
           else {

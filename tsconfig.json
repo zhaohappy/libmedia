@@ -93,8 +93,8 @@
       "ENABLE_DEMUXER_FLV": true,
       // 开启支持 ivf 解封装格式
       "ENABLE_DEMUXER_IVF": true,
-      // 开启支持 oggs 解封装格式
-      "ENABLE_DEMUXER_OGGS": true,
+      // 开启支持 ogg 解封装格式
+      "ENABLE_DEMUXER_OGG": true,
       // 开启支持 mp3 解封装格式
       "ENABLE_DEMUXER_MP3": true,
       // 开启支持 matroska 解封装格式
@@ -132,8 +132,8 @@
       "ENABLE_MUXER_IVF": true,
       // 开启支持 mpegts 封装格式
       "ENABLE_MUXER_MPEGTS": true,
-      // 开启支持 oggs 封装格式
-      "ENABLE_MUXER_OGGS": true,
+      // 开启支持 ogg 封装格式
+      "ENABLE_MUXER_OGG": true,
 
       // 开启支持 mse 模式
       "ENABLE_MSE": true,

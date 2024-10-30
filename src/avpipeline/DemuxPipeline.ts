@@ -352,7 +352,7 @@ export default class DemuxPipeline extends Pipeline {
           }
           break
         case AVFormat.OGG:
-          if (defined(ENABLE_DEMUXER_OGGS)) {
+          if (defined(ENABLE_DEMUXER_OGG)) {
             iformat = new ((await import('avformat/formats/IOggFormat')).default)
           }
           else {
@@ -612,7 +612,6 @@ export default class DemuxPipeline extends Pipeline {
     }
   }
 
-
   public async changeConnectStream(taskId: string, newStreamIndex: number, oldStreamIndex: number, force: boolean = true) {
     const task = this.tasks.get(taskId)
     if (task) {
@@ -665,6 +664,146 @@ export default class DemuxPipeline extends Pipeline {
     }
   }
 
+  private async doDemux(task: SelfTask, minQueueLength: int32) {
+    const avpacket = task.avpacketPool.alloc()
+
+    let ret = await demux.readAVPacket(task.formatContext, avpacket)
+
+    if (!ret) {
+
+      if (defined(ENABLE_LOG_TRACE)) {
+        logger.trace(`got packet, index: ${avpacket.streamIndex}, dts: ${avpacket.dts}, pts: ${avpacket.pts}, pos: ${
+          avpacket.pos
+        }, duration: ${avpacket.duration}, keyframe: ${(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) ? 'true' : 'false'}`)
+      }
+
+      const streamIndex = avpacket.streamIndex
+
+      assert(streamIndex !== NOPTS_VALUE)
+
+      if (task.stats !== nullptr) {
+        if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
+          && task.cacheAVPackets.has(streamIndex)
+        ) {
+          task.stats.audioPacketCount++
+          task.stats.audioPacketBytes += static_cast<int64>(avpacket.size)
+          if (task.stats.audioPacketCount > 1 && avpacket.dts > task.lastAudioDts) {
+            const list = task.cacheAVPackets.get(streamIndex)
+            if (list && list.length) {
+              task.stats.audioEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
+                / (static_cast<int32>(avpacket.dts - list[0].dts) / list.length))
+            }
+            else {
+              task.stats.audioEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
+                / static_cast<int32>(avpacket.dts - task.lastAudioDts))
+            }
+          }
+          task.lastAudioDts = avpacket.dts
+        }
+        else if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
+          && task.cacheAVPackets.has(streamIndex)
+        ) {
+          task.stats.videoPacketCount++
+          task.stats.videoPacketBytes += static_cast<int64>(avpacket.size)
+
+          if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
+            task.stats.keyFrameCount++
+            if (task.stats.keyFrameCount > 1 && avpacket.pts > task.lastKeyFramePts) {
+              task.stats.gop = task.gopCounter
+              task.gopCounter = 1
+              task.stats.keyFrameInterval = static_cast<int32>(avRescaleQ(
+                avpacket.pts - task.lastKeyFramePts,
+                avpacket.timeBase,
+                AV_MILLI_TIME_BASE_Q
+              ))
+            }
+            task.lastKeyFramePts = avpacket.pts
+          }
+          else {
+            task.gopCounter++
+          }
+          if (task.stats.videoPacketCount > 1 && avpacket.dts > task.lastVideoDts) {
+            const list = task.cacheAVPackets.get(streamIndex)
+            if (list && list.length) {
+              task.stats.videoEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
+                / (static_cast<int32>(avpacket.dts - list[0].dts) / list.length))
+            }
+            else {
+              task.stats.videoEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
+                / static_cast<int32>(avpacket.dts - task.lastVideoDts))
+            }
+          }
+          task.lastVideoDts = avpacket.dts
+        }
+      }
+
+      if (task.streamIndexFlush.get(streamIndex)) {
+        const stream = task.formatContext.streams.find((stream) => {
+          return stream.index === streamIndex
+        })
+        const ele = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+        if (!ele && stream && stream.codecpar.extradataSize) {
+          const data = avMalloc(stream.codecpar.extradataSize)
+          memcpy(data, stream.codecpar.extradata, stream.codecpar.extradataSize)
+          addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, data, stream.codecpar.extradataSize)
+        }
+        task.streamIndexFlush.set(streamIndex, false)
+      }
+
+      if (task.cacheRequests.has(streamIndex)) {
+        this.replyAVPacket(task, task.rightIPCPorts.get(streamIndex), task.cacheRequests.get(streamIndex), avpacket)
+        task.cacheRequests.delete(streamIndex)
+      }
+      else {
+        if (task.cacheAVPackets.has(streamIndex)) {
+          task.cacheAVPackets.get(streamIndex).push(avpacket)
+          if (task.stats !== nullptr) {
+            if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+              task.stats.audioPacketQueueLength++
+            }
+            else if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+              task.stats.videoPacketQueueLength++
+            }
+          }
+          if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE) {
+            if (task.cacheAVPackets.get(streamIndex).length > minQueueLength) {
+              task.avpacketPool.release(task.cacheAVPackets.get(streamIndex).shift())
+            }
+          }
+        }
+        else {
+          if (task.rightIPCPorts.has(STREAM_INDEX_ALL)) {
+            if (task.cacheRequests.has(STREAM_INDEX_ALL)) {
+              this.replyAVPacket(task, task.rightIPCPorts.get(STREAM_INDEX_ALL), task.cacheRequests.get(STREAM_INDEX_ALL), avpacket)
+              task.cacheRequests.delete(STREAM_INDEX_ALL)
+            }
+            else {
+              task.cacheAVPackets.get(STREAM_INDEX_ALL).push(avpacket)
+            }
+          }
+          else {
+            task.avpacketPool.release(avpacket)
+          }
+        }
+      }
+    }
+    else {
+      task.avpacketPool.release(avpacket)
+      if (ret !== IOError.END) {
+        logger.error(`demux error, ret: ${ret}, taskId: ${task.taskId}`)
+      }
+      for (let streamIndex of task.cacheRequests.keys()) {
+        const cacheAVPackets = task.cacheAVPackets.get(streamIndex)
+        if (!cacheAVPackets.length) {
+          task.rightIPCPorts.get(streamIndex).reply(task.cacheRequests.get(streamIndex), IOError.END)
+          task.cacheRequests.delete(streamIndex)
+        }
+      }
+    }
+
+    return ret
+  }
+
   public async startDemux(taskId: string, isLive: boolean, minQueueLength: int32) {
     const task = this.tasks.get(taskId)
     if (task) {
@@ -695,149 +834,34 @@ export default class DemuxPipeline extends Pipeline {
             return
           }
         }
-
-        const avpacket = task.avpacketPool.alloc()
-
-        let ret = await demux.readAVPacket(task.formatContext, avpacket)
-
-        if (!ret) {
-
-          if (defined(ENABLE_LOG_TRACE)) {
-            logger.trace(`got packet, index: ${avpacket.streamIndex}, dts: ${avpacket.dts}, pts: ${avpacket.pts}, pos: ${
-              avpacket.pos
-            }, duration: ${avpacket.duration}, keyframe: ${(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) ? 'true' : 'false'}`)
-          }
-
-          const streamIndex = avpacket.streamIndex
-
-          assert(streamIndex !== NOPTS_VALUE)
-
-          if (task.stats !== nullptr) {
-            if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
-              && task.cacheAVPackets.has(streamIndex)
-            ) {
-              task.stats.audioPacketCount++
-              task.stats.audioPacketBytes += static_cast<int64>(avpacket.size)
-              if (task.stats.audioPacketCount > 1 && avpacket.dts > task.lastAudioDts) {
-                const list = task.cacheAVPackets.get(streamIndex)
-                if (list && list.length) {
-                  task.stats.audioEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
-                    / (static_cast<int32>(avpacket.dts - list[0].dts) / list.length))
-                }
-                else {
-                  task.stats.audioEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
-                    / static_cast<int32>(avpacket.dts - task.lastAudioDts))
-                }
-              }
-              task.lastAudioDts = avpacket.dts
-            }
-            else if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
-              && task.cacheAVPackets.has(streamIndex)
-            ) {
-              task.stats.videoPacketCount++
-              task.stats.videoPacketBytes += static_cast<int64>(avpacket.size)
-
-              if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
-                task.stats.keyFrameCount++
-                if (task.stats.keyFrameCount > 1 && avpacket.pts > task.lastKeyFramePts) {
-                  task.stats.gop = task.gopCounter
-                  task.gopCounter = 1
-                  task.stats.keyFrameInterval = static_cast<int32>(avRescaleQ(
-                    avpacket.pts - task.lastKeyFramePts,
-                    avpacket.timeBase,
-                    AV_MILLI_TIME_BASE_Q
-                  ))
-                }
-                task.lastKeyFramePts = avpacket.pts
-              }
-              else {
-                task.gopCounter++
-              }
-              if (task.stats.videoPacketCount > 1 && avpacket.dts > task.lastVideoDts) {
-                const list = task.cacheAVPackets.get(streamIndex)
-                if (list && list.length) {
-                  task.stats.videoEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
-                    / (static_cast<int32>(avpacket.dts - list[0].dts) / list.length))
-                }
-                else {
-                  task.stats.videoEncodeFramerate = Math.round(avpacket.timeBase.den / avpacket.timeBase.num
-                    / static_cast<int32>(avpacket.dts - task.lastVideoDts))
-                }
-              }
-              task.lastVideoDts = avpacket.dts
-            }
-          }
-
-          if (task.streamIndexFlush.get(streamIndex)) {
-            const stream = task.formatContext.streams.find((stream) => {
-              return stream.index === streamIndex
-            })
-            const ele = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
-            if (!ele && stream && stream.codecpar.extradataSize) {
-              const data = avMalloc(stream.codecpar.extradataSize)
-              memcpy(data, stream.codecpar.extradata, stream.codecpar.extradataSize)
-              addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, data, stream.codecpar.extradataSize)
-            }
-            task.streamIndexFlush.set(streamIndex, false)
-          }
-
-          if (task.cacheRequests.has(streamIndex)) {
-            this.replyAVPacket(task, task.rightIPCPorts.get(streamIndex), task.cacheRequests.get(streamIndex), avpacket)
-            task.cacheRequests.delete(streamIndex)
-          }
-          else {
-            if (task.cacheAVPackets.has(streamIndex)) {
-              task.cacheAVPackets.get(streamIndex).push(avpacket)
-              if (task.stats !== nullptr) {
-                if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-                  task.stats.audioPacketQueueLength++
-                }
-                else if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-                  task.stats.videoPacketQueueLength++
-                }
-              }
-              if (task.formatContext.streams[streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE) {
-                if (task.cacheAVPackets.get(streamIndex).length > minQueueLength) {
-                  task.avpacketPool.release(task.cacheAVPackets.get(streamIndex).shift())
-                }
-              }
-            }
-            else {
-              if (task.rightIPCPorts.has(STREAM_INDEX_ALL)) {
-                if (task.cacheRequests.has(STREAM_INDEX_ALL)) {
-                  this.replyAVPacket(task, task.rightIPCPorts.get(STREAM_INDEX_ALL), task.cacheRequests.get(STREAM_INDEX_ALL), avpacket)
-                  task.cacheRequests.delete(STREAM_INDEX_ALL)
-                }
-                else {
-                  task.cacheAVPackets.get(STREAM_INDEX_ALL).push(avpacket)
-                }
-              }
-              else {
-                task.avpacketPool.release(avpacket)
-              }
-            }
-          }
-        }
-        else {
-          task.avpacketPool.release(avpacket)
-          if (ret !== IOError.END) {
-            logger.error(`demux error, ret: ${ret}, taskId: ${taskId}`)
-          }
-
+        const ret = await this.doDemux(task, minQueueLength)
+        if (ret) {
           task.demuxEnded = true
-
           logger.info(`demuxer ended, taskId: ${task.taskId}`)
-
-          for (let streamIndex of task.cacheRequests.keys()) {
-            const cacheAVPackets = task.cacheAVPackets.get(streamIndex)
-            if (!cacheAVPackets.length) {
-              task.rightIPCPorts.get(streamIndex).reply(task.cacheRequests.get(streamIndex), IOError.END)
-              task.cacheRequests.delete(streamIndex)
-            }
-          }
           task.loop.stop()
         }
       }, 0, 0, true, false)
+
+      if (isLive) {
+        while (true) {
+          let done = false
+          task.cacheAVPackets.forEach((list, streamIndex) => {
+            if (list.length > minQueueLength) {
+              done = true
+            }
+          })
+          if (!done) {
+            const ret = await this.doDemux(task, minQueueLength)
+            if (ret) {
+              task.demuxEnded = true
+              return
+            }
+          }
+          else {
+            break
+          }
+        }
+      }
 
       task.loop.start()
 

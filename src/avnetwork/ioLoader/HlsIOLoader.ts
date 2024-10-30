@@ -32,7 +32,7 @@ import { buildAbsoluteURL } from 'common/util/url'
 
 import hlsParser from 'avprotocol/m3u8/parser'
 import { MasterPlaylist, MediaPlaylist, Playlist, Segment } from 'avprotocol/m3u8/types'
-import FetchIOLoader from './FetchIOLoader'
+import FetchIOLoader, { FetchInfo } from './FetchIOLoader'
 import getTimestamp from 'common/function/getTimestamp'
 import * as logger from 'common/util/logger'
 import * as urlUtil from 'common/util/url'
@@ -41,13 +41,6 @@ import * as is from 'common/util/is'
 import { Data, Range } from 'common/types/type'
 
 const FETCHED_HISTORY_LIST_MAX = 10
-
-export interface FetchInfo {
-  url: string
-  headers?: Object
-  withCredentials?: boolean
-  referrerPolicy?: string
-}
 
 export default class HlsIOLoader extends IOLoader {
 
@@ -89,18 +82,18 @@ export default class HlsIOLoader extends IOLoader {
       cache: 'default',
       referrerPolicy: 'no-referrer-when-downgrade'
     }
-    if (this.info.headers) {
-      object.each(this.info.headers, (value, key) => {
+    if (this.info.httpOptions?.headers) {
+      object.each(this.info.httpOptions.headers, (value, key) => {
         params.headers[key] = value
       })
     }
 
-    if (this.info.withCredentials) {
-      params.credentials = 'include'
+    if (this.info.httpOptions?.credentials) {
+      params.credentials = this.info.httpOptions.credentials
     }
 
-    if (this.info.referrerPolicy) {
-      params.referrerPolicy = this.info.referrerPolicy
+    if (this.info.httpOptions?.referrerPolicy) {
+      params.referrerPolicy = this.info.httpOptions.referrerPolicy
     }
 
     try {
@@ -176,18 +169,18 @@ export default class HlsIOLoader extends IOLoader {
       cache: 'default',
       referrerPolicy: 'no-referrer-when-downgrade'
     }
-    if (this.info.headers) {
-      object.each(this.info.headers, (value, key) => {
+    if (this.info.httpOptions?.headers) {
+      object.each(this.info.httpOptions.headers, (value, key) => {
         params.headers[key] = value
       })
     }
 
-    if (this.info.withCredentials) {
-      params.credentials = 'include'
+    if (this.info.httpOptions?.credentials) {
+      params.credentials = this.info.httpOptions.credentials
     }
 
-    if (this.info.referrerPolicy) {
-      params.referrerPolicy = this.info.referrerPolicy
+    if (this.info.httpOptions?.referrerPolicy) {
+      params.referrerPolicy = this.info.httpOptions.referrerPolicy
     }
 
     try {
@@ -374,9 +367,9 @@ export default class HlsIOLoader extends IOLoader {
       }
 
       await this.loader.open(
-        {
-          url
-        },
+        object.extend({}, this.info, {
+          url,
+        }),
         range
       )
       return this.aesDecryptPipe ? this.aesDecryptPipe.read(buffer) : this.loader.read(buffer)
@@ -405,9 +398,9 @@ export default class HlsIOLoader extends IOLoader {
       }
 
       await this.loader.open(
-        {
-          url
-        },
+        object.extend({}, this.info, {
+          url,
+        }),
         range
       )
       return this.aesDecryptPipe ? this.aesDecryptPipe.read(buffer) : this.loader.read(buffer)

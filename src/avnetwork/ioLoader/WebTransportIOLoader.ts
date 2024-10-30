@@ -31,9 +31,12 @@ import { Data } from 'common/types/type'
 
 export interface WebTransportInfo {
   url: string
+  webtransportOptions?: WebTransportOptions
 }
 
 export default class WebTransportIOLoader extends SocketIOLoader {
+
+  protected info: WebTransportInfo
 
   protected transport: WebTransport
 
@@ -103,7 +106,8 @@ export default class WebTransportIOLoader extends SocketIOLoader {
   }
 
   public async open(info: WebTransportInfo): Promise<int32> {
-    this.transport = new WebTransport(info.url)
+    this.info = info
+    this.transport = new WebTransport(info.url, info.webtransportOptions)
 
     this.readPacketQueue = []
 

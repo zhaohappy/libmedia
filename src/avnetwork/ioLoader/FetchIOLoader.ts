@@ -30,13 +30,11 @@ import { IOError } from 'common/io/error'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
-import { Data, Range } from 'common/types/type'
+import { Data, HttpOptions, Range } from 'common/types/type'
 
 export interface FetchInfo {
   url: string
-  headers?: Object
-  withCredentials?: boolean
-  referrerPolicy?: string
+  httpOptions?: HttpOptions
 }
 
 export interface FetchIOLoaderOptions extends IOLoaderOptions {
@@ -81,8 +79,8 @@ export default class FetchIOLoader extends IOLoader {
       cache: 'default',
       referrerPolicy: 'no-referrer-when-downgrade'
     }
-    if (this.info.headers) {
-      object.each(this.info.headers, (value, key) => {
+    if (this.info.httpOptions?.headers) {
+      object.each(this.info.httpOptions.headers, (value, key) => {
         params.headers[key] = value
       })
     }
@@ -91,14 +89,14 @@ export default class FetchIOLoader extends IOLoader {
       params.headers[key] = value
     })
 
-    if (this.info.withCredentials) {
-      params.credentials = 'include'
+    if (this.info.httpOptions?.credentials) {
+      params.credentials = this.info.httpOptions.credentials
     }
 
-    if (this.info.referrerPolicy) {
-      params.referrerPolicy = this.info.referrerPolicy as ReferrerPolicy
+    if (this.info.httpOptions?.referrerPolicy) {
+      params.referrerPolicy = this.info.httpOptions.referrerPolicy
     }
-    if (AbortController) {
+    if (typeof AbortController === 'function') {
       this.abortController = new AbortController()
       params.signal = this.abortController.signal
     }
@@ -199,8 +197,8 @@ export default class FetchIOLoader extends IOLoader {
       cache: 'default',
       referrerPolicy: 'no-referrer-when-downgrade'
     }
-    if (this.info.headers) {
-      object.each(this.info.headers, (value, key) => {
+    if (this.info.httpOptions?.headers) {
+      object.each(this.info.httpOptions.headers, (value, key) => {
         params.headers[key] = value
       })
     }
@@ -208,12 +206,12 @@ export default class FetchIOLoader extends IOLoader {
       params.headers['range'] = `bytes=${this.startBytes}-${this.endBytes > 0 ? this.endBytes : ''}`
     }
 
-    if (this.info.withCredentials) {
-      params.credentials = 'include'
+    if (this.info.httpOptions?.credentials) {
+      params.credentials = this.info.httpOptions.credentials
     }
 
-    if (this.info.referrerPolicy) {
-      params.referrerPolicy = this.info.referrerPolicy as ReferrerPolicy
+    if (this.info.httpOptions?.referrerPolicy) {
+      params.referrerPolicy = this.info.httpOptions.referrerPolicy
     }
 
     if (this.abortController) {

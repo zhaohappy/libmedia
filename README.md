@@ -79,7 +79,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 
 ### 编解码器
 
-编解码器被编译成了单独的 wasm 模块，解码器在 ```dist/decode``` 目录下，编码器在 ```dist/encode``` 目录下。编解码器的 wasm 模块有三个版本分别为 baseline、atomic、simd。baseline 版本是基准版本，指令集对应到 WebAssembly 的 MVP 版本，但需要支持 Mutable Globals，兼容性最高，性能最低；atomic 增加了 atomic 原子操作指令集和 Bulk Memory 指令集；simd 增加了 simd 向量加速指令集，性能最高。目前的 simd 版本是靠编译器自动优化的，不同的编解码器实现效果不同（目前没有看见过有针对 wasm 指令集做加速优化的开源项目，如果想要更高的加速效果需要自己优化）。
+编解码器被编译成了单独的 wasm 模块，解码器在 ```dist/decode``` 目录下，编码器在 ```dist/encode``` 目录下。编解码器的 wasm 模块有三个版本分别为 baseline、atomic、simd。baseline 版本是基准版本，指令集对应到 WebAssembly 的 MVP 版本，但需要支持 Mutable Globals，兼容性最高，性能最低；atomic 增加了 atomic 原子操作指令集和 Bulk Memory 指令集；simd 增加了 simd 向量加速指令集，性能最高。目前的 simd 版本是靠编译器自动优化的，不同的编解码器实现效果不同（目前没有看见过有针对 wasm 指令集做加速优化的开源项目，如果想要更高的加速效果需要自己优化，当前只有 h264 的 simd 解码器是手动优化的，也是性能最好的一个 wasm 模块）。
 
 #### 三个版本和 webcodecs 的兼容性支持情况
 

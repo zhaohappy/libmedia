@@ -40,6 +40,7 @@ export interface JitterBufferControllerOptions {
   stats: pointer<Stats>
   jitterBuffer: pointer<JitterBuffer>
   lowLatencyStart: boolean
+  lowLatency: boolean
   useMse: boolean
   max: float
   min: float
@@ -192,35 +193,37 @@ export default class JitterBufferController {
 
     const jitter = Math.sqrt(variance)
 
-    const incomingFramerate = Math.round(average / (this.interval / 1000))
-    const needFramerate = this.options.stats.videoEncodeFramerate + this.options.stats.audioEncodeFramerate
+    if (this.options.lowLatency) {
+      const incomingFramerate = Math.round(average / (this.interval / 1000))
+      const needFramerate = this.options.stats.videoEncodeFramerate + this.options.stats.audioEncodeFramerate
 
-    if ((incomingFramerate < (needFramerate >> 1)) || this.shutterCount > 3) {
-      this.options.jitterBuffer.min = Math.min(this.options.jitterBuffer.min * 2, this.max - BUFFER_STEP)
-      this.options.jitterBuffer.max = Math.min(this.options.jitterBuffer.max * 2, this.max)
-    }
-    else if (incomingFramerate >= needFramerate && jitter < 50) {
-      this.options.jitterBuffer.min = Math.max(this.options.jitterBuffer.min - BUFFER_STEP, this.min)
-      this.options.jitterBuffer.max = Math.max(this.options.jitterBuffer.max - BUFFER_STEP, this.min + BUFFER_STEP)
-    }
-    else if (jitter > 100) {
-      this.options.jitterBuffer.min = Math.min(this.options.jitterBuffer.min + BUFFER_STEP, this.max - BUFFER_STEP)
-      this.options.jitterBuffer.max = Math.min(this.options.jitterBuffer.max + BUFFER_STEP, this.max)
-    }
-    else if (jitter < 20) {
-      if (this.options.jitterBuffer.min === this.min) {
+      if ((incomingFramerate < (needFramerate >> 1)) || this.shutterCount > 3) {
+        this.options.jitterBuffer.min = Math.min(this.options.jitterBuffer.min * 2, this.max - BUFFER_STEP)
+        this.options.jitterBuffer.max = Math.min(this.options.jitterBuffer.max * 2, this.max)
+      }
+      else if (incomingFramerate >= needFramerate && jitter < 50) {
+        this.options.jitterBuffer.min = Math.max(this.options.jitterBuffer.min - BUFFER_STEP, this.min)
         this.options.jitterBuffer.max = Math.max(this.options.jitterBuffer.max - BUFFER_STEP, this.min + BUFFER_STEP)
       }
-      else {
-        this.options.jitterBuffer.min = Math.max(this.options.jitterBuffer.min - BUFFER_STEP, this.min)
-      }
-    }
-    else {
-      if (this.options.jitterBuffer.max === this.max) {
+      else if (jitter > 100) {
         this.options.jitterBuffer.min = Math.min(this.options.jitterBuffer.min + BUFFER_STEP, this.max - BUFFER_STEP)
+        this.options.jitterBuffer.max = Math.min(this.options.jitterBuffer.max + BUFFER_STEP, this.max)
+      }
+      else if (jitter < 20) {
+        if (this.options.jitterBuffer.min === this.min) {
+          this.options.jitterBuffer.max = Math.max(this.options.jitterBuffer.max - BUFFER_STEP, this.min + BUFFER_STEP)
+        }
+        else {
+          this.options.jitterBuffer.min = Math.max(this.options.jitterBuffer.min - BUFFER_STEP, this.min)
+        }
       }
       else {
-        this.options.jitterBuffer.max = Math.min(this.options.jitterBuffer.max + BUFFER_STEP, this.max)
+        if (this.options.jitterBuffer.max === this.max) {
+          this.options.jitterBuffer.min = Math.min(this.options.jitterBuffer.min + BUFFER_STEP, this.max - BUFFER_STEP)
+        }
+        else {
+          this.options.jitterBuffer.max = Math.min(this.options.jitterBuffer.max + BUFFER_STEP, this.max)
+        }
       }
     }
 

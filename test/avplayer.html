@@ -216,7 +216,7 @@
 <body>
 
     <div style="margin-left: 10px;">
-      支持 mp4、mov、mpegts、flv、matroska、webm、mp3、oggs、flac、aac、wav 封装格式 <br>
+      支持 mp4、mov、mpegts、flv、matroska、webm、mp3、ogg、flac、aac、wav 封装格式 <br>
       支持 hls、dash 协议 （只支持 url 播放）<br>
       支持 vvc、av1、hevc、h264、vp9、vp8、mpeg4、aac、mp3、opus、speex、flac、vorbis、g711 编码 <br>
       支持直播（LIVE）和点播（VOD） <br>
@@ -420,6 +420,12 @@
       </div>
       <div class="stats-item">
         videoBitrate: <span id="videoBitrate" class="stats-text">0</span> kbps
+      </div>
+      <div class="stats-item">
+        jitterMin: <span id="jitterMin" class="stats-text">0</span>
+      </div>
+      <div class="stats-item">
+        jitterMax: <span id="jitterMax" class="stats-text">0</span>
       </div>
       <div class="stats-item">
         audioPacketQueueLength: <span id="audioPacketQueueLength" class="stats-text">0</span>
@@ -1183,6 +1189,9 @@
 
           span.textContent = value
         })
+
+        document.querySelector('#jitterMin').textContent = stats.jitterBuffer.min
+        document.querySelector('#jitterMax').textContent = stats.jitterBuffer.max
       }
       
       urlComponent = new Vue({

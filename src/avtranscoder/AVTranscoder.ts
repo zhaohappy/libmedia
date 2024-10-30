@@ -98,6 +98,7 @@ import FetchIOLoader from 'avnetwork/ioLoader/FetchIOLoader'
 import FileIOLoader from 'avnetwork/ioLoader/FileIOLoader'
 import HlsIOLoader from 'avnetwork/ioLoader/HlsIOLoader'
 import DashIOLoader from 'avnetwork/ioLoader/DashIOLoader'
+import analyzeUrlIOLoader from 'avutil/function/analyzeUrlIOLoader'
 
 export interface AVTranscoderOptions {
   getWasm: (type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codec?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
@@ -108,7 +109,32 @@ export interface TaskOptions {
   input: {
     file: string | File | CustomIOLoader
     format?: keyof (typeof Format2AVFormat)
-    protocol?: 'hls' | 'dash'
+    /**
+     * 源扩展名
+     * 强制指定扩展名，对没有扩展名的 url 链接使用
+     */
+    ext?: string
+    /**
+     * http 请求配置
+     */
+    http?: {
+      /**
+       * http 请求需要添加的 header
+       */
+      headers?: Data
+      /**
+       * http 请求的 credentials 配置
+       */
+      credentials?: RequestCredentials
+      /**
+       * http 请求的 referrerPolicy 配置
+       */
+      referrerPolicy?: ReferrerPolicy
+    },
+    /**
+     * webtransport 配置
+     */
+    webtransport?: WebTransportOptions
   }
   start?: number
   duration?: number
@@ -471,14 +497,20 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     if (task.ext) {
       return task.ext === 'm3u8' || task.ext === 'm3u'
     }
-    return task.options.input.protocol === 'hls'
+    if (task.options.input.file instanceof CustomIOLoader) {
+      return task.options.input.file.ext === 'm3u8'
+    }
+    return task.options.input.ext === 'm3u8'
   }
 
   private isDash(task: SelfTask) {
     if (task.ext) {
       return task.ext === 'mpd'
     }
-    return task.options.input.protocol === 'dash'
+    if (task.options.input.file instanceof CustomIOLoader) {
+      return task.options.input.file.ext === 'mpd'
+    }
+    return task.options.input.ext === 'mpd'
   }
 
   public async ready() {
@@ -525,14 +557,19 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     let ret = 0
     let ext: string
     if (is.string(taskOptions.input.file)) {
-      ext = urlUtils.parse(taskOptions.input.file).file.split('.').pop()
+      let { url, type, ext: ext_ } = await analyzeUrlIOLoader(
+        taskOptions.input.file,
+        taskOptions.input.ext,
+        taskOptions.input.http
+      )
+      ext = ext_
       // 注册一个 url io 任务
       ret = await this.IOThread.registerTask
         .transfer(ioloader2DemuxerChannel.port1)
         .invoke({
-          type: Ext2IOLoader[ext] ?? IOType.Fetch,
+          type: type,
           info: {
-            url: taskOptions.input.file
+            url: url
           },
           range: {
             from: -1,

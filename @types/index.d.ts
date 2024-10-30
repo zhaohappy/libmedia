@@ -43,7 +43,7 @@ declare const ENABLE_DEMUXER_FLV: boolean
 
 declare const ENABLE_DEMUXER_MP3: boolean
 
-declare const ENABLE_DEMUXER_OGGS: boolean
+declare const ENABLE_DEMUXER_OGG: boolean
 
 declare const ENABLE_DEMUXER_IVF: boolean
 
@@ -81,7 +81,7 @@ declare const ENABLE_MUXER_IVF: boolean
 
 declare const ENABLE_MUXER_MPEGTS: boolean
 
-declare const ENABLE_MUXER_OGGS: boolean
+declare const ENABLE_MUXER_OGG: boolean
 
 declare const ENABLE_MSE: boolean
 

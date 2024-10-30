@@ -89,14 +89,13 @@ import * as errorType from 'avutil/error'
 import FetchIOLoader from 'avnetwork/ioLoader/FetchIOLoader'
 import FileIOLoader from 'avnetwork/ioLoader/FileIOLoader'
 import CustomIOLoader from 'avnetwork/ioLoader/CustomIOLoader'
-import HlsIOLoader from 'avnetwork/ioLoader/HlsIOLoader'
-import DashIOLoader from 'avnetwork/ioLoader/DashIOLoader'
 import { AVPlayerGlobalData } from './struct'
 import { serializeAVCodecParameters } from 'avutil/util/serialize'
 import IODemuxPipelineProxy from './worker/IODemuxPipelineProxy'
 import AudioPipelineProxy from './worker/AudioPipelineProxy'
 import VideoPipelineProxy from './worker/VideoPipelineProxy'
 import MSEPipelineProxy from './worker/MSEPipelineProxy'
+import analyzeUrlIOLoader from 'avutil/function/analyzeUrlIOLoader'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -327,6 +326,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private videoEnded: boolean
   private status: AVPlayerStatus
   private lastStatus: AVPlayerStatus
+  private playChannels: number
 
   private statsController: StatsController
   private jitterBufferController: JitterBufferController
@@ -911,11 +911,39 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * 加载媒体源，分析流信息
    * 
    * @param source 媒体源，支持 url 和 文件
-   * @param externalSubtitles 外挂字幕源
+   * @param options 配置项
    */
   public async load(source: string | File | CustomIOLoader, options: {
-    externalSubtitles?: ExternalSubtitle[]
+    /**
+     * 源扩展名
+     * 强制指定扩展名，对没有扩展名的 url 链接使用
+     */
     ext?: string
+    /**
+     * 需要一起加载的外挂字幕
+     */
+    externalSubtitles?: ExternalSubtitle[]
+    /**
+     * http 请求配置
+     */
+    http?: {
+      /**
+       * http 请求需要添加的 header
+       */
+      headers?: Data
+      /**
+       * http 请求的 credentials 配置
+       */
+      credentials?: RequestCredentials
+      /**
+       * http 请求的 referrerPolicy 配置
+       */
+      referrerPolicy?: ReferrerPolicy
+    }
+    /**
+     * webtransport 配置
+     */
+    webtransport?: WebTransportOptions
   } = {}) {
 
     logger.info(`call load, taskId: ${this.taskId}`)
@@ -933,33 +961,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     let ret = 0
     if (is.string(source)) {
-      let url = source
-      let type: IOType
-
-      if (defined(ENABLE_PROTOCOL_RTSP) && /^rtsp/.test(source)
-        || defined(ENABLE_PROTOCOL_RTMP) && /^rtmp/.test(source)
-      ) {
-        if (defined(ENABLE_PROTOCOL_RTSP) && /^rtsp/.test(source)) {
-          this.ext = 'rtsp'
-        }
-        else if (defined(ENABLE_PROTOCOL_RTMP) && /^rtmp/.test(source)) {
-          this.ext = 'rtmp'
-        }
-        type = IOType.WEBSOCKET
-        const protocol = urlUtils.parse(source).protocol
-        const subProtocol = protocol.split('+')[1] || 'wss'
-        if (subProtocol === 'wss' || subProtocol === 'ws') {
-          type = IOType.WEBSOCKET
-        }
-        else if (subProtocol === 'webtransport') {
-          type = IOType.WEBTRANSPORT
-        }
-        url = url.replace(/^\S+:\/\//, subProtocol + '://')
-      }
-      else {
-        this.ext = options.ext || urlUtils.parse(source).file.split('.').pop()
-        type = Ext2IOLoader[this.ext] ?? IOType.Fetch
-      }
+      let { url, type, ext } = await analyzeUrlIOLoader(source, options.ext, options.http)
+      this.ext = ext
 
       // 注册一个 url io 任务
       ret = await AVPlayer.IOThread.registerTask
@@ -967,7 +970,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         .invoke({
           type,
           info: {
-            url
+            url,
+            httpOptions: options.http,
+            webtransportOptions: options.webtransport
           },
           range: {
             from: -1,
@@ -1289,7 +1294,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
     }
 
-    if (this.options.isLive && this.options.lowLatency) {
+    if (this.options.isLive) {
       const min = Math.max(
         this.source instanceof CustomIOLoader
           ? this.source.minBuffer
@@ -1304,6 +1309,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         stats: addressof(this.GlobalData.stats),
         jitterBuffer: addressof(this.GlobalData.stats.jitterBuffer),
         lowLatencyStart: !(this.isHls() || this.isDash()),
+        lowLatency: this.options.lowLatency,
         useMse: this.useMSE,
         max,
         min,
@@ -1685,7 +1691,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         this.videoEnded = false
         this.VideoRenderThread.setPlayRate(this.taskId, this.playRate)
-        promises.push(this.VideoRenderThread.play(this.taskId))
       }
       if (this.audioDecoder2AudioRenderChannel) {
 
@@ -1695,7 +1700,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         this.audioRender2AudioWorkletChannel = new MessageChannel()
 
-        const playChannels = Math.max(stream.codecpar.chLayout.nbChannels, Math.min(AVPlayer.audioContext.destination.channelCount, 2))
+        this.playChannels = Math.max(stream.codecpar.chLayout.nbChannels, Math.min(AVPlayer.audioContext.destination.channelCount, 2))
 
         let resamplerResource = await this.getResource('resampler')
         let stretchpitcherResource = await this.getResource('stretchpitcher')
@@ -1721,7 +1726,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             controlPort: this.controller.getAudioRenderControlPort(),
             playFormat: AVSampleFormat.AV_SAMPLE_FMT_FLTP,
             playSampleRate: AVPlayer.audioContext.sampleRate,
-            playChannels: playChannels,
+            playChannels: this.playChannels,
             resamplerResource,
             stretchpitcherResource,
             stats: addressof(this.GlobalData.stats),
@@ -1759,7 +1764,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           {
             numberOfInputs: 1,
             numberOfOutputs: 1,
-            outputChannelCount: [playChannels],
+            outputChannelCount: [this.playChannels],
             isMainWorker: !!AVPlayer.AudioPipelineProxy
           }
         )
@@ -1783,11 +1788,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         this.setVolume(this.volume)
 
         this.audioEnded = false
-
-        promises.push(this.audioSourceNode.request('start', {
-          port: this.audioRender2AudioWorkletChannel.port2,
-          channels: playChannels
-        }, [this.audioRender2AudioWorkletChannel.port2]))
       }
       if (this.audioDecoder2AudioRenderChannel) {
         this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_AUDIO)
@@ -1858,6 +1858,17 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         })
       }
       else {
+        const promises = []
+        if (this.videoDecoder2VideoRenderChannel) {
+          promises.push(this.VideoRenderThread.play(this.taskId))
+        }
+        if (this.audioDecoder2AudioRenderChannel) {
+          promises.push(this.audioSourceNode.request('start', {
+            port: this.audioRender2AudioWorkletChannel.port2,
+            channels: this.playChannels
+          }, [this.audioRender2AudioWorkletChannel.port2]))
+        }
+        await Promise.all(promises)
         if (this.audioSourceNode && AVPlayer.audioContext.state === 'suspended') {
           if (AVPlayer.audioContext.state === 'suspended') {
             this.fire(eventType.RESUME)
