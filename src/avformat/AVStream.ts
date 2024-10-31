@@ -154,7 +154,7 @@ export default class AVStream {
   /**
    * 第一个 packet 的 dts
    */
-  firstDTS: int64 = 0n
+  firstDTS: int64 = NOPTS_VALUE_BIGINT
 
   /**
    * AV_DISPOSITION_* bit field

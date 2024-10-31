@@ -310,11 +310,12 @@ export async function analyzeStreams(formatContext: AVIFormatContext) {
       }
     }
 
-    if ((avpacket.dts - stream.firstDTS) > avRescaleQ(
-      static_cast<int64>((formatContext.options as DemuxOptions).maxAnalyzeDuration),
-      AV_MILLI_TIME_BASE_Q,
-      stream.timeBase
-    )
+    if (stream.firstDTS !== NOPTS_VALUE_BIGINT
+      && (avpacket.dts - stream.firstDTS) > avRescaleQ(
+        static_cast<int64>((formatContext.options as DemuxOptions).maxAnalyzeDuration),
+        AV_MILLI_TIME_BASE_Q,
+        stream.timeBase
+      )
     ) {
       object.each(streamDtsMap, (list, id) => {
         const stream = formatContext.getStreamByIndex(+id)
