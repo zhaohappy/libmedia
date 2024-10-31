@@ -145,7 +145,7 @@ const Folder: ComponentOptions = {
       this.append('root', {
         id: generateUUID(),
         type: 'file',
-        name: params.file,
+        name: params.file || url,
         depth: 0,
         source: url,
         isLive
