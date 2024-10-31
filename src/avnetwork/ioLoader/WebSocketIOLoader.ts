@@ -51,6 +51,7 @@ export default class WebSocketIOLoader extends SocketIOLoader {
     this.status = IOLoaderStatus.CONNECTING
     return new Promise<int32>((resolve) => {
       this.socket = new WebSocket(info.url)
+      this.socket.binaryType = 'arraybuffer'
       this.socket.onopen = () => {
         this.status = IOLoaderStatus.BUFFERING
         resolve(0)
@@ -64,13 +65,7 @@ export default class WebSocketIOLoader extends SocketIOLoader {
       }
       this.socket.onmessage = async (message) => {
         let data = message.data
-        if (data instanceof Blob) {
-          data = new Uint8Array(await data.arrayBuffer())
-        }
-        else if (data instanceof ArrayBuffer) {
-          data = new Uint8Array(data)
-        }
-        this.readQueue.push(data)
+        this.readQueue.push(new Uint8Array(data))
         if (this.consume) {
           this.consume()
         }
