@@ -28,7 +28,7 @@ import Timer from 'common/timer/Timer'
 import WorkerTimer from 'common/timer/WorkerTimer'
 
 const QUEUE_MAX = 10
-const BUFFER_STEP = 200
+const BUFFER_STEP = 500
 const RATE_STEP = 0.01
 
 export interface ControllerObserver {
@@ -161,11 +161,13 @@ export default class JitterBufferController {
       ? (this.options.stats.audioPacketQueueLength / this.options.stats.audioEncodeFramerate * 1000)
       : (this.options.stats.videoEncodeFramerate
         ? (this.options.stats.videoPacketQueueLength / this.options.stats.videoEncodeFramerate * 1000)
-        : 0
+        : this.options.jitterBuffer.min
       )
 
+    const jitterBufferMid = (this.options.jitterBuffer.min + this.options.jitterBuffer.max) / 2
+
     if ((buffer < (this.options.jitterBuffer.min >> 1)) && buffer < 2000) {
-      this.setPlayRate(0.8)
+      this.setPlayRate(0.9)
     }
     else if ((buffer < this.options.jitterBuffer.min - BUFFER_STEP) && buffer < 2000) {
       this.setPlayRate(0.95)
@@ -173,7 +175,9 @@ export default class JitterBufferController {
     else if (buffer > this.options.jitterBuffer.max + BUFFER_STEP) {
       this.setPlayRate(1.05)
     }
-    else {
+    else if (this.currentPlaybackRate < 1 && buffer >= jitterBufferMid
+      || this.currentPlaybackRate > 1 && buffer <= jitterBufferMid
+    ) {
       this.setPlayRate(1)
     }
 
