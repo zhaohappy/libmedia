@@ -625,10 +625,6 @@ export default class VideoRenderPipeline extends Pipeline {
             task.firstRendered = true
             task.canvasUpdated = false
           }
-          if (task.playRate !== task.targetRate) {
-            task.startTimestamp = static_cast<int64>(getTimestamp()) - (pts * 100n / task.targetRate)
-            task.playRate = task.targetRate
-          }
           task.currentPTS = pts
 
           if (pts - task.lastNotifyPTS >= 1000n) {
@@ -641,6 +637,11 @@ export default class VideoRenderPipeline extends Pipeline {
         }
         else {
           task.loop.emptyTask()
+        }
+
+        if (task.playRate !== task.targetRate) {
+          task.startTimestamp = static_cast<int64>(getTimestamp()) - (pts * 100n / task.targetRate)
+          task.playRate = task.targetRate
         }
       }, 0, interval)
 
