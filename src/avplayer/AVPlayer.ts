@@ -3411,7 +3411,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   public on(event: typeof eventType.STOPPED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.ENDED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.SEEKING, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
-  public on(event: typeof eventType.STOPPED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.CHANGING, listener: typeof playerEventChanging, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.CHANGED, listener: typeof playerEventChanged, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.RESUME, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer

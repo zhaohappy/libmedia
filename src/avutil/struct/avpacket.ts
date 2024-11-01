@@ -156,9 +156,7 @@ export default class AVPacket {
   opaqueRef: pointer<AVBufferRef> = nullptr
 
   /**
-   * 编码时间基
-   * 
-   * 封装时用户设置
+   * Time base of the packet's timestamps.
    */
   timeBase: Rational = new Rational({ den: AV_TIME_BASE, num: 1 })
 

@@ -1,5 +1,4 @@
 const path = require('path');
-const ts = require('typescript');
 const { execSync } = require('child_process');
 const CheapPlugin = require('./src/cheap/build/webpack/plugin/CheapPlugin');
 
