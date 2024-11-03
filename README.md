@@ -76,6 +76,40 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | ssa      | ✅       | ❌        |
 | ttml     | ✅       | ❌        |
 
+### 当前支持的音视频协议
+
+| Protocol | Input   | Output    |
+| ---------| --------|-----------|
+| hls      | ✅       | ❌        |
+| dash     | ✅       | ❌        |
+| rtmp     | ✅       | ❌        |
+| rtsp     | ✅       | ❌        |
+
+rtmp 和 rtsp 需要使用 Websocket 或 WebTransport 代理 tcp 连接，avplayer 使用如下:
+
+```JavaScript
+
+const player = new AVPlayer()
+
+// 第一个参数是 Websocket 代理的 rtmp 地址
+player.load('rtmp://xxx.xxx.xxx.xxx/xxx/xxx', {
+  // uri 是原 rtmp 地址
+  uri: 'rtmp://xxx.xxx.xxx.xxx/xxx/xxx'
+})
+player.play()
+
+player.load('rtsp://xxx.xxx.xxx.xxx/xxx')
+player.play()
+
+// 使用 wss 连接
+player.load('rtsp://xxx.xxx.xxx.xxx/xxx')
+// 使用 ws 连接
+player.load('rtsp+ws://xxx.xxx.xxx.xxx/xxx')
+// 使用 webtransport 连接
+player.load('rtsp+webtransport://xxx.xxx.xxx.xxx/xxx')
+
+```
+
 
 ### 编解码器
 

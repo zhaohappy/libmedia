@@ -75,6 +75,39 @@ if multi-threading is not supported, it will fall back to running on the main th
 | ssa      | ✅       | ❌        |
 | ttml     | ✅       | ❌        |
 
+### Protocol
+
+| Protocol | Input   | Output    |
+| ---------| --------|-----------|
+| hls      | ✅       | ❌        |
+| dash     | ✅       | ❌        |
+| rtmp     | ✅       | ❌        |
+| rtsp     | ✅       | ❌        |
+
+rtmp and rtsp need use Websocket or WebTransport proxy tcp connection，for example in avplayer:
+
+```JavaScript
+
+const player = new AVPlayer()
+
+// first url is the websocket proxy rtmp url 
+player.load('rtmp://xxx.xxx.xxx.xxx/xxx/xxx', {
+  // uri is the source rtmp url
+  uri: 'rtmp://xxx.xxx.xxx.xxx/xxx/xxx'
+})
+player.play()
+
+player.load('rtsp://xxx.xxx.xxx.xxx/xxx')
+player.play()
+
+// use wss
+player.load('rtsp://xxx.xxx.xxx.xxx/xxx')
+// use ws
+player.load('rtsp+ws://xxx.xxx.xxx.xxx/xxx')
+// use webtransport
+player.load('rtsp+webtransport://xxx.xxx.xxx.xxx/xxx')
+
+```
 
 ### Codecs
 
