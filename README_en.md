@@ -362,6 +362,7 @@ But some dependent libraries are under GPL license. If you use these dependent l
  - [dav1d](https://code.videolan.org/videolan/dav1d/): BSD-2-Clause
  - [aom](https://aomedia.googlesource.com/aom/): BSD-2-Clause
  - [hls-parser](https://github.com/kuu/hls-parser): MIT
+ - [sdp-transform](https://github.com/clux/sdp-transform): MIT
  - [ass.js](https://github.com/weizhenye/ASS): MIT
  - [ass-compiler](https://github.com/weizhenye/ass-compiler): MIT
  - [yox](https://github.com/yoxjs/yox): MIT
