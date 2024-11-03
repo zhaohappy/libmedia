@@ -183,5 +183,8 @@ export default class WebTransportIOLoader extends SocketIOLoader {
       this.transport = null
     }
     this.status = IOLoaderStatus.COMPLETE
+    if (this.consume) {
+      this.consume()
+    }
   }
 }

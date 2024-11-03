@@ -944,6 +944,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
      * webtransport 配置
      */
     webtransport?: WebTransportOptions
+    /**
+     * 如果 source 是被 Websocket 或者 WebTransport 代理的，这里传源地址
+     * 像 rtmp 需要使用到这个源地址
+     */
+    uri?: string
   } = {}) {
 
     logger.info(`call load, taskId: ${this.taskId}`)
@@ -961,7 +966,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     let ret = 0
     if (is.string(source)) {
-      let { url, type, ext } = await analyzeUrlIOLoader(source, options.ext, options.http)
+      let { info, type, ext } = await analyzeUrlIOLoader(source, options.ext, options.http)
       this.ext = ext
 
       // 注册一个 url io 任务
@@ -970,9 +975,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         .invoke({
           type,
           info: {
-            url,
+            ...info,
             httpOptions: options.http,
-            webtransportOptions: options.webtransport
+            webtransportOptions: options.webtransport,
+            uri: options.uri
           },
           range: {
             from: -1,

@@ -84,5 +84,8 @@ export default class WebSocketIOLoader extends SocketIOLoader {
       this.socket = null
     }
     this.status = IOLoaderStatus.COMPLETE
+    if (this.consume) {
+      this.consume()
+    }
   }
 }

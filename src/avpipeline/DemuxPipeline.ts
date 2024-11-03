@@ -291,7 +291,7 @@ export default class DemuxPipeline extends Pipeline {
 
       let format: AVFormat
       try {
-        if (task.format !== AVFormat.RTSP && task.format !== AVFormat.RTMP) {
+        if (task.format !== AVFormat.RTSP) {
           format = await analyzeAVFormat(task.ioReader, task.format)
           task.format = format
         }

@@ -44,7 +44,8 @@ export const enum IOType {
   WEBSOCKET,
   WEBTRANSPORT,
   HLS,
-  DASH
+  DASH,
+  RTMP
 }
 
 export interface IOTaskOptions extends TaskOptions {
@@ -98,6 +99,15 @@ export default class IOPipeline extends Pipeline {
         }
         else {
           logger.error('dash protocol not support, maybe you can rebuild avmedia')
+          return errorType.FORMAT_NOT_SUPPORT
+        }
+        break
+      case IOType.RTMP:
+        if (defined(ENABLE_PROTOCOL_RTMP)) {
+          ioLoader = new (await import('avnetwork/ioLoader/RtmpIOLoader')).default(options.options)
+        }
+        else {
+          logger.error('rtmp protocol not support, maybe you can rebuild avmedia')
           return errorType.FORMAT_NOT_SUPPORT
         }
         break

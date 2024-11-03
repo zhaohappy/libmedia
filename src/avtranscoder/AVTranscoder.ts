@@ -557,7 +557,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     let ret = 0
     let ext: string
     if (is.string(taskOptions.input.file)) {
-      let { url, type, ext: ext_ } = await analyzeUrlIOLoader(
+      let { info, type, ext: ext_ } = await analyzeUrlIOLoader(
         taskOptions.input.file,
         taskOptions.input.ext,
         taskOptions.input.http
@@ -569,7 +569,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         .invoke({
           type: type,
           info: {
-            url: url
+            ...info
           },
           range: {
             from: -1,

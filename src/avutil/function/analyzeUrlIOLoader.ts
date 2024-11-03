@@ -25,7 +25,7 @@
 import { IOType } from 'avpipeline/IOPipeline'
 import { Ext2IOLoader } from 'avutil/stringEnum'
 import concatTypeArray from 'common/function/concatTypeArray'
-import { HttpOptions } from 'common/types/type'
+import { Data, HttpOptions } from 'common/types/type'
 import * as object from 'common/util/object'
 import * as text from 'common/util/text'
 import * as urlUtils from 'common/util/url'
@@ -92,9 +92,11 @@ async function analyzeUrlFileExt(url: string, httpOptions: HttpOptions = {}) {
 }
 
 export default async function analyzeUrlIOLoader(source: string, defaultExt: string = '', httpOptions: HttpOptions = {}) {
-  let url = source
   let type: IOType
   let ext: string = ''
+  let info: Data = {
+    url: source
+  }
 
   if (defined(ENABLE_PROTOCOL_RTSP) && /^rtsp/.test(source)
     || defined(ENABLE_PROTOCOL_RTMP) && /^rtmp/.test(source)
@@ -114,7 +116,11 @@ export default async function analyzeUrlIOLoader(source: string, defaultExt: str
     else if (subProtocol === 'webtransport') {
       type = IOType.WEBTRANSPORT
     }
-    url = url.replace(/^\S+:\/\//, subProtocol + '://')
+    info.url = info.url.replace(/^\S+:\/\//, subProtocol + '://')
+    if (ext === 'rtmp') {
+      info.subProtocol = type
+      type = IOType.RTMP
+    }
   }
   else {
     ext = defaultExt || urlUtils.parse(source).file.split('.').pop()
@@ -129,6 +135,6 @@ export default async function analyzeUrlIOLoader(source: string, defaultExt: str
   return {
     type,
     ext,
-    url
+    info
   }
 }
