@@ -877,7 +877,7 @@ export default class DemuxPipeline extends Pipeline {
     if (task) {
       if (task.loop) {
         await task.loop.stopBeforeNextTick()
-        let ret = await demux.seek(task.formatContext, streamIndex, timestamp, flags)
+        let ret: int32 | int64 = await demux.seek(task.formatContext, streamIndex, timestamp, flags)
         if (ret >= 0n) {
           task.cacheAVPackets.forEach((list) => {
             array.each(list, (avpacket) => {

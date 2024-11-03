@@ -57,9 +57,16 @@ export const DefaultDemuxOptions = {
   maxAnalyzeDuration: 1000
 }
 
+/**
+ * 打开流
+ * 
+ * @param formatContext 
+ * @param options DemuxOptions 选项
+ * @returns 成功返回 0，否则返回错误码
+ */
 // @ts-ignore
 @deasync
-export async function open(formatContext: AVIFormatContext, options: DemuxOptions = {}) {
+export async function open(formatContext: AVIFormatContext, options: DemuxOptions = {}): Promise<int32> {
   const opts = object.extend({}, DefaultDemuxOptions, options)
   if (!formatContext.ioReader) {
     logger.fatal('need IOReader')
@@ -156,9 +163,15 @@ async function estimateDurationFromPts(formatContext: AVIFormatContext) {
   await formatContext.iformat.seek(formatContext, null, now, AVSeekFlags.BYTE)
 }
 
+/**
+ * 分析流 stream
+ * 
+ * @param formatContext 
+ * @returns 成功返回 0，否则返回错误码
+ */
 // @ts-ignore
 @deasync
-export async function analyzeStreams(formatContext: AVIFormatContext) {
+export async function analyzeStreams(formatContext: AVIFormatContext): Promise<int32> {
   const needStreams = formatContext.iformat.getAnalyzeStreamsCount()
   const streamFirstGotMap = {}
   const streamDtsMap: Record<number, bigint[]> = {}
@@ -409,7 +422,7 @@ function addSample(stream: AVStream, avpacket: pointer<AVPacket>) {
 
 // @ts-ignore
 @deasync
-async function packetNeedRead(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>) {
+async function packetNeedRead(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<int32> {
   const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
   let ret = 0
   // h264 hevc aac 解析到 extradata，继续
@@ -507,9 +520,16 @@ async function packetNeedRead(formatContext: AVIFormatContext, avpacket: pointer
   return 0
 }
 
+/**
+ * 读取一个包
+ * 
+ * @param formatContext AVIFormatContext 上下文
+ * @param avpacket 
+ * @returns 成功返回 0，否则返回错误码
+ */
 // @ts-ignore
 @deasync
-export async function readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>) {
+export async function readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<int32> {
   let ret = 0
   unrefAVPacket(avpacket)
   if (formatContext.interval.packetBuffer.length) {
@@ -528,6 +548,16 @@ export async function readAVPacket(formatContext: AVIFormatContext, avpacket: po
   return packetNeedRead(formatContext, avpacket)
 }
 
+/**
+ * 
+ * seek 到指定位置
+ * 
+ * @param formatContext AVIFormatContext 上下文
+ * @param streamIndex 指定流 index
+ * @param timestamp seek 的位置或时间戳（毫秒）
+ * @param flags AVSeekFlags 标志
+ * @returns 错误返回负数，否则返回 seek 之前的 pos，方便 seek 回来
+ */
 // @ts-ignore
 @deasync
 export async function seek(formatContext: AVIFormatContext, streamIndex: number, timestamp: int64, flags: int32): Promise<int64> {
