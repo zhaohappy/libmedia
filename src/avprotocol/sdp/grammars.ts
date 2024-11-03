@@ -1,26 +1,5 @@
-/*
- * libmedia sdp grammars
- *
- * 版权所有 (C) 2024 赵高兴
- * Copyright (C) 2024 Gaoxing Zhao
- *
- * 此文件是 libmedia 的一部分
- * This file is part of libmedia.
- * 
- * libmedia 是自由软件；您可以根据 GNU Lesser General Public License（GNU LGPL）3.1
- * 或任何其更新的版本条款重新分发或修改它
- * libmedia is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 3.1 of the License, or (at your option) any later version.
- * 
- * libmedia 希望能够为您提供帮助，但不提供任何明示或暗示的担保，包括但不限于适销性或特定用途的保证
- * 您应自行承担使用 libmedia 的风险，并且需要遵守 GNU Lesser General Public License 中的条款和条件。
- * libmedia is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
+/**
+ * from https://github.com/clux/sdp-transform
  */
 
 import { Data } from 'common/types/type'
@@ -48,9 +27,9 @@ export const grammars: Record<string, SdpGrammar[]> = {
   o: [
     {
       /*
-             * o=- 20518 0 IN IP4 203.0.113.1
-             * NB: sessionId will be a String in most cases because it is huge
-             */
+       * o=- 20518 0 IN IP4 203.0.113.1
+       * NB: sessionId will be a String in most cases because it is huge
+       */
       name: 'origin',
       reg: /^(\S*) (\d*) (\d*) (\S*) IP(\d) (\S*)/,
       names: ['username', 'sessionId', 'sessionVersion', 'netType', 'ipVer', 'address'],
@@ -141,10 +120,10 @@ export const grammars: Record<string, SdpGrammar[]> = {
   m: [
     {
       /*
-             * m=video 51744 RTP/AVP 126 97 98 34 31
-             * NB: special - pushes to session
-             * TODO: rtp/fmtp should be filtered by the payloads found here?
-             */
+       * m=video 51744 RTP/AVP 126 97 98 34 31
+       * NB: special - pushes to session
+       * TODO: rtp/fmtp should be filtered by the payloads found here?
+       */
       reg: /^(\w*) (\d*) ([\w/]*)(?: (.*))?/,
       names: ['type', 'port', 'protocol', 'payloads'],
       format: '%s %d %s %s'
@@ -166,9 +145,9 @@ export const grammars: Record<string, SdpGrammar[]> = {
     },
     {
       /*
-             * a=fmtp:108 profile-level-id=24;object=23;bitrate=64000
-             * a=fmtp:111 minptime=10; useinbandfec=1
-             */
+       * a=fmtp:108 profile-level-id=24;object=23;bitrate=64000
+       * a=fmtp:111 minptime=10; useinbandfec=1
+       */
       push: 'fmtp',
       reg: /^fmtp:(\d*) ([\S| ]*)/,
       names: ['payload', 'config'],
@@ -211,20 +190,20 @@ export const grammars: Record<string, SdpGrammar[]> = {
     },
     {
       /*
-             * a=extmap:2 urn:ietf:params:rtp-hdrext:toffset
-             * a=extmap:1/recvonly URI-gps-string
-             * a=extmap:3 urn:ietf:params:rtp-hdrext:encrypt urn:ietf:params:rtp-hdrext:smpte-tc 25@600/24
-             */
+       * a=extmap:2 urn:ietf:params:rtp-hdrext:toffset
+       * a=extmap:1/recvonly URI-gps-string
+       * a=extmap:3 urn:ietf:params:rtp-hdrext:encrypt urn:ietf:params:rtp-hdrext:smpte-tc 25@600/24
+       */
       push: 'ext',
       reg: /^extmap:(\d+)(?:\/(\w+))?(?: (urn:ietf:params:rtp-hdrext:encrypt))? (\S*)(?: (\S*))?/,
       names: ['value', 'direction', 'encrypt-uri', 'uri', 'config'],
       format: function (o) {
         return (
           'extmap:%d'
-                    + (o.direction ? '/%s' : '%v')
-                    + (o['encrypt-uri'] ? ' %s' : '%v')
-                    + ' %s'
-                    + (o.config ? ' %s' : '')
+          + (o.direction ? '/%s' : '%v')
+          + (o['encrypt-uri'] ? ' %s' : '%v')
+          + ' %s'
+          + (o.config ? ' %s' : '')
         )
       }
     },
@@ -314,12 +293,12 @@ export const grammars: Record<string, SdpGrammar[]> = {
     },
     {
       /*
-             * a=candidate:0 1 UDP 2113667327 203.0.113.1 54400 typ host
-             * a=candidate:1162875081 1 udp 2113937151 192.168.34.75 60017 typ host generation 0 network-id 3 network-cost 10
-             * a=candidate:3289912957 2 udp 1845501695 193.84.77.194 60017 typ srflx raddr 192.168.34.75 rport 60017 generation 0 network-id 3 network-cost 10
-             * a=candidate:229815620 1 tcp 1518280447 192.168.150.19 60017 typ host tcptype active generation 0 network-id 3 network-cost 10
-             * a=candidate:3289912957 2 tcp 1845501695 193.84.77.194 60017 typ srflx raddr 192.168.34.75 rport 60017 tcptype passive generation 0 network-id 3 network-cost 10
-             */
+       * a=candidate:0 1 UDP 2113667327 203.0.113.1 54400 typ host
+       * a=candidate:1162875081 1 udp 2113937151 192.168.34.75 60017 typ host generation 0 network-id 3 network-cost 10
+       * a=candidate:3289912957 2 udp 1845501695 193.84.77.194 60017 typ srflx raddr 192.168.34.75 rport 60017 generation 0 network-id 3 network-cost 10
+       * a=candidate:229815620 1 tcp 1518280447 192.168.150.19 60017 typ host tcptype active generation 0 network-id 3 network-cost 10
+       * a=candidate:3289912957 2 tcp 1845501695 193.84.77.194 60017 typ srflx raddr 192.168.34.75 rport 60017 tcptype passive generation 0 network-id 3 network-cost 10
+       */
       push: 'candidates',
       reg: /^candidate:(\S*) (\d*) (\S*) (\d*) (\S*) (\d*) typ (\S*)(?: raddr (\S*) rport (\d*))?(?: tcptype (\S*))?(?: generation (\d*))?(?: network-id (\d*))?(?: network-cost (\d*))?/,
       // eslint-disable-next-line max-len
@@ -377,9 +356,9 @@ export const grammars: Record<string, SdpGrammar[]> = {
     },
     {
       /*
-             * a=ssrc-group:FEC 1 2
-             * a=ssrc-group:FEC-FR 3004364195 1080772241
-             */
+       * a=ssrc-group:FEC 1 2
+       * a=ssrc-group:FEC-FR 3004364195 1080772241
+       */
       push: 'ssrcGroups',
       // token-char = %x21 / %x23-27 / %x2A-2B / %x2D-2E / %x30-39 / %x41-5A / %x5E-7E
       reg: /^ssrc-group:([\x21\x23\x24\x25\x26\x27\x2A\x2B\x2D\x2E\w]*) (.*)/,
@@ -441,19 +420,19 @@ export const grammars: Record<string, SdpGrammar[]> = {
     },
     {
       /*
-             * a=imageattr:97 send [x=800, y=640, sar=1.1, q=0.6] [x=480, y=320] recv [x=330, y=250]
-             * a=imageattr:* send [x=800, y=640] recv *
-             * a=imageattr:100 recv [x=320, y=240]
-             */
+       * a=imageattr:97 send [x=800, y=640, sar=1.1, q=0.6] [x=480, y=320] recv [x=330, y=250]
+       * a=imageattr:* send [x=800, y=640] recv *
+       * a=imageattr:100 recv [x=320, y=240]
+       */
       push: 'imageattrs',
       // eslint-disable-next-line function-paren-newline
       reg: new RegExp(
         // a=imageattr:97
         '^imageattr:(\\d+|\\*)'
-                // send [x=800, y=640, sar=1.1, q=0.6] [x=480, y=320]
-                + '[\\s\\t]+(send|recv)[\\s\\t]+(\\*|\\[\\S+\\](?:[\\s\\t]+\\[\\S+\\])*)'
-                // recv [x=330, y=250]
-                + '(?:[\\s\\t]+(recv|send)[\\s\\t]+(\\*|\\[\\S+\\](?:[\\s\\t]+\\[\\S+\\])*))?'),
+        // send [x=800, y=640, sar=1.1, q=0.6] [x=480, y=320]
+        + '[\\s\\t]+(send|recv)[\\s\\t]+(\\*|\\[\\S+\\](?:[\\s\\t]+\\[\\S+\\])*)'
+        // recv [x=330, y=250]
+        + '(?:[\\s\\t]+(recv|send)[\\s\\t]+(\\*|\\[\\S+\\](?:[\\s\\t]+\\[\\S+\\])*))?'),
       names: ['pt', 'dir1', 'attrs1', 'dir2', 'attrs2'],
       format: function (o) {
         return 'imageattr:%s %s %s' + (o.dir2 ? ' %s %s' : '')
@@ -461,20 +440,20 @@ export const grammars: Record<string, SdpGrammar[]> = {
     },
     {
       /*
-             * a=simulcast:send 1,2,3;~4,~5 recv 6;~7,~8
-             * a=simulcast:recv 1;4,5 send 6;7
-             */
+       * a=simulcast:send 1,2,3;~4,~5 recv 6;~7,~8
+       * a=simulcast:recv 1;4,5 send 6;7
+       */
       name: 'simulcast',
       // eslint-disable-next-line function-paren-newline
       reg: new RegExp(
         // a=simulcast:
         '^simulcast:'
-                // send 1,2,3;~4,~5
-                + '(send|recv) ([a-zA-Z0-9\\-_~;,]+)'
-                // space + recv 6;~7,~8
-                + '(?:\\s?(send|recv) ([a-zA-Z0-9\\-_~;,]+))?'
-                // end
-                + '$'),
+        // send 1,2,3;~4,~5
+        + '(send|recv) ([a-zA-Z0-9\\-_~;,]+)'
+        // space + recv 6;~7,~8
+        + '(?:\\s?(send|recv) ([a-zA-Z0-9\\-_~;,]+))?'
+        // end
+        + '$'),
       names: ['dir1', 'list1', 'dir2', 'list2'],
       format: function (o) {
         return 'simulcast:%s %s' + (o.dir2 ? ' %s %s' : '')
@@ -482,11 +461,11 @@ export const grammars: Record<string, SdpGrammar[]> = {
     },
     {
       /*
-             * old simulcast draft 03 (implemented by Firefox)
-             *   https://tools.ietf.org/html/draft-ietf-mmusic-sdp-simulcast-03
-             * a=simulcast: recv pt=97;98 send pt=97
-             * a=simulcast: send rid=5;6;7 paused=6,7
-             */
+       * old simulcast draft 03 (implemented by Firefox)
+       *   https://tools.ietf.org/html/draft-ietf-mmusic-sdp-simulcast-03
+       * a=simulcast: recv pt=97;98 send pt=97
+       * a=simulcast: send rid=5;6;7 paused=6,7
+       */
       name: 'simulcast_03',
       reg: /^simulcast:[\s\t]+([\S+\s\t]+)$/,
       names: ['value'],
@@ -494,18 +473,18 @@ export const grammars: Record<string, SdpGrammar[]> = {
     },
     {
       /*
-             * a=framerate:25
-             * a=framerate:29.97
-             */
+       * a=framerate:25
+       * a=framerate:29.97
+       */
       name: 'framerate',
       reg: /^framerate:(\d+(?:$|\.\d+))/,
       format: 'framerate:%s'
     },
     {
       /*
-             * RFC4570
-             * a=source-filter: incl IN IP4 239.5.2.31 10.1.15.5
-             */
+       * RFC4570
+       * a=source-filter: incl IN IP4 239.5.2.31 10.1.15.5
+       */
       name: 'sourceFilter',
       reg: /^source-filter: *(excl|incl) (\S*) (IP4|IP6|\*) (\S*) (.*)/,
       names: ['filterMode', 'netType', 'addressTypes', 'destAddress', 'srcList'],
@@ -525,27 +504,27 @@ export const grammars: Record<string, SdpGrammar[]> = {
     },
     {
       /*
-             * RFC version 26 for SCTP over DTLS
-             * https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26#section-5
-             */
+       * RFC version 26 for SCTP over DTLS
+       * https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26#section-5
+       */
       name: 'sctpPort',
       reg: /^sctp-port:(\d+)$/,
       format: 'sctp-port:%s'
     },
     {
       /*
-             * RFC version 26 for SCTP over DTLS
-             * https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26#section-6
-             */
+       * RFC version 26 for SCTP over DTLS
+       * https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26#section-6
+       */
       name: 'maxMessageSize',
       reg: /^max-message-size:(\d+)$/,
       format: 'max-message-size:%s'
     },
     {
       /*
-             * RFC7273
-             * a=ts-refclk:ptp=IEEE1588-2008:39-A7-94-FF-FE-07-CB-D0:37
-             */
+       * RFC7273
+       * a=ts-refclk:ptp=IEEE1588-2008:39-A7-94-FF-FE-07-CB-D0:37
+       */
       push: 'tsRefClocks',
       reg: /^ts-refclk:([^\s=]*)(?:=(\S*))?/,
       names: ['clksrc', 'clksrcExt'],
@@ -555,9 +534,9 @@ export const grammars: Record<string, SdpGrammar[]> = {
     },
     {
       /*
-             * RFC7273
-             * a=mediaclk:direct=963214424
-             */
+       * RFC7273
+       * a=mediaclk:direct=963214424
+       */
       name: 'mediaClk',
       reg: /^mediaclk:(?:id=(\S*))? *([^\s=]*)(?:=(\S*))?(?: *rate=(\d+)\/(\d+))?/,
       names: ['id', 'mediaClockName', 'mediaClockValue', 'rateNumerator', 'rateDenominator'],
