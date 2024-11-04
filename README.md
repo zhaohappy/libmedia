@@ -93,7 +93,7 @@ const player = new AVPlayer()
 
 // 第一个参数是 Websocket 代理的 rtmp 地址
 player.load('rtmp://xxx.xxx.xxx.xxx/xxx/xxx', {
-  // uri 是原 rtmp 地址
+  // uri 是源 rtmp 地址
   uri: 'rtmp://xxx.xxx.xxx.xxx/xxx/xxx'
 })
 player.play()

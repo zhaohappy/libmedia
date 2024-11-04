@@ -27,7 +27,6 @@ import { Uint8ArrayInterface } from 'common/io/interface'
 import { IOLoaderStatus } from './IOLoader'
 import { IOError } from 'common/io/error'
 import SocketIOLoader from './SocketIOLoader'
-import { Data } from 'common/types/type'
 import WebSocketIOLoader from './WebSocketIOLoader'
 import WebTransportIOLoader from './WebTransportIOLoader'
 import RtmpSession from 'avprotocol/rtmp/RtmpSession'
@@ -39,6 +38,11 @@ import IOWriterSync from 'common/io/IOWriterSync'
 import FlvHeader from 'avformat/formats/flv/FlvHeader'
 import { RtmpPacketType } from 'avprotocol/rtmp/rtmp'
 import { IOType } from 'avpipeline/IOPipeline'
+import FlvScriptTag from 'avformat/formats/flv/FlvScriptTag'
+import BufferReader from 'common/io/BufferReader'
+import * as iamf from 'avformat/formats/flv/iamf'
+import { FlvMetaData } from 'avformat/formats/flv/type'
+import isDef from 'common/function/isDef'
 
 export interface RtmpIOInfo {
   url: string
@@ -58,10 +62,11 @@ export default class RtmpIOLoader extends SocketIOLoader {
   private ioWriter: IOWriter
   private flvWriter: IOWriterSync
 
-  private streamId: uint32
   private flvHeader: FlvHeader
   private packetQueue: RtmpPacket[]
   private flvHeaderWrote: boolean
+  private hasMetadata: boolean
+  private bufferReader: BufferReader
 
   private writeFlvData(packet: RtmpPacket) {
     this.flvWriter.writeUint8(packet.type)
@@ -74,7 +79,7 @@ export default class RtmpIOLoader extends SocketIOLoader {
     this.flvWriter.flush()
   }
 
-  private handleRtmpPacket(packet: RtmpPacket) {
+  private async handleRtmpPacket(packet: RtmpPacket) {
     if (this.flvHeaderWrote) {
       this.writeFlvData(packet)
     }
@@ -86,9 +91,33 @@ export default class RtmpIOLoader extends SocketIOLoader {
       else if (packet.type === RtmpPacketType.PT_VIDEO) {
         this.flvHeader.hasVideo = true
       }
-      if (this.packetQueue.length > 10) {
+      else if (packet.type === RtmpPacketType.PT_NOTIFY) {
+        if (!this.bufferReader) {
+          this.bufferReader = new BufferReader(packet.payload)
+        }
+        else {
+          this.bufferReader.resetBuffer(packet.payload)
+        }
+        this.bufferReader.resetBuffer(packet.payload)
+        const command = await iamf.parseValue(this.bufferReader, BigInt(packet.payload.length)) as string
+        if (command === 'onMetaData') {
+          this.hasMetadata = true
+          const metadata = await iamf.parseValue(this.bufferReader, BigInt(packet.payload.length)) as FlvMetaData
+          this.flvHeader.hasAudio = isDef(metadata.audiocodecid)
+          this.flvHeader.hasVideo = isDef(metadata.videocodecid)
+        }
+      }
+      if (this.packetQueue.length > 10 || this.hasMetadata) {
         this.flvHeader.write(this.flvWriter)
         this.flvWriter.writeUint32(0)
+
+        if (!this.hasMetadata && this.session.getDuration()) {
+          const script = new FlvScriptTag()
+          script.onMetaData = {
+            duration: this.session.getDuration()
+          }
+          script.write(this.flvWriter)
+        }
 
         this.packetQueue.forEach((p) => {
           this.writeFlvData(p)
@@ -154,9 +183,15 @@ export default class RtmpIOLoader extends SocketIOLoader {
     this.flvHeader = new FlvHeader()
     this.packetQueue = []
     this.flvHeaderWrote = false
+    this.hasMetadata = false
 
-    this.session = new RtmpSession(this.ioReader, this.ioWriter)
-    this.session.onMediaPacket = this.handleRtmpPacket.bind(this)
+    this.session = new RtmpSession(this.ioReader, this.ioWriter, {
+      isLive: this.options.isLive,
+      isPull: true
+    })
+    this.session.onMediaPacket = async (packet, streamName) => {
+      return this.handleRtmpPacket(packet)
+    }
     this.session.onError = () => {
       this.status = IOLoaderStatus.ERROR
       if (this.consume) {
@@ -167,17 +202,16 @@ export default class RtmpIOLoader extends SocketIOLoader {
     await this.session.handshake()
 
     const path = url.parse(this.info.url).pathname.split('/')
-
-    await this.session.connect(path[1], this.info.uri)
-    this.streamId = await this.session.createStream()
-    this.session.play(path[2] || '')
+    await this.session.connect(path[1], `rtmp://${url.parse(this.info.uri).host}${path.slice(0, path.length - 1).join('/')}`)
+    this.session.play(path[path.length - 1] || '')
     return 0
   }
-  public seek(pos: int64, options?: Data): Promise<int32> {
-    throw new Error('Method not implemented.')
+  public async seek(pos: int64): Promise<int32> {
+    await this.session.seek(Number(pos))
+    return 0
   }
-  public size(): Promise<int64> {
-    throw new Error('Method not implemented.')
+  public async size(): Promise<int64> {
+    return 0n
   }
   public async stop() {
     if (this.socket) {

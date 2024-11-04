@@ -42,12 +42,7 @@ export default class FlvScriptTag {
 
   constructor() {
     this.onMetaData = {
-      audiocodecid: 10,
-      canSeekToEnd: false,
-      width: 0,
-      height: 0,
-      stereo: true,
-      videocodecid: 7
+      canSeekToEnd: false
     }
   }
 
@@ -58,6 +53,10 @@ export default class FlvScriptTag {
     const key = await parseValue(ioReader, endPos)
     const value = await parseValue(ioReader, endPos)
     this[key] = value
+
+    if (endPos > ioReader.getPos()) {
+      await ioReader.skip(static_cast<int32>(endPos - ioReader.getPos()))
+    }
 
     const tagSize = Number(ioReader.getPos() - now)
     const prev = await ioReader.readUint32()

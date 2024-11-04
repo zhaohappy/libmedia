@@ -59,6 +59,7 @@ import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as array from 'common/util/array'
 import seekInBytes from '../function/seekInBytes'
 import { BitFormat } from '../codecs/h264'
+import isDef from 'common/function/isDef'
 
 
 export interface FlvFormatOptions {
@@ -620,10 +621,10 @@ export default class IFlvFormat extends IFormat {
 
   public getAnalyzeStreamsCount(): number {
     let count = 0
-    if (this.header.hasAudio) {
+    if (this.header.hasAudio || isDef(this.script.onMetaData.audiocodecid)) {
       count++
     }
-    if (this.header.hasVideo) {
+    if (this.header.hasVideo || isDef(this.script.onMetaData.videocodecid)) {
       count++
     }
 

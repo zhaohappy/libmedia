@@ -37,6 +37,9 @@ import { readRtmpPacket, sendRtmpPacket } from './util'
 import BufferReader from 'common/io/BufferReader'
 import * as logger from 'common/util/logger'
 import * as array from 'common/util/array'
+import * as is from 'common/util/is'
+import Sleep from 'common/timer/Sleep'
+import { Sync, lock, unlock } from 'cheap/thread/sync'
 
 const enum ClientState {
   /**
@@ -77,6 +80,12 @@ const enum ClientState {
   STOPPED,
 }
 
+export interface RtmpSessionOptions {
+  isPull: boolean
+  isLive: boolean
+  clientBufferTime?: int32
+}
+
 export default class RtmpSession {
   private ioReader: IOReader
   private ioWriter: IOWriter
@@ -92,21 +101,32 @@ export default class RtmpSession {
   private requestMap: Map<int32, { resolve: (result: Data) => void, reject: (error: Data) => void }>
 
   private state: ClientState
+  private maxSentUnacked: uint32
+  private receiveReportSize: uint32
+  private duration: double
+  private options: RtmpSessionOptions
+  private streamIdMap: Map<uint32, string>
+  private sendAsync: Sync
 
-  public onMediaPacket: (packet: RtmpPacket) => void
+  public onMediaPacket: (packet: RtmpPacket, streamName: string) => Promise<void> | void
   public onError: () => void
 
-  constructor(ioReader: IOReader, ioWriter: IOWriter) {
+  constructor(ioReader: IOReader, ioWriter: IOWriter, options: RtmpSessionOptions) {
     this.ioReader = ioReader
     this.ioWriter = ioWriter
+    this.options = options
 
     this.prevReadPacket = new Map()
     this.prevWritePacket = new Map()
     this.requestMap = new Map()
+    this.streamIdMap = new Map()
 
     this.inChunkSize = 128
     this.outChunkSize = 128
     this.seq = 0
+    this.maxSentUnacked = 2500000
+    this.receiveReportSize = 1048576
+    this.sendAsync = new Sync()
 
     this.bufferWriter = new BufferWriter(new Uint8Array(1))
     this.bufferReader = new BufferReader(new Uint8Array(1))
@@ -151,8 +171,10 @@ export default class RtmpSession {
   }
 
   private async sendPacket(packet: RtmpPacket) {
+    await lock(this.sendAsync)
     await sendRtmpPacket(this.ioWriter, this.outChunkSize, packet, this.prevWritePacket.get(packet.channelId))
     this.prevWritePacket.set(packet.channelId, packet)
+    unlock(this.sendAsync)
   }
 
   private async readPacket() {
@@ -178,10 +200,22 @@ export default class RtmpSession {
     }
   }
   private handleSetPeerBW(packet: RtmpPacket) {
-
+    if (packet.payload.length >= 4) {
+      this.bufferReader.resetBuffer(packet.payload)
+      this.maxSentUnacked = this.bufferReader.readUint32()
+      logger.debug(`Max sent, unacked = ${this.maxSentUnacked}`)
+    }
   }
   private handleWindowSizeACK(packet: RtmpPacket) {
-
+    if (packet.payload.length >= 4) {
+      this.bufferReader.resetBuffer(packet.payload)
+      this.receiveReportSize = this.bufferReader.readUint32()
+      logger.debug(`Window acknowledgement size = ${this.receiveReportSize}`)
+      // Send an Acknowledgement packet after receiving half the maximum
+      // size, to make sure the peer can keep on sending without waiting
+      // for acknowledgements.
+      this.receiveReportSize >>= 1
+    }
   }
   private async handleInvoke(packet: RtmpPacket) {
     this.bufferReader.resetBuffer(packet.payload)
@@ -212,8 +246,15 @@ export default class RtmpSession {
       const options = await iamf.parseValue(this.bufferReader, endPos)
       let info: Data = await iamf.parseValue(this.bufferReader, endPos)
       if (info.level === 'error') {
-        logger.error(`Server error: ${info.description}`)
-        if (this.onError) {
+        logger.error(`Server error: ${info.description}, ${info.code}`)
+        if (this.requestMap.has(seq)) {
+          this.requestMap.get(seq).reject({
+            options,
+            info
+          })
+          this.requestMap.delete(seq)
+        }
+        else if (this.onError) {
           this.onError()
         }
       }
@@ -235,14 +276,30 @@ export default class RtmpSession {
             this.state = ClientState.PLAYING
             break
         }
+        if (this.requestMap.has(seq)) {
+          this.requestMap.get(seq).resolve({
+            options,
+            info
+          })
+          this.requestMap.delete(seq)
+        }
       }
     }
     else if (key === 'onBWDone') {
-
+      await this.sendCheckBW()
     }
   }
-  private handleNotify(packet: RtmpPacket) {
+  private async handleNotify(packet: RtmpPacket) {
+    this.bufferReader.resetBuffer(packet.payload)
+    const command = await iamf.parseValue(this.bufferReader, BigInt(packet.payload.length))
 
+    if (command === '@setDataFrame') {
+      packet.payload = packet.payload.subarray(Number(this.bufferReader.getPos()))
+    }
+
+    if (packet.payload.length && this.onMediaPacket) {
+      await this.onMediaPacket(packet, this.streamIdMap.get(packet.extra))
+    }
   }
 
   private async readRtmpPacket() {
@@ -268,12 +325,14 @@ export default class RtmpSession {
             await this.handleInvoke(packet)
             break
           case RtmpPacketType.PT_NOTIFY:
-            this.handleNotify(packet)
+            await this.handleNotify(packet)
             break
           case RtmpPacketType.PT_METADATA:
           case RtmpPacketType.PT_AUDIO:
           case RtmpPacketType.PT_VIDEO:
-            this.onMediaPacket(packet)
+            if (this.onMediaPacket) {
+              await this.onMediaPacket(packet, this.streamIdMap.get(packet.extra))
+            }
             break
           default:
             break
@@ -297,7 +356,67 @@ export default class RtmpSession {
     this.sendPacket(p)
   }
 
-  private request(method: string, data: any[]) {
+  private async sendWindowAckSize() {
+    const p = new RtmpPacket(RtmpChannel.NETWORK_CHANNEL, RtmpPacketType.PT_WINDOW_ACK_SIZE, 0, 4)
+    this.bufferWriter.resetBuffer(p.payload)
+    this.bufferWriter.writeUint32(this.maxSentUnacked)
+    await this.sendPacket(p)
+  }
+
+  private async sendBufferTime(streamId: uint32) {
+    const p = new RtmpPacket(RtmpChannel.NETWORK_CHANNEL, RtmpPacketType.PT_USER_CONTROL, 1, 10)
+    this.bufferWriter.resetBuffer(p.payload)
+    // SetBuffer Length
+    this.bufferWriter.writeUint16(3)
+    this.bufferWriter.writeUint32(streamId)
+    this.bufferWriter.writeUint32(this.options.clientBufferTime || 3000)
+    await this.sendPacket(p)
+  }
+
+  private async sendFCSubscribe(subscribe: string) {
+    const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 27 + subscribe.length)
+    this.bufferWriter.resetBuffer(packet.payload)
+
+    oamf.writeValue(this.bufferWriter, 'FCSubscribe')
+    oamf.writeValue(this.bufferWriter, ++this.seq)
+    oamf.writeValue(this.bufferWriter, null)
+    oamf.writeValue(this.bufferWriter, subscribe)
+    await this.sendPacket(packet)
+  }
+
+  private async sendFCPublish(publish: string) {
+    const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 25 + publish.length)
+    this.bufferWriter.resetBuffer(packet.payload)
+
+    oamf.writeValue(this.bufferWriter, 'FCPublish')
+    oamf.writeValue(this.bufferWriter, ++this.seq)
+    oamf.writeValue(this.bufferWriter, null)
+    oamf.writeValue(this.bufferWriter, publish)
+    await this.sendPacket(packet)
+  }
+
+  private async sendReleaseStream(streamName: string) {
+    const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 29 + streamName.length)
+    this.bufferWriter.resetBuffer(packet.payload)
+
+    oamf.writeValue(this.bufferWriter, 'releaseStream')
+    oamf.writeValue(this.bufferWriter, ++this.seq)
+    oamf.writeValue(this.bufferWriter, null)
+    oamf.writeValue(this.bufferWriter, streamName)
+    await this.sendPacket(packet)
+  }
+
+  private async sendCheckBW() {
+    const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 21)
+    this.bufferWriter.resetBuffer(packet.payload)
+
+    oamf.writeValue(this.bufferWriter, '_checkbw')
+    oamf.writeValue(this.bufferWriter, ++this.seq)
+    oamf.writeValue(this.bufferWriter, null)
+    await this.sendPacket(packet)
+  }
+
+  private async request(method: string, data: any[]) {
     const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 4096 + APP_MAX_LENGTH)
     this.bufferWriter.resetBuffer(packet.payload)
 
@@ -323,7 +442,7 @@ export default class RtmpSession {
       app: appName,
       fourCcList: ['hvc1', 'av01', 'vp09'],
       flashVer: 'LNX 9,0,124,2',
-      tcUrl: 'rtmp://pulltc3-live.baijiayun.com/zgx/test001',
+      tcUrl: url,
       fpad: 0,
       capabilities: 15.0,
       /* Tell the server we support all the audio codecs except
@@ -334,18 +453,78 @@ export default class RtmpSession {
       videoCodecs: 252.0,
       videoFunction: 1.0
     }])
+    if (this.options.isPull) {
+      await this.sendWindowAckSize()
+    }
   }
 
-  public async createStream() {
+  private async createStream() {
     const result = await this.request('createStream', [null])
     return result.info as uint32
   }
 
   public async play(streamName: string) {
-    await this.request('play', [null, streamName, -1, -1, true])
+
+    const streamId = await this.createStream()
+
+    this.streamIdMap.set(streamId, streamName)
+
+    if (!this.options.isLive) {
+      const result = await Promise.race([
+        this.request('getStreamLength', [null, streamName]),
+        new Sleep(1)
+      ])
+      if (!is.number(result)) {
+        this.duration = result.info as double
+      }
+    }
+    await this.sendFCSubscribe(streamName)
+
+    this.request('play', [null, streamName, -1, -1, true])
+    await this.sendBufferTime(streamId)
   }
 
   public async publish(streamName: string) {
-    await this.request('publish', [null, 'streamName', 'live'])
+    await this.sendReleaseStream(streamName)
+    await this.sendFCPublish(streamName)
+    const streamId = await this.createStream()
+    this.streamIdMap.set(streamId, streamName)
+    await this.request('publish', [null, streamName, 'live'])
+  }
+
+  public async sendStreamPacket(packet: RtmpPacket, streamName: string) {
+    let streamId = 0
+    this.streamIdMap.forEach((v, k) => {
+      if (v === streamName) {
+        streamId = k
+      }
+    })
+    packet.extra = streamId
+    await this.sendPacket(packet)
+  }
+
+  public async seek(timestamp: number) {
+    const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 26)
+    this.bufferWriter.resetBuffer(packet.payload)
+    oamf.writeValue(this.bufferWriter, 'seek')
+    oamf.writeValue(this.bufferWriter, 0)
+    oamf.writeValue(this.bufferWriter, null)
+    oamf.writeValue(this.bufferWriter, timestamp)
+    await this.sendPacket(packet)
+  }
+
+  public async pause(paused: boolean, timestamp: number) {
+    const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 29)
+    this.bufferWriter.resetBuffer(packet.payload)
+    oamf.writeValue(this.bufferWriter, 'pause')
+    oamf.writeValue(this.bufferWriter, 0)
+    oamf.writeValue(this.bufferWriter, null)
+    oamf.writeValue(this.bufferWriter, paused)
+    oamf.writeValue(this.bufferWriter, timestamp)
+    await this.sendPacket(packet)
+  }
+
+  public getDuration() {
+    return this.duration
   }
 }

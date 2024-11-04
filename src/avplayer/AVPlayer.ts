@@ -72,7 +72,7 @@ import getMediaSource from './function/getMediaSource'
 import JitterBufferController from './JitterBufferController'
 import getAudioCodec from 'avcodec/function/getAudioCodec'
 import { IOFlags } from 'common/io/flags'
-import { Ext2Format, Ext2IOLoader, mediaType2AVMediaType } from 'avutil/stringEnum'
+import { Ext2Format, mediaType2AVMediaType } from 'avutil/stringEnum'
 import { AVDisposition, AVStreamInterface } from 'avformat/AVStream'
 import { AVFormatContextInterface } from 'avformat/AVFormatContext'
 import dump, { dumpCodecName, dumpKey } from 'avformat/dump'
@@ -648,7 +648,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           }
         }
 
-        if (this.subtitleRender) {
+        if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender) {
           this.subtitleRender.reset()
           this.subtitleRender.start()
         }
@@ -737,29 +737,31 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   private createSubtitleRender(subtitleStream: AVStreamInterface, taskId: string) {
-    this.subtitleRender = new SubtitleRender({
-      dom: this.canvas || this.video || this.options.container,
-      getCurrentTime: () => {
-        return this.currentTime
-      },
-      avpacketList: addressof(this.GlobalData.avpacketList),
-      avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
-      codecpar: subtitleStream.codecpar,
-      container: this.options.container,
-      videoWidth: this.selectedVideoStream?.codecpar.width ?? 0,
-      videoHeight: this.selectedVideoStream?.codecpar.height ?? 0
-    })
+    if (defined(ENABLE_SUBTITLE_RENDER)) {
+      this.subtitleRender = new SubtitleRender({
+        dom: this.canvas || this.video || this.options.container,
+        getCurrentTime: () => {
+          return this.currentTime
+        },
+        avpacketList: addressof(this.GlobalData.avpacketList),
+        avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+        codecpar: subtitleStream.codecpar,
+        container: this.options.container,
+        videoWidth: this.selectedVideoStream?.codecpar.width ?? 0,
+        videoHeight: this.selectedVideoStream?.codecpar.height ?? 0
+      })
 
-    this.subtitleRender.setDemuxTask(taskId)
+      this.subtitleRender.setDemuxTask(taskId)
 
-    this.selectedSubtitleStream = subtitleStream
+      this.selectedSubtitleStream = subtitleStream
 
-    if (taskId === this.taskId) {
-      this.lastSelectedInnerSubtitleStreamIndex = subtitleStream.index
+      if (taskId === this.taskId) {
+        this.lastSelectedInnerSubtitleStreamIndex = subtitleStream.index
+      }
+
+      AVPlayer.DemuxerThread.connectStreamTask.transfer(this.subtitleRender.getDemuxerPort(taskId))
+        .invoke(taskId, subtitleStream.index, this.subtitleRender.getDemuxerPort(taskId))
     }
-
-    AVPlayer.DemuxerThread.connectStreamTask.transfer(this.subtitleRender.getDemuxerPort(taskId))
-      .invoke(taskId, subtitleStream.index, this.subtitleRender.getDemuxerPort(taskId))
   }
 
   /**
@@ -890,13 +892,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await AVPlayer.DemuxerThread.seek(taskId, this.currentTime, AVSeekFlags.FRAME)
     }
 
-    if (handleStatus && !this.subtitleRender) {
-      this.createSubtitleRender(stream, taskId)
-      this.subtitleRender.start()
-    }
-    else if (this.subtitleRender) {
-      await AVPlayer.DemuxerThread.connectStreamTask.transfer(this.subtitleRender.getDemuxerPort(taskId))
-        .invoke(taskId, stream.index, this.subtitleRender.getDemuxerPort(taskId))
+    if (defined(ENABLE_SUBTITLE_RENDER)) {
+      if (handleStatus && !this.subtitleRender) {
+        this.createSubtitleRender(stream, taskId)
+        this.subtitleRender.start()
+      }
+      else if (this.subtitleRender) {
+        await AVPlayer.DemuxerThread.connectStreamTask.transfer(this.subtitleRender.getDemuxerPort(taskId))
+          .invoke(taskId, stream.index, this.subtitleRender.getDemuxerPort(taskId))
+      }
     }
 
     await AVPlayer.DemuxerThread.startDemux(taskId, false, 10)
@@ -1177,7 +1181,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (defined(ENABLE_PROTOCOL_RTSP) && this.ext === 'rtsp'
         || defined(ENABLE_PROTOCOL_RTMP) && this.ext === 'rtmp'
       ) {
-        formatOptions.uri = (source as string).replace(/^\S+:\/\//, this.ext + '://')
+        formatOptions.uri = options.uri || (source as string).replace(/^\S+:\/\//, this.ext + '://')
       }
       await AVPlayer.DemuxerThread.registerTask
         .transfer(this.ioloader2DemuxerChannel.port2, this.controller.getDemuxerControlPort())
@@ -1428,7 +1432,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         if (this.jitterBufferController) {
           this.jitterBufferController.start()
         }
-        if (this.subtitleRender) {
+        if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender) {
           this.subtitleRender.start()
         }
       })
@@ -1812,20 +1816,22 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
     }
 
-    const subtitleStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_SUBTITLE)
-    if (subtitleStream && options.subtitle && this.isCodecIdSupported(subtitleStream.codecpar.codecId)) {
-      const externalTask = this.externalSubtitleTasks.find((task) => {
-        return task.streamId === subtitleStream.id
-      })
-      this.createSubtitleRender(subtitleStream, externalTask ? externalTask.taskId : (this.subtitleTaskId || this.taskId))
-    }
+    if (defined(ENABLE_SUBTITLE_RENDER)) {
+      const subtitleStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_SUBTITLE)
+      if (subtitleStream && options.subtitle && this.isCodecIdSupported(subtitleStream.codecpar.codecId)) {
+        const externalTask = this.externalSubtitleTasks.find((task) => {
+          return task.streamId === subtitleStream.id
+        })
+        this.createSubtitleRender(subtitleStream, externalTask ? externalTask.taskId : (this.subtitleTaskId || this.taskId))
+      }
 
-    if (this.subtitleRender && this.externalSubtitleTasks.length) {
-      for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
-        const stream = this.formatContext.streams.find(((s) => s.id === this.externalSubtitleTasks[i].streamId))
-        if (stream !== subtitleStream) {
-          await AVPlayer.DemuxerThread.connectStreamTask.transfer(this.subtitleRender.getDemuxerPort(this.externalSubtitleTasks[i].taskId))
-            .invoke(this.externalSubtitleTasks[i].taskId, stream.index, this.subtitleRender.getDemuxerPort(this.externalSubtitleTasks[i].taskId))
+      if (this.subtitleRender && this.externalSubtitleTasks.length) {
+        for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
+          const stream = this.formatContext.streams.find(((s) => s.id === this.externalSubtitleTasks[i].streamId))
+          if (stream !== subtitleStream) {
+            await AVPlayer.DemuxerThread.connectStreamTask.transfer(this.subtitleRender.getDemuxerPort(this.externalSubtitleTasks[i].taskId))
+              .invoke(this.externalSubtitleTasks[i].taskId, stream.index, this.subtitleRender.getDemuxerPort(this.externalSubtitleTasks[i].taskId))
+          }
         }
       }
     }
@@ -1895,7 +1901,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (this.jitterBufferController) {
         this.jitterBufferController.start()
       }
-      if (this.subtitleRender) {
+      if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender) {
         this.subtitleRender.start()
       }
     })
@@ -1940,7 +1946,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         if (this.jitterBufferController) {
           this.jitterBufferController.stop()
         }
-        if (this.subtitleRender) {
+        if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender) {
           this.subtitleRender.pause()
         }
       })
@@ -2054,7 +2060,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
       await AVPlayer.DemuxerThread.seek(this.externalSubtitleTasks[i].taskId, this.currentTime, AVSeekFlags.FRAME)
     }
-    if (this.subtitleRender) {
+    if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender) {
       this.subtitleRender.reset()
     }
   }
@@ -2254,7 +2260,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await AVPlayer.IOThread.unregisterTask(this.externalSubtitleTasks[i].taskId)
     }
 
-    if (this.subtitleRender) {
+    if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender) {
       this.subtitleRender.destroy()
       this.subtitleRender = null
     }
@@ -2527,7 +2533,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @param delay 
    */
   public setSubtitleDelay(delay: int32) {
-    if (this.subtitleRender && this.getSubtitleDelay() !== delay) {
+    if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender && this.getSubtitleDelay() !== delay) {
       this.subtitleRender.setDelay(static_cast<int64>(delay))
 
       logger.info(`set subtitle delay ${delay}`)
@@ -2542,7 +2548,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @returns 
    */
   public getSubtitleDelay() {
-    if (this.subtitleRender) {
+    if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender) {
       return static_cast<int32>(this.subtitleRender.getDelay())
     }
     return 0
@@ -2554,7 +2560,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @param enable 
    */
   public setSubtitleEnable(enable: boolean) {
-    if (this.subtitleRender && this.selectedSubtitleStream) {
+    if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender && this.selectedSubtitleStream) {
       if (enable) {
         const externalTask = this.externalSubtitleTasks.find((task) => {
           return task.streamId === this.selectedSubtitleStream.id
@@ -2785,7 +2791,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         logger.info(`changed selected video stream, from ${this.selectedVideoStream.id} to ${stream.id}, taskId: ${this.taskId}`)
         this.selectedVideoStream = stream
 
-        if (this.subtitleRender) {
+        if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender) {
           this.subtitleRender.updateVideoResolution(stream.codecpar.width, stream.codecpar.height)
         }
 
@@ -2875,69 +2881,71 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @returns 
    */
   public async selectSubtitle(id: number) {
-    if (defined(ENABLE_PROTOCOL_HLS) && this.isHls() || defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
-      logger.info(`call IOThread selectSubtitle, index: ${id}, taskId: ${this.taskId}`)
-      await AVPlayer.IOThread?.selectSubtitle(this.taskId, id)
-      if (this.subtitleTaskId) {
-        await AVPlayer.DemuxerThread.seek(this.subtitleTaskId, this.currentTime, AVSeekFlags.TIMESTAMP)
-      }
-      if (this.subtitleRender) {
-        this.subtitleRender.reset()
-        this.subtitleRender.start()
-      }
-    }
-    else {
-      const stream = this.formatContext.streams.find((stream) => stream.id === id)
-      if (this.selectedSubtitleStream && stream && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE && stream !== this.selectedSubtitleStream) {
-        if (this.status === AVPlayerStatus.CHANGING) {
-          logger.warn(`player is changing now, taskId: ${this.taskId}`)
-          return
+    if (defined(ENABLE_SUBTITLE_RENDER)) {
+      if (defined(ENABLE_PROTOCOL_HLS) && this.isHls() || defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
+        logger.info(`call IOThread selectSubtitle, index: ${id}, taskId: ${this.taskId}`)
+        await AVPlayer.IOThread?.selectSubtitle(this.taskId, id)
+        if (this.subtitleTaskId) {
+          await AVPlayer.DemuxerThread.seek(this.subtitleTaskId, this.currentTime, AVSeekFlags.TIMESTAMP)
         }
-        this.lastStatus = this.status
-        this.status = AVPlayerStatus.CHANGING
-        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.id, this.selectedSubtitleStream.id])
-
-        this.subtitleRender.reopenDecoder(stream.codecpar)
-
-        const externalTask = this.externalSubtitleTasks.find((task) => {
-          return task.streamId === stream.id
-        })
-        if (externalTask) {
-          this.subtitleRender.setDemuxTask(externalTask.taskId)
-          this.subtitleRender.reset()
-          await AVPlayer.DemuxerThread.seek(externalTask.taskId, this.currentTime, AVSeekFlags.FRAME, stream.index)
-        }
-        else {
-          this.subtitleRender.setDemuxTask(this.taskId)
-          if (this.lastSelectedInnerSubtitleStreamIndex === -1) {
-            await AVPlayer.DemuxerThread.connectStreamTask.transfer(this.subtitleRender.getDemuxerPort(this.taskId))
-              .invoke(this.taskId, stream.index, this.subtitleRender.getDemuxerPort(this.taskId))
-          }
-          else {
-            await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.lastSelectedInnerSubtitleStreamIndex, false)
-          }
-          const lastExternalTask = this.externalSubtitleTasks.find((task) => {
-            return task.streamId === this.selectedSubtitleStream.id
-          })
-          if (lastExternalTask) {
-            this.subtitleRender.reset()
-          }
-          this.lastSelectedInnerSubtitleStreamIndex = stream.index
-        }
-
         if (this.subtitleRender) {
+          this.subtitleRender.reset()
           this.subtitleRender.start()
         }
-
-        logger.info(`changed selected subtitle stream, from ${this.selectedSubtitleStream.id} to ${stream.id}, taskId: ${this.taskId}`)
-
-        this.selectedSubtitleStream = stream
-
-        this.status = this.lastStatus
-        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.id, this.selectedSubtitleStream.id])
       }
       else {
-        logger.error(`call selectSubtitle failed, id: ${id}, taskId: ${this.taskId}`)
+        const stream = this.formatContext.streams.find((stream) => stream.id === id)
+        if (this.selectedSubtitleStream && stream && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE && stream !== this.selectedSubtitleStream) {
+          if (this.status === AVPlayerStatus.CHANGING) {
+            logger.warn(`player is changing now, taskId: ${this.taskId}`)
+            return
+          }
+          this.lastStatus = this.status
+          this.status = AVPlayerStatus.CHANGING
+          this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.id, this.selectedSubtitleStream.id])
+
+          this.subtitleRender.reopenDecoder(stream.codecpar)
+
+          const externalTask = this.externalSubtitleTasks.find((task) => {
+            return task.streamId === stream.id
+          })
+          if (externalTask) {
+            this.subtitleRender.setDemuxTask(externalTask.taskId)
+            this.subtitleRender.reset()
+            await AVPlayer.DemuxerThread.seek(externalTask.taskId, this.currentTime, AVSeekFlags.FRAME, stream.index)
+          }
+          else {
+            this.subtitleRender.setDemuxTask(this.taskId)
+            if (this.lastSelectedInnerSubtitleStreamIndex === -1) {
+              await AVPlayer.DemuxerThread.connectStreamTask.transfer(this.subtitleRender.getDemuxerPort(this.taskId))
+                .invoke(this.taskId, stream.index, this.subtitleRender.getDemuxerPort(this.taskId))
+            }
+            else {
+              await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.lastSelectedInnerSubtitleStreamIndex, false)
+            }
+            const lastExternalTask = this.externalSubtitleTasks.find((task) => {
+              return task.streamId === this.selectedSubtitleStream.id
+            })
+            if (lastExternalTask) {
+              this.subtitleRender.reset()
+            }
+            this.lastSelectedInnerSubtitleStreamIndex = stream.index
+          }
+
+          if (this.subtitleRender) {
+            this.subtitleRender.start()
+          }
+
+          logger.info(`changed selected subtitle stream, from ${this.selectedSubtitleStream.id} to ${stream.id}, taskId: ${this.taskId}`)
+
+          this.selectedSubtitleStream = stream
+
+          this.status = this.lastStatus
+          this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.id, this.selectedSubtitleStream.id])
+        }
+        else {
+          logger.error(`call selectSubtitle failed, id: ${id}, taskId: ${this.taskId}`)
+        }
       }
     }
   }
