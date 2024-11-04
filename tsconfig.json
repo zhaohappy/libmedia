@@ -141,6 +141,8 @@
       "ENABLE_WEBGPU": true,
       // 高 bitDepth 和 HDR 支持编译开关
       "ENABLE_RENDER_16": true,
+      // 是否开启字幕渲染功能
+      "ENABLE_SUBTITLE_RENDER": true,
       // 打印日志是否显示文件名和行号编译开关
       "ENABLE_LOG_PATH": true,
 

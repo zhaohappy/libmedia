@@ -414,20 +414,25 @@ export default class VideoRenderPipeline extends Pipeline {
       task.render.clear()
     }
     catch (error) {
-      if (task.render instanceof WebGPURender && !fallback) {
-        disableWebGPU = true
-        task.renderCreating = false
-        logger.warn('not support webgpu render, try to fallback to webgl render')
-        return this.createRender(task, frame, true)
-      }
-      else if (fallback) {
-        task.renderCreating = false
-        logger.warn('canvas context lost after fallback, wait for recreate canvas')
-        if (task.renderRecreateCount < 3) {
-          task.renderRecreateCount++
-          task.controlIPCPort.notify('updateCanvas')
-          return
+      if (defined(ENABLE_WEBGPU)) {
+        if (task.render instanceof WebGPURender && !fallback) {
+          disableWebGPU = true
+          task.renderCreating = false
+          logger.warn('not support webgpu render, try to fallback to webgl render')
+          return this.createRender(task, frame, true)
         }
+        else if (fallback) {
+          task.renderCreating = false
+          logger.warn('canvas context lost after fallback, wait for recreate canvas')
+          if (task.renderRecreateCount < 3) {
+            task.renderRecreateCount++
+            task.controlIPCPort.notify('updateCanvas')
+            return
+          }
+          throw error
+        }
+      }
+      else {
         throw error
       }
     }

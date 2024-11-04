@@ -89,6 +89,8 @@ declare const ENABLE_WEBGPU: boolean
 
 declare const ENABLE_RENDER_16: boolean
 
+declare const ENABLE_SUBTITLE_RENDER: boolean
+
 declare const API_FRAME_KEY: boolean
 
 declare const API_INTERLACED_FRAME: boolean

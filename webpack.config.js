@@ -1,6 +1,7 @@
 const path = require('path');
 const { execSync } = require('child_process');
 const CheapPlugin = require('./src/cheap/build/webpack/plugin/CheapPlugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 function getVersion() {
   try {
@@ -240,7 +241,9 @@ module.exports = (env) => {
         },
       ],
     },
-    plugins: []
+    plugins: [
+      // new BundleAnalyzerPlugin()
+    ]
   };
 
   if (!env.transformer) {
