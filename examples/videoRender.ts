@@ -49,7 +49,9 @@ export async function run(readFile: File, canvas: HTMLCanvasElement) {
     return BigInt(readFile.size)
   }
 
-  await demux.open(iformatContext)
+  await demux.open(iformatContext, {
+    maxAnalyzeDuration: 3000
+  })
   await demux.analyzeStreams(iformatContext)
 
   const stream = iformatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
@@ -89,7 +91,7 @@ export async function run(readFile: File, canvas: HTMLCanvasElement) {
       decodePause()
       decodePause = null
     }
-  }, 0, 33)
+  }, 0, 1000 / stream.codecpar.framerate.num)
 
   timer.start()
 
