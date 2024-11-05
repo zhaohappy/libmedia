@@ -64,6 +64,11 @@ import * as h264 from 'avformat/codecs/h264'
 import * as hevc from 'avformat/codecs/hevc'
 import * as vvc from 'avformat/codecs/vvc'
 import { IRtspFormatOptions } from 'avformat/formats/IRtspFormat'
+import { FlvFormatOptions } from 'avformat/formats/IFlvFormat'
+import { MovFormatOptions } from 'avformat/formats/mov/type'
+import { IH264FormatOptions } from 'avformat/formats/IH264Format'
+import { IHevcFormatOptions } from 'avformat/formats/IHevcFormat'
+import { IVvcFormatOptions } from 'avformat/formats/IVvcFormat'
 
 export const STREAM_INDEX_ALL = -1
 
@@ -308,7 +313,7 @@ export default class DemuxPipeline extends Pipeline {
       switch (format) {
         case AVFormat.FLV:
           if (defined(ENABLE_DEMUXER_FLV)) {
-            iformat = new ((await import('avformat/formats/IFlvFormat')).default)
+            iformat = new ((await import('avformat/formats/IFlvFormat')).default)(task.formatOptions as FlvFormatOptions)
           }
           else {
             logger.error('flv format not support, maybe you can rebuild avmedia')
@@ -317,7 +322,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.MP4:
           if (defined(ENABLE_DEMUXER_MP4) || defined(ENABLE_PROTOCOL_DASH)) {
-            iformat = new ((await import('avformat/formats/IMovFormat')).default)
+            iformat = new ((await import('avformat/formats/IMovFormat')).default)(task.formatOptions as MovFormatOptions)
           }
           else {
             logger.error('mp4 format not support, maybe you can rebuild avmedia')
@@ -444,7 +449,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.H264:
           if (defined(ENABLE_DEMUXER_H264)) {
-            iformat = new (((await import('avformat/formats/IH264Format')).default))
+            iformat = new (((await import('avformat/formats/IH264Format')).default))(task.formatOptions as IH264FormatOptions)
           }
           else {
             logger.error('h264 format not support, maybe you can rebuild avmedia')
@@ -453,7 +458,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.HEVC:
           if (defined(ENABLE_DEMUXER_HEVC)) {
-            iformat = new (((await import('avformat/formats/IHevcFormat')).default))
+            iformat = new (((await import('avformat/formats/IHevcFormat')).default))(task.formatOptions as IHevcFormatOptions)
           }
           else {
             logger.error('hevc format not support, maybe you can rebuild avmedia')
@@ -462,7 +467,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.VVC:
           if (defined(ENABLE_DEMUXER_VVC)) {
-            iformat = new (((await import('avformat/formats/IVvcFormat')).default))
+            iformat = new (((await import('avformat/formats/IVvcFormat')).default))(task.formatOptions as IVvcFormatOptions)
           }
           else {
             logger.error('vvc format not support, maybe you can rebuild avmedia')

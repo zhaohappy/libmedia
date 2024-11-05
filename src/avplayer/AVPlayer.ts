@@ -953,6 +953,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
      * 像 rtmp 需要使用到这个源地址
      */
     uri?: string
+    /**
+     * 透传给 format 的参数
+     */
+    formatOptions?: Data
   } = {}) {
 
     logger.info(`call load, taskId: ${this.taskId}`)
@@ -1119,6 +1123,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       logger.fatal(`register io task failed, ret: ${ret}, taskId: ${this.taskId}`)
     }
 
+    const formatOptions: Data = object.extend({}, options.formatOptions || {})
+
     if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
       await AVPlayer.IOThread.open(this.taskId)
       const hasAudio = await AVPlayer.IOThread.hasAudio(this.taskId)
@@ -1139,6 +1145,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             ioloaderOptions: {
               mediaType: 'audio'
             },
+            formatOptions,
             avpacketList: addressof(this.GlobalData.avpacketList),
             avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           })
@@ -1152,6 +1159,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           ioloaderOptions: {
             mediaType: 'video'
           },
+          formatOptions,
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
         })
@@ -1171,13 +1179,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             ioloaderOptions: {
               mediaType: hasAudio ? 'audio' : 'video'
             },
+            formatOptions,
             avpacketList: addressof(this.GlobalData.avpacketList),
             avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           })
       }
     }
     else {
-      const formatOptions: Data = {}
       if (defined(ENABLE_PROTOCOL_RTSP) && this.ext === 'rtsp'
         || defined(ENABLE_PROTOCOL_RTMP) && this.ext === 'rtmp'
       ) {
@@ -1837,8 +1845,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     let minQueueLength = 10
-    if (is.string(this.source)) {
-      const preLoadTime = this.options.isLive ? this.options.jitterBufferMin : this.options.preLoadTime
+    if (is.string(this.source) || this.source instanceof CustomIOLoader) {
+      const preLoadTime = this.source instanceof CustomIOLoader
+        ? this.source.minBuffer
+        : (this.options.isLive ? this.options.jitterBufferMin : this.options.preLoadTime)
       this.formatContext.streams.forEach((stream) => {
         minQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate) * preLoadTime), minQueueLength)
       })
