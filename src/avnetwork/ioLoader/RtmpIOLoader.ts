@@ -98,7 +98,6 @@ export default class RtmpIOLoader extends SocketIOLoader {
         else {
           this.bufferReader.resetBuffer(packet.payload)
         }
-        this.bufferReader.resetBuffer(packet.payload)
         const command = await iamf.parseValue(this.bufferReader, BigInt(packet.payload.length)) as string
         if (command === 'onMetaData') {
           this.hasMetadata = true
