@@ -1846,9 +1846,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     let minQueueLength = 10
     if (is.string(this.source) || this.source instanceof CustomIOLoader) {
-      const preLoadTime = this.source instanceof CustomIOLoader
-        ? this.source.minBuffer
-        : (this.options.isLive ? this.options.jitterBufferMin : this.options.preLoadTime)
+      let preLoadTime = this.options.isLive ? this.options.jitterBufferMin : this.options.preLoadTime
+      if (this.source instanceof CustomIOLoader) {
+        preLoadTime = Math.max(preLoadTime, this.source.minBuffer)
+      }
       this.formatContext.streams.forEach((stream) => {
         minQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate) * preLoadTime), minQueueLength)
       })
