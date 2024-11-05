@@ -181,7 +181,7 @@ export default class JitterBufferController {
       this.setPlayRate(1)
     }
 
-    if (buffer > (this.max << 1)) {
+    if (buffer > 2000 && this.max > 2000 && buffer > (this.max << 1)) {
       this.options.observer.onCroppingBuffer(this.options.jitterBuffer.max)
     }
   }
