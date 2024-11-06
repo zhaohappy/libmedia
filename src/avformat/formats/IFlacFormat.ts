@@ -289,7 +289,8 @@ export default class IFlacFormat extends IFormat {
 
       const sync = this.context.isVarSize < 0 ? [0xf8, 0xf9] : (this.context.isVarSize ? [0xf9] : [0xf8])
 
-      for (; i < this.context.cacheBuffer.length - 2; i++) {
+      const end = this.context.cacheBuffer.length - 2
+      for (; i < end; i++) {
         if (this.context.cacheBuffer[i] === 0xff && array.has(sync, this.context.cacheBuffer[i + 1])) {
           if (i) {
             buffers.push(this.context.cacheBuffer.subarray(0, i))
@@ -300,7 +301,7 @@ export default class IFlacFormat extends IFormat {
         }
       }
 
-      if (i === this.context.cacheBuffer.length - 2) {
+      if (i === end) {
         if (formatContext.ioReader.getPos() === this.context.fileSize) {
           buffers.push(this.context.cacheBuffer)
           this.context.cachePos += static_cast<int64>(this.context.cacheBuffer.length)
@@ -330,8 +331,11 @@ export default class IFlacFormat extends IFormat {
       const info: Partial<FrameInfo> = {}
       // 检查下一帧的数据是否合法，不合法说明和前面的是同一帧数据
       if (decodeFrameHeader(this.context.bitReader, info, true) < 0
-        || info.sampleRate !== this.context.frameInfo.sampleRate
-        || info.channels !== this.context.frameInfo.channels
+        // || info.sampleRate !== this.context.frameInfo.sampleRate
+        // || info.channels !== this.context.frameInfo.channels
+        || ((info.frameOrSampleNum - this.context.frameInfo.frameOrSampleNum !== static_cast<int64>(this.context.frameInfo.blocksize))
+          && (info.frameOrSampleNum !== this.context.frameInfo.frameOrSampleNum + 1n)
+        )
       ) {
         buffers.push(this.context.cacheBuffer.subarray(0, 2))
         this.context.cachePos += 2n
