@@ -63,7 +63,7 @@ export default class WebSocketIOLoader extends SocketIOLoader {
           this.consume()
         }
       }
-      this.socket.onmessage = async (message) => {
+      this.socket.onmessage = (message) => {
         let data = message.data
         this.readQueue.push(new Uint8Array(data))
         if (this.consume) {
