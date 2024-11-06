@@ -57,9 +57,6 @@ export default abstract class CustomIOLoader {
   /**
    * 打开 ioloader
    * 
-   * @param info 
-   * @param range 
-   * 
    * @returns 成功返回 0, 失败返回错误码（负值）
    */
   public abstract open(): Promise<int32>
