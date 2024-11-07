@@ -154,6 +154,10 @@ export interface AVPlayerOptions {
    */
   enableWebGPU?: boolean
   /**
+   * 是否启用 WebCodecs 编解码
+   */
+  enableWebCodecs?: boolean
+  /**
    * 是否启用 worker
    */
   enableWorker?: boolean
@@ -216,6 +220,7 @@ const defaultAVPlayerOptions: Partial<AVPlayerOptions> = {
   enableHardware: true,
   enableWebGPU: true,
   enableWorker: true,
+  enableWebCodecs: true,
   loop: false,
   jitterBufferMax: 4,
   jitterBufferMin: 1,
@@ -1577,12 +1582,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             leftPort: this.demuxer2VideoDecoderChannel.port2,
             rightPort: this.videoDecoder2VideoRenderChannel.port1,
             stats: addressof(this.GlobalData.stats),
-            enableHardware: this.options.enableHardware,
+            enableHardware: this.options.enableHardware && this.options.enableWebCodecs,
             avpacketList: addressof(this.GlobalData.avpacketList),
             avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
             avframeList: addressof(this.GlobalData.avframeList),
             avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-            preferWebCodecs: !isHdr(videoStream.codecpar) && !hasAlphaChannel(videoStream.codecpar)
+            preferWebCodecs: !isHdr(videoStream.codecpar) && !hasAlphaChannel(videoStream.codecpar) && this.options.enableWebCodecs
           })
 
         let ret = await this.VideoDecoderThread.open(this.taskId, serializeAVCodecParameters(videoStream.codecpar))

@@ -243,7 +243,10 @@
       <div id="enableSimd">
         <el-checkbox v-model="enableSimd">enable simd</el-checkbox>
       </div>
-      <div id="enableWebcodec">
+      <div id="enableWebCodecs">
+        <el-checkbox v-model="enableWebCodecs">enable WebCodecs</el-checkbox>
+      </div>
+      <div id="enableHardwareAcceleration">
         <el-checkbox v-model="enableHardwareAcceleration">enable hardwareAcceleration</el-checkbox>
       </div>
       <div id="enableWorker">
@@ -493,7 +496,8 @@
       let urlComponent;
       let isLiveComponent;
       let enableSimdComponent;
-      let enableWebcodecComponent;
+      let enableWebCodecsComponent;
+      let enableHardwareComponent;
       let enableWorkerComponent;
       let useMseComponent;
       let loopComponent;
@@ -671,7 +675,8 @@
             checkUseMES: (streams) => {
               return useMseComponent.useMse
             },
-            enableHardware: enableWebcodecComponent.enableHardwareAcceleration,
+            enableHardware: enableHardwareComponent.enableHardwareAcceleration,
+            enableWebCodecs: enableWebCodecsComponent.enableWebCodecs,
             enableWebGPU: enableWebGPUComponent.enableWebGPU,
             enableWorker: enableWorkerComponent.enableWorker,
             loop: loopComponent.loop,
@@ -1255,8 +1260,17 @@
         }
       })
 
-      enableWebcodecComponent = new Vue({
-        el: '#enableWebcodec',
+      enableWebCodecsComponent = new Vue({
+        el: '#enableWebCodecs',
+        data: function () {
+          return {
+            enableWebCodecs: true
+          }
+        }
+      })
+
+      enableHardwareComponent = new Vue({
+        el: '#enableHardwareAcceleration',
         data: function () {
           return {
             enableHardwareAcceleration: true
