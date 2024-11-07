@@ -28,6 +28,7 @@ import { RtmpPacket } from './RtmpPacket'
 import { RtmpPacketHeaderSize } from './rtmp'
 import IOReader from 'common/io/IOReader'
 import concatTypeArray from 'common/function/concatTypeArray'
+import * as logger from 'common/util/logger'
 
 async function writeChannelId(ioWriter: IOWriter, channelId: int32, mode: int32) {
   if (channelId < 64) {
@@ -163,9 +164,13 @@ export async function readRtmpPacket(ioReader: IOReader, chunkSize: int32, prevP
     timestamp = tsField
   }
   if (mode !== RtmpPacketHeaderSize.PS_TWELVE_BYTES) {
-    timestamp += prevPacket.timestamp
+    if (prevPacket) {
+      timestamp += prevPacket.timestamp
+    }
+    else {
+      logger.warn(`got invalid message fmt, channel id ${channelId} can not find prev message with fmt ${mode}`)
+    }
   }
-
   if (size < chunkSize) {
     buffers.push(await ioReader.readBuffer(size))
   }
