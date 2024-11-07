@@ -96,6 +96,9 @@ import AudioPipelineProxy from './worker/AudioPipelineProxy'
 import VideoPipelineProxy from './worker/VideoPipelineProxy'
 import MSEPipelineProxy from './worker/MSEPipelineProxy'
 import analyzeUrlIOLoader from 'avutil/function/analyzeUrlIOLoader'
+import WebSocketIOLoader from 'avnetwork/ioLoader/WebSocketIOLoader'
+import SocketIOLoader from 'avnetwork/ioLoader/SocketIOLoader'
+import WebTransportIOLoader from 'avnetwork/ioLoader/WebTransportIOLoader'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -187,6 +190,63 @@ export interface AVPlayerOptions {
   findBestStream?: (streams: AVStreamInterface[], mediaType: AVMediaType) => AVStreamInterface
 }
 
+export interface AVPlayerLoadOptions {
+  /**
+   * 源扩展名
+   * 强制指定扩展名，对没有扩展名的 url 链接使用
+   */
+  ext?: string
+  /**
+   * 需要一起加载的外挂字幕
+   */
+  externalSubtitles?: ExternalSubtitle[]
+  /**
+   * http 请求配置
+   */
+  http?: {
+    /**
+     * http 请求需要添加的 header
+     */
+    headers?: Data
+    /**
+     * http 请求的 credentials 配置
+     */
+    credentials?: RequestCredentials
+    /**
+     * http 请求的 referrerPolicy 配置
+     */
+    referrerPolicy?: ReferrerPolicy
+  }
+  /**
+   * webtransport 配置
+   */
+  webtransport?: WebTransportOptions
+  /**
+   * 如果 source 是被 Websocket 或者 WebTransport 代理的，这里传源地址
+   * 像 rtmp 需要使用到这个源地址
+   */
+  uri?: string
+  /**
+   * 透传给 format 的参数
+   */
+  formatOptions?: Data
+}
+
+export interface AVPlayerPlayOptions {
+  /**
+   * 是否播放音频
+   */
+  audio?: boolean
+  /**
+   * 是否播放视频
+   */
+  video?: boolean
+  /**
+   * 是否播放字幕
+   */
+  subtitle?: boolean
+}
+
 export const AVPlayerSupportedCodecs = [
   AVCodecID.AV_CODEC_ID_H264,
   AVCodecID.AV_CODEC_ID_HEVC,
@@ -259,7 +319,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   static IOLoader = {
     CustomIOLoader,
     FetchIOLoader,
-    FileIOLoader
+    FileIOLoader,
+    WebSocketIOLoader,
+    SocketIOLoader,
+    WebTransportIOLoader
   }
 
   static level: number = logger.INFO
@@ -919,50 +982,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   /**
    * 加载媒体源，分析流信息
    * 
-   * @param source 媒体源，支持 url 和 文件
+   * @param source 媒体源，支持 url、File 和自定义 CustomIOLoader
    * @param options 配置项
    */
-  public async load(source: string | File | CustomIOLoader, options: {
-    /**
-     * 源扩展名
-     * 强制指定扩展名，对没有扩展名的 url 链接使用
-     */
-    ext?: string
-    /**
-     * 需要一起加载的外挂字幕
-     */
-    externalSubtitles?: ExternalSubtitle[]
-    /**
-     * http 请求配置
-     */
-    http?: {
-      /**
-       * http 请求需要添加的 header
-       */
-      headers?: Data
-      /**
-       * http 请求的 credentials 配置
-       */
-      credentials?: RequestCredentials
-      /**
-       * http 请求的 referrerPolicy 配置
-       */
-      referrerPolicy?: ReferrerPolicy
-    }
-    /**
-     * webtransport 配置
-     */
-    webtransport?: WebTransportOptions
-    /**
-     * 如果 source 是被 Websocket 或者 WebTransport 代理的，这里传源地址
-     * 像 rtmp 需要使用到这个源地址
-     */
-    uri?: string
-    /**
-     * 透传给 format 的参数
-     */
-    formatOptions?: Data
-  } = {}) {
+  public async load(source: string | File | CustomIOLoader, options: AVPlayerLoadOptions = {}) {
 
     logger.info(`call load, taskId: ${this.taskId}`)
 
@@ -1381,20 +1404,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @param options 
    * @returns 
    */
-  public async play(options: {
-    /**
-     * 是否播放音频
-     */
-    audio?: boolean
-    /**
-     * 是否播放视频
-     */
-    video?: boolean
-    /**
-     * 是否播放字幕
-     */
-    subtitle?: boolean
-  } = {
+  public async play(options: AVPlayerPlayOptions = {
     audio: true,
     video: true,
     subtitle: true
