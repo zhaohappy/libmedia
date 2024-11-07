@@ -200,9 +200,11 @@ export default class RtmpIOLoader extends SocketIOLoader {
 
     await this.session.handshake()
 
-    const path = url.parse(this.info.url).pathname.split('/')
-    await this.session.connect(path[1], `rtmp://${url.parse(this.info.uri).host}${path.slice(0, path.length - 1).join('/')}`)
-    this.session.play(path[path.length - 1] || '')
+    const result = url.parse(this.info.uri)
+    const paths = result.pathname.split('/')
+    await this.session.connect(paths[1], `rtmp://${result.host}${result.port ? (':' + result.port) : ''}/${paths[1]}`)
+    const streamName = paths.slice(2)
+    this.session.play((streamName.length > 1 ? streamName.join('/') : streamName[0]) || '')
     return 0
   }
   public async seek(pos: int64): Promise<int32> {
