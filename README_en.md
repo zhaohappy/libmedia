@@ -84,7 +84,7 @@ if multi-threading is not supported, it will fall back to running on the main th
 | rtmp     | ✅       | ❌        |
 | rtsp     | ✅       | ❌        |
 
-rtmp and rtsp need use Websocket or WebTransport proxy tcp connection，for example in avplayer:
+rtmp and rtsp need use WebSocket or WebTransport proxy tcp connection，for example in avplayer:
 
 ```JavaScript
 

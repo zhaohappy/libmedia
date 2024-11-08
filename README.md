@@ -85,7 +85,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | rtmp     | ✅       | ❌        |
 | rtsp     | ✅       | ❌        |
 
-rtmp 和 rtsp 需要使用 Websocket 或 WebTransport 代理 tcp 连接，avplayer 使用如下:
+rtmp 和 rtsp 需要使用 WebSocket 或 WebTransport 代理 tcp 连接，avplayer 使用如下:
 
 ```JavaScript
 
