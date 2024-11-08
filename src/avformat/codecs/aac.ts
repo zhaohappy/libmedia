@@ -162,9 +162,10 @@ export function parseAVCodecParameters(stream: Stream, extradata?: Uint8ArrayInt
 export function avCodecParameters2Extradata(codecpar: AVCodecParameters) {
   const samplingFreqIndex = MPEG4SamplingFrequencyIndex[codecpar.sampleRate]
   const channelConfig = codecpar.chLayout.nbChannels
+  const profile = codecpar.profile === NOPTS_VALUE ? MPEG4AudioObjectTypes.AAC_LC : codecpar.profile
 
   const extradata = new Uint8Array(2)
-  extradata[0] = ((codecpar.profile & 0x1f) << 3) | ((samplingFreqIndex & 0x0e) >> 1)
+  extradata[0] = ((profile & 0x1f) << 3) | ((samplingFreqIndex & 0x0e) >> 1)
   extradata[1] = ((samplingFreqIndex & 0x01) << 7) | ((channelConfig & 0x0f) << 3)
 
   return extradata
