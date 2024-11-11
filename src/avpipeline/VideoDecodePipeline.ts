@@ -327,6 +327,7 @@ export default class VideoDecodePipeline extends Pipeline {
                     else if (task.resource) {
                       task.softwareDecoder.close()
                       task.softwareDecoder = this.createWasmcodecDecoder(task, task.resource)
+                      task.softwareDecoderOpened = false
                     }
                     else {
                       logger.error(`cannot fallback to wasm video decoder because of resource not found , taskId: ${options.taskId}`)
