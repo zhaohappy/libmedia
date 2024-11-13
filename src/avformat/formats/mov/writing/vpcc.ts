@@ -32,7 +32,7 @@ import { mapUint8Array } from 'cheap/std/memory'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
   // size
-  ioWriter.writeUint32(12 + stream.codecpar.extradataSize ?? 0)
+  ioWriter.writeUint32(12 + (stream.codecpar.extradataSize ?? 0))
   // tag
   ioWriter.writeString(BoxType.VPCC)
   // version
