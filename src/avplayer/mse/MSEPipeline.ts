@@ -1466,7 +1466,7 @@ export default class MSEPipeline extends Pipeline {
   private createTask(options: MSETaskOptions): number {
 
     const controlIPCPort = new IPCPort(options.controlPort)
-    const mediaSource = new MediaSource() || new ManagedMediaSource()
+    const mediaSource = new (getMediaSource())()
 
     const task: SelfTask = {
       ...options,
