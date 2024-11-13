@@ -69,6 +69,7 @@ import { MovFormatOptions } from 'avformat/formats/mov/type'
 import { IH264FormatOptions } from 'avformat/formats/IH264Format'
 import { IHevcFormatOptions } from 'avformat/formats/IHevcFormat'
 import { IVvcFormatOptions } from 'avformat/formats/IVvcFormat'
+import support from 'common/util/support'
 
 export const STREAM_INDEX_ALL = -1
 
@@ -240,16 +241,18 @@ export default class DemuxPipeline extends Pipeline {
     formatContext.ioReader = ioReader
     formatContext.ioWriter = ioWriter
 
-    formatContext.getDecoderResource = async (mediaType, codecId) => {
-      if (!controlIPCPort) {
-        return
-      }
-      const wasm: ArrayBuffer | WebAssemblyResource = await controlIPCPort.request('getDecoderResource', {
-        codecId,
-        mediaType
-      })
+    if (support.wasmBaseSupported) {
+      formatContext.getDecoderResource = async (mediaType, codecId) => {
+        if (!controlIPCPort) {
+          return
+        }
+        const wasm: ArrayBuffer | WebAssemblyResource = await controlIPCPort.request('getDecoderResource', {
+          codecId,
+          mediaType
+        })
 
-      return compileResource(wasm, mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO)
+        return compileResource(wasm, mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO)
+      }
     }
 
     this.tasks.set(options.taskId, {
