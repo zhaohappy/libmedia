@@ -74,6 +74,24 @@ module.exports = (env) => {
     library = 'CheapPolyfill';
     libraryTarget = 'var';
   }
+  else if (env.webassembly_runner) {
+    entry = path.resolve(__dirname, './src/cheap/webassembly/WebAssemblyRunner.ts');
+    output = 'WebAssemblyRunner_.js';
+    library = '__CHeap_WebAssemblyRunner__';
+    libraryTarget = 'var';
+    outputPath = path.resolve(__dirname, './src/cheap/webassembly');
+  }
+  else if (env.pcm_worklet_processor) {
+    entry = {
+      'AudioSourceWorkletProcessor_': path.resolve(__dirname, './src/avrender/pcm/AudioSourceWorkletProcessor.ts'),
+      'AudioSourceWorkletProcessor2_': path.resolve(__dirname, './src/avrender/pcm/AudioSourceWorkletProcessor2.ts')
+    };
+
+    output = '[name].js';
+    library = 'processor';
+    libraryTarget = 'var';
+    outputPath = path.resolve(__dirname, './src/avrender/pcm');
+  }
   else {
     return;
   }
@@ -252,6 +270,7 @@ module.exports = (env) => {
         name: 'libmedia',
         env: 'browser',
         projectPath: __dirname,
+        tmpPath: path.resolve(__dirname, './dist'),
         exclude: /__test__/,
         // 配置线程模块中有动态导入的模块，需要给动态导入的模块重新处理依赖，因为线程模块可能没有动态导入模块的依赖模块
         threadFiles: [
