@@ -3211,7 +3211,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       return
     }
 
-    if (cheapConfig.USE_THREADS || !support.worker || !enableWorker || !supportOffscreenCanvas()) {
+    if (cheapConfig.USE_THREADS
+      || !support.worker
+      || !enableWorker
+      || !supportOffscreenCanvas()
+      || !defined(ENABLE_WORKER_PROXY)
+    ) {
       this.VideoDecoderThread = await createThreadFromClass(VideoDecodePipeline, {
         name: 'VideoDecoderThread',
       }).run()
@@ -3233,7 +3238,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     return AVPlayer.DemuxThreadReady = new Promise(async (resolve) => {
-      if (cheapConfig.USE_THREADS || !support.worker || !enableWorker) {
+      if (cheapConfig.USE_THREADS || !support.worker || !enableWorker || !defined(ENABLE_WORKER_PROXY)) {
         AVPlayer.IOThread = await createThreadFromClass(IOPipeline, {
           name: 'IOThread'
         }).run()
@@ -3273,7 +3278,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         )
       }
 
-      if (cheapConfig.USE_THREADS || !support.worker || !enableWorker) {
+      if (cheapConfig.USE_THREADS || !support.worker || !enableWorker || !defined(ENABLE_WORKER_PROXY)) {
         AVPlayer.AudioDecoderThread = await createThreadFromClass(AudioDecodePipeline, {
           name: 'AudioDecoderThread',
         }).run()
@@ -3318,7 +3323,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         return AVPlayer.MSEThreadReady
       }
       return AVPlayer.MSEThreadReady = new Promise(async (resolve) => {
-        if (cheapConfig.USE_THREADS || !support.worker || !enableWorker || !support.workerMSE) {
+        if (cheapConfig.USE_THREADS || !support.worker || !enableWorker || !support.workerMSE || !defined(ENABLE_WORKER_PROXY)) {
           AVPlayer.MSEThread = await createThreadFromClass(MSEPipeline, {
             name: 'MSEThread',
             disableWorker: !support.workerMSE
