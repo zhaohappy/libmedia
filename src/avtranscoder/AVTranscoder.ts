@@ -332,12 +332,15 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     }
 
     const wasmUrl = this.options.getWasm(type, codecId, mediaType)
-    let resource: WebAssemblyResource
 
     if (wasmUrl) {
       let resource: WebAssemblyResource | ArrayBuffer
       // safari 16 以下不支持将 WebAssembly.Module 传递到 worker 中
-      if (browser.safari && !browser.checkVersion(browser.version, '16.1', true) && (is.string(wasmUrl) || is.arrayBuffer(wasmUrl))) {
+      if ((browser.safari && !browser.checkVersion(browser.version, '16.1', true)
+          || os.ios && !browser.checkVersion(os.version, '16.1', true)
+      )
+        && (is.string(wasmUrl) || is.arrayBuffer(wasmUrl))
+      ) {
         if (is.string(wasmUrl)) {
           const params: Partial<Data> = {
             method: 'GET',
@@ -435,18 +438,21 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       this.VideoDecoderThread = await createThreadFromClass(VideoDecodePipeline, {
         name: 'VideoDecoderThread',
         disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
+          || os.ios && !browser.checkVersion(os.version, '16.1', true)
       }).run()
       this.VideoDecoderThread.setLogLevel(this.level)
 
       this.VideoFilterThread = await createThreadFromClass(AVFilterPipeline, {
         name: 'VideoFilterThread',
         disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
+          || os.ios && !browser.checkVersion(os.version, '16.1', true)
       }).run()
       this.VideoFilterThread.setLogLevel(this.level)
 
       this.VideoEncoderThread = await createThreadFromClass(VideoEncodePipeline, {
         name: 'VideoEncoderThread',
         disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
+          || os.ios && !browser.checkVersion(os.version, '16.1', true)
       }).run()
       this.VideoEncoderThread.setLogLevel(this.level)
       resolve()
@@ -461,18 +467,21 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       this.AudioDecoderThread = await createThreadFromClass(AudioDecodePipeline, {
         name: 'AudioDecoderThread',
         disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
+          || os.ios && !browser.checkVersion(os.version, '16.1', true)
       }).run()
       this.AudioDecoderThread.setLogLevel(this.level)
 
       this.AudioFilterThread = await createThreadFromClass(AVFilterPipeline, {
         name: 'AudioFilterThread',
         disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
+          || os.ios && !browser.checkVersion(os.version, '16.1', true)
       }).run()
       this.AudioFilterThread.setLogLevel(this.level)
 
       this.AudioEncoderThread = await createThreadFromClass(AudioEncodePipeline, {
         name: 'AudioEncoderThread',
         disableWorker: browser.safari && !browser.checkVersion(browser.version, '16.1', true)
+          || os.ios && !browser.checkVersion(os.version, '16.1', true)
       }).run()
       this.AudioEncoderThread.setLogLevel(this.level)
       resolve()

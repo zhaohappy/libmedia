@@ -540,7 +540,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
         else if (videoStream.codecpar.width * videoStream.codecpar.height === 1920 * 1080) {
           // safari 1080p@30fps 无法在 worker 中解码
-          if (browser.safari && !browser.checkVersion(browser.version, '16.1', true) && avQ2D(videoStream.codecpar.framerate) > 30) {
+          if ((browser.safari && !browser.checkVersion(browser.version, '16.1', true)
+              || os.ios && !browser.checkVersion(os.version, '16.1', true)
+          )
+            && avQ2D(videoStream.codecpar.framerate) > 30
+          ) {
             return true
           }
         }
@@ -778,7 +782,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       let resource: WebAssemblyResource | ArrayBuffer
       // safari 16 以下不支持将 WebAssembly.Module 传递到 worker 中
       // 所以这里选择将 buffer 传递到 worker 中编译
-      if (browser.safari && !browser.checkVersion(browser.version, '16.3', false) && (is.string(wasmUrl) || is.arrayBuffer(wasmUrl))) {
+      if ((browser.safari && !browser.checkVersion(browser.version, '16.3', false)
+          || os.ios && !browser.checkVersion(os.version, '16.3', false)
+      )
+        && (is.string(wasmUrl) || is.arrayBuffer(wasmUrl))
+      ) {
         if (is.string(wasmUrl)) {
           const params: Data = {
             method: 'GET',
@@ -1806,6 +1814,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           && defined(ENABLE_THREADS)
           && support.audioWorklet
           && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
+          && (!os.ios || browser.checkVersion(os.version, '16.1', true))
         ) {
           await this.audioSourceNode.request('init', {
             memory: Memory
@@ -3273,13 +3282,19 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         if (defined(ENV_WEBPACK)) {
           await registerProcessor(
             AVPlayer.audioContext,
-            defined(ENABLE_THREADS) && cheapConfig.USE_THREADS && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
+            defined(ENABLE_THREADS)
+            && cheapConfig.USE_THREADS
+            && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
+            && (!os.ios || browser.checkVersion(os.version, '16.1', true))
               ? require.resolve('avrender/pcm/AudioSourceWorkletProcessor2')
               : require.resolve('avrender/pcm/AudioSourceWorkletProcessor')
           )
         }
         else {
-          await AVPlayer.audioContext.audioWorklet.addModule(defined(ENABLE_THREADS) && cheapConfig.USE_THREADS && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
+          await AVPlayer.audioContext.audioWorklet.addModule(defined(ENABLE_THREADS)
+            && cheapConfig.USE_THREADS
+            && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
+            && (!os.ios || browser.checkVersion(os.version, '16.1', true))
             ? new URL('avrender/pcm/AudioSourceWorkletProcessor2_.js', import.meta.url)
             : new URL('avrender/pcm/AudioSourceWorkletProcessor_.js', import.meta.url))
         }

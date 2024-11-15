@@ -65,6 +65,7 @@ import * as hevc from 'avformat/codecs/hevc'
 import { AVCodecParametersSerialize, AVPacketSerialize, unserializeAVCodecParameters, unserializeAVPacket } from 'avutil/util/serialize'
 import isPointer from 'cheap/std/function/isPointer'
 import * as is from 'common/util/is'
+import os from 'common/util/os'
 
 const BUFFER_MIN = 0.5
 const BUFFER_MAX = 1
@@ -322,7 +323,7 @@ export default class MSEPipeline extends Pipeline {
       }
 
       // safari 播放某些视频会卡主，开始时间不是从 0 开始的 seek 到 min buffer 处
-      if (browser.safari || min > 0.1) {
+      if (browser.safari || os.ios || min > 0.1) {
         task.controlIPCPort.notify('seek', {
           time: min
         })
@@ -907,7 +908,7 @@ export default class MSEPipeline extends Pipeline {
         task.stats.width = codecpar.width
         task.stats.height = codecpar.height
 
-        if (task.stats.width * task.stats.height > 3840 * 2160 && browser.safari) {
+        if (task.stats.width * task.stats.height > 3840 * 2160 && (browser.safari || os.ios)) {
           task.cacheDuration = bigint.max(3000n, task.cacheDuration)
         }
       }
@@ -1079,7 +1080,7 @@ export default class MSEPipeline extends Pipeline {
         }
         task.audio.bufferQueue.flush()
 
-        if (browser.safari) {
+        if (browser.safari || os.ios) {
           await new Promise<void>((resolve) => {
             task.audio.track.removeAllBuffer(() => {
               resolve()
@@ -1118,7 +1119,7 @@ export default class MSEPipeline extends Pipeline {
         }
         task.video.bufferQueue.flush()
 
-        if (browser.safari) {
+        if (browser.safari || os.ios) {
           await new Promise<void>((resolve) => {
             task.video.track.removeAllBuffer(() => {
               resolve()

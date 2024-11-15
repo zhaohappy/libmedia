@@ -34,6 +34,7 @@ import { getHardwarePreference } from '../function/getHardwarePreference'
 import { BitFormat } from 'avformat/codecs/h264'
 import avpacket2EncodedVideoChunk from 'avutil/function/avpacket2EncodedVideoChunk'
 import * as logger from 'common/util/logger'
+import os from 'common/util/os'
 
 export type WebVideoDecoderOptions = {
   onReceiveFrame: (frame: VideoFrame) => void
@@ -66,7 +67,7 @@ export default class WebVideoDecoder {
     this.outputQueue = []
 
     // safari 输出帧在有 B 帧的情况下没有按 pts 排序递增输出，这里需要进行排序输出
-    this.sort = browser.safari
+    this.sort = browser.safari || os.ios
   }
 
   private async output(frame: VideoFrame) {

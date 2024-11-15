@@ -59,6 +59,7 @@ import WebGPUYUV16Render from 'avrender/image/WebGPUYUV16Render'
 import isWorker from 'common/function/isWorker'
 import nextTick from 'common/function/nextTick'
 import isPointer from 'cheap/std/function/isPointer'
+import os from 'common/util/os'
 
 type WebGPURenderFactory = {
   new(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions): WebGPURender,
@@ -330,6 +331,7 @@ export default class VideoRenderPipeline extends Pipeline {
           // chrome116+ webgpu 可以导入 VideoFrame 作为纹理
           (browser.chrome || browser.newEdge) && browser.checkVersion(browser.majorVersion, '116', true)
           || browser.safari && browser.checkVersion(browser.majorVersion, '17.4', true)
+          || os.ios && browser.checkVersion(os.version, '17.4', true)
           || browser.firefox && browser.checkVersion(browser.majorVersion, '129', true)
         )
         && !isHDR(frame.colorSpace.primaries)
