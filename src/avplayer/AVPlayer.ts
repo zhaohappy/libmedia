@@ -3328,7 +3328,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     return AVPlayer.VideoThreadReady = new Promise(async (resolve) => {
-      if (cheapConfig.USE_THREADS || !support.worker || !enableWorker || !supportOffscreenCanvas()) {
+      if (cheapConfig.USE_THREADS || !support.worker || !enableWorker || !supportOffscreenCanvas() || !defined(ENABLE_WORKER_PROXY)) {
         AVPlayer.VideoRenderThread = await createThreadFromClass(VideoRenderPipeline, {
           name: 'VideoRenderThread',
           disableWorker: !supportOffscreenCanvas()

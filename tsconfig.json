@@ -139,7 +139,7 @@
       "ENABLE_MSE": true,
       // 是否开启 worker 代理，在不支持多线程的环境下可以使用 worker
       // 将一些任务放到 worker 中执行
-      "ENABLE_WORKER_PROXY": false,
+      "ENABLE_WORKER_PROXY": true,
       // webgpu 编译开关
       "ENABLE_WEBGPU": true,
       // 高 bitDepth 和 HDR 支持编译开关
