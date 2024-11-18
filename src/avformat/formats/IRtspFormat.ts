@@ -140,7 +140,7 @@ export default class IRtspFormat extends IFormat {
         return errorType.DATA_INVALID
       }
 
-      const sdpDes = sdp.parse(response.context)
+      const sdpDes = sdp.parse(response.content)
 
       let trackId = 1
       let interleaved = 0
