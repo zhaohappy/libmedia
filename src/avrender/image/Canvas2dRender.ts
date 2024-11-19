@@ -182,7 +182,7 @@ export default class CanvasImageRender extends ImageRender {
     }
   }
 
-  public setRotate(angle: number): void {
+  public setRotate(angle: number, clear: boolean = true): void {
 
     angle = angle % 360
 
@@ -199,7 +199,9 @@ export default class CanvasImageRender extends ImageRender {
       this.context.translate(-w, -h)
     }
 
-    this.clear()
+    if (clear) {
+      this.clear()
+    }
 
     this.rotate = angle
     if (this.context) {

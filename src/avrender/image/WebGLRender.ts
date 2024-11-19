@@ -222,7 +222,7 @@ export default abstract class WebGLRender extends ImageRender {
     }
   }
 
-  public setRotate(angle: number): void {
+  public setRotate(angle: number, clear: boolean = true): void {
     angle = angle % 360
 
     if (angle === this.rotate) {
@@ -234,7 +234,9 @@ export default abstract class WebGLRender extends ImageRender {
       this.program.setRotateMatrix(this.getRotateMatrix(this.rotate))
     }
     this.layout()
-    this.clear()
+    if (clear) {
+      this.clear()
+    }
   }
 
   public destroy(): void {

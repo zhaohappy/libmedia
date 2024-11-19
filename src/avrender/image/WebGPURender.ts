@@ -312,7 +312,7 @@ export default abstract class WebGPURender extends ImageRender {
     super.viewport(width, height)
   }
 
-  public setRotate(angle: number): void {
+  public setRotate(angle: number, clear: boolean = true): void {
     angle = angle % 360
 
     if (angle === this.rotate) {
@@ -323,7 +323,9 @@ export default abstract class WebGPURender extends ImageRender {
     this.setRotateMatrix(this.getRotateMatrix(angle))
 
     this.layout()
-    this.clear()
+    if (clear) {
+      this.clear()
+    }
   }
 
   public destroy(): void {

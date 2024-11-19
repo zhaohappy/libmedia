@@ -409,7 +409,7 @@ export default class VideoRenderPipeline extends Pipeline {
     try {
       await task.render.init()
       task.render.viewport(task.viewportWidth, task.viewportHeight)
-      task.render.setRotate(task.renderRotate ?? 0)
+      task.render.setRotate(task.renderRotate ?? 0, false)
       task.render.enableHorizontalFlip(task.flipHorizontal ?? false)
       task.render.enableVerticalFlip(task.flipVertical ?? false)
       task.render.render(frame)

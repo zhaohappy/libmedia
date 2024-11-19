@@ -125,7 +125,7 @@ export default abstract class ImageRender {
   public abstract init(): Promise<void>
   public abstract render(frame: VideoFrame | pointer<AVFrame>): void
   public abstract clear(): void
-  public abstract setRotate(angle: number): void
+  public abstract setRotate(angle: number, clear?: boolean): void
   protected abstract layout(): void
 
   public setRenderMode(mode: RenderMode) {
