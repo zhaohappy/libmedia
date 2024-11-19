@@ -229,6 +229,9 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
       if (!is.object(value) && !is.array(value)) {
         dump += `${prefix}    ${key}: ${value}\n`
       }
+      else if (key === 'matrix' && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+        dump += `${prefix}    ${key}: [${value.toString()}]\n`
+      }
     })
   }
 

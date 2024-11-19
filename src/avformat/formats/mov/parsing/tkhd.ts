@@ -67,12 +67,21 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
 
   await ioReader.skip(2)
 
-  streamContext.matrix = new Uint32Array(9)
+  const matrix: number[] = []
+  streamContext.matrix = new Int32Array(9)
   for (let i = 0; i < 9; i++) {
-    streamContext.matrix[i] = await ioReader.readUint32()
+    streamContext.matrix[i] = await ioReader.readInt32()
+    if (i === 8) {
+      matrix[i] = streamContext.matrix[i] / 1073741824
+    }
+    else {
+      matrix[i] = streamContext.matrix[i] / 65536
+    }
   }
   streamContext.width = (await ioReader.readUint32()) >> 16
   streamContext.height = (await ioReader.readUint32()) >> 16
+
+  stream.metadata['matrix'] = matrix
 
   const remainingLength = atom.size - Number(ioReader.getPos() - now)
   if (remainingLength > 0) {

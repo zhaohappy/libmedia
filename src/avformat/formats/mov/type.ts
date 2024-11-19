@@ -147,7 +147,7 @@ export interface MOVStreamContext {
   layer: number
   alternateGroup: number
   volume: number
-  matrix: Uint32Array,
+  matrix: Int32Array,
   width: number
   height: number
 

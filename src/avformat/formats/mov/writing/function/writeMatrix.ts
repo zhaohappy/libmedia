@@ -40,13 +40,13 @@ export default function writeMatrix(
   tx: number,
   ty: number
 ) {
-  ioWriter.writeUint32(a << 16)
-  ioWriter.writeUint32(b << 16)
-  ioWriter.writeUint32(0)
-  ioWriter.writeUint32(c << 16)
-  ioWriter.writeUint32(d << 16)
-  ioWriter.writeUint32(0)
-  ioWriter.writeUint32(tx << 16)
-  ioWriter.writeUint32(ty << 16)
-  ioWriter.writeUint32(1 << 30)
+  ioWriter.writeInt32(Math.floor(a * 65536))
+  ioWriter.writeInt32(Math.floor(b * 65536))
+  ioWriter.writeInt32(0)
+  ioWriter.writeInt32(Math.floor(c * 65536))
+  ioWriter.writeInt32(Math.floor(d * 65536))
+  ioWriter.writeInt32(0)
+  ioWriter.writeInt32(Math.floor(tx * 65536))
+  ioWriter.writeInt32(Math.floor(ty * 65536))
+  ioWriter.writeInt32(1 << 30)
 }
