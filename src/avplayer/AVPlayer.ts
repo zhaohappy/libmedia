@@ -1695,9 +1695,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         )
           ? this.canvas.transferControlToOffscreen()
           : this.canvas
-        const stream = this.formatContext.streams.find((stream) => {
-          return stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
-        })
+
+        // 处理旋转
+        if (videoStream.metadata['matrix']) {
+          this.renderRotate = -(Math.atan2(videoStream.metadata['matrix'][3], videoStream.metadata['matrix'][0]) * (180 / Math.PI))
+        }
 
         // 注册一个视频渲染任务
         await this.VideoRenderThread.registerTask
@@ -1716,15 +1718,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             flipHorizontal: this.flipHorizontal,
             flipVertical: this.flipVertical,
             timeBase: {
-              num: stream.timeBase.num,
-              den: stream.timeBase.den,
+              num: videoStream.timeBase.num,
+              den: videoStream.timeBase.den,
             },
             viewportWidth: this.options.container.offsetWidth,
             viewportHeight: this.options.container.offsetHeight,
             devicePixelRatio: devicePixelRatio,
             stats: addressof(this.GlobalData.stats),
             enableWebGPU: this.options.enableWebGPU,
-            startPTS: stream.startTime,
+            startPTS: videoStream.startTime,
             avframeList: addressof(this.GlobalData.avframeList),
             avframeListMutex: addressof(this.GlobalData.avframeListMutex),
             enableJitterBuffer: !!this.jitterBufferController && !this.audioDecoder2AudioRenderChannel
@@ -1735,13 +1737,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
       if (this.audioDecoder2AudioRenderChannel) {
 
-        const stream = this.formatContext.streams.find((stream) => {
-          return stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
-        })
-
         this.audioRender2AudioWorkletChannel = new MessageChannel()
 
-        this.playChannels = Math.max(stream.codecpar.chLayout.nbChannels, Math.min(AVPlayer.audioContext.destination.channelCount, 2))
+        this.playChannels = Math.max(audioStream.codecpar.chLayout.nbChannels, Math.min(AVPlayer.audioContext.destination.channelCount, 2))
 
         let resamplerResource = await this.getResource('resampler')
         let stretchpitcherResource = await this.getResource('stretchpitcher')
@@ -1772,10 +1770,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             stretchpitcherResource,
             stats: addressof(this.GlobalData.stats),
             timeBase: {
-              num: stream.timeBase.num,
-              den: stream.timeBase.den,
+              num: audioStream.timeBase.num,
+              den: audioStream.timeBase.den,
             },
-            startPTS: stream.startTime,
+            startPTS: audioStream.startTime,
             avframeList: addressof(this.GlobalData.avframeList),
             avframeListMutex: addressof(this.GlobalData.avframeListMutex),
             enableJitterBuffer: !!this.jitterBufferController
