@@ -486,15 +486,22 @@ export default class IFlacFormat extends IFormat {
     }
 
     if (context.seekPoints.length) {
+      let index = 0
       for (let i = 0; i < context.seekPoints.length; i++) {
-        const cue =  context.seekPoints[i]
-        if (cue.pts >= timestamp) {
-          logger.debug(`seek in seekPoints, found index: ${i}, pts: ${cue.pts}, pos: ${cue.pos + context.firstFramePos}`)
-          await formatContext.ioReader.seek(cue.pos + context.firstFramePos)
-          context.cacheBuffer = null
-          return now
+        if (context.seekPoints[i].pts === timestamp) {
+          index = i
+          break
+        }
+        else if (context.seekPoints[i].pts > timestamp) {
+          index = Math.max(i - 1, 0)
+          break
         }
       }
+      const cue =  context.seekPoints[index]
+      logger.debug(`seek in seekPoints, found index: ${index}, pts: ${cue.pts}, pos: ${cue.pos + context.firstFramePos}`)
+      await formatContext.ioReader.seek(cue.pos + context.firstFramePos)
+      context.cacheBuffer = null
+      return now
     }
 
     logger.debug('not found any keyframe index, try to seek in bytes')
