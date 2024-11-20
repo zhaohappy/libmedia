@@ -486,7 +486,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
 
       // 不支持 wasm
-      if (!support.wasmBaseSupported) {
+      if (!support.wasmPlayerSupported) {
         return true
       }
 
