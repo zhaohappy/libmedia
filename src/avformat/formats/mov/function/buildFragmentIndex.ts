@@ -23,7 +23,7 @@
  *
  */
 
-import Stream from '../../../AVStream'
+import Stream from 'avutil/AVStream'
 import { FragmentTrack, MOVContext, MOVStreamContext, Sample } from '../type'
 import { SampleFlags } from '../boxType'
 import { AVPacketFlags } from 'avutil/struct/avpacket'

@@ -24,16 +24,16 @@
  */
 
 import AVStream from '../AVStream'
-import { AVPacketSideDataType } from 'avutil/codec'
+import { AVPacketSideDataType } from '../codec'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import BitReader from 'common/io/BitReader'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { NOPTS_VALUE } from 'avutil/constant'
-import { PixelFormatDescriptorsMap } from 'avutil/pixelFormatDescriptor'
-import { avQ2D } from 'avutil/util/rational'
-import { AVChromaLocation, AVColorRange } from 'avutil/pixfmt'
+import AVCodecParameters from '../struct/avcodecparameters'
+import { NOPTS_VALUE } from '../constant'
+import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
+import { avQ2D } from '../util/rational'
+import { AVChromaLocation, AVColorRange } from '../pixfmt'
 import BufferWriter from 'common/io/BufferWriter'
-import AVPacket from 'avutil/struct/avpacket'
+import AVPacket from '../struct/avpacket'
 
 export const enum VP9Profile {
   Profile0,

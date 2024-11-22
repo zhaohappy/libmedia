@@ -23,7 +23,7 @@
  *
  */
 
-import Stream from '../../../AVStream'
+import Stream from 'avutil/AVStream'
 import { MOVContext } from '../type'
 import IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'

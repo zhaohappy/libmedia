@@ -23,7 +23,7 @@
  *
  */
 
-import AVStream from '../AVStream'
+import AVStream from 'avutil/AVStream'
 import { AVIFormatContext } from '../AVFormatContext'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import { OggPage, OggsCommentPage, PagePayload } from './ogg/OggPage'
@@ -34,7 +34,7 @@ import { VorbisOggsIdPage, VorbisOggsCommentPage } from './ogg/vorbis'
 import * as errorType from 'avutil/error'
 import concatTypeArray from 'common/function/concatTypeArray'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from '../avformat'
+import { AVFormat, AVSeekFlags } from 'avutil/avformat'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData } from 'avutil/util/avpacket'

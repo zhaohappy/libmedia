@@ -25,7 +25,7 @@
 
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 
-import AVStream, { AVStreamInterface } from './AVStream'
+import AVStream, { AVStreamInterface } from 'avutil/AVStream'
 import AVPacket from 'avutil/struct/avpacket'
 
 import OFormat from './formats/OFormat'
@@ -36,7 +36,7 @@ import IOReader from 'common/io/IOReader'
 import IOWriter from 'common/io/IOWriter'
 import IOReaderSync from 'common/io/IOReaderSync'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import { AVFormat } from './avformat'
+import { AVFormat } from 'avutil/avformat'
 import { destroyAVPacket } from 'avutil/util/avpacket'
 import { Rational } from 'avutil/struct/rational'
 import * as staticData from 'cheap/staticData'

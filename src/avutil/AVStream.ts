@@ -24,10 +24,10 @@
  */
 
 import { Data } from 'common/types/type'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { AVPacketSideDataType } from 'avutil/codec'
-import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { Rational } from 'avutil/struct/rational'
+import AVCodecParameters from './struct/avcodecparameters'
+import { AVPacketSideDataType } from './codec'
+import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from './constant'
+import { Rational } from './struct/rational'
 
 export const enum AVDisposition {
   NONE = 0,

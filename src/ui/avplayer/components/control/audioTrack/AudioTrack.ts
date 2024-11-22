@@ -4,7 +4,7 @@ import * as eventType from 'avplayer/eventType'
 
 import template from './AudioTrack.hbs'
 import style from './AudioTrack.styl'
-import { AVStreamInterface } from 'avformat/AVStream'
+import { AVStreamInterface } from 'avutil/AVStream'
 import { AVMediaType } from 'avutil/codec'
 import { IOLoaderAudioStreamInfo } from 'avnetwork/ioLoader/IOLoader'
 

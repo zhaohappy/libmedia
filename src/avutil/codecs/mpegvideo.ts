@@ -1,5 +1,5 @@
 /*
- * libmedia mpeg4 util
+ * libmedia mpegvideo util
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -23,15 +23,27 @@
  *
  */
 
-import AVPacket from 'avutil/struct/avpacket'
+import AVPacket from '../struct/avpacket'
+import { getAVPacketData } from '../util/avpacket'
 
-export const enum Mpeg4PictureType {
-  I = 0,
+export const enum MpegVideoPictureType {
+  I = 1,
   P,
   B
 }
 
 export function isIDR(avpacket: pointer<AVPacket>) {
-  const byte = accessof(reinterpret_cast<pointer<uint8>>(avpacket.data + 4))
-  return (byte >>> 6) === Mpeg4PictureType.I
+  const data = getAVPacketData(avpacket)
+
+  for (let i = 0; i < data.length - 6; i++) {
+    if (data[i] === 0
+      && data[i + 1] === 0
+      && data[i + 2] === 1
+      && data[i + 3] === 0
+    ) {
+      const picType = (data[i + 5] >> 3) & 7
+      return picType === MpegVideoPictureType.I
+    }
+  }
+  return false
 }

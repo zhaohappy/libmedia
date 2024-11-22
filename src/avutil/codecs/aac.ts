@@ -24,9 +24,9 @@
  */
 
 import Stream from '../AVStream'
-import { AVPacketSideDataType } from 'avutil/codec'
-import { NOPTS_VALUE } from 'avutil/constant'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import { AVPacketSideDataType } from '../codec'
+import { NOPTS_VALUE } from '../constant'
+import AVCodecParameters from '../struct/avcodecparameters'
 import BitReader from 'common/io/BitReader'
 import { Uint8ArrayInterface } from 'common/io/interface'
 

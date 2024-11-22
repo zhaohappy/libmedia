@@ -27,7 +27,7 @@ import AVPacket from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { Rational } from 'avutil/struct/rational'
-import { MPEG4SamplingFrequencyIndex, getAVCodecParameters } from '../../codecs/aac'
+import { MPEG4SamplingFrequencyIndex, getAVCodecParameters } from 'avutil/codecs/aac'
 import { mapUint8Array } from 'cheap/std/memory'
 import { addAVPacketData, copyAVPacketProps, createAVPacket,
   destroyAVPacket, getAVPacketSideData, refAVPacket, unrefAVPacket

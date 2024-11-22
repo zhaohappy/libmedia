@@ -23,12 +23,12 @@
  *
  */
 
-import { AVPacketSideDataType } from 'avutil/codec'
+import { AVPacketSideDataType } from '../codec'
 import AVStream from '../AVStream'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import AVCodecParameters from '../struct/avcodecparameters'
 import BufferReader from 'common/io/BufferReader'
 import BufferWriter from 'common/io/BufferWriter'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ } from '../util/rational'
 import { Uint8ArrayInterface } from 'common/io/interface'
 
 export const durations = [

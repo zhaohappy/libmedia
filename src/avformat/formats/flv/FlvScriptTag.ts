@@ -33,8 +33,7 @@ import { FlvTag } from './flv'
 
 import * as flv from './oflv'
 import * as errorType from 'avutil/error'
-import { parseValue } from './iamf'
-import { writeValue } from './oamf'
+import { parseValue, writeValue } from 'avutil/util/amf'
 
 export default class FlvScriptTag {
 

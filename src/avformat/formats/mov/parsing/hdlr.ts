@@ -24,7 +24,7 @@
  */
 
 import IOReader from 'common/io/IOReader'
-import Stream from '../../../AVStream'
+import Stream from 'avutil/AVStream'
 import { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 import isDef from 'common/function/isDef'

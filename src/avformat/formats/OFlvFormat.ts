@@ -41,13 +41,13 @@ import * as flvH264 from './flv/codecs/h264'
 import * as flvEnhanced from './flv/codecs/enhanced'
 
 import concatTypeArray from 'common/function/concatTypeArray'
-import { AVFormat } from '../avformat'
+import { AVFormat } from 'avutil/avformat'
 import { mapUint8Array } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
-import { BitFormat } from '../codecs/h264'
+import { BitFormat } from 'avutil/codecs/h264'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 

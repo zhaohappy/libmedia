@@ -24,7 +24,7 @@
  */
 
 import * as flv from '../oflv'
-import Stream from '../../../AVStream'
+import Stream from 'avutil/AVStream'
 import { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVCPacketType, FlvTag } from '../flv'
 import IOWriter from 'common/io/IOWriterSync'

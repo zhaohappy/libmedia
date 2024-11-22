@@ -33,7 +33,7 @@ import { addAVPacketData, copyAVPacketProps, createAVPacket,
 } from 'avutil/util/avpacket'
 import { avMalloc } from 'avutil/util/mem'
 import * as errorType from 'avutil/error'
-import * as opus from '../../codecs/opus'
+import * as opus from 'avutil/codecs/opus'
 import { AVPacketSideDataType } from 'avutil/codec'
 
 export default class Raw2MpegtsFilter extends AVBSFilter {

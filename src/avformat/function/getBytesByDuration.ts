@@ -24,7 +24,7 @@
  */
 
 import { Rational } from 'avutil/struct/rational'
-import AVStream from '../AVStream'
+import AVStream from 'avutil/AVStream'
 import * as array from 'common/util/array'
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'

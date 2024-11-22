@@ -37,12 +37,12 @@ import { RtmpPacket } from 'avprotocol/rtmp/RtmpPacket'
 import IOWriterSync from 'common/io/IOWriterSync'
 import FlvHeader from 'avformat/formats/flv/FlvHeader'
 import { RtmpPacketType } from 'avprotocol/rtmp/rtmp'
-import { IOType } from 'avpipeline/IOPipeline'
 import FlvScriptTag from 'avformat/formats/flv/FlvScriptTag'
 import BufferReader from 'common/io/BufferReader'
-import * as iamf from 'avformat/formats/flv/iamf'
+import * as amf from 'avutil/util/amf'
 import { FlvMetaData } from 'avformat/formats/flv/type'
 import isDef from 'common/function/isDef'
+import { IOType } from 'avutil/avformat'
 
 export interface RtmpIOInfo {
   url: string
@@ -98,10 +98,10 @@ export default class RtmpIOLoader extends SocketIOLoader {
         else {
           this.bufferReader.resetBuffer(packet.payload)
         }
-        const command = await iamf.parseValue(this.bufferReader, BigInt(packet.payload.length)) as string
+        const command = await amf.parseValue(this.bufferReader, BigInt(packet.payload.length)) as string
         if (command === 'onMetaData') {
           this.hasMetadata = true
-          const metadata = await iamf.parseValue(this.bufferReader, BigInt(packet.payload.length)) as FlvMetaData
+          const metadata = await amf.parseValue(this.bufferReader, BigInt(packet.payload.length)) as FlvMetaData
           this.flvHeader.hasAudio = isDef(metadata.audiocodecid)
           this.flvHeader.hasVideo = isDef(metadata.videocodecid)
         }

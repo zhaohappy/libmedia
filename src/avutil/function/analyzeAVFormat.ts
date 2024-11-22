@@ -23,7 +23,7 @@
  *
  */
 
-import { AVFormat } from 'avformat/avformat'
+import { AVFormat } from '../avformat'
 import IOReader from 'common/io/IOReader'
 
 export default async function analyzeAVFormat(ioReader: IOReader, defaultFormat: AVFormat = AVFormat.UNKNOWN) {

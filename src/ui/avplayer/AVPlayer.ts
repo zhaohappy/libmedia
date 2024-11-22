@@ -33,7 +33,7 @@ import style from './AVPlayer.styl'
 import getLanguage from './i18n/getLanguage'
 import debounce from 'common/function/debounce'
 import { AVMediaType } from 'avutil/codec'
-import { AVStreamInterface } from 'avformat/AVStream'
+import { AVStreamInterface } from 'avutil/AVStream'
 import Keyboard from './Keyboard'
 
 import outside from '../util/outside'

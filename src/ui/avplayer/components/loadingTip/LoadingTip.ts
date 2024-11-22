@@ -4,7 +4,7 @@ import * as eventType from 'avplayer/eventType'
 
 import template from './LoadingTip.hbs'
 import style from './LoadingTip.styl'
-import { AVStreamInterface } from 'avformat/AVStream'
+import { AVStreamInterface } from 'avutil/AVStream'
 import { dumpCodecName } from 'avformat/dump'
 import IntervalQueueTask from 'common/helper/IntervalQueueTask'
 

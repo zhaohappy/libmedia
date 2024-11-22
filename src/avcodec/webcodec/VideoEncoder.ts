@@ -33,7 +33,7 @@ import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import { avframe2VideoFrame } from 'avutil/function/avframe2VideoFrame'
 import { createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
-import { BitFormat } from 'avformat/codecs/h264'
+import { BitFormat } from 'avutil/codecs/h264'
 import { PixelFormatDescriptorsMap, PixelFormatFlags } from 'avutil/pixelFormatDescriptor'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
@@ -42,8 +42,8 @@ import { mapColorPrimaries, mapColorSpace, mapColorTrc } from 'avutil/function/v
 import browser from 'common/util/browser'
 import * as logger from 'common/util/logger'
 
-import * as av1 from 'avformat/codecs/av1'
-import * as vp9 from 'avformat/codecs/vp9'
+import * as av1 from 'avutil/codecs/av1'
+import * as vp9 from 'avutil/codecs/vp9'
 import isPointer from 'cheap/std/function/isPointer'
 
 export type WebVideoEncoderOptions = {

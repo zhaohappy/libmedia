@@ -24,20 +24,20 @@
  */
 
 import * as array from 'common/util/array'
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
+import AVPacket, { AVPacketFlags } from '../struct/avpacket'
 import BufferWriter from 'common/io/BufferWriter'
 import BufferReader from 'common/io/BufferReader'
-import { AVPacketSideDataType } from 'avutil/codec'
+import { AVPacketSideDataType } from '../codec'
 import BitReader from 'common/io/BitReader'
 import AVStream from '../AVStream'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { naluUnescape, splitNaluByStartCode, isAnnexb } from 'avutil/util/nalu'
-import { addAVPacketSideData, getAVPacketData } from 'avutil/util/avpacket'
-import { avMalloc } from 'avutil/util/mem'
-import * as expgolomb from 'avutil/util/expgolomb'
+import { naluUnescape, splitNaluByStartCode, isAnnexb } from '../util/nalu'
+import { addAVPacketSideData, getAVPacketData } from '../util/avpacket'
+import { avMalloc } from '../util/mem'
+import * as expgolomb from '../util/expgolomb'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import { BitFormat } from './h264'
-import * as intread from 'avutil/util/intread'
+import * as intread from '../util/intread'
 
 export const enum HEVCProfile {
   Main = 1,

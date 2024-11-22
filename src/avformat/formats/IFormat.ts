@@ -23,10 +23,10 @@
  *
  */
 
-import Stream from '../AVStream'
+import Stream from 'avutil/AVStream'
 import { AVIFormatContext } from '../AVFormatContext'
 import AVPacket from 'avutil/struct/avpacket'
-import { AVFormat } from '../avformat'
+import { AVFormat } from 'avutil/avformat'
 
 export default abstract class IFormat {
 

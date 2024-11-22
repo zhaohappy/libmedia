@@ -35,7 +35,7 @@ import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { Rational } from 'avutil/struct/rational'
 import { addAVPacketData, unrefAVPacket } from 'avutil/util/avpacket'
 import * as frameHeader from '../../formats/mp3/frameHeader'
-import * as mp3 from '../../codecs/mp3'
+import * as mp3 from 'avutil/codecs/mp3'
 import concatTypeArray from 'common/function/concatTypeArray'
 
 export default class Mp32RawFilter extends AVBSFilter {

@@ -24,13 +24,13 @@
  */
 
 import IOWriter from 'common/io/IOWriterSync'
-import Stream from '../AVStream'
+import Stream from 'avutil/AVStream'
 import { AVOFormatContext } from '../AVFormatContext'
 import AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
 import { OggPage, OggsCommentPage, PagePayload } from './ogg/OggPage'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
-import { AVFormat } from '../avformat'
+import { AVFormat } from 'avutil/avformat'
 import * as logger from 'common/util/logger'
 import { getAVPacketData } from 'avutil/util/avpacket'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'

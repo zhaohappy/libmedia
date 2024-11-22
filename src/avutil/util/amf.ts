@@ -25,6 +25,11 @@
 
 import BufferReader from 'common/io/BufferReader'
 import IOReader from 'common/io/IOReader'
+import BufferWriter from 'common/io/BufferWriter'
+import IOWriterSync from 'common/io/IOWriterSync'
+import * as is from 'common/util/is'
+import * as array from 'common/util/array'
+import * as object from 'common/util/object'
 
 // @ts-ignore
 @deasync
@@ -112,3 +117,61 @@ export async function parseValue(ioReader: IOReader | BufferReader, endPos: bigi
   return value
 }
 
+export function writeValue(ioWriter: IOWriterSync | BufferWriter, value: any) {
+  // double
+  if (is.number(value)) {
+    ioWriter.writeUint8(0)
+    ioWriter.writeDouble(value)
+  }
+  else if (is.bigint(value)) {
+    ioWriter.writeUint8(0)
+    ioWriter.writeDouble(Number(value))
+  }
+  // boolean
+  else if (is.boolean(value)) {
+    ioWriter.writeUint8(1)
+    ioWriter.writeUint8(value ? 1 : 0)
+  }
+  // string
+  else if (is.string(value)) {
+    // long string
+    if (value.length >= 65536) {
+      ioWriter.writeUint8(12)
+      ioWriter.writeUint32(value.length)
+      ioWriter.writeString(value)
+    }
+    // string
+    else {
+      ioWriter.writeUint8(2)
+      ioWriter.writeUint16(value.length)
+      ioWriter.writeString(value)
+    }
+  }
+  // array type
+  else if (is.array(value)) {
+    ioWriter.writeUint8(10)
+    ioWriter.writeUint32(value.length)
+    array.each(value, (value) => {
+      writeValue(ioWriter, value)
+    })
+  }
+  // object
+  else if (is.object(value)) {
+    ioWriter.writeUint8(3)
+    object.each(value, (item, key) => {
+      ioWriter.writeUint16(key.length)
+      ioWriter.writeString(key)
+      writeValue(ioWriter, item)
+    })
+    // object end flag
+    ioWriter.writeUint24(9)
+  }
+  else if (value instanceof Date) {
+    ioWriter.writeUint8(11)
+    ioWriter.writeDouble(value.getTime())
+    ioWriter.writeInt16(0)
+  }
+  else if (value == null) {
+    ioWriter.writeUint8(5)
+  }
+}

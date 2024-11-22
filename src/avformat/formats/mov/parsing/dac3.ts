@@ -25,12 +25,12 @@
 
 import IOReader from 'common/io/IOReader'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import Stream from '../../../AVStream'
+import Stream from 'avutil/AVStream'
 import { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 import { newSideData } from 'avutil/util/avpacket'
 import { AV_CH_LAYOUT } from 'avutil/audiosamplefmt'
-import { AC3ChannelLayout } from '../../../codecs/ac3'
+import { AC3ChannelLayout } from 'avutil/codecs/ac3'
 import * as avChannel from 'avutil/util/channel'
 
 // @ts-ignore

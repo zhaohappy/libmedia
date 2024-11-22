@@ -25,7 +25,7 @@
 
 import * as flv from '../oflv'
 import { FlvCodecHeaderLength, FlvTag } from '../flv'
-import Stream from '../../../AVStream'
+import Stream from 'avutil/AVStream'
 import IOWriter from 'common/io/IOWriterSync'
 import { AVCodecID } from 'avutil/codec'
 

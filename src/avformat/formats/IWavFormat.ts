@@ -23,14 +23,14 @@
  *
  */
 
-import AVStream from '../AVStream'
+import AVStream from 'avutil/AVStream'
 import { AVIFormatContext } from '../AVFormatContext'
 import AVPacket from 'avutil/struct/avpacket'
 import { AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from '../avformat'
+import { AVFormat, AVSeekFlags } from 'avutil/avformat'
 import { mapSafeUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData } from 'avutil/util/avpacket'

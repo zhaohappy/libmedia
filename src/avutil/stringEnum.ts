@@ -1,9 +1,8 @@
-import { AVFormat } from 'avformat/avformat'
+import { AVFormat, IOType } from './avformat'
 import { AVCodecID, AVMediaType } from './codec'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from './pixfmt'
 import { AVSampleFormat } from './audiosamplefmt'
-import { AVDisposition } from 'avformat/AVStream'
-import { IOType } from 'avpipeline/IOPipeline'
+import { AVDisposition } from './AVStream'
 
 export const CodecId2MimeType = {
   [AVCodecID.AV_CODEC_ID_MP3]: 'mp3',

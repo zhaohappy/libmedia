@@ -25,12 +25,12 @@
 
 import IOReader from 'common/io/IOReader'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import Stream from '../../../AVStream'
+import Stream from 'avutil/AVStream'
 import { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 import { mapSafeUint8Array } from 'cheap/std/memory'
 import { avFree, avMalloc } from 'avutil/util/mem'
-import * as av1 from '../../../codecs/av1'
+import * as av1 from 'avutil/codecs/av1'
 
 // @ts-ignore
 @deasync

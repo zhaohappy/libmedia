@@ -1,5 +1,5 @@
 
-import AVStream from 'avformat/AVStream'
+import AVStream from 'avutil/AVStream'
 import { AVCodecID } from 'avutil/codec'
 import BufferReader from 'common/io/BufferReader'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
@@ -8,8 +8,8 @@ import { avMalloc } from 'avutil/util/mem'
 import { mapUint8Array } from 'cheap/std/memory'
 import { addAVPacketData, getAVPacketData } from 'avutil/util/avpacket'
 
-import * as hevc from 'avformat/codecs/hevc'
-import * as h264 from 'avformat/codecs/h264'
+import * as hevc from 'avutil/codecs/hevc'
+import * as h264 from 'avutil/codecs/h264'
 import * as naluUtil from 'avutil/util/nalu'
 
 export function readSEI(avpacket: pointer<AVPacket>, stream: AVStream) {

@@ -26,7 +26,7 @@
 import IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from './boxType'
 import { FragmentMode, MovMode } from './mov'
-import { AC3HeaderInfo } from '../../codecs/ac3'
+import { AC3HeaderInfo } from 'avutil/codecs/ac3'
 
 export interface BoxsPositionSizeInfo {
   pos: bigint

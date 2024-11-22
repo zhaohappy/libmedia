@@ -23,7 +23,7 @@
  *
  */
 
-import Stream from '../../../AVStream'
+import Stream from 'avutil/AVStream'
 import { MOVContext } from '../type'
 import { BoxType } from '../boxType'
 import { AVCodecID, AVMediaType } from 'avutil/codec'

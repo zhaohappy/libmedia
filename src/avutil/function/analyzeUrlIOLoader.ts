@@ -22,8 +22,8 @@
  *
  */
 
-import { IOType } from 'avpipeline/IOPipeline'
-import { Ext2IOLoader } from 'avutil/stringEnum'
+import { IOType } from '../avformat'
+import { Ext2IOLoader } from '../stringEnum'
 import concatTypeArray from 'common/function/concatTypeArray'
 import { Data, HttpOptions } from 'common/types/type'
 import * as object from 'common/util/object'

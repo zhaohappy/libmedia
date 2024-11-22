@@ -32,9 +32,9 @@ import { addAVPacketData, copyAVPacketProps, createAVPacket, destroyAVPacket,
   refAVPacket, unrefAVPacket
 } from 'avutil/util/avpacket'
 
-import * as h264 from '../../codecs/h264'
-import * as hevc from '../../codecs/hevc'
-import * as vvc from '../../codecs/vvc'
+import * as h264 from 'avutil/codecs/h264'
+import * as hevc from 'avutil/codecs/hevc'
+import * as vvc from 'avutil/codecs/vvc'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import * as errorType from 'avutil/error'
 import { isAnnexb } from 'avutil/util/nalu'

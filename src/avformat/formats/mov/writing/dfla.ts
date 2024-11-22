@@ -23,14 +23,14 @@
  *
  */
 
-import Stream from '../../../AVStream'
+import Stream from 'avutil/AVStream'
 import { MOVContext } from '../type'
 import IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
 import { mapUint8Array } from 'cheap/std/memory'
 import { AVPacketSideDataType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
-import { FlacMetadataType } from '../../../codecs/flac'
+import { FlacMetadataType } from 'avutil/codecs/flac'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
   let extradata: Uint8Array

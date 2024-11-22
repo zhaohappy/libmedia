@@ -24,13 +24,13 @@
  */
 
 import IOReader from 'common/io/IOReader'
-import Stream from '../../../AVStream'
+import Stream from 'avutil/AVStream'
 import { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 import { avFree, avMalloc } from 'avutil/util/mem'
 import { mapSafeUint8Array } from 'cheap/std/memory'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import * as opus from '../../../codecs/opus'
+import * as opus from 'avutil/codecs/opus'
 import BufferReader from 'common/io/BufferReader'
 import BufferWriter from 'common/io/BufferWriter'
 

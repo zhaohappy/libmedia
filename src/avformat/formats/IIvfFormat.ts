@@ -30,11 +30,11 @@ import * as logger from 'common/util/logger'
 import { IOError } from 'common/io/error'
 import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat } from '../avformat'
+import { AVFormat } from 'avutil/avformat'
 import { mapSafeUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData } from 'avutil/util/avpacket'
-import AVStream from '../AVStream'
+import AVStream from 'avutil/AVStream'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 export const enum IVFCodec {

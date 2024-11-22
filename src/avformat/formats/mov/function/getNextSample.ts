@@ -23,7 +23,7 @@
  *
  */
 
-import Stream from '../../../AVStream'
+import Stream from 'avutil/AVStream'
 import { AVIFormatContext } from '../../../AVFormatContext'
 import { MOVContext, MOVStreamContext, Sample } from '../type'
 import { AV_TIME_BASE_Q } from 'avutil/constant'

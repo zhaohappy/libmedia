@@ -24,7 +24,7 @@
  */
 
 import { AVCodecID } from 'avutil/codec'
-import { AVFormat } from '../avformat'
+import { AVFormat } from 'avutil/avformat'
 import { AVOFormatContext } from '../AVFormatContext'
 import AVPacket from 'avutil/struct/avpacket'
 

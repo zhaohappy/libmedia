@@ -23,7 +23,7 @@
  *
  */
 
-import { AV_CH_LAYOUT } from 'avutil/audiosamplefmt'
+import { AV_CH_LAYOUT } from '../audiosamplefmt'
 import BitReader from 'common/io/BitReader'
 import { Uint8ArrayInterface } from 'common/io/interface'
 

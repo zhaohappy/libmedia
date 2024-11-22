@@ -24,13 +24,13 @@
  */
 
 import AVStream from '../AVStream'
-import { AVPacketSideDataType } from 'avutil/codec'
+import { AVPacketSideDataType } from '../codec'
 import BitReader from 'common/io/BitReader'
-import * as av1syntax from 'avutil/util/av1syntax'
+import * as av1syntax from '../util/av1syntax'
 import { Uint8ArrayInterface } from 'common/io/interface'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import AVCodecParameters from '../struct/avcodecparameters'
 import BitWriter from 'common/io/BitWriter'
-import { PixelFormatDescriptorsMap } from 'avutil/pixelFormatDescriptor'
+import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
 
 export const enum AV1Profile {
   Main,

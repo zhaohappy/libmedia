@@ -30,8 +30,7 @@ import * as crypto from 'avutil/util/crypto'
 import getTimestamp from 'common/function/getTimestamp'
 import BufferWriter from 'common/io/BufferWriter'
 import { APP_MAX_LENGTH, RtmpChannel, RtmpPacketType } from './rtmp'
-import * as iamf from 'avformat/formats/flv/iamf'
-import * as oamf from 'avformat/formats/flv/oamf'
+import * as amf from 'avutil/util/amf'
 import { Data } from 'common/types/type'
 import { readRtmpPacket, sendRtmpPacket } from './util'
 import BufferReader from 'common/io/BufferReader'
@@ -220,13 +219,13 @@ export default class RtmpSession {
   private async handleInvoke(packet: RtmpPacket) {
     this.bufferReader.resetBuffer(packet.payload)
     const endPos = BigInt(packet.payload.length)
-    const key = await iamf.parseValue(this.bufferReader, endPos)
-    const seq: number = await iamf.parseValue(this.bufferReader, endPos)
+    const key = await amf.parseValue(this.bufferReader, endPos)
+    const seq: number = await amf.parseValue(this.bufferReader, endPos)
 
     if (key === '_result' || key === '_error') {
       if (this.requestMap.has(seq)) {
-        const options = await iamf.parseValue(this.bufferReader, endPos)
-        const info = await iamf.parseValue(this.bufferReader, endPos)
+        const options = await amf.parseValue(this.bufferReader, endPos)
+        const info = await amf.parseValue(this.bufferReader, endPos)
         if (key === '_result') {
           this.requestMap.get(seq).resolve({
             options,
@@ -243,8 +242,8 @@ export default class RtmpSession {
       }
     }
     else if (key === 'onStatus') {
-      const options = await iamf.parseValue(this.bufferReader, endPos)
-      let info: Data = await iamf.parseValue(this.bufferReader, endPos)
+      const options = await amf.parseValue(this.bufferReader, endPos)
+      let info: Data = await amf.parseValue(this.bufferReader, endPos)
       if (info.level === 'error') {
         logger.error(`Server error: ${info.description}, ${info.code}`)
         if (this.requestMap.has(seq)) {
@@ -291,7 +290,7 @@ export default class RtmpSession {
   }
   private async handleNotify(packet: RtmpPacket) {
     this.bufferReader.resetBuffer(packet.payload)
-    const command = await iamf.parseValue(this.bufferReader, BigInt(packet.payload.length))
+    const command = await amf.parseValue(this.bufferReader, BigInt(packet.payload.length))
 
     if (command === '@setDataFrame') {
       packet.payload = packet.payload.subarray(Number(this.bufferReader.getPos()))
@@ -377,10 +376,10 @@ export default class RtmpSession {
     const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 27 + subscribe.length)
     this.bufferWriter.resetBuffer(packet.payload)
 
-    oamf.writeValue(this.bufferWriter, 'FCSubscribe')
-    oamf.writeValue(this.bufferWriter, ++this.seq)
-    oamf.writeValue(this.bufferWriter, null)
-    oamf.writeValue(this.bufferWriter, subscribe)
+    amf.writeValue(this.bufferWriter, 'FCSubscribe')
+    amf.writeValue(this.bufferWriter, ++this.seq)
+    amf.writeValue(this.bufferWriter, null)
+    amf.writeValue(this.bufferWriter, subscribe)
     await this.sendPacket(packet)
   }
 
@@ -388,10 +387,10 @@ export default class RtmpSession {
     const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 25 + publish.length)
     this.bufferWriter.resetBuffer(packet.payload)
 
-    oamf.writeValue(this.bufferWriter, 'FCPublish')
-    oamf.writeValue(this.bufferWriter, ++this.seq)
-    oamf.writeValue(this.bufferWriter, null)
-    oamf.writeValue(this.bufferWriter, publish)
+    amf.writeValue(this.bufferWriter, 'FCPublish')
+    amf.writeValue(this.bufferWriter, ++this.seq)
+    amf.writeValue(this.bufferWriter, null)
+    amf.writeValue(this.bufferWriter, publish)
     await this.sendPacket(packet)
   }
 
@@ -399,10 +398,10 @@ export default class RtmpSession {
     const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 29 + streamName.length)
     this.bufferWriter.resetBuffer(packet.payload)
 
-    oamf.writeValue(this.bufferWriter, 'releaseStream')
-    oamf.writeValue(this.bufferWriter, ++this.seq)
-    oamf.writeValue(this.bufferWriter, null)
-    oamf.writeValue(this.bufferWriter, streamName)
+    amf.writeValue(this.bufferWriter, 'releaseStream')
+    amf.writeValue(this.bufferWriter, ++this.seq)
+    amf.writeValue(this.bufferWriter, null)
+    amf.writeValue(this.bufferWriter, streamName)
     await this.sendPacket(packet)
   }
 
@@ -410,9 +409,9 @@ export default class RtmpSession {
     const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 21)
     this.bufferWriter.resetBuffer(packet.payload)
 
-    oamf.writeValue(this.bufferWriter, '_checkbw')
-    oamf.writeValue(this.bufferWriter, ++this.seq)
-    oamf.writeValue(this.bufferWriter, null)
+    amf.writeValue(this.bufferWriter, '_checkbw')
+    amf.writeValue(this.bufferWriter, ++this.seq)
+    amf.writeValue(this.bufferWriter, null)
     await this.sendPacket(packet)
   }
 
@@ -420,11 +419,11 @@ export default class RtmpSession {
     const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 4096 + APP_MAX_LENGTH)
     this.bufferWriter.resetBuffer(packet.payload)
 
-    oamf.writeValue(this.bufferWriter, method)
-    oamf.writeValue(this.bufferWriter, ++this.seq)
+    amf.writeValue(this.bufferWriter, method)
+    amf.writeValue(this.bufferWriter, ++this.seq)
 
     array.each(data, (value) => {
-      oamf.writeValue(this.bufferWriter, value)
+      amf.writeValue(this.bufferWriter, value)
     })
     packet.payload = packet.payload.subarray(0, this.bufferWriter.getPos())
 
@@ -506,21 +505,21 @@ export default class RtmpSession {
   public async seek(timestamp: number) {
     const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 26)
     this.bufferWriter.resetBuffer(packet.payload)
-    oamf.writeValue(this.bufferWriter, 'seek')
-    oamf.writeValue(this.bufferWriter, 0)
-    oamf.writeValue(this.bufferWriter, null)
-    oamf.writeValue(this.bufferWriter, timestamp)
+    amf.writeValue(this.bufferWriter, 'seek')
+    amf.writeValue(this.bufferWriter, 0)
+    amf.writeValue(this.bufferWriter, null)
+    amf.writeValue(this.bufferWriter, timestamp)
     await this.sendPacket(packet)
   }
 
   public async pause(paused: boolean, timestamp: number) {
     const packet = new RtmpPacket(RtmpChannel.SYSTEM_CHANNEL, RtmpPacketType.PT_INVOKE, 0, 29)
     this.bufferWriter.resetBuffer(packet.payload)
-    oamf.writeValue(this.bufferWriter, 'pause')
-    oamf.writeValue(this.bufferWriter, 0)
-    oamf.writeValue(this.bufferWriter, null)
-    oamf.writeValue(this.bufferWriter, paused)
-    oamf.writeValue(this.bufferWriter, timestamp)
+    amf.writeValue(this.bufferWriter, 'pause')
+    amf.writeValue(this.bufferWriter, 0)
+    amf.writeValue(this.bufferWriter, null)
+    amf.writeValue(this.bufferWriter, paused)
+    amf.writeValue(this.bufferWriter, timestamp)
     await this.sendPacket(packet)
   }
 

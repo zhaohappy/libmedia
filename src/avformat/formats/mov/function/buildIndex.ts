@@ -23,7 +23,7 @@
  *
  */
 
-import Stream from '../../../AVStream'
+import Stream from 'avutil/AVStream'
 import { MOVStreamContext, Sample } from '../type'
 import { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVMediaType } from 'avutil/codec'

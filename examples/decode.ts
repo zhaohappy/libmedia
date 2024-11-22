@@ -1,5 +1,5 @@
 import WasmVideoDecoder from 'avcodec/wasmcodec/VideoDecoder'
-import AVStream from 'avformat/AVStream'
+import AVStream from 'avutil/AVStream'
 import AVPacket from 'avutil/struct/avpacket'
 import compile from 'cheap/webassembly/compiler'
 

@@ -23,14 +23,14 @@
  *
  */
 
-import AVStream from '../AVStream'
+import AVStream from 'avutil/AVStream'
 import { AVIFormatContext } from '../AVFormatContext'
 import AVPacket from 'avutil/struct/avpacket'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from '../avformat'
+import { AVFormat, AVSeekFlags } from 'avutil/avformat'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData } from 'avutil/util/avpacket'
@@ -38,7 +38,7 @@ import { IOError } from 'common/io/error'
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as array from 'common/util/array'
-import { avCodecParameters2Extradata, parseLATMHeader, parseADTSHeader } from '../codecs/aac'
+import { avCodecParameters2Extradata, parseLATMHeader, parseADTSHeader } from 'avutil/codecs/aac'
 import * as is from 'common/util/is'
 import LATM2RawFilter from '../bsf/aac/LATM2RawFilter'
 

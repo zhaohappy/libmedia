@@ -24,7 +24,7 @@
  */
 
 import { AVIFormatContext } from '../AVFormatContext'
-import AVStream from '../AVStream'
+import AVStream from 'avutil/AVStream'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'
 import { getBytesByDuration } from './getBytesByDuration'

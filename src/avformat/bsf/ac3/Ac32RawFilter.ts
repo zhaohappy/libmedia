@@ -34,7 +34,7 @@ import { avMalloc } from 'avutil/util/mem'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { Rational } from 'avutil/struct/rational'
 import { addAVPacketData, unrefAVPacket } from 'avutil/util/avpacket'
-import * as ac3 from '../../codecs/ac3'
+import * as ac3 from 'avutil/codecs/ac3'
 import concatTypeArray from 'common/function/concatTypeArray'
 import * as is from 'common/util/is'
 

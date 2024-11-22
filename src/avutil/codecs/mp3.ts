@@ -25,7 +25,7 @@
 
 import { Uint8ArrayInterface } from 'common/io/interface'
 import AVStream from '../AVStream'
-import { NOPTS_VALUE } from 'avutil/constant'
+import { NOPTS_VALUE } from '../constant'
 
 const MpegAudioV10SampleRateTable = [44100, 48000, 32000, 0]
 

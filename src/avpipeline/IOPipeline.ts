@@ -37,16 +37,7 @@ import DashIOLoader from 'avnetwork/ioLoader/DashIOLoader'
 import HlsIOLoader from 'avnetwork/ioLoader/HlsIOLoader'
 import WebSocketIOLoader from 'avnetwork/ioLoader/WebSocketIOLoader'
 import WebTransportIOLoader from 'avnetwork/ioLoader/WebTransportIOLoader'
-
-export const enum IOType {
-  Fetch,
-  File,
-  WEBSOCKET,
-  WEBTRANSPORT,
-  HLS,
-  DASH,
-  RTMP
-}
+import { IOType } from 'avutil/avformat'
 
 export interface IOTaskOptions extends TaskOptions {
   type: IOType

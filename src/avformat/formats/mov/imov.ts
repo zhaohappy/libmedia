@@ -23,7 +23,7 @@
  *
  */
 
-import Stream from '../../AVStream'
+import Stream from 'avutil/AVStream'
 import { Atom, FragmentTrack, MOVContext, MOVStreamContext } from './type'
 import IOReader from 'common/io/IOReader'
 import mktag from '../../function/mktag'

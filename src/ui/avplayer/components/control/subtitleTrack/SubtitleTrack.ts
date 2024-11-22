@@ -4,7 +4,7 @@ import * as eventType from 'avplayer/eventType'
 
 import template from './SubtitleTrack.hbs'
 import style from './SubtitleTrack.styl'
-import { AVStreamInterface } from 'avformat/AVStream'
+import { AVStreamInterface } from 'avutil/AVStream'
 import { AVMediaType } from 'avutil/codec'
 import { IOLoaderSubtitleStreamInfo } from 'avnetwork/ioLoader/IOLoader'
 import { subtitleExt } from '../../folder/Node'

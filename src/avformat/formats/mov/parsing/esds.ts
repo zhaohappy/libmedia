@@ -24,7 +24,7 @@
  */
 
 import IOReader from 'common/io/IOReader'
-import Stream from '../../../AVStream'
+import Stream from 'avutil/AVStream'
 import { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 import { MP4Tag } from '../boxType'
@@ -32,8 +32,8 @@ import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import { Mp4aObj2AVCodecID } from '../mov'
 import { avFree, avMalloc } from 'avutil/util/mem'
 import { mapSafeUint8Array } from 'cheap/std/memory'
-import * as aac from '../../../codecs/aac'
-import * as opus from '../../../codecs/opus'
+import * as aac from 'avutil/codecs/aac'
+import * as opus from 'avutil/codecs/opus'
 
 // @ts-ignore
 @deasync

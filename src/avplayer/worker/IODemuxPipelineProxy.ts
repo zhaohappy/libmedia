@@ -25,7 +25,7 @@
 
 import { createThreadFromClass, joinThread, Thread } from 'cheap/thread/thread'
 import IODemuxPipeline from './IODemuxPipeline'
-import { AVStreamInterface } from 'avformat/AVStream'
+import { AVStreamInterface } from 'avutil/AVStream'
 import { AVCodecParametersSerialize, unserializeAVCodecParameters } from 'avutil/util/serialize'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import * as is from 'common/util/is'

@@ -24,8 +24,8 @@
  */
 
 import AVStream from '../AVStream'
-import { AVPacketSideDataType } from 'avutil/codec'
-import AVPacket from 'avutil/struct/avpacket'
+import { AVPacketSideDataType } from '../codec'
+import AVPacket from '../struct/avpacket'
 import BitReader from 'common/io/BitReader'
 import { Uint8ArrayInterface } from 'common/io/interface'
 

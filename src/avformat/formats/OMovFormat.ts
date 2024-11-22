@@ -46,16 +46,16 @@ import * as object from 'common/util/object'
 import rewriteIO from '../function/rewriteIO'
 
 import arrayItemSame from '../function/arrayItemSame'
-import AVStream, { AVDisposition } from '../AVStream'
-import { AVFormat } from '../avformat'
+import AVStream, { AVDisposition } from 'avutil/AVStream'
+import { AVFormat } from 'avutil/avformat'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import { getAVPacketData } from 'avutil/util/avpacket'
 import { Rational } from 'avutil/struct/rational'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
-import { BitFormat } from '../codecs/h264'
+import { BitFormat } from 'avutil/codecs/h264'
 import * as is from 'common/util/is'
 
-import * as ac3 from '../codecs/ac3'
+import * as ac3 from 'avutil/codecs/ac3'
 import { mapUint8Array } from 'cheap/std/memory'
 
 const defaultOptions: MovFormatOptions = {

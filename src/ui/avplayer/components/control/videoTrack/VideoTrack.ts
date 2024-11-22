@@ -4,7 +4,7 @@ import * as eventType from 'avplayer/eventType'
 
 import template from './VideoTrack.hbs'
 import style from './VideoTrack.styl'
-import { AVStreamInterface } from 'avformat/AVStream'
+import { AVStreamInterface } from 'avutil/AVStream'
 import { AVMediaType } from 'avutil/codec'
 import { IOLoaderVideoStreamInfo } from 'avnetwork/ioLoader/IOLoader'
 
