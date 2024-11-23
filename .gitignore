@@ -41,3 +41,5 @@ dist/avtranscoder-legacy/*.*
 test/material
 media/*
 media
+
+src/**/dist/
