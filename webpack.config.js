@@ -76,10 +76,9 @@ module.exports = (env) => {
   }
   else if (env.webassembly_runner) {
     entry = path.resolve(__dirname, './src/cheap/webassembly/WebAssemblyRunner.ts');
-    output = 'WebAssemblyRunner_.js';
+    output = 'WebAssemblyRunner.js';
     library = '__CHeap_WebAssemblyRunner__';
     libraryTarget = 'var';
-    outputPath = path.resolve(__dirname, './src/cheap/webassembly');
   }
   else if (env.pcm_worklet_processor) {
     entry = {
