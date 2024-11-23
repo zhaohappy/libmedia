@@ -24,7 +24,7 @@ else
     LIB_OUTPUT_PATH="$LIB_OUTPUT_PATH-atomic"
     LIB_BUILD_PATH="$LIB_BUILD_PATH-atomic"
   else 
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory"
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory -no-pthread -mno-sign-ext"
   fi
 fi
 

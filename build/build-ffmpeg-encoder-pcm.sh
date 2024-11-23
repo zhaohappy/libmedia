@@ -49,7 +49,7 @@ else
     COMPONENTS="$COMPONENTS --disable-wasmatomic"
     EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory"
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory -mno-sign-ext -no-pthread"
     COMPONENTS="$COMPONENTS --enable-wasmatomic"
   fi
 fi

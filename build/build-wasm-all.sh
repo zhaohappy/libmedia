@@ -61,7 +61,6 @@ sh ./build/build-decoder.sh pcm 1 1
 
 sh ./build/build-encoder.sh x264 0 0
 sh ./build/build-encoder.sh openh264 0 0
-sh ./build/build-encoder.sh kvazaar  0 0
 sh ./build/build-encoder.sh mpeg4 0 0
 sh ./build/build-encoder.sh vp8 0 0
 sh ./build/build-encoder.sh vp9 0 0

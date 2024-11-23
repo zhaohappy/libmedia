@@ -29,7 +29,7 @@ else
     dir="$dir-atomic"
   else
     COMPONENTS="$COMPONENTS --enable-wasmatomic"
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory"
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory -no-pthread -mno-sign-ext"
   fi
 fi
 

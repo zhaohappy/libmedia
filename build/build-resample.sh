@@ -10,6 +10,7 @@ PROJECT_ROOT_PATH=$(cd $NOW_PATH/../; pwd)
 PROJECT_SRC_PATH=$PROJECT_ROOT_PATH/src
 
 PROJECT_OUTPUT_PATH=$PROJECT_ROOT_PATH/dist/resample
+EMSDK_PATH=$PROJECT_ROOT_PATH/../emsdk
 
 FFMPEG_PATH=$PROJECT_ROOT_PATH/lib/ffmpeg
 FFMPEG_AVUTIL_PATH=$FFMPEG_PATH/lib
@@ -17,7 +18,7 @@ FFMPEG_RESAMPLE_PATH=$FFMPEG_PATH/lib
 
 CLIB_PATH=$PROJECT_SRC_PATH/audioresample/clib
 
-source $PROJECT_ROOT_PATH/../emsdk/emsdk_env.sh
+source $EMSDK_PATH/emsdk_env.sh
 
 if ! [ -n "$1" ]; then
   ENABLE_SIMD=`sed '/^enable_simd=/!d;s/.*=//' $NOW_PATH/config`
@@ -65,7 +66,7 @@ else
     FFMPEG_AVUTIL_PATH=$PROJECT_ROOT_PATH/lib/ffmpeg-atomic/lib
     CFLAG="$CFLAG -mbulk-memory"
   else
-    CFLAG="$CFLAG -mno-bulk-memory"
+    CFLAG="$CFLAG -mno-bulk-memory -no-pthread -mno-sign-ext"
   fi
 fi
 
@@ -85,5 +86,9 @@ emcc $CFLAG --no-entry -Wl,--no-check-features $CLIB_PATH/resample.c $FFMPEG_AVU
   -s ERROR_ON_UNDEFINED_SYMBOLS=0 \
   $EMCCFLAG \
   -o $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm
+
+if [ $ENABLE_SIMD != "1" ] && [ $ENABLE_ATOMIC != "1" ]; then
+  $EMSDK_PATH/upstream/bin/wasm-opt $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm -o $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm --signext-lowering
+fi
 
 echo "===== build resample finished  ====="
