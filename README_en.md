@@ -121,7 +121,7 @@ Codecs are compiled into separate wasm modules, the decoders are in the ```dist/
 | -----------    | -----------  |----------- | -----------  | -----------          |
 | Chrome         | 74+          | 75+        | 91+          |94+                   |
 | Firefox        | 61+          | 79+        | 89+          |N/A(linux video only) |
-| Safari         | 12+          | 15+        | 16.4+        |16.4+(video only)     |
+| Safari         | 13.4+        | 15+        | 16.4+        |16.4+(video only)     |
 | Wasmtime       | 0.20+        | 15+        | 15+          |N/A                   |
 | Wasmer         | 0.7+         | N/A        | N/A          |N/A                   |
 | Node.js        | 12.0+        | 16.4+      | 16.4+        |N/A                   |
