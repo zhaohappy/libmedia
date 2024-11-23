@@ -9,6 +9,6 @@ Version: 61.3.100
 Requires: libavutil >= 59.8.100
 Requires.private: 
 Conflicts:
-Libs: -L${libdir}  -lavcodec -pthread -lm
+Libs: -L${libdir}  -lavcodec -lpthread -lm
 Libs.private: 
 Cflags: -I${includedir}
