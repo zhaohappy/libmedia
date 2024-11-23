@@ -134,7 +134,7 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
 
         case 'stop': {
 
-          if (!this.ended && !this.pause) {
+          if (!this.ended && !this.pause && !this.frontBuffered) {
             await new Promise<void>((resolve) => {
               this.afterPullResolve = resolve
             })

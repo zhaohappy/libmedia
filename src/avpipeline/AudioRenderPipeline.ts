@@ -850,6 +850,10 @@ export default class AudioRenderPipeline extends Pipeline {
   public async unregisterTask(taskId: string): Promise<void> {
     const task = this.tasks.get(taskId)
     if (task) {
+      if (task.fakePlayTimer) {
+        clearTimeout(task.fakePlayTimer)
+        task.fakePlayTimer = null
+      }
       if (task.resampler) {
         task.resampler.close()
       }
