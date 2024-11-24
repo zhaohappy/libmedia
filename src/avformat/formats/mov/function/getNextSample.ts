@@ -76,7 +76,11 @@ export function getNextSample(context: AVIFormatContext, movContext: MOVContext)
     const dtsDts = avRescaleQ(dtsSample.dts, dtsStream.timeBase, AV_TIME_BASE_Q)
     const diff = Math.abs(Number(posDts - dtsDts))
     // 两者时间差值在 1s 内优先 pos，避免来回 seek
-    if ((diff < 1000000) || (context.ioReader.flags & IOFlags.SLICE)) {
+    // 切片和网络资源优先 pos
+    if ((diff < 1000000)
+      || (context.ioReader.flags & IOFlags.SLICE)
+      || (context.ioReader.flags & IOFlags.NETWORK)
+    ) {
       sample = posSample
       stream = posStream
     }

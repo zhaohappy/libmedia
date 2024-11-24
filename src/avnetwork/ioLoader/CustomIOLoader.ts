@@ -39,6 +39,13 @@ export default abstract class CustomIOLoader {
   }
 
   /**
+   * IOFlags
+   */
+  get flags(): int32 {
+    return 0
+  }
+
+  /**
    * 源的名字，主要用于日志打印，可不传
    */
   get name(): string {

@@ -196,7 +196,21 @@ export default class IMovFormat extends IFormat {
         stream.startTime = avpacket.pts || avpacket.dts
       }
 
-      await formatContext.ioReader.seek(avpacket.pos)
+      const skip = static_cast<int32>(avpacket.pos - formatContext.ioReader.getPos())
+      if (skip !== 0) {
+        // NETWORK 优先 pos，pos 是递增的，这里我们使用 skip
+        // 防止触发 seek
+        if (skip > 0
+          && ((formatContext.ioReader.flags & IOFlags.NETWORK)
+            || (formatContext.ioReader.flags & IOFlags.SLICE)
+          )
+        ) {
+          await formatContext.ioReader.skip(skip)
+        }
+        else {
+          await formatContext.ioReader.seek(avpacket.pos)
+        }
+      }
 
       const len = sample.size
       const data = avMalloc(len)
@@ -394,22 +408,38 @@ export default class IMovFormat extends IFormat {
       array.each(formatContext.streams, (st) => {
         if (st !== stream) {
           const stContext = st.privData as MOVStreamContext
-          let seeked = false
           let timestamp = avRescaleQ(streamContext.samplesIndex[streamContext.currentSample].pts, stream.timeBase, st.timeBase)
-          array.each(stContext.samplesIndex, (sample, i) => {
-            if (sample.pts >= timestamp) {
-              stContext.currentSample = i
-              seeked = true
-              return false
+          
+          let index = array.binarySearch(stContext.samplesIndex, (sample) => {
+            if (sample.pts > timestamp) {
+              return -1
             }
+            else if (sample.pts === timestamp) {
+              return 0
+            }
+            return 1
           })
 
-          if (!seeked) {
-            stContext.sampleEnd = true
-            stContext.currentSample = stContext.samplesIndex.length
+          if (index > -1 && st.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+            let i = index
+            for (; i >= 0; i--) {
+              if (stContext.samplesIndex[i].flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
+                index = i
+                break
+              }
+            }
+            if (i < 0) {
+              index = -1
+            }
+          }
+
+          if (index >= 0) {
+            stContext.currentSample = index
+            stContext.sampleEnd = false
           }
           else {
-            stContext.sampleEnd = false
+            stContext.sampleEnd = true
+            stContext.currentSample = stContext.samplesIndex.length
           }
         }
       })

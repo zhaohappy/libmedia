@@ -874,7 +874,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     let ext = ''
     let ret = 0
 
+    let flags = 0
+
     if (is.string(externalSubtitle.source)) {
+      flags |= IOFlags.NETWORK
       ext = urlUtils.parse(externalSubtitle.source).file.split('.').pop()
       ret = await AVPlayer.IOThread.registerTask
         .transfer(ioloader2DemuxerChannel.port1)
@@ -928,7 +931,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         format: Ext2Format[ext],
         stats: nullptr,
         isLive: false,
-        flags: 0,
+        flags,
         avpacketList: addressof(this.GlobalData.avpacketList),
         avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
       })
@@ -1008,8 +1011,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     await AVPlayer.startDemuxPipeline(this.options.enableWorker)
 
+    let flags = 0
     let ret = 0
+
     if (is.string(source)) {
+      flags |= IOFlags.NETWORK
       let { info, type, ext } = await analyzeUrlIOLoader(source, options.ext, options.http)
       this.ext = ext
 
@@ -1060,6 +1066,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         })
     }
     else if (source instanceof CustomIOLoader) {
+      flags |= source.flags || 0
       this.ext = source.ext
       this.ioIPCPort = new IPCPort(this.ioloader2DemuxerChannel.port1)
       this.ioIPCPort.on(REQUEST, async (request: RpcMessage) => {
@@ -1159,6 +1166,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       logger.fatal(`register io task failed, ret: ${ret}, taskId: ${this.taskId}`)
     }
 
+    if (this.isDash() || this.isHls()) {
+      flags |= IOFlags.SLICE
+    }
+
     const formatOptions: Data = object.extend({}, options.formatOptions || {})
 
     if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
@@ -1177,7 +1188,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             format: Ext2Format[this.ext],
             stats: addressof(this.GlobalData.stats),
             isLive: this.options.isLive,
-            flags: IOFlags.SLICE,
+            flags,
             ioloaderOptions: {
               mediaType: 'audio'
             },
@@ -1188,7 +1199,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         await AVPlayer.DemuxerThread.registerTask({
           taskId: this.subTaskId,
           mainTaskId: this.taskId,
-          flags: IOFlags.SLICE,
+          flags,
           format: Ext2Format[this.ext],
           stats: addressof(this.GlobalData.stats),
           isLive: this.options.isLive,
@@ -1211,7 +1222,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             format: Ext2Format[this.ext],
             stats: addressof(this.GlobalData.stats),
             isLive: this.options.isLive,
-            flags: IOFlags.SLICE,
+            flags,
             ioloaderOptions: {
               mediaType: hasAudio ? 'audio' : 'video'
             },
@@ -1237,7 +1248,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           formatOptions,
           stats: addressof(this.GlobalData.stats),
           isLive: this.options.isLive,
-          flags: this.isHls() ? IOFlags.SLICE : 0,
+          flags,
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
         })
@@ -1251,7 +1262,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         await AVPlayer.DemuxerThread.registerTask({
           taskId: this.subtitleTaskId,
           mainTaskId: this.taskId,
-          flags: IOFlags.SLICE,
+          flags,
           format: Ext2Format[this.ext],
           stats: addressof(this.GlobalData.stats),
           isLive: this.options.isLive,
