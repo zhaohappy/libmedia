@@ -2,7 +2,7 @@ var fs = require('fs');
 var path = require('path');
 
 exports.port = 9000;
-exports.protocol = 'http';
+exports.protocol = 'https';
 exports.tlsOptions = {
   key: fs.readFileSync(path.join(__dirname, './test/key.pem')),
   cert: fs.readFileSync(path.join(__dirname, './test/cert.pem'))
@@ -53,6 +53,8 @@ exports.getLocations = function () {
         proxyNoneExists(),
         function (context) {
           var header = context.header;
+          header['Access-Control-Allow-Origin'] = '*';
+          header['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
           header['Content-Length'] = context.content.length;
           if (context.request.method === 'OPTIONS' || context.request.method === 'HEAD') {
             header['X-Content-Length'] = context.content.length;
