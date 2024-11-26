@@ -35,7 +35,7 @@ declare const ENABLE_PROTOCOL_RTMP: boolean
 
 declare const ENABLE_DEMUXER_MPEGTS: boolean
 
-declare const ENABLE_DEMUXER_MPEGPS: bool
+declare const ENABLE_DEMUXER_MPEGPS: boolean
 
 declare const ENABLE_DEMUXER_MP4: boolean
 
