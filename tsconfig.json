@@ -53,7 +53,8 @@
   "exclude": [
     "*.test.ts",
     "__test__",
-    "/node_modules/**"
+    "/node_modules/**",
+    "**/dist/"
   ],
   "cheap": {
     "defined": {
