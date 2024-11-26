@@ -23,7 +23,7 @@
  *
  */
 
-import Stream from '../../../avutil/AVStream'
+import Stream from 'avutil/AVStream'
 import { AVCodecID } from 'avutil/codec'
 import { AVPacketFlags } from 'avutil/struct/avpacket'
 import IOWriter from 'common/io/IOWriterSync'

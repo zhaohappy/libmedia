@@ -23,7 +23,7 @@
  *
  */
 
-import getVideoCodec from 'avcodec/function/getVideoCodec'
+import getVideoCodec from 'avutil/function/getVideoCodec'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 
 export default function getVideoMimeType(codecpar: pointer<AVCodecParameters>) {

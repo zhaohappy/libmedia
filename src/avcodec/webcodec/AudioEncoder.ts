@@ -25,7 +25,7 @@
 
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import AVPacket, { AVPacketPool } from 'avutil/struct/avpacket'
-import getAudioCodec from '../function/getAudioCodec'
+import getAudioCodec from 'avutil/function/getAudioCodec'
 import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
 import { avframe2AudioData } from 'avutil/function/avframe2AudioData'
 import { createAVPacket } from 'avutil/util/avpacket'

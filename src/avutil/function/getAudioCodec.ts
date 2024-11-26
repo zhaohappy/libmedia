@@ -23,9 +23,9 @@
  *
  */
 
-import { AVCodecID } from 'avutil/codec'
-import { CodecId2MimeType } from 'avutil/stringEnum'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import { AVCodecID } from '../codec'
+import { CodecId2MimeType } from '../stringEnum'
+import AVCodecParameters from '../struct/avcodecparameters'
 
 export default function getAudioCodec(codecpar: pointer<AVCodecParameters>) {
 

@@ -59,18 +59,18 @@ import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import Stats from 'avpipeline/struct/stats'
 import { memset, mapUint8Array, mapSafeUint8Array } from 'cheap/std/memory'
 import createMessageChannel from './function/createMessageChannel'
-import getVideoCodec from 'avcodec/function/getVideoCodec'
+import getVideoCodec from 'avutil/function/getVideoCodec'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
 import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
 import MSEPipeline from './mse/MSEPipeline'
-import { getHardwarePreference } from 'avcodec/function/getHardwarePreference'
+import { getHardwarePreference } from 'avutil/function/getHardwarePreference'
 import Sleep from 'common/timer/Sleep'
 import StatsController from './StatsController'
 import * as mutex from 'cheap/thread/mutex'
 import * as bigint from 'common/util/bigint'
 import getMediaSource from './function/getMediaSource'
 import JitterBufferController from './JitterBufferController'
-import getAudioCodec from 'avcodec/function/getAudioCodec'
+import getAudioCodec from 'avutil/function/getAudioCodec'
 import { IOFlags } from 'common/io/flags'
 import { Ext2Format, mediaType2AVMediaType } from 'avutil/stringEnum'
 import { AVDisposition, AVStreamInterface } from 'avutil/AVStream'
@@ -3304,8 +3304,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             && cheapConfig.USE_THREADS
             && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
             && (!os.ios || browser.checkVersion(os.version, '16.1', true))
-            ? new URL('avrender/pcm/AudioSourceWorkletProcessor2_.js', import.meta.url)
-            : new URL('avrender/pcm/AudioSourceWorkletProcessor_.js', import.meta.url))
+            ? new URL('avrender/dist/AudioSourceWorkletProcessor2.js', import.meta.url)
+            : new URL('avrender/dist/AudioSourceWorkletProcessor.js', import.meta.url))
         }
       }
 

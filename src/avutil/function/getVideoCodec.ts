@@ -23,16 +23,16 @@
  *
  */
 
-import { AVCodecID } from 'avutil/codec'
-import { CodecId2MimeType } from 'avutil/stringEnum'
-import { H264Profile } from 'avutil/codecs/h264'
-import * as av1 from 'avutil/codecs/av1'
-import * as vp8 from 'avutil/codecs/vp8'
-import * as vp9 from 'avutil/codecs/vp9'
-import * as vvc from 'avutil/codecs/vvc'
+import { AVCodecID } from '../codec'
+import { CodecId2MimeType } from '../stringEnum'
+import { H264Profile } from '../codecs/h264'
+import * as av1 from '../codecs/av1'
+import * as vp8 from '../codecs/vp8'
+import * as vp9 from '../codecs/vp9'
+import * as vvc from '../codecs/vvc'
 import * as string from 'common/util/string'
-import { NOPTS_VALUE } from 'avutil/constant'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import { NOPTS_VALUE } from '../constant'
+import AVCodecParameters from '../struct/avcodecparameters'
 import { mapUint8Array } from 'cheap/std/memory'
 import * as base32 from 'common/util/base32'
 
