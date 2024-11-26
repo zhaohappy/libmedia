@@ -480,6 +480,11 @@
     </script>
     <script src="./sw.js"></script>
     <script id="cheap-polyfill" src="../dist/cheap-polyfill.js"></script>
+    <script>
+      if (BigInt === Number) {
+        window.CHEAP_POLYFILL_URL = document.querySelector('#cheap-polyfill').src
+      }
+    </script>
     <script src="../dist/avplayer/avplayer.js"></script>
     <script src="./vue.js" crossorigin></script>
     <script src="./element-ui.js" crossorigin></script>
@@ -490,9 +495,7 @@
     </script> -->
 
     <script>
-      if (BigInt === Number) {
-        window.CHEAP_POLYFILL_URL = document.querySelector('#cheap-polyfill').src
-      }
+      
       
       let player;
       let slider;
@@ -1398,8 +1401,6 @@
           console.log('atomic not support')
         })
       }
-
-      supportAtomic = false
 
       document.querySelector('#ua').textContent = navigator.userAgent
 
