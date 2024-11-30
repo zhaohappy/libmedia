@@ -1896,7 +1896,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     return Promise.all(promises).then(async () => {
-      this.status = AVPlayerStatus.PLAYED
       if (defined(ENABLE_MSE) && this.useMSE) {
         await Promise.all([
           this.video?.play(),
@@ -1931,7 +1930,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             logger.warn('the audioContext was not started. It must be resumed after a user gesture')
           }
           if (this.videoDecoder2VideoRenderChannel) {
-            AVPlayer.AudioRenderThread.fakePlay(this.taskId)
+            await AVPlayer.AudioRenderThread.fakePlay(this.taskId)
             this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_VIDEO)
           }
           else {
@@ -1940,6 +1939,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           }
         }
       }
+      this.status = AVPlayerStatus.PLAYED
       this.fire(eventType.PLAYED)
       this.statsController.start()
       if (this.jitterBufferController) {
