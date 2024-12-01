@@ -1,0 +1,39 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "sourceMap": true,
+    "declarationMap": false,
+    "baseUrl": "./",
+    "paths": {
+      "avcodec/*": ["../avcodec/*"],
+      "avformat/*": ["../avformat/*"],
+      "avnetwork/*": ["../avnetwork/*"],
+      "avprotocol/*": ["../avprotocol/*"],
+      "avrender/*": ["../avrender/*"],
+      "audiostretchpitch/*": ["../audiostretchpitch/*"],
+      "audioresample/*": ["../audioresample/*"],
+      "avpipeline/*": ["../avpipeline/*"],
+      "avutil/*": ["../avutil/*"],
+
+      "cheap/*": ["../cheap/*"],
+      "common/*": ["../common/*"]
+    },
+    "allowJs": false
+  },
+  "include": [
+    "./**/*.ts",
+    "../cheap/**/*.ts",
+    "../common/types/*.ts",
+    "../avprotocol/**/*.ts",
+    "../avutil/**/*.ts",
+    "../avformat/**/*.ts",
+    "../avcodec/**/*.ts",
+    "../avnetwork/**/*.ts",
+    "../avrender/**/*.ts",
+    "../audiostretchpitch/**/*.ts",
+    "../audioresample/**/*.ts",
+    "../avpipeline/**/*.ts",
+    "../../@types/index.d.ts"
+  ]
+}

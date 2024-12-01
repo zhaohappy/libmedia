@@ -1,0 +1,818 @@
+const ts = require('typescript');
+const path = require('path');
+const fs = require('fs');
+const transformer = require('../src/cheap/build/transformer');
+const argv = require('yargs').argv;
+const { spawnSync, execSync } = require('child_process');
+const terser = require('terser');
+
+// 打印任务日志，支持缩进
+function printTaskLog(taskLevel, taskId, status, message = '') {
+  const indent = ' '.repeat(taskLevel * 2);
+  console.log(`${indent}Task ${taskId}: ${status} ${message}`);
+}
+
+function packageMapTransformer() {
+  return (context) => {
+    return (sourceFile) => {
+      function visitor(node) {
+        if (ts.isStringLiteral(node) && node.parent && ts.isImportDeclaration(node.parent)) {
+
+          let path = node.text
+          path = path.replace(/^(\.\.\/)*cheap\//, '@libmedia/cheap/')
+          path = path.replace(/^(\.\.\/)*common\//, '@libmedia/common/')
+
+          path = path.replace(/^(\.\.\/)*avcodec\//, '@libmedia/avcodec/')
+          path = path.replace(/^(\.\.\/)*avformat\//, '@libmedia/avformat/')
+          path = path.replace(/^(\.\.\/)*avnetwork\//, '@libmedia/avnetwork/')
+          path = path.replace(/^(\.\.\/)*avplayer\//, '@libmedia/avplayer/')
+          path = path.replace(/^(\.\.\/)*avprotocol\//, '@libmedia/avprotocol/')
+          path = path.replace(/^(\.\.\/)*audiostretchpitch\//, '@libmedia/audiostretchpitch/')
+          path = path.replace(/^(\.\.\/)*audioresample\//, '@libmedia/audioresample/')
+          path = path.replace(/^(\.\.\/)*avpipeline\//, '@libmedia/avpipeline/')
+          path = path.replace(/^(\.\.\/)*avtranscode\//, '@libmedia/avtranscode/')
+          path = path.replace(/^(\.\.\/)*avutil\//, '@libmedia/avutil/')
+          path = path.replace(/^(\.\.\/)*videoscale\//, '@libmedia/videoscale/')
+          path = path.replace(/^(\.\.\/)*avfilter\//, '@libmedia/avfilter/')
+
+          if (/\.(glsl|vert|frag|asm|wgsl)$/.test(path)) {
+            path += '.js'
+          }
+
+          return context.factory.createStringLiteral(path)
+        }
+        return ts.visitEachChild(node, visitor, context);
+      }
+      return ts.visitNode(sourceFile, visitor);
+    };
+  };
+}
+
+function getVersion() {
+  try {
+    return execSync('git describe --tags').toString().trim();
+  }
+  catch (error) {
+    return 'n0.0.1';
+  }
+}
+
+function compile(fileNames, options, writeCallback, cjs = false, defined = {}) {
+  const program = ts.createProgram(fileNames, options);
+  const emitResult = program.emit(undefined, writeCallback, undefined, undefined, {
+    before: [
+      packageMapTransformer(),
+      transformer.before(program, {
+        cheapPacketName: '@libmedia/cheap',
+        defined: Object.assign({
+          ENV_NODE: cjs,
+          ENV_WEBPACK: false,
+          DEBUG: false,
+          ENABLE_LOG_TRACE: false,
+          ENABLE_THREADS: true,
+          ENABLE_THREADS_SPLIT: false,
+          BIGINT_LITERAL: false,
+          CHEAP_HEAP_INITIAL: 265,
+          ENABLE_SYNCHRONIZE_API: false,
+          ENABLE_PROTOCOL_HLS: true,
+          ENABLE_PROTOCOL_DASH: true,
+          ENABLE_PROTOCOL_RTSP: true,
+          ENABLE_PROTOCOL_RTMP: true,
+          ENABLE_DEMUXER_MPEGTS: true,
+          ENABLE_DEMUXER_MPEGPS: true,
+          ENABLE_DEMUXER_MP4: true,
+          ENABLE_DEMUXER_FLV: true,
+          ENABLE_DEMUXER_IVF: true,
+          ENABLE_DEMUXER_OGG: true,
+          ENABLE_DEMUXER_MP3: true,
+          ENABLE_DEMUXER_MATROSKA: true,
+          ENABLE_DEMUXER_AAC: true,
+          ENABLE_DEMUXER_FLAC: true,
+          ENABLE_DEMUXER_WAV: true,
+          ENABLE_DEMUXER_WEBVTT: true,
+          ENABLE_DEMUXER_SUBRIP: true,
+          ENABLE_DEMUXER_ASS: true,
+          ENABLE_DEMUXER_TTML: true,
+          ENABLE_DEMUXER_H264: true,
+          ENABLE_DEMUXER_HEVC: true,
+          ENABLE_DEMUXER_VVC: true,
+          ENABLE_MUXER_FLV: true,
+          ENABLE_MUXER_MP4: true,
+          ENABLE_MUXER_MP3: true,
+          ENABLE_MUXER_MATROSKA: true,
+          ENABLE_MUXER_IVF: true,
+          ENABLE_MUXER_MPEGTS: true,
+          ENABLE_MUXER_OGG: true,
+          ENABLE_MSE: true,
+          ENABLE_WORKER_PROXY: true,
+          ENABLE_WEBGPU: true,
+          ENABLE_RENDER_16: true,
+          ENABLE_SUBTITLE_RENDER: true,
+          ENABLE_LOG_PATH: true,
+          API_FRAME_KEY: true,
+          API_INTERLACED_FRAME: true,
+          API_PALETTE_HAS_CHANGED: true,
+          API_FRAME_PKT: true,
+          VERSION: getVersion()
+        }, defined),
+        importPath: (p) => {
+          p = p.replace(/^(\.\.\/)*cheap\//, '@libmedia/cheap/')
+          p = p.replace(/^(\.\.\/)*common\//, '@libmedia/common/')
+
+          p = p.replace(/^(\.\.\/)*avcodec\//, '@libmedia/avcodec/')
+          p = p.replace(/^(\.\.\/)*avformat\//, '@libmedia/avformat/')
+          p = p.replace(/^(\.\.\/)*avnetwork\//, '@libmedia/avnetwork/')
+          p = p.replace(/^(\.\.\/)*avplayer\//, '@libmedia/avplayer/')
+          p = p.replace(/^(\.\.\/)*avprotocol\//, '@libmedia/avprotocol/')
+          p = p.replace(/^(\.\.\/)*audiostretchpitch\//, '@libmedia/audiostretchpitch/')
+          p = p.replace(/^(\.\.\/)*audioresample\//, '@libmedia/audioresample/')
+          p = p.replace(/^(\.\.\/)*avpipeline\//, '@libmedia/avpipeline/')
+          p = p.replace(/^(\.\.\/)*avtranscode\//, '@libmedia/avtranscode/')
+          p = p.replace(/^(\.\.\/)*avutil\//, '@libmedia/avutil/')
+          p = p.replace(/^(\.\.\/)*videoscale\//, '@libmedia/videoscale/')
+          p = p.replace(/^(\.\.\/)*avfilter\//, '@libmedia/avfilter/')
+          return p
+        }
+      })
+    ],
+    afterDeclarations: [
+      packageMapTransformer(),
+      transformer.afterDeclarations(program, {
+      })
+    ]
+  });
+
+  // 打印错误
+  const allDiagnostics = ts
+    .getPreEmitDiagnostics(program)
+    .concat(emitResult.diagnostics);
+
+  allDiagnostics.forEach((diagnostic) => {
+    if (diagnostic.file) {
+      const { line, character } =
+        diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+      const message = ts.flattenDiagnosticMessageText(
+        diagnostic.messageText,
+        '\n'
+      );
+      console.log(
+        `${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`
+      );
+    } else {
+      console.log(
+        ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
+      );
+    }
+  });
+}
+
+function parseCommandLine(configPath) {
+  const configText = fs.readFileSync(configPath, 'utf8');
+  const { config } = ts.parseConfigFileTextToJson(configPath, configText);
+  const parsedCommandLine = ts.parseJsonConfigFileContent(
+    config,
+    ts.sys,
+    path.dirname(configPath)
+  );
+  return parsedCommandLine
+}
+
+function addPackageExport(p, extra = {}) {
+  if (!argv.export) {
+    return
+  }
+  let parsedCommandLine = parseCommandLine(path.resolve(p, 'tsconfig.esm.json'))
+
+  const json = fs.readFileSync(path.resolve(p, './package.json'), 'utf8');
+  const config = JSON.parse(json);
+
+  const exports = {}
+
+  parsedCommandLine.fileNames.forEach((name) => {
+
+    if (/__test__/.test(name)
+      || /\.test\.ts$/.test(name)
+      || /\.d\.ts$/.test(name)
+    ) {
+      return
+    }
+
+    const relativePath = path.relative(p, name)
+    if (!relativePath.startsWith('..')) {
+
+      let fileName = relativePath.split('.')
+      fileName.pop()
+      fileName = fileName.join('.')
+
+      exports['./' + fileName] = {
+        "import": './' + path.join('dist/esm', fileName + '.js'),
+        "require": './' + path.join('dist/cjs', fileName + '.js'),
+        "types": './' + path.join('dist/esm', fileName + '.d.ts')
+      }
+    }
+  })
+
+  Object.assign(exports, extra)
+
+  config.exports = exports
+  fs.writeFileSync(path.resolve(p, './package.json'), JSON.stringify(config, null, 2), 'utf8');
+}
+
+function buildASM(file, to, sourcePath, cjs) {
+
+  const os = require('os');
+
+  const input = '__cheap__transformer_tmp.wat'
+  const output = '__cheap__transformer_tmp.wasm'
+
+  let wat2wasmPath = path.resolve(__dirname, '../src/cheap/build/asm/ubuntu') + '/wat2wasm';
+  if (os.platform() === 'win32') {
+    wat2wasmPath = path.resolve(__dirname, '../src/cheap/build/asm/win') + '/wat2wasm.exe';
+  }
+  else if (os.platform() === 'darwin') {
+    wat2wasmPath = path.resolve(__dirname, '../src/cheap/build/asm/macos') + '/wat2wasm';
+  }
+
+  const inputPath = `${path.resolve(__dirname, '../dist')}/${input}`
+  const outputPath = `${path.resolve(__dirname, '../dist')}/${output}`
+
+  const cmd = `${wat2wasmPath} ${inputPath} --enable-simd --enable-threads -o ${outputPath}`
+
+  const content = fs.readFileSync(file, 'utf8')
+
+  const source = `
+    (module
+      (import "env" "memory" (memory 1 65536 shared))
+      ${content}
+    )
+  `
+
+  fs.writeFileSync(inputPath, source)
+
+  execSync(cmd, {
+    stdio: 'pipe'
+  })
+  const buffer = fs.readFileSync(outputPath)
+  let dir = path.dirname(to);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(to, cjs ? `
+    module.exports = '${buffer.toString('base64')}';
+  `
+  :`
+    export default '${buffer.toString('base64')}';
+  `, 'utf8');
+
+  // const map = {
+  //   "version": 3,
+  //   "sources": [sourcePath + path.basename(file)],
+  //   "names": [],
+  //   "mappings": "",
+  //   "sourcesContent": [
+  //     content
+  //   ]
+  // }
+  // fs.writeFileSync(to + '.map', JSON.stringify(map))
+}
+
+function buildGlsl(file, to, sourcePath, cjs) {
+  const html2js = require('html2js'); 
+  const source = fs.readFileSync(file, 'utf8')
+  let code = html2js(
+    source
+  );
+  let dir = path.dirname(to);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(to, cjs ? `
+      module.exports = ${code};
+    `
+    : `
+    export default ${code};
+  `, 'utf8');
+
+  // const map = {
+  //   "version": 3,
+  //   "sources": [sourcePath + path.basename(file)],
+  //   "names": [],
+  //   "mappings": "",
+  //   "sourcesContent": [
+  //     source
+  //   ]
+  // }
+  // fs.writeFileSync(to + '.map', JSON.stringify(map))
+}
+
+function buildWgsl(file, to, sourcePath, cjs) {
+  const html2js = require('html2js');
+  const source = fs.readFileSync(file, 'utf8')
+  let code = html2js(
+    source
+  );
+  let dir = path.dirname(to);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(to, cjs ? `
+    module.exports = ${code};
+    `
+    :`
+    export default ${code};
+  `, 'utf8');
+
+  // const map = {
+  //   "version": 3,
+  //   "sources": [sourcePath + path.basename(file)],
+  //   "names": [],
+  //   "mappings": "",
+  //   "sourcesContent": [
+  //     source
+  //   ]
+  // }
+  // fs.writeFileSync(to + '.map', JSON.stringify(map))
+}
+
+function buildPackage(package, taskLevel = 1) {
+  let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${package}/tsconfig.esm.json`))
+
+  const esmReg = new RegExp(`dist\/esm\/${package}\/?`)
+  const cjsReg = new RegExp(`dist\/cjs\/${package}\/?`)
+
+  printTaskLog(taskLevel, package, 'START', `starting built ${package} esm package`);
+
+  compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
+    let dir = path.dirname(fileName);
+    if (esmReg.test(dir)) {
+      dir = dir.replace(esmReg, 'dist/esm/')
+      fs.mkdirSync(dir, { recursive: true });
+      if (/\.js$/.test(fileName)) {
+        terser.minify(data, {
+          compress: {
+            unused: true,
+            dead_code: true,
+            toplevel: true
+          },
+          sourceMap: {
+            content: fs.readFileSync(path.resolve(dir, path.basename(fileName) + '.map'), 'utf8'),
+            url: path.basename(fileName) + '.map'
+          },
+          mangle: false,
+          output: {
+            beautify: true
+          }
+        }).then((result) => {
+          fs.writeFileSync(path.resolve(dir, path.basename(fileName)), result.code);
+          fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), result.map);
+        })
+      }
+      else {
+        if (/\.map$/.test(fileName)) {
+          const json = JSON.parse(data)
+          json.sources[0] = json.sources[0].replace(/^(\.\.\/)/, '')
+          data = JSON.stringify(json)
+        }
+        fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
+      }
+    }
+  });
+
+  printTaskLog(taskLevel, package, 'SUCCESS', `built ${package} esm package completed`);
+
+  printTaskLog(taskLevel, package, 'START', `starting built ${package} cjs package`);
+
+  parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${package}/tsconfig.cjs.json`))
+  compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
+    let dir = path.dirname(fileName);
+    if (cjsReg.test(dir)) {
+      dir = dir.replace(cjsReg, 'dist/cjs/')
+      fs.mkdirSync(dir, { recursive: true });
+      if (/\.js$/.test(fileName)) {
+        terser.minify(data, {
+          compress: {
+            unused: true,
+            dead_code: true,
+            toplevel: true
+          },
+          sourceMap: {
+            content: fs.readFileSync(path.resolve(dir, path.basename(fileName) + '.map'), 'utf8'),
+            url: path.basename(fileName) + '.map'
+          },
+          mangle: false,
+          output: {
+            beautify: true
+          }
+        }).then((result) => {
+          fs.writeFileSync(path.resolve(dir, path.basename(fileName)), result.code);
+          fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), result.map);
+        })
+      }
+      else {
+        if (/\.map$/.test(fileName)) {
+          const json = JSON.parse(data)
+          json.sources[0] = json.sources[0].replace(/^(\.\.\/)/, '')
+          data = JSON.stringify(json)
+        }
+        fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
+      }
+    }
+  }, true);
+
+  printTaskLog(taskLevel, package, 'SUCCESS', `built ${package} cjs package completed`);
+}
+
+function removeMainModule(fileName, module) {
+  const content = fs.readFileSync(fileName, 'utf8');
+  const lines = content.split('\n')
+
+  let skip = false
+  let output = []
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].indexOf(`declare module '${module}'`) === 0) {
+      skip = true
+    }
+    else if (skip && lines[i] === '}') {
+      skip = false
+    }
+    else {
+      output.push(lines[i])
+    }
+  }
+
+  fs.writeFileSync(fileName, output.join('\n'));
+}
+
+function buildCommon() {
+  printTaskLog(0, 'common', 'START', `starting built common`);
+
+  printTaskLog(1, 'common', 'START', `starting built common esm package`);
+  let parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/common/tsconfig.esm.json'))
+  compile(parsedCommandLine.fileNames, parsedCommandLine.options);
+  printTaskLog(1, 'common', 'SUCCESS', `built common esm package completed`);
+
+  printTaskLog(1, 'common', 'START', `starting built common cjs package`);
+  parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/common/tsconfig.cjs.json'))
+  compile(parsedCommandLine.fileNames, parsedCommandLine.options, undefined, true);
+  printTaskLog(1, 'common', 'SUCCESS', `built common cjs package completed`);
+
+  addPackageExport(path.resolve(__dirname, '../src/common/'))
+
+  printTaskLog(0, 'common', 'SUCCESS', `built common completed`);
+}
+
+function buildCheap() {
+  printTaskLog(0, 'cheap', 'START', `starting built cheap`);
+
+  printTaskLog(1, 'cheap', 'START', `starting built cheap polyfill`);
+  spawnSync('npm', ['run', 'build-cheap-polyfill'], {
+    stdio: 'ignore'
+  })
+  printTaskLog(1, 'cheap', 'SUCCESS', `built cheap polyfill completed`);
+
+  printTaskLog(1, 'cheap', 'START', `starting built cheap webassembly runner`);
+  spawnSync('npm', ['run', 'build-webassembly-runner'], {
+    stdio: 'ignore'
+  })
+  printTaskLog(1, 'cheap', 'SUCCESS', `built cheap webassembly runner completed`);
+
+  fs.mkdirSync(path.resolve(__dirname, '../src/cheap/dist/esm/webassembly'), { recursive: true });
+  fs.mkdirSync(path.resolve(__dirname, '../src/cheap/dist/cjs/webassembly'), { recursive: true });
+  fs.copyFileSync(path.resolve(__dirname, '../dist/cheap-polyfill.js'), path.resolve(__dirname, '../src/cheap/dist/cheap-polyfill.js'));
+  fs.copyFileSync(path.resolve(__dirname, '../src/cheap/webassembly/WebAssemblyRunnerWorker.js'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/WebAssemblyRunnerWorker.js'));
+  fs.copyFileSync(path.resolve(__dirname, '../src/cheap/webassembly/WebAssemblyRunnerWorker.js'), path.resolve(__dirname, '../src/cheap/dist/cjs/webassembly/WebAssemblyRunnerWorker.js'));
+  
+  printTaskLog(1, 'cheap', 'SUCCESS', `copy cheap-polyfill.js WebAssemblyRunnerWorker.js completed`);
+
+  buildPackage('cheap')
+
+  buildASM(path.resolve(__dirname, '../src/cheap/asm/memory.asm'), path.resolve(__dirname, '../src/cheap/dist/esm/asm/memory.asm.js'), '../../../asm/')
+  buildASM(path.resolve(__dirname, '../src/cheap/asm/memory.asm'), path.resolve(__dirname, '../src/cheap/dist/cjs/asm/memory.asm.js'), '../../../asm/', true)
+  buildASM(path.resolve(__dirname, '../src/cheap/thread/asm/atomics.asm'), path.resolve(__dirname, '../src/cheap/dist/esm/thread/asm/atomics.asm.js'), '../../../../thread/asm/')
+  buildASM(path.resolve(__dirname, '../src/cheap/thread/asm/atomics.asm'), path.resolve(__dirname, '../src/cheap/dist/cjs/thread/asm/atomics.asm.js'), '../../../../thread/asm/', true)
+  buildASM(path.resolve(__dirname, '../src/cheap/webassembly/runtime/asm/libc.asm'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/runtime/asm/libc.asm.js'), '../../../../../webassembly/runtime/asm/')
+  buildASM(path.resolve(__dirname, '../src/cheap/webassembly/runtime/asm/libc.asm'), path.resolve(__dirname, '../src/cheap/dist/cjs/webassembly/runtime/asm/libc.asm.js'), '../../../../../webassembly/runtime/asm/', true)
+  buildASM(path.resolve(__dirname, '../src/cheap/webassembly/runtime/asm/thread.asm'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/runtime/asm/thread.asm.js'), '../../../../../webassembly/runtime/asm/')
+  buildASM(path.resolve(__dirname, '../src/cheap/webassembly/runtime/asm/thread.asm'), path.resolve(__dirname, '../src/cheap/dist/cjs/webassembly/runtime/asm/thread.asm.js'), '../../../../../webassembly/runtime/asm/', true)
+
+  printTaskLog(1, 'cheap', 'SUCCESS', `built asm completed`);
+
+  addPackageExport(path.resolve(__dirname, '../src/cheap/'), {
+    "./build/webpack/CheapPlugin": "./build/webpack/plugin/CheapPlugin.js",
+    "./build/transformer": "./build/transformer.js"
+  })
+
+  printTaskLog(0, 'cheap', 'SUCCESS', `built cheap completed`);
+}
+
+function buildAudioresample() {
+  printTaskLog(0, 'audioresample', 'START', `starting built audioresample`);
+
+  buildPackage('audioresample')
+  addPackageExport(path.resolve(__dirname, '../src/audioresample/'))
+
+  printTaskLog(0, 'audioresample', 'SUCCESS', `built audioresample completed`);
+}
+
+function buildAudiostretchpitch() {
+  printTaskLog(0, 'audiostretchpitch', 'START', `starting built audiostretchpitch`);
+  buildPackage('audiostretchpitch')
+  addPackageExport(path.resolve(__dirname, '../src/audiostretchpitch/'))
+  printTaskLog(0, 'audiostretchpitch', 'SUCCESS', `built audiostretchpitch completed`);
+}
+
+function buildVideoscale() {
+  printTaskLog(0, 'videoscale', 'START', `starting built videoscale`);
+  buildPackage('videoscale')
+  addPackageExport(path.resolve(__dirname, '../src/videoscale/'))
+  printTaskLog(0, 'videoscale', 'SUCCESS', `built videoscale completed`);
+}
+
+function buildAvutil() {
+  printTaskLog(0, 'avutil', 'START', `starting built avutil`);
+  buildPackage('avutil')
+  addPackageExport(path.resolve(__dirname, '../src/avutil/'))
+  printTaskLog(0, 'avutil', 'SUCCESS', `built avutil completed`);
+}
+
+function buildAvcodec() {
+  printTaskLog(0, 'avcodec', 'START', `starting built avcodec`);
+  buildPackage('avcodec')
+  addPackageExport(path.resolve(__dirname, '../src/avcodec/'))
+  printTaskLog(0, 'avcodec', 'SUCCESS', `built avcodec completed`);
+}
+
+function buildAvfilter() {
+  printTaskLog(0, 'avfilter', 'START', `starting built avfilter`);
+  buildPackage('avfilter')
+  addPackageExport(path.resolve(__dirname, '../src/avfilter/'))
+  printTaskLog(0, 'avfilter', 'SUCCESS', `built avfilter completed`);
+}
+
+function buildAvformat() {
+  printTaskLog(0, 'avformat', 'START', `starting built avformat`);
+  buildPackage('avformat')
+  addPackageExport(path.resolve(__dirname, '../src/avformat/'))
+  printTaskLog(0, 'avformat', 'SUCCESS', `built avformat completed`);
+}
+
+function buildAvnetwork() {
+  printTaskLog(0, 'avnetwork', 'START', `starting built avnetwork`);
+  buildPackage('avnetwork')
+  addPackageExport(path.resolve(__dirname, '../src/avnetwork/'))
+  printTaskLog(0, 'avnetwork', 'SUCCESS', `built avnetwork completed`);
+}
+
+function buildAvpipeline() {
+  printTaskLog(0, 'avpipeline', 'START', `starting built avpipeline`);
+  buildPackage('avpipeline')
+  addPackageExport(path.resolve(__dirname, '../src/avpipeline/'))
+  printTaskLog(0, 'avpipeline', 'SUCCESS', `built avpipeline completed`);
+}
+
+function buildAvprotocol() {
+  printTaskLog(0, 'avprotocol', 'START', `starting built avprotocol`);
+  buildPackage('avprotocol')
+  addPackageExport(path.resolve(__dirname, '../src/avprotocol/'))
+  printTaskLog(0, 'avprotocol', 'SUCCESS', `built avprotocol completed`);
+}
+
+function buildAvrender() {
+  printTaskLog(0, 'avrender', 'START', `starting built avrender`);
+
+  printTaskLog(1, 'avrender', 'START', `starting built pcm worklet processor`);
+  spawnSync('npm', ['run', 'build-pcm-worklet-processor'], {
+    stdio: 'ignore'
+  })
+  printTaskLog(1, 'avrender', 'SUCCESS', `built pcm worklet processor completed`);
+
+  fs.mkdirSync(path.resolve(__dirname, '../src/avrender/dist'), { recursive: true });
+  fs.copyFileSync(path.resolve(__dirname, '../dist/AudioSourceWorkletProcessor.js'), path.resolve(__dirname, '../src/avrender/dist/AudioSourceWorkletProcessorWorklet.js'));
+  fs.copyFileSync(path.resolve(__dirname, '../dist/AudioSourceWorkletProcessor2.js'), path.resolve(__dirname, '../src/avrender/dist/AudioSourceWorkletProcessor2Worklet.js'));
+
+  printTaskLog(1, 'avrender', 'SUCCESS', `copy AudioSourceWorkletProcessor AudioSourceWorkletProcessor2 completed`);
+
+  buildPackage('avrender')
+
+  buildGlsl(path.resolve(__dirname, '../src/avrender/image/webgl/glsl/vertex.vert'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgl/glsl/vertex.vert.js'), '../../../../../image/webgl/glsl/')
+  buildGlsl(path.resolve(__dirname, '../src/avrender/image/webgl/glsl/vertex.vert'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgl/glsl/vertex.vert.js'), '../../../../../image/webgl/glsl/', true)
+
+  printTaskLog(1, 'avrender', 'SUCCESS', `built glsl completed`);
+
+  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/vertex.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/vertex.wgsl.js'), '../../../../../image/webgpu/wgsl/')
+  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/vertex.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/vertex.wgsl.js'), '../../../../../image/webgpu/wgsl/', true)
+  
+  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/compute/uint2FloatBE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/compute/uint2FloatBE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/')
+  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/compute/uint2FloatBE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/compute/uint2FloatBE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/', true)
+  
+  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/compute/uint2FloatLE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/compute/uint2FloatLE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/')
+  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/compute/uint2FloatLE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/compute/uint2FloatLE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/', true)
+  
+  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/fragment/external.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/fragment/external.wgsl.js'), '../../../../../image/webgpu/wgsl/fragment/')
+  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/fragment/external.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/fragment/external.wgsl.js'), '../../../../../image/webgpu/wgsl/fragment/', true)
+
+  printTaskLog(1, 'avrender', 'SUCCESS', `built wgsl completed`);
+
+  addPackageExport(path.resolve(__dirname, '../src/avrender/'))
+  printTaskLog(0, 'avrender', 'SUCCESS', `built avrender completed`);
+}
+
+function buildAvplayer() {
+  printTaskLog(0, 'AVPlayer', 'START', `starting built AVPlayer`);
+
+  process.env.NODE_ENV = 'production';
+
+  printTaskLog(1, 'AVPlayer', 'START', `built umd AVPlayer starting`);
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'release=1', 'esm=0', `dist=${path.resolve(__dirname, '../src/avplayer/dist/umd')}`], {
+    stdio: 'ignore'
+  })
+  printTaskLog(1, 'AVPlayer', 'SUCCESS', `built umd AVPlayer completed`);
+
+  printTaskLog(1, 'AVPlayer', 'START', `built esm AVPlayer starting`);
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'release=1', 'esm=1', `dist=${path.resolve(__dirname, '../src/avplayer/dist/esm')}`], {
+    stdio: 'ignore'
+  })
+  printTaskLog(1, 'AVPlayer', 'SUCCESS', `built esm AVPlayer completed`);
+
+  printTaskLog(1, 'AVPlayer', 'START', `built AVPlayer.d.ts starting`);
+  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../tsconfig.json'))
+  compile(parsedCommandLine.fileNames, parsedCommandLine.options, undefined, false, {
+    ENV_WEBPACK: true
+  });
+
+  const dts = require('dts-bundle');
+  dts.bundle({
+    name: 'AVPlayer',
+    main: path.resolve(__dirname, '../dist/src/avplayer/AVPlayer.d.ts'),
+    out: path.resolve(__dirname, '../src/avplayer/dist/avplayer.d.ts'),
+    removeSource: false
+  });
+  removeMainModule(path.resolve(__dirname, '../src/avplayer/dist/avplayer.d.ts'), 'AVPlayer')
+  printTaskLog(1, 'AVPlayer', 'SUCCESS', `built AVPlayer.d.ts completed`);
+
+  printTaskLog(0, 'AVPlayer', 'SUCCESS', `built AVPlayer completed`);
+}
+
+function buildAvtranscoder() {
+  printTaskLog(0, 'AVTranscoder', 'START', `starting built AVTranscoder`);
+
+  printTaskLog(1, 'AVTranscoder', 'START', `built umd AVTranscoder starting`);
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avtranscoder=1', 'release=1', 'esm=0', `dist=${path.resolve(__dirname, '../src/avtranscoder/dist/umd')}`], {
+    stdio: 'ignore'
+  })
+  printTaskLog(1, 'AVTranscoder', 'SUCCESS', `built umd AVTranscoder completed`);
+
+  printTaskLog(1, 'AVTranscoder', 'START', `built esm AVTranscoder starting`);
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avtranscoder=1', 'release=1', 'esm=1', `dist=${path.resolve(__dirname, '../src/avtranscoder/dist/esm')}`], {
+    stdio: 'ignore'
+  })
+  printTaskLog(1, 'AVTranscoder', 'SUCCESS', `built esm AVTranscoder completed`);
+
+  printTaskLog(1, 'AVTranscoder', 'START', `built AVTranscoder.d.ts starting`);
+  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../tsconfig.json'))
+  compile(parsedCommandLine.fileNames, parsedCommandLine.options, undefined, false, {
+    ENV_WEBPACK: true
+  });
+
+  const dts = require('dts-bundle');
+  dts.bundle({
+    name: 'AVTranscoder',
+    main: path.resolve(__dirname, '../dist/src/avtranscoder/AVTranscoder.d.ts'),
+    out: path.resolve(__dirname, '../src/avtranscoder/dist/avtranscoder.d.ts'),
+    removeSource: false
+  });
+  removeMainModule(path.resolve(__dirname, '../src/avtranscoder/dist/avtranscoder.d.ts'), 'AVTranscoder')
+  printTaskLog(1, 'AVTranscoder', 'SUCCESS', `built AVTranscoder.d.ts completed`);
+
+  printTaskLog(0, 'AVTranscoder', 'SUCCESS', `built AVTranscoder completed`);
+}
+
+function buildAvplayerUI() {
+  printTaskLog(0, 'AVPlayerUI', 'START', `starting built AVPlayerUI`);
+
+  printTaskLog(1, 'AVPlayerUI', 'START', `built umd AVPlayerUI starting`);
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'ui=1', 'release=1', 'esm=0', `dist=${path.resolve(__dirname, '../src/ui/avplayer/dist/umd')}`], {
+    stdio: 'ignore'
+  })
+  printTaskLog(1, 'AVPlayerUI', 'SUCCESS', `built umd AVPlayerUI completed`);
+
+  printTaskLog(1, 'AVPlayerUI', 'START', `built esm AVPlayerUI starting`);
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'ui=1', 'release=1', 'esm=1', `dist=${path.resolve(__dirname, '../src/ui/avplayer/dist/esm')}`], {
+    stdio: 'ignore'
+  })
+  printTaskLog(1, 'AVPlayerUI', 'SUCCESS', `built esm AVPlayerUI completed`);
+
+  printTaskLog(1, 'AVPlayerUI', 'START', `built AVPlayerUI.d.ts starting`);
+  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../tsconfig.json'))
+  compile(parsedCommandLine.fileNames, parsedCommandLine.options, undefined, false, {
+    ENV_WEBPACK: true
+  });
+
+  const dts = require('dts-bundle');
+  dts.bundle({
+    name: 'AVPlayer',
+    main: path.resolve(__dirname, '../dist/src/ui/avplayer/AVPlayer.d.ts'),
+    out: path.resolve(__dirname, '../src/ui/avplayer/dist/avplayer.d.ts'),
+    removeSource: false
+  });
+  removeMainModule(path.resolve(__dirname, '../src/ui/avplayer/dist/avplayer.d.ts'), 'AVPlayer')
+  printTaskLog(1, 'AVPlayerUI', 'SUCCESS', `built AVPlayerUI.d.ts completed`);
+
+  printTaskLog(0, 'AVPlayerUI', 'SUCCESS', `built AVPlayerUI completed`);
+}
+
+function buildAll() {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=cheap'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=common'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=audioresample'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=audiostretchpitch'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=videoscale'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avcodec'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avfilter'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avformat'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avnetwork'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avpipeline'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avplayer'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avprotocol'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avrender'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avtranscoder'], {
+    stdio: 'inherit'
+  })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avplayer_ui'], {
+    stdio: 'inherit'
+  })
+}
+
+switch (argv.package) {
+  case 'cheap':
+    buildCheap()
+    break
+  case 'common':
+    buildCommon()
+    break
+  case 'audioresample':
+    buildAudioresample()
+    break
+  case 'audiostretchpitch':
+    buildAudiostretchpitch()
+    break
+  case 'videoscale':
+    buildVideoscale()
+    break
+  case 'avutil':
+    buildAvutil()
+    break
+  case 'avcodec':
+    buildAvcodec()
+    break
+  case 'avfilter':
+    buildAvfilter()
+    break
+  case 'avformat':
+    buildAvformat()
+    break
+  case 'avnetwork':
+    buildAvnetwork()
+    break
+  case 'avpipeline':
+    buildAvpipeline()
+    break
+  case 'avplayer':
+    buildAvplayer()
+    break
+  case 'avprotocol':
+    buildAvprotocol()
+    break
+  case 'avrender':
+    buildAvrender()
+    break
+  case 'avtranscoder':
+    buildAvtranscoder()
+    break
+  case 'avplayer_ui':
+    buildAvplayerUI()
+    break
+  case 'all':
+    buildAll()
+    break
+}

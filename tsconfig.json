@@ -54,7 +54,11 @@
     "*.test.ts",
     "__test__",
     "/node_modules/**",
-    "**/dist/"
+    "**/dist/",
+    "*.d.ts"
+  ],
+  "files": [
+    "./@types/index.d.ts"
   ],
   "cheap": {
     "defined": {

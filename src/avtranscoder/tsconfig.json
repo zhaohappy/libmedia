@@ -1,0 +1,39 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "sourceMap": true,
+    "declarationMap": false,
+    "baseUrl": "./",
+    "paths": {
+      "avcodec/*": ["../avcodec/*"],
+      "avformat/*": ["../avformat/*"],
+      "avnetwork/*": ["../avnetwork/*"],
+      "avprotocol/*": ["../avprotocol/*"],
+      "audiostretchpitch/*": ["../audiostretchpitch/*"],
+      "audioresample/*": ["../audioresample/*"],
+      "avpipeline/*": ["../avpipeline/*"],
+      "avutil/*": ["../avutil/*"],
+      "videoscale/*": ["../videoscale/*"],
+      "avfilter/*": ["../avfilter/*"],
+
+      "cheap/*": ["../cheap/*"],
+      "common/*": ["../common/*"]
+    },
+    "allowJs": false
+  },
+  "include": [
+    "./**/*.ts",
+    "../cheap/**/*.ts",
+    "../common/types/*.ts",
+    "../avprotocol/**/*.ts",
+    "../avutil/**/*.ts",
+    "../avformat/**/*.ts",
+    "../avcodec/**/*.ts",
+    "../avnetwork/**/*.ts",
+    "../audiostretchpitch/**/*.ts",
+    "../audioresample/**/*.ts",
+    "../avpipeline/**/*.ts",
+    "../../@types/index.d.ts"
+  ]
+}

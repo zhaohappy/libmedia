@@ -1,0 +1,42 @@
+{
+  "name": "@libmedia/avplayer",
+  "version": "0.1.2",
+  "description": "libmedia avplayer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhaohappy/libmedia.git"
+  },
+  "types": "./dist/avplayer.d.ts",
+  "module": "./dist/esm/avplayer.js",
+  "main": "./dist/umd/avplayer.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/avplayer.js",
+      "require": "./dist/umd/avplayer.js",
+      "type": "./dist/avplayer.d.ts"
+    },
+    "./AVPlayer": {
+      "type": "./dist/avplayer.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "author": "Gaoxing Zhao",
+  "license": "LGPL-3.0-or-later",
+  "dependencies": {
+    "@libmedia/common": "workspace:*",
+    "@libmedia/cheap": "workspace:*",
+    "@libmedia/avutil": "workspace:*",
+    "@libmedia/avprotocol": "workspace:*",
+    "@libmedia/avcodec": "workspace:*",
+    "@libmedia/avformat": "workspace:*",
+    "@libmedia/avpipeline": "workspace:*",
+    "@libmedia/avnetwork": "workspace:*",
+    "@libmedia/avrender": "workspace:*",
+    "@libmedia/audioresample": "workspace:*",
+    "@libmedia/audiostretchpitch": "workspace:*",
+    "ass-compiler": "^0.1.13",
+    "assjs": "^0.1.1"
+  }
+}

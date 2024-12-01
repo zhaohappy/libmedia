@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "sourceMap": true,
+    "declarationMap": false,
+    "baseUrl": "./",
+    "paths": {
+      "cheap/*": ["../cheap/*"],
+      "common/*": ["../common/*"]
+    },
+    "allowJs": false
+  },
+  "include": [
+    "./**/*.ts",
+    "../cheap/**/*.ts",
+    "../common/types/*.ts",
+    "../../@types/index.d.ts"
+  ]
+}

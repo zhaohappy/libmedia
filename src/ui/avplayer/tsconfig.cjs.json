@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/cjs",
+    "module": "CommonJS"
+  },
+  "exclude": [
+    "*.test.ts",
+    "__test__",
+    "/node_modules/**",
+    "**/dist",
+    "**/transformer/**",
+    "**/polyfill/**"
+  ]
+}

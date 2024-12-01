@@ -1,0 +1,24 @@
+{
+  "name": "@libmedia/audiostretchpitch",
+  "version": "0.1.2",
+  "description": "libmedia 音频变调变速",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhaohappy/libmedia.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "author": "Gaoxing Zhao",
+  "license": "LGPL-3.0-or-later",
+  "dependencies": {
+    "@libmedia/cheap": "workspace:*"
+  },
+  "exports": {
+    "./StretchPitcher": {
+      "import": "./dist/esm/StretchPitcher.js",
+      "require": "./dist/cjs/StretchPitcher.js",
+      "types": "./dist/esm/StretchPitcher.d.ts"
+    }
+  }
+}

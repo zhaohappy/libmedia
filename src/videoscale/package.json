@@ -1,0 +1,26 @@
+{
+  "name": "@libmedia/videoscale",
+  "version": "0.1.2",
+  "description": "libmedia 图像格式处理",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhaohappy/libmedia.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "author": "Gaoxing Zhao",
+  "license": "LGPL-3.0-or-later",
+  "dependencies": {
+    "@libmedia/common": "workspace:*",
+    "@libmedia/cheap": "workspace:*",
+    "@libmedia/avutil": "workspace:*"
+  },
+  "exports": {
+    "./VideoScaler": {
+      "import": "./dist/esm/VideoScaler.js",
+      "require": "./dist/cjs/VideoScaler.js",
+      "types": "./dist/esm/VideoScaler.d.ts"
+    }
+  }
+}

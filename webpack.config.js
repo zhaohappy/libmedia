@@ -16,7 +16,7 @@ module.exports = (env) => {
 
   let entry = '';
   let output = '';
-  let libraryTarget = 'umd';
+  let libraryTarget = env.esm ? 'module' : 'umd';
   let library = '';
   let libraryExport;
   let outputPath = path.resolve(__dirname, './dist');
@@ -76,20 +76,19 @@ module.exports = (env) => {
   }
   else if (env.webassembly_runner) {
     entry = path.resolve(__dirname, './src/cheap/webassembly/WebAssemblyRunner.ts');
-    output = 'WebAssemblyRunner.js';
+    outputPath = path.resolve(__dirname, './src/cheap/webassembly');
+    output = 'WebAssemblyRunnerWorker.js'
     library = '__CHeap_WebAssemblyRunner__';
     libraryTarget = 'var';
   }
   else if (env.pcm_worklet_processor) {
     entry = {
-      'AudioSourceWorkletProcessor_': path.resolve(__dirname, './src/avrender/pcm/AudioSourceWorkletProcessor.ts'),
-      'AudioSourceWorkletProcessor2_': path.resolve(__dirname, './src/avrender/pcm/AudioSourceWorkletProcessor2.ts')
+      'AudioSourceWorkletProcessor': path.resolve(__dirname, './src/avrender/pcm/AudioSourceWorkletProcessor.ts'),
+      'AudioSourceWorkletProcessor2': path.resolve(__dirname, './src/avrender/pcm/AudioSourceWorkletProcessor2.ts')
     };
-
     output = '[name].js';
     library = 'processor';
     libraryTarget = 'var';
-    outputPath = path.resolve(__dirname, './src/avrender/pcm');
   }
   else {
     return;
@@ -105,6 +104,9 @@ module.exports = (env) => {
       errors: true,
       warnings: true,
       children: true
+    },
+    experiments: {
+      outputModule: env.esm ? true : undefined,
     },
     watchOptions: {
       aggregateTimeout: 1000,
@@ -153,11 +155,11 @@ module.exports = (env) => {
     entry: entry,
     output: {
       filename: output,
-      path: outputPath,
+      path: env.dist || outputPath,
       library: {
-        name: library,
+        name: env.esm ? undefined : library,
         type: libraryTarget,
-        export: libraryExport
+        export: env.esm ? undefined : libraryExport
       }
     },
     module: {
@@ -219,12 +221,6 @@ module.exports = (env) => {
           test: /\.(glsl|vert|frag)$/,
           use: [
             'raw-loader',
-            {
-              loader: 'glslify-loader',
-              options: {
-                resourcePath: '/src/avrender/image/webgl/glsl'
-              }
-            }
           ]
         },
         {
@@ -268,6 +264,7 @@ module.exports = (env) => {
       new CheapPlugin({
         name: 'libmedia',
         env: 'browser',
+        cheapPacketName: 'cheap',
         projectPath: __dirname,
         tmpPath: path.resolve(__dirname, './dist'),
         exclude: /__test__/,

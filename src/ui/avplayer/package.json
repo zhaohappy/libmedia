@@ -1,0 +1,31 @@
+{
+  "name": "@libmedia/avplayer-ui",
+  "version": "0.1.2",
+  "description": "libmedia avplayer ui",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhaohappy/libmedia.git"
+  },
+  "types": "./dist/avplayer.d.ts",
+  "module": "./dist/esm/avplayer.js",
+  "main": "./dist/umd/avplayer.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/avplayer.js",
+      "require": "./dist/umd/avplayer.js",
+      "type": "./dist/avplayer.d.ts"
+    },
+    "./AVPlayer": {
+      "type": "./dist/avplayer.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "author": "Gaoxing Zhao",
+  "license": "LGPL-3.0-or-later",
+  "dependencies": {
+    "@libmedia/avplayer": "workspace:*",
+    "yox": "^1.0.0-alpha.408"
+  }
+}

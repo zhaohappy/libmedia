@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/esm",
+    "module": "ESNext",
+    "moduleResolution": "node"
+  },
+  "exclude": [
+    "*.test.ts",
+    "__test__",
+    "/node_modules/**",
+    "**/dist",
+    "**/transformer/**",
+    "**/polyfill/**"
+  ]
+}

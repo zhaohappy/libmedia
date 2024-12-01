@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "sourceMap": true,
+    "declarationMap": false,
+    "baseUrl": "./",
+    "paths": {
+      "avprotocol/*": ["../avprotocol/*"],
+      "avutil/*": ["../avutil/*"],
+      "avformat/*": ["../avformat/*"],
+      "avcodec/*": ["../avcodec/*"],
+
+      "cheap/*": ["../cheap/*"],
+      "common/*": ["../common/*"]
+    },
+    "allowJs": false
+  },
+  "include": [
+    "./**/*.ts",
+    "../cheap/**/*.ts",
+    "../common/types/*.ts",
+    "../avprotocol/**/*.ts",
+    "../avutil/**/*.ts",
+    "../avformat/**/*.ts",
+    "../avcodec/**/*.ts",
+    "../../@types/index.d.ts"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "name": "@libmedia/avtranscoder",
+  "version": "0.1.2",
+  "description": "libmedia avtranscoder",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhaohappy/libmedia.git"
+  },
+  "types": "./dist/avtranscoder.d.ts",
+  "module": "./dist/esm/avtranscoder.js",
+  "main": "./dist/umd/avtranscoder.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/avtranscoder.js",
+      "require": "./dist/umd/avtranscoder.js",
+      "type": "./dist/avtranscoder.d.ts"
+    },
+    "./AVTranscoder": {
+      "type": "./dist/avtranscoder.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "author": "Gaoxing Zhao",
+  "license": "LGPL-3.0-or-later",
+  "dependencies": {
+    "@libmedia/common": "workspace:*",
+    "@libmedia/cheap": "workspace:*",
+    "@libmedia/avutil": "workspace:*",
+    "@libmedia/avprotocol": "workspace:*",
+    "@libmedia/avcodec": "workspace:*",
+    "@libmedia/avformat": "workspace:*",
+    "@libmedia/avfilter": "workspace:*",
+    "@libmedia/avpipeline": "workspace:*",
+    "@libmedia/avnetwork": "workspace:*",
+    "@libmedia/audioresample": "workspace:*",
+    "@libmedia/audiostretchpitch": "workspace:*",
+    "@libmedia/videoscale": "workspace:*"
+  }
+}

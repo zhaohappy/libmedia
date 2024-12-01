@@ -1,0 +1,26 @@
+{
+  "name": "@libmedia/audioresample",
+  "version": "0.1.2",
+  "description": "libmedia 音频重采样模块",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhaohappy/libmedia.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "author": "Gaoxing Zhao",
+  "license": "LGPL-3.0-or-later",
+  "dependencies": {
+    "@libmedia/common": "workspace:*",
+    "@libmedia/cheap": "workspace:*",
+    "@libmedia/avutil": "workspace:*"
+  },
+  "exports": {
+    "./Resampler": {
+      "import": "./dist/esm/Resampler.js",
+      "require": "./dist/cjs/Resampler.js",
+      "types": "./dist/esm/Resampler.d.ts"
+    }
+  }
+}
