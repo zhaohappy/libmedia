@@ -14,7 +14,9 @@ function parseMPD(xmlString: string) {
   if (!xmlString) {
     return null
   }
-  return xml2Json(xmlString) as {
+  return xml2Json(xmlString, {
+    aloneValueName: 'value'
+  }) as {
     MPD: MPD
   }
 }
@@ -93,7 +95,7 @@ export default function parser(xml: string, url: string) {
   }
   let MpdBaseURL = ''
   if (result.BaseURL) {
-    MpdBaseURL = result.BaseURL
+    MpdBaseURL = is.string(result.BaseURL) ? result.BaseURL : result.BaseURL.value
   }
   const Period = is.array(result.Period) ? result.Period[0] : result.Period
   if (!list.duration && Period && Period.duration) {

@@ -167,5 +167,5 @@ export interface MPD {
   minimumUpdatePeriod?: string
   ServiceDescription?: {id: string}[]
   Period: Period | Period[]
-  BaseURL?: string
+  BaseURL?: string | { value: string }
 }
