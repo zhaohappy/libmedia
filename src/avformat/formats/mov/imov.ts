@@ -255,10 +255,10 @@ export async function readMoov(
               old.codecpar.extradata = avMalloc(old.codecpar.extradataSize)
               memcpyFromUint8Array(old.codecpar.extradata, old.codecpar.extradataSize, old.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA])
 
-              if (stream.codecpar.width === NOPTS_VALUE && streamContext.width > 0) {
+              if (stream.codecpar.width !== NOPTS_VALUE && streamContext.width > 0) {
                 old.codecpar.width = streamContext.width
               }
-              if (stream.codecpar.width === NOPTS_VALUE && streamContext.height > 0) {
+              if (stream.codecpar.width !== NOPTS_VALUE && streamContext.height > 0) {
                 old.codecpar.height = streamContext.height
               }
             }

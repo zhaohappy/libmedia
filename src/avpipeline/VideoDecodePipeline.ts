@@ -43,7 +43,7 @@ import Sleep from 'common/timer/Sleep'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
 import isWorker from 'common/function/isWorker'
-import { AVCodecID } from 'avutil/codec'
+import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import getTimestamp from 'common/function/getTimestamp'
 import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
@@ -52,8 +52,10 @@ import isPointer from 'cheap/std/function/isPointer'
 import { Data } from 'common/types/type'
 import compileResource from 'avutil/function/compileResource'
 import { AVCodecParametersSerialize, AVPacketSerialize, unserializeAVCodecParameters, unserializeAVPacket } from 'avutil/util/serialize'
-import { avMallocz } from 'avutil/util/mem'
+import { avFree, avMalloc, avMallocz } from 'avutil/util/mem'
 import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
+import { getAVPacketSideData } from 'avutil/util/avpacket'
+import { memcpy } from 'cheap/std/memory'
 
 export interface VideoDecodeTaskOptions extends TaskOptions {
   resource: ArrayBuffer | WebAssemblyResource
@@ -313,6 +315,20 @@ export default class VideoDecodePipeline extends Pipeline {
                   }
                 }
                 let ret = task.targetDecoder.decode(avpacket)
+
+                if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
+                  // 更新 task.parameters 到最新的 extradata
+                  const element = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+                  if (element !== nullptr) {
+                    if (task.parameters.extradata) {
+                      avFree(task.parameters.extradata)
+                    }
+                    task.parameters.extradataSize = element.size
+                    task.parameters.extradata = avMalloc(element.size)
+                    memcpy(task.parameters.extradata, element.data, element.size)
+                  }
+                }
+
                 if (ret < 0) {
                   task.stats.videoDecodeErrorPacketCount++
                   // 硬解或者 webcodecs 软解失败
