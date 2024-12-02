@@ -66,7 +66,7 @@
     "terser": "^5.36.0",
     "ts-jest": "^23.10.5",
     "ts-loader": "^9.4.4",
-    "typedoc": "^0.26.11",
+    "typedoc": "^0.27.2",
     "typedoc-github-wiki-theme": "^2.0.0",
     "typedoc-plugin-markdown": "^4.2.10",
     "typedoc-plugin-rename-defaults": "^0.7.1",
