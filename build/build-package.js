@@ -6,6 +6,29 @@ const argv = require('yargs').argv;
 const { spawnSync, execSync } = require('child_process');
 const terser = require('terser');
 
+function replacePath(path) {
+  path = path.replace(/^(\.\.\/)*cheap\//, '@libmedia/cheap/')
+  path = path.replace(/^(\.\.\/)*common\//, '@libmedia/common/')
+
+  path = path.replace(/^(\.\.\/)*avcodec\//, '@libmedia/avcodec/')
+  path = path.replace(/^(\.\.\/)*avformat\//, '@libmedia/avformat/')
+  path = path.replace(/^(\.\.\/)*avnetwork\//, '@libmedia/avnetwork/')
+  path = path.replace(/^(\.\.\/)*avplayer\//, '@libmedia/avplayer/')
+  path = path.replace(/^(\.\.\/)*avprotocol\//, '@libmedia/avprotocol/')
+  path = path.replace(/^(\.\.\/)*audiostretchpitch\//, '@libmedia/audiostretchpitch/')
+  path = path.replace(/^(\.\.\/)*audioresample\//, '@libmedia/audioresample/')
+  path = path.replace(/^(\.\.\/)*avpipeline\//, '@libmedia/avpipeline/')
+  path = path.replace(/^(\.\.\/)*avtranscode\//, '@libmedia/avtranscode/')
+  path = path.replace(/^(\.\.\/)*avutil\//, '@libmedia/avutil/')
+  path = path.replace(/^(\.\.\/)*videoscale\//, '@libmedia/videoscale/')
+  path = path.replace(/^(\.\.\/)*avfilter\//, '@libmedia/avfilter/')
+  path = path.replace(/^(\.\.\/)*avrender\//, '@libmedia/avrender/')
+  path = path.replace(/^(\.\.\/)*avplayer\/AVPlayer/, '@libmedia/avplayer')
+  path = path.replace(/^(\.\.\/)*avtranscoder\/AVTranscoder/, '@libmedia/avtranscoder')
+
+  return path
+}
+
 // 打印任务日志，支持缩进
 function printTaskLog(taskLevel, taskId, status, message = '') {
   const indent = ' '.repeat(taskLevel * 2);
@@ -17,29 +40,25 @@ function packageMapTransformer() {
     return (sourceFile) => {
       function visitor(node) {
         if (ts.isStringLiteral(node) && node.parent && ts.isImportDeclaration(node.parent)) {
-
-          let path = node.text
-          path = path.replace(/^(\.\.\/)*cheap\//, '@libmedia/cheap/')
-          path = path.replace(/^(\.\.\/)*common\//, '@libmedia/common/')
-
-          path = path.replace(/^(\.\.\/)*avcodec\//, '@libmedia/avcodec/')
-          path = path.replace(/^(\.\.\/)*avformat\//, '@libmedia/avformat/')
-          path = path.replace(/^(\.\.\/)*avnetwork\//, '@libmedia/avnetwork/')
-          path = path.replace(/^(\.\.\/)*avplayer\//, '@libmedia/avplayer/')
-          path = path.replace(/^(\.\.\/)*avprotocol\//, '@libmedia/avprotocol/')
-          path = path.replace(/^(\.\.\/)*audiostretchpitch\//, '@libmedia/audiostretchpitch/')
-          path = path.replace(/^(\.\.\/)*audioresample\//, '@libmedia/audioresample/')
-          path = path.replace(/^(\.\.\/)*avpipeline\//, '@libmedia/avpipeline/')
-          path = path.replace(/^(\.\.\/)*avtranscode\//, '@libmedia/avtranscode/')
-          path = path.replace(/^(\.\.\/)*avutil\//, '@libmedia/avutil/')
-          path = path.replace(/^(\.\.\/)*videoscale\//, '@libmedia/videoscale/')
-          path = path.replace(/^(\.\.\/)*avfilter\//, '@libmedia/avfilter/')
-
+          let path = replacePath(node.text)
           if (/\.(glsl|vert|frag|asm|wgsl)$/.test(path)) {
             path += '.js'
           }
-
           return context.factory.createStringLiteral(path)
+        }
+        else if (ts.isCallExpression(node)
+          && ts.isIdentifier(node.expression)
+          && node.expression.escapedText === 'import'
+          && ts.isStringLiteral(node.arguments[0])
+        ) {
+          let path = replacePath(node.arguments[0].text)
+          return context.factory.createCallExpression(
+            context.factory.createIdentifier('import'),
+            undefined,
+            [
+              context.factory.createStringLiteral(path)
+            ]
+          )
         }
         return ts.visitEachChild(node, visitor, context);
       }
@@ -116,22 +135,7 @@ function compile(fileNames, options, writeCallback, cjs = false, defined = {}) {
           VERSION: getVersion()
         }, defined),
         importPath: (p) => {
-          p = p.replace(/^(\.\.\/)*cheap\//, '@libmedia/cheap/')
-          p = p.replace(/^(\.\.\/)*common\//, '@libmedia/common/')
-
-          p = p.replace(/^(\.\.\/)*avcodec\//, '@libmedia/avcodec/')
-          p = p.replace(/^(\.\.\/)*avformat\//, '@libmedia/avformat/')
-          p = p.replace(/^(\.\.\/)*avnetwork\//, '@libmedia/avnetwork/')
-          p = p.replace(/^(\.\.\/)*avplayer\//, '@libmedia/avplayer/')
-          p = p.replace(/^(\.\.\/)*avprotocol\//, '@libmedia/avprotocol/')
-          p = p.replace(/^(\.\.\/)*audiostretchpitch\//, '@libmedia/audiostretchpitch/')
-          p = p.replace(/^(\.\.\/)*audioresample\//, '@libmedia/audioresample/')
-          p = p.replace(/^(\.\.\/)*avpipeline\//, '@libmedia/avpipeline/')
-          p = p.replace(/^(\.\.\/)*avtranscode\//, '@libmedia/avtranscode/')
-          p = p.replace(/^(\.\.\/)*avutil\//, '@libmedia/avutil/')
-          p = p.replace(/^(\.\.\/)*videoscale\//, '@libmedia/videoscale/')
-          p = p.replace(/^(\.\.\/)*avfilter\//, '@libmedia/avfilter/')
-          return p
+          return replacePath(p)
         }
       })
     ],
@@ -416,27 +420,6 @@ function buildPackage(package, taskLevel = 1) {
   printTaskLog(taskLevel, package, 'SUCCESS', `built ${package} cjs package completed`);
 }
 
-function removeMainModule(fileName, module) {
-  const content = fs.readFileSync(fileName, 'utf8');
-  const lines = content.split('\n')
-
-  let skip = false
-  let output = []
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].indexOf(`declare module '${module}'`) === 0) {
-      skip = true
-    }
-    else if (skip && lines[i] === '}') {
-      skip = false
-    }
-    else {
-      output.push(lines[i])
-    }
-  }
-
-  fs.writeFileSync(fileName, output.join('\n'));
-}
-
 function buildCommon() {
   printTaskLog(0, 'common', 'START', `starting built common`);
 
@@ -629,19 +612,15 @@ function buildAvplayer() {
   printTaskLog(1, 'AVPlayer', 'SUCCESS', `built esm AVPlayer completed`);
 
   printTaskLog(1, 'AVPlayer', 'START', `built AVPlayer.d.ts starting`);
-  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../tsconfig.json'))
-  compile(parsedCommandLine.fileNames, parsedCommandLine.options, undefined, false, {
-    ENV_WEBPACK: true
-  });
-
-  const dts = require('dts-bundle');
-  dts.bundle({
-    name: 'AVPlayer',
-    main: path.resolve(__dirname, '../dist/src/avplayer/AVPlayer.d.ts'),
-    out: path.resolve(__dirname, '../src/avplayer/dist/avplayer.d.ts'),
-    removeSource: false
-  });
-  removeMainModule(path.resolve(__dirname, '../src/avplayer/dist/avplayer.d.ts'), 'AVPlayer')
+  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/avplayer/tsconfig.d.json'))
+  compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
+    let dir = path.dirname(fileName);
+    if (/dist\/types\/avplayer\/?/.test(dir)) {
+      dir = dir.replace(/dist\/types\/avplayer\/?/, 'dist/types/')
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
+    }
+  }, false);
   printTaskLog(1, 'AVPlayer', 'SUCCESS', `built AVPlayer.d.ts completed`);
 
   printTaskLog(0, 'AVPlayer', 'SUCCESS', `built AVPlayer completed`);
@@ -663,19 +642,15 @@ function buildAvtranscoder() {
   printTaskLog(1, 'AVTranscoder', 'SUCCESS', `built esm AVTranscoder completed`);
 
   printTaskLog(1, 'AVTranscoder', 'START', `built AVTranscoder.d.ts starting`);
-  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../tsconfig.json'))
-  compile(parsedCommandLine.fileNames, parsedCommandLine.options, undefined, false, {
-    ENV_WEBPACK: true
-  });
-
-  const dts = require('dts-bundle');
-  dts.bundle({
-    name: 'AVTranscoder',
-    main: path.resolve(__dirname, '../dist/src/avtranscoder/AVTranscoder.d.ts'),
-    out: path.resolve(__dirname, '../src/avtranscoder/dist/avtranscoder.d.ts'),
-    removeSource: false
-  });
-  removeMainModule(path.resolve(__dirname, '../src/avtranscoder/dist/avtranscoder.d.ts'), 'AVTranscoder')
+  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/avtranscoder/tsconfig.d.json'))
+  compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
+    let dir = path.dirname(fileName);
+    if (/dist\/types\/avtranscoder\/?/.test(dir)) {
+      dir = dir.replace(/dist\/types\/avtranscoder\/?/, 'dist/types/')
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
+    }
+  }, false);
   printTaskLog(1, 'AVTranscoder', 'SUCCESS', `built AVTranscoder.d.ts completed`);
 
   printTaskLog(0, 'AVTranscoder', 'SUCCESS', `built AVTranscoder completed`);
@@ -697,19 +672,15 @@ function buildAvplayerUI() {
   printTaskLog(1, 'AVPlayerUI', 'SUCCESS', `built esm AVPlayerUI completed`);
 
   printTaskLog(1, 'AVPlayerUI', 'START', `built AVPlayerUI.d.ts starting`);
-  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../tsconfig.json'))
-  compile(parsedCommandLine.fileNames, parsedCommandLine.options, undefined, false, {
-    ENV_WEBPACK: true
-  });
-
-  const dts = require('dts-bundle');
-  dts.bundle({
-    name: 'AVPlayer',
-    main: path.resolve(__dirname, '../dist/src/ui/avplayer/AVPlayer.d.ts'),
-    out: path.resolve(__dirname, '../src/ui/avplayer/dist/avplayer.d.ts'),
-    removeSource: false
-  });
-  removeMainModule(path.resolve(__dirname, '../src/ui/avplayer/dist/avplayer.d.ts'), 'AVPlayer')
+  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/ui/avplayer/tsconfig.d.json'))
+  compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
+    let dir = path.dirname(fileName);
+    if (/dist\/types\/ui\/avplayer\/?/.test(dir)) {
+      dir = dir.replace(/dist\/types\/ui\/avplayer\/?/, 'dist/types/')
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
+    }
+  }, false);
   printTaskLog(1, 'AVPlayerUI', 'SUCCESS', `built AVPlayerUI.d.ts completed`);
 
   printTaskLog(0, 'AVPlayerUI', 'SUCCESS', `built AVPlayerUI completed`);

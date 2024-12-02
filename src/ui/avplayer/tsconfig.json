@@ -10,7 +10,7 @@
       "avformat/*": ["../../avformat/*"],
       "avnetwork/*": ["../../avnetwork/*"],
       "avplayer/*": ["../../avplayer/*"],
-      "avprotocol/*": ["../avprotocol/*"],
+      "avprotocol/*": ["../../avprotocol/*"],
       "avrender/*": ["../../avrender/*"],
       "audiostretchpitch/*": ["../../audiostretchpitch/*"],
       "audioresample/*": ["../../audioresample/*"],
@@ -26,17 +26,17 @@
   },
   "include": [
     "./**/*.ts",
-    "../cheap/**/*.ts",
-    "../common/types/*.ts",
-    "../avprotocol/**/*.ts",
-    "../avutil/**/*.ts",
-    "../avformat/**/*.ts",
-    "../avcodec/**/*.ts",
-    "../avnetwork/**/*.ts",
-    "../avrender/**/*.ts",
-    "../audiostretchpitch/**/*.ts",
-    "../audioresample/**/*.ts",
-    "../avpipeline/**/*.ts",
-    "../../@types/index.d.ts"
+    "../../cheap/**/*.ts",
+    "../../common/types/*.ts",
+    "../../avprotocol/**/*.ts",
+    "../../avutil/**/*.ts",
+    "../../avformat/**/*.ts",
+    "../../avcodec/**/*.ts",
+    "../../avnetwork/**/*.ts",
+    "../../avrender/**/*.ts",
+    "../../audiostretchpitch/**/*.ts",
+    "../../audioresample/**/*.ts",
+    "../../avpipeline/**/*.ts",
+    "../../../@types/index.d.ts"
   ]
 }

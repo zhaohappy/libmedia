@@ -10,6 +10,7 @@
       "avformat/*": ["../avformat/*"],
       "avnetwork/*": ["../avnetwork/*"],
       "avprotocol/*": ["../avprotocol/*"],
+      "avrender/*": ["../avrender/*"],
       "audiostretchpitch/*": ["../audiostretchpitch/*"],
       "audioresample/*": ["../audioresample/*"],
       "avpipeline/*": ["../avpipeline/*"],
@@ -34,6 +35,7 @@
     "../audiostretchpitch/**/*.ts",
     "../audioresample/**/*.ts",
     "../avpipeline/**/*.ts",
+    "../avrender/**/*.ts",
     "../../@types/index.d.ts"
   ]
 }

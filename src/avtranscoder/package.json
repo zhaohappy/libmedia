@@ -6,17 +6,17 @@
     "type": "git",
     "url": "git+https://github.com/zhaohappy/libmedia.git"
   },
-  "types": "./dist/avtranscoder.d.ts",
+  "types": "./dist/types/AVTranscoder.d.ts",
   "module": "./dist/esm/avtranscoder.js",
   "main": "./dist/umd/avtranscoder.js",
   "exports": {
     ".": {
       "import": "./dist/esm/avtranscoder.js",
       "require": "./dist/umd/avtranscoder.js",
-      "type": "./dist/avtranscoder.d.ts"
+      "types": "./dist/types/AVTranscoder.d.ts"
     },
     "./AVTranscoder": {
-      "type": "./dist/avtranscoder.d.ts"
+      "types": "./dist/types/AVTranscoder.d.ts"
     }
   },
   "files": [

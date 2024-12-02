@@ -6,17 +6,17 @@
     "type": "git",
     "url": "git+https://github.com/zhaohappy/libmedia.git"
   },
-  "types": "./dist/avplayer.d.ts",
+  "types": "./dist/types/AVPlayer.d.ts",
   "module": "./dist/esm/avplayer.js",
   "main": "./dist/umd/avplayer.js",
   "exports": {
     ".": {
       "import": "./dist/esm/avplayer.js",
       "require": "./dist/umd/avplayer.js",
-      "type": "./dist/avplayer.d.ts"
+      "types": "./dist/types/AVPlayer.d.ts"
     },
     "./AVPlayer": {
-      "type": "./dist/avplayer.d.ts"
+      "types": "./dist/types/AVPlayer.d.ts"
     }
   },
   "files": [
