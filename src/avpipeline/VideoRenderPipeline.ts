@@ -905,16 +905,22 @@ export default class VideoRenderPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       while (true) {
+        // 已经调用了 unregisterTask
+        if (task.afterPullResolver) {
+          task.ended = true
+          task.adjust = AdjustStatus.None
+          task.backFrame = null
+          logger.warn(`pull video frame end after unregisterTask, taskId: ${taskId}`)
+          return
+        }
 
         task.backFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
 
         if (is.number(task.backFrame) && task.backFrame < 0) {
           task.ended = true
-          task.seeking = false
           task.adjust = AdjustStatus.None
           task.backFrame = null
           logger.warn(`pull video frame end after seek, taskId: ${taskId}`)
-          task.controlIPCPort.notify('ended')
           return
         }
 
@@ -956,6 +962,13 @@ export default class VideoRenderPipeline extends Pipeline {
     if (task) {
 
       if (task.ended) {
+        task.seeking = false
+        task.controlIPCPort.notify('ended')
+        if (task.afterPullResolver) {
+          task.afterPullResolver()
+          task.afterPullResolver = null
+        }
+        logger.debug(`after seek end with task ended, taskId: ${task.taskId}`)
         return
       }
 
@@ -969,9 +982,36 @@ export default class VideoRenderPipeline extends Pipeline {
       }
       else {
         task.frontBuffered = true
+        task.ended = false
       }
 
-      task.ended = false
+      if (task.afterPullResolver) {
+        if (task.backFrame) {
+          if (!isPointer(task.backFrame)) {
+            task.backFrame.close()
+          }
+          else {
+            task.avframePool.release(task.backFrame)
+          }
+          task.backFrame = null
+        }
+        if (task.frontFrame) {
+          if (!isPointer(task.frontFrame)) {
+            task.frontFrame.close()
+          }
+          else {
+            task.avframePool.release(task.frontFrame)
+          }
+          task.frontFrame = null
+        }
+        task.seeking = false
+        task.ended = true
+        task.afterPullResolver()
+        task.afterPullResolver = null
+        logger.debug(`after seek end with unregisterTask call, taskId: ${task.taskId}`)
+        return
+      }
+      
       task.adjust = AdjustStatus.None
       task.lastRenderTimestamp = getTimestamp()
 

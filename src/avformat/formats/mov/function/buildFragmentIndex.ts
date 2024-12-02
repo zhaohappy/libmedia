@@ -27,7 +27,7 @@ import Stream from 'avutil/AVStream'
 import { FragmentTrack, MOVContext, MOVStreamContext, Sample } from '../type'
 import { SampleFlags } from '../boxType'
 import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { IOFlags } from 'common/io/flags'
+import { IOFlags } from 'avutil/avformat'
 
 
 export function buildFragmentIndex(stream: Stream, track: FragmentTrack, movContext: MOVContext, ioFlag: int32 = 0) {

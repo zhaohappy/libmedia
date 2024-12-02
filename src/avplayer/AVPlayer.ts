@@ -38,7 +38,7 @@ import { unrefAVFrame } from 'avutil/util/avframe'
 import { unrefAVPacket } from 'avutil/util/avpacket'
 import AudioRenderPipeline from 'avpipeline/AudioRenderPipeline'
 import VideoRenderPipeline from 'avpipeline/VideoRenderPipeline'
-import { AVSeekFlags, IOType } from 'avutil/avformat'
+import { AVSeekFlags, IOType, IOFlags } from 'avutil/avformat'
 import * as urlUtils from 'common/util/url'
 import * as cheapConfig from 'cheap/config'
 import { AVSampleFormat } from 'avutil/audiosamplefmt'
@@ -71,7 +71,6 @@ import * as bigint from 'common/util/bigint'
 import getMediaSource from './function/getMediaSource'
 import JitterBufferController from './JitterBufferController'
 import getAudioCodec from 'avutil/function/getAudioCodec'
-import { IOFlags } from 'common/io/flags'
 import { Ext2Format, mediaType2AVMediaType } from 'avutil/stringEnum'
 import { AVDisposition, AVStreamInterface } from 'avutil/AVStream'
 import { AVFormatContextInterface } from 'avformat/AVFormatContext'
@@ -2262,10 +2261,25 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     if (this.audioSourceNode) {
+      // 正在 seeking 先 stop 防止 audioSourceNode 阻塞
+      if (this.status === AVPlayerStatus.SEEKING) {
+        await AVPlayer.AudioRenderThread.stop(this.taskId)
+      }
       await this.audioSourceNode.request('stop')
       this.audioSourceNode.disconnect()
       this.audioSourceNode = null
     }
+
+    if (this.status === AVPlayerStatus.SEEKING &&  AVPlayer.DemuxerThread) {
+      await AVPlayer.DemuxerThread.stop(this.taskId)
+      if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
+        await AVPlayer.DemuxerThread.stop(this.subTaskId)
+      }
+      if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId) {
+        await AVPlayer.DemuxerThread.stop(this.subtitleTaskId)
+      }
+    }
+
     if (this.VideoRenderThread) {
       await this.VideoRenderThread.unregisterTask(this.taskId)
     }

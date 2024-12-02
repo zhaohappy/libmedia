@@ -28,7 +28,7 @@ import { AVIFormatContext } from '../../../AVFormatContext'
 import { MOVContext, MOVStreamContext, Sample } from '../type'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'
-import { IOFlags } from 'common/io/flags'
+import { IOFlags } from 'avutil/avformat'
 
 export function getNextSample(context: AVIFormatContext, movContext: MOVContext) {
   let sample: Sample

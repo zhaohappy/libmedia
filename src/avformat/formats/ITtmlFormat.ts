@@ -38,7 +38,7 @@ import { IOError } from 'common/io/error'
 import * as array from 'common/util/array'
 import * as text from 'common/util/text'
 import * as ittml from './ttml/ittml'
-import { IOFlags } from 'common/io/flags'
+import { IOFlags } from 'avutil/avformat'
 
 export default class ITtmlFormat extends IFormat {
 

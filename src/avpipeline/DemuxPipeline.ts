@@ -33,7 +33,7 @@ import IOReader from 'common/io/IOReader'
 import IOWriter from 'common/io/IOWriter'
 import IFormat from 'avformat/formats/IFormat'
 import * as demux from 'avformat/demux'
-import { AVFormat } from 'avutil/avformat'
+import { AVFormat, IOFlags } from 'avutil/avformat'
 import { avFree, avMalloc } from 'avutil/util/mem'
 import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
 import List from 'cheap/std/collection/List'
@@ -44,7 +44,6 @@ import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
 import { IOError } from 'common/io/error'
 import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import LoopTask from 'common/timer/LoopTask'
-import { IOFlags } from 'common/io/flags'
 import * as array from 'common/util/array'
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
@@ -1078,6 +1077,13 @@ export default class DemuxPipeline extends Pipeline {
     }
   }
 
+  public async stop(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      task.formatContext.ioReader.flags |= IOFlags.ABORT
+    }
+  }
+
   public async registerTask(options: DemuxTaskOptions): Promise<number> {
     if (this.tasks.has(options.taskId)) {
       return errorType.INVALID_OPERATE
@@ -1098,6 +1104,11 @@ export default class DemuxPipeline extends Pipeline {
           task.avpacketPool.release(avpacket)
         })
       })
+
+      task.cacheRequests.forEach((request, streamId) => {
+        task.rightIPCPorts.get(streamId).reply(request, IOError.END)
+      })
+      task.cacheRequests.clear()
 
       await task.formatContext.destroy()
 

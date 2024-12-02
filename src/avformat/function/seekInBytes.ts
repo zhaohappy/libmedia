@@ -32,6 +32,7 @@ import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
 import * as errorType from 'avutil/error'
 import AVPacket from 'avutil/struct/avpacket'
 import * as logger from 'common/util/logger'
+import { IOFlags } from 'avutil/avformat'
 
 // @ts-ignore
 @deasync
@@ -87,6 +88,9 @@ export default async function seekInBytes(
     }
     await context.ioReader.seek(bytes)
     await syncAVPacket(context)
+    if (context.ioReader.flags & IOFlags.ABORT) {
+      break
+    }
     const now = context.ioReader.getPos()
 
     let ret = await readAVPacket(context, avpacket)
@@ -118,6 +122,9 @@ export default async function seekInBytes(
       pos = NOPTS_VALUE_BIGINT
       break
     }
+    if (context.ioReader.flags & IOFlags.ABORT) {
+      break
+    }
   }
 
   destroyAVPacket(avpacket)
@@ -131,6 +138,9 @@ export default async function seekInBytes(
   }
   else {
     await context.ioReader.seek(now)
+    if (context.ioReader.flags & IOFlags.ABORT) {
+      return static_cast<int64>(errorType.EOF)
+    }
   }
 
   return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)

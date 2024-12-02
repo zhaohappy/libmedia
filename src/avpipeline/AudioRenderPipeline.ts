@@ -92,6 +92,7 @@ type SelfTask = AudioRenderTaskOptions & {
 
   seeking: boolean
   pausing: boolean
+  stopping: boolean
   seekSync: () => void
   receivePCMSync: () => void
 
@@ -152,6 +153,7 @@ export default class AudioRenderPipeline extends Pipeline {
       firstPlayed: false,
       seeking: false,
       pausing: false,
+      stopping: false,
       seekSync: null,
       receivePCMSync: null,
 
@@ -345,6 +347,9 @@ export default class AudioRenderPipeline extends Pipeline {
         await new Promise<void>((resolve) => {
           task.receivePCMSync = resolve
         })
+        if (task.stopping) {
+          return IOError.END
+        }
       }
 
       if (task.enableJitterBuffer) {
@@ -655,6 +660,12 @@ export default class AudioRenderPipeline extends Pipeline {
       let videoEnded = false
 
       while (true) {
+        // 已经调用了 unregisterTask
+        if (!task.leftIPCPort) {
+          task.frameEnded = true
+          logger.warn(`pull audio frame end after unregisterTask, taskId: ${taskId}`)
+          return
+        }
 
         let now = getTimestamp()
         let videoPacketQueueLength = task.stats.videoPacketQueueLength
@@ -840,6 +851,18 @@ export default class AudioRenderPipeline extends Pipeline {
     }
   }
 
+  public async stop(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      task.stopping = true
+      if (task.receivePCMSync) {
+        task.receivePCMSync()
+        task.receivePCMSync = null
+      }
+      logger.info(`task stopping, taskId: ${task.taskId}`)
+    }
+  }
+
   public async registerTask(options: AudioRenderTaskOptions): Promise<number> {
     if (this.tasks.has(options.taskId)) {
       return error.INVALID_OPERATE
@@ -882,8 +905,14 @@ export default class AudioRenderPipeline extends Pipeline {
       if (task.paddingAVFrame) {
         task.avframePool.release(task.paddingAVFrame)
       }
-      task.leftIPCPort.destroy()
-      task.rightIPCPort.destroy()
+      if (task.leftIPCPort) {
+        task.leftIPCPort.destroy()
+        task.leftIPCPort = null
+      }
+      if (task.rightIPCPort) {
+        task.rightIPCPort.destroy()
+        task.rightIPCPort = null
+      }
       this.tasks.delete(taskId)
     }
   }

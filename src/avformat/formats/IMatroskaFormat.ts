@@ -37,7 +37,7 @@ import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/uti
 import AVStream, { AVDisposition } from 'avutil/AVStream'
 import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { EBMLId, MATROSKABlockAddIdType, MATROSKALacingMode, MATROSKATrackEncodingComp, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
-import { IOFlags } from 'common/io/flags'
+import { IOFlags } from 'avutil/avformat'
 import { Additions, ClusterIndex, MatroskaContext, TrackEntry } from './matroska/type'
 import { EbmlSyntaxAttachments, EbmlSyntaxBlockGroup, EbmlSyntaxChapters, EbmlSyntaxCluster, EbmlSyntaxCues, EbmlSyntaxHeadSeek,
   EbmlSyntaxHeader, EbmlSyntaxInfo, EbmlSyntaxTags, EbmlSyntaxTracks, parseEbmlSyntax, readEbmlId, readVInt, readVInt64,
@@ -900,6 +900,11 @@ export default class IMatroskaFormat extends IFormat {
 
     while (true) {
       try {
+
+        if (formatContext.ioReader.flags & IOFlags.ABORT) {
+          break
+        }
+
         const now = formatContext.ioReader.getPos()
 
         const id = await formatContext.ioReader.peekUint32()

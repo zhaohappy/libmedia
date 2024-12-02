@@ -45,7 +45,7 @@ import { addAVPacketData, addAVPacketSideData } from 'avutil/util/avpacket'
 import { avRescaleQ } from 'avutil/util/rational'
 import AVStream from 'avutil/AVStream'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { IOFlags } from 'common/io/flags'
+import { IOFlags } from 'avutil/avformat'
 import { BitFormat } from 'avutil/codecs/h264'
 import * as intread from 'avutil/util/intread'
 

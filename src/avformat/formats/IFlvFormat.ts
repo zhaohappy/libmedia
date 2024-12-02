@@ -49,7 +49,7 @@ import * as errorType from 'avutil/error'
 import { IOError } from 'common/io/error'
 import AVStream from 'avutil/AVStream'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
+import { AVFormat, AVSeekFlags, IOFlags } from 'avutil/avformat'
 import { mapSafeUint8Array, mapUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData, addAVPacketSideData } from 'avutil/util/avpacket'
@@ -504,6 +504,9 @@ export default class IFlvFormat extends IFormat {
 
     while (true) {
       try {
+        if (formatContext.ioReader.flags & IOFlags.ABORT) {
+          break
+        }
         const byte = await formatContext.ioReader.readUint8()
         if (byte === FlvTag.AUDIO || byte === FlvTag.VIDEO) {
           pos = formatContext.ioReader.getPos() - 1n
