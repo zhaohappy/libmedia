@@ -45,7 +45,6 @@ const SubtitleTrack: ComponentOptions = {
       const subtitleInfo: IOLoaderSubtitleStreamInfo = this.get('subtitleInfo')
       if (subtitleInfo) {
         if (subtitleInfo.list.length) {
-          const codecs = subtitleInfo.list[subtitleInfo.selectedIndex].codecs
           const list = subtitleInfo.list
             .map((item, index) => {
               return {
@@ -54,15 +53,7 @@ const SubtitleTrack: ComponentOptions = {
                 codecs: item.codecs
               }
             })
-            .filter((item) => {
-              return item.codecs === codecs
-            })
-
-          list.forEach((item, index) => {
-            if (item.value === subtitleInfo.selectedIndex) {
-              this.set('selectIndex', index)
-            }
-          })
+          return list
         }
       }
       else {
@@ -135,7 +126,10 @@ const SubtitleTrack: ComponentOptions = {
 
     init: function (player: AVPlayer) {
       if (player.isDash() || player.isHls()) {
-        this.set('subtitleInfo', player.getSubtitleList())
+        player.getSubtitleList().then((info) => {
+          this.set('subtitleInfo', info)
+          this.set('selectIndex', info.selectedIndex)
+        })
       }
       else {
         this.set('streams', player.getStreams().filter((stream) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE))

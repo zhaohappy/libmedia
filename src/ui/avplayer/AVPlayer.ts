@@ -96,6 +96,9 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       loading: false,
       language,
       streams: [],
+      videoList: [],
+      audioList:[],
+      subtitleList: [],
       isLive: false,
       menu,
       showMenu: false,
@@ -156,25 +159,31 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
   computed: {
     hasVideoTrack: function () {
       const streams: AVStreamInterface[] = this.get('streams')
+      const videoList = this.get('videoList')
       return streams
         .filter((stream) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
         .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
         .length > 1
+        || videoList.length > 1
     },
     hasAudioTrack: function () {
       const streams: AVStreamInterface[] = this.get('streams')
+      const audioList = this.get('audioList')
       return streams
         .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO)
         .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
         .length > 1
+        || audioList.length > 1
     },
     hasSubtitleTrack: function () {
       const streams: AVStreamInterface[] = this.get('streams')
+      const subtitleList = this.get('subtitleList')
       const isLive = this.get('isLive')
       return !isLive && streams
         .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
         .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
         .length > 0
+        && subtitleList.length > 1
     },
     hasPip: function () {
       const streams: AVStreamInterface[] = this.get('streams')
@@ -207,6 +216,16 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       }
       this.set('streams', player.getStreams())
       this.set('isLive', player.isLive())
+
+      player.getVideoList().then((list) => {
+        this.set('videoList', list.list)
+      })
+      player.getAudioList().then((list) => {
+        this.set('audioList', list.list)
+      })
+      player.getSubtitleList().then((list) => {
+        this.set('subtitleList', list.list)
+      })
     },
 
     mousemove() {

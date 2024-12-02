@@ -41,7 +41,6 @@ const AudioTrack: ComponentOptions = {
       const audioInfo: IOLoaderAudioStreamInfo = this.get('audioInfo')
       if (audioInfo) {
         if (audioInfo.list.length) {
-          const codecs = audioInfo.list[audioInfo.selectedIndex].codecs
           const list = audioInfo.list
             .map((item, index) => {
               return {
@@ -50,15 +49,7 @@ const AudioTrack: ComponentOptions = {
                 codecs: item.codecs
               }
             })
-            .filter((item) => {
-              return item.codecs === codecs
-            })
-
-          list.forEach((item, index) => {
-            if (item.value === audioInfo.selectedIndex) {
-              this.set('selectIndex', index)
-            }
-          })
+          return list
         }
       }
       else {
@@ -89,7 +80,10 @@ const AudioTrack: ComponentOptions = {
 
     init: function (player: AVPlayer) {
       if (player.isDash() || player.isHls()) {
-        this.set('audioInfo', player.getAudioList())
+        player.getAudioList().then((info) => {
+          this.set('audioInfo', info)
+          this.set('selectIndex', info.selectedIndex)
+        })
       }
       else {
         this.set('streams', player.getStreams().filter((stream) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO))

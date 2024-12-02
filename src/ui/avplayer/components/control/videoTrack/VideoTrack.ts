@@ -51,14 +51,9 @@ const VideoTrack: ComponentOptions = {
               }
             })
             .filter((item) => {
-              return item.codecs === codecs
+              return item.codecs.split('.')[0] === codecs.split('.')[0]
             })
-
-          list.forEach((item, index) => {
-            if (item.value === videoInfo.selectedIndex) {
-              this.set('selectIndex', index)
-            }
-          })
+          return list
         }
       }
       else {
@@ -89,7 +84,10 @@ const VideoTrack: ComponentOptions = {
 
     init: function (player: AVPlayer) {
       if (player.isDash() || player.isHls()) {
-        this.set('videoInfo', player.getVideoList())
+        player.getVideoList().then((info) => {
+          this.set('videoInfo', info)
+          this.set('selectIndex', info.selectedIndex)
+        })
       }
       else {
         this.set('streams', player.getStreams().filter((stream) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO))
