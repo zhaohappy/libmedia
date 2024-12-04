@@ -103,5 +103,4 @@ class MeterWorkletProcessor extends AudioWorkletProcessorBase {
     return true
   }
 }
-// @ts-ignore
 registerProcessor('meter-processor', MeterWorkletProcessor)

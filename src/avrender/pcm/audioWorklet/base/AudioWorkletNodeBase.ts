@@ -79,9 +79,7 @@ export default class AudioWorkletNodeBase {
 
   public getParameters(type: string): AudioParam {
     const parameters = this.audioWorkletNode.parameters
-    // @ts-ignore
     if (is.func(parameters.get)) {
-      // @ts-ignore
       return parameters.get(type)
     }
     parameters.forEach((value, key) => {

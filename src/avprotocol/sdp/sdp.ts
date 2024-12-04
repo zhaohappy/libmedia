@@ -125,10 +125,9 @@ function makeLine(type: string, grammar: SdpGrammar, location: Data) {
  * @returns 
  */
 export function parse(sdp: string): SessionDescription {
-  // @ts-ignore
-  const session: SessionDescription = {}
-  const media: Media[] = []
-  let target: Media | SessionDescription = session
+  const session: Partial<SessionDescription> = {}
+  const media: Partial<Media>[] = []
+  let target: Partial<Media> | Partial<SessionDescription> = session
 
   // parse lines we understand
   sdp.split(/(\r\n|\r|\n)/).filter(validLine).forEach((line) => {
@@ -137,7 +136,6 @@ export function parse(sdp: string): SessionDescription {
     const content = line.slice(2)
 
     if (type === 'm') {
-      // @ts-ignore
       media.push({
         rtp: [],
         fmtp: []
@@ -149,14 +147,14 @@ export function parse(sdp: string): SessionDescription {
     for (let j = 0; j < (grammars[type] || []).length; j += 1) {
       const grammar = grammars[type][j]
       if (grammar.reg.test(content)) {
-        return parseReg(grammar, target, content)
+        return parseReg(grammar, target as (Media | SessionDescription), content)
       }
     }
   })
 
   // link it up
-  session.media = media
-  return session
+  session.media = media as Media[]
+  return session as SessionDescription
 }
 
 /**

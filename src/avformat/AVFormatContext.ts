@@ -170,7 +170,7 @@ export interface AVFormatContextInterface {
   chapters: AVChapter[]
 }
 
-export class AVFormatContext implements AVIFormatContext, AVOFormatContext {
+export class AVFormatContext {
 
   public metadataHeaderPadding = -1
 
@@ -186,9 +186,7 @@ export class AVFormatContext implements AVIFormatContext, AVOFormatContext {
   public iformat: IFormat
   public oformat: OFormat
 
-  // @ts-ignore
   public ioReader: IOReader | IOReaderSync
-  // @ts-ignore
   public ioWriter: IOWriter | IOWriterSync
 
   public errorFlag: number

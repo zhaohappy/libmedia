@@ -180,9 +180,9 @@ export interface AVPlayerOptions {
    */
   jitterBufferMin?: float
   /**
-   * 预加载 buffer 时长（秒）
+   * 预加载 buffer 时长，点播使用（秒）
    */
-  preLoadTime?: int32
+  preLoadTime?: float
   /**
    * 自定义查找播放流回调
    */
@@ -255,6 +255,8 @@ export const AVPlayerSupportedCodecs = [
   AVCodecID.AV_CODEC_ID_VP8,
   AVCodecID.AV_CODEC_ID_VP9,
   AVCodecID.AV_CODEC_ID_THEORA,
+  AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  AVCodecID.AV_CODEC_ID_MPEG1VIDEO,
 
   AVCodecID.AV_CODEC_ID_AAC,
   AVCodecID.AV_CODEC_ID_MP3,

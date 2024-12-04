@@ -218,5 +218,4 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
     return true
   }
 }
-// @ts-ignore
 registerProcessor('audio-source-processor', AudioSourceWorkletProcessor)
