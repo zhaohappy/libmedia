@@ -4,7 +4,7 @@ import style from './Progress.styl'
 import CustomEvent from 'common/event/CustomEvent'
 import * as eventType from 'avplayer/eventType'
 import AVPlayer, { AVPlayerStatus } from 'avplayer/AVPlayer'
-import { avQ2D, avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ } from 'avutil/util/rational'
 import * as string from 'common/util/string'
 import * as is from 'common/util/is'
 import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
@@ -243,23 +243,12 @@ const Progress: ComponentOptions = {
       this.set('currentTime', static_cast<double>(pts))
 
       const stats = player.getStats()
-      const streams = player.getStreams()
 
-      if (player.hasAudio()) {
-        const selectStream = streams.find((stream) => {
-          return stream.id === player.getSelectedAudioStreamId()
-        })
-        if (selectStream) {
-          this.set('loadedTime', stats.audioPacketQueueLength / avQ2D(selectStream.codecpar.framerate) * 1000)
-        }
+      if (stats.audioEncodeFramerate) {
+        this.set('loadedTime', stats.audioPacketQueueLength / stats.audioEncodeFramerate * 1000)
       }
-      else if (player.hasVideo()) {
-        const selectStream = streams.find((stream) => {
-          return stream.id === player.getSelectedVideoStreamId()
-        })
-        if (selectStream) {
-          this.set('loadedTime', stats.videoPacketQueueLength / avQ2D(selectStream.codecpar.framerate) * 1000)
-        }
+      else if (stats.videoEncodeFramerate) {
+        this.set('loadedTime', stats.videoPacketQueueLength / stats.videoEncodeFramerate * 1000)
       }
     })
 
