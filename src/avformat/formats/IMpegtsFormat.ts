@@ -120,7 +120,7 @@ export default class IMpegtsFormat extends IFormat {
       }
 
       while ((!this.context.hasPAT || !this.context.hasPMT)) {
-        const tsPacket = await impegts.parserTSPacket(formatContext.ioReader, this.context)
+        const tsPacket = await impegts.parseTSPacket(formatContext.ioReader, this.context)
 
         if (!tsPacket.payload) {
           continue
@@ -384,7 +384,7 @@ export default class IMpegtsFormat extends IFormat {
             catch (e) {}
             await this.syncTSPacket(formatContext, false)
           }
-          const tsPacket = await impegts.parserTSPacket(formatContext.ioReader, this.context)
+          const tsPacket = await impegts.parseTSPacket(formatContext.ioReader, this.context)
           if (!tsPacket.payload) {
             continue
           }
@@ -541,7 +541,7 @@ export default class IMpegtsFormat extends IFormat {
       await formatContext.ioReader.seek(pos)
       if (syncPES) {
         while (true) {
-          const tsPacket = await impegts.parserTSPacket(formatContext.ioReader, this.context)
+          const tsPacket = await impegts.parseTSPacket(formatContext.ioReader, this.context)
           // 移动到下一个 pes 的开始
           if (tsPacket.payloadUnitStartIndicator) {
             // 返回到上一个 ts packet 的开始

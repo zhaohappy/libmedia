@@ -78,7 +78,7 @@ export async function getPacketSize(ioReader: IOReader): Promise<number> {
 
 // @ts-ignore
 @deasync
-export async function parserTSPacket(ioReader: IOReader, mpegtsContext: MpegtsContext): Promise<TSPacket> {
+export async function parseTSPacket(ioReader: IOReader, mpegtsContext: MpegtsContext): Promise<TSPacket> {
 
   const pos = ioReader.getPos()
   let byte = 0
