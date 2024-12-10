@@ -25,7 +25,7 @@ libmedia is designed to run on multi-threads, but can fallback to running on the
 - ```audiostretchpitch``` Audio speed change and pitch change processing (compiled by soundtouch)
 - ```videoscale``` video scale, format transform（compiled by FFmpeg libswscale）
 - ```avnetwork``` Web Platform network file IO related (Fetch, WebSocket, WebTransport, File)
-- ```avprotocol``` Audio and video protocols (dash, m3u8)
+- ```avprotocol``` Audio and video protocols (dash, m3u8、rtp、rtsp、rtmp)
 - ```avrender``` Audio and video rendering (8bit, 10bit, HDR, audioWorklet, WebGL, WebGPU)
 - ```avpipeline``` Media task processing pipeline for multi-threaded parallel processing tasks
 

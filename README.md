@@ -26,7 +26,7 @@ libmedia 是设计在多线程上的，只是可以回退到单线程上运行�
 - ```audiostretchpitch``` 音频变速、变调处理（soundtouch 编译）
 - ```videoscale``` 视频缩放，格式转换（FFmpeg libswscale 模块编译）
 - ```avnetwork``` Web 平台网络文件 IO 相关（Fetch、WebSocket、WebTransport、File）
-- ```avprotocol``` 音视频协议（dash、m3u8）
+- ```avprotocol``` 音视频协议（dash、m3u8、rtp、rtsp、rtmp）
 - ```avrender``` 音视频渲染（8bit、10bit、HDR、audioWorklet、WebGL、WebGPU）
 - ```avpipeline``` 媒体任务处理管线，用于多线程并行化处理任务
 
