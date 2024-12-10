@@ -74,7 +74,7 @@ export default class HlsIOLoader extends IOLoader {
 
   private initLoaded: boolean
 
-  private async fetchMasterPlayList() {
+  private getFetchParams(method: string = 'GET') {
     const params: Data = {
       method: 'GET',
       headers: {},
@@ -95,9 +95,12 @@ export default class HlsIOLoader extends IOLoader {
     if (this.info.httpOptions?.referrerPolicy) {
       params.referrerPolicy = this.info.httpOptions.referrerPolicy
     }
+    return params
+  }
 
+  private async fetchMasterPlayList() {
     try {
-      const res = await fetch(this.info.url, params)
+      const res = await fetch(this.info.url, this.getFetchParams())
       const text = await res.text()
 
       const playList: Playlist = hlsParser(text)
@@ -162,29 +165,8 @@ export default class HlsIOLoader extends IOLoader {
 
     this.mediaListUrl = url
 
-    const params: Data = {
-      method: 'GET',
-      headers: {},
-      mode: 'cors',
-      cache: 'default',
-      referrerPolicy: 'no-referrer-when-downgrade'
-    }
-    if (this.info.httpOptions?.headers) {
-      object.each(this.info.httpOptions.headers, (value, key) => {
-        params.headers[key] = value
-      })
-    }
-
-    if (this.info.httpOptions?.credentials) {
-      params.credentials = this.info.httpOptions.credentials
-    }
-
-    if (this.info.httpOptions?.referrerPolicy) {
-      params.referrerPolicy = this.info.httpOptions.referrerPolicy
-    }
-
     try {
-      const res = await fetch(url, params)
+      const res = await fetch(url, this.getFetchParams())
       const text = await res.text()
       this.mediaPlayList = hlsParser(text) as MediaPlaylist
 
@@ -272,7 +254,7 @@ export default class HlsIOLoader extends IOLoader {
       this.currentKey = this.keyMap.get(keyUrl)
     }
     else {
-      this.currentKey = await (await fetch(buildAbsoluteURL(this.mediaListUrl, keyUrl))).arrayBuffer()
+      this.currentKey = await (await fetch(buildAbsoluteURL(this.mediaListUrl, keyUrl), this.getFetchParams())).arrayBuffer()
       this.keyMap.set(keyUrl, this.currentKey)
     }
 
