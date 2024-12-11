@@ -110,7 +110,7 @@ export default class WasmAudioDecoder {
       await this.decoder.childThreadsReady()
     }
     if (ret < 0) {
-      logger.fatal(`open audio decoder failed, ret: ${ret}`)
+      logger.fatal(`open audio encoder failed, ret: ${ret}`)
     }
   }
 

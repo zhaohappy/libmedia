@@ -184,7 +184,7 @@ export default class WasmVideoEncoder {
     stack.free(sizeof(Rational))
 
     if (ret < 0) {
-      logger.fatal(`open video decoder failed, ret: ${ret}`)
+      logger.fatal(`open video encoder failed, ret: ${ret}`)
     }
 
     this.parameters = parameters
