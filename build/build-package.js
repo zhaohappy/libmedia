@@ -6,6 +6,30 @@ const argv = require('yargs').argv;
 const { spawnSync, execSync } = require('child_process');
 const terser = require('terser');
 
+function copyFolder(src, dest) {
+  // 确保目标文件夹存在
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+
+  // 读取源文件夹内容
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+
+  for (let entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      // 如果是文件夹，递归复制
+      copyFolderSync(srcPath, destPath);
+    }
+    else {
+      // 如果是文件，直接复制
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
 function replacePath(path) {
   path = path.replace(/^(\.\.\/)*cheap\//, '@libmedia/cheap/')
   path = path.replace(/^(\.\.\/)*common\//, '@libmedia/common/')
