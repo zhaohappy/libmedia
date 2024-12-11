@@ -3,7 +3,8 @@ node_modules
 report.json
 test/lib/
 ffmpeg-cache
-docs/
+/docs/
+
 dist/**/
 dist/*
 !dist/decode/
