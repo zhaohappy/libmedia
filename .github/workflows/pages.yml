@@ -37,6 +37,7 @@ jobs:
           fetch-tags: true
       - name: Fetch latest tag
         run: |
+          git fetch --tags
           latest_tag=$(git describe --tags --abbrev=0)
           echo "Latest tag: $latest_tag"
           git fetch origin $latest_tag..HEAD
