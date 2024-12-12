@@ -48,12 +48,14 @@ jobs:
         run:  npm run build-avtranscoder
       - name: Build docs
         run:  npm run doc
+      - name: Clean up files
+        run: find . -mindepth 1 -maxdepth 1 ! -name "dist" ! -name "docs" ! -name "test" ! -name "product" -exec rm -rf {} +
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist ./docs ./test ./product
+          path: .
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
