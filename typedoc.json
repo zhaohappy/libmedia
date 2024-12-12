@@ -23,7 +23,7 @@
   ],
   "plugin": ["typedoc-plugin-rename-defaults"],
   "readme": "none",
-  "out": "./docs/",
+  "out": "./docs/libmedia_api",
   "excludeExternals": true,
   "excludePrivate": true,
   "excludeProtected": true,
