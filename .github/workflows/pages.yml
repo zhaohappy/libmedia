@@ -36,10 +36,10 @@ jobs:
           submodules: true
           fetch-tags: true
       - name: Fetch latest tag
-      run: |
-        latest_tag=$(git describe --tags --abbrev=0)
-        echo "Latest tag: $latest_tag"
-        git fetch origin $latest_tag..HEAD
+        run: |
+          latest_tag=$(git describe --tags --abbrev=0)
+          echo "Latest tag: $latest_tag"
+          git fetch origin $latest_tag..HEAD
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
