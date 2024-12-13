@@ -209,7 +209,7 @@ export default class MSEPipeline extends Pipeline {
     return firstIsKeyframe
   }
 
-  private getSourceOpenHandler(task: SelfTask) {
+  private getSourceOpenHandler(task: SelfTask, startTimestamp: int64 = 0n) {
     return async () => {
 
       await this.syncToKeyframe(task)
@@ -223,7 +223,7 @@ export default class MSEPipeline extends Pipeline {
           })
           mux.writeHeader(task.audio.oformatContext)
         }
-        promises.push(this.startMux(task.audio, task))
+        promises.push(this.startMux(task.audio, task, startTimestamp))
       }
       if (task.video) {
         task.video.track.setSourceBuffer(this.createSourceBuffer(task.mediaSource, addressof(task.video.oformatContext.streams[0].codecpar)))
@@ -234,7 +234,7 @@ export default class MSEPipeline extends Pipeline {
           })
           mux.writeHeader(task.video.oformatContext)
         }
-        promises.push(this.startMux(task.video, task))
+        promises.push(this.startMux(task.video, task, startTimestamp))
       }
 
       await Promise.all(promises)
@@ -322,8 +322,14 @@ export default class MSEPipeline extends Pipeline {
         min = task.video.track.getBufferedStart()
       }
 
+      if (startTimestamp > 0n) {
+        task.currentTime = milliSecond2Second(startTimestamp)
+        task.controlIPCPort.notify('seek', {
+          time: task.currentTime
+        })
+      }
       // safari 播放某些视频会卡主，开始时间不是从 0 开始的 seek 到 min buffer 处
-      if (browser.safari || os.ios || min > 0.1) {
+      else if (browser.safari || os.ios || min > 0.1) {
         task.controlIPCPort.notify('seek', {
           time: min
         })
@@ -673,24 +679,29 @@ export default class MSEPipeline extends Pipeline {
     }, 0, 0)
   }
 
-  private async startMux(resource: MSEResource, task: SelfTask) {
+  private async startMux(resource: MSEResource, task: SelfTask, startTimestamp: int64 = 0n) {
     let startDTS: int64 = NOPTS_VALUE_BIGINT
     let startPTS: int64 = NOPTS_VALUE_BIGINT
     let lastDTS: int64 = 0n
     let avpacket: pointer<AVPacketRef>
+    let cacheDuration = task.cacheDuration
 
     const timeBase = resource.oformatContext.streams[0].timeBase
 
     if (resource.backPacket > 0) {
       startDTS = resource.backPacket.dts
       startPTS = resource.backPacket.pts
+      if (startTimestamp > 0n) {
+        cacheDuration += startTimestamp - avRescaleQ(startDTS, timeBase, AV_MILLI_TIME_BASE_Q)
+      }
+
       resource.backPacket.streamIndex = resource.oformatContext.streams[0].index
       this.writeAVPacket(resource.backPacket, resource)
       task.avpacketPool.release(resource.backPacket)
       resource.backPacket = nullptr
     }
 
-    while (startDTS < 0n || avRescaleQ((lastDTS - startDTS), timeBase, AV_MILLI_TIME_BASE_Q) < task.cacheDuration) {
+    while (startDTS < 0n || avRescaleQ((lastDTS - startDTS), timeBase, AV_MILLI_TIME_BASE_Q) < cacheDuration) {
       avpacket = await this.pullAVPacket(resource, task)
 
       if (avpacket < 0) {
@@ -1463,7 +1474,7 @@ export default class MSEPipeline extends Pipeline {
     }
   }
 
-  private createTask(options: MSETaskOptions): number {
+  private createTask(options: MSETaskOptions, startTimestamp: int64): number {
 
     const controlIPCPort = new IPCPort(options.controlPort)
     const mediaSource = new (getMediaSource())()
@@ -1486,16 +1497,16 @@ export default class MSEPipeline extends Pipeline {
     }
     this.tasks.set(options.taskId, task)
 
-    mediaSource.onsourceopen = this.getSourceOpenHandler(task)
+    mediaSource.onsourceopen = this.getSourceOpenHandler(task, startTimestamp)
 
     return 0
   }
 
-  public async registerTask(options: MSETaskOptions): Promise<number> {
+  public async registerTask(options: MSETaskOptions, startTimestamp: int64 = 0n): Promise<number> {
     if (this.tasks.has(options.taskId)) {
       return errorType.INVALID_OPERATE
     }
-    return this.createTask(options)
+    return this.createTask(options, startTimestamp)
   }
 
   public async unregisterTask(id: string): Promise<void> {

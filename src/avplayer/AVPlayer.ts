@@ -396,6 +396,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private status: AVPlayerStatus
   private lastStatus: AVPlayerStatus
   private playChannels: number
+  private seekedTimestamp: int64
 
   private statsController: StatsController
   private jitterBufferController: JitterBufferController
@@ -1509,7 +1510,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           enableJitterBuffer: !!this.jitterBufferController
-        })
+        }, this.seekedTimestamp > 0n ? this.seekedTimestamp : NOPTS_VALUE_BIGINT)
 
       if (videoStream && options.video) {
         this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_VIDEO_DECODER, videoStream])
@@ -1896,6 +1897,22 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       promises.push(AVPlayer.DemuxerThread.startDemux(this.subtitleTaskId, this.options.isLive, minQueueLength))
     }
 
+    if (this.seekedTimestamp > 0n) {
+      let maxQueueLength = 20
+      this.formatContext.streams.forEach((stream) => {
+        if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+          maxQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate)), maxQueueLength)
+        }
+      })
+      if (this.videoDecoder2VideoRenderChannel) {
+        promises.push(this.VideoRenderThread.syncSeekTime(this.taskId, this.seekedTimestamp))
+      }
+      if (this.audioDecoder2AudioRenderChannel) {
+        promises.push(AVPlayer.AudioRenderThread.syncSeekTime(this.taskId, this.seekedTimestamp))
+      }
+      this.seekedTimestamp = NOPTS_VALUE_BIGINT
+    }
+
     return Promise.all(promises).then(async () => {
       if (defined(ENABLE_MSE) && this.useMSE) {
         await Promise.all([
@@ -2100,6 +2117,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
       if (this.jitterBufferController) {
         this.jitterBufferController.reset()
+      }
+
+      if (this.lastStatus === AVPlayerStatus.LOADED && seekedTimestamp >= 0n) {
+        this.seekedTimestamp = seekedTimestamp > timestamp ? seekedTimestamp : timestamp
       }
     }
     for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
@@ -2363,6 +2384,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.ext = ''
     this.subTaskId = ''
     this.subtitleTaskId = ''
+    this.seekedTimestamp = NOPTS_VALUE_BIGINT
 
     this.statsController.stop()
     if (this.jitterBufferController) {
