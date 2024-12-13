@@ -67,8 +67,9 @@ int open_codec_context(AVCodecContext** dec_ctx, enum AVCodecID codec_id, AVCode
     format_log(ERROR, "Failed to copy %s codec parameters to decoder context\n", avcodec_get_name(codec_id));
     return ret;
   }
-
-  (*dec_ctx)->pkt_timebase = *time_base;
+  if (time_base) {
+    (*dec_ctx)->pkt_timebase = *time_base;
+  }
   (*dec_ctx)->flags2 |= AV_CODEC_FLAG2_SHOW_ALL;
 
   if (wasm_pthread_support()) {
