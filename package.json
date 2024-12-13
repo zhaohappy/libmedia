@@ -28,7 +28,12 @@
     "eslint": "./node_modules/.bin/eslint -o=report.json -f=json './src/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore",
     "eslint-fix": "./node_modules/.bin/eslint './src/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore --fix",
     "eslint-check": "./node_modules/.bin/eslint './src/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore",
-    "build-debug": "cross-env NODE_ENV=development node --inspect-brk ./node_modules/webpack/bin/webpack.js --progress --env avplayer=1 release=0"
+    "build-debug": "cross-env NODE_ENV=development node --inspect-brk ./node_modules/webpack/bin/webpack.js --progress --env avplayer=1 release=0",
+    "postinstall": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "commit-msg": "node scripts/verify-commit.js",
+    "pre-commit": "node scripts/pre-commit.js"
   },
   "author": "Gaoxing Zhao",
   "license": "LGPL-3.0-or-later",
@@ -61,13 +66,12 @@
     "raw-loader": "^4.0.0",
     "rider": "^2.0.0",
     "schema-utils": "^3.1.0",
+    "simple-git-hooks": "^2.11.1",
     "stylus": "^0.54.2",
     "terser": "^5.36.0",
     "ts-jest": "^23.10.5",
     "ts-loader": "^9.4.4",
     "typedoc": "^0.27.2",
-    "typedoc-github-wiki-theme": "^2.0.0",
-    "typedoc-plugin-markdown": "^4.2.10",
     "typedoc-plugin-rename-defaults": "^0.7.1",
     "typescript": "^5.6.3",
     "webpack": "^5.92.0",
