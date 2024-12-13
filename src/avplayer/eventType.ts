@@ -63,4 +63,4 @@ export const PROGRESS = 'progress'
 
 export const VOLUME_CHANGE = 'volumeChange'
 
-export const SUBTITLE_DELAY_CHANGE = 'subtitle_delay_change'
+export const SUBTITLE_DELAY_CHANGE = 'subtitleDelayChange'
