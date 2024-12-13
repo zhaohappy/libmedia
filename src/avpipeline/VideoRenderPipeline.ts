@@ -1011,7 +1011,7 @@ export default class VideoRenderPipeline extends Pipeline {
         logger.debug(`after seek end with unregisterTask call, taskId: ${task.taskId}`)
         return
       }
-      
+
       task.adjust = AdjustStatus.None
       task.lastRenderTimestamp = getTimestamp()
 

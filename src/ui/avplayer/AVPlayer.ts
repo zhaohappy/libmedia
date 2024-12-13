@@ -97,7 +97,7 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       language,
       streams: [],
       videoList: [],
-      audioList:[],
+      audioList: [],
       subtitleList: [],
       isLive: false,
       menu,

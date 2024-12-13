@@ -409,7 +409,7 @@ export default class IMovFormat extends IFormat {
         if (st !== stream) {
           const stContext = st.privData as MOVStreamContext
           let timestamp = avRescaleQ(streamContext.samplesIndex[streamContext.currentSample].pts, stream.timeBase, st.timeBase)
-          
+
           let index = array.binarySearch(stContext.samplesIndex, (sample) => {
             if (sample.pts > timestamp) {
               return -1
