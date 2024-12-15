@@ -69,7 +69,7 @@ export type IOLoaderOptions = {
 }
 
 const optionsDefault = {
-  isLive: true,
+  isLive: false,
   preload: 5 * 1024 * 1024,
   retryCount: 20,
   retryInterval: 1
