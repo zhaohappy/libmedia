@@ -268,7 +268,7 @@ export default class OMovFormat extends OFormat {
   private updateCurrentChunk(formatContext: AVOFormatContext) {
     let currentChunk = this.context.currentChunk
 
-    if (!currentChunk.sampleCount) {
+    if (!currentChunk || !currentChunk.sampleCount) {
       return
     }
 
