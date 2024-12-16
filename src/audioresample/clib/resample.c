@@ -48,6 +48,9 @@ struct PCMBuffer {
   int maxnbSamples;
   int channels;
   int sampleRate;
+  enum AVSampleFormat format;
+  int64_t timestamp;
+  double duration;
 };
 
 struct SwrContext *swr_ctx;
@@ -148,6 +151,7 @@ EM_PORT_API(int) resample_process(uint8_t **input, struct PCMBuffer* output, int
   output->channels = dst_nb_channels;
   output->sampleRate = dst_samplerate;
   output->nbSamples = ret;
+  output->format = dst_sample_fmt;
 
   return 0;
 }

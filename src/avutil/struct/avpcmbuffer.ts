@@ -23,6 +23,8 @@
  *
  */
 
+import { AVSampleFormat } from '../audiosamplefmt'
+
 @struct
 export default class AVPCMBuffer {
   /**
@@ -50,6 +52,10 @@ export default class AVPCMBuffer {
    * 采样率
    */
   sampleRate: int32
+  /**
+   * pcm 格式
+   */
+  format: AVSampleFormat
   /**
    * pts
    */
