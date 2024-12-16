@@ -16,7 +16,7 @@ export async function decodeVideo(stream: AVStream) {
     onError: (error) => {
       
     },
-    onReceiveFrame(frame) {
+    onReceiveAVFrame(frame) {
       // 这里拿到解码出的帧
     }
   })

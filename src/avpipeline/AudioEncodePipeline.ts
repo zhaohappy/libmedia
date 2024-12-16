@@ -83,7 +83,7 @@ export default class AudioEncodePipeline extends Pipeline {
           task.openReject = null
         }
       },
-      onReceivePacket(avpacket) {
+      onReceiveAVPacket(avpacket) {
         task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
         task.stats.audioPacketEncodeCount++
       },

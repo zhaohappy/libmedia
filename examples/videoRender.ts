@@ -71,7 +71,7 @@ export async function run(readFile: File, canvas: HTMLCanvasElement) {
     onError: (error) => {
       
     },
-    onReceiveFrame(frame) {
+    onReceiveVideoFrame(frame) {
       queue.push(frame)
     },
     enableHardwareAcceleration: true

@@ -40,7 +40,7 @@ import { avMallocz } from 'avutil/util/mem'
 
 export type WasmVideoDecoderOptions = {
   resource: WebAssemblyResource
-  onReceiveFrame: (frame: pointer<AVFrame>) => void
+  onReceiveAVFrame: (frame: pointer<AVFrame>) => void
   onError: (error?: Error) => void
   avframePool?: AVFramePool
 }
@@ -106,8 +106,8 @@ export default class WasmVideoDecoder {
 
   private outputAVFrame() {
     if (this.frame) {
-      if (this.options.onReceiveFrame) {
-        this.options.onReceiveFrame(this.frame)
+      if (this.options.onReceiveAVFrame) {
+        this.options.onReceiveAVFrame(this.frame)
       }
       else {
         this.options.avframePool ? this.options.avframePool.release(this.frame as pointer<AVFrameRef>) : destroyAVFrame(this.frame)

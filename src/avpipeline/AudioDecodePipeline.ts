@@ -96,10 +96,11 @@ export default class AudioDecodePipeline extends Pipeline {
           task.openReject = null
         }
       },
-      onReceiveFrame(audioData) {
+      onReceiveAudioData(audioData) {
         const avframe = audioData2AVFrame(audioData, task.avframePool.alloc())
 
         avframe.pts = avRescaleQ(avframe.pts, AV_TIME_BASE_Q, task.timeBase)
+        avframe.duration = avRescaleQ(avframe.duration, AV_TIME_BASE_Q, task.timeBase)
         avframe.timeBase.den = task.timeBase.den
         avframe.timeBase.num = task.timeBase.num
 
@@ -127,7 +128,7 @@ export default class AudioDecodePipeline extends Pipeline {
           task.openReject = null
         }
       },
-      onReceiveFrame(frame) {
+      onReceiveAVFrame(frame) {
         task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
         task.stats.audioFrameDecodeCount++
         if (task.lastDecodeTimestamp) {

@@ -33,7 +33,7 @@ import avpacket2EncodedAudioChunk from 'avutil/function/avpacket2EncodedAudioChu
 import * as logger from 'common/util/logger'
 
 export type WebAudioDecoderOptions = {
-  onReceiveFrame: (frame: AudioData) => void
+  onReceiveAudioData: (frame: AudioData) => void
   onError: (error?: Error) => void
 }
 
@@ -53,8 +53,8 @@ export default class WebAudioDecoder {
   }
 
   private output(frame: AudioData) {
-    if (this.options.onReceiveFrame) {
-      this.options.onReceiveFrame(frame)
+    if (this.options.onReceiveAudioData) {
+      this.options.onReceiveAudioData(frame)
     }
     else {
       frame.close()

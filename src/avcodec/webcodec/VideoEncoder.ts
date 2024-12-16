@@ -47,7 +47,7 @@ import * as vp9 from 'avutil/codecs/vp9'
 import isPointer from 'cheap/std/function/isPointer'
 
 export type WebVideoEncoderOptions = {
-  onReceivePacket: (avpacket: pointer<AVPacket>) => void
+  onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
   onError: (error?: Error) => void
   enableHardwareAcceleration?: boolean
   avpacketPool?: AVPacketPool
@@ -160,7 +160,7 @@ export default class WebVideoEncoder {
       avpacket.bitFormat = this.parameters.bitFormat
     }
 
-    this.options.onReceivePacket(avpacket)
+    this.options.onReceiveAVPacket(avpacket)
 
     const avframe = this.avframeMap.get(inputCounter)
 

@@ -38,7 +38,7 @@ import isPointer from 'cheap/std/function/isPointer'
 import * as logger from 'common/util/logger'
 
 export type WebAudioEncoderOptions = {
-  onReceivePacket: (avpacket: pointer<AVPacket>) => void
+  onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
   onError: (error?: Error) => void
   avpacketPool?: AVPacketPool
   avframePool?: AVFramePool
@@ -94,7 +94,7 @@ export default class WebAudioEncoder {
 
     this.pts += avpacket.duration
 
-    this.options.onReceivePacket(avpacket)
+    this.options.onReceiveAVPacket(avpacket)
 
     const avframe = this.avframeCache.shift()
     if (avframe) {

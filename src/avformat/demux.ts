@@ -45,9 +45,13 @@ import WasmAudioDecoder from 'avcodec/wasmcodec/AudioDecoder'
 import { destroyAVFrame } from 'avutil/util/avframe'
 
 export interface DemuxOptions {
-  // 只分析流的必要参数（设置 true 将不会分析视频帧率和音频每帧采用点数等参数）
+  /**
+   * 只分析流的必要参数（设置 true 将不会分析视频帧率和音频每帧采用点数等参数）
+   */
   fastOpen?: boolean
-  // 最大流分析时长（毫秒）
+  /**
+   * 最大流分析时长（毫秒）
+   */
   maxAnalyzeDuration?: number
 }
 
@@ -252,7 +256,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
             if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
               decoder = new WasmAudioDecoder({
                 resource,
-                onReceiveFrame: (avframe) => {
+                onReceiveAVFrame: (avframe) => {
                   stream.codecpar.format = avframe.format
                   stream.codecpar.frameSize = avframe.nbSamples
                   stream.codecpar.sampleRate = avframe.sampleRate
@@ -271,7 +275,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
               }
               decoder = new WasmVideoDecoder({
                 resource,
-                onReceiveFrame: (avframe) => {
+                onReceiveAVFrame: (avframe) => {
                   stream.codecpar.format = avframe.format
                   stream.codecpar.colorSpace = avframe.colorSpace
                   stream.codecpar.colorPrimaries = avframe.colorPrimaries

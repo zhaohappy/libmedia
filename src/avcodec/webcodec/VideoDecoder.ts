@@ -37,7 +37,7 @@ import * as logger from 'common/util/logger'
 import os from 'common/util/os'
 
 export type WebVideoDecoderOptions = {
-  onReceiveFrame: (frame: VideoFrame) => void
+  onReceiveVideoFrame: (frame: VideoFrame) => void
   enableHardwareAcceleration?: boolean
   onError: (error?: Error) => void
 }
@@ -87,8 +87,8 @@ export default class WebVideoDecoder {
         && this.outputQueue[0].timestamp === this.inputQueue[0]
       ) {
         const output = this.outputQueue.shift()
-        if (this.options.onReceiveFrame) {
-          this.options.onReceiveFrame(output)
+        if (this.options.onReceiveVideoFrame) {
+          this.options.onReceiveVideoFrame(output)
         }
         else {
           output.close()
@@ -97,8 +97,8 @@ export default class WebVideoDecoder {
       }
     }
     else {
-      if (this.options.onReceiveFrame) {
-        this.options.onReceiveFrame(frame)
+      if (this.options.onReceiveVideoFrame) {
+        this.options.onReceiveVideoFrame(frame)
       }
       else {
         frame.close()
@@ -238,8 +238,8 @@ export default class WebVideoDecoder {
     if (this.sort) {
       while (this.outputQueue.length) {
         const frame = this.outputQueue.shift()
-        if (this.options.onReceiveFrame) {
-          this.options.onReceiveFrame(frame)
+        if (this.options.onReceiveVideoFrame) {
+          this.options.onReceiveVideoFrame(frame)
         }
         else {
           frame.close()

@@ -54,7 +54,7 @@ export async function demuxFile(readFile: File) {
     onError: (error) => {
       
     },
-    onReceiveFrame(frame) {
+    onReceiveVideoFrame(frame) {
       // 这里拿到解码出的帧
       console.log('receive frame', frame.timestamp)
       frame.close()

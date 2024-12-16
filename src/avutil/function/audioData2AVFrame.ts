@@ -61,6 +61,7 @@ export function audioData2AVFrame(audioData: AudioData, avframe: pointer<AVFrame
   avframe.chLayout.nbChannels = audioData.numberOfChannels
   avframe.format = mapFormat(audioData.format)
   avframe.pts = static_cast<int64>(audioData.timestamp)
+  avframe.duration = static_cast<int64>(audioData.duration)
 
   getAudioBuffer(avframe)
 

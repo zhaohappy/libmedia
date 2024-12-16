@@ -141,7 +141,7 @@ export default class VideoDecodePipeline extends Pipeline {
         task.needKeyFrame = true
         task.leftIPCPort.request('requestKeyframe')
       },
-      onReceiveFrame(frame) {
+      onReceiveVideoFrame(frame) {
         task.firstDecoded = true
         task.frameCaches.push(frame)
         task.stats.videoFrameDecodeCount++
@@ -167,7 +167,7 @@ export default class VideoDecodePipeline extends Pipeline {
           task.openReject = null
         }
       },
-      onReceiveFrame(frame) {
+      onReceiveAVFrame(frame) {
         task.firstDecoded = true
         task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
         task.stats.videoFrameDecodeCount++

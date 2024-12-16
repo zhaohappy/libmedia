@@ -125,7 +125,7 @@ export default class VideoEncodePipeline extends Pipeline {
           logger.error(`video encode error width hardware, taskId: ${task.taskId}, error: ${error}`)
         }
       },
-      onReceivePacket(avpacket) {
+      onReceiveAVPacket(avpacket) {
         task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
         task.stats.videoPacketEncodeCount++
       },
