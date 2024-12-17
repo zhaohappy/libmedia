@@ -1,0 +1,28 @@
+{
+  "name": "libmedia-site",
+  "version": "0.0.1",
+  "description": "libmedia 文档网站",
+  "private": true,
+  "scripts": {
+    "dev": "dumi dev",
+    "build": "dumi build"
+  },
+  "author": "Gaoxing Zhao",
+  "license": "MIT",
+  "devDependencies": {
+    "@commitlint/cli": "^17.1.2",
+    "@commitlint/config-conventional": "^17.1.0",
+    "@types/node": "^22.7.6",
+    "@umijs/plugins": "^4.1.2",
+    "dumi": "^2.2.13",
+    "dumi-theme-antd-style": "^0.31.1",
+    "gh-pages": "^6.1.0",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3",
+    "tailwindcss": "^3.4.1",
+    "url-loader": "^4.1.1"
+  },
+  "dependencies": {
+    "antd": "^5.11.5"
+  }
+}

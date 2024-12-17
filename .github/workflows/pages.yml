@@ -50,6 +50,13 @@ jobs:
         run:  npm run build-avtranscoder
       - name: Build docs
         run:  npm run doc
+      - name: Build site
+        run: | 
+          cd site
+          npm install
+          npm run build
+      - name: Move site files
+        run: mv ./site/dist/* ./docs/
       - name: Clean up files
         run: find . -mindepth 1 -maxdepth 1 ! -name "dist" ! -name "docs" ! -name "test" ! -name "product" -exec rm -rf {} +
       - name: Setup Pages

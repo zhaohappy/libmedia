@@ -74,6 +74,6 @@ ioWriter.onSeek = (pos) => {
 
 主要是设置 IOWriterSync 的 onFlush、onSeek 回调。
 
-其中 onFlush 若参数 pos 有值则表示在文件 pos 处追加数据，不要覆盖 pos 后面的数据，否则在当前文件位置写入数据，若后面有数据则会覆盖。
+其中 onFlush 若参数 pos 有值则表示在文件 pos 处追加数据，此时不要覆盖 pos 后面的数据（某些封装格式会在写完数据之后返回到文件头部追加数据，比如封装 mp4 时将 moov box 移到文件开始的位置）；否则在当前文件位置写入数据，若后面有数据则会覆盖。
 
 onSeek 用于调整文件写入位置，下一次 onFlush 从这个位置覆盖写入。
