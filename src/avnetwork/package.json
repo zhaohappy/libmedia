@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avnetwork",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "libmedia 网络模块",
   "repository": {
     "type": "git",
