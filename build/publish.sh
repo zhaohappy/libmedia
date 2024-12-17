@@ -2,55 +2,55 @@ NOW_PATH=$(cd $(dirname $0); pwd)
 
 PROJECT_ROOT_PATH=$(cd $NOW_PATH/../; pwd)
 
-node $NOW_PATH/update-dependencies.js
+node $PROJECT_ROOT_PATH/scripts/update-dependencies.js
 
 cd $PROJECT_ROOT_PATH/src/common
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/cheap
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/audioresample
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/audiostretchpitch
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/avcodec
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/avfilter
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/avformat
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/avnetwork
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/avpipeline
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/avplayer
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/avprotocol
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/avrender
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/avtranscoder
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/avutil
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/videoscale
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH/src/ui/avplayer
-npm publish
+npm publish --access=public
 
 cd $PROJECT_ROOT_PATH
 git checkout -- .
