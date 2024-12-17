@@ -711,49 +711,49 @@ function buildAvplayerUI() {
 }
 
 function buildAll() {
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=cheap'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=cheap'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=common'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=common'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=audioresample'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=audioresample'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=audiostretchpitch'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=audiostretchpitch'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=videoscale'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=videoscale'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avcodec'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=avcodec'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avfilter'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=avfilter'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avformat'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=avformat'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avnetwork'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=avnetwork'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avpipeline'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=avpipeline'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avplayer'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=avplayer'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avprotocol'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=avprotocol'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avrender'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=avrender'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avtranscoder'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=avtranscoder'], {
     stdio: 'inherit'
   })
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/build/build-package.js`, '--package=avplayer_ui'], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=avplayer_ui'], {
     stdio: 'inherit'
   })
 }
