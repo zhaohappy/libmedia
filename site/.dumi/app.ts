@@ -1,18 +1,17 @@
-import { type IPreviewerProps } from 'dumi';
 import { type Project } from '@stackblitz/sdk';
 import { IFiles } from 'codesandbox-import-utils/lib/api/define';
 
-export function modifyStackBlitzData(memo: Project, props: IPreviewerProps) {
+export function modifyStackBlitzData(memo: Project, props: any) {
   // if use default template: 'create-react-app', demo won't install dependencies automatically
   memo.template = 'node';
   return createTemplate(memo, props, true);
 }
 
-export function modifyCodeSandboxData(memo: { files: IFiles }, props: IPreviewerProps) {
+export function modifyCodeSandboxData(memo: { files: IFiles }, props: any) {
   return createTemplate(memo, props, false);
 }
 
-function createTemplate(memo: { files: IFiles } | Project, props: IPreviewerProps, isStackBlitz: boolean) { 
+function createTemplate(memo: { files: IFiles } | Project, props: any, isStackBlitz: boolean) { 
   Object.entries(memo.files).forEach(([name, content]) => {
     if (name === 'sandbox.config.json') {
       memo.files[name] = {
@@ -33,8 +32,10 @@ function createTemplate(memo: { files: IFiles } | Project, props: IPreviewerProp
     if (name === 'package.json') {
       const packageJson = JSON.parse(content);
       const npmDeps = Object.entries(props.asset.dependencies || {})
+        // @ts-ignore
         .filter(([key, value]) => value.type === 'NPM')
         .reduce((acc: { [key: string]: any }, [key, value]) => {
+          // @ts-ignore
           acc[key] = value.value;
           return acc;
         }, {});
