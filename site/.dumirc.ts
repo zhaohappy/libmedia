@@ -63,8 +63,8 @@ export default defineConfig({
         publicPath: '/',
       }
     : {
-        base: '/docs/',
-        publicPath: '/docs/',
+        base: '/libmedia/docs/',
+        publicPath: '/libmedia/docs/',
       }),
   targets: { chrome: 102 },
   mfsu: true,
