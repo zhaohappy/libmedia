@@ -56,21 +56,19 @@ const template = {
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "skipLibCheck": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
+    "declaration": false,
     "jsx": "react-jsx",
 
     /* Linting */
-    "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "baseUrl": "./",
     "paths": {
       "@libmedia/common/*": ["node_modules/@libmedia/common/dist/esm/*"],
       "@libmedia/cheap/*": ["node_modules/@libmedia/cheap/dist/esm/*"],
@@ -87,12 +85,12 @@ const template = {
       "@libmedia/avutil/*": ["node_modules/@libmedia/avutil/dist/esm/*"],
       "@libmedia/videoscale/*": ["node_modules/@libmedia/videoscale/dist/esm/*"],
       "@libmedia/avfilter/*": ["node_modules/@libmedia/avfilter/dist/esm/*"]
-    },
-    "files": [
-      "node_modules/@libmedia/cheap/dist/esm/cheapdef.d.ts"
-    ]
+    }
   },
   "include": ["src"],
+  "files": [
+    "node_modules/@libmedia/cheap/dist/esm/cheapdef.d.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
 `,
@@ -162,7 +160,7 @@ export default defineConfig({
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -174,10 +172,11 @@ export default defineConfig({
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.2.1",
     "@rollup/plugin-typescript": "^12.1.1",
-    "typescript": "^5.2.2",
+    "typescript": "^5.6.3",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.1",
-    "vite": "^5.2.0"
+    "vite": "^6.0.1",
+    "tslib": "^2.8.1"
   }
 }
 `,

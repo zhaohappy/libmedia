@@ -38,9 +38,9 @@ export function formatUrl(
     window.location.hostname.includes('webcontainer.io') ||
     window.location.hostname.includes('stackblitz.io') ||
     window.location.hostname.includes('csb.app')
-      ? BASE_URL
+      ? (BASE_URL + '/docs')
       : '';
-  const prefix = process.env.NODE_ENV === 'development' ? '/' : '/docs/'
+  const prefix = process.env.NODE_ENV === 'development' ? '/' : '/libmedia/docs/'
   return `${base}${prefix}${url}`
 }
 
