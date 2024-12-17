@@ -59,7 +59,7 @@ async function encode(set: (v: string) => void) {
   })
 
   const decoder = new WasmVideoDecoder({
-    resource: await compileResource(getWasm('decoder', stream.codecpar.codecId)),
+    resource: await compileResource(getWasm('decoder', stream.codecpar.codecId), true),
     onError: (error) => {
       set(`decode error: ${error}\n`)
     },

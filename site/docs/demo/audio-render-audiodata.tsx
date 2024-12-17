@@ -12,12 +12,13 @@ import { mapFloat32Array } from '@libmedia/cheap/std/memory'
 import { destroyAVFrame } from '@libmedia/avutil/util/avframe'
 import WebAudioDecoder from '@libmedia/avcodec/webcodec/AudioDecoder'
 import { audioData2AVFrame } from '@libmedia/avutil/function/audioData2AVFrame'
-
-import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
-import { useEffect, useRef, useState } from 'react'
-import React from 'react'
+import * as cheapConfig from '@libmedia/cheap/config'
 import { avRescaleQ } from '@libmedia/avutil/util/rational'
 import { AV_TIME_BASE_Q } from '@libmedia/avutil/constant'
+
+import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
+import { useEffect } from 'react'
+import React from 'react'
 
 
 let file: File
@@ -74,7 +75,17 @@ async function render() {
   function play(data: pointer<pointer<float>>, nbSamples: int32, sampleRate: int32) {
     const audioBuffer = audioContext.createBuffer(channels, nbSamples, sampleRate)
     for (let i = 0; i < channels; i++) {
-      audioBuffer.copyToChannel(mapFloat32Array(data[i], nbSamples), i)
+      if (audioBuffer.copyToChannel && !cheapConfig.USE_THREADS) {
+        audioBuffer.copyToChannel(
+          mapFloat32Array(data[i], nbSamples),
+          i,
+          0
+        )
+      }
+      else {
+        const audioData = audioBuffer.getChannelData(i)
+        audioData.set(mapFloat32Array(data[i], nbSamples), 0)
+      }
     }
     const bufferSource = audioContext.createBufferSource()
     bufferSource.buffer = audioBuffer

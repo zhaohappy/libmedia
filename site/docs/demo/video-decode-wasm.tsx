@@ -37,7 +37,7 @@ async function decode(set: (v: string) => void) {
   const stream = iformatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
 
   const decoder = new WasmVideoDecoder({
-    resource: await compileResource(getWasm('decoder', stream.codecpar.codecId)),
+    resource: await compileResource(getWasm('decoder', stream.codecpar.codecId), true),
     onError: (error) => {
       set(`decode error: ${error}\n`)
     },

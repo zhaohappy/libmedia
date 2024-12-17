@@ -11,9 +11,10 @@ import AVPCMBuffer from '@libmedia/avutil/struct/avpcmbuffer'
 import { avFreep } from '@libmedia/avutil/util/mem'
 import { mapFloat32Array } from '@libmedia/cheap/std/memory'
 import { destroyAVFrame } from '@libmedia/avutil/util/avframe'
+import * as cheapConfig from '@libmedia/cheap/config'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import React from 'react'
 
 let file: File
@@ -70,7 +71,17 @@ async function render() {
   function play(data: pointer<pointer<float>>, nbSamples: int32, sampleRate: int32) {
     const audioBuffer = audioContext.createBuffer(channels, nbSamples, sampleRate)
     for (let i = 0; i < channels; i++) {
-      audioBuffer.copyToChannel(mapFloat32Array(data[i], nbSamples), i)
+      if (audioBuffer.copyToChannel && !cheapConfig.USE_THREADS) {
+        audioBuffer.copyToChannel(
+          mapFloat32Array(data[i], nbSamples),
+          i,
+          0
+        )
+      }
+      else {
+        const audioData = audioBuffer.getChannelData(i)
+        audioData.set(mapFloat32Array(data[i], nbSamples), 0)
+      }
     }
     const bufferSource = audioContext.createBufferSource()
     bufferSource.buffer = audioBuffer

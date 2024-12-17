@@ -50,7 +50,7 @@ async function encode(set: (v: string) => void) {
   let counter = 0
 
   const encoder = new WasmVideoEncoder({
-    resource: await compileResource(getWasm('encoder', codecpar.codecId)),
+    resource: await compileResource(getWasm('encoder', codecpar.codecId), true),
     onError: (error) => {
       set(`encode error: ${error}\n`)
     },
@@ -61,7 +61,7 @@ async function encode(set: (v: string) => void) {
   })
 
   const decoder = new WasmVideoDecoder({
-    resource: await compileResource(getWasm('decoder', stream.codecpar.codecId)),
+    resource: await compileResource(getWasm('decoder', stream.codecpar.codecId), true),
     onError: (error) => {
       set(`decode error: ${error}\n`)
     },
