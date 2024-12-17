@@ -73,7 +73,7 @@ yarn add @libmedia/avcodec
 
 主要是 ```paths``` 设置和 ```files``` 设置。```paths``` 根据自己的使用情况配置无需全部配置；
 
-**```isolatedModules``` 和 ```skipLibCheck``` 不能设置为 true**
+**```isolatedModules``` 不能设置为 true, libmedia 下面有很多 const enum 类型**
 
 ## 编译配置
 
