@@ -210,6 +210,7 @@ module.exports = (env) => {
 const fs = require('fs')
 const path = require('path')
 const ts = require('typescript')
+const transformer = require('@libmedia/cheap/build/transformer')
 
 // 读取 tsconfig.json 配置，更改为自己的 tsconfig.json 的路径
 const configPath = path.resolve(__dirname, './tsconfig.json')
