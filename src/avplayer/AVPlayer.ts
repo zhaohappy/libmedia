@@ -187,6 +187,11 @@ export interface AVPlayerOptions {
    * 自定义查找播放流回调
    */
   findBestStream?: (streams: AVStreamInterface[], mediaType: AVMediaType) => AVStreamInterface
+  /**
+   * 配置 audioWorklet 的缓冲区大小，以 128 采样为单位
+   * 某些机器上 audioWorklet 线程与其他线程通信延迟较大会导致音频播放卡顿，此时可以调大这个
+   */
+  audioWorkletBufferLength?: int32
 }
 
 export interface AVPlayerLoadOptions {
@@ -310,6 +315,8 @@ export const enum AVPlayerProgress {
 }
 
 export default class AVPlayer extends Emitter implements ControllerObserver {
+
+  static Instances: AVPlayer[] = []
 
   static Util = {
     compile,
@@ -435,6 +442,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     mutex.init(addressof(this.GlobalData.avpacketListMutex))
     mutex.init(addressof(this.GlobalData.avframeListMutex))
+
+    AVPlayer.Instances.push(this)
 
     logger.info(`create player, taskId: ${this.taskId}`)
   }
@@ -1821,16 +1830,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           }
         )
 
-        if (cheapConfig.USE_THREADS
-          && defined(ENABLE_THREADS)
-          && support.audioWorklet
-          && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
-          && (!os.ios || browser.checkVersion(os.version, '16.1', true))
-        ) {
-          await this.audioSourceNode.request('init', {
-            memory: Memory
-          })
-        }
+        await this.audioSourceNode.request('init', {
+          memory: cheapConfig.USE_THREADS ? Memory : null,
+          bufferLength: this.options.audioWorkletBufferLength
+        })
 
         AVPlayer.AudioRenderThread.setPlayTempo(this.taskId, this.playRate)
 
@@ -3155,6 +3158,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.GlobalData = null
     }
 
+    array.remove(AVPlayer.Instances, this)
+
     this.status = AVPlayerStatus.DESTROYED
   }
 
@@ -3263,6 +3268,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  /**
+   * @internal
+   */
+  public onAudioContextStateChange() {
+    // @ts-ignore
+    if (AVPlayer.audioContext.state === 'interrupted') {
+      if (this.status === AVPlayerStatus.PLAYED || this.status === AVPlayerStatus.PAUSED) {
+        AVPlayer.AudioRenderThread.fakePlay(this.taskId)
+      }
+    }
+  }
+
   private async createVideoDecoderThread(enableWorker: boolean = true) {
 
     if (this.VideoDecoderThread) {
@@ -3327,6 +3344,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (!AVPlayer.audioContext) {
         AVPlayer.audioContext = new (AudioContext || webkitAudioContext)()
       }
+
+      AVPlayer.audioContext.addEventListener('statechange', () => {
+        array.each(AVPlayer.Instances, (player) => {
+          player.onAudioContextStateChange()
+        })
+      })
+
       if (support.audioWorklet) {
         if (defined(ENV_WEBPACK)) {
           await registerProcessor(

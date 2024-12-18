@@ -29,7 +29,7 @@ import * as is from 'common/util/is'
 import * as logger from 'common/util/logger'
 import os from 'common/util/os'
 
-const BUFFER_LENGTH = (os.windows || os.mac || os.linux) ? 10 : 20
+let BUFFER_LENGTH = (os.windows || os.mac || os.linux) ? 10 : 20
 
 export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBase {
 
@@ -55,6 +55,9 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
     this.ipcPort.on(REQUEST, async (request: RpcMessage) => {
       switch (request.method) {
         case 'init': {
+          if (request.params && request.params.bufferLength) {
+            BUFFER_LENGTH = request.params.bufferLength
+          }
           this.ipcPort.reply(request)
           break
         }

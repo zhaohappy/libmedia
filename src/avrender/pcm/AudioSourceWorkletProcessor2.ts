@@ -31,7 +31,7 @@ import { avFree, avFreep, avMallocz } from 'avutil/util/mem'
 import * as logger from 'common/util/logger'
 import os from 'common/util/os'
 
-const BUFFER_LENGTH = (os.windows || os.mac || os.linux) ? 10 : 20
+let BUFFER_LENGTH = (os.windows || os.mac || os.linux) ? 10 : 20
 
 export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorBase {
 
@@ -58,7 +58,11 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
     this.ipcPort.on(REQUEST, async (request: RpcMessage) => {
       switch (request.method) {
         case 'init': {
-          const { memory } = request.params
+          const { memory, bufferLength } = request.params
+
+          if (request.params.bufferLength) {
+            BUFFER_LENGTH = bufferLength
+          }
 
           await initThread({
             memory,
