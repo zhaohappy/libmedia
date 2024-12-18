@@ -108,7 +108,7 @@ export default defineConfig({
 
 ## webpack 中使用多线程
 
-如果你是使用的 webpack 来构建项目，推荐使用 webpack 插件来编译，如何配置查看[配置](./quick-start.md#webpack-插件)。这样开启多线程更加简单，并且多线程的代码不会单独分成独立的文件，运行时通过动态生成代码来创建 worker。
+如果你是使用的 webpack 来构建项目，推荐使用 webpack 插件来编译，如何配置查看[配置](./quick-start.md#webpack-插件)。这样开启多线程更加简单，不需要单独写一个 worker 的入口文件；并且多线程的代码不会单独分成独立的文件，运行时通过动态生成代码来创建 worker。
 
 ```javascript
 

@@ -1,6 +1,5 @@
 import * as demux from '@libmedia/avformat/demux'
 import { createAVIFormatContext } from '@libmedia/avformat/AVFormatContext'
-import { createAVPacket, destroyAVPacket } from '@libmedia/avutil/util/avpacket'
 import dump from '@libmedia/avformat/dump'
 import { AVCodecID, AVMediaType } from '@libmedia/avutil/codec'
 import compileResource from '@libmedia/avutil/function/compileResource'
@@ -26,8 +25,6 @@ async function probe(set: (v: string) => void) {
   iformatContext.ioReader = ioReader
   iformatContext.iformat = iformat
 
-  const avpacket = createAVPacket()
-
   await demux.open(iformatContext, {
     maxAnalyzeDuration: 15000
   })
@@ -39,7 +36,6 @@ async function probe(set: (v: string) => void) {
   }]))
   
   iformatContext.destroy()
-  destroyAVPacket(avpacket)
 }
 
 export default function () {
