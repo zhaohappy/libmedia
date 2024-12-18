@@ -49,6 +49,8 @@ import { Timeout } from 'common/types/type'
 import Sleep from 'common/timer/Sleep'
 import * as bigint from 'common/util/bigint'
 import compileResource from 'avutil/function/compileResource'
+import WorkerSetTimeout from 'common/timer/WorkerSetTimeout'
+import isWorker from 'common/function/isWorker'
 
 export interface AudioRenderTaskOptions extends TaskOptions {
   playSampleRate: int32
@@ -101,6 +103,7 @@ type SelfTask = AudioRenderTaskOptions & {
   fakePlayStartTimestamp: number
   fakePlaySamples: int64
   fakePlayTimer: Timeout
+  fakePlayWorkerTimer: WorkerSetTimeout
   fakePlay: boolean
 
   lastRenderTimestamp: number
@@ -162,6 +165,7 @@ export default class AudioRenderPipeline extends Pipeline {
       fakePlayStartTimestamp: 0,
       fakePlaySamples: 0n,
       fakePlayTimer: null,
+      fakePlayWorkerTimer: null,
       fakePlay: false,
 
       lastRenderTimestamp: 0,
@@ -487,10 +491,7 @@ export default class AudioRenderPipeline extends Pipeline {
         case 'pull': {
           if (task.fakePlay) {
             task.fakePlay = false
-            if (task.fakePlayTimer) {
-              clearTimeout(task.fakePlayTimer)
-              task.fakePlayTimer = null
-            }
+            this.clearFakePlayTimer(task)
             task.fakePlaySamples = 0n
             task.fakePlayStartTimestamp = 0
           }
@@ -507,10 +508,7 @@ export default class AudioRenderPipeline extends Pipeline {
         case 'pullBuffer': {
           if (task.fakePlay) {
             task.fakePlay = false
-            if (task.fakePlayTimer) {
-              clearTimeout(task.fakePlayTimer)
-              task.fakePlayTimer = null
-            }
+            this.clearFakePlayTimer(task)
             task.fakePlaySamples = 0n
             task.fakePlayStartTimestamp = 0
           }
@@ -624,10 +622,7 @@ export default class AudioRenderPipeline extends Pipeline {
         })
       }
       else {
-        if (task.fakePlayTimer) {
-          clearTimeout(task.fakePlayTimer)
-          task.fakePlayTimer = null
-        }
+        this.clearFakePlayTimer(task)
       }
 
       task.seeking = true
@@ -754,14 +749,38 @@ export default class AudioRenderPipeline extends Pipeline {
           task.stretchpitcher.get(i)?.clear()
         }
       }
-      if (task.fakePlayTimer) {
-        clearTimeout(task.fakePlayTimer)
-      }
+      this.clearFakePlayTimer(task)
       task.fakePlaySamples = 0n
       task.fakePlayStartTimestamp = 0
       task.lastRenderTimestamp = getTimestamp()
 
       logger.debug(`restart task, taskId: ${task.taskId}`)
+    }
+  }
+
+  private clearFakePlayTimer(task: SelfTask) {
+    if (task.fakePlayTimer) {
+      if (task.fakePlayWorkerTimer) {
+        task.fakePlayWorkerTimer.clearTimeout(task.fakePlayTimer as unknown as number)
+        task.fakePlayWorkerTimer.destroy()
+        task.fakePlayWorkerTimer = null
+      }
+      else {
+        clearTimeout(task.fakePlayTimer)
+      }
+      task.fakePlayTimer = null
+    }
+  }
+
+  private setFakePlayTimer(task: SelfTask, fn: Function, timeout: number) {
+    if (isWorker()) {
+      return setTimeout(fn, timeout) as unknown as Timeout
+    }
+    else {
+      if (!task.fakePlayWorkerTimer) {
+        task.fakePlayWorkerTimer = new WorkerSetTimeout()
+      }
+      return task.fakePlayWorkerTimer.setTimeout(fn, timeout) as unknown as Timeout
     }
   }
 
@@ -803,7 +822,7 @@ export default class AudioRenderPipeline extends Pipeline {
       })
     }
 
-    task.fakePlayTimer = setTimeout(() => {
+    task.fakePlayTimer = this.setFakePlayTimer(task, () => {
       task.fakePlayTimer = null
       this.fakePlayNext(task)
     }, next)
@@ -826,10 +845,7 @@ export default class AudioRenderPipeline extends Pipeline {
     if (task) {
       task.pausing = true
       if (task.fakePlay) {
-        if (task.fakePlayTimer) {
-          clearTimeout(task.fakePlayTimer)
-          task.fakePlayTimer = null
-        }
+        this.clearFakePlayTimer(task)
       }
 
       logger.info(`task paused, taskId: ${task.taskId}`)
@@ -873,10 +889,7 @@ export default class AudioRenderPipeline extends Pipeline {
   public async unregisterTask(taskId: string): Promise<void> {
     const task = this.tasks.get(taskId)
     if (task) {
-      if (task.fakePlayTimer) {
-        clearTimeout(task.fakePlayTimer)
-        task.fakePlayTimer = null
-      }
+      this.clearFakePlayTimer(task)
       if (task.resampler) {
         task.resampler.close()
       }
