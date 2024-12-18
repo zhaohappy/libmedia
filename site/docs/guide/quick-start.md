@@ -47,6 +47,7 @@ yarn add @libmedia/avcodec
 
 ```json
 {
+  "baseUrl": "./",
   "paths": {
     ...
     "@libmedia/common/*": ["node_modules/@libmedia/common/dist/esm/*"],
