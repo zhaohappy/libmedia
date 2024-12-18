@@ -33,6 +33,7 @@ import { AVFormat, AVSeekFlags, IOFlags } from 'avutil/avformat'
 import { checkStreamParameters } from './function/checkStreamParameters'
 import { avRescaleQ } from 'avutil/util/rational'
 import { copyAVPacketData, createAVPacket, destroyAVPacket,
+  getAVPacketSideData,
   hasAVPacketSideData, refAVPacket, unrefAVPacket
 } from 'avutil/util/avpacket'
 import { DURATION_MAX_READ_SIZE, SAMPLE_INDEX_STEP } from './config'
@@ -43,6 +44,7 @@ import { IOError } from 'common/io/error'
 import WasmVideoDecoder from 'avcodec/wasmcodec/VideoDecoder'
 import WasmAudioDecoder from 'avcodec/wasmcodec/AudioDecoder'
 import { destroyAVFrame } from 'avutil/util/avframe'
+import { mapUint8Array } from 'cheap/std/memory'
 
 export interface DemuxOptions {
   /**
@@ -593,6 +595,13 @@ export async function seek(formatContext: AVIFormatContext, streamIndex: number,
 
   if (ret >= 0n) {
     array.each(formatContext.interval.packetBuffer, (avpacket) => {
+      if (formatContext.ioReader.flags & IOFlags.SLICE) {
+        const newSideData = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+        const stream = formatContext.streams[avpacket.streamIndex]
+        if (!stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] && newSideData) {
+          stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = mapUint8Array(newSideData.data, newSideData.size).slice()
+        }
+      }
       destroyAVPacket(avpacket)
     })
     formatContext.interval.packetBuffer.length = 0

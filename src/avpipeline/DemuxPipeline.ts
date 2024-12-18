@@ -50,7 +50,7 @@ import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/co
 import * as bigint from 'common/util/bigint'
 import { AVStreamInterface } from 'avutil/AVStream'
 import { addAVPacketSideData, getAVPacketData, getAVPacketSideData } from 'avutil/util/avpacket'
-import { memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
+import { mapUint8Array, memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
 import analyzeAVFormat from 'avutil/function/analyzeAVFormat'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import compileResource from 'avutil/function/compileResource'
@@ -888,6 +888,13 @@ export default class DemuxPipeline extends Pipeline {
         if (ret >= 0n) {
           task.cacheAVPackets.forEach((list) => {
             array.each(list, (avpacket) => {
+              if (task.formatContext.ioReader.flags & IOFlags.SLICE) {
+                const newSideData = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+                const stream = task.formatContext.streams[avpacket.streamIndex]
+                if (!stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] && newSideData) {
+                  stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = mapUint8Array(newSideData.data, newSideData.size).slice()
+                }
+              }
               task.avpacketPool.release(avpacket)
             })
             list.length = 0

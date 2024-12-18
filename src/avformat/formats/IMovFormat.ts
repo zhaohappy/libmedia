@@ -255,7 +255,9 @@ export default class IMovFormat extends IFormat {
         }
       }
 
-      if (stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
+      if (stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
+        && (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+      ) {
         const len = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA].length
         const extradata = avMalloc(len)
         addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, extradata, len)

@@ -358,9 +358,12 @@ export default class DashIOLoader extends IOLoader {
     return errorType.INVALID_ARGUMENT
   }
 
-
   private async seekResource(timestamp: int64, resource: Resource) {
+
+    let currentSegment = ''
+
     if (resource.loader) {
+      currentSegment = resource.loader.getUrl()
       await resource.loader.abort()
       resource.loader = null
     }
@@ -385,6 +388,19 @@ export default class DashIOLoader extends IOLoader {
         }
       }
       resource.segmentIndex = index + (mediaList[resource.selectedIndex].initSegment ? 1 : 0)
+      let initSegment = ''
+      if (resource.type === 'video') {
+        initSegment = this.mediaPlayList.mediaList.video[resource.selectedIndex].initSegment
+      }
+      else if (resource.type === 'audio') {
+        initSegment = this.mediaPlayList.mediaList.audio[resource.selectedIndex].initSegment
+      }
+      else if (resource.type === 'subtitle') {
+        initSegment = this.mediaPlayList.mediaList.subtitle[resource.selectedIndex].initSegment
+      }
+      if (initSegment && initSegment === currentSegment) {
+        resource.initSegmentPadding = initSegment
+      }
     }
   }
 
