@@ -1,8 +1,8 @@
 libmedia
 ======
-English | [中文](README.md)
+English | [中文](README.md) | [Document](https://zhaohappy.github.io/libmedia/docs)
 
-![](https://img.shields.io/badge/language-typescript-blue.svg) [![](https://img.shields.io/badge/base-cheap-green.svg)](https://github.com/zhaohappy/cheap) ![](https://img.shields.io/badge/feature-thread-red.svg) ![license](https://img.shields.io/github/license/zhaohappy/libmedia)
+![](https://img.shields.io/badge/language-typescript-blue.svg) [![](https://img.shields.io/badge/base-cheap-green.svg)](https://github.com/zhaohappy/cheap) ![](https://img.shields.io/badge/feature-thread-red.svg) ![license](https://img.shields.io/github/license/zhaohappy/libmedia) [![npm](https://img.shields.io/npm/v/@libmedia/avutil.svg?style=flat)](https://www.npmjs.com/settings/libmedia/packages)
 
 ### Introduction
  
@@ -84,31 +84,6 @@ if multi-threading is not supported, it will fall back to running on the main th
 | rtmp     | ✅       | ❌        |
 | rtsp     | ✅       | ❌        |
 
-rtmp and rtsp need use WebSocket or WebTransport proxy tcp connection，for example in avplayer:
-
-```JavaScript
-
-const player = new AVPlayer()
-
-// first url is the websocket proxy rtmp url 
-player.load('rtmp://xxx.xxx.xxx.xxx/xxx/xxx', {
-  // uri is the source rtmp url
-  uri: 'rtmp://xxx.xxx.xxx.xxx/xxx/xxx'
-})
-player.play()
-
-player.load('rtsp://xxx.xxx.xxx.xxx/xxx')
-player.play()
-
-// use wss
-player.load('rtsp://xxx.xxx.xxx.xxx/xxx')
-// use ws
-player.load('rtsp+ws://xxx.xxx.xxx.xxx/xxx')
-// use webtransport
-player.load('rtsp+webtransport://xxx.xxx.xxx.xxx/xxx')
-
-```
-
 ### Codecs
 
 Codecs are compiled into separate wasm modules, the decoders are in the ```dist/decode``` directory, and the encoders are in the ```dist/encode``` directory. There are three versions of the encoding and decoding wasm module: baseline, atomic, and simd. The baseline version's instruction set corresponds to the MVP version of WebAssembly, but it needs to support Mutable Globals, with the highest compatibility and the lowest performance; atomic version add the atomic operation instruction set and Bulk memory instruction set; simd version add the simd vector acceleration instruction set, has the highest performance. The current simd version is automatically optimized by the compiler, and different codecs have different effects (currently I have not seen any codec projects has optimized for the wasm simd instruction set. If you want higher acceleration effects, you may want to optimize by yourself).
@@ -178,66 +153,6 @@ Codecs are compiled into separate wasm modules, the decoders are in the ```dist/
 | dts         | ✅         | ✅          | ✅          | ❌                 |
 | G.711 A-law | ✅         | ✅          | ✅          | ❌                 |
 | G.711 μ-law | ✅         | ✅          | ✅          | ❌                 |
-
-
-### Start
-
-If you want to integrate this project for development, it is recommended to use libmedia as a sub-module. The project dependence on [cheap](https://github.com/zhaohappy/cheap) library, which requires you to understanding of the usage of cheap.
-
-Currently, this project only supports using webpack for compilation and packaging.
-
-Here's how to compile the AVPlayer and AVTranscoder tool
-
-```shell
-
-# Clone the project and all submodules
-git clone git@github.com:zhaohappy/libmedia.git --recursive
-
-# enter libmedia directory
-cd libmedia
-
-# Install dependencies
-npm install
-
-# Compile AVPlayer with development mode
-npm run build-avplayer-dev
-
-# Compile AVTranscoder with development mode
-npm run build-avtranscoder-dev
-
-# Start local http service
-# Any http service will do. If it reports that edp cannot be found, you can install it globally use: npm install edp -g
-edp webserver start --port=9000
-
-# use browser access http://localhost:9000/test/avplayer.html
-
-```
-
-To debug the code in multi-threaded Worker from source, set the ```ENABLE_THREADS_SPLIT``` macro in ```tsconfig.json``` to ```true``` and recompile.
-
-```json
-{
-  "cheap": {
-    "defined": {
-      "ENABLE_THREADS_SPLIT": true
-    }
-  }
-}
-```
-
-```tsconfig.json``` can also set other macros to tailor compilation. You can change the relevant settings according to your own needs. For details, see ```tsconfig.json``` -> ```cheap``` -> Configuration in ```defined```
-
-### Example
-
-```examples/demux.ts``` is an example of demux
-
-```examples/mux.ts``` is an example of mux
-
-```examples/decode.ts``` is an example of decode
-
-```test/avplayer.html``` is an example of using AVPlayer and also the implementation of online demo.
-
-```test/avtranscode.html``` is an example of using AVTranscoder and also the implementation of online demo.
 
 ### License
 

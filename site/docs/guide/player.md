@@ -147,6 +147,71 @@ await player.play()
 
 ```
 
+## rtsp 和 rtmp
+
+rtmp 和 rtsp 需要使用 WebSocket 或 WebTransport 代理 tcp 连接，avplayer 使用如下:
+
+```javascript
+
+const player = new AVPlayer()
+
+// 第一个参数是 Websocket 代理的 rtmp 地址
+player.load('rtmp://xxx.xxx.xxx.xxx/xxx/xxx', {
+  // uri 是源 rtmp 地址
+  uri: 'rtmp://xxx.xxx.xxx.xxx/xxx/xxx'
+})
+player.play()
+
+player.load('rtsp://xxx.xxx.xxx.xxx/xxx')
+player.play()
+
+// 使用 wss 连接
+player.load('rtsp://xxx.xxx.xxx.xxx/xxx')
+// 使用 ws 连接
+player.load('rtsp+ws://xxx.xxx.xxx.xxx/xxx')
+// 使用 webtransport 连接
+player.load('rtsp+webtransport://xxx.xxx.xxx.xxx/xxx')
+
+```
+
+## 开发
+
+```shell
+
+# 克隆项目以及所有子模块
+git clone https://github.com/zhaohappy/libmedia.git --recursive
+
+# 进入 libmedia 目录
+cd libmedia
+
+# 安装依赖
+npm install
+
+# 编译 AVPlayer 开发版
+npm run build-avplayer-dev
+
+# 启动本地 http 服务
+# 任何一个 http 服务都行，若报 edp 找不到，可以全局安装: npm install edp -g
+edp webserver start --port=9000
+
+# 浏览器访问 http://localhost:9000/test/avplayer.html
+
+```
+
+若要源码调试多线程 Worker 中的代码，设置 ```tsconfig.json``` 中```ENABLE_THREADS_SPLIT```宏为 ```true```并重新编译
+
+```json
+{
+  "cheap": {
+    "defined": {
+      "ENABLE_THREADS_SPLIT": true
+    }
+  }
+}
+```
+
+```tsconfig.json``` 还可设置其他宏来裁剪编译，你可以根据自己的需要更改相关设置，详情看 ```tsconfig.json``` -> ```cheap``` -> ```defined``` 中的配置
+
 ## 注意事项
 
 - AVPlayer 的接口绝大多数都是异步的，你需要自己确保接口调用时序，不能某个接口还未执行完成就调另一个接口。唯一的例外是 seeking 状态下可以调用 stop 接口。

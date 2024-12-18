@@ -1,9 +1,9 @@
 
 libmedia
 ======
-中文 | [English](README_en.md)
+中文 | [English](README_en.md) | [文档](https://zhaohappy.github.io/libmedia/docs)
 
-![](https://img.shields.io/badge/language-typescript-blue.svg) [![](https://img.shields.io/badge/base-cheap-green.svg)](https://github.com/zhaohappy/cheap) ![](https://img.shields.io/badge/feature-thread-red.svg) ![license](https://img.shields.io/github/license/zhaohappy/libmedia)
+![](https://img.shields.io/badge/language-typescript-blue.svg) [![](https://img.shields.io/badge/base-cheap-green.svg)](https://github.com/zhaohappy/cheap) ![](https://img.shields.io/badge/feature-thread-red.svg) ![license](https://img.shields.io/github/license/zhaohappy/libmedia) [![npm](https://img.shields.io/npm/v/@libmedia/avutil.svg?style=flat)](https://www.npmjs.com/settings/libmedia/packages)
 
 ### 介绍
  
@@ -85,31 +85,6 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | rtmp     | ✅       | ❌        |
 | rtsp     | ✅       | ❌        |
 
-rtmp 和 rtsp 需要使用 WebSocket 或 WebTransport 代理 tcp 连接，avplayer 使用如下:
-
-```JavaScript
-
-const player = new AVPlayer()
-
-// 第一个参数是 Websocket 代理的 rtmp 地址
-player.load('rtmp://xxx.xxx.xxx.xxx/xxx/xxx', {
-  // uri 是源 rtmp 地址
-  uri: 'rtmp://xxx.xxx.xxx.xxx/xxx/xxx'
-})
-player.play()
-
-player.load('rtsp://xxx.xxx.xxx.xxx/xxx')
-player.play()
-
-// 使用 wss 连接
-player.load('rtsp://xxx.xxx.xxx.xxx/xxx')
-// 使用 ws 连接
-player.load('rtsp+ws://xxx.xxx.xxx.xxx/xxx')
-// 使用 webtransport 连接
-player.load('rtsp+webtransport://xxx.xxx.xxx.xxx/xxx')
-
-```
-
 
 ### 编解码器
 
@@ -181,65 +156,6 @@ player.load('rtsp+webtransport://xxx.xxx.xxx.xxx/xxx')
 | G.711 A-law | ✅         | ✅          | ✅          | ❌                 |
 | G.711 μ-law | ✅         | ✅          | ✅          | ❌                 |
 
-
-### 开发
-
-若你想集成此项目来开发，建议将本仓库作为子模块，项目使用了 [cheap](https://github.com/zhaohappy/cheap) 库，需要你对 cheap 的使用有所了解。凡是使用了 libmedia API 的地方都需要使用 cheap 插件来编译。
-
-当前本项目只支持使用 webpack 进行编译打包
-
-下面介绍如何编译 AVPlayer 和 AVTranscoder 工具
-
-```shell
-
-# 克隆项目以及所有子模块
-git clone https://github.com/zhaohappy/libmedia.git --recursive
-
-# 进入 libmedia 目录
-cd libmedia
-
-# 安装依赖
-npm install
-
-# 编译 AVPlayer 开发版
-npm run build-avplayer-dev
-
-# 编译 AVTranscoder 开发版
-npm run build-avtranscoder-dev
-
-# 启动本地 http 服务
-# 任何一个 http 服务都行，若报 edp 找不到，可以全局安装: npm install edp -g
-edp webserver start --port=9000
-
-# 浏览器访问 http://localhost:9000/test/avplayer.html
-
-```
-
-若要源码调试多线程 Worker 中的代码，设置 ```tsconfig.json``` 中```ENABLE_THREADS_SPLIT```宏为 ```true```并重新编译
-
-```json
-{
-  "cheap": {
-    "defined": {
-      "ENABLE_THREADS_SPLIT": true
-    }
-  }
-}
-```
-
-```tsconfig.json``` 还可设置其他宏来裁剪编译，你可以根据自己的需要更改相关设置，详情看 ```tsconfig.json``` -> ```cheap``` -> ```defined``` 中的配置
-
-### 示例
-
-```examples/demux.ts``` 是解封装的使用示例
-
-```examples/mux.ts``` 是封装的使用示例
-
-```examples/decode.ts``` 是解码的使用示例
-
-```test/avplayer.html``` 是 AVPlayer 的使用示例，也是在线 demo 的实现
-
-```test/avtranscoder.html``` 是一个 AVTranscoder 的使用示例，也是在线 demo 的实现
 
 ### 相关文章
 
