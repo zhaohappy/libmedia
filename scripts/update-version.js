@@ -39,7 +39,20 @@ const packages = {
 function update(name) {
   const file = files[name]
   const json = packages[name]
-  json.version = argv.pubVersion
+  if (argv.pubVersion) {
+    json.version = argv.pubVersion
+  }
+  else if (argv.feature) {
+    const list = json.version.split('.')
+    list[1] = (+list[1] + 1) + ''
+    list[2] = '0'
+    json.version = list.join('.')
+  }
+  else {
+    const list = json.version.split('.')
+    list[2] = (+list[2] + 1) + ''
+    json.version = list.join('.')
+  }
   fs.writeFileSync(file, JSON.stringify(json, null, 2), 'utf8')
 }
 

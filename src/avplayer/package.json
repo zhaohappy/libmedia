@@ -6,6 +6,9 @@
     "type": "git",
     "url": "git+https://github.com/zhaohappy/libmedia.git"
   },
+  "scripts": {
+    "prepublishOnly": "node ../../scripts/check-publish-status.js --package=avplayer"
+  },
   "types": "./dist/types/AVPlayer.d.ts",
   "module": "./dist/esm/avplayer.js",
   "main": "./dist/umd/avplayer.js",

@@ -49,6 +49,8 @@ function replacePath(path) {
   path = path.replace(/^(\.\.\/)*avrender\//, '@libmedia/avrender/')
   path = path.replace(/^(\.\.\/)*avplayer\/AVPlayer/, '@libmedia/avplayer')
   path = path.replace(/^(\.\.\/)*avtranscoder\/AVTranscoder/, '@libmedia/avtranscoder')
+  path = path.replace(/^@libmedia\/avplayer\/AVPlayer/, '@libmedia/avplayer')
+  path = path.replace(/^@libmedia\/avtranscoder\/AVTranscoder/, '@libmedia/avtranscoder')
 
   return path
 }

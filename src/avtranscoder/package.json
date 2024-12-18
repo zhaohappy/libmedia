@@ -6,6 +6,9 @@
     "type": "git",
     "url": "git+https://github.com/zhaohappy/libmedia.git"
   },
+  "scripts": {
+    "prepublishOnly": "node ../../scripts/check-publish-status.js --package=avtranscoder"
+  },
   "types": "./dist/types/AVTranscoder.d.ts",
   "module": "./dist/esm/avtranscoder.js",
   "main": "./dist/umd/avtranscoder.js",

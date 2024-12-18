@@ -37,7 +37,7 @@ yarn add @libmedia/avcodec
 
 :::
 
-查看 [package](./package.md) 获取 ```@libmedia``` 下都有哪些包，你可以根据自己的需要进行安装。这其中 ```@libmedia/common``` 和 ```@libmedia/cheap``` 两个包的版本号单独发布；其余包在发布时版本号会保持一致。如果项目依赖多个 ```@libmedia/*``` 下除 ```@libmedia/common``` 和 ```@libmedia/cheap``` 的包，务必让它们的版本号保持一致。一般情况下 ```@libmedia/common``` 和 ```@libmedia/cheap``` 两个包无需自己安装，它们作为其他包的依赖会自动安装。
+查看 [package](./package.md) 获取 ```@libmedia``` 下都有哪些包，你可以根据自己的需要进行安装。这其中 ```@libmedia/common```、 ```@libmedia/cheap``` ```@libmedia/avplayer``` ```@libmedia/avplayer-ui``` ```@libmedia/avtranscoder``` 五个包的版本号单独发布；其余包在发布时版本号会保持一致。如果项目依赖多个 ```@libmedia/*``` 下除上面所列的五个包，务必让它们的版本号保持一致。一般情况下 ```@libmedia/common``` 和 ```@libmedia/cheap``` 两个包无需自己安装，它们作为其他包的依赖会自动安装。
 
 每个包都同时拥有 es6 模块和 commonjs 模块；es6 模块给浏览器环境使用，commonjs 模块给 Node 环境使用。当你使用 import 导入的是 es6 模块，使用 require 导入的是 commonjs 模块。若你的运行环境是 Node 环境而源码使用的是 es6 模块开发，需要编译成 commonjs 模块代码在 Node 中运行。
 

@@ -1,9 +1,9 @@
-import pico from 'picocolors';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+const fs = require('fs');
+const path = require('path');
+const pico = require('picocolors');
 
-const msgPath = resolve('.git/COMMIT_EDITMSG');
-const msg = readFileSync(msgPath, 'utf-8').trim();
+const msgPath = path.resolve('.git/COMMIT_EDITMSG');
+const msg = fs.readFileSync(msgPath, 'utf-8').trim();
 
 const commitRE =
   /^(Release v)|(Merge.*branch)|((revert: )?(feat|fix|docs|dx|style|refactor|perf|test|workflow|build|ci|chore|types|wip|release|version)(\(.+\))?: .+)/;
@@ -11,16 +11,16 @@ const commitRE =
 if (!commitRE.test(msg)) {
   console.error(
     `\n  ${pico.white(pico.bgRed(' ERROR '))} ${pico.red(
-      `invalid commit message format.`,
+      `invalid commit message format.`
     )}\n\n` +
       pico.red(
-        `  Proper commit message format is required for automated changelog generation. Examples:\n\n`,
+        `  Proper commit message format is required for automated changelog generation. Examples:\n\n`
       ) +
       `    ${pico.green(`feat(avformat): add 'IMp4Format' feature`)}\n` +
       `    ${pico.green(
-        `fix(avcodec): when stop reset subTaskId and subtitleTaskId (close #00)`,
+        `fix(avcodec): when stop reset subTaskId and subtitleTaskId (close #00)`
       )}\n\n` +
-      pico.red(`  See .github/commit-convention.md for more details.\n`),
+      pico.red(`  See .github/commit-convention.md for more details.\n`)
   );
   process.exit(1);
 }
