@@ -33,8 +33,6 @@ import { AV_CH_LAYOUT } from 'avutil/audiosamplefmt'
 import { AC3ChannelLayout } from 'avutil/codecs/ac3'
 import * as avChannel from 'avutil/util/channel'
 
-// @ts-ignore
-@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()

@@ -45,7 +45,6 @@ export default class FlvScriptTag {
     }
   }
 
-  @deasync
   public async read(ioReader: IOReader, size: number) {
     const now = ioReader.getPos()
     const endPos = now + static_cast<int64>(size)

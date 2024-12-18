@@ -754,8 +754,6 @@ export const EbmlSyntaxHeader: Partial<Record<EBMLId, EbmlSyntax<Header>>> = {
   }
 }
 
-// @ts-ignore
-@deasync
 export async function readVInt(reader: BytesReader | BytesReaderSync, maxLen: number) {
 
   assert(maxLen <= 4)
@@ -793,8 +791,6 @@ export async function readVInt(reader: BytesReader | BytesReaderSync, maxLen: nu
   return value
 }
 
-// @ts-ignore
-@deasync
 export async function readVSint(reader: BytesReader | BytesReaderSync, maxLen: number) {
 
   assert(maxLen <= 4)
@@ -805,8 +801,6 @@ export async function readVSint(reader: BytesReader | BytesReaderSync, maxLen: n
   return value - ((1 << (7 * (static_cast<int32>(reader.getPos() - now)) - 1)) - 1)
 }
 
-// @ts-ignore
-@deasync
 export async function readVInt64(reader: BytesReader | BytesReaderSync, maxLen: number) {
 
   assert(maxLen <= 8)
@@ -842,8 +836,6 @@ export async function readVInt64(reader: BytesReader | BytesReaderSync, maxLen: 
   return value
 }
 
-// @ts-ignore
-@deasync
 export async function readUint(formatContext: AVIFormatContext, len: int64) {
   switch (len) {
     case 0n:
@@ -869,8 +861,6 @@ export async function readUint(formatContext: AVIFormatContext, len: int64) {
   return num
 }
 
-// @ts-ignore
-@deasync
 export async function readInt(formatContext: AVIFormatContext, len: int64) {
   switch (len) {
     case 0n:
@@ -899,8 +889,6 @@ export async function readInt(formatContext: AVIFormatContext, len: int64) {
   return BigInt.asIntN(64, num)
 }
 
-// @ts-ignore
-@deasync
 export async function readFloat(formatContext: AVIFormatContext, len: int64) {
   if (len === 4n) {
     return formatContext.ioReader.readFloat()
@@ -914,8 +902,6 @@ export async function readFloat(formatContext: AVIFormatContext, len: int64) {
   }
 }
 
-// @ts-ignore
-@deasync
 export async function readEbmlId(formatContext: AVIFormatContext, maxLen: number) {
   const pos = formatContext.ioReader.getPos()
   let mask = await formatContext.ioReader.peekUint8()
@@ -946,8 +932,6 @@ export async function readEbmlId(formatContext: AVIFormatContext, maxLen: number
   return value
 }
 
-// @ts-ignore
-@deasync
 export async function parseEbml(formatContext: AVIFormatContext, size: int64, callback: (id: EBMLId, length: int64) => Promise<void | boolean>) {
   const matroskaContext = formatContext.privateData as MatroskaContext
   const now = formatContext.ioReader.getPos()
@@ -963,8 +947,6 @@ export async function parseEbml(formatContext: AVIFormatContext, size: int64, ca
   assert(formatContext.ioReader.getPos() - now === size)
 }
 
-// @ts-ignore
-@deasync
 export async function parseEbmlSyntax<T extends Record<string, any>>(
   formatContext: AVIFormatContext,
   size: int64,

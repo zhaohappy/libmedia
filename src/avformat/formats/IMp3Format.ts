@@ -337,7 +337,6 @@ export default class IMp3Format extends IFormat {
     }
   }
 
-  @deasync
   private async syncToFrame(formatContext: AVIFormatContext) {
 
     let pos: int64 = NOPTS_VALUE_BIGINT

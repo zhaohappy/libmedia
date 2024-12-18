@@ -520,7 +520,6 @@ export default class IMatroskaFormat extends IFormat {
     }
   }
 
-  @deasync
   private async parseBlock(formatContext: AVIFormatContext, packet: pointer<AVPacket>) {
 
     const buffer = this.context.currentCluster.block?.data || this.context.currentCluster.blockGroup.block.data
@@ -794,7 +793,6 @@ export default class IMatroskaFormat extends IFormat {
     }
   }
 
-  @deasync
   private async readAVPacket_(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
 
     const now = formatContext.ioReader.getPos()
@@ -894,7 +892,6 @@ export default class IMatroskaFormat extends IFormat {
     }
   }
 
-  @deasync
   private async syncTopLevelElement(formatContext: AVIFormatContext, analyzeCount: int32 = 3) {
     let pos: int64 = NOPTS_VALUE_BIGINT
 

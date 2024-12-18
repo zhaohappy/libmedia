@@ -76,9 +76,6 @@
       // 初始堆大小
       "CHEAP_HEAP_INITIAL": 265,
 
-      // 将标记为同步接口的函数编译成使用同步方式
-      "ENABLE_SYNCHRONIZE_API": false,
-
       // 开启支持 hls 协议
       "ENABLE_PROTOCOL_HLS": true,
       // 开启支持 dash 协议

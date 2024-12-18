@@ -32,8 +32,6 @@ import { mapSafeUint8Array } from 'cheap/std/memory'
 import { avFree, avMalloc } from 'avutil/util/mem'
 import * as av1 from 'avutil/codecs/av1'
 
-// @ts-ignore
-@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()

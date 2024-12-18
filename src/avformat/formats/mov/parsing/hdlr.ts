@@ -30,8 +30,6 @@ import * as logger from 'common/util/logger'
 import isDef from 'common/function/isDef'
 import { HandlerType2MediaType } from '../mov'
 
-// @ts-ignore
-@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
   const now = ioReader.getPos()
 

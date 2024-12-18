@@ -39,11 +39,7 @@ export default abstract class IFormat {
   public async destroy(formatContext: AVIFormatContext): Promise<void> {}
 
   public abstract getAnalyzeStreamsCount(): number
-  // @ts-ignore
-  @deasync
   public abstract readHeader(formatContext: AVIFormatContext): Promise<number>
-  // @ts-ignore
-  @deasync
   public abstract readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number>
 
   /**
@@ -56,8 +52,6 @@ export default abstract class IFormat {
    * 
    * @returns 返回 seek 之前的下一个 avpacket pos（若不知道返回 0n 方便之后可以再 seek 回来）返回负数表示 seek 失败
    */
-  // @ts-ignore
-  @deasync
   public abstract seek(
     formatContext: AVIFormatContext,
     stream: Stream,

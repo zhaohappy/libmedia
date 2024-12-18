@@ -33,8 +33,6 @@ import parseAdaptationField from './function/parseAdaptationField'
 import IOReader from 'common/io/IOReader'
 import median from 'common/math/median'
 
-// @ts-ignore
-@deasync
 export async function getPacketSize(ioReader: IOReader): Promise<number> {
   let buffer: Uint8Array
   try {
@@ -76,8 +74,6 @@ export async function getPacketSize(ioReader: IOReader): Promise<number> {
   return 0
 }
 
-// @ts-ignore
-@deasync
 export async function parseTSPacket(ioReader: IOReader, mpegtsContext: MpegtsContext): Promise<TSPacket> {
 
   const pos = ioReader.getPos()

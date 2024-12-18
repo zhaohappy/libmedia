@@ -32,8 +32,6 @@ import { mapSafeUint8Array } from 'cheap/std/memory'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import { FlacMetadataType } from 'avutil/codecs/flac'
 
-// @ts-ignore
-@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()

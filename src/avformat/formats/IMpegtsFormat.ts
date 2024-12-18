@@ -329,7 +329,6 @@ export default class IMpegtsFormat extends IFormat {
     return 0
   }
 
-  @deasync
   private async readAVPacket_(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
     if (this.context.ioEnd) {
       if (!this.context.tsSliceQueueMap.size) {
@@ -490,7 +489,6 @@ export default class IMpegtsFormat extends IFormat {
     }
   }
 
-  @deasync
   private async syncTSPacket(formatContext: AVIFormatContext, syncPES: boolean = true) {
     let pos: int64 = NOPTS_VALUE_BIGINT
 

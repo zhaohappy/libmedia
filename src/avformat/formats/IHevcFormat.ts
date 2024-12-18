@@ -113,7 +113,6 @@ export default class IHevcFormat extends IFormat {
     return type < hevc.HEVCNaluType.kSliceVPS
   }
 
-  @deasync
   private async readNaluFrame(formatContext: AVIFormatContext) {
 
     let hasFrame = false
@@ -232,7 +231,6 @@ export default class IHevcFormat extends IFormat {
     return 0
   }
 
-  @deasync
   private async readAVPacket_(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
 
     const stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)

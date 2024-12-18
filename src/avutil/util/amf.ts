@@ -31,8 +31,6 @@ import * as is from 'common/util/is'
 import * as array from 'common/util/array'
 import * as object from 'common/util/object'
 
-// @ts-ignore
-@deasync
 export async function parseObject(ioReader: IOReader | BufferReader, endPos: bigint) {
   const key = await ioReader.readString(await ioReader.readUint16())
   const value = await parseValue(ioReader, endPos)
@@ -42,8 +40,6 @@ export async function parseObject(ioReader: IOReader | BufferReader, endPos: big
   }
 }
 
-// @ts-ignore
-@deasync
 export async function parseValue(ioReader: IOReader | BufferReader, endPos: bigint) {
   const type = await ioReader.readUint8()
   let value: any

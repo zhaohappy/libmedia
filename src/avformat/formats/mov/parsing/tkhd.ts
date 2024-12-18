@@ -29,8 +29,6 @@ import { Atom, MOVContext, MOVStreamContext } from '../type'
 import * as logger from 'common/util/logger'
 import { TKHDFlags } from '../boxType'
 
-// @ts-ignore
-@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
   const streamContext = stream.privData as MOVStreamContext
 

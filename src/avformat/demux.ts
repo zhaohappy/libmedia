@@ -69,8 +69,6 @@ export const DefaultDemuxOptions = {
  * @param options DemuxOptions 选项
  * @returns 成功返回 0，否则返回错误码
  */
-// @ts-ignore
-@deasync
 export async function open(formatContext: AVIFormatContext, options: DemuxOptions = {}): Promise<int32> {
   const opts = object.extend({}, DefaultDemuxOptions, options)
   if (!formatContext.ioReader) {
@@ -88,9 +86,6 @@ export async function open(formatContext: AVIFormatContext, options: DemuxOption
   return formatContext.iformat.readHeader(formatContext)
 }
 
-
-// @ts-ignore
-@deasync
 async function estimateDurationFromPts(formatContext: AVIFormatContext) {
   const fileSize = await formatContext.ioReader.fileSize()
   if (fileSize <= 0n) {
@@ -174,8 +169,6 @@ async function estimateDurationFromPts(formatContext: AVIFormatContext) {
  * @param formatContext 
  * @returns 成功返回 0，否则返回错误码
  */
-// @ts-ignore
-@deasync
 export async function analyzeStreams(formatContext: AVIFormatContext): Promise<int32> {
   const needStreams = formatContext.iformat.getAnalyzeStreamsCount()
   const streamFirstGotMap = {}
@@ -425,8 +418,6 @@ function addSample(stream: AVStream, avpacket: pointer<AVPacket>) {
   }
 }
 
-// @ts-ignore
-@deasync
 async function packetNeedRead(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<int32> {
   const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
   let ret = 0
@@ -532,8 +523,6 @@ async function packetNeedRead(formatContext: AVIFormatContext, avpacket: pointer
  * @param avpacket 
  * @returns 成功返回 0，否则返回错误码
  */
-// @ts-ignore
-@deasync
 export async function readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<int32> {
   let ret = 0
   unrefAVPacket(avpacket)
@@ -563,8 +552,6 @@ export async function readAVPacket(formatContext: AVIFormatContext, avpacket: po
  * @param flags AVSeekFlags 标志
  * @returns 错误返回负数，否则返回 seek 之前的 pos，方便 seek 回来
  */
-// @ts-ignore
-@deasync
 export async function seek(formatContext: AVIFormatContext, streamIndex: number, timestamp: int64, flags: int32): Promise<int64> {
 
   let stream = streamIndex > -1 ? formatContext.streams.find((stream) => stream.index === streamIndex) : null

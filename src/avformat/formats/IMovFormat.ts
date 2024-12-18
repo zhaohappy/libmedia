@@ -177,7 +177,6 @@ export default class IMovFormat extends IFormat {
     }
   }
 
-  @deasync
   private async readAVPacket_(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
 
     const { sample, stream } = getNextSample(formatContext, this.context)

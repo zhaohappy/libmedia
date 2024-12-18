@@ -117,7 +117,6 @@ export default class IH264Format extends IFormat {
       || type === h264.H264NaluType.kSliceDPC
   }
 
-  @deasync
   private async readNaluFrame(formatContext: AVIFormatContext) {
 
     let hasFrame = false
@@ -239,7 +238,6 @@ export default class IH264Format extends IFormat {
     return 0
   }
 
-  @deasync
   private async readAVPacket_(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
 
     const stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)

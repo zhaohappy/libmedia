@@ -36,8 +36,6 @@ const enum ID3v2Encoding {
   UTF8
 }
 
-// @ts-ignore
-@deasync
 async function getSize(ioReader: IOReader, len: number) {
   let v = 0
   while (len--) {
@@ -70,8 +68,6 @@ function decodeString(encoding: ID3v2Encoding, buffer: Uint8Array) {
   return decoder.decode(buffer)
 }
 
-// @ts-ignore
-@deasync
 export async function parse(ioReader: IOReader, len: int32, id3v2: ID3V2, metadata: Mp3MetaData) {
   const isV34 = id3v2.version !== 2
   const tagHeaderLen = isV34 ? 10 : 6

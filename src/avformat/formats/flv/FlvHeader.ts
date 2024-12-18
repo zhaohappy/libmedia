@@ -68,7 +68,6 @@ export default class FlvHeader {
     this.hasVideo = false
   }
 
-  @deasync
   public async read(ioReader: IOReader) {
     this.signature = await ioReader.readString(3)
     this.version = await ioReader.readUint8()

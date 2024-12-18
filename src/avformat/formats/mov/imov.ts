@@ -41,8 +41,6 @@ import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { NOPTS_VALUE } from 'avutil/constant'
 
 
-// @ts-ignore
-@deasync
 export async function readFtyp(ioReader: IOReader, context: MOVContext, atom: Atom) {
 
   const endPos = ioReader.getPos() + static_cast<int64>(atom.size)
@@ -59,8 +57,6 @@ export async function readFtyp(ioReader: IOReader, context: MOVContext, atom: At
   }
 }
 
-// @ts-ignore
-@deasync
 async function parseOneBox(
   ioReader: IOReader,
   stream: Stream,
@@ -192,8 +188,6 @@ async function parseOneBox(
   }
 }
 
-// @ts-ignore
-@deasync
 export async function readMoov(
   ioReader: IOReader,
   formatContext: AVIFormatContext,
@@ -297,8 +291,6 @@ export async function readMoov(
   }
 }
 
-// @ts-ignore
-@deasync
 export async function readMoof(
   ioReader: IOReader,
   formatContext: AVIFormatContext,
@@ -361,8 +353,6 @@ export async function readMoof(
   }
 }
 
-// @ts-ignore
-@deasync
 export async function readMfra(
   ioReader: IOReader,
   formatContext: AVIFormatContext,

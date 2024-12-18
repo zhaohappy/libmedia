@@ -34,8 +34,6 @@ import AVPacket from 'avutil/struct/avpacket'
 import * as logger from 'common/util/logger'
 import { IOFlags } from 'avutil/avformat'
 
-// @ts-ignore
-@deasync
 export default async function seekInBytes(
   context: AVIFormatContext,
   stream: AVStream,

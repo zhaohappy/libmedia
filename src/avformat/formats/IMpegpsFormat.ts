@@ -113,7 +113,6 @@ export default class IMpegpsFormat extends IFormat {
     })
   }
 
-  @deasync
   private async findNextStartCode(formatContext: AVIFormatContext) {
     let code = 0xff
     let n = 0
@@ -133,7 +132,6 @@ export default class IMpegpsFormat extends IFormat {
     return code
   }
 
-  @deasync
   private async parsePSM(formatContext: AVIFormatContext) {
     const psmLength = await formatContext.ioReader.readUint16()
     await formatContext.ioReader.skip(2)
@@ -154,7 +152,6 @@ export default class IMpegpsFormat extends IFormat {
     await formatContext.ioReader.readUint32()
   }
 
-  @deasync
   private async readPES(formatContext: AVIFormatContext) {
     while (true) {
       const startCode = await this.findNextStartCode(formatContext)
@@ -780,7 +777,6 @@ export default class IMpegpsFormat extends IFormat {
     return -1
   }
 
-  @deasync
   private async readAVPacket_(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
 
     const handlePES = (context: MpegpsStreamContext, stream: AVStream) => {
@@ -1032,7 +1028,6 @@ export default class IMpegpsFormat extends IFormat {
     }
   }
 
-  @deasync
   private async syncPSPacket(formatContext: AVIFormatContext) {
     let pos: int64 = NOPTS_VALUE_BIGINT
     try {

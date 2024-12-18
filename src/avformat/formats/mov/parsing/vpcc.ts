@@ -32,8 +32,6 @@ import { mapSafeUint8Array } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'
 import * as vp9 from 'avutil/codecs/vp9'
 
-// @ts-ignore
-@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()

@@ -41,7 +41,6 @@ export default class NaluReader {
     this.ended = false
   }
 
-  @deasync
   public async read(ioReader: IOReader) {
     if (this.ended && this.pos >= this.end) {
       return

@@ -417,7 +417,6 @@ export default class IFlacFormat extends IFormat {
     }
   }
 
-  @deasync
   private async syncFrame(formatContext: AVIFormatContext) {
     let pos: int64 = NOPTS_VALUE_BIGINT
     while (true) {

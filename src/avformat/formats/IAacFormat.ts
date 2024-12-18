@@ -275,7 +275,6 @@ export default class IAacFormat extends IFormat {
     }
   }
 
-  @deasync
   private async syncFrame(formatContext: AVIFormatContext) {
 
     if (this.frameType === FrameType.ADIF) {

@@ -35,8 +35,6 @@ import { mapSafeUint8Array } from 'cheap/std/memory'
 import * as aac from 'avutil/codecs/aac'
 import * as opus from 'avutil/codecs/opus'
 
-// @ts-ignore
-@deasync
 async function readDescriptorLength(ioReader: IOReader) {
   let len = 0
   for (let i = 0; i < 4; i++) {
@@ -49,8 +47,6 @@ async function readDescriptorLength(ioReader: IOReader) {
   return len
 }
 
-// @ts-ignore
-@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()

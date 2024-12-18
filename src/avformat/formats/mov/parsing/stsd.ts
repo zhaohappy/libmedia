@@ -46,8 +46,6 @@ import colr from './colr'
 import ac3 from './dac3'
 import eac3 from './dec3'
 
-// @ts-ignore
-@deasync
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
   const now = ioReader.getPos()
 

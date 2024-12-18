@@ -482,7 +482,6 @@ export default class IOggFormat extends IFormat {
     }
   }
 
-  @deasync
   private async syncPage(formatContext: AVIFormatContext) {
     let pos: int64 = NOPTS_VALUE_BIGINT
 

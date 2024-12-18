@@ -113,7 +113,6 @@ export default class IHevcFormat extends IFormat {
     return type < vvc.VVCNaluType.kOPI_NUT
   }
 
-  @deasync
   private async readNaluFrame(formatContext: AVIFormatContext) {
 
     let hasFrame = false
@@ -329,7 +328,6 @@ export default class IHevcFormat extends IFormat {
     /* eslint-enable camelcase */
   }
 
-  @deasync
   private async readAVPacket_(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
 
     const stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
