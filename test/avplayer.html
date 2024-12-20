@@ -416,6 +416,9 @@
         videoStutter: <span id="videoStutter" class="stats-text">0</span>
       </div>
       <div class="stats-item">
+        A-V: <span id="A_V" class="stats-text">0</span> ms
+      </div>
+      <div class="stats-item">
         bandwidth: <span id="bandwidth" class="stats-text">0</span> kbps
       </div>
       <div class="stats-item">
@@ -688,7 +691,8 @@
             loop: loopComponent.loop,
             jitterBufferMax: 4,
             jitterBufferMin: 1,
-            lowLatency: true
+            lowLatency: true,
+            // audioWorkletBufferLength: 40
           })
         }
         if (!isLiveComponent.isLive && !slider) {
@@ -1203,6 +1207,7 @@
 
         document.querySelector('#jitterMin').textContent = stats.jitterBuffer.min
         document.querySelector('#jitterMax').textContent = stats.jitterBuffer.max
+        document.querySelector('#A_V').textContent = stats.audioCurrentTime - stats.videoCurrentTime
       }
       
       urlComponent = new Vue({
