@@ -105,6 +105,7 @@ export default class Controller {
           break
         case 'ended':
           this.observer.onAudioEnded()
+          this.timeUpdateListenType = AVMediaType.AVMEDIA_TYPE_VIDEO
           break
       }
     })

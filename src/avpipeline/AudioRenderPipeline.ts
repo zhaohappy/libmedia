@@ -51,6 +51,9 @@ import * as bigint from 'common/util/bigint'
 import compileResource from 'avutil/function/compileResource'
 import WorkerSetTimeout from 'common/timer/WorkerSetTimeout'
 import isWorker from 'common/function/isWorker'
+import MasterTimer from 'common/timer/MasterTimer'
+
+const MASTER_SYNC_THRESHOLD = 400n
 
 export interface AudioRenderTaskOptions extends TaskOptions {
   playSampleRate: int32
@@ -79,7 +82,7 @@ type SelfTask = AudioRenderTaskOptions & {
   waitPCMBufferPos: int32
   waitAVFrame: pointer<AVFrameRef>
 
-  frameEnded: boolean
+  ended: boolean
   stretchpitcherEnded: boolean
 
   playRate: double
@@ -91,6 +94,8 @@ type SelfTask = AudioRenderTaskOptions & {
   firstPlayed: boolean
   lastNotifyPTS: int64
   currentPTS: int64
+  lastMasterPts: int64
+  masterTimer: MasterTimer
 
   seeking: boolean
   pausing: boolean
@@ -143,7 +148,7 @@ export default class AudioRenderPipeline extends Pipeline {
       waitPCMBuffer: nullptr,
       waitAVFrame: nullptr,
       waitPCMBufferPos: 0,
-      frameEnded: false,
+      ended: false,
       stretchpitcherEnded: false,
 
       playRate: 1,
@@ -153,6 +158,8 @@ export default class AudioRenderPipeline extends Pipeline {
       useStretchpitcher: false,
       lastNotifyPTS: 0n,
       currentPTS: NOPTS_VALUE_BIGINT,
+      lastMasterPts: NOPTS_VALUE_BIGINT,
+      masterTimer: new MasterTimer(),
       firstPlayed: false,
       seeking: false,
       pausing: false,
@@ -208,10 +215,12 @@ export default class AudioRenderPipeline extends Pipeline {
           stretchpitcher.flush()
         }
         logger.info(`audio render ended, taskId: ${task.taskId}`)
+        task.controlIPCPort.notify('ended')
         return IOError.END
       }
       else if (audioFrame < 0) {
         logger.error(`pull audio frame failed, taskId: ${task.taskId}`)
+        task.controlIPCPort.notify('ended')
         return audioFrame as number
       }
       else {
@@ -237,6 +246,10 @@ export default class AudioRenderPipeline extends Pipeline {
         }
 
         task.currentPTS = avRescaleQ(audioFrame.pts, task.timeBase, AV_MILLI_TIME_BASE_Q)
+        if (task.masterTimer.getMasterTime() - task.currentPTS > MASTER_SYNC_THRESHOLD) {
+          task.masterTimer.setMasterTime(task.currentPTS)
+        }
+
         task.stats.audioFrameRenderCount++
 
         if (task.lastRenderTimestamp) {
@@ -363,7 +376,7 @@ export default class AudioRenderPipeline extends Pipeline {
         }
       }
 
-      if (task.frameEnded && task.useStretchpitcher) {
+      if (task.ended && task.useStretchpitcher) {
         let ret = 0
         for (let i = 0; i < task.playChannels; i++) {
           const stretchpitcher = task.stretchpitcher.get(i)
@@ -434,7 +447,7 @@ export default class AudioRenderPipeline extends Pipeline {
         if (receive < pcmBuffer.maxnbSamples) {
           let ret = await pullNewAudioFrame()
           if (ret === IOError.END) {
-            task.frameEnded = true
+            task.ended = true
             if (task.useStretchpitcher) {
               for (let i = 0; i < task.playChannels; i++) {
                 const stretchpitcher = task.stretchpitcher.get(i)
@@ -495,11 +508,31 @@ export default class AudioRenderPipeline extends Pipeline {
             task.fakePlaySamples = 0n
             task.fakePlayStartTimestamp = 0
           }
-          if (task.frameEnded && (task.stretchpitcherEnded || !task.useStretchpitcher)) {
+          if (task.ended && (task.stretchpitcherEnded || !task.useStretchpitcher)) {
             rightIPCPort.reply(request, IOError.END)
             return
           }
           const pcmBuffer: pointer<AVPCMBuffer> = request.params.buffer
+
+          if (!task.firstPlayed) {
+            task.masterTimer.setMasterTime(task.lastMasterPts === NOPTS_VALUE_BIGINT ? task.startPTS : task.lastMasterPts)
+            task.lastMasterPts = NOPTS_VALUE_BIGINT
+            let ret = await pullNewAudioFrame()
+            if (ret < 0) {
+              rightIPCPort.reply(request, ret)
+              break
+            }
+          }
+
+          const diff = task.currentPTS - task.masterTimer.getMasterTime()
+
+          if (diff > MASTER_SYNC_THRESHOLD) {
+            memset(pcmBuffer.data[0], 0, pcmBuffer.maxnbSamples * sizeof(float) * pcmBuffer.channels)
+            rightIPCPort.reply(request, 0)
+            this.fakeSyncPts(task)
+            break
+          }
+
           const ret = await receiveToPCMBuffer(pcmBuffer)
           rightIPCPort.reply(request, ret)
           break
@@ -513,7 +546,7 @@ export default class AudioRenderPipeline extends Pipeline {
             task.fakePlayStartTimestamp = 0
           }
 
-          if (task.frameEnded && (task.stretchpitcherEnded || !task.useStretchpitcher)) {
+          if (task.ended && (task.stretchpitcherEnded || !task.useStretchpitcher)) {
             rightIPCPort.reply(request, IOError.END)
             return
           }
@@ -533,6 +566,25 @@ export default class AudioRenderPipeline extends Pipeline {
               task.outPCMBuffer.data[i] = reinterpret_cast<pointer<uint8>>(data + nbSamples * sizeof(float) * i)
             }
             task.outPCMBuffer.maxnbSamples = nbSamples
+          }
+
+          if (!task.firstPlayed) {
+            task.masterTimer.setMasterTime(task.lastMasterPts === NOPTS_VALUE_BIGINT ? task.startPTS : task.lastMasterPts)
+            task.lastMasterPts = NOPTS_VALUE_BIGINT
+            let ret = await pullNewAudioFrame()
+            if (ret < 0) {
+              rightIPCPort.reply(request, ret)
+              break
+            }
+          }
+
+          const diff = task.currentPTS - task.masterTimer.getMasterTime()
+
+          if (diff > MASTER_SYNC_THRESHOLD) {
+            const pcm = new Uint8Array(task.outPCMBuffer.nbSamples * sizeof(float) * task.playChannels)
+            rightIPCPort.reply(request, pcm.buffer, null, [pcm.buffer])
+            this.fakeSyncPts(task)
+            break
           }
 
           const ret = await receiveToPCMBuffer(addressof(task.outPCMBuffer))
@@ -587,6 +639,11 @@ export default class AudioRenderPipeline extends Pipeline {
         task.stretchpitcher.get(i).setRate(rate)
       }
       this.checkUseStretchpitcher(task)
+      task.masterTimer.setRate(task.playRate * task.playTempo)
+      if (task.fakePlay) {
+        task.fakePlayStartTimestamp = getTimestamp()
+        task.fakePlaySamples = 0n
+      }
     }
   }
 
@@ -598,6 +655,11 @@ export default class AudioRenderPipeline extends Pipeline {
         task.stretchpitcher.get(i).setTempo(tempo)
       }
       this.checkUseStretchpitcher(task)
+      task.masterTimer.setRate(task.playRate * task.playTempo)
+      if (task.fakePlay) {
+        task.fakePlayStartTimestamp = getTimestamp()
+        task.fakePlaySamples = 0n
+      }
     }
   }
 
@@ -657,7 +719,7 @@ export default class AudioRenderPipeline extends Pipeline {
       while (true) {
         // 已经调用了 unregisterTask
         if (!task.leftIPCPort) {
-          task.frameEnded = true
+          task.ended = true
           logger.warn(`pull audio frame end after unregisterTask, taskId: ${taskId}`)
           return
         }
@@ -681,7 +743,7 @@ export default class AudioRenderPipeline extends Pipeline {
 
         if (audioFrame < 0) {
           logger.warn(`pull audio frame end after seek, taskId: ${taskId}`)
-          task.frameEnded = true
+          task.ended = true
           break
         }
 
@@ -698,9 +760,12 @@ export default class AudioRenderPipeline extends Pipeline {
 
         if (pts - task.startPTS >= timestamp) {
           task.paddingAVFrame = audioFrame
-          task.frameEnded = false
+          task.ended = false
           task.lastNotifyPTS = pts
           task.stats.audioCurrentTime = pts
+          task.currentPTS = pts
+          task.masterTimer.setMasterTime(timestamp)
+          task.lastMasterPts = timestamp
           break
         }
         else {
@@ -741,7 +806,7 @@ export default class AudioRenderPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       task.lastNotifyPTS = 0n
-      task.frameEnded = false
+      task.ended = false
       task.firstPlayed = false
       task.stretchpitcherEnded = false
       if (task.stretchpitcher?.size) {
@@ -753,8 +818,27 @@ export default class AudioRenderPipeline extends Pipeline {
       task.fakePlaySamples = 0n
       task.fakePlayStartTimestamp = 0
       task.lastRenderTimestamp = getTimestamp()
+      task.masterTimer.setMasterTime(task.startPTS)
 
       logger.debug(`restart task, taskId: ${task.taskId}`)
+    }
+  }
+
+  public async setMasterTime(taskId: string, masterTime: int64) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      task.masterTimer.setMasterTime(masterTime)
+    }
+  }
+
+  private fakeSyncPts(task: SelfTask) {
+    const pts = task.masterTimer.getMasterTime()
+    if (pts - task.lastNotifyPTS >= 1000n) {
+      task.lastNotifyPTS = pts
+      task.stats.audioCurrentTime = pts
+      task.controlIPCPort.notify('syncPts', {
+        pts
+      })
     }
   }
 
@@ -786,10 +870,12 @@ export default class AudioRenderPipeline extends Pipeline {
 
   private async fakePlayNext(task: SelfTask) {
 
-    const audioFrame = await task.leftIPCPort.request<pointer<AVFrameRef>>('pull')
+    const audioFrame = task.paddingAVFrame || await task.leftIPCPort.request<pointer<AVFrameRef>>('pull')
+
+    task.paddingAVFrame = nullptr
 
     if (audioFrame < 0) {
-      task.frameEnded = true
+      task.ended = true
 
       logger.info(`audio fake render ended, taskId: ${task.taskId}`)
       task.controlIPCPort.notify('ended')
@@ -806,7 +892,23 @@ export default class AudioRenderPipeline extends Pipeline {
     next /= (task.playRate * task.playTempo)
 
     task.currentPTS = avRescaleQ(audioFrame.pts, task.timeBase, AV_MILLI_TIME_BASE_Q)
-    const targetSamples = static_cast<int64>(getTimestamp() - task.fakePlayStartTimestamp) * static_cast<int64>(audioFrame.sampleRate) / 1000n
+    if (task.masterTimer.getMasterTime() - task.currentPTS > MASTER_SYNC_THRESHOLD) {
+      task.masterTimer.setMasterTime(task.currentPTS)
+    }
+
+    const diffPts = task.currentPTS - task.masterTimer.getMasterTime()
+    if (diffPts > MASTER_SYNC_THRESHOLD) {
+      task.paddingAVFrame = audioFrame
+      this.fakeSyncPts(task)
+      task.fakePlayTimer = this.setFakePlayTimer(task, () => {
+        task.fakePlayTimer = null
+        this.fakePlayNext(task)
+      }, next)
+      return
+    }
+
+    let targetSamples = static_cast<int64>(getTimestamp() - task.fakePlayStartTimestamp) * static_cast<int64>(audioFrame.sampleRate) / 1000n
+    targetSamples = targetSamples * static_cast<int64>(task.playRate * task.playTempo * 100) / 100n
 
     const diff = Number(targetSamples - task.fakePlaySamples)
 
@@ -817,6 +919,7 @@ export default class AudioRenderPipeline extends Pipeline {
     task.avframePool.release(audioFrame)
     if (task.currentPTS - task.lastNotifyPTS >= 1000n) {
       task.lastNotifyPTS = task.currentPTS
+      task.stats.audioCurrentTime = task.currentPTS
       task.controlIPCPort.notify('syncPts', {
         pts: task.currentPTS
       })
@@ -844,6 +947,7 @@ export default class AudioRenderPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       task.pausing = true
+      task.lastMasterPts = task.masterTimer.getMasterTime()
       if (task.fakePlay) {
         this.clearFakePlayTimer(task)
       }
@@ -856,6 +960,8 @@ export default class AudioRenderPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       task.pausing = false
+      task.masterTimer.setMasterTime(task.lastMasterPts)
+      task.lastMasterPts = NOPTS_VALUE_BIGINT
       if (task.fakePlay) {
         task.fakePlayStartTimestamp = getTimestamp()
         task.fakePlaySamples = 0n
@@ -911,6 +1017,7 @@ export default class AudioRenderPipeline extends Pipeline {
           task.waitPCMBuffer.data = nullptr
           task.waitPCMBuffer.maxnbSamples = 0
           task.avframePool.release(task.waitAVFrame)
+          task.waitAVFrame = nullptr
         }
         this.avPCMBufferPool.release(task.waitPCMBuffer)
         task.waitPCMBuffer = nullptr

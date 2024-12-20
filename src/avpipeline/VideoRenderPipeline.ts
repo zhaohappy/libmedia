@@ -60,6 +60,7 @@ import isWorker from 'common/function/isWorker'
 import nextTick from 'common/function/nextTick'
 import isPointer from 'cheap/std/function/isPointer'
 import os from 'common/util/os'
+import MasterTimer from 'common/timer/MasterTimer'
 
 type WebGPURenderFactory = {
   new(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions): WebGPURender,
@@ -109,6 +110,7 @@ export interface VideoRenderTaskOptions extends TaskOptions {
   avframeList: pointer<List<pointer<AVFrameRef>>>
   avframeListMutex: pointer<Mutex>
   enableJitterBuffer: boolean
+  isLive: boolean
 }
 
 type SelfTask = VideoRenderTaskOptions & {
@@ -116,12 +118,12 @@ type SelfTask = VideoRenderTaskOptions & {
   controlIPCPort: IPCPort
 
   currentPTS: int64
-  firstPTS: int64
-  startTimestamp: int64
   lastAdjustTimestamp: int64
+  lastMasterPts: int64
+  masterTimer: MasterTimer
+  lastNotifyPTS: int64
   // playRate / 100 
   playRate: int64
-  targetRate: int64
   frontFrame: pointer<AVFrameRef> | VideoFrame
   backFrame: pointer<AVFrameRef> | VideoFrame
   renderFrame: pointer<AVFrameRef> | VideoFrame
@@ -138,10 +140,6 @@ type SelfTask = VideoRenderTaskOptions & {
   firstRendered: boolean
   canvasUpdated: boolean
   renderCreating: boolean
-
-  pauseTimestamp: number
-  pauseCurrentPts: int64
-  lastNotifyPTS: int64
 
   skipRender: boolean
 
@@ -183,12 +181,6 @@ export default class VideoRenderPipeline extends Pipeline {
       leftIPCPort,
       controlIPCPort,
       render: null,
-
-      currentPTS: NOPTS_VALUE_BIGINT,
-      firstPTS: 0n,
-      startTimestamp: 0n,
-      playRate: 100n,
-      targetRate: 100n,
       frontFrame: null,
       backFrame: null,
       renderFrame: null,
@@ -196,18 +188,19 @@ export default class VideoRenderPipeline extends Pipeline {
 
       loop: null,
       renderRedyed: false,
+      currentPTS: NOPTS_VALUE_BIGINT,
       adjust: AdjustStatus.None,
       adjustDiff: 0n,
       lastAdjustTimestamp: 0n,
+      lastMasterPts: NOPTS_VALUE_BIGINT,
+      masterTimer: new MasterTimer(),
+      lastNotifyPTS: 0n,
+      playRate: 100n,
 
       firstRendered: false,
       canvasUpdated: false,
       renderCreating: false,
       renderRecreateCount: 0,
-
-      pauseTimestamp: 0,
-      pauseCurrentPts: 0n,
-      lastNotifyPTS: 0n,
 
       skipRender: false,
 
@@ -229,16 +222,17 @@ export default class VideoRenderPipeline extends Pipeline {
     controlIPCPort.on(NOTIFY, async (request: RpcMessage) => {
       switch (request.method) {
         case 'syncPts': {
-          const targetPTS = request.params.pts
-          const diff = Math.abs(Number(targetPTS - task.currentPTS))
+          const targetMaster = request.params.pts
+          const currentMaster = task.masterTimer.getMasterTime()
+          const diff = Math.abs(Number(targetMaster - currentMaster))
           if (diff > 100 && task.currentPTS > 0n) {
-            if (targetPTS > task.currentPTS) {
+            if (targetMaster > currentMaster) {
               task.adjust = AdjustStatus.Accelerate
-              logger.debug(`video render sync pts accelerate, targetPTS: ${targetPTS}, currentPTS: ${task.currentPTS}, diff: ${diff}, taskId: ${task.taskId}`)
+              logger.debug(`video render sync master time accelerate, targetMaster: ${targetMaster}, currentMaster: ${currentMaster}, diff: ${diff}, taskId: ${task.taskId}`)
             }
             else {
               task.adjust = AdjustStatus.Decelerate
-              logger.debug(`video render sync pts decelerate, targetPTS: ${targetPTS}, currentPTS: ${task.currentPTS}, diff: ${diff} taskId: ${task.taskId}`)
+              logger.debug(`video render sync master time decelerate, targetMaster: ${targetMaster}, currentMaster: ${currentMaster}, diff: ${diff} taskId: ${task.taskId}`)
             }
             task.adjustDiff = static_cast<int64>(diff)
           }
@@ -280,7 +274,6 @@ export default class VideoRenderPipeline extends Pipeline {
       return
     }
     task.frontBuffered = false
-    const now = getTimestamp()
 
     task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull').then((frame) => {
       if (task.afterPullResolver) {
@@ -292,11 +285,6 @@ export default class VideoRenderPipeline extends Pipeline {
         return
       }
       assert(!isPointer(frame) || frame.data[0], 'got empty video frame')
-      const cost = getTimestamp() - now
-      // 超过 1 秒认为是网卡了（断点暂停），对齐一下时间
-      if (cost > 1000) {
-        task.startTimestamp += static_cast<int64>(cost)
-      }
       task.frontFrame = frame
       task.frontBuffered = true
       if (task.seekSync) {
@@ -309,6 +297,17 @@ export default class VideoRenderPipeline extends Pipeline {
       }
     })
     return true
+  }
+
+  private fakeSyncPts(task: SelfTask) {
+    const pts = task.masterTimer.getMasterTime()
+    if (pts - task.lastNotifyPTS >= 1000n) {
+      task.lastNotifyPTS = pts
+      task.stats.videoCurrentTime = pts
+      task.controlIPCPort.notify('syncPts', {
+        pts
+      })
+    }
   }
 
   private async createRender(task: SelfTask, frame: pointer<AVFrameRef> | VideoFrame, fallback: boolean = false) {
@@ -472,7 +471,7 @@ export default class VideoRenderPipeline extends Pipeline {
 
       await this.createRender(task, task.backFrame)
 
-      task.firstPTS = avRescaleQ(
+      task.currentPTS = avRescaleQ(
         (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
         task.timeBase,
         AV_MILLI_TIME_BASE_Q
@@ -481,15 +480,10 @@ export default class VideoRenderPipeline extends Pipeline {
       logger.debug(`got first video frame, pts: ${!isPointer(task.backFrame)
         ? static_cast<int64>(task.backFrame.timestamp)
         : task.backFrame.pts
-      }(${task.firstPTS}ms), taskId: ${task.taskId}`)
+      }(${task.currentPTS}ms), taskId: ${task.taskId}`)
 
-      // 当第一个帧的 pts 大于 1000ms 时判定不是从 0 开始，这里做一下对其
-      if (task.firstPTS < 1000n) {
-        task.firstPTS = 0n
-      }
-
-      task.currentPTS = task.firstPTS
-      task.startTimestamp = static_cast<int64>(getTimestamp()) - task.firstPTS * 100n / task.playRate
+      task.masterTimer.setMasterTime(task.lastMasterPts === NOPTS_VALUE_BIGINT ? task.startPTS : task.lastMasterPts)
+      task.lastMasterPts = NOPTS_VALUE_BIGINT
 
       const inWorker = isWorker()
 
@@ -533,7 +527,7 @@ export default class VideoRenderPipeline extends Pipeline {
         if (pts < task.currentPTS) {
           // 差值大于 5s 认为从头开始了
           if (task.currentPTS - pts > 5000n) {
-            task.startTimestamp = static_cast<int64>(getTimestamp()) - (pts * 100n / task.targetRate)
+            task.masterTimer.setMasterTime(pts)
           }
           else {
             logger.warn(`dropping frame with pts ${pts}, which is earlier then the last rendered frame(${task.currentPTS}), taskId: ${task.taskId}`)
@@ -541,27 +535,24 @@ export default class VideoRenderPipeline extends Pipeline {
             return
           }
         }
-        // 差值大于 5s 认为从某一处开始了
-        else if (pts - task.currentPTS > 5000n) {
-          task.startTimestamp = static_cast<int64>(getTimestamp()) - (pts * 100n / task.targetRate)
+        // 直播差值大于 5s 认为从某一处开始了
+        else if ((pts - task.currentPTS > 5000n) && task.isLive) {
+          task.masterTimer.setMasterTime(pts)
         }
 
         if (task.adjust === AdjustStatus.Accelerate) {
           if (task.adjustDiff <= 0) {
             task.adjust = AdjustStatus.None
-            task.startTimestamp = static_cast<int64>(getTimestamp()) - (pts * 100n / task.targetRate)
             task.lastAdjustTimestamp = 0n
           }
           else {
             if (static_cast<int64>(getTimestamp()) - task.lastAdjustTimestamp >= 200n) {
-              const sub = task.adjustDiff <= 100n
-                ? task.adjustDiff
-                : bigint.min(task.adjustDiff, 100n) * 100n / task.targetRate
+              const add = bigint.min(task.adjustDiff, 100n)
 
-              task.startTimestamp -= sub
-              task.adjustDiff -= sub
+              task.masterTimer.setMasterTime(task.masterTimer.getMasterTime() + add)
+              task.adjustDiff -= add
 
-              logger.debug(`video render accelerate startTimestamp sub: ${sub}, taskId: ${task.taskId}`)
+              logger.debug(`video render accelerate master time add: ${add}, taskId: ${task.taskId}`)
 
               task.lastAdjustTimestamp = static_cast<int64>(getTimestamp())
             }
@@ -570,19 +561,16 @@ export default class VideoRenderPipeline extends Pipeline {
         else if (task.adjust === AdjustStatus.Decelerate) {
           if (task.adjustDiff <= 0) {
             task.adjust = AdjustStatus.None
-            task.startTimestamp = static_cast<int64>(getTimestamp()) - (pts * 100n / task.targetRate)
             task.lastAdjustTimestamp = 0n
           }
           else {
             if (static_cast<int64>(getTimestamp()) - task.lastAdjustTimestamp >= 300n) {
-              const add = task.adjustDiff < 50n
-                ? task.adjustDiff
-                : bigint.min(task.adjustDiff, 50n) * 100n / task.targetRate
+              const sub = bigint.min(task.adjustDiff, 50n)
 
-              task.startTimestamp += add
-              task.adjustDiff -= add
+              task.masterTimer.setMasterTime(task.masterTimer.getMasterTime() - sub)
+              task.adjustDiff -= sub
 
-              logger.debug(`video render decelerate startTimestamp add: ${add}, taskId: ${task.taskId}`)
+              logger.debug(`video render decelerate master time sub: ${sub}, taskId: ${task.taskId}`)
 
               task.lastAdjustTimestamp = static_cast<int64>(getTimestamp())
             }
@@ -596,7 +584,7 @@ export default class VideoRenderPipeline extends Pipeline {
           }
         }
 
-        const diff = pts * 100n / task.playRate + task.startTimestamp - static_cast<int64>(getTimestamp())
+        const diff = pts - task.masterTimer.getMasterTime()
 
         if (diff <= 0) {
           // 太晚的帧跳过渲染
@@ -641,14 +629,13 @@ export default class VideoRenderPipeline extends Pipeline {
             })
           }
           this.swap(task)
+          if (task.masterTimer.getMasterTime() - pts >= 2000n) {
+            task.masterTimer.setMasterTime(pts)
+          }
         }
         else {
+          this.fakeSyncPts(task)
           task.loop.emptyTask()
-        }
-
-        if (task.playRate !== task.targetRate) {
-          task.startTimestamp = static_cast<int64>(getTimestamp()) - (pts * 100n / task.targetRate)
-          task.playRate = task.targetRate
         }
       }, 0, interval)
 
@@ -696,19 +683,13 @@ export default class VideoRenderPipeline extends Pipeline {
       task.lastNotifyPTS = NOPTS_VALUE_BIGINT
       task.firstRendered = false
 
-      task.firstPTS = avRescaleQ(
+      task.currentPTS = avRescaleQ(
         (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
         task.timeBase,
         AV_MILLI_TIME_BASE_Q
       )
-      task.currentPTS = task.firstPTS
 
-      // 当第一个帧的 pts 大于 1000ms 时判定不是从 0 开始，这里做一下对其
-      if (task.firstPTS < 1000n) {
-        task.firstPTS = 0n
-      }
-
-      task.startTimestamp = static_cast<int64>(getTimestamp()) - task.firstPTS * 100n / task.playRate
+      task.masterTimer.setMasterTime(task.startPTS)
 
       task.loop.start()
     }
@@ -720,10 +701,9 @@ export default class VideoRenderPipeline extends Pipeline {
       if (!task.loop) {
         logger.fatal('task has not played')
       }
-      task.pauseTimestamp = getTimestamp()
-      task.pauseCurrentPts = task.currentPTS
       task.loop.stop()
       task.pausing = true
+      task.lastMasterPts = task.masterTimer.getMasterTime()
 
       logger.info(`task paused, taskId: ${task.taskId}`)
     }
@@ -738,8 +718,8 @@ export default class VideoRenderPipeline extends Pipeline {
       if (!task.loop) {
         logger.fatal('task has not played')
       }
-      task.startTimestamp += static_cast<int64>(getTimestamp() - task.pauseTimestamp)
-      task.startTimestamp -= task.currentPTS - task.pauseCurrentPts
+      task.masterTimer.setMasterTime(task.lastMasterPts)
+      task.lastMasterPts = NOPTS_VALUE_BIGINT
       if (!task.seeking) {
         task.loop.start()
       }
@@ -777,7 +757,8 @@ export default class VideoRenderPipeline extends Pipeline {
           rate = 1
         }
       }
-      task.targetRate = static_cast<int64>(Math.floor(rate * 100))
+      task.masterTimer.setRate(rate)
+      task.playRate = static_cast<int64>(Math.floor(rate * 100))
     }
   }
 
@@ -864,6 +845,13 @@ export default class VideoRenderPipeline extends Pipeline {
     }
   }
 
+  public async setMasterTime(taskId: string, masterTime: int64) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      task.masterTimer.setMasterTime(masterTime)
+    }
+  }
+
   public async beforeSeek(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
@@ -936,7 +924,12 @@ export default class VideoRenderPipeline extends Pipeline {
         )
 
         if (pts - task.startPTS >= timestamp) {
+          task.ended = false
           task.stats.videoCurrentTime = pts
+          task.lastNotifyPTS = pts
+          task.currentPTS = pts
+          task.masterTimer.setMasterTime(timestamp)
+          task.lastMasterPts = timestamp
           break
         }
 
@@ -972,7 +965,6 @@ export default class VideoRenderPipeline extends Pipeline {
         return
       }
 
-      task.startTimestamp = static_cast<int64>(getTimestamp()) - (timestamp + task.startPTS) * 100n / task.playRate
       task.frontFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
 
       if (is.number(task.frontFrame) && task.frontFrame < 0) {
@@ -1033,9 +1025,6 @@ export default class VideoRenderPipeline extends Pipeline {
       }
       else if (task.backFrame) {
         task.render.render(task.backFrame)
-        // reset pause time
-        task.pauseCurrentPts = task.currentPTS
-        task.pauseTimestamp = getTimestamp()
       }
 
       logger.debug(`after seek end, taskId: ${task.taskId}`)

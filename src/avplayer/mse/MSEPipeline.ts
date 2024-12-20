@@ -218,9 +218,7 @@ export default class MSEPipeline extends Pipeline {
       if (task.audio) {
         task.audio.track.setSourceBuffer(this.createSourceBuffer(task.mediaSource, addressof(task.audio.oformatContext.streams[0].codecpar)))
         if (!task.audio.enableRawMpeg) {
-          mux.open(task.audio.oformatContext, {
-            paddingZero: false
-          })
+          mux.open(task.audio.oformatContext)
           mux.writeHeader(task.audio.oformatContext)
         }
         promises.push(this.startMux(task.audio, task, startTimestamp))
@@ -229,9 +227,7 @@ export default class MSEPipeline extends Pipeline {
         task.video.track.setSourceBuffer(this.createSourceBuffer(task.mediaSource, addressof(task.video.oformatContext.streams[0].codecpar)))
 
         if (!task.video.enableRawMpeg) {
-          mux.open(task.video.oformatContext, {
-            paddingZero: false
-          })
+          mux.open(task.video.oformatContext)
           mux.writeHeader(task.video.oformatContext)
         }
         promises.push(this.startMux(task.video, task, startTimestamp))
@@ -322,6 +318,8 @@ export default class MSEPipeline extends Pipeline {
         min = task.video.track.getBufferedStart()
       }
 
+      task.currentTimeNTP = getTimestamp()
+
       if (startTimestamp > 0n) {
         task.currentTime = milliSecond2Second(startTimestamp)
         task.controlIPCPort.notify('seek', {
@@ -330,6 +328,8 @@ export default class MSEPipeline extends Pipeline {
       }
       // safari 播放某些视频会卡主，开始时间不是从 0 开始的 seek 到 min buffer 处
       else if (browser.safari || os.ios || min > 0.1) {
+        task.currentTime = min
+        task.currentTimeNTP = getTimestamp()
         task.controlIPCPort.notify('seek', {
           time: min
         })
@@ -404,6 +404,11 @@ export default class MSEPipeline extends Pipeline {
     if (avpacket < 0) {
       pullQueue.ended = true
       return IOError.END as pointer<AVPacketRef>
+    }
+
+    // 负数直接输出
+    if (avpacket.dts < 0n) {
+      return avpacket
     }
 
     if (avpacket.dts < pullQueue.lastDTS) {
@@ -1002,9 +1007,7 @@ export default class MSEPipeline extends Pipeline {
         }
         resource.track.changeMimeType(this.getMimeType(addressof(stream.codecpar)))
         if (!resource.enableRawMpeg) {
-          mux.open(resource.oformatContext, {
-            paddingZero: false
-          })
+          mux.open(resource.oformatContext)
           mux.writeHeader(resource.oformatContext)
         }
       }

@@ -35,7 +35,7 @@ import * as errorType from 'avutil/error'
 import { dumpCodecName, dumpFormatName } from './dump'
 
 export type MuxOptions = {
-  paddingZero?: boolean
+  zeroStart?: boolean
 }
 
 interface MuxPrivateData {
@@ -43,7 +43,7 @@ interface MuxPrivateData {
 }
 
 const defaultMuxOptions: MuxOptions = {
-  paddingZero: false
+  zeroStart: false
 }
 
 export function open(formatContext: AVOFormatContext, options: MuxOptions = {}) {
@@ -89,14 +89,9 @@ export function writeHeader(formatContext: AVOFormatContext): number {
 export function writeAVPacket(formatContext: AVOFormatContext, avpacket: pointer<AVPacket>): number {
   const privateData = formatContext.processPrivateData as MuxPrivateData
   if (!privateData.first.has(avpacket.streamIndex)) {
-    if (avpacket.dts > 0n) {
-      privateData.first.set(avpacket.streamIndex, avpacket.dts)
-    }
-    else {
-      privateData.first.set(avpacket.streamIndex, 0n)
-    }
+    privateData.first.set(avpacket.streamIndex, avpacket.dts)
   }
-  if ((formatContext.options as MuxOptions).paddingZero) {
+  if ((formatContext.options as MuxOptions).zeroStart) {
     avpacket.dts -= privateData.first.get(avpacket.streamIndex)
     avpacket.pts -= privateData.first.get(avpacket.streamIndex)
   }

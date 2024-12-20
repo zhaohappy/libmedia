@@ -358,16 +358,16 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   // 解码线程每个 player 独占一个
   // TODO 若需要同时播放大量视频，可以考虑实现一个 VideoDecoderThreadPool
   // 来根据各个视频规格做线程解码任务调度，降低系统线程切换开销，这里就不实现了
-  private VideoDecoderThread: Thread<VideoDecodePipeline>
-  private VideoRenderThread: Thread<VideoRenderPipeline>
+  public VideoDecoderThread: Thread<VideoDecodePipeline>
+  public VideoRenderThread: Thread<VideoRenderPipeline>
   private VideoPipelineProxy: VideoPipelineProxy
 
   // AVPlayer 各个线程间共享的数据
   private GlobalData: AVPlayerGlobalData
 
-  private taskId: string
-  private subTaskId: string
-  private subtitleTaskId: string
+  public taskId: string
+  public subTaskId: string
+  public subtitleTaskId: string
   private ext: string
   private source: string | File | CustomIOLoader
   private ioIPCPort: IPCPort
@@ -429,6 +429,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.renderRotate = 0
     this.flipHorizontal = false
     this.flipVertical = false
+    this.seekedTimestamp = NOPTS_VALUE_BIGINT
 
     this.GlobalData = make<AVPlayerGlobalData>()
 
@@ -455,7 +456,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (this.useMSE) {
       return static_cast<int64>((((this.video || this.audio)?.currentTime || 0) * 1000) as double)
     }
-    if (this.selectedAudioStream) {
+    if (this.selectedAudioStream && this.selectedVideoStream) {
+      return bigint.max(this.GlobalData.stats.audioCurrentTime, this.GlobalData.stats.videoCurrentTime)
+    }
+    else if (this.selectedAudioStream) {
       return this.GlobalData.stats.audioCurrentTime
     }
     else if (this.selectedVideoStream) {
@@ -778,6 +782,24 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   public isDash() {
     return this.ext === 'mpd'
+  }
+
+  private getMinStartPTS() {
+    let minPTS = NOPTS_VALUE_BIGINT
+    for (const stream of this.formatContext.streams) {
+      if (stream.startTime !== NOPTS_VALUE_BIGINT) {
+        if (minPTS === NOPTS_VALUE_BIGINT) {
+          minPTS = avRescaleQ(stream.startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+        }
+        else {
+          minPTS = bigint.min(minPTS, avRescaleQ(stream.startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q))
+        }
+      }
+    }
+    if (minPTS < 1000n) {
+      return 0n
+    }
+    return minPTS
   }
 
   private async getResource(type: 'decoder' | 'resampler' | 'stretchpitcher', codecId?: AVCodecID, mediaType?: AVMediaType) {
@@ -1423,6 +1445,20 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       tag: 'Input'
     }]))
 
+    if (!this.options.isLive) {
+      let start = -1n
+      formatContext.streams.forEach((stream) => {
+        const s = avRescaleQ(stream.startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+        if (s < start || start === -1n) {
+          start = s
+        }
+      })
+      // 一些文件会裁剪内容导致前面的 pts 为负数，我们需要从 0 开始播放
+      if (start < 0n) {
+        await this.seek(0n)
+      }
+    }
+
     this.status = AVPlayerStatus.LOADED
 
     this.fire(eventType.LOADED)
@@ -1519,7 +1555,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           enableJitterBuffer: !!this.jitterBufferController
-        }, this.seekedTimestamp > 0n ? this.seekedTimestamp : NOPTS_VALUE_BIGINT)
+        }, this.seekedTimestamp >= 0n ? this.seekedTimestamp : NOPTS_VALUE_BIGINT)
 
       if (videoStream && options.video) {
         this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_VIDEO_DECODER, videoStream])
@@ -1732,6 +1768,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           )
           .invoke({
             taskId: this.taskId,
+            isLive: this.options.isLive,
             leftPort: this.videoDecoder2VideoRenderChannel.port2,
             controlPort: this.controller.getVideoRenderControlPort(),
             canvas,
@@ -1748,7 +1785,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             devicePixelRatio: devicePixelRatio,
             stats: addressof(this.GlobalData.stats),
             enableWebGPU: this.options.enableWebGPU,
-            startPTS: videoStream.startTime,
+            startPTS: this.options.isLive
+              ? (videoStream.startTime < 1000n ? 0n : videoStream.startTime)
+              : avRescaleQ(this.getMinStartPTS(), AV_MILLI_TIME_BASE_Q, videoStream.timeBase),
             avframeList: addressof(this.GlobalData.avframeList),
             avframeListMutex: addressof(this.GlobalData.avframeListMutex),
             enableJitterBuffer: !!this.jitterBufferController && !this.audioDecoder2AudioRenderChannel
@@ -1795,7 +1834,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
               num: audioStream.timeBase.num,
               den: audioStream.timeBase.den,
             },
-            startPTS: audioStream.startTime,
+            startPTS: this.options.isLive
+              ? (audioStream.startTime < 1000n ? 0n : audioStream.startTime)
+              : avRescaleQ(this.getMinStartPTS(), AV_MILLI_TIME_BASE_Q, audioStream.timeBase),
             avframeList: addressof(this.GlobalData.avframeList),
             avframeListMutex: addressof(this.GlobalData.avframeListMutex),
             enableJitterBuffer: !!this.jitterBufferController
@@ -1900,7 +1941,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       promises.push(AVPlayer.DemuxerThread.startDemux(this.subtitleTaskId, this.options.isLive, minQueueLength))
     }
 
-    if (this.seekedTimestamp > 0n) {
+    if (this.seekedTimestamp >= 0n) {
       let maxQueueLength = 20
       this.formatContext.streams.forEach((stream) => {
         if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
@@ -2122,7 +2163,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         this.jitterBufferController.reset()
       }
 
-      if (this.lastStatus === AVPlayerStatus.LOADED && seekedTimestamp >= 0n) {
+      if ((this.lastStatus === AVPlayerStatus.LOADED
+          || this.lastStatus === AVPlayerStatus.LOADING
+      )
+        && seekedTimestamp >= 0n
+      ) {
         this.seekedTimestamp = seekedTimestamp > timestamp ? seekedTimestamp : timestamp
       }
     }
@@ -3253,7 +3298,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @internal
    */
   public onTimeUpdate(pts: int64): void {
-    this.fire(eventType.TIME, [pts])
+    this.fire(eventType.TIME, [this.currentTime])
   }
 
   /**
