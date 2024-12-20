@@ -142,7 +142,7 @@ function writeAudioTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
     if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_FLAC
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_ALAC
     ) {
-      ioWriter.writeUint16(stream.codecpar.bitsPerCodedSample)
+      ioWriter.writeUint16(stream.codecpar.bitsPerRawSample)
     }
     else {
       ioWriter.writeUint16(16)
