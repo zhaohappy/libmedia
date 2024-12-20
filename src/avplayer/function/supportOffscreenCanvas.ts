@@ -25,11 +25,14 @@
 
 import support from 'common/util/support'
 import browser from 'common/util/browser'
+import os from 'common/util/os'
 
 export default function supportOffscreenCanvas() {
   let result = support.offscreenCanvas
   // webgl with offscreencanvas only supported for Safari 17+
-  if (browser.safari && !browser.checkVersion(browser.version, '17', true)) {
+  if (browser.safari && !browser.checkVersion(browser.version, '17', true)
+    || os.ios && !browser.checkVersion(os.version, '17', true)
+  ) {
     result = false
   }
   return result
