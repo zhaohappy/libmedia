@@ -123,13 +123,24 @@ export default async function analyzeUrlIOLoader(source: string, defaultExt: str
     }
   }
   else {
+
+    const protocol = urlUtils.parse(source).protocol
+
     ext = defaultExt || urlUtils.parse(source).file.split('.').pop()
     // 没有文件后缀，我们需要分析是不是 m3u8 和 mpd 文件
     // 这两种格式需要提前知道来创建指定的 ioloader
-    if (!ext) {
+    if (!ext && /^https?/.test(protocol)) {
       ext = await analyzeUrlFileExt(source, httpOptions)
     }
-    type = Ext2IOLoader[ext] ?? IOType.Fetch
+
+    let defaultType: IOType = IOType.Fetch
+    if (protocol === 'wss' || protocol === 'ws') {
+      defaultType = IOType.WEBSOCKET
+    }
+    else if (protocol === 'webtransport') {
+      defaultType = IOType.WEBTRANSPORT
+    }
+    type = Ext2IOLoader[ext] ?? defaultType
   }
 
   return {
