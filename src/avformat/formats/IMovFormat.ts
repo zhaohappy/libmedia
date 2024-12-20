@@ -61,8 +61,10 @@ export default class IMovFormat extends IFormat {
     super()
 
     this.options = options
-
     this.context = createMovContext()
+    if (options.ignoreEditlist) {
+      this.context.ignoreEditlist = true
+    }
   }
 
   public init(formatContext: AVIFormatContext): void {

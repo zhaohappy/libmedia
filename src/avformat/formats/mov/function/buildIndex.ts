@@ -24,12 +24,14 @@
  */
 
 import Stream from 'avutil/AVStream'
-import { MOVStreamContext, Sample } from '../type'
+import { MOVContext, MOVStreamContext, Sample } from '../type'
 import { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVMediaType } from 'avutil/codec'
+import * as logger from 'common/util/logger'
+import { avRescaleQ } from 'avutil/util/rational'
 
 
-export function buildIndex(stream: Stream) {
+export function buildIndex(stream: Stream, movContext: MOVContext) {
   const context = stream.privData as MOVStreamContext
 
   const chunkOffsets = context.chunkOffsets
@@ -64,6 +66,39 @@ export function buildIndex(stream: Stream) {
   let currentDts = 0n
 
   const samplesIndex: Sample[] = []
+
+  if (!movContext.ignoreEditlist && stream.metadata.elst?.length) {
+    let timeOffset = 0n
+    let editStartIndex = 0
+    let unsupported = false
+    let emptyDuration = 0n
+    let startTime = 0n
+    for (let i = 0; i < stream.metadata.elst.length; i++) {
+      const e = stream.metadata.elst[i]
+      if (i === 0 && e.mediaTime === -1n) {
+        emptyDuration = e.segmentDuration
+        editStartIndex = 1
+      }
+      else if (i === editStartIndex && e.mediaTime >= 0n) {
+        startTime = e.mediaTime
+      }
+      else {
+        unsupported = true
+      }
+    }
+
+    if (unsupported) {
+      logger.warn('multiple edit list entries, a/v desync might occur, patch welcome')
+    }
+
+    if ((emptyDuration || startTime) && movContext.timescale > 0) {
+      if (emptyDuration) {
+        emptyDuration = avRescaleQ(emptyDuration, { num: 1, den: movContext.timescale }, stream.timeBase)
+      }
+      timeOffset = startTime - emptyDuration
+      currentDts = -timeOffset
+    }
+  }
 
   for (let i = 0; i < chunkOffsets.length; i++) {
     currentOffset = chunkOffsets[i]
@@ -122,6 +157,8 @@ export function buildIndex(stream: Stream) {
   if (samplesIndex.length > 1) {
     // 最后一个 sample 使用前一个的 duration
     samplesIndex[currentSample - 1].duration = samplesIndex[currentSample - 2].duration
+    stream.duration = static_cast<int64>(samplesIndex[currentSample - 1].duration)
+      + samplesIndex[currentSample - 1].dts
   }
 
   context.samplesIndex = samplesIndex

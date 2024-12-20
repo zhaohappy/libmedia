@@ -229,7 +229,7 @@ export async function readMoov(
           movContext
         )
         if (!movContext.fragment) {
-          buildIndex(stream)
+          buildIndex(stream, movContext)
         }
         else {
           const streamContext: MOVStreamContext = stream.privData

@@ -125,6 +125,7 @@ export interface MOVContext {
   }
   ac3Info?: EC3Info
   firstMoof?: int64
+  ignoreEditlist?: boolean
 }
 
 export interface MOVStreamContext {
@@ -178,4 +179,12 @@ export interface MovFormatOptions {
   fragment?: boolean
   fastOpen?: boolean
   defaultBaseIsMoof?: boolean
+  ignoreEditlist?: boolean
+}
+
+export interface ElstEntry {
+  segmentDuration: int64
+  mediaTime: int64
+  mediaRate: number
+  mediaRateFraction: number
 }

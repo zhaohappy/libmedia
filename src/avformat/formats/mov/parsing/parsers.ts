@@ -47,6 +47,7 @@ import mfhd from './mfhd'
 import tfhd from './tfhd'
 import tfdt from './tfdt'
 import trun from './trun'
+import elst from './elst'
 
 import mktag from '../../../function/mktag'
 
@@ -67,6 +68,7 @@ number,
   [mktag(BoxType.TKHD)]: tkhd,
   [mktag(BoxType.HDLR)]: hdlr,
   [mktag(BoxType.STSD)]: stsd,
+  [mktag(BoxType.ELST)]: elst,
 
   [mktag(BoxType.TREX)]: trex,
   [mktag(BoxType.MFHD)]: mfhd,
