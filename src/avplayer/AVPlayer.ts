@@ -718,6 +718,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           if (this.audioDecoder2AudioRenderChannel) {
             await AVPlayer.AudioDecoderThread.resetTask(this.taskId)
             await AVPlayer.AudioRenderThread.restart(this.taskId)
+            this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_AUDIO)
           }
 
           if (this.audioSourceNode) {
