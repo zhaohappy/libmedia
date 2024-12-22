@@ -13,30 +13,6 @@ dist/*
 !dist/scale/
 !dist/stretchpitch/
 
-!dist/avplayer/
-dist/avplayer/*.*
-!dist/avplayer/[0-9]*.avplayer.js
-!dist/avplayer/avplayer.js
-
-!dist/avplayer-legacy/
-dist/avplayer-legacy/*.*
-!dist/avplayer-legacy/[0-9]*.avplayer.js
-!dist/avplayer-legacy/avplayer.js
-
-!dist/avplayer-ui/
-dist/avplayer-ui/*.*
-!dist/avplayer-ui/[0-9]*.avplayer.js
-!dist/avplayer-ui/avplayer.js
-
-!dist/avtranscoder/
-!dist/avtranscoder-legacy/
-dist/avtranscoder/*.*
-!dist/avtranscoder/[0-9]*.avtranscoder.js
-!dist/avtranscoder/avtranscoder.js
-dist/avtranscoder-legacy/*.*
-!dist/avtranscoder-legacy/[0-9]*.avtranscoder.js
-!dist/avtranscoder-legacy/avtranscoder.js
-
 !dist/cheap-polyfill.js
 
 test/material
