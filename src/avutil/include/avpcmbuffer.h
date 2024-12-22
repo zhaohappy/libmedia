@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include "wasmatomic.h"
+#include "audiosample.h"
 
 typedef struct AVPCMBuffer {
    /**
@@ -31,6 +32,10 @@ typedef struct AVPCMBuffer {
    * 采样率
    */
   int32_t sampleRate;
+  /**
+   * pcm 格式
+   */
+  enum AVSampleFormat format;
   /**
    * pts
    */
