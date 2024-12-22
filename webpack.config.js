@@ -28,6 +28,13 @@ module.exports = (env) => {
     library = undefined;
     outputPath = path.resolve(__dirname, './src/cheap/build');
   }
+  else if (env.wasm_opt) {
+    entry = path.resolve(__dirname, './src/cheap/webassembly/wasm-opt.ts');
+    output = 'wasm-opt.js';
+    libraryTarget = 'commonjs2';
+    library = undefined;
+    outputPath = path.resolve(__dirname, './src/cheap/build');
+  }
   else if (env.avplayer) {
     if (env.ui) {
       entry = path.resolve(__dirname, './src/ui/avplayer/AVPlayer.ts');

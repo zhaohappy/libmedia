@@ -142,6 +142,12 @@ elif [ $encode == "opus" ]; then
   echo "#define MEDIA_TYPE_AUDIO 1" >> $INCLUDE_PATH/config.h
 elif [ $encode == "flac" ]; then
   echo "#define MEDIA_TYPE_AUDIO 1" >> $INCLUDE_PATH/config.h
+elif [ $encode == "ac3" ]; then
+  echo "#define MEDIA_TYPE_AUDIO 1" >> $INCLUDE_PATH/config.h
+elif [ $encode == "eac3" ]; then
+  echo "#define MEDIA_TYPE_AUDIO 1" >> $INCLUDE_PATH/config.h
+elif [ $encode == "dca" ]; then
+  echo "#define MEDIA_TYPE_AUDIO 1" >> $INCLUDE_PATH/config.h
 elif [ $encode == "mp3lame" ]; then
   echo "#define MEDIA_TYPE_AUDIO 1" >> $INCLUDE_PATH/config.h
   if [ $ENABLE_SIMD == "1" ]; then
@@ -237,5 +243,7 @@ emcc $CFLAG $CLIB_PATH/encode.c $CLIB_PATH/logger/log.c \
 if [ $ENABLE_SIMD != "1" ] && [ $ENABLE_ATOMIC != "1" ]; then
   $EMSDK_PATH/upstream/bin/wasm-opt $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm -o $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm --signext-lowering
 fi
+
+node $PROJECT_SRC_PATH/cheap/build/wasm-opt.js $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm --bss -o $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm
 
 echo "===== build encoder $encode finished  ====="
