@@ -192,15 +192,13 @@ export default class IFlvFormat extends IFormat {
 
     if (type === FlvTag.AUDIO) {
       let stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_AUDIO)
-      if (stream) {
-        avpacket.streamIndex = stream.index
-      }
 
       avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
 
       const audioHeader = await formatContext.ioReader.readUint8()
 
       if (stream) {
+        avpacket.streamIndex = stream.index
         if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
           const packetType = await formatContext.ioReader.readUint8()
           if (packetType === flvAAC.AACPacketType.AAC_SEQUENCE_HEADER) {
@@ -283,14 +281,11 @@ export default class IFlvFormat extends IFormat {
     }
     else if (type === FlvTag.VIDEO) {
       let stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
-      if (stream) {
-        avpacket.streamIndex = stream.index
-      }
 
       const videoHeader = await formatContext.ioReader.readUint8()
 
       if (stream) {
-
+        avpacket.streamIndex = stream.index
         if ((((videoHeader & 0x70) >> 4)) === 1) {
           avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
         }
