@@ -9,7 +9,7 @@ order: 9
 
 # 在 JavaScript 中使用
 
-原则上你需要使用 Typescript 语言来基于 libmedia 做音视频开发。如果必须要使用 JavaScript 来开发则需要掌握在 JavaScript 中访问指针数据的技巧，这需要你对 cheap 比较熟悉。
+原则上你需要使用 TypeScript 语言来基于 libmedia 做音视频开发。如果必须要使用 JavaScript 来开发则需要掌握在 JavaScript 中访问指针数据的技巧，这需要你对 cheap 比较熟悉。
 
 ## 访问结构体指针属性
 
