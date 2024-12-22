@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avrender",
-  "version": "0.2.1",
+  "version": "0.4.0",
   "description": "libmedia 渲染模块",
   "repository": {
     "type": "git",

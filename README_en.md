@@ -88,7 +88,6 @@ if multi-threading is not supported, it will fall back to running on the main th
 
 Codecs are compiled into separate wasm modules, the decoders are in the ```dist/decode``` directory, and the encoders are in the ```dist/encode``` directory. There are three versions of the encoding and decoding wasm module: baseline, atomic, and simd. The baseline version's instruction set corresponds to the MVP version of WebAssembly, but it needs to support Mutable Globals, with the highest compatibility and the lowest performance; atomic version add the atomic operation instruction set and Bulk memory instruction set; simd version add the simd vector acceleration instruction set, has the highest performance. The current simd version is automatically optimized by the compiler, and different codecs have different effects (currently I have not seen any codec projects has optimized for the wasm simd instruction set. If you want higher acceleration effects, you may want to optimize by yourself).
 
-> If you find that some wasm(such as aac.wasm) file's size are too large, it is because the source code implementation of the wasm declares a large size of global array, causing the Data segment to contain large pieces of data all zero; as long as your web server enables gzip for static resources can make it very small.
 
 #### Compatibility support status of three versions and Webcodecs
 
