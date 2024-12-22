@@ -246,7 +246,7 @@ export default class AudioRenderPipeline extends Pipeline {
         }
 
         task.currentPTS = avRescaleQ(audioFrame.pts, task.timeBase, AV_MILLI_TIME_BASE_Q)
-        if (task.masterTimer.getMasterTime() - task.currentPTS > MASTER_SYNC_THRESHOLD) {
+        if (task.currentPTS > 0n && task.masterTimer.getMasterTime() - task.currentPTS > MASTER_SYNC_THRESHOLD) {
           task.masterTimer.setMasterTime(task.currentPTS)
         }
 
@@ -892,7 +892,7 @@ export default class AudioRenderPipeline extends Pipeline {
     next /= (task.playRate * task.playTempo)
 
     task.currentPTS = avRescaleQ(audioFrame.pts, task.timeBase, AV_MILLI_TIME_BASE_Q)
-    if (task.masterTimer.getMasterTime() - task.currentPTS > MASTER_SYNC_THRESHOLD) {
+    if (task.currentPTS > 0n && (task.masterTimer.getMasterTime() - task.currentPTS > MASTER_SYNC_THRESHOLD)) {
       task.masterTimer.setMasterTime(task.currentPTS)
     }
 
