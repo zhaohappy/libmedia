@@ -1050,6 +1050,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           newStream.codecpar.sampleRate = 48000
         }
       }
+      else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_OPUS) {
+        newStream.codecpar.sampleRate = 48000
+      }
       else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_FLAC) {
         if (newStream.codecpar.format !== AVSampleFormat.AV_SAMPLE_FMT_S16
           && newStream.codecpar.format !== AVSampleFormat.AV_SAMPLE_FMT_S32
@@ -1066,6 +1069,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       }
       else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_SPEEX) {
         newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_S16
+        if (newStream.codecpar.sampleRate > 32000) {
+          newStream.codecpar.sampleRate = 32000
+        }
       }
 
       if (newStream.codecpar.profile === NOPTS_VALUE) {
