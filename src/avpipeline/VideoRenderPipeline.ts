@@ -535,8 +535,8 @@ export default class VideoRenderPipeline extends Pipeline {
             return
           }
         }
-        // 直播差值大于 5s 认为从某一处开始了
-        else if ((pts - task.currentPTS > 5000n) && task.isLive) {
+        // 直播差值大于 4s 认为从某一处开始了
+        else if ((pts - task.currentPTS > 4000n) && task.isLive) {
           task.masterTimer.setMasterTime(pts)
         }
 

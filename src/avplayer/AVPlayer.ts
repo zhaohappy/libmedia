@@ -1822,6 +1822,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           )
           .invoke({
             taskId: this.taskId,
+            isLive: this.options.isLive,
             leftPort: this.audioDecoder2AudioRenderChannel.port2,
             rightPort: this.audioRender2AudioWorkletChannel.port1,
             controlPort: this.controller.getAudioRenderControlPort(),

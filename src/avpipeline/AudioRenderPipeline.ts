@@ -66,6 +66,7 @@ export interface AudioRenderTaskOptions extends TaskOptions {
   avframeList: pointer<List<pointer<AVFrameRef>>>
   avframeListMutex: pointer<Mutex>
   enableJitterBuffer: boolean
+  isLive: boolean
 }
 
 type SelfTask = AudioRenderTaskOptions & {
@@ -245,11 +246,15 @@ export default class AudioRenderPipeline extends Pipeline {
           logger.debug(`got first audio frame, pts: ${audioFrame.pts}(${start}ms), taskId: ${task.taskId}`)
         }
 
-        task.currentPTS = avRescaleQ(audioFrame.pts, task.timeBase, AV_MILLI_TIME_BASE_Q)
-        if (task.currentPTS > 0n && task.masterTimer.getMasterTime() - task.currentPTS > MASTER_SYNC_THRESHOLD) {
-          task.masterTimer.setMasterTime(task.currentPTS)
+        const pts = avRescaleQ(audioFrame.pts, task.timeBase, AV_MILLI_TIME_BASE_Q)
+        if (pts > 0n && (task.masterTimer.getMasterTime() - pts > MASTER_SYNC_THRESHOLD)) {
+          task.masterTimer.setMasterTime(pts)
         }
-
+        // 直播差值大于 4s 认为从某一处开始了
+        else if (task.isLive && (pts - task.currentPTS > 4000n)) {
+          task.masterTimer.setMasterTime(pts)
+        }
+        task.currentPTS = pts
         task.stats.audioFrameRenderCount++
 
         if (task.lastRenderTimestamp) {
@@ -891,10 +896,15 @@ export default class AudioRenderPipeline extends Pipeline {
 
     next /= (task.playRate * task.playTempo)
 
-    task.currentPTS = avRescaleQ(audioFrame.pts, task.timeBase, AV_MILLI_TIME_BASE_Q)
-    if (task.currentPTS > 0n && (task.masterTimer.getMasterTime() - task.currentPTS > MASTER_SYNC_THRESHOLD)) {
-      task.masterTimer.setMasterTime(task.currentPTS)
+    const pts = avRescaleQ(audioFrame.pts, task.timeBase, AV_MILLI_TIME_BASE_Q)
+    if (pts > 0n && (task.masterTimer.getMasterTime() - pts > MASTER_SYNC_THRESHOLD)) {
+      task.masterTimer.setMasterTime(pts)
     }
+    // 直播差值大于 4s 认为从某一处开始了
+    else if (task.isLive && (pts - task.currentPTS > 4000n)) {
+      task.masterTimer.setMasterTime(pts)
+    }
+    task.currentPTS = pts
 
     const diffPts = task.currentPTS - task.masterTimer.getMasterTime()
     if (diffPts > MASTER_SYNC_THRESHOLD) {
