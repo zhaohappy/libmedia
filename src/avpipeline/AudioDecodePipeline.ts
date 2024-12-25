@@ -106,13 +106,10 @@ export default class AudioDecodePipeline extends Pipeline {
 
         task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(avframe))
         task.stats.audioFrameDecodeCount++
-        if (task.lastDecodeTimestamp) {
-          task.stats.audioFrameDecodeIntervalMax = Math.max(
-            getTimestamp() - task.lastDecodeTimestamp,
-            task.stats.audioFrameDecodeIntervalMax
-          )
-        }
-        task.lastDecodeTimestamp = getTimestamp()
+        task.stats.audioFrameDecodeIntervalMax = Math.max(
+          getTimestamp() - task.lastDecodeTimestamp,
+          task.stats.audioFrameDecodeIntervalMax
+        )
         audioData.close()
       }
     })
@@ -131,13 +128,10 @@ export default class AudioDecodePipeline extends Pipeline {
       onReceiveAVFrame(frame) {
         task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
         task.stats.audioFrameDecodeCount++
-        if (task.lastDecodeTimestamp) {
-          task.stats.audioFrameDecodeIntervalMax = Math.max(
-            getTimestamp() - task.lastDecodeTimestamp,
-            task.stats.audioFrameDecodeIntervalMax
-          )
-        }
-        task.lastDecodeTimestamp = getTimestamp()
+        task.stats.audioFrameDecodeIntervalMax = Math.max(
+          getTimestamp() - task.lastDecodeTimestamp,
+          task.stats.audioFrameDecodeIntervalMax
+        )
       },
       avframePool: task.avframePool
     })
@@ -205,6 +199,7 @@ export default class AudioDecodePipeline extends Pipeline {
                 break
               }
 
+              task.lastDecodeTimestamp = getTimestamp()
               const avpacket = await this.pullAVPacketInternal(task, leftIPCPort)
 
               if (avpacket === IOError.END) {

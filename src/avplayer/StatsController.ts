@@ -28,6 +28,7 @@ import Timer from 'common/timer/Timer'
 
 export interface StatsControllerObserver {
   onVideoStutter: () => void
+  onVideoDiscard: () => void
 }
 
 export default class StatsController {
@@ -49,6 +50,9 @@ export default class StatsController {
 
   private observer: StatsControllerObserver
   private isWorkerMain: boolean
+  private videoDecodeMaxIntervalCounter: number
+  private lastAudioStutterCount: number
+  private lastAVDelta: int64
 
   constructor(stats: pointer<Stats>, isWorkerMain: boolean, observer: StatsControllerObserver) {
     this.stats = stats
@@ -65,11 +69,19 @@ export default class StatsController {
     this.videoPacketBytes = this.stats.videoPacketBytes
     this.audioPacketBytes = this.stats.audioPacketBytes
     this.bufferReceiveBytes = this.stats.bufferReceiveBytes
+    if (!this.isWorkerMain) {
+      this.stats.audioFrameDecodeIntervalMax = 0
+      this.stats.audioFrameRenderIntervalMax = 0
+      this.stats.videoFrameDecodeIntervalMax = 0
+      this.stats.videoFrameRenderIntervalMax = 0
+    }
   }
 
   public start() {
     this.reset()
-
+    this.videoDecodeMaxIntervalCounter = 0
+    this.lastAudioStutterCount = 0
+    this.lastAVDelta = 0n
     this.timer.start()
   }
 
@@ -78,13 +90,6 @@ export default class StatsController {
   }
 
   private onTimer() {
-    if (!this.isWorkerMain) {
-      this.stats.audioFrameDecodeIntervalMax = 0
-      this.stats.audioFrameRenderIntervalMax = 0
-      this.stats.videoFrameDecodeIntervalMax = 0
-      this.stats.videoFrameRenderIntervalMax = 0
-    }
-
     this.stats.videoRenderFramerate = static_cast<int32>(this.stats.videoFrameRenderCount - this.videoFrameRenderCount)
     this.stats.videoDecodeFramerate = static_cast<int32>(this.stats.videoFrameDecodeCount - this.videoFrameDecodeCount)
     this.stats.audioRenderFramerate = static_cast<int32>(this.stats.audioFrameRenderCount - this.audioFrameRenderCount)
@@ -101,7 +106,26 @@ export default class StatsController {
     ) {
       this.observer.onVideoStutter()
     }
-
+    if (this.stats.videoFrameDecodeIntervalMax > 1000 / this.stats.videoEncodeFramerate
+      && this.stats.videoDecodeFramerate < this.stats.videoEncodeFramerate * 0.9
+      && (this.stats.audioCurrentTime > 0
+        && this.stats.videoCurrentTime > 0
+        && this.stats.audioCurrentTime - this.stats.videoCurrentTime > 1000n
+        && this.stats.audioCurrentTime - this.stats.videoCurrentTime > this.lastAVDelta
+        || this.stats.audioStutter > this.lastAudioStutterCount
+      )
+    ) {
+      this.videoDecodeMaxIntervalCounter++
+    }
+    else {
+      this.videoDecodeMaxIntervalCounter = 0
+    }
+    if (this.videoDecodeMaxIntervalCounter > 5) {
+      this.observer.onVideoDiscard()
+      this.videoDecodeMaxIntervalCounter = 0
+    }
+    this.lastAudioStutterCount = this.stats.audioStutter
+    this.lastAVDelta = this.stats.audioCurrentTime - this.stats.videoCurrentTime
     this.reset()
   }
 }

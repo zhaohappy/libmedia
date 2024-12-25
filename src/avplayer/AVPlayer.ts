@@ -2343,7 +2343,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.audioSourceNode = null
     }
 
-    if (this.status === AVPlayerStatus.SEEKING &&  AVPlayer.DemuxerThread) {
+    if (this.status === AVPlayerStatus.SEEKING && AVPlayer.DemuxerThread) {
       await AVPlayer.DemuxerThread.stop(this.taskId)
       if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
         await AVPlayer.DemuxerThread.stop(this.subTaskId)
@@ -3276,9 +3276,20 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.GlobalData.stats.audioStutter++
     }
   }
+  /**
+   * @internal
+   */
   public onVideoStutter() {
     if (this.status === AVPlayerStatus.PLAYED) {
       this.GlobalData.stats.videoStutter++
+    }
+  }
+  /**
+   * @internal
+   */
+  public onVideoDiscard() {
+    if (this.status === AVPlayerStatus.PLAYED) {
+      this.VideoDecoderThread.setNextDiscard(this.taskId)
     }
   }
 

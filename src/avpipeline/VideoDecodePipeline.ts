@@ -46,7 +46,7 @@ import isWorker from 'common/function/isWorker'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import getTimestamp from 'common/function/getTimestamp'
-import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
+import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE } from 'avutil/constant'
 import support from 'common/util/support'
 import isPointer from 'cheap/std/function/isPointer'
 import { Data } from 'common/types/type'
@@ -98,6 +98,8 @@ type SelfTask = Omit<VideoDecodeTaskOptions, 'resource'> & {
   avpacketPool: AVPacketPool
 
   wasmDecoderOptions?: Data
+  discard: AVDiscard
+  playRate: double
 }
 
 export interface VideoDecodeTaskInfo {
@@ -145,13 +147,13 @@ export default class VideoDecodePipeline extends Pipeline {
         task.firstDecoded = true
         task.frameCaches.push(frame)
         task.stats.videoFrameDecodeCount++
-        if (task.lastDecodeTimestamp) {
+        if (task.lastDecodeTimestamp !== NOPTS_VALUE) {
           task.stats.videoFrameDecodeIntervalMax = Math.max(
             getTimestamp() - task.lastDecodeTimestamp,
             task.stats.videoFrameDecodeIntervalMax
           )
+          task.lastDecodeTimestamp = NOPTS_VALUE
         }
-        task.lastDecodeTimestamp = getTimestamp()
       },
       enableHardwareAcceleration
     })
@@ -171,13 +173,13 @@ export default class VideoDecodePipeline extends Pipeline {
         task.firstDecoded = true
         task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
         task.stats.videoFrameDecodeCount++
-        if (task.lastDecodeTimestamp) {
+        if (task.lastDecodeTimestamp !== NOPTS_VALUE) {
           task.stats.videoFrameDecodeIntervalMax = Math.max(
             getTimestamp() - task.lastDecodeTimestamp,
             task.stats.videoFrameDecodeIntervalMax
           )
+          task.lastDecodeTimestamp = NOPTS_VALUE
         }
-        task.lastDecodeTimestamp = getTimestamp()
       },
       avframePool: task.avframePool
     })
@@ -223,6 +225,8 @@ export default class VideoDecodePipeline extends Pipeline {
       firstDecoded: false,
       decoderReady: null,
       softwareDecoderOpened: false,
+      discard: AVDiscard.AVDISCARD_DEFAULT,
+      playRate: 1,
 
       avframePool,
       avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex)
@@ -265,7 +269,9 @@ export default class VideoDecodePipeline extends Pipeline {
                 await task.decoderReady
                 task.decoderReady = null
               }
-
+              if (task.lastDecodeTimestamp === NOPTS_VALUE) {
+                task.lastDecodeTimestamp = getTimestamp()
+              }
               const avpacket = await this.pullAVPacketInternal(task, leftIPCPort)
 
               if (avpacket === IOError.END) {
@@ -665,11 +671,11 @@ export default class VideoDecodePipeline extends Pipeline {
   public async setPlayRate(taskId: string, rate: double) {
     const task = this.tasks.get(taskId)
     if (task && task.softwareDecoder) {
-      let discard = AVDiscard.AVDISCARD_NONE
+      let discard = AVDiscard.AVDISCARD_DEFAULT
       let framerate = avQ2D(task.parameters.framerate)
       if (framerate >= 120) {
         if (rate <= 1) {
-          discard = AVDiscard.AVDISCARD_NONE
+          discard = AVDiscard.AVDISCARD_DEFAULT
         }
         else if (rate < 1.5) {
           discard = AVDiscard.AVDISCARD_NONREF
@@ -685,7 +691,7 @@ export default class VideoDecodePipeline extends Pipeline {
       }
       else if (framerate >= 60) {
         if (rate < 1.5) {
-          discard = AVDiscard.AVDISCARD_NONE
+          discard = AVDiscard.AVDISCARD_DEFAULT
         }
         else if (rate < 3) {
           discard = AVDiscard.AVDISCARD_NONREF
@@ -698,9 +704,48 @@ export default class VideoDecodePipeline extends Pipeline {
         }
       }
       else {
-        discard = AVDiscard.AVDISCARD_NONE
+        if (rate >= 8) {
+          discard = AVDiscard.AVDISCARD_NONKEY
+        }
+        else if (rate >= 4) {
+          discard = AVDiscard.AVDISCARD_NONINTRA
+        }
+        else {
+          discard = AVDiscard.AVDISCARD_DEFAULT
+        }
       }
       task.softwareDecoder.setSkipFrameDiscard(discard)
+      if (task.playRate < rate) {
+        task.discard = discard
+      }
+      else {
+        task.discard = Math.max(task.discard, discard)
+      }
+      task.playRate = rate
+    }
+  }
+
+  public async setNextDiscard(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task && task.softwareDecoder) {
+      if (task.discard < AVDiscard.AVDISCARD_NONKEY) {
+        task.discard += 8
+        task.softwareDecoder.setSkipFrameDiscard(task.discard)
+
+        logger.info(`set next discard, taskId: ${task.taskId}, discard: ${task.discard}`)
+      }
+    }
+  }
+
+  public async setPrevDiscard(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task && task.softwareDecoder) {
+      if (task.discard > AVDiscard.AVDISCARD_DEFAULT) {
+        task.discard -= 8
+        task.softwareDecoder.setSkipFrameDiscard(task.discard)
+
+        logger.info(`set prev discard, taskId: ${task.taskId}, discard: ${task.discard}`)
+      }
     }
   }
 
