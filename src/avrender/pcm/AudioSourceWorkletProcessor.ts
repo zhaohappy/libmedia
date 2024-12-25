@@ -31,6 +31,8 @@ import os from 'common/util/os'
 
 let BUFFER_LENGTH = (os.windows || os.mac || os.linux) ? 10 : 20
 
+declare const currentTime: number
+
 export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBase {
 
   private pullIPC: IPCPort
@@ -47,6 +49,7 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
   private firstRendered: boolean
   private stopped: boolean
   private afterPullResolve: () => void
+  private lastStutterTimestamp: number
 
   constructor() {
     super()
@@ -83,6 +86,7 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
           this.pause = false
           this.firstRendered = false
           this.stopped = false
+          this.lastStutterTimestamp = currentTime
 
           this.ipcPort.reply(request)
 
@@ -111,6 +115,7 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
           this.pause = false
           this.firstRendered = false
           this.stopped = false
+          this.lastStutterTimestamp = currentTime
 
           this.ipcPort.reply(request)
 
@@ -204,7 +209,10 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
           return true
         }
         if (!this.swapBuffer()) {
-          this.ipcPort.notify('stutter')
+          if (currentTime - this.lastStutterTimestamp > 1) {
+            this.ipcPort.notify('stutter')
+            this.lastStutterTimestamp = currentTime
+          }
           return true
         }
       }

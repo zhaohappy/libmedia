@@ -34,6 +34,7 @@ import * as cheapConfig from 'cheap/config'
 import os from 'common/util/os'
 import * as is from 'common/util/is'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
+import getTimestamp from 'common/function/getTimestamp'
 
 const BUFFER_LENGTH = (os.windows || os.mac || os.linux) ? 20 : 30
 
@@ -66,6 +67,8 @@ export default class AudioSourceBufferNode {
 
   private firstRendered: boolean
 
+  private lastStutterTimestamp: number
+
   constructor(context: AudioContext, observer: AudioWorkletNodeObserver, options: AudioSourceBufferNodeOptions = {}) {
     this.context = context
     this.observer = observer
@@ -91,6 +94,7 @@ export default class AudioSourceBufferNode {
         this.ended = false
         this.pause = false
         this.firstRendered = false
+        this.lastStutterTimestamp = getTimestamp()
 
         await this.pullInterval()
         this.buffering()
@@ -125,6 +129,7 @@ export default class AudioSourceBufferNode {
         })
 
         this.buffered = true
+        this.lastStutterTimestamp = getTimestamp()
 
         this.process()
 
@@ -256,7 +261,10 @@ export default class AudioSourceBufferNode {
       this.process()
 
       if (!this.queue.length) {
-        this.observer.onStutter()
+        if (getTimestamp() - this.lastStutterTimestamp > 1000) {
+          this.observer.onStutter()
+          this.lastStutterTimestamp = getTimestamp()
+        }
       }
 
       if (!this.firstRendered) {
