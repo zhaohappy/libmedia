@@ -201,3 +201,9 @@ libmedia 使用 LGPL 开源协议，你需要遵守协议要求，详情查看 [
 
 Copyright (C) 2024-present, Gaoxing Zhao
 
+### 赞助作者
+
+如果该项目对你有帮助，可以扫描二维码赞助作者:
+
+<img src="./site/public/img/alipay-qcode.png" width="200" alt="alipay" />
+<img src="./site/public/img/wechat-qcode.png" width="200" alt="wechat-pay" />

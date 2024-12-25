@@ -30,9 +30,9 @@ libmedia 是设计在多线程上的，只是可以回退到单线程上运行�
 - 丰富的音视频协议支持：支持 hls、dash、rtmp、rtsp 协议；
 - 开箱即用的强大工具：内部实现了播放器和转码器可快速集成使用；
 
-## 赞助
+## 赞助作者
 
-如果该项目对你有帮助，扫描二维码赞助作者:
+如果该项目对你有帮助，可以扫描二维码赞助作者:
 
 <img src="../../public/img/alipay-qcode.png" width="200" alt="alipay" />
 <img src="../../public/img/wechat-qcode.png" width="200" alt="wechat-pay" />

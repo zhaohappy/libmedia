@@ -165,7 +165,7 @@ But some dependent libraries are under GPL license. If you use these dependent l
  - dist/encoder/x265-atomic.wasm
  - dist/encoder/x265-simd.wasm
 
-#### Dependence Licence
+#### Dependencies Licence
  - [ffmpeg](https://github.com/FFmpeg/FFmpeg): LGPL v2.1+
  - [soundtouch](https://www.surina.net/soundtouch/): LGPL v2.1
  - [openh264](https://github.com/cisco/openh264): BSD-2-Clause
@@ -190,3 +190,9 @@ But some dependent libraries are under GPL license. If you use these dependent l
  - [yox](https://github.com/yoxjs/yox): MIT
 
 Copyright (C) 2024-present, Gaoxing Zhao
+
+### Sponsor Author
+
+If this project is helpful to you, scan the QR code to sponsor the author:
+
+[Paypal.me](https://paypal.me/zhaohappylibmedia)

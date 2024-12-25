@@ -44,7 +44,7 @@ export default defineConfig({
   themeConfig: {
     name: 'libmedia',
     logo: false,
-    hideHomeNav: false,
+    hideHomeNav: true,
     socialLinks: {
       github: 'https://github.com/zhaohappy/libmedia',
     },
@@ -71,6 +71,6 @@ export default defineConfig({
   legacy: { nodeModulesTransform: false },
   locales: [
     { id: 'zh-CN', name: '简体中文' },
-    // { id: 'en-US', name: 'English' },
+    { id: 'en-US', name: 'English' },
   ],
 });

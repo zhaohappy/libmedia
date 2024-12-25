@@ -1,5 +1,5 @@
 ---
-title: libmedia Doc Site
+title: libmedia 文档网站
 hero:
   title: libmedia
   description: 'libmedia 是一个用于在 Web 平台上处理多媒体内容（如音频、视频、字幕）的工具库。'

@@ -1,39 +1,77 @@
 ---
 nav:
-  title: 指南
+  title: Guide
   order: 2
 group:
-  title: 开始
-order: 6
+  title: Start
+order: 5
 ---
 
-# 编解码器
+# Feature List
 
-## 介绍
+## Preface
 
-编解码器被编译成了单独的 wasm 模块。编解码器的 wasm 模块有三个版本分别为 baseline、atomic、simd。baseline 版本是基准版本，指令集对应到 WebAssembly 的 MVP 版本，但需要支持 Mutable Globals，兼容性最高，性能最低；atomic 增加了 atomic 原子操作指令集和 Bulk Memory 指令集；simd 增加了 simd 向量加速指令集，性能最高。目前的 simd 版本是靠编译器自动优化的，不同的编解码器实现效果不同（目前没有看见过有针对 wasm 指令集做加速优化的开源项目，如果想要更高的加速效果需要自己优化，当前只有 h264 的 simd 解码器是手动优化的，也是性能最好的一个 wasm 模块）。
+In addition to providing low-level APIs, libmedia also provides player tools and transcoding tools. For details, see [Player](./player.md) and [Transcoding](./transcode.md).
 
+libmedia can complete the following functions:
 
-## 兼容性
+- Media file demux
+- Audio and video mux into files
+- Audio and video decoding
+- Audio and video encoding
+- Audio and video rendering
+- Audio resampling
+- Audio speed change and pitch change
+- Video scaling
+- Video color format conversion
+- Media mux format conversion
+- Media data encoding and transcoding
+- Media file playback
+- Media file cropping
 
-| 环境            | baseline     | atomic     | simd         | webcodecs            |
-| -----------    | -----------  |----------- | -----------  | -----------          |
-| Chrome         | 74+          | 75+        | 91+          |94+                   |
-| Firefox        | 61+          | 79+        | 89+          |130+                  |
-| Safari         | 13.4+        | 15+        | 16.4+        |16.4+(只支持视频)       |
-| Wasmtime       | 0.20+        | 15+        | 15+          |N/A                   |
-| Wasmer         | 0.7+         | N/A        | N/A          |N/A                   |
-| Node.js        | 12.0+        | 16.4+      | 16.4+        |N/A                   |
-| Deno           | 0.1+         | 1.9+       | 1.9+         |N/A                   |
-| wasm2c         | 1.0.1+       | N/A        | N/A          |N/A                   |
+## Formats
 
+| Format   | Input   | Output    |
+| ---------| --------|-----------|
+| flv      | ✅       | ✅        |
+| mov      | ✅       | ✅        |
+| mp4      | ✅       | ✅        |
+| mpegts   | ✅       | ✅        |
+| mpegps   | ✅       | ❌        |
+| matroska | ✅       | ✅        |
+| webm     | ✅       | ✅        |
+| h264 raw | ✅       | ❌        |
+| hevc raw | ✅       | ❌        |
+| vvc  raw | ✅       | ❌        |
+| mp3      | ✅       | ✅        |
+| ogg      | ✅       | ✅        |
+| ivf      | ✅       | ✅        |
+| aac      | ✅       | ❌        |
+| flac     | ✅       | ❌        |
+| wav      | ✅       | ❌        |
+| webvtt   | ✅       | ❌        |
+| srt      | ✅       | ❌        |
+| ass      | ✅       | ❌        |
+| ssa      | ✅       | ❌        |
+| ttml     | ✅       | ❌        |
 
-## 解码器
+## Protocols
+
+| Protocol | Input   | Output    |
+| ---------| --------|-----------|
+| hls      | ✅       | ❌        |
+| dash     | ✅       | ❌        |
+| rtmp     | ✅       | ❌        |
+| rtsp     | ✅       | ❌        |
+
+In the browser environment we cannot be used TCP and UDP, RTMP and RTSP need to use Websocket or WebTransport services to proxy TCP or UDP services.
+
+## Decode Codecs
 
 | codec       | baseline   | atomic     | simd        |  webcodecs(Chrome) |
 | ----------- | -----------|----------- | ----------- | -----------        |
 | h264        | ✅         | ✅          | ✅          | ✅                 |
-| hevc        | ✅         | ✅          | ✅          | ✅ (只支持硬解)      |
+| hevc        | ✅         | ✅          | ✅          | ✅ (Hardware Only) |
 | vvc         | ✅         | ✅          | ✅          | ❌                 |
 | av1         | ✅         | ✅          | ✅          | ✅                 |
 | vp8         | ✅         | ✅          | ✅          | ✅                 |
@@ -54,7 +92,7 @@ order: 6
 | G.711 A-law | ✅         | ✅          | ✅          | ❌                 |
 | G.711 μ-law | ✅         | ✅          | ✅          | ❌                 |
 
-## 编码器
+## Encode Codecs
 
 | codec       | baseline   | atomic     | simd        |  webcodecs(Chrome) |
 | ----------- | -----------|----------- | ----------- | -----------        |
@@ -77,18 +115,3 @@ order: 6
 | dts         | ✅         | ✅          | ✅          | ❌                 |
 | G.711 A-law | ✅         | ✅          | ✅          | ❌                 |
 | G.711 μ-law | ✅         | ✅          | ✅          | ❌                 |
-
-## 使用
-
-解码器在项目的 ```dist/decode``` 目录下，编码器在项目的 ```dist/encode``` 目录下。wasm 模块并没有发布 npm 包，建议自己将 wasm 文件托管到自己的 cdn 上。你也可以使用一些公共 cdn 来访问 github 上托管的文件。下面以 ```cdn.jsdelivr.net``` 举例。
-
-```javascript
-let codecName = 'h264'
-let wasmVersion = '-simd'
-let libmediaVersion = '0.1.2'
-
-const decoderH264 = `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@${libmediaVersion}/dist/decode/${codecName}${wasmVersion}.wasm`
-
-```
-
-**libmediaVersion 使用你依赖的 libmedia 下的包的版本，不建议使用 latest 版本，可能会因为后续升级 wasm 文件导致原来的项目出现问题**
