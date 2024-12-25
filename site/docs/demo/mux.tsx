@@ -105,6 +105,7 @@ export default function () {
     <div>
       <button
         onClick={() => {
+          setValue('Loading...')
           muxFile((val) => {
             setValue((prev) => {
               return prev + val

@@ -123,6 +123,7 @@ export default function () {
     <div>
       <button
         onClick={() => {
+          setValue('Loading...')
           decode((val) => {
             setValue((prev) => {
               return prev + val

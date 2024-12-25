@@ -150,7 +150,7 @@ export default function () {
     <div>
       <button
         onClick={() => {
-          setValue('加载中...')
+          setValue('Loading...')
           encode((val) => {
             setValue((prev) => {
               return prev + val

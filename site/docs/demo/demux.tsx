@@ -80,6 +80,7 @@ export default function () {
     <div>
       <button
         onClick={() => {
+          setValue('Loading...')
           demuxFile((val) => {
             setValue((prev) => {
               return prev + val

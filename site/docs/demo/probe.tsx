@@ -62,7 +62,7 @@ export default function () {
     <div>
       <button
         onClick={async () => {
-          setValue('加载中...')
+          setValue('Loading...')
           probe(setValue)
         }}
       >
