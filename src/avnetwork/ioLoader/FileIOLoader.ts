@@ -33,7 +33,8 @@ export interface FileInfo {
   file: File
 }
 
-const hasArrayBuffer = is.func(Blob.prototype.arrayBuffer)
+// chrome 目前使用 arrayBuffer 读文件数据会造成内存泄漏，先关闭
+const hasArrayBuffer = is.func(Blob.prototype.arrayBuffer) && false
 
 export default class FileIOLoader extends IOLoader {
 
