@@ -267,7 +267,7 @@ export default class WebVideoDecoder {
   }
 
   public getQueueLength() {
-    return this.decoder.decodeQueueSize
+    return this.decoder?.decodeQueueSize ?? 0
   }
 
   public setSkipFrameDiscard(discard: number) {

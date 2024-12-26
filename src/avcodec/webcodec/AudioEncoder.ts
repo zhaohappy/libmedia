@@ -190,7 +190,7 @@ export default class WebAudioEncoder {
   }
 
   public getQueueLength() {
-    return this.encoder.encodeQueueSize
+    return this.encoder?.encodeQueueSize ?? 0
   }
 
   static async isSupported(parameters: pointer<AVCodecParameters>) {
