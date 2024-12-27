@@ -153,7 +153,7 @@ async function render() {
   unmake(pcmBuffer)
   stop = true
 
-  console.log('decode end')
+  console.log('render end')
 }
 
 export default function () {

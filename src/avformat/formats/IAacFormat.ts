@@ -25,7 +25,7 @@
 
 import AVStream from 'avutil/AVStream'
 import { AVIFormatContext } from '../AVFormatContext'
-import AVPacket from 'avutil/struct/avpacket'
+import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
@@ -262,6 +262,7 @@ export default class IAacFormat extends IFormat {
       avpacket.timeBase.den = stream.timeBase.den
       avpacket.timeBase.num = stream.timeBase.num
       avpacket.dts = avpacket.pts = this.currentPts
+      avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
       this.currentPts += avpacket.duration
 
       return 0
