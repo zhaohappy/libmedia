@@ -314,7 +314,7 @@ export default class IRtspFormat extends IFormat {
     const context = stream.privData as RtspStreamContext
 
     if (context.lastRtcpNtpTime !== NOPTS_VALUE_BIGINT && formatContext.streams.length > 1) {
-      const deltaTimestamp = static_cast<int64>(timestamp - context.lastRtcpTimestamp)
+      const deltaTimestamp = static_cast<int64>((timestamp - context.lastRtcpTimestamp) as int32)
       const addend = (context.lastRtcpNtpTime - context.firstRtcpNtpTime) * static_cast<int64>(stream.timeBase.den)
         / (static_cast<int64>(stream.timeBase.num) << 32n)
 
