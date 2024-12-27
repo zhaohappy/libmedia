@@ -28,7 +28,7 @@ import AVFrame from '../struct/avframe'
 import { sampleFormatIsPlanar } from '../util/sample'
 import { mapUint8Array } from 'cheap/std/memory'
 
-function mapFormat(format: AudioDataFormat) {
+function mapFormat(format: AudioSampleFormat) {
   switch (format) {
     case 'u8':
       return AVSampleFormat.AV_SAMPLE_FMT_U8

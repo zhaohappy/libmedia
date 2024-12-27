@@ -65,7 +65,7 @@ export default class Mp32RawFilter extends AVBSFilter {
     let i = 0
 
     let lastDts = this.lastDts || (avpacket.dts || avpacket.pts)
-    let buffer = mapUint8Array(avpacket.data, avpacket.size).slice()
+    let buffer: Uint8Array<ArrayBufferLike> = mapUint8Array(avpacket.data, avpacket.size).slice()
     let firstGot = false
     let hasCache = !!this.cache
 
