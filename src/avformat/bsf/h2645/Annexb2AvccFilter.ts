@@ -64,7 +64,7 @@ export default class Annexb2AvccFilter extends AVBSFilter {
 
     const buffer = mapSafeUint8Array(avpacket.data, avpacket.size)
 
-    if (avpacket.bitFormat === h264.BitFormat.AVCC || !isAnnexb(buffer)) {
+    if (avpacket.bitFormat === h264.BitFormat.AVCC) {
       refAVPacket(this.cache, avpacket)
     }
     else {
