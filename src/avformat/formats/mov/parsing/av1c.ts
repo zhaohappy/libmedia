@@ -52,10 +52,8 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   else {
     stream.codecpar.extradata = data
     stream.codecpar.extradataSize = atom.size
-    stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = extradata.slice()
+    av1.parseAVCodecParameters(stream, extradata)
   }
-
-  av1.parseAVCodecParameters(stream, stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA])
 
   const remainingLength = atom.size - Number(ioReader.getPos() - now)
   if (remainingLength > 0) {

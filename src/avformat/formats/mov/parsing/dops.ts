@@ -68,7 +68,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   else {
     stream.codecpar.extradata = data
     stream.codecpar.extradataSize = extradata.length
-    opus.parseAVCodecParameters(stream, extradata.slice())
+    opus.parseAVCodecParameters(stream, extradata)
   }
 
   const remainingLength = atom.size - Number(ioReader.getPos() - now)
