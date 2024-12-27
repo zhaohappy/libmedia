@@ -459,7 +459,30 @@ async function packetNeedRead(formatContext: AVIFormatContext, avpacket: pointer
           }
         }
         else {
-          formatContext.interval.packetBuffer.push(tmpPacket)
+          let i = formatContext.interval.packetBuffer.length - 1
+          let needPush = true
+          for (; i >= 0; i--) {
+            if (formatContext.interval.packetBuffer[i].streamIndex === tmpPacket.streamIndex) {
+              if (!formatContext.interval.packetBuffer[i].size
+                && !tmpPacket.size
+              ) {
+                destroyAVPacket(formatContext.interval.packetBuffer[i])
+                formatContext.interval.packetBuffer.splice(i, 1, tmpPacket)
+                needPush = false
+              }
+              else if (!formatContext.interval.packetBuffer[i].size
+                && tmpPacket.size
+              ) {
+                copyAVPacketData(formatContext.interval.packetBuffer[i], tmpPacket)
+                destroyAVPacket(tmpPacket)
+                needPush = false
+              }
+              break
+            }
+          }
+          if (needPush) {
+            formatContext.interval.packetBuffer.push(tmpPacket)
+          }
         }
       }
     }
