@@ -207,7 +207,7 @@ export function mpeg4(rtps: RTPPacket[], context: Mpeg4PayloadContext) {
   const buffers: Uint8Array[] = []
   const bitReader: BitReader = new BitReader(RTP_MAX_PACKET_LENGTH)
   for (let i = 0; i < rtps.length; i++) {
-    const payload =  rtps[i].payload
+    const payload = rtps[i].payload
     if (context.latm) {
       let offset = 0
       while (offset < payload.length) {
@@ -255,14 +255,21 @@ export function mpeg4(rtps: RTPPacket[], context: Mpeg4PayloadContext) {
         sizes.push(bitReader.readU(context.sizeLength))
         indexes.push(bitReader.readU(context.indexLength))
       }
-      if (sizes.length === 1 && sizes[0] + auHeadersLengthBytes + 2 > payload.length) {
-        buffers.push(payload.subarray(2 + auHeadersLengthBytes))
+      if (sizes.length === 1 && sizes[0] + auHeadersLengthBytes + 2 >= payload.length) {
+        // 一个 rtp 一个 au
+        if (sizes[0] + auHeadersLengthBytes + 2 === payload.length) {
+          frames.push(payload.subarray(2 + auHeadersLengthBytes))
+        }
+        else {
+          // push 下一帧的数据
+          buffers.push(payload.subarray(2 + auHeadersLengthBytes))
+        }
       }
       else if (sizes.length > 1) {
         let offset = auHeadersLengthBytes + 2
         for (let j = 0; j < sizes.length; j++) {
           if (!indexes[j] && buffers.length) {
-            frames.push(concatTypeArray(Uint8Array, buffers))
+            frames.push(buffers.length === 1 ? buffers[0] : concatTypeArray(Uint8Array, buffers))
             buffers.length = 0
           }
           frames.push(payload.subarray(offset, offset + sizes[j]))
