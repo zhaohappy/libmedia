@@ -66,6 +66,7 @@ import * as isomTags from './isom/tags'
 import concatTypeArray from 'common/function/concatTypeArray'
 import * as text from 'common/util/text'
 import isDef from 'common/function/isDef'
+import * as naluUtil from 'avutil/util/nalu'
 
 export default class IMatroskaFormat extends IFormat {
 
@@ -269,15 +270,39 @@ export default class IMatroskaFormat extends IFormat {
 
           if (stream.codecpar.extradata) {
             switch (stream.codecpar.codecId) {
-              case AVCodecID.AV_CODEC_ID_H264:
-                h264.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+              case AVCodecID.AV_CODEC_ID_H264: {
+                const extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+                h264.parseAVCodecParameters(stream, extradata)
+                if (naluUtil.isAnnexb(extradata)) {
+                  stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+                }
+                else {
+                  stream.codecpar.bitFormat = h264.BitFormat.AVCC
+                }
                 break
-              case AVCodecID.AV_CODEC_ID_HEVC:
-                hevc.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+              }
+              case AVCodecID.AV_CODEC_ID_HEVC: {
+                const extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+                hevc.parseAVCodecParameters(stream, extradata)
+                if (naluUtil.isAnnexb(extradata)) {
+                  stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+                }
+                else {
+                  stream.codecpar.bitFormat = h264.BitFormat.AVCC
+                }
                 break
-              case AVCodecID.AV_CODEC_ID_VVC:
-                vvc.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+              }
+              case AVCodecID.AV_CODEC_ID_VVC: {
+                const extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+                vvc.parseAVCodecParameters(stream, extradata)
+                if (naluUtil.isAnnexb(extradata)) {
+                  stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+                }
+                else {
+                  stream.codecpar.bitFormat = h264.BitFormat.AVCC
+                }
                 break
+              }
               case AVCodecID.AV_CODEC_ID_AV1:
                 av1.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
                 break
@@ -699,7 +724,7 @@ export default class IMatroskaFormat extends IFormat {
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
         ) {
-          avpacket.bitFormat = h264.BitFormat.AVCC
+          avpacket.bitFormat = stream.codecpar.bitFormat
         }
         if (isKey) {
           avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY

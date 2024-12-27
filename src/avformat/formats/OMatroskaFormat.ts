@@ -26,11 +26,11 @@
 import { AVOFormatContext } from '../AVFormatContext'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
+import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import { AVFormat } from 'avutil/avformat'
 import * as logger from 'common/util/logger'
 import { avRescaleQ } from 'avutil/util/rational'
-import { getAVPacketData } from 'avutil/util/avpacket'
+import { createAVPacket, destroyAVPacket, getAVPacketData, getAVPacketSideData } from 'avutil/util/avpacket'
 import * as object from 'common/util/object'
 import { OMatroskaContext, TrackEntry } from './matroska/type'
 import IOWriterSync from 'common/io/IOWriterSync'
@@ -44,6 +44,11 @@ import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 import * as string from 'common/util/string'
 import AVStream from 'avutil/AVStream'
 import concatTypeArray from 'common/function/concatTypeArray'
+import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
+import * as naluUtil from 'avutil/util/nalu'
+import * as h264 from 'avutil/codecs/h264'
+import * as hevc from 'avutil/codecs/hevc'
+import * as vvc from 'avutil/codecs/vvc'
 
 export interface OMatroskaFormatOptions {
   isLive?: boolean
@@ -86,6 +91,9 @@ export default class OMatroskaFormat extends OFormat {
   private random: Uint8Array
   private randomView: DataView
 
+  private avpacket: pointer<AVPacket>
+  private annexb2AvccFilter: Annexb2AvccFilter
+
   constructor(options: OMatroskaFormatOptions = {}) {
     super()
     this.options = object.extend({}, defaultOMatroskaFormatOptions, options)
@@ -96,6 +104,7 @@ export default class OMatroskaFormat extends OFormat {
 
   public init(formatContext: AVOFormatContext): number {
     formatContext.ioWriter.setEndian(false)
+    this.avpacket = createAVPacket()
 
     const context: OMatroskaContext = {
       isLive: this.options.isLive,
@@ -256,6 +265,27 @@ export default class OMatroskaFormat extends OFormat {
               track.video.color.chromaSitingVert = (result.x >>> 7) + 1
               track.video.color.chromaSitingHorz = (result.y >>> 7) + 1
             }
+            if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+              || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+              || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+            ) {
+              if (track.codecPrivate) {
+                if (naluUtil.isAnnexb(track.codecPrivate.data)) {
+                  if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
+                    track.codecPrivate.data = h264.annexbExtradata2AvccExtradata(track.codecPrivate.data)
+                  }
+                  else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+                    track.codecPrivate.data = hevc.annexbExtradata2AvccExtradata(track.codecPrivate.data)
+                  }
+                  else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
+                    track.codecPrivate.data = vvc.annexbExtradata2AvccExtradata(track.codecPrivate.data)
+                  }
+                  track.codecPrivate.size = static_cast<int64>(track.codecPrivate.data.length)
+                }
+              }
+              this.annexb2AvccFilter = new Annexb2AvccFilter()
+              this.annexb2AvccFilter.init(addressof(stream.codecpar), addressof(stream.timeBase))
+            }
             break
           }
           case AVMediaType.AVMEDIA_TYPE_SUBTITLE: {
@@ -271,6 +301,17 @@ export default class OMatroskaFormat extends OFormat {
     })
 
     return 0
+  }
+
+  public async destroy(formatContext: AVOFormatContext) {
+    if (this.annexb2AvccFilter) {
+      this.annexb2AvccFilter.destroy()
+      this.annexb2AvccFilter = null
+    }
+    if (this.avpacket) {
+      destroyAVPacket(this.avpacket)
+      this.avpacket = nullptr
+    }
   }
 
   public writeHeader(formatContext: AVOFormatContext): number {
@@ -297,6 +338,15 @@ export default class OMatroskaFormat extends OFormat {
   private writeBlock(stream: AVStream, avpacket: pointer<AVPacket>) {
     const track = stream.privData as TrackEntry
     omatroska.writeEbmlId(this.context.eleWriter, EBMLId.SIMPLE_BLOCK)
+    if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+    ) && avpacket.bitFormat !== h264.BitFormat.AVCC
+    ) {
+      this.annexb2AvccFilter.sendAVPacket(avpacket)
+      this.annexb2AvccFilter.receiveAVPacket(this.avpacket)
+      avpacket = this.avpacket
+    }
     omatroska.writeEbmlLength(this.context.eleWriter, omatroska.ebmlLengthSize(track.number) + 2 + 1 + avpacket.size)
     omatroska.writeEbmlNum(this.context.eleWriter, track.number, omatroska.ebmlLengthSize(track.number))
     const pts = avRescaleQ(avpacket.pts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
@@ -308,6 +358,16 @@ export default class OMatroskaFormat extends OFormat {
     }
     else {
       this.context.eleWriter.writeUint8(0x00)
+    }
+    if (!track.codecPrivate) {
+      let element = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+      if (element) {
+        track.codecPrivate = {
+          data: mapUint8Array(element.data, element.size).slice(),
+          pos: -1n,
+          size: static_cast<int64>(element.size)
+        }
+      }
     }
     this.context.eleWriter.writeBuffer(getAVPacketData(avpacket))
   }

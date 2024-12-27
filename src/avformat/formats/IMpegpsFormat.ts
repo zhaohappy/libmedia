@@ -344,6 +344,12 @@ export default class IMpegpsFormat extends IFormat {
       stream.codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
       stream.codecpar.chLayout.u.mask = static_cast<uint64>(AV_CH_LAYOUT.AV_CH_LAYOUT_MONO)
     }
+    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+    ) {
+      stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+    }
 
     if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3) {
       context.filter = new Mp32RawFilter()
@@ -467,16 +473,7 @@ export default class IMpegpsFormat extends IFormat {
         stream.codecpar.extradataSize = element.size
         deleteAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
 
-        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
-          h264.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
-        }
-        else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
-          hevc.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
-        }
-        else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
-          vvc.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
-        }
-        else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
           aac.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
         }
         else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_OPUS) {
@@ -568,9 +565,13 @@ export default class IMpegpsFormat extends IFormat {
       }
       else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
         if (!stream.codecpar.extradata) {
-          h264.parseAnnexbExtraData(avpacket, true)
-          this.checkExtradata(avpacket, stream)
-          stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+          const extradata = h264.generateAnnexbExtradata(getAVPacketData(avpacket))
+          if (extradata) {
+            stream.codecpar.extradata = avMalloc(extradata.length)
+            memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
+            stream.codecpar.extradataSize = extradata.length
+            h264.parseAVCodecParameters(stream, extradata)
+          }
         }
         if (h264.isIDR(avpacket)) {
           avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
@@ -578,9 +579,13 @@ export default class IMpegpsFormat extends IFormat {
       }
       else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
         if (!stream.codecpar.extradata) {
-          hevc.parseAnnexbExtraData(avpacket, true)
-          this.checkExtradata(avpacket, stream)
-          stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+          const extradata = hevc.generateAnnexbExtradata(getAVPacketData(avpacket))
+          if (extradata) {
+            stream.codecpar.extradata = avMalloc(extradata.length)
+            memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
+            stream.codecpar.extradataSize = extradata.length
+            hevc.parseAVCodecParameters(stream, extradata)
+          }
         }
         if (hevc.isIDR(avpacket)) {
           avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
@@ -588,9 +593,13 @@ export default class IMpegpsFormat extends IFormat {
       }
       else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
         if (!stream.codecpar.extradata) {
-          vvc.parseAnnexbExtraData(avpacket, true)
-          this.checkExtradata(avpacket, stream)
-          stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+          const extradata = vvc.generateAnnexbExtradata(getAVPacketData(avpacket))
+          if (extradata) {
+            stream.codecpar.extradata = avMalloc(extradata.length)
+            memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
+            stream.codecpar.extradataSize = extradata.length
+            vvc.parseAVCodecParameters(stream, extradata)
+          }
         }
         if (vvc.isIDR(avpacket)) {
           avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY

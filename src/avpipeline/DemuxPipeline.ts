@@ -993,13 +993,13 @@ export default class DemuxPipeline extends Pipeline {
         let hasNewSps = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA) !== nullptr
         if (!hasNewSps && avpacket.bitFormat === h264.BitFormat.ANNEXB) {
           if (codecId === AVCodecID.AV_CODEC_ID_H264) {
-            hasNewSps = !!h264.annexbExtradata2AvccExtradata(getAVPacketData(avpacket))
+            hasNewSps = !!h264.generateAnnexbExtradata(getAVPacketData(avpacket))
           }
           else if (codecId === AVCodecID.AV_CODEC_ID_HEVC) {
-            hasNewSps = !!hevc.annexbExtradata2AvccExtradata(getAVPacketData(avpacket))
+            hasNewSps = !!hevc.generateAnnexbExtradata(getAVPacketData(avpacket))
           }
           else if (codecId === AVCodecID.AV_CODEC_ID_VVC) {
-            hasNewSps = !!vvc.annexbExtradata2AvccExtradata(getAVPacketData(avpacket))
+            hasNewSps = !!vvc.generateAnnexbExtradata(getAVPacketData(avpacket))
           }
         }
         return hasNewSps

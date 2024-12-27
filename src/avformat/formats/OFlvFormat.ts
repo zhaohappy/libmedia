@@ -44,7 +44,7 @@ import concatTypeArray from 'common/function/concatTypeArray'
 import { AVFormat } from 'avutil/avformat'
 import { mapUint8Array } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'
-import { getAVPacketSideData } from 'avutil/util/avpacket'
+import { createAVPacket, destroyAVPacket, getAVPacketSideData } from 'avutil/util/avpacket'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
 import { BitFormat } from 'avutil/codecs/h264'
@@ -69,6 +69,8 @@ export default class OFlvFormat extends OFormat {
   public options: FlvFormatOptions
 
   private annexb2AvccFilter: Annexb2AvccFilter
+
+  private avpacket: pointer<AVPacket>
 
   constructor(options: FlvFormatOptions = {}) {
     super()
@@ -140,9 +142,16 @@ export default class OFlvFormat extends OFormat {
       videoStream.timeBase.den = 1000
       videoStream.timeBase.num = 1
 
-      this.annexb2AvccFilter = new Annexb2AvccFilter()
-      this.annexb2AvccFilter.init(addressof(videoStream.codecpar), addressof(videoStream.timeBase))
+      if (videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+      ) {
+        this.annexb2AvccFilter = new Annexb2AvccFilter()
+        this.annexb2AvccFilter.init(addressof(videoStream.codecpar), addressof(videoStream.timeBase))
+      }
     }
+
+    this.avpacket = createAVPacket()
 
     return 0
   }
@@ -151,6 +160,10 @@ export default class OFlvFormat extends OFormat {
     if (this.annexb2AvccFilter) {
       this.annexb2AvccFilter.destroy()
       this.annexb2AvccFilter = null
+    }
+    if (this.avpacket) {
+      destroyAVPacket(this.avpacket)
+      this.avpacket = nullptr
     }
   }
 
@@ -279,12 +292,13 @@ export default class OFlvFormat extends OFormat {
     else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
 
       if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
-        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
       ) && avpacket.bitFormat !== BitFormat.AVCC
       ) {
         this.annexb2AvccFilter.sendAVPacket(avpacket)
-        this.annexb2AvccFilter.receiveAVPacket(avpacket)
+        this.annexb2AvccFilter.receiveAVPacket(this.avpacket)
+        avpacket = this.avpacket
       }
 
       const keyframePos = formatContext.ioWriter.getPos()

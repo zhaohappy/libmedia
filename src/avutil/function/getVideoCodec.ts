@@ -30,11 +30,13 @@ import * as av1 from '../codecs/av1'
 import * as vp8 from '../codecs/vp8'
 import * as vp9 from '../codecs/vp9'
 import * as vvc from '../codecs/vvc'
+import * as hevc from '../codecs/hevc'
 import * as string from 'common/util/string'
 import { NOPTS_VALUE } from '../constant'
 import AVCodecParameters from '../struct/avcodecparameters'
 import { mapUint8Array } from 'cheap/std/memory'
 import * as base32 from 'common/util/base32'
+import * as naluUtil from '../util/nalu'
 
 export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extradata?: Uint8Array) {
   const codecId = codecpar.codecId
@@ -86,12 +88,17 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
     let generalTierFlag = 0
     let constraintFlags = 0
 
-    if (extradata?.length > 13) {
-      generalProfileSpace = (extradata[1] >>> 6) & 0x03
-      generalTierFlag = (extradata[1] >>> 5) & 0x01
-      generalProfileCompatibilityFlags = extradata[2] | (extradata[3] << 8) | (extradata[4] << 16) | (extradata[5] << 24)
-      // constraintFlags 目前只能使用 4 个 bit
-      constraintFlags = extradata[6] & 0xf0
+    if (extradata) {
+      if (naluUtil.isAnnexb(extradata)) {
+        extradata = hevc.annexbExtradata2AvccExtradata(extradata)
+      }
+      if (extradata.length > 13) {
+        generalProfileSpace = (extradata[1] >>> 6) & 0x03
+        generalTierFlag = (extradata[1] >>> 5) & 0x01
+        generalProfileCompatibilityFlags = extradata[2] | (extradata[3] << 8) | (extradata[4] << 16) | (extradata[5] << 24)
+        // constraintFlags 目前只能使用 4 个 bit
+        constraintFlags = extradata[6] & 0xf0
+      }
     }
 
     const generalProfileSpaceMap = {
@@ -133,6 +140,11 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
     )
 
     if (extradata) {
+
+      if (naluUtil.isAnnexb(extradata)) {
+        extradata = vvc.annexbExtradata2AvccExtradata(extradata)
+      }
+
       const params = vvc.parseExtraData(extradata)
       if (params.generalConstraintInfo.length) {
         let index = params.generalConstraintInfo.length - 1

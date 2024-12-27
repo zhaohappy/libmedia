@@ -105,10 +105,51 @@ export function splitNaluByLength<T extends Uint8ArrayInterface>(buffer: T, nalu
   return list
 }
 
-export function joinNaluByStartCode(nalus: Uint8ArrayInterface[], output?: Uint8Array, slice: boolean = false): Uint8Array {
+/**
+ * 
+ * @param nalus 
+ * @param mode 模式
+ *  - 0 全使用 0x00000001 分割
+ *  - 1 全使用 0x000001 分割
+ *  - 2 第一个使用 0x00000001，后面的使用 0x000001 分割
+ * @returns 
+ */
+export function joinNaluByStartCodeLength(nalus: Uint8ArrayInterface[], mode: int32) {
+  return nalus.reduce((prev, nalu, index) => {
+    if (mode === 0) {
+      return prev + 4 + nalu.length
+    }
+    else if ( mode === 1) {
+      return prev + 3 + nalu.length
+    }
+    else {
+      return prev + (index ? 3 : 4) + nalu.length
+    }
+  }, 0)
+}
+
+/**
+ * 
+ * @param nalus 
+ * @param mode 模式
+ *  - 0 全使用 0x00000001 分割
+ *  - 1 全使用 0x000001 分割
+ *  - 2 第一个使用 0x00000001，后面的使用 0x000001 分割
+ * @param output 
+ * @returns 
+ */
+export function joinNaluByStartCode(nalus: Uint8ArrayInterface[], mode: int32, output?: Uint8Array): Uint8Array {
   if (!output) {
     let length = nalus.reduce((prev, nalu, index) => {
-      return prev + ((index || slice) ? 3 : 4) + nalu.length
+      if (mode === 0) {
+        return prev + 4 + nalu.length
+      }
+      else if ( mode === 1) {
+        return prev + 3 + nalu.length
+      }
+      else {
+        return prev + (index ? 3 : 4) + nalu.length
+      }
     }, 0)
     output = new Uint8Array(length)
   }
@@ -118,7 +159,7 @@ export function joinNaluByStartCode(nalus: Uint8ArrayInterface[], output?: Uint8
   array.each(nalus, (nalu, index) => {
     bufferWriter.writeUint8(0x00)
     bufferWriter.writeUint8(0x00)
-    if (!index && !slice) {
+    if (mode === 0 || (mode === 2 && !index)) {
       bufferWriter.writeUint8(0x00)
     }
     bufferWriter.writeUint8(0x01)
@@ -128,7 +169,7 @@ export function joinNaluByStartCode(nalus: Uint8ArrayInterface[], output?: Uint8
   return output
 }
 
-export function joinNaluByLength(nalus: Uint8Array[], naluLengthSizeMinusOne: int32, output?: Uint8Array): Uint8Array {
+export function joinNaluByLength(nalus: Uint8ArrayInterface[], naluLengthSizeMinusOne: int32, output?: Uint8Array): Uint8Array {
   if (!output) {
     const length = nalus.reduce((prev, nalu) => {
       return prev + naluLengthSizeMinusOne + 1 + nalu.length

@@ -24,20 +24,20 @@
  */
 
 import * as array from 'common/util/array'
-import AVPacket, { AVPacketFlags } from '../struct/avpacket'
+import AVPacket from '../struct/avpacket'
 import BufferWriter from 'common/io/BufferWriter'
 import BufferReader from 'common/io/BufferReader'
 import { AVPacketSideDataType } from '../codec'
 import BitReader from 'common/io/BitReader'
 import AVStream from '../AVStream'
 import * as logger from 'common/util/logger'
-import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { addAVPacketSideData, getAVPacketData } from '../util/avpacket'
-import { naluUnescape, splitNaluByStartCode, isAnnexb } from '../util/nalu'
+import { mapUint8Array } from 'cheap/std/memory'
+import * as naluUtil from '../util/nalu'
 import { avMalloc } from '../util/mem'
 import * as expgolomb from '../util/expgolomb'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import * as intread from '../util/intread'
+import * as intwrite from '../util/intwrite'
 
 export const NALULengthSizeMinusOne = 3
 
@@ -170,9 +170,9 @@ export function extradata2SpsPps(extradata: Uint8ArrayInterface) {
   const bufferReader = new BufferReader(extradata)
   bufferReader.skip(5)
 
-  const spss = []
-  const ppss = []
-  const spsExts = []
+  const spss: Uint8ArrayInterface[] = []
+  const ppss: Uint8ArrayInterface[] = []
+  const spsExts: Uint8ArrayInterface[] = []
 
   const spsLength = bufferReader.readUint8() & 0x1f
   for (let i = 0; i < spsLength; i++) {
@@ -204,6 +204,14 @@ export function extradata2SpsPps(extradata: Uint8ArrayInterface) {
   }
 }
 
+/**
+ * annexb sps pps 转 avcc 格式的 extradata
+ * 
+ * @param spss 
+ * @param ppss 
+ * @param spsExts 
+ * @returns 
+ */
 export function spsPps2Extradata(spss: Uint8ArrayInterface[], ppss: Uint8ArrayInterface[], spsExts: Uint8ArrayInterface[] = []) {
 
   if (spss.length > 32) {
@@ -276,12 +284,18 @@ export function spsPps2Extradata(spss: Uint8ArrayInterface[], ppss: Uint8ArrayIn
   return buffer
 }
 
+/**
+ * annexb extradata 转 avcc extradata
+ * 
+ * @param data 
+ * @returns 
+ */
 export function annexbExtradata2AvccExtradata(data: Uint8ArrayInterface) {
-  let nalus = splitNaluByStartCode(data)
+  let nalus = naluUtil.splitNaluByStartCode(data)
   if (nalus.length > 1) {
-    const spss = []
-    const ppss = []
-    const spsExts = []
+    const spss: Uint8ArrayInterface[] = []
+    const ppss: Uint8ArrayInterface[] = []
+    const spsExts: Uint8ArrayInterface[] = []
 
     nalus.forEach((nalu) => {
       const type = nalu[0] & 0x1f
@@ -302,20 +316,19 @@ export function annexbExtradata2AvccExtradata(data: Uint8ArrayInterface) {
 }
 
 /**
+ * 从 annexb 码流里面生成 annexb extradata
  * 
- * annexb 格式的 NALU 转 avcc NALU 
+ * 提取出 sps 和 pps
  * 
+ * @param data 
+ * @returns 
  */
-export function annexb2Avcc(data: Uint8ArrayInterface) {
-
-  let nalus = splitNaluByStartCode(data)
-  let extradata: Uint8Array
-  let key: boolean = false
-
+export function generateAnnexbExtradata(data: Uint8ArrayInterface) {
+  let nalus = naluUtil.splitNaluByStartCode(data)
   if (nalus.length > 1) {
-    const spss = []
-    const ppss = []
-    const spsExts = []
+    const spss: Uint8ArrayInterface[] = []
+    const ppss: Uint8ArrayInterface[] = []
+    const spsExts: Uint8ArrayInterface[] = []
 
     nalus.forEach((nalu) => {
       const type = nalu[0] & 0x1f
@@ -329,18 +342,65 @@ export function annexb2Avcc(data: Uint8ArrayInterface) {
         spsExts.push(nalu)
       }
     })
+    if (spss.length && ppss.length) {
+      const nalus = [spss[0], ppss[0]]
+      if (spsExts.length) {
+        nalus.push(spsExts[0])
+      }
+      return naluUtil.joinNaluByStartCode(nalus, 0)
+    }
+  }
+}
+
+/**
+ * 
+ * annexb 格式的 NALU 转 avcc NALU 
+ * 
+ * 需要保证 data 是 safe 的
+ */
+export function annexb2Avcc(data: Uint8ArrayInterface) {
+
+  let nalus = naluUtil.splitNaluByStartCode(data)
+  let extradata: Uint8Array
+  let key: boolean = false
+
+  if (nalus.length) {
+    const spss: Uint8ArrayInterface[] = []
+    const ppss: Uint8ArrayInterface[] = []
+    const spsExts: Uint8ArrayInterface[] = []
+
+    nalus.forEach((nalu) => {
+      const type = nalu[0] & 0x1f
+      if (type === H264NaluType.kSliceSPS) {
+        spss.push(nalu)
+      }
+      else if (type === H264NaluType.kSlicePPS) {
+        ppss.push(nalu)
+      }
+      else if (type === H264NaluType.kSPSExt) {
+        spsExts.push(nalu)
+      }
+      else if (type === H264NaluType.kSliceIDR) {
+        key = true
+      }
+    })
 
     if (spss.length && ppss.length) {
       extradata = spsPps2Extradata(spss, ppss, spsExts)
+      nalus = nalus.filter((nalu) => {
+        const type = nalu[0] & 0x1f
+        return type !== H264NaluType.kSliceAUD
+          && type !== H264NaluType.kSlicePPS
+          && type !== H264NaluType.kSliceSPS
+          && type !== H264NaluType.kSPSExt
+      })
     }
-
-    nalus = nalus.filter((nalu) => {
-      const type = nalu[0] & 0x1f
-      return type !== H264NaluType.kSliceAUD
-        && type !== H264NaluType.kSlicePPS
-        && type !== H264NaluType.kSliceSPS
-        && type !== H264NaluType.kSPSExt
-    })
+    else {
+      nalus = nalus.filter((nalu) => {
+        const type = nalu[0] & 0x1f
+        return type !== H264NaluType.kSliceAUD
+      })
+    }
   }
 
   const length = nalus.reduce((prev, nalu) => {
@@ -350,28 +410,7 @@ export function annexb2Avcc(data: Uint8ArrayInterface) {
   const bufferPointer = avMalloc(length)
   const buffer = mapUint8Array(bufferPointer, length)
 
-  const bufferWriter = new BufferWriter(buffer)
-
-  array.each(nalus, (nalu) => {
-    if (NALULengthSizeMinusOne === 3) {
-      bufferWriter.writeUint32(nalu.length)
-    }
-    else if (NALULengthSizeMinusOne === 2) {
-      bufferWriter.writeUint24(nalu.length)
-    }
-    else if (NALULengthSizeMinusOne === 1) {
-      bufferWriter.writeUint16(nalu.length)
-    }
-    else {
-      bufferWriter.writeUint8(nalu.length)
-    }
-    bufferWriter.writeBuffer(nalu.subarray(0))
-
-    const type = nalu[0] & 0x1f
-    if (type === H264NaluType.kSliceIDR) {
-      key = true
-    }
-  })
+  naluUtil.joinNaluByLength(nalus, NALULengthSizeMinusOne, buffer)
 
   return {
     bufferPointer,
@@ -382,14 +421,81 @@ export function annexb2Avcc(data: Uint8ArrayInterface) {
 }
 
 /**
+ * 需要保证 data 是 safe 的
+ * 
+ * @param spss 
+ * @param ppss 
+ * @param spsExts 
+ * @param seis 
+ * @param others  
+ * @returns 
+ */
+export function nalus2Annexb(
+  spss: Uint8ArrayInterface[],
+  ppss: Uint8ArrayInterface[],
+  spsExts: Uint8ArrayInterface[],
+  seis: Uint8ArrayInterface[],
+  others: Uint8ArrayInterface[]
+) {
+  const lengths = [
+    naluUtil.joinNaluByStartCodeLength(seis, 0),
+    naluUtil.joinNaluByStartCodeLength(spss, 0),
+    naluUtil.joinNaluByStartCodeLength(ppss, 0),
+    naluUtil.joinNaluByStartCodeLength(spsExts, 0),
+    naluUtil.joinNaluByStartCodeLength(others, 2)
+  ]
+
+  let length = lengths.reduce((prev, length) => {
+    return prev + length
+  }, 0)
+
+  const bufferPointer = avMalloc(length + 6)
+
+  let offset = bufferPointer
+  // AUD
+  intwrite.w8(offset++, 0)
+  intwrite.w8(offset++, 0)
+  intwrite.w8(offset++, 0)
+  intwrite.w8(offset++, 1)
+  intwrite.w8(offset++, H264NaluType.kSliceAUD)
+  intwrite.w8(offset++, 0xf0)
+
+  if (seis.length) {
+    naluUtil.joinNaluByStartCode(seis, 0, mapUint8Array(offset, lengths[0]))
+    offset += lengths[0]
+  }
+  if (spss.length) {
+    naluUtil.joinNaluByStartCode(spss, 0, mapUint8Array(offset, lengths[1]))
+    offset += lengths[1]
+  }
+  if (ppss.length) {
+    naluUtil.joinNaluByStartCode(ppss, 0, mapUint8Array(offset, lengths[2]))
+    offset += lengths[2]
+  }
+  if (spsExts.length) {
+    naluUtil.joinNaluByStartCode(spsExts, 0, mapUint8Array(offset, lengths[3]))
+    offset += lengths[3]
+  }
+  if (others.length) {
+    naluUtil.joinNaluByStartCode(others, 2, mapUint8Array(offset, lengths[4]))
+  }
+
+  return {
+    bufferPointer,
+    length: length + 6,
+  }
+}
+
+/**
  * avcc 格式的 NALU 转 annexb NALU 
  * 
+ * 需要保证 data 是 safe 的
  */
 export function avcc2Annexb(data: Uint8ArrayInterface, extradata?: Uint8ArrayInterface) {
   const naluLengthSizeMinusOne = extradata ? (extradata[4] & 0x03) : NALULengthSizeMinusOne
-  let spss = []
-  let ppss = []
-  let spsExts = []
+  let spss: Uint8ArrayInterface[] = []
+  let ppss: Uint8ArrayInterface[] = []
+  let spsExts: Uint8ArrayInterface[] = []
   let key = false
 
   if (extradata) {
@@ -397,221 +503,28 @@ export function avcc2Annexb(data: Uint8ArrayInterface, extradata?: Uint8ArrayInt
     spss = result.spss
     ppss = result.ppss
     spsExts = result.spsExts
-
     key = true
   }
 
-  const nalus = []
-  const seis = []
-
-  const bufferReader = new BufferReader(data)
-  while (bufferReader.remainingSize() > 0) {
-    let length = 0
-    if (naluLengthSizeMinusOne === 3) {
-      length = bufferReader.readUint32()
-    }
-    else if (naluLengthSizeMinusOne === 2) {
-      length = bufferReader.readUint24()
-    }
-    else if (naluLengthSizeMinusOne === 1) {
-      length = bufferReader.readUint16()
-    }
-    else {
-      length = bufferReader.readUint8()
-    }
-
-    const nalu = data.subarray(static_cast<int32>(bufferReader.getPos()), static_cast<int32>(bufferReader.getPos()) + length)
-    bufferReader.skip(length)
-
+  const others: Uint8ArrayInterface[] = []
+  const seis: Uint8ArrayInterface[] = []
+  const nalus = naluUtil.splitNaluByLength(data, naluLengthSizeMinusOne)
+  nalus.forEach((nalu) => {
     const naluType = nalu[0] & 0x1f
-
     if (naluType === H264NaluType.kSliceSEI) {
       seis.push(nalu)
     }
     else if (naluType !== H264NaluType.kSliceAUD) {
-      nalus.push(nalu)
+      others.push(nalu)
     }
-  }
-
-  let length = spss.reduce((prev, sps) => {
-    return prev + 4 + sps.length
-  }, 0)
-  length = ppss.reduce((prev, pps) => {
-    return prev + 4 + pps.length
-  }, length)
-  length = spsExts.reduce((prev, ext) => {
-    return prev + 4 + ext.length
-  }, length)
-  length = seis.reduce((prev, sei) => {
-    return prev + 4 + sei.length
-  }, length)
-  length = nalus.reduce((prev, nalu, index) => {
-    return prev + (index ? 3 : 4) + nalu.length
-  }, length)
-
-  const bufferPointer = avMalloc(length + 6)
-  const bufferWriter = new BufferWriter(mapUint8Array(bufferPointer, length + 6))
-
-  // AUD
-  bufferWriter.writeUint8(0x00)
-  bufferWriter.writeUint8(0x00)
-  bufferWriter.writeUint8(0x00)
-  bufferWriter.writeUint8(0x01)
-  bufferWriter.writeUint8(0x09)
-  bufferWriter.writeUint8(0xf0)
-
-  array.each(seis, (sei) => {
-    bufferWriter.writeUint8(0x00)
-    bufferWriter.writeUint8(0x00)
-    bufferWriter.writeUint8(0x00)
-    bufferWriter.writeUint8(0x01)
-    bufferWriter.writeBuffer(sei)
-  })
-
-  array.each(spss, (sps) => {
-    bufferWriter.writeUint8(0x00)
-    bufferWriter.writeUint8(0x00)
-    bufferWriter.writeUint8(0x00)
-    bufferWriter.writeUint8(0x01)
-    bufferWriter.writeBuffer(sps)
-  })
-
-  array.each(ppss, (pps) => {
-    bufferWriter.writeUint8(0x00)
-    bufferWriter.writeUint8(0x00)
-    bufferWriter.writeUint8(0x00)
-    bufferWriter.writeUint8(0x01)
-    bufferWriter.writeBuffer(pps)
-  })
-  array.each(spsExts, (ext) => {
-    bufferWriter.writeUint8(0x00)
-    bufferWriter.writeUint8(0x00)
-    bufferWriter.writeUint8(0x00)
-    bufferWriter.writeUint8(0x01)
-    bufferWriter.writeBuffer(ext)
-  })
-
-  array.each(nalus, (nalu, index) => {
-    bufferWriter.writeUint8(0x00)
-    bufferWriter.writeUint8(0x00)
-    if (!index) {
-      bufferWriter.writeUint8(0x00)
-    }
-    bufferWriter.writeUint8(0x01)
-    bufferWriter.writeBuffer(nalu)
-
-    const type = nalu[0] & 0x1f
-    if (type === H264NaluType.kSliceIDR) {
+    if (naluType === H264NaluType.kSliceIDR) {
       key = true
     }
   })
+
   return {
-    bufferPointer,
-    length: length + 6,
+    ...nalus2Annexb(spss, ppss, spsExts, seis, others),
     key
-  }
-}
-
-export function parseAvccExtraData(avpacket: pointer<AVPacket>, stream: AVStream) {
-
-  if (!(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)) {
-    return
-  }
-
-  const data = getAVPacketData(avpacket)
-
-  if (isAnnexb(data)) {
-    return
-  }
-
-  const naluLengthSizeMinusOne = stream.metadata.naluLengthSizeMinusOne ?? NALULengthSizeMinusOne
-
-  let spss = []
-  let ppss = []
-  let spsExts = []
-  let others = []
-
-  const bufferReader = new BufferReader(data)
-  while (bufferReader.remainingSize() > 0) {
-    let length = 0
-    if (naluLengthSizeMinusOne === 3) {
-      length = bufferReader.readUint32()
-    }
-    else if (naluLengthSizeMinusOne === 2) {
-      length = bufferReader.readUint24()
-    }
-    else if (naluLengthSizeMinusOne === 1) {
-      length = bufferReader.readUint16()
-    }
-    else {
-      length = bufferReader.readUint8()
-    }
-
-    const nalu = data.subarray(static_cast<int32>(bufferReader.getPos()), static_cast<int32>(bufferReader.getPos()) + length)
-    bufferReader.skip(length)
-
-    const naluType = nalu[0] & 0x1f
-
-    if (naluType === H264NaluType.kSliceSPS) {
-      spss.push(nalu)
-    }
-    else if (naluType === H264NaluType.kSlicePPS) {
-      ppss.push(nalu)
-    }
-    else if (naluType === H264NaluType.kSPSExt) {
-      spsExts.push(nalu)
-    }
-    else {
-      others.push(nalu)
-    }
-  }
-
-  if (spss.length || ppss.length) {
-    const extradata = spsPps2Extradata(spss, ppss, spsExts)
-    const extradataPointer = avMalloc(extradata.length)
-    memcpyFromUint8Array(extradataPointer, extradata.length, extradata)
-    addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, extradataPointer, extradata.length)
-  }
-}
-
-export function parseAnnexbExtraData(avpacket: pointer<AVPacket>, force: boolean = false) {
-  if (!(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) && !force) {
-    return
-  }
-
-  const data = getAVPacketData(avpacket)
-
-  if (!isAnnexb(data)) {
-    return
-  }
-
-  let nalus = splitNaluByStartCode(data)
-
-  if (nalus.length > 1) {
-    const spss = []
-    const ppss = []
-    const spsExts = []
-
-    nalus.forEach((nalu) => {
-      const type = nalu[0] & 0x1f
-      if (type === H264NaluType.kSliceSPS) {
-        spss.push(nalu)
-      }
-      else if (type === H264NaluType.kSlicePPS) {
-        ppss.push(nalu)
-      }
-      else if (type === H264NaluType.kSPSExt) {
-        spsExts.push(nalu)
-      }
-    })
-
-    if (spss.length && ppss.length) {
-      const extradata = spsPps2Extradata(spss, ppss, spsExts)
-      const extradataPointer = avMalloc(extradata.length)
-      memcpyFromUint8Array(extradataPointer, extradata.length, extradata)
-      addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, extradataPointer, extradata.length)
-      avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
-    }
   }
 }
 
@@ -619,26 +532,36 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
   if (!extradata && stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
     extradata = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
   }
-  if (extradata && extradata.length >= 6) {
 
+  let sps: Uint8ArrayInterface
+  if (extradata && naluUtil.isAnnexb(extradata)) {
+    array.each(naluUtil.splitNaluByStartCode(extradata), (nalu) => {
+      const type = nalu[0] & 0x1f
+      if (type === H264NaluType.kSliceSPS) {
+        sps = nalu
+        return false
+      }
+    })
+  }
+  else if (extradata && extradata.length >= 6) {
     stream.metadata.naluLengthSizeMinusOne = (extradata[4] & 0x03)
-
     const { spss } = extradata2SpsPps(extradata)
-
     if (spss.length) {
-      const { profile, level, width, height } = parseSPS(spss[0])
-
-      stream.codecpar.profile = profile
-      stream.codecpar.level = level
-      stream.codecpar.width = width
-      stream.codecpar.height = height
+      sps = spss[0]
     }
+  }
+  if (sps) {
+    const { profile, level, width, height } = parseSPS(sps)
+    stream.codecpar.profile = profile
+    stream.codecpar.level = level
+    stream.codecpar.width = width
+    stream.codecpar.height = height
   }
 }
 
 export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
   if (avpacket.bitFormat === BitFormat.ANNEXB) {
-    let nalus = splitNaluByStartCode(mapUint8Array(avpacket.data, avpacket.size))
+    let nalus = naluUtil.splitNaluByStartCode(mapUint8Array(avpacket.data, avpacket.size))
     return nalus.some((nalu) => {
       const type = nalu[0] & 0x1f
       return type === H264NaluType.kSliceIDR
@@ -700,7 +623,7 @@ export function parseSPS(sps: Uint8ArrayInterface): H264SPS {
     offset = 4
   }
 
-  const buffer = naluUnescape(sps.subarray(offset))
+  const buffer = naluUtil.naluUnescape(sps.subarray(offset))
   const bitReader = new BitReader(buffer.length)
   bitReader.appendBuffer(buffer)
 

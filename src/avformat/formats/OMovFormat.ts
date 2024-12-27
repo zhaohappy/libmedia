@@ -49,7 +49,7 @@ import arrayItemSame from '../function/arrayItemSame'
 import AVStream, { AVDisposition } from 'avutil/AVStream'
 import { AVFormat } from 'avutil/avformat'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
-import { getAVPacketData } from 'avutil/util/avpacket'
+import { createAVPacket, destroyAVPacket, getAVPacketData } from 'avutil/util/avpacket'
 import { Rational } from 'avutil/struct/rational'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
 import { BitFormat } from 'avutil/codecs/h264'
@@ -75,6 +75,7 @@ export default class OMovFormat extends OFormat {
   public options: MovFormatOptions
 
   private annexb2AvccFilter: Annexb2AvccFilter
+  private avpacket: pointer<AVPacket>
 
   constructor(options: MovFormatOptions = {}) {
     super()
@@ -88,10 +89,17 @@ export default class OMovFormat extends OFormat {
     formatContext.ioWriter.setEndian(true)
     const videoStream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
 
-    if (videoStream) {
+    if (videoStream
+      && (videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+      )
+    ) {
       this.annexb2AvccFilter = new Annexb2AvccFilter()
       this.annexb2AvccFilter.init(addressof(videoStream.codecpar), addressof(videoStream.timeBase))
     }
+    this.avpacket = createAVPacket()
+
     return 0
   }
 
@@ -99,6 +107,10 @@ export default class OMovFormat extends OFormat {
     if (this.annexb2AvccFilter) {
       this.annexb2AvccFilter.destroy()
       this.annexb2AvccFilter = null
+    }
+    if (this.avpacket) {
+      destroyAVPacket(this.avpacket)
+      this.avpacket = nullptr
     }
   }
 
@@ -562,10 +574,11 @@ export default class OMovFormat extends OFormat {
       && avpacket.bitFormat === BitFormat.ANNEXB
     ) {
       this.annexb2AvccFilter.sendAVPacket(avpacket)
-      this.annexb2AvccFilter.receiveAVPacket(avpacket)
+      this.annexb2AvccFilter.receiveAVPacket(this.avpacket)
+      avpacket = this.avpacket
     }
     else if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3
-        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_EAC3
+      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_EAC3
     )
       && (!this.context.ac3Info || !this.context.ac3Info.done)
     ) {

@@ -30,6 +30,10 @@ import { AVCPacketType, FlvTag } from '../flv'
 import IOWriter from 'common/io/IOWriterSync'
 import { FlvCodecHeaderLength } from '../flv'
 import { AVCodecID } from 'avutil/codec'
+import * as naluUtil from 'avutil/util/nalu'
+import * as h264 from 'avutil/codecs/h264'
+import * as hevc from 'avutil/codecs/hevc'
+import * as vvc from 'avutil/codecs/vvc'
 
 export function writeDataHeader(ioWriter: IOWriter, type: AVCPacketType, ct: number) {
   ioWriter.writeUint8(type)
@@ -47,22 +51,39 @@ export function writeDataHeader(ioWriter: IOWriter, type: AVCPacketType, ct: num
 export function writeExtradata(
   ioWriter: IOWriter,
   stream: Stream,
-  metadata: Uint8Array,
+  extradata: Uint8Array,
   flags: AVPacketFlags
 ) {
 
   const now = ioWriter.getPos()
 
+  if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+    || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+    || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+  ) {
+    if (naluUtil.isAnnexb(extradata)) {
+      if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
+        extradata = h264.annexbExtradata2AvccExtradata(extradata)
+      }
+      else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+        extradata = hevc.annexbExtradata2AvccExtradata(extradata)
+      }
+      else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
+        extradata = vvc.annexbExtradata2AvccExtradata(extradata)
+      }
+    }
+  }
+
   flv.writeTagHeader(
     ioWriter,
     FlvTag.VIDEO,
-    metadata.length + 1 + FlvCodecHeaderLength[AVCodecID.AV_CODEC_ID_H264],
+    extradata.length + 1 + FlvCodecHeaderLength[AVCodecID.AV_CODEC_ID_H264],
     0n
   )
   flv.writeVideoTagDataHeader(ioWriter, stream, flags)
 
   writeDataHeader(ioWriter, AVCPacketType.AVC_SEQUENCE_HEADER, 0)
-  ioWriter.writeBuffer(metadata)
+  ioWriter.writeBuffer(extradata)
 
   const length = Number(ioWriter.getPos() - now)
   ioWriter.writeUint32(length)

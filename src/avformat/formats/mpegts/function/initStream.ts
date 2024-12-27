@@ -30,12 +30,12 @@ import { AVCodecID, AVMediaType } from 'avutil/codec'
 import AVBSFilter from '../../../bsf/AVBSFilter'
 import AACADTS2RawFilter from '../../../bsf/aac/ADTS2RawFilter'
 import AACLATM2RawFilter from '../../../bsf/aac/LATM2RawFilter'
-import Annexb2AvccFilter from '../../../bsf/h2645/Annexb2AvccFilter'
 import OpusMpegts2RawFilter from '../../../bsf/opus/Mpegts2RawFilter'
 import Stream from 'avutil/AVStream'
 import * as opus from 'avutil/codecs/opus'
 import { avMalloc } from 'avutil/util/mem'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
+import { BitFormat } from 'avutil/codecs/h264'
 
 export default function initStream(pid: PID, stream: Stream, mpegtsContext: MpegtsContext) {
 
@@ -129,17 +129,18 @@ export default function initStream(pid: PID, stream: Stream, mpegtsContext: Mpeg
     case mpegts.TSStreamType.AUDIO_AAC_LATM:
       filter = new AACLATM2RawFilter()
       break
-    case mpegts.TSStreamType.VIDEO_H264:
-      // filter = new Annexb2AvccFilter()
-      break
-    case mpegts.TSStreamType.VIDEO_HEVC:
-      // filter = new Annexb2AvccFilter()
-      break
     case mpegts.TSStreamType.PRIVATE_DATA:
       if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_OPUS) {
         filter = new OpusMpegts2RawFilter()
       }
       break
+  }
+
+  if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+    || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+    || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+  ) {
+    stream.codecpar.bitFormat = BitFormat.ANNEXB
   }
 
   if (filter) {

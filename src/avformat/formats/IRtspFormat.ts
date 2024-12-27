@@ -536,7 +536,7 @@ export default class IRtspFormat extends IFormat {
                   continue
                 }
 
-                const frame = naluUtil.joinNaluByStartCode(nalus)
+                const frame = naluUtil.joinNaluByStartCode(nalus, 2)
 
                 const p = handleVideoFrame(frame, isKey, pts)
                 p.bitFormat = stream.codecpar.bitFormat

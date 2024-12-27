@@ -105,7 +105,7 @@ export function writeSEI(avpacket: pointer<AVPacket>, stream: AVStream, payloadT
   const data = avMalloc(length)
 
   avpacket.bitFormat === h264.BitFormat.ANNEXB
-    ? naluUtil.joinNaluByStartCode(nalus, mapUint8Array(data, length))
+    ? naluUtil.joinNaluByStartCode(nalus, 2, mapUint8Array(data, length))
     : naluUtil.joinNaluByLength(nalus, stream.metadata.naluLengthSizeMinusOne || 3, mapUint8Array(data, length))
 
   addAVPacketData(avpacket, data, length)

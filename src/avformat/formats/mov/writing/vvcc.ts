@@ -29,10 +29,37 @@ import IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
 import { AVPacketSideDataType } from 'avutil/codec'
 import { mapUint8Array } from 'cheap/std/memory'
+import * as naluUtil from 'avutil/util/nalu'
+import * as vvc from 'avutil/codecs/vvc'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
+
+
+  let extradata: Uint8Array
+
+  if (movContext.fragment) {
+    if (stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
+      extradata = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
+      delete stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
+    }
+    else {
+      if (stream.codecpar.extradata) {
+        extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+      }
+    }
+  }
+  else {
+    if (stream.codecpar.extradata) {
+      extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+    }
+  }
+
+  if (extradata && naluUtil.isAnnexb(extradata)) {
+    extradata = vvc.annexbExtradata2AvccExtradata(extradata)
+  }
+
   // size
-  ioWriter.writeUint32(8 + (stream.codecpar.extradataSize ?? 0))
+  ioWriter.writeUint32(12 + (extradata ? extradata.length : 0))
   // tag
   ioWriter.writeString(BoxType.VVCC)
 
@@ -41,20 +68,7 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
   // flags
   ioWriter.writeUint24(0)
 
-  if (movContext.fragment) {
-    if (stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
-      ioWriter.writeBuffer(stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA])
-      delete stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
-    }
-    else {
-      if (stream.codecpar.extradata) {
-        ioWriter.writeBuffer(mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
-      }
-    }
-  }
-  else {
-    if (stream.codecpar.extradata) {
-      ioWriter.writeBuffer(mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
-    }
+  if (extradata) {
+    ioWriter.writeBuffer(extradata)
   }
 }

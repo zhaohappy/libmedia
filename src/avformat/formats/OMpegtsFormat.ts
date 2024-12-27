@@ -42,11 +42,16 @@ import OpusRaw2MpegtsFilter from '../bsf/opus/Raw2MpegtsFilter'
 import Avcc2AnnexbFilter from '../bsf/h2645/Avcc2AnnexbFilter'
 import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { AVFormat } from 'avutil/avformat'
-import { memcpy } from 'cheap/std/memory'
+import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avRescaleQ } from 'avutil/util/rational'
-import { addAVPacketSideData, getAVPacketData, hasAVPacketSideData } from 'avutil/util/avpacket'
+import { addAVPacketData, addAVPacketSideData, createAVPacket, destroyAVPacket, getAVPacketData, hasAVPacketSideData } from 'avutil/util/avpacket'
 import { avMalloc } from 'avutil/util/mem'
 import * as logger from 'common/util/logger'
+import * as naluUtil from 'avutil/util/nalu'
+import * as h264 from 'avutil/codecs/h264'
+import * as hevc from 'avutil/codecs/hevc'
+import * as vvc from 'avutil/codecs/vvc'
+import { Uint8ArrayInterface } from 'common/io/interface'
 
 export interface OMpegtsFormatOptions {
   pesMaxSize?: number
@@ -84,6 +89,8 @@ export default class OMpegtsFormat extends OFormat {
 
   private patPeriod: bigint
 
+  private avpacket: pointer<AVPacket>
+
   constructor(options: OMpegtsFormatOptions = {}) {
     super()
     this.context = createMpegtsContext()
@@ -98,6 +105,7 @@ export default class OMpegtsFormat extends OFormat {
 
   public init(context: AVOFormatContext): number {
     context.ioWriter.setEndian(true)
+    this.avpacket = createAVPacket()
     return 0
   }
 
@@ -110,6 +118,10 @@ export default class OMpegtsFormat extends OFormat {
         streamContext.filter = null
       }
     })
+    if (this.avpacket) {
+      destroyAVPacket(this.avpacket)
+      this.avpacket = nullptr
+    }
   }
 
   public writeHeader(context: AVOFormatContext): number {
@@ -160,6 +172,7 @@ export default class OMpegtsFormat extends OFormat {
           break
         case mpegts.TSStreamType.VIDEO_H264:
         case mpegts.TSStreamType.VIDEO_HEVC:
+        case mpegts.TSStreamType.VIDEO_VVC:
           filter = new Avcc2AnnexbFilter()
           break
         case mpegts.TSStreamType.PRIVATE_DATA:
@@ -245,23 +258,165 @@ export default class OMpegtsFormat extends OFormat {
 
     if (streamContext.filter) {
       if (!this.firstVideoCheck
-        && !hasAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
-        && stream.codecpar.extradata
-        && (
-          stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
-            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
-            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
+        && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
         )
+        && avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
       ) {
+        let hasNewSps = hasAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+        if (!hasNewSps && avpacket.bitFormat === h264.BitFormat.ANNEXB) {
+          if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
+            hasNewSps = !!h264.generateAnnexbExtradata(getAVPacketData(avpacket))
+          }
+          else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+            hasNewSps = !!hevc.generateAnnexbExtradata(getAVPacketData(avpacket))
+          }
+          else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
+            hasNewSps = !!vvc.generateAnnexbExtradata(getAVPacketData(avpacket))
+          }
+        }
         this.firstVideoCheck = true
-        const extradata = avMalloc(stream.codecpar.extradataSize)
-        memcpy(extradata, stream.codecpar.extradata, stream.codecpar.extradataSize)
-        addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, extradata, stream.codecpar.extradataSize)
+        if (!hasNewSps && stream.codecpar.extradata) {
+          if (avpacket.bitFormat === h264.BitFormat.ANNEXB) {
+            let extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize).slice()
+
+            if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+              && !h264.generateAnnexbExtradata(getAVPacketData(avpacket))
+            ) {
+              let spss: Uint8ArrayInterface[] = []
+              let ppss: Uint8ArrayInterface[] = []
+              let spsExts: Uint8ArrayInterface[] = []
+              const seis: Uint8ArrayInterface[] = []
+              const others: Uint8ArrayInterface[] = []
+              if (naluUtil.isAnnexb(extradata)) {
+                naluUtil.splitNaluByStartCode(extradata).forEach((nalu) => {
+                  const naluType = nalu[0] & 0x1f
+                  if (naluType === h264.H264NaluType.kSliceSPS) {
+                    spss.push(nalu)
+                  }
+                  else if (naluType === h264.H264NaluType.kSlicePPS) {
+                    ppss.push(nalu)
+                  }
+                  else if (naluType === h264.H264NaluType.kSPSExt) {
+                    spsExts.push(nalu)
+                  }
+                })
+              }
+              else {
+                const result = h264.extradata2SpsPps(extradata)
+                spss = result.spss
+                ppss = result.ppss
+                spsExts = result.spsExts
+              }
+              naluUtil.splitNaluByStartCode(getAVPacketData(avpacket, true)).forEach((nalu) => {
+                const naluType = nalu[0] & 0x1f
+                if (naluType === h264.H264NaluType.kSliceSEI) {
+                  seis.push(nalu)
+                }
+                else if (naluType !== h264.H264NaluType.kSliceAUD) {
+                  others.push(nalu)
+                }
+              })
+              const result = h264.nalus2Annexb(spss, ppss, spsExts, seis, others)
+              addAVPacketData(avpacket, result.bufferPointer, result.length)
+            }
+            else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+              && !hevc.generateAnnexbExtradata(getAVPacketData(avpacket))
+            ) {
+              let spss: Uint8ArrayInterface[] = []
+              let ppss: Uint8ArrayInterface[] = []
+              let vpss: Uint8ArrayInterface[] = []
+              const nalus: Uint8ArrayInterface[] = []
+              if (naluUtil.isAnnexb(extradata)) {
+                naluUtil.splitNaluByStartCode(extradata).forEach((nalu) => {
+                  const type = (nalu[0] >>> 1) & 0x3f
+                  if (type === hevc.HEVCNaluType.kSliceVPS) {
+                    vpss.push(nalu)
+                  }
+                  else if (type === hevc.HEVCNaluType.kSliceSPS) {
+                    spss.push(nalu)
+                  }
+                  else if (type === hevc.HEVCNaluType.kSlicePPS) {
+                    ppss.push(nalu)
+                  }
+                })
+              }
+              else {
+                const result = hevc.extradata2VpsSpsPps(extradata)
+                spss = result.spss
+                ppss = result.ppss
+                vpss = result.vpss
+              }
+              naluUtil.splitNaluByStartCode(getAVPacketData(avpacket, true)).forEach((nalu) => {
+                const type = (nalu[0] >>> 1) & 0x3f
+                if (type !== hevc.HEVCNaluType.kSliceAUD) {
+                  nalus.push(nalu)
+                }
+              })
+              const result = hevc.nalus2Annexb(vpss, spss, ppss, nalus)
+              addAVPacketData(avpacket, result.bufferPointer, result.length)
+            }
+            else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+              && !vvc.generateAnnexbExtradata(getAVPacketData(avpacket))
+            ) {
+              let spss: Uint8ArrayInterface[] = []
+              let ppss: Uint8ArrayInterface[] = []
+              let vpss: Uint8ArrayInterface[] = []
+              const nalus: Uint8ArrayInterface[] = []
+              if (naluUtil.isAnnexb(extradata)) {
+                naluUtil.splitNaluByStartCode(extradata).forEach((nalu) => {
+                  const type = (nalu[1] >>> 3) & 0x1f
+                  if (type === vvc.VVCNaluType.kVPS_NUT) {
+                    vpss.push(nalu)
+                  }
+                  else if (type === vvc.VVCNaluType.kSPS_NUT) {
+                    spss.push(nalu)
+                  }
+                  else if (type === vvc.VVCNaluType.kPPS_NUT) {
+                    ppss.push(nalu)
+                  }
+                })
+              }
+              else {
+                const result = vvc.extradata2VpsSpsPps(extradata)
+                spss = result.spss
+                ppss = result.ppss
+                vpss = result.vpss
+              }
+              naluUtil.splitNaluByStartCode(getAVPacketData(avpacket, true)).forEach((nalu) => {
+                const type = (nalu[1] >>> 3) & 0x1f
+                if (type !== vvc.VVCNaluType.kAUD_NUT) {
+                  nalus.push(nalu)
+                }
+              })
+              const result = vvc.nalus2Annexb(vpss, spss, ppss, nalus, !!(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY))
+              addAVPacketData(avpacket, result.bufferPointer, result.length)
+            }
+          }
+          else {
+            let extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize).slice()
+            if (naluUtil.isAnnexb(extradata)) {
+              if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
+                extradata = h264.annexbExtradata2AvccExtradata(extradata)
+              }
+              else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+                extradata = hevc.annexbExtradata2AvccExtradata(extradata)
+              }
+              else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
+                extradata = vvc.annexbExtradata2AvccExtradata(extradata)
+              }
+            }
+            const extradataPointer = avMalloc(extradata.length)
+            memcpyFromUint8Array(extradataPointer, extradata.length, extradata)
+            addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, extradataPointer, extradata.length)
+          }
+        }
       }
       streamContext.filter.sendAVPacket(avpacket)
-      streamContext.filter.receiveAVPacket(avpacket)
-      buffer = getAVPacketData(avpacket)
+      streamContext.filter.receiveAVPacket(this.avpacket)
+      buffer = getAVPacketData(this.avpacket)
+      avpacket = this.avpacket
     }
 
     if (!buffer.length) {

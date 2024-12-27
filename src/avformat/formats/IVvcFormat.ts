@@ -190,23 +190,19 @@ export default class IHevcFormat extends IFormat {
 
       const data = concatTypeArray(Uint8Array, slices)
 
-      const extradata = concatTypeArray(Uint8Array, slices.filter((n) => {
-        const type = (n[(n[2] === 1 ? 4 : 5)] >>> 3) & 0x1f
-        return type === vvc.VVCNaluType.kVPS_NUT
-          || type === vvc.VVCNaluType.kSPS_NUT
-          || type === vvc.VVCNaluType.kPPS_NUT
-      }))
+      const extradata = vvc.generateAnnexbExtradata(data)
 
       if (extradata) {
         stream.codecpar.extradata = avMalloc(extradata.length)
         memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
         stream.codecpar.extradataSize = extradata.length
 
+        vvc.parseAVCodecParameters(stream, extradata)
+
         const sps = slices.find((n) => {
           const type = (n[(n[2] === 1 ? 4 : 5)] >>> 3) & 0x1f
           return type === vvc.VVCNaluType.kSPS_NUT
         })
-        vvc.parseAVCodecParametersBySps(stream, sps)
         this.sps = vvc.parseSPS(sps)
 
         const avpacket = createAVPacket()

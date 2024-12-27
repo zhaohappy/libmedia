@@ -65,7 +65,7 @@ export function parseH264Fmtp(stream: AVStream, config: string) {
         const nalus: Uint8Array[] = value.split(',').map((context) => {
           return base64.base64ToUint8Array(context)
         })
-        const extradata = h264.annexbExtradata2AvccExtradata(naluUtil.joinNaluByStartCode(nalus))
+        const extradata = naluUtil.joinNaluByStartCode(nalus, 0)
         stream.codecpar.extradata = avMalloc(extradata.length)
         stream.codecpar.extradataSize = extradata.length
         memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
@@ -97,7 +97,7 @@ export function parseHevcFmtp(stream: AVStream, config: string) {
   })
 
   if (nalus.length) {
-    const extradata = hevc.annexbExtradata2AvccExtradata(naluUtil.joinNaluByStartCode(nalus))
+    const extradata = naluUtil.joinNaluByStartCode(nalus, 0)
     stream.codecpar.extradata = avMalloc(extradata.length)
     stream.codecpar.extradataSize = extradata.length
     memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)

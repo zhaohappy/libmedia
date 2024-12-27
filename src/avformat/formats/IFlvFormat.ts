@@ -159,16 +159,10 @@ export default class IFlvFormat extends IFormat {
     addAVPacketData(avpacket, data, len)
     await formatContext.ioReader.readBuffer(len, mapSafeUint8Array(data, len))
 
-    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
-      h264.parseAvccExtraData(avpacket, stream)
-      avpacket.bitFormat = BitFormat.AVCC
-    }
-    else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
-      hevc.parseAvccExtraData(avpacket, stream)
-      avpacket.bitFormat = BitFormat.AVCC
-    }
-    else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
-      vvc.parseAvccExtraData(avpacket, stream)
+    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+    ) {
       avpacket.bitFormat = BitFormat.AVCC
     }
   }
@@ -206,7 +200,6 @@ export default class IFlvFormat extends IFormat {
             const data = avMalloc(len)
             addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, data, len)
             await formatContext.ioReader.readBuffer(len, mapSafeUint8Array(data, len))
-            // aac.parseAVCodecParameters(stream, mapUint8Array(data, len))
           }
           else {
             await this.readAVPacketData(formatContext, stream, avpacket, size - 2)

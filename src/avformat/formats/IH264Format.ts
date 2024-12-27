@@ -42,6 +42,7 @@ import { AV_TIME_BASE } from 'avutil/constant'
 import BitReader from 'common/io/BitReader'
 import * as expgolomb from 'avutil/util/expgolomb'
 import NaluReader from './nalu/NaluReader'
+import * as naluUtil from 'avutil/util/nalu'
 
 export interface IH264FormatOptions {
   framerate?: Rational
@@ -195,7 +196,7 @@ export default class IH264Format extends IFormat {
 
       const data = concatTypeArray(Uint8Array, slices)
 
-      const extradata = h264.annexbExtradata2AvccExtradata(data)
+      let extradata = h264.generateAnnexbExtradata(data)
 
       if (extradata) {
         stream.codecpar.extradata = avMalloc(extradata.length)
@@ -204,8 +205,12 @@ export default class IH264Format extends IFormat {
 
         h264.parseAVCodecParameters(stream, extradata)
 
-        const { spss } = h264.extradata2SpsPps(extradata)
-        this.sps = h264.parseSPS(spss[0])
+        const sps = slices.find((n) => {
+          const type = n[(n[2] === 1 ? 3 : 4)] & 0x1f
+          return type === h264.H264NaluType.kSliceSPS
+        })
+
+        this.sps = h264.parseSPS(sps)
 
         const avpacket = createAVPacket()
 

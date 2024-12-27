@@ -187,7 +187,7 @@ export default class IHevcFormat extends IFormat {
 
       const data = concatTypeArray(Uint8Array, slices)
 
-      const extradata = hevc.annexbExtradata2AvccExtradata(data)
+      const extradata = hevc.generateAnnexbExtradata(data)
 
       if (extradata) {
         stream.codecpar.extradata = avMalloc(extradata.length)
@@ -196,9 +196,17 @@ export default class IHevcFormat extends IFormat {
 
         hevc.parseAVCodecParameters(stream, extradata)
 
-        const { spss, ppss } = hevc.extradata2VpsSpsPps(extradata)
-        this.sps = hevc.parseSPS(spss[0])
-        this.pps = hevc.parsePPS(ppss[0])
+        const sps = slices.find((n) => {
+          const type = (n[(n[2] === 1 ? 3 : 4)] >>> 1) & 0x3f
+          return type === hevc.HEVCNaluType.kSliceSPS
+        })
+        const pps = slices.find((n) => {
+          const type = (n[(n[2] === 1 ? 3 : 4)] >>> 1) & 0x3f
+          return type === hevc.HEVCNaluType.kSlicePPS
+        })
+
+        this.sps = hevc.parseSPS(sps)
+        this.pps = hevc.parsePPS(pps)
 
         const avpacket = createAVPacket()
 
