@@ -29,6 +29,7 @@ import { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import { avRescaleQ } from 'avutil/util/rational'
+import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 
 
 export function buildIndex(stream: Stream, movContext: MOVContext) {
@@ -95,6 +96,13 @@ export function buildIndex(stream: Stream, movContext: MOVContext) {
       if (emptyDuration) {
         emptyDuration = avRescaleQ(emptyDuration, { num: 1, den: movContext.timescale }, stream.timeBase)
       }
+      if (startTime > 0) {
+        // 第一帧小于 400ms 调整为从 0 开始
+        // 这种情况并不是裁剪，只是相对于 0 的少许偏移偏移
+        if (avRescaleQ(startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q) < 400n) {
+          startTime = 0n
+        }
+      }
       timeOffset = startTime - emptyDuration
       currentDts = -timeOffset
     }
@@ -118,7 +126,7 @@ export function buildIndex(stream: Stream, movContext: MOVContext) {
       }
 
       if (stssSampleNumbers && stssSampleNumbers.has(currentSample + 1)
-                || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
+        || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
       ) {
         sample.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
       }
