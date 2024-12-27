@@ -34,7 +34,8 @@ export interface FileInfo {
 }
 
 // chrome 目前使用 arrayBuffer 读文件数据会造成内存泄漏，先关闭
-const hasArrayBuffer = is.func(Blob.prototype.arrayBuffer) && false
+const hasArrayBuffer = is.func(Blob.prototype.arrayBuffer)
+const hasFileReaderSync = typeof FileReaderSync === 'function'
 
 export default class FileIOLoader extends IOLoader {
 
@@ -46,7 +47,7 @@ export default class FileIOLoader extends IOLoader {
 
   private endPos: number
 
-  private reader: FileReader
+  private reader: FileReader | FileReaderSync
   private readerResolve: (buffer: ArrayBuffer) => void
 
   public async open(info: FileInfo, range: Range) {
@@ -69,6 +70,13 @@ export default class FileIOLoader extends IOLoader {
     return 0
   }
 
+  private readBufferByReaderSync(len: number) {
+    if (!this.reader) {
+      this.reader = new FileReaderSync()
+    }
+    return this.reader.readAsArrayBuffer(this.info.file.slice(this.readPos, this.readPos + len)) as ArrayBuffer
+  }
+
   private async readBufferByReader(len: number) {
     if (!this.reader) {
       this.reader = new FileReader()
@@ -78,11 +86,9 @@ export default class FileIOLoader extends IOLoader {
         }
       }
     }
-    const blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice
-
     return new Promise<ArrayBuffer>((resolve) => {
       this.readerResolve = resolve
-      this.reader.readAsArrayBuffer(blobSlice.call(this.info.file, this.readPos, this.readPos + len))
+      this.reader.readAsArrayBuffer(this.info.file.slice(this.readPos, this.readPos + len))
     })
   }
 
@@ -93,7 +99,10 @@ export default class FileIOLoader extends IOLoader {
     }
     const len = Math.min(buffer.length, this.endPos - this.readPos)
 
-    if (hasArrayBuffer) {
+    if (hasFileReaderSync) {
+      buffer.set(new Uint8Array(this.readBufferByReaderSync(len)), 0)
+    }
+    else if (hasArrayBuffer) {
       buffer.set(new Uint8Array(await (this.info.file.slice(this.readPos, this.readPos + len).arrayBuffer())), 0)
     }
     else {
