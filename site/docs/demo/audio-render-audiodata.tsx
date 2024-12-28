@@ -3,7 +3,6 @@ import { createAVIFormatContext } from '@libmedia/avformat/AVFormatContext'
 import { createAVPacket, destroyAVPacket } from '@libmedia/avutil/util/avpacket'
 import { AVCodecID, AVMediaType } from '@libmedia/avutil/codec'
 import compileResource from '@libmedia/avutil/function/compileResource'
-import Sleep from '@libmedia/common/timer/Sleep'
 import Resampler from '@libmedia/audioresample/Resampler'
 import { AVSampleFormat } from '@libmedia/avutil/audiosamplefmt'
 import AVPCMBuffer from '@libmedia/avutil/struct/avpcmbuffer'
@@ -165,8 +164,6 @@ async function render() {
     if (stop) {
       break
     }
-
-    await new Sleep(0)
   }
   await decoder.flush()
   decoder.close()
