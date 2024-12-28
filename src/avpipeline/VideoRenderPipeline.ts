@@ -1044,6 +1044,7 @@ export default class VideoRenderPipeline extends Pipeline {
         task.stats.videoCurrentTime = pts
         task.stats.videoFrameRenderCount++
         task.currentPTS = pts
+        task.lastMasterPts = pts
         this.swap(task)
       }
     }
