@@ -390,7 +390,7 @@
                       return '../dist/encode/mp3lame-simd.wasm'
                     // HEVC
                     case 173:
-                      return '../dist/encode/kvazaar-simd.wasm'
+                      return '../dist/encode/x265-simd.wasm'
                     // // VVC
                     // case 196:
                     //   return '../dist/encode/vvc-simd.wasm'
@@ -465,7 +465,11 @@
               height: videoHeightComp.height,
               bitrate: videoBitrateComp.bitrate,
               framerate: videoFramerateComp.framerate,
-              enableHardware: enableWebcodecComponent.enableHardwareAcceleration
+              enableHardware: enableWebcodecComponent.enableHardwareAcceleration,
+              encoderOptions: {
+                preset: 'fast',
+                'cpu-used': 5
+              }
             }
           }
         }).then((taskId) => {
