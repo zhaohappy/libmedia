@@ -191,6 +191,12 @@ export interface TaskOptions {
       profile?: number
       level?: number
       delay?: number
+      /**
+       * 编码器的参数设置
+       */
+      encoderOptions?: {
+        preset?: string
+      }
     }
     audio?: {
       /**
@@ -1579,8 +1585,11 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9) {
         resourceExtraData.enableThreadPool = true
       }
-      else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1) {
-        wasmEncoderOptions['cpu-used'] = '5'
+
+      if (task.options?.output?.video?.encoderOptions) {
+        object.each(task.options.output.video.encoderOptions, (value, key) => {
+          wasmEncoderOptions[key] = value
+        })
       }
 
       // 注册一个视频编码任务
