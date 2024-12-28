@@ -67,6 +67,9 @@ async function render() {
     }
   )
 
+  const queue: AudioBufferSourceNode[] = []
+  let decodePause: () => void
+
   let startTime = 0
   function play(data: pointer<pointer<float>>, nbSamples: int32, sampleRate: int32) {
     const audioBuffer = audioContext.createBuffer(channels, nbSamples, sampleRate)
@@ -86,6 +89,14 @@ async function render() {
     const bufferSource = audioContext.createBufferSource()
     bufferSource.buffer = audioBuffer
     bufferSource.connect(audioContext.destination)
+    bufferSource.onended = () => {
+      queue.shift()
+      if (queue.length < 5 && decodePause) {
+        decodePause()
+        decodePause = null
+      }
+    }
+    queue.push(bufferSource)
 
     if (startTime === 0) {
       startTime = audioContext.currentTime
@@ -124,6 +135,12 @@ async function render() {
   stop = false
 
   while (1) {
+
+    if (queue.length > 5) {
+      await new Promise<void>((resolve) => {
+        decodePause = resolve
+      })
+    }
 
     let ret = await demux.readAVPacket(iformatContext, avpacket)
     if (ret !== 0) {
