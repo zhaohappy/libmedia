@@ -1492,12 +1492,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     const promises = []
 
     if (this.status === AVPlayerStatus.PAUSED) {
-
-      // 逐帧播放之后视频与音频相差可能过大，这里同步一下
-      if (this.selectedAudioStream && this.selectedVideoStream && (this.GlobalData.stats.videoCurrentTime - this.GlobalData.stats.audioCurrentTime > 400n)) {
-        await AVPlayer.AudioRenderThread.syncSeekTime(this.taskId, this.GlobalData.stats.videoCurrentTime)
-      }
-
       if (defined(ENABLE_MSE) && this.useMSE) {
         promises.push(AVPlayer.MSEThread.unpause(this.taskId))
         if (this.audio) {
@@ -1508,6 +1502,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
       }
       else {
+        // 逐帧播放之后视频与音频相差可能过大，这里同步一下
+        if (this.selectedAudioStream && this.selectedVideoStream && (this.GlobalData.stats.videoCurrentTime - this.GlobalData.stats.audioCurrentTime > 400n)) {
+          await AVPlayer.AudioRenderThread.syncSeekTime(this.taskId, this.GlobalData.stats.videoCurrentTime)
+        }
         if (this.audioSourceNode) {
           promises.push(this.audioSourceNode.request('unpause'))
           promises.push(AVPlayer.AudioRenderThread.unpause(this.taskId))
