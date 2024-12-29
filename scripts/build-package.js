@@ -502,7 +502,8 @@ function buildCheap() {
 
   addPackageExport(path.resolve(__dirname, '../src/cheap/'), {
     "./build/webpack/CheapPlugin": "./build/webpack/plugin/CheapPlugin.js",
-    "./build/transformer": "./build/transformer.js"
+    "./build/transformer": "./build/transformer.js",
+    "./build/wasm-opt": "./build/wasm-opt.js"
   })
 
   printTaskLog(0, 'cheap', 'SUCCESS', `built cheap completed`);
