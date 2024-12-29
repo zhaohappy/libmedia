@@ -2536,7 +2536,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * 
    */
   public setVolume(volume: number, force: boolean = false) {
-    this.volume = restrain(volume, 0, 3)
+    this.volume = this.useMSE ? restrain(volume, 0, 1) : restrain(volume, 0, 3)
     if (this.gainNode && AVPlayer.audioContext) {
       this.gainNode.gain.cancelScheduledValues(AVPlayer.audioContext.currentTime)
 
