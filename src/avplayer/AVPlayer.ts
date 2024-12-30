@@ -190,6 +190,8 @@ export interface AVPlayerOptions {
   /**
    * 配置 audioWorklet 的缓冲区大小，以 128 采样为单位
    * 某些机器上 audioWorklet 线程与其他线程通信延迟较大会导致音频播放卡顿，此时可以调大这个
+   * 
+   * 默认 桌面端 10 移动端 20
    */
   audioWorkletBufferLength?: int32
 }
