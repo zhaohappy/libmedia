@@ -27,6 +27,8 @@ export const Ext2Format: Record<string, AVFormat> = {
   'mp4': AVFormat.MOV,
   'mov': AVFormat.MOV,
   'ts': AVFormat.MPEGTS,
+  'mts': AVFormat.MPEGTS,
+  'm2ts': AVFormat.MPEGTS,
   'ivf': AVFormat.IVF,
   'opus': AVFormat.OGG,
   'oggs': AVFormat.OGG,
