@@ -170,6 +170,25 @@ export default {
 
 :::
 
+**```vite``` 和 ```rollup``` 可能还需要依赖 tslib 库，这个是 ```@rollup/plugin-typescript``` 插件的依赖，如果报错需要这个库请自己安装**
+
+:::code-group
+
+```bash [npm]
+npm install tslib
+```
+
+```bash [pnpm]
+pnpm add tslib
+```
+
+```bash [yarn]
+yarn add tslib
+```
+
+:::
+
+
 > vite 默认使用 esbuild 来编译 ts，但 esbuild 是不支持 transformer 的，所以需要使用 tsc 来编译使用到 libmedia API 的模块。你可以通过合理的模块设计将需要使用 transformer 编译的部分聚合，并配置这部分使用 tsc 编译，其他部分使用 esbuild 编译。(理论上应该可行，但我对 vite 的掌握并不是很深，不清楚如何配置，当然最简单的方式是全部都使用 tsc 来编译)
 
 ## webpack 插件

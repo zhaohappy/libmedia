@@ -170,6 +170,24 @@ export default {
 
 :::
 
+**`` `vite``` and` `` `rollup``` may depended on the ```tslib``` library which is dependency of ```@rollup/plugin-typescript```, you can install it when need**
+
+:::code-group
+
+```bash [npm]
+npm install tslib
+```
+
+```bash [pnpm]
+pnpm add tslib
+```
+
+```bash [yarn]
+yarn add tslib
+```
+
+:::
+
 > vite uses esbuild to compile ts by default, but esbuild does not support transformers, so you need to use tsc to compile modules that use libmedia API. You can aggregate the parts that need to be compiled with transformer through reasonable module design, and configure these parts to be compiled with tsc, and the other parts to be compiled with esbuild. (Theoretically, it should be feasible, but I don't have a deep understanding of vite and don't know how to configure it. Of course, the easiest way is to use tsc to compile everything)
 
 ## Webpack Plugin
