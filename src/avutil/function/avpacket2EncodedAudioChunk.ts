@@ -31,6 +31,6 @@ export default function avpacket2EncodedAudioChunk(avpacket: pointer<AVPacket>, 
   return new EncodedAudioChunk({
     type: key ? 'key' : 'delta',
     timestamp,
-    data: mapUint8Array(avpacket.data, avpacket.size)
+    data: mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
   })
 }

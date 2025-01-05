@@ -153,10 +153,10 @@ export function getVideoBuffer(frame: pointer<AVFrame>, algin: int32 = 0) {
     return ret
   }
 
-  let totalSize = 4 * planePadding
+  let totalSize: size = 4 * planePadding
 
   for (let i = 0; i < 4; i++) {
-    if (sizes[i] > INT32_MAX - totalSize) {
+    if (sizes[i] > reinterpret_cast<size>(INT32_MAX) - totalSize) {
       errorType.INVALID_ARGUMENT
     }
     totalSize += sizes[i]
@@ -210,8 +210,8 @@ export function getAudioBuffer(frame: pointer<AVFrame>, algin?: int32) {
   }
 
   if (planes > AV_NUM_DATA_POINTERS) {
-    frame.extendedData = reinterpret_cast<pointer<pointer<uint8>>>(avMalloc(planes * sizeof(accessof(frame.extendedData))))
-    frame.extendedBuf = reinterpret_cast<pointer<pointer<AVBufferRef>>>(avMalloc(planes * sizeof(accessof(frame.extendedBuf))))
+    frame.extendedData = reinterpret_cast<pointer<pointer<uint8>>>(avMalloc(planes * reinterpret_cast<int32>(sizeof(accessof(frame.extendedData)))))
+    frame.extendedBuf = reinterpret_cast<pointer<pointer<AVBufferRef>>>(avMalloc(planes * reinterpret_cast<int32>(sizeof(accessof(frame.extendedBuf)))))
 
     if (!frame.extendedBuf || !frame.extendedData) {
       avFreep(reinterpret_cast<pointer<pointer<uint8>>>(addressof(frame.extendedData)))
@@ -225,7 +225,7 @@ export function getAudioBuffer(frame: pointer<AVFrame>, algin?: int32) {
   }
 
   for (let i = 0; i < Math.min(planes, AV_NUM_DATA_POINTERS); i++) {
-    frame.buf[i] = avbufferAlloc(frame.linesize[0])
+    frame.buf[i] = avbufferAlloc(reinterpret_cast<size>(frame.linesize[0]))
     if (!frame.buf[i]) {
       unrefAVFrame(frame)
       return errorType.NO_MEMORY
@@ -234,7 +234,7 @@ export function getAudioBuffer(frame: pointer<AVFrame>, algin?: int32) {
   }
 
   for (let i = 0; i < planes - AV_NUM_DATA_POINTERS; i++) {
-    frame.extendedBuf[i] = avbufferAlloc(frame.linesize[0])
+    frame.extendedBuf[i] = avbufferAlloc(reinterpret_cast<size>(frame.linesize[0]))
     if (!frame.extendedBuf[i]) {
       unrefAVFrame(frame)
       return errorType.NO_MEMORY
@@ -273,23 +273,23 @@ export function refAVFrame(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
   }
 
   if (!src.buf[0]) {
-    for (let i = 0; i < sizeof(src.data) / sizeof(src.data[0]); i++) {
+    for (let i = 0; i < reinterpret_cast<int32>(sizeof(src.data)) / reinterpret_cast<int32>(sizeof(src.data[0])); i++) {
       if (!src.data[i] || !src.linesize[i]) {
         continue
       }
-      let size = src.linesize[i] * sizeof(accessof(src.data[0]))
+      let size: int32 = src.linesize[i] * reinterpret_cast<int32>(sizeof(accessof(src.data[0])))
 
-      dst.data[i] = avMalloc(size)
+      dst.data[i] = avMalloc(reinterpret_cast<size>(size))
       if (!dst.data[i]) {
         unrefAVFrame(dst)
         return NO_MEMORY
       }
-      memcpy(dst.data[i], src.data[i], size)
+      memcpy(dst.data[i], src.data[i], reinterpret_cast<size>(size))
     }
     return 0
   }
 
-  for (let i = 0; i < sizeof(src.buf) / sizeof(src.buf[0]); i++) {
+  for (let i = 0; i < reinterpret_cast<int32>(sizeof(src.buf)) / reinterpret_cast<int32>(sizeof(src.buf[0])); i++) {
     if (!src.buf[i]) {
       continue
     }
@@ -301,7 +301,7 @@ export function refAVFrame(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
   }
 
   if (src.extendedBuf) {
-    dst.extendedBuf = reinterpret_cast<pointer<pointer<void>>>(avMallocz(sizeof(accessof(dst.extendedBuf)) * src.nbExtendedBuf))
+    dst.extendedBuf = reinterpret_cast<pointer<pointer<void>>>(avMallocz(reinterpret_cast<int32>(sizeof(accessof(dst.extendedBuf))) * src.nbExtendedBuf))
     if (!dst.extendedBuf) {
       unrefAVFrame(dst)
       return NO_MEMORY
@@ -326,13 +326,13 @@ export function refAVFrame(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
 
     assert(!src.chLayout.u.mask || src.chLayout.nbChannels == getChannelLayoutNBChannels(src.chLayout.u.mask))
 
-    dst.extendedData = reinterpret_cast<pointer<pointer<void>>>(avMallocz(sizeof(accessof(dst.extendedData)) * ch))
+    dst.extendedData = reinterpret_cast<pointer<pointer<void>>>(avMallocz(reinterpret_cast<int32>(sizeof(accessof(dst.extendedData))) * ch))
     if (!dst.extendedData) {
       unrefAVFrame(dst)
       return NO_MEMORY
     }
 
-    memcpy(dst.extendedData, src.extendedData, sizeof(accessof(dst.extendedData)) * ch)
+    memcpy(dst.extendedData, src.extendedData, reinterpret_cast<int32>(sizeof(accessof(dst.extendedData))) * ch)
   }
   else {
     dst.extendedData = addressof(dst.data)
@@ -347,7 +347,7 @@ export function refAVFrame(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
 export function unrefAVFrame(frame: pointer<AVFrame>) {
   wipeSideData(frame)
 
-  for (let i = 0; i < (sizeof(frame.buf) / sizeof(frame.buf[0])); i++) {
+  for (let i = 0; i < (reinterpret_cast<int32>(sizeof(frame.buf)) / reinterpret_cast<int32>(sizeof(frame.buf[0]))); i++) {
     avbufferUnref(addressof(frame.buf[i]))
   }
   for (let i = 0; i < frame.nbExtendedBuf; i++) {

@@ -118,7 +118,7 @@ export default class ResampleFilterNode extends AVFilterNode {
       const planes = planar ? out.chLayout.nbChannels : 1
 
       if (planes > AV_NUM_DATA_POINTERS) {
-        out.extendedData = reinterpret_cast<pointer<pointer<uint8>>>(avMalloc(planes * sizeof(accessof(out.extendedData))))
+        out.extendedData = reinterpret_cast<pointer<pointer<uint8>>>(avMalloc(planes * reinterpret_cast<int32>(sizeof(accessof(out.extendedData)))))
         if (!out.extendedData) {
           avFreep(reinterpret_cast<pointer<pointer<uint8>>>(addressof(out.extendedData)))
           outputs[0] = reinterpret_cast<pointer<AVFrame>>(errorType.NO_MEMORY)

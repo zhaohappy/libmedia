@@ -215,7 +215,7 @@ export default class OMatroskaFormat extends OFormat {
           name: stream.metadata['name'] || 'unknown',
           mime: stream.metadata['mime'] || 'unknown',
           data: {
-            data: mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize),
+            data: mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)),
             size: static_cast<int64>(stream.codecpar.extradataSize),
             pos: -1n
           },
@@ -230,7 +230,7 @@ export default class OMatroskaFormat extends OFormat {
         track.number = stream.index + 1
         if (stream.codecpar.extradata) {
           track.codecPrivate = {
-            data: mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize).slice(),
+            data: mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)).slice(),
             pos: -1n,
             size: static_cast<int64>(stream.codecpar.extradataSize)
           }

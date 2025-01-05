@@ -138,13 +138,13 @@ export default class AudioDecodePipeline extends Pipeline {
   }
 
   private async pullAVPacketInternal(task: SelfTask, leftIPCPort: IPCPort) {
-    const data = await leftIPCPort.request<pointer<AVPacketRef> | AVPacketSerialize>('pull')
-    if (is.number(data)) {
-      return data
+    const result = await leftIPCPort.request<pointer<AVPacketRef> | AVPacketSerialize>('pull')
+    if (is.number(result) || isPointer(result)) {
+      return result as pointer<AVPacketRef>
     }
     else {
       const avpacket = task.avpacketPool.alloc()
-      unserializeAVPacket(data, avpacket)
+      unserializeAVPacket(result, avpacket)
       return avpacket
     }
   }

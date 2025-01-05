@@ -62,7 +62,7 @@ export default class Annexb2AvccFilter extends AVBSFilter {
 
   public sendAVPacket(avpacket: pointer<AVPacket>): number {
 
-    const buffer = mapSafeUint8Array(avpacket.data, avpacket.size)
+    const buffer = mapSafeUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
 
     if (avpacket.bitFormat === h264.BitFormat.AVCC) {
       refAVPacket(this.cache, avpacket)
@@ -73,7 +73,7 @@ export default class Annexb2AvccFilter extends AVBSFilter {
 
       let convert: {
         bufferPointer: pointer<uint8>,
-        length: size,
+        length: number,
         extradata: Uint8Array,
         key: boolean
       }

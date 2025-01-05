@@ -37,13 +37,13 @@ const AV_INPUT_BUFFER_PADDING_SIZE = 64
 export function getAVPacketData(avpacket: pointer<AVPacket>): Uint8Array
 export function getAVPacketData(avpacket: pointer<AVPacket>, safe: boolean): SafeUint8Array
 export function getAVPacketData(avpacket: pointer<AVPacket>, safe?: boolean) {
-  return safe ? mapSafeUint8Array(avpacket.data, avpacket.size) : mapUint8Array(avpacket.data, avpacket.size)
+  return safe ? mapSafeUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)) : mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
 }
 
 export function initAVPacketData(avpacket: pointer<AVPacket>, length: size) {
   avpacket.data = avMalloc(length)
-  avpacket.size = length
-  return mapUint8Array(avpacket.data, avpacket.size)
+  avpacket.size = static_cast<int32>(length)
+  return mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
 }
 
 export function getAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPacketSideDataType): pointer<AVPacketSideData> {
@@ -75,7 +75,7 @@ export function addSideData(psd: pointer<pointer<AVPacketSideData>>, pnbSd: poin
       return
     }
   }
-  const len = (sideDataElems + 1) * sizeof(AVPacketSideData)
+  const len = (sideDataElems + 1) * reinterpret_cast<int32>(sizeof(AVPacketSideData))
   const newSideData = avMallocz(len) as pointer<AVPacketSideData>
 
   if (sideDataElems) {
@@ -100,7 +100,7 @@ export function addSideData(psd: pointer<pointer<AVPacketSideData>>, pnbSd: poin
 }
 
 export function newSideData(psd: pointer<pointer<AVPacketSideData>>, pnbSd: pointer<int32>, type: AVPacketSideDataType, size: size) {
-  const data = avMalloc(size + AV_INPUT_BUFFER_PADDING_SIZE)
+  const data = avMalloc(size + static_cast<size>(AV_INPUT_BUFFER_PADDING_SIZE as uint32))
   memset(reinterpret_cast<pointer<uint8>>(data + size), 0, AV_INPUT_BUFFER_PADDING_SIZE)
   return addSideData(psd, pnbSd, type, data, size)
 }
@@ -125,7 +125,7 @@ export function deleteAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPack
       avpacket.sideDataElems = 0
     }
     else {
-      const len = (avpacket.sideDataElems - 1) * sizeof(AVPacketSideData)
+      const len = (avpacket.sideDataElems - 1) * reinterpret_cast<int32>(sizeof(AVPacketSideData))
       const sideData = avMallocz(len) as pointer<AVPacketSideData>
       for (let i = 0; i < avpacket.sideDataElems; i++) {
         if (i !== index) {
@@ -188,7 +188,7 @@ export function getAVPacketDefault(avpacket: pointer<AVPacket>) {
 export function copyAVPacketSideData(dst: pointer<AVPacket>, src: pointer<AVPacket>) {
   freeAVPacketSideData(addressof(dst.sideData), addressof(dst.sideDataElems))
   if (src.sideDataElems) {
-    let size = sizeof(AVPacketSideData)
+    let size = reinterpret_cast<int32>(sizeof(AVPacketSideData))
     dst.sideData = avMallocz(size * src.sideDataElems)
     for (let i = 0; i < src.sideDataElems; i++) {
       dst.sideData[i].size = src.sideData[i].size
@@ -222,7 +222,7 @@ export function copyAVPacketProps(dst: pointer<AVPacket>, src: pointer<AVPacket>
 }
 
 function allocAVPacket(buf: pointer<pointer<AVBufferRef>>, size: size) {
-  avbufferRealloc(buf, size + AV_INPUT_BUFFER_PADDING_SIZE)
+  avbufferRealloc(buf, size + static_cast<size>(AV_INPUT_BUFFER_PADDING_SIZE as uint32))
   memset(accessof(buf).data + size, 0, AV_INPUT_BUFFER_PADDING_SIZE)
   return 0
 }
@@ -235,9 +235,9 @@ export function refAVPacket(dst: pointer<AVPacket>, src: pointer<AVPacket>) {
   copyAVPacketProps(dst, src)
 
   if (!src.buf && src.size) {
-    allocAVPacket(addressof(dst.buf), src.size)
+    allocAVPacket(addressof(dst.buf), reinterpret_cast<size>(src.size))
     if (src.size) {
-      memcpy(dst.buf.data, src.data, src.size)
+      memcpy(dst.buf.data, src.data, reinterpret_cast<size>(src.size))
     }
     dst.data = dst.buf.data
   }
@@ -269,9 +269,9 @@ export function copyAVPacketData(dst: pointer<AVPacket>, src: pointer<AVPacket>)
   }
   dst.buf = nullptr
   if (!src.buf && src.size) {
-    allocAVPacket(addressof(dst.buf), src.size)
+    allocAVPacket(addressof(dst.buf), reinterpret_cast<size>(src.size))
     if (src.size) {
-      memcpy(dst.buf.data, src.data, src.size)
+      memcpy(dst.buf.data, src.data, reinterpret_cast<size>(src.size))
     }
     dst.data = dst.buf.data
   }
@@ -282,7 +282,7 @@ export function copyAVPacketData(dst: pointer<AVPacket>, src: pointer<AVPacket>)
   dst.size = src.size
 }
 
-export function addAVPacketData(avpacket: pointer<AVPacket>, data: pointer<uint8>, size: size) {
+export function addAVPacketData(avpacket: pointer<AVPacket>, data: pointer<uint8>, size: int32) {
 
   if (avpacket.buf) {
     avbufferUnref(addressof(avpacket.buf))

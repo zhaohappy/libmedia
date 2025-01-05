@@ -43,7 +43,7 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
   let profile = codecpar.profile
   let level = codecpar.level
   if (!extradata && codecpar.extradata !== nullptr && codecpar.extradataSize) {
-    extradata = mapUint8Array(codecpar.extradata, codecpar.extradataSize)
+    extradata = mapUint8Array(codecpar.extradata, reinterpret_cast<size>(codecpar.extradataSize))
   }
 
   let entry = CodecId2MimeType[codecId]

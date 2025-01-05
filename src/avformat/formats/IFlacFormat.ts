@@ -169,7 +169,7 @@ export default class IFlacFormat extends IFormat {
         stream.codecpar.codecTag = await formatContext.ioReader.readUint32()
         stream.codecpar.extradata = avMalloc(blockLen - 4)
         stream.codecpar.extradataSize = blockLen - 4
-        await formatContext.ioReader.readBuffer(blockLen - 4, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+        await formatContext.ioReader.readBuffer(blockLen - 4, mapSafeUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
       }
       else if (blockType === MetaDataBlockType.SEEKTABLE) {
         for (let i = 0; i < blockLen / 18; i++) {

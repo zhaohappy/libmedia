@@ -29,7 +29,7 @@ import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteri
 import { Rational } from '../struct/rational'
 import { avRescaleQ } from '../util/rational'
 import { AV_TIME_BASE_Q } from '../constant'
-import { getHeapU8 } from 'cheap/heap'
+import { getHeap } from 'cheap/heap'
 
 export function avPixelFormat2Format(pixfmt: AVPixelFormat) {
   switch (pixfmt) {
@@ -125,7 +125,7 @@ export function avframe2VideoFrame(avframe: pointer<AVFrame>, timeBase?: Rationa
 
   for (let i = 0; i < des.nbComponents; i++) {
     layout.push({
-      offset: avframe.data[i],
+      offset: reinterpret_cast<double>(avframe.data[i]),
       stride: avframe.linesize[i]
     })
   }
@@ -139,12 +139,11 @@ export function avframe2VideoFrame(avframe: pointer<AVFrame>, timeBase?: Rationa
     layout,
     colorSpace: getVideoColorSpaceInit(avframe),
     visibleRect: {
-      x: avframe.cropLeft,
-      y: avframe.cropTop,
-      width: avframe.width - (avframe.cropLeft + avframe.cropRight),
-      height: avframe.height - (avframe.cropTop + avframe.cropBottom)
+      x: reinterpret_cast<double>(avframe.cropLeft),
+      y: reinterpret_cast<double>(avframe.cropTop),
+      width: avframe.width - reinterpret_cast<int32>((avframe.cropLeft + avframe.cropRight) as size),
+      height: avframe.height - reinterpret_cast<int32>((avframe.cropTop + avframe.cropBottom) as size)
     }
   }
-
-  return new VideoFrame(getHeapU8(), init)
+  return new VideoFrame(getHeap(), init)
 }

@@ -26,6 +26,8 @@
 import { readCString, writeCString } from 'cheap/std/memory'
 import { AVDictFlags, AVDictionary, AVDictionaryEntry } from '../struct/avdict'
 import { avFreep } from './mem'
+import * as is from 'common/util/is'
+import toString from 'common/function/toString'
 
 export function freeAVDict(pm: pointer<pointer<AVDictionary>>) {
   freeAVDict2(accessof(pm))
@@ -116,7 +118,10 @@ export function avDictSet(m: pointer<AVDictionary>, key: string, value: string, 
     writeCString(tag.value, value, value.length)
   }
   else {
-    let tmp: pointer<AVDictionaryEntry> = realloc(m.elems, (m.count + 1) * sizeof(AVDictionaryEntry))
+    if (!is.string(value)) {
+      value = toString(value)
+    }
+    let tmp: pointer<AVDictionaryEntry> = realloc(m.elems, (m.count + 1) * reinterpret_cast<int32>(sizeof(AVDictionaryEntry)))
     m.elems = tmp
 
     m.elems[m.count].key = malloc(key.length + 1)

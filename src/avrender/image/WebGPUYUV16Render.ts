@@ -186,7 +186,7 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
     this.hdrMetadataBuffer = this.device.createBuffer({
-      size: (sizeof(HdrMetadata) + 15) & ~15,
+      size: (reinterpret_cast<int32>(sizeof(HdrMetadata)) + 15) & ~15,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
   }

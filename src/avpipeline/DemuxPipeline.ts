@@ -171,7 +171,7 @@ export default class DemuxPipeline extends Pipeline {
         length: int32
         ioloaderOptions?: Data
       } = {
-        pointer: reinterpret_cast<pointer<uint8>>(buffer.byteOffset),
+        pointer: static_cast<pointer<void>>(buffer.byteOffset as uint32),
         length: buffer.length
       }
       if (options.ioloaderOptions) {
@@ -750,9 +750,9 @@ export default class DemuxPipeline extends Pipeline {
         })
         const ele = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
         if (!ele && stream && stream.codecpar.extradataSize) {
-          const data = avMalloc(stream.codecpar.extradataSize)
-          memcpy(data, stream.codecpar.extradata, stream.codecpar.extradataSize)
-          addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, data, stream.codecpar.extradataSize)
+          const data = avMalloc(reinterpret_cast<size>(stream.codecpar.extradataSize))
+          memcpy(data, stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize))
+          addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, data, reinterpret_cast<size>(stream.codecpar.extradataSize))
         }
         task.streamIndexFlush.set(streamIndex, false)
       }

@@ -187,8 +187,8 @@ export default class VideoDecodePipeline extends Pipeline {
 
   private async pullAVPacketInternal(task: SelfTask, leftIPCPort: IPCPort) {
     const result = await leftIPCPort.request<pointer<AVPacketRef> | AVPacketSerialize>('pull')
-    if (is.number(result)) {
-      return result
+    if (is.number(result) || isPointer(result)) {
+      return result as pointer<AVPacketRef>
     }
     else {
       const avpacket = task.avpacketPool.alloc()
@@ -329,7 +329,7 @@ export default class VideoDecodePipeline extends Pipeline {
                     if (task.parameters.extradata) {
                       avFree(task.parameters.extradata)
                     }
-                    task.parameters.extradataSize = element.size
+                    task.parameters.extradataSize = static_cast<int32>(element.size)
                     task.parameters.extradata = avMalloc(element.size)
                     memcpy(task.parameters.extradata, element.data, element.size)
                   }

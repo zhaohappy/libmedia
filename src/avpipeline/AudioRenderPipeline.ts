@@ -394,7 +394,7 @@ export default class AudioRenderPipeline extends Pipeline {
           task.stretchpitcherEnded = true
           for (let i = 0; i < task.playChannels; i++) {
             // 将不足的置为 0 
-            memset(pcmBuffer.data[i] + receive, 0, (pcmBuffer.maxnbSamples - receive) * sizeof(float))
+            memset(pcmBuffer.data[i] + receive, 0, (pcmBuffer.maxnbSamples - receive) * reinterpret_cast<int32>(sizeof(float)))
           }
         }
         pcmBuffer.nbSamples = receive
@@ -413,9 +413,9 @@ export default class AudioRenderPipeline extends Pipeline {
             if (len) {
               for (let i = 0; i < task.playChannels; i++) {
                 memcpy(
-                  pcmBuffer.data[i] + receive * sizeof(float),
-                  task.waitPCMBuffer.data[i] + task.waitPCMBufferPos * sizeof(float),
-                  len * sizeof(float)
+                  pcmBuffer.data[i] + receive * reinterpret_cast<int32>(sizeof(float)),
+                  task.waitPCMBuffer.data[i] + task.waitPCMBufferPos * reinterpret_cast<int32>(sizeof(float)),
+                  len * reinterpret_cast<int32>(sizeof(float))
                 )
               }
               task.waitPCMBufferPos += len
@@ -466,7 +466,7 @@ export default class AudioRenderPipeline extends Pipeline {
                 task.stretchpitcherEnded = true
                 for (let i = 0; i < task.playChannels; i++) {
                   // 将不足的置为 0 
-                  memset(pcmBuffer.data[i] + receive, 0, (pcmBuffer.maxnbSamples - receive) * sizeof(float))
+                  memset(pcmBuffer.data[i] + receive, 0, (pcmBuffer.maxnbSamples - receive) * reinterpret_cast<int32>(sizeof(float)))
                 }
               }
               receive += ret
@@ -530,7 +530,7 @@ export default class AudioRenderPipeline extends Pipeline {
           const diff = task.currentPTS - task.masterTimer.getMasterTime()
 
           if (diff > MASTER_SYNC_THRESHOLD) {
-            memset(pcmBuffer.data[0], 0, pcmBuffer.maxnbSamples * sizeof(float) * pcmBuffer.channels)
+            memset(pcmBuffer.data[0], 0, pcmBuffer.maxnbSamples * reinterpret_cast<int32>(sizeof(float)) * pcmBuffer.channels)
             rightIPCPort.reply(request, 0)
             this.fakeSyncPts(task)
             break
@@ -563,10 +563,10 @@ export default class AudioRenderPipeline extends Pipeline {
               unmake(task.outPCMBuffer)
             }
             task.outPCMBuffer = make<AVPCMBuffer>()
-            task.outPCMBuffer.data = reinterpret_cast<pointer<pointer<uint8>>>(avMalloc(sizeof(pointer) * task.playChannels))
-            const data = avMallocz(nbSamples * sizeof(float) * task.playChannels)
+            task.outPCMBuffer.data = reinterpret_cast<pointer<pointer<uint8>>>(avMalloc(reinterpret_cast<int32>(sizeof(pointer)) * task.playChannels))
+            const data = avMallocz(nbSamples * reinterpret_cast<int32>(sizeof(float)) * task.playChannels)
             for (let i = 0; i < task.playChannels; i++) {
-              task.outPCMBuffer.data[i] = reinterpret_cast<pointer<uint8>>(data + nbSamples * sizeof(float) * i)
+              task.outPCMBuffer.data[i] = reinterpret_cast<pointer<uint8>>(data + nbSamples * reinterpret_cast<int32>(sizeof(float)) * i)
             }
             task.outPCMBuffer.maxnbSamples = nbSamples
           }
@@ -584,7 +584,7 @@ export default class AudioRenderPipeline extends Pipeline {
           const diff = task.currentPTS - task.masterTimer.getMasterTime()
 
           if (diff > MASTER_SYNC_THRESHOLD) {
-            const pcm = new Uint8Array(task.outPCMBuffer.nbSamples * sizeof(float) * task.playChannels)
+            const pcm = new Uint8Array(task.outPCMBuffer.nbSamples * reinterpret_cast<int32>(sizeof(float)) * task.playChannels)
             rightIPCPort.reply(request, pcm.buffer, null, [pcm.buffer])
             this.fakeSyncPts(task)
             break
@@ -599,7 +599,7 @@ export default class AudioRenderPipeline extends Pipeline {
 
           const pcm = mapUint8Array(
             task.outPCMBuffer.data[0],
-            task.outPCMBuffer.nbSamples * sizeof(float) * task.playChannels
+            task.outPCMBuffer.nbSamples * reinterpret_cast<int32>(sizeof(float)) * task.playChannels
           ).slice()
 
           rightIPCPort.reply(request, pcm.buffer, null, [pcm.buffer])

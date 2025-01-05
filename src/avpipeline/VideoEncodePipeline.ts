@@ -314,7 +314,7 @@ export default class VideoEncodePipeline extends Pipeline {
                     break
                   }
                 }
-                task.firstEncoded = true
+                // task.firstEncoded = true
                 task.gopCounter++
                 if (task.gopCounter === task.gop) {
                   task.gopCounter = 0

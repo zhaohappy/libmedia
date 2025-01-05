@@ -398,7 +398,7 @@ export default class OMp3Format extends OFormat {
 
       this.xingAddFrame(avpacket)
 
-      formatContext.ioWriter.writeBuffer(mapUint8Array(avpacket.data, avpacket.size))
+      formatContext.ioWriter.writeBuffer(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)))
     }
 
     return 0

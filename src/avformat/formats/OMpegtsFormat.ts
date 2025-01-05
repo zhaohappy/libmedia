@@ -279,7 +279,7 @@ export default class OMpegtsFormat extends OFormat {
         this.firstVideoCheck = true
         if (!hasNewSps && stream.codecpar.extradata) {
           if (avpacket.bitFormat === h264.BitFormat.ANNEXB) {
-            let extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize).slice()
+            let extradata = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)).slice()
 
             if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
               && !h264.generateAnnexbExtradata(getAVPacketData(avpacket))
@@ -395,7 +395,7 @@ export default class OMpegtsFormat extends OFormat {
             }
           }
           else {
-            let extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize).slice()
+            let extradata = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)).slice()
             if (naluUtil.isAnnexb(extradata)) {
               if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
                 extradata = h264.annexbExtradata2AvccExtradata(extradata)

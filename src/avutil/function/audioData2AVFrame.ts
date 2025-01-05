@@ -69,7 +69,7 @@ export function audioData2AVFrame(audioData: AudioData, avframe: pointer<AVFrame
   const planes = planar ? avframe.chLayout.nbChannels : 1
 
   for (let i = 0; i < planes; i++) {
-    audioData.copyTo(mapUint8Array(avframe.extendedData[i], avframe.linesize[0]), {
+    audioData.copyTo(mapUint8Array(avframe.extendedData[i], reinterpret_cast<size>(avframe.linesize[0])), {
       planeIndex: i
     })
   }

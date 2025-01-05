@@ -358,7 +358,7 @@ export default class MSEPipeline extends Pipeline {
   }
 
   // TODO avpacket extradata 混入码流
-  private mixExtradata(avpacket: pointer<AVPacket>, resource: MSEResource, extradata: pointer<uint8>, extradataSize: size) {
+  private mixExtradata(avpacket: pointer<AVPacket>, resource: MSEResource, extradata: pointer<uint8>, extradataSize: int32) {
     const codecId = resource.oformatContext.streams[0].codecpar.codecId
     if (codecId === AVCodecID.AV_CODEC_ID_H264
       || codecId === AVCodecID.AV_CODEC_ID_H265
@@ -372,8 +372,8 @@ export default class MSEPipeline extends Pipeline {
     if (codecpar.extradata) {
       avFree(codecpar.extradata)
     }
-    codecpar.extradata = avMalloc(extradataSize)
-    memcpy(codecpar.extradata, extradata, extradataSize)
+    codecpar.extradata = avMalloc(reinterpret_cast<size>(extradataSize))
+    memcpy(codecpar.extradata, extradata, reinterpret_cast<size>(extradataSize))
     codecpar.extradataSize = extradataSize
   }
 
@@ -514,7 +514,7 @@ export default class MSEPipeline extends Pipeline {
         resource.track.updateTimestampOffset(static_cast<int32>(offset) / 1000)
         resource.timestampOffsetUpdated = true
       }
-      resource.bufferQueue.write(mapUint8Array(avpacket.data, avpacket.size).slice())
+      resource.bufferQueue.write(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)).slice())
     }
     else {
       mux.writeAVPacket(resource.oformatContext, avpacket)
@@ -636,9 +636,9 @@ export default class MSEPipeline extends Pipeline {
           resource.oformatContext.streams[0].codecpar.extradata,
           resource.oformatContext.streams[0].codecpar.extradataSize,
           extradata.data,
-          extradata.size
+          static_cast<int32>(extradata.size)
         )) {
-          this.mixExtradata(avpacket, resource, extradata.data, extradata.size)
+          this.mixExtradata(avpacket, resource, extradata.data, static_cast<int32>(extradata.size))
         }
 
         this.writeAVPacket(avpacket, resource, true)
@@ -729,9 +729,9 @@ export default class MSEPipeline extends Pipeline {
           resource.oformatContext.streams[0].codecpar.extradata,
           resource.oformatContext.streams[0].codecpar.extradataSize,
           extradata.data,
-          extradata.size
+          static_cast<int32>(extradata.size)
         )) {
-          this.mixExtradata(avpacket, resource, extradata.data, extradata.size)
+          this.mixExtradata(avpacket, resource, extradata.data, static_cast<int32>(extradata.size))
         }
       }
 

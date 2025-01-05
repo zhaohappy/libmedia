@@ -151,7 +151,7 @@ export default class Raw2LATMFilter extends AVBSFilter {
     }
     this.bitWriter.writeU(8, avpacket.size - i)
 
-    const packetBuffer = mapUint8Array(avpacket.data, avpacket.size)
+    const packetBuffer = mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
 
     if ((packetBuffer[0] & 0xe1) === 0x81) {
       /*

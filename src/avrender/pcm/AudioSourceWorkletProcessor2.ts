@@ -25,7 +25,7 @@
 
 import IPCPort, { REQUEST, RpcMessage } from 'common/network/IPCPort'
 import AudioWorkletProcessorBase from './audioWorklet/base/AudioWorkletProcessorBase'
-import { initThread, getHeapU8 } from 'cheap/heap'
+import { initThread, getHeap } from 'cheap/heap'
 import AVPCMBuffer from 'avutil/struct/avpcmbuffer'
 import { avFree, avFreep, avMallocz } from 'avutil/util/mem'
 import * as logger from 'common/util/logger'
@@ -48,7 +48,6 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
   private frontBuffered: boolean
   private firstRendered: boolean
 
-  private float32: Float32Array
   private pause: boolean
   private stopped: boolean
   private afterPullResolve: () => void
@@ -102,7 +101,6 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
           this.stopped = false
           this.lastStutterTimestamp = currentTime
 
-          this.float32 = new Float32Array(getHeapU8().buffer)
           this.ipcPort.reply(request)
 
           break
@@ -133,7 +131,6 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
           this.frontBuffered = true
           this.firstRendered = false
           this.stopped = false
-          this.float32 = new Float32Array(getHeapU8().buffer)
           this.lastStutterTimestamp = currentTime
 
           this.ipcPort.reply(request)
@@ -184,11 +181,11 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
 
   private allocBuffer() {
     const buffer: pointer<AVPCMBuffer> = avMallocz(sizeof(AVPCMBuffer))
-    buffer.data = reinterpret_cast<pointer<pointer<uint8>>>(avMallocz(sizeof(pointer) * this.channels))
+    buffer.data = reinterpret_cast<pointer<pointer<uint8>>>(avMallocz(reinterpret_cast<int32>(sizeof(pointer)) * this.channels))
     buffer.channels = this.channels
-    const data = avMallocz(sizeof(float) * 128 * BUFFER_LENGTH * this.channels)
+    const data = avMallocz(reinterpret_cast<int32>(sizeof(float)) * 128 * BUFFER_LENGTH * this.channels)
     for (let i = 0; i < this.channels; i++) {
-      buffer.data[i] = reinterpret_cast<pointer<uint8>>(data + 128 * BUFFER_LENGTH * sizeof(float) * i)
+      buffer.data[i] = reinterpret_cast<pointer<uint8>>(data + 128 * BUFFER_LENGTH * reinterpret_cast<int32>(sizeof(float)) * i)
     }
     buffer.maxnbSamples = 128 * BUFFER_LENGTH
     return buffer
@@ -263,9 +260,12 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
       const output = outputs[0]
       for (let i = 0; i < this.channels; i++) {
         output[i].set(
-          this.float32.subarray(
-            (this.backBuffer.data[i] >>> 2) + this.backBufferOffset * 128,
-            (this.backBuffer.data[i] >>> 2) + (this.backBufferOffset + 1) * 128
+          new Float32Array(
+            getHeap(),
+            static_cast<double>((this.backBuffer.data[i]
+              + (this.backBufferOffset * 128 * reinterpret_cast<int32>(sizeof(float))) as uint32
+            ) as pointer<void>),
+            128
           ),
           0
         )

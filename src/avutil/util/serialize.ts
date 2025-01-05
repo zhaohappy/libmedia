@@ -195,7 +195,7 @@ export function serializeAVCodecParameters(codecpar: pointer<AVCodecParameters>)
   }
 
   if (codecpar.extradataSize) {
-    serialize.extradata = mapUint8Array(codecpar.extradata, codecpar.extradataSize).slice()
+    serialize.extradata = mapUint8Array(codecpar.extradata, reinterpret_cast<size>(codecpar.extradataSize)).slice()
   }
 
   for (let i = 0; i < codecpar.nbCodedSideData; i++) {

@@ -158,14 +158,14 @@ export default class IMpegtsFormat extends IFormat {
       }
       stream.codecpar.extradata = avMalloc(element.size)
       memcpy(stream.codecpar.extradata, element.data, element.size)
-      stream.codecpar.extradataSize = element.size
+      stream.codecpar.extradataSize = static_cast<int32>(element.size)
       deleteAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
 
       if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
-        aac.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+        aac.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
       }
       else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_OPUS) {
-        opus.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+        opus.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
       }
     }
   }
