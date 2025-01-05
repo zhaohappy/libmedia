@@ -1621,7 +1621,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           avframeList: addressof(this.GlobalData.avframeList),
           avframeListMutex: addressof(this.GlobalData.avframeListMutex),
           gop: static_cast<int32>(avQ2D(newStream.codecpar.framerate) * (videoConfig?.keyFrameInterval ?? 5000) / 1000),
-          // preferWebCodecs: array.has([AVCodecID.AV_CODEC_ID_AV1, AVCodecID.AV_CODEC_ID_VP9, AVCodecID.AV_CODEC_ID_VP8], newStream.codecpar.codecId)
+          preferWebCodecs: array.has([AVCodecID.AV_CODEC_ID_AV1, AVCodecID.AV_CODEC_ID_VP9, AVCodecID.AV_CODEC_ID_VP8], newStream.codecpar.codecId)
         })
 
       ret = await this.VideoEncoderThread.open(taskId, newStream.codecpar, { num: newStream.timeBase.num, den: newStream.timeBase.den }, wasmEncoderOptions)
