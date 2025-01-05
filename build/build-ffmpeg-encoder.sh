@@ -1,6 +1,7 @@
 encode=$1
 simd=$2
 atomic=$3
+wasm64=$4
 
 echo "===== start build ffmpeg encoder $encode ====="
 
@@ -14,11 +15,15 @@ source $PROJECT_ROOT_PATH/../emsdk/emsdk_env.sh
 
 DIRNAME=$PROJECT_ROOT_PATH/lib/encode/$encode
 
-if [[ $simd == "1" ]]; then
-  DIRNAME="$DIRNAME-simd"
+if [[ $wasm64 == "1" ]]; then
+  DIRNAME="$DIRNAME-64"
 else
-  if [[ $atomic == "1" ]]; then
-    DIRNAME="$DIRNAME-atomic"
+  if [[ $simd == "1" ]]; then
+    DIRNAME="$DIRNAME-simd"
+  else
+    if [[ $atomic == "1" ]]; then
+      DIRNAME="$DIRNAME-atomic"
+    fi
   fi
 fi
 
@@ -39,19 +44,25 @@ EXTRA_CFLAGS="-I$PROJECT_ROOT_PATH/src/cheap/include -O3"
 
 COMPONENTS=""
 
-if [[ $simd == "1" ]]; then
+if [[ $wasm64 == "1" ]]; then
   COMPONENTS="$COMPONENTS --enable-websimd128 --disable-wasmatomic"
   EXTRA_CFLAGS="$EXTRA_CFLAGS -msimd128 -fvectorize -fslp-vectorize -pthread -mbulk-memory"
 else
-  COMPONENTS="$COMPONENTS --disable-websimd128"
-  if [[ $atomic == "1" ]]; then
-    COMPONENTS="$COMPONENTS --disable-wasmatomic"
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory"
+  if [[ $simd == "1" ]]; then
+    COMPONENTS="$COMPONENTS --enable-websimd128 --disable-wasmatomic"
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -msimd128 -fvectorize -fslp-vectorize -pthread -mbulk-memory"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory -no-pthread -mno-sign-ext"
-    COMPONENTS="$COMPONENTS --enable-wasmatomic"
+    COMPONENTS="$COMPONENTS --disable-websimd128"
+    if [[ $atomic == "1" ]]; then
+      COMPONENTS="$COMPONENTS --disable-wasmatomic"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory"
+    else
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory -no-pthread -mno-sign-ext"
+      COMPONENTS="$COMPONENTS --enable-wasmatomic"
+    fi
   fi
 fi
+
 
 EXTRACOMPONENTS=""
 
@@ -59,121 +70,153 @@ realEncoder=$encode
 if [[ $encode == "kvazaar" ]]; then
   realEncoder="libkvazaar"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libkvazaar"
-
-  if [[ $simd == "1" ]]; then
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/kvazaar-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/kvazaar-simd/lib -lkvazaar"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/kvazaar-atomic/include"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/kvazaar-64/lib -lkvazaar"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/kvazaar-atomic/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/kvazaar-atomic/lib -lkvazaar"
+    if [[ $simd == "1" ]]; then
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/kvazaar-simd/lib -lkvazaar"
+    else
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/kvazaar-atomic/lib -lkvazaar"
+    fi
   fi
 elif [ $encode == "x264" ]; then
   realEncoder="libx264"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libx264"
-
-  if [[ $simd == "1" ]]; then
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/x264-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/x264-simd/lib -lx264"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/x264/include"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/x264-64/lib -lx264"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/x264/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/x264/lib -lx264"
+    if [[ $simd == "1" ]]; then
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/x264-simd/lib -lx264"
+    else
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/x264/lib -lx264"
+    fi
   fi
 elif [ $encode == "openh264" ]; then
   realEncoder="libopenh264"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libopenh264"
 
-  if [[ $simd == "1" ]]; then
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/openh264-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/openh264-simd/lib -lopenh264"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/openh264/include"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/openh264-64/lib -lopenh264"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/openh264/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/openh264/lib -lopenh264"
+    if [[ $simd == "1" ]]; then
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/openh264-simd/lib -lopenh264"
+    else
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/openh264/lib -lopenh264"
+    fi
   fi
 elif [ $encode == "x265" ]; then
   realEncoder="libx265"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libx265"
 
-  if [[ $simd == "1" ]]; then
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/x265-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/x265-simd/lib -lx265"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/x265-atomic/include"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/x265-64/lib -lx265"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/x265-atomic/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/x265-atomic/lib -lx265"
+    if [[ $simd == "1" ]]; then
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/x265-simd/lib -lx265"
+    else
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/x265-atomic/lib -lx265"
+    fi
   fi
 elif [ $encode == "mp3lame" ]; then
   realEncoder="libmp3lame"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libmp3lame"
 
-  if [[ $simd == "1" ]]; then
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/mp3lame-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/mp3lame-simd/lib -lmp3lame"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/mp3lame/include"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/mp3lame-64/lib -lmp3lame"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/mp3lame/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/mp3lame/lib -lmp3lame"
+    if [[ $simd == "1" ]]; then
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/mp3lame-simd/lib -lmp3lame"
+    else
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/mp3lame/lib -lmp3lame"
+    fi
   fi
 elif [[ $encode == "vp8" ]]; then
   realEncoder="libvpx_vp8"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libvpx"
 
-  if [[ $simd == "1" ]]; then
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx-simd/lib -lvpx"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx/include"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx-64/lib -lvpx"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx/lib -lvpx"
+    if [[ $simd == "1" ]]; then
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx-simd/lib -lvpx"
+    else
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx/lib -lvpx"
+    fi
   fi
 elif [[ $encode == "vp9" ]]; then
   realEncoder="libvpx_vp9"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libvpx"
 
-  if [[ $simd == "1" ]]; then
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx-simd/lib -lvpx"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx/include"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx-64/lib -lvpx"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx/lib -lvpx"
+    if [[ $simd == "1" ]]; then
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx-simd/lib -lvpx"
+    else
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx/lib -lvpx"
+    fi
   fi
 elif [[ $encode == "virbos" ]]; then
   realEncoder="libvorbis"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libvorbis"
 
-  if [[ $simd == "1" ]]; then
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/vorbis-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/vorbis-simd/lib -lvorbisenc"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/vorbis/include"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/vorbis-64/lib -lvorbisenc"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/vorbis/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/vorbis/lib -lvorbisenc"
+    if [[ $simd == "1" ]]; then
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/vorbis-simd/lib -lvorbisenc"
+    else
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/vorbis/lib -lvorbisenc"
+    fi
   fi
 elif [[ $encode == "speex" ]]; then
   realEncoder="libspeex"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libspeex"
 
-  if [[ $simd == "1" ]]; then
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/speex-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex-simd/lib -lspeex"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/speex/include"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex-64/lib -lspeex"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/speex/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex/lib -lspeex"
+    if [[ $simd == "1" ]]; then
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex-simd/lib -lspeex"
+    else
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex/lib -lspeex"
+    fi
   fi
 elif [[ $encode == "av1" ]]; then
   realEncoder="libaom_av1"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libaom"
-  if [[ $simd == "1" ]]; then
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/aom-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/aom-simd/lib -laom"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/aom-atomic/include"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/aom-64/lib -laom"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/aom-atomic/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/aom-atomic/lib -laom"
+    if [[ $simd == "1" ]]; then
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/aom-simd/lib -laom"
+    else
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/aom-atomic/lib -laom"
+    fi
   fi
 elif [[ $encode == "theora" ]]; then
   realEncoder="libtheora"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libtheora"
-  if [[ $simd == "1" ]]; then
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/theora-simd/include -I$PROJECT_ROOT_PATH/lib/libogg-simd/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/theora-simd/lib -ltheoraenc"
+
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/theora/include -I$PROJECT_ROOT_PATH/lib/libogg/include"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/theora-64/lib -ltheoraenc"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/theora/include -I$PROJECT_ROOT_PATH/lib/libogg/include"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/theora/lib -ltheoraenc"
+    if [[ $simd == "1" ]]; then
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/theora-simd/lib -ltheoraenc"
+    else
+      EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/theora/lib -ltheoraenc"
+    fi
   fi
 fi
 

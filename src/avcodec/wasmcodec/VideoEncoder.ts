@@ -147,10 +147,12 @@ export default class WasmVideoEncoder {
   public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, threadCount: number = 1, opts: Data = {}) {
     await this.encoder.run(null, threadCount)
 
-    const timeBaseP = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
+    const timeBaseP = reinterpret_cast<pointer<Rational>>(malloc(sizeof(Rational)))
+    const optsP = reinterpret_cast<pointer<pointer<AVDictionary>>>(malloc(sizeof(pointer)))
 
     timeBaseP.num = timeBase.num
     timeBaseP.den = timeBase.den
+    accessof(optsP) <- nullptr
 
     if (parameters.codecId === AVCodecID.AV_CODEC_ID_MPEG4 && parameters.bitFormat === BitFormat.AVCC) {
       this.encoder.call('encoder_set_flags', 1 << 22)
@@ -169,19 +171,23 @@ export default class WasmVideoEncoder {
           dict.avDictSet(this.encoderOptions, key, value)
         }
       })
+      accessof(optsP) <- this.encoderOptions
     }
 
     let ret = 0
 
     if (support.jspi) {
-      ret = await this.encoder.callAsync<int32>('encoder_open', parameters, timeBaseP, threadCount, this.encoderOptions)
+      ret = await this.encoder.callAsync<int32>('encoder_open', parameters, timeBaseP, threadCount, optsP)
     }
     else {
-      ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, threadCount, this.encoderOptions)
+      ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, threadCount, optsP)
       await this.encoder.childThreadsReady()
     }
 
-    stack.free(sizeof(Rational))
+    this.encoderOptions = accessof(optsP)
+
+    free(reinterpret_cast<pointer<void>>(optsP))
+    free(timeBaseP)
 
     if (ret < 0) {
       logger.fatal(`open video encoder failed, ret: ${ret}`)
@@ -276,7 +282,7 @@ export default class WasmVideoEncoder {
     const pointer = this.encoder.call<pointer<uint8>>('encoder_get_extradata')
     const size = this.encoder.call<int32>('encoder_get_extradata_size')
     if (pointer && size) {
-      return mapUint8Array(pointer, size).slice()
+      return mapUint8Array(pointer, reinterpret_cast<size>(size)).slice()
     }
     return null
   }

@@ -489,17 +489,6 @@ function buildCheap() {
 
   buildPackage('cheap')
 
-  buildASM(path.resolve(__dirname, '../src/cheap/asm/memory.asm'), path.resolve(__dirname, '../src/cheap/dist/esm/asm/memory.asm.js'), '../../../asm/')
-  buildASM(path.resolve(__dirname, '../src/cheap/asm/memory.asm'), path.resolve(__dirname, '../src/cheap/dist/cjs/asm/memory.asm.js'), '../../../asm/', true)
-  buildASM(path.resolve(__dirname, '../src/cheap/thread/asm/atomics.asm'), path.resolve(__dirname, '../src/cheap/dist/esm/thread/asm/atomics.asm.js'), '../../../../thread/asm/')
-  buildASM(path.resolve(__dirname, '../src/cheap/thread/asm/atomics.asm'), path.resolve(__dirname, '../src/cheap/dist/cjs/thread/asm/atomics.asm.js'), '../../../../thread/asm/', true)
-  buildASM(path.resolve(__dirname, '../src/cheap/webassembly/runtime/asm/libc.asm'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/runtime/asm/libc.asm.js'), '../../../../../webassembly/runtime/asm/')
-  buildASM(path.resolve(__dirname, '../src/cheap/webassembly/runtime/asm/libc.asm'), path.resolve(__dirname, '../src/cheap/dist/cjs/webassembly/runtime/asm/libc.asm.js'), '../../../../../webassembly/runtime/asm/', true)
-  buildASM(path.resolve(__dirname, '../src/cheap/webassembly/runtime/asm/thread.asm'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/runtime/asm/thread.asm.js'), '../../../../../webassembly/runtime/asm/')
-  buildASM(path.resolve(__dirname, '../src/cheap/webassembly/runtime/asm/thread.asm'), path.resolve(__dirname, '../src/cheap/dist/cjs/webassembly/runtime/asm/thread.asm.js'), '../../../../../webassembly/runtime/asm/', true)
-
-  printTaskLog(1, 'cheap', 'SUCCESS', `built asm completed`);
-
   addPackageExport(path.resolve(__dirname, '../src/cheap/'), {
     "./build/webpack/CheapPlugin": "./build/webpack/plugin/CheapPlugin.js",
     "./build/transformer": "./build/transformer.js",

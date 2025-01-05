@@ -87,6 +87,10 @@ export default class WasmAudioDecoder {
   public async open(parameters: pointer<AVCodecParameters>, opts: Data = {}) {
     await this.decoder.run()
 
+    const optsP = reinterpret_cast<pointer<pointer<AVDictionary>>>(malloc(sizeof(pointer)))
+
+    accessof(optsP) <- nullptr
+
     if (object.keys(opts).length) {
       if (this.decoderOptions) {
         dict.freeAVDict2(this.decoderOptions)
@@ -99,18 +103,24 @@ export default class WasmAudioDecoder {
           dict.avDictSet(this.decoderOptions, key, value)
         }
       })
+      accessof(optsP) <- this.decoderOptions
     }
 
     let ret = 0
     if (support.jspi) {
-      ret = await this.decoder.callAsync<int32>('decoder_open', parameters, nullptr, 1, this.decoderOptions)
+      ret = await this.decoder.callAsync<int32>('decoder_open', parameters, nullptr, 1, optsP)
     }
     else {
-      ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, 1, this.decoderOptions)
+      ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, 1, optsP)
       await this.decoder.childThreadsReady()
     }
+
+    this.decoderOptions = accessof(optsP)
+
+    free(reinterpret_cast<pointer<void>>(optsP))
+
     if (ret < 0) {
-      logger.fatal(`open audio encoder failed, ret: ${ret}`)
+      logger.fatal(`open audio decoder failed, ret: ${ret}`)
     }
   }
 

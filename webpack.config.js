@@ -12,6 +12,24 @@ function getVersion() {
   }
 }
 
+function deDefined() {
+  const ts = require('typescript');
+  return (context) => {
+    return (sourceFile) => {
+      function visitor(node) {
+        if (ts.isCallExpression(node)
+          && ts.isIdentifier(node.expression)
+          && node.expression.escapedText === 'defined'
+        ) {
+          return context.factory.createNumericLiteral(0);
+        }
+        return ts.visitEachChild(node, visitor, context);
+      }
+      return ts.visitNode(sourceFile, visitor);
+    };
+  };
+}
+
 module.exports = (env) => {
 
   let entry = '';
@@ -219,7 +237,12 @@ module.exports = (env) => {
             {
               loader: 'ts-loader',
               options: {
-                configFile: path.resolve(__dirname, './tsconfig.json')
+                configFile: path.resolve(__dirname, './tsconfig.json'),
+                getCustomTransformers: env.transformer ? function() {
+                  return {
+                    before: [deDefined()]
+                  }
+                } : undefined
               }
             }
           ]

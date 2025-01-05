@@ -1,6 +1,7 @@
 
 simd=$1
 atomic=$2
+wasm64=$3
 
 NOW_PATH=$(cd $(dirname $0); pwd)
 
@@ -14,17 +15,23 @@ LIB_BUILD_PATH=$PROJECT_ROOT_PATH/dist/x264
 CFLAG=""
 EXTRA_CFLAGS="-I$PROJECT_ROOT_PATH/src/cheap/include -O3"
 
-if [[ $simd == "1" ]]; then
+if [[ $wasm64 == "1" ]]; then
   EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory -msimd128 -fvectorize -fslp-vectorize"
-  LIB_OUTPUT_PATH="$LIB_OUTPUT_PATH-simd"
-  LIB_BUILD_PATH="$LIB_BUILD_PATH-simd"
+  LIB_OUTPUT_PATH="$LIB_OUTPUT_PATH-64"
+  LIB_BUILD_PATH="$LIB_BUILD_PATH-64"
 else
-  if [[ $atomic == "1" ]]; then
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory"
-    LIB_OUTPUT_PATH="$LIB_OUTPUT_PATH-atomic"
-    LIB_BUILD_PATH="$LIB_BUILD_PATH-atomic"
-  else 
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory -no-pthread -mno-sign-ext"
+  if [[ $simd == "1" ]]; then
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory -msimd128 -fvectorize -fslp-vectorize"
+    LIB_OUTPUT_PATH="$LIB_OUTPUT_PATH-simd"
+    LIB_BUILD_PATH="$LIB_BUILD_PATH-simd"
+  else
+    if [[ $atomic == "1" ]]; then
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory"
+      LIB_OUTPUT_PATH="$LIB_OUTPUT_PATH-atomic"
+      LIB_BUILD_PATH="$LIB_BUILD_PATH-atomic"
+    else 
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory -no-pthread -mno-sign-ext"
+    fi
   fi
 fi
 

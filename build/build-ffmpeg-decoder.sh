@@ -1,6 +1,7 @@
 decode=$1
 simd=$2
 atomic=$3
+wasm64=$4
 
 echo "===== start build ffmpeg decoder $decode ====="
 
@@ -14,11 +15,15 @@ source $PROJECT_ROOT_PATH/../emsdk/emsdk_env.sh
 
 DIRNAME=$PROJECT_ROOT_PATH/lib/decode/$decode
 
-if [[ $simd == "1" ]]; then
-  DIRNAME="$DIRNAME-simd"
+if [[ $wasm64 == "1" ]]; then
+  DIRNAME="$DIRNAME-64"
 else
-  if [[ $atomic == "1" ]]; then
-    DIRNAME="$DIRNAME-atomic"
+  if [[ $simd == "1" ]]; then
+    DIRNAME="$DIRNAME-simd"
+  else
+    if [[ $atomic == "1" ]]; then
+      DIRNAME="$DIRNAME-atomic"
+    fi
   fi
 fi
 
@@ -40,17 +45,22 @@ EXTRA_LDFLAGS=""
 
 COMPONENTS=""
 
-if [[ $simd == "1" ]]; then
+if [[ $wasm64 == "1" ]]; then
   COMPONENTS="$COMPONENTS --enable-websimd128 --disable-wasmatomic"
   EXTRA_CFLAGS="$EXTRA_CFLAGS -msimd128 -fvectorize -fslp-vectorize -pthread -mbulk-memory"
 else
-  COMPONENTS="$COMPONENTS --disable-websimd128"
-  if [[ $atomic == "1" ]]; then
-    COMPONENTS="$COMPONENTS --disable-wasmatomic"
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory"
+  if [[ $simd == "1" ]]; then
+    COMPONENTS="$COMPONENTS --enable-websimd128 --disable-wasmatomic"
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -msimd128 -fvectorize -fslp-vectorize -pthread -mbulk-memory"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory -no-pthread -mno-sign-ext"
-    COMPONENTS="$COMPONENTS --enable-wasmatomic"
+    COMPONENTS="$COMPONENTS --disable-websimd128"
+    if [[ $atomic == "1" ]]; then
+      COMPONENTS="$COMPONENTS --disable-wasmatomic"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory"
+    else
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory -no-pthread -mno-sign-ext"
+      COMPONENTS="$COMPONENTS --enable-wasmatomic"
+    fi
   fi
 fi
 
@@ -65,28 +75,44 @@ if [[ $decode == "speex" ]]; then
   realDecoder="libspeex"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libspeex"
   EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/speex/include"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex/lib -lspeex"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex-64/lib -lspeex"
+  else
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/speex/lib -lspeex"
+  fi
 fi
 
 if [[ $decode == "av1" ]]; then
   realDecoder="libdav1d"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libdav1d"
   EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/dav1d/include"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/dav1d/lib -ldav1d"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/dav1d-64/lib -ldav1d"
+  else
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/dav1d/lib -ldav1d"
+  fi
 fi
 
 if [[ $decode == "vp8" ]]; then
   realDecoder="libvpx_vp8"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libvpx"
   EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx/include"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx/lib -lvpx"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx-64/lib -lvpx"
+  else
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx/lib -lvpx"
+  fi
 fi
 
 if [[ $decode == "vp9" ]]; then
   realDecoder="libvpx_vp9"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-libvpx"
   EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/libvpx/include"
-  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx/lib -lvpx"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx-64/lib -lvpx"
+  else
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/libvpx/lib -lvpx"
+  fi
 fi
 
 emmake make clean

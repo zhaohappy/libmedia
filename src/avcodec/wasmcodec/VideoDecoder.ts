@@ -125,6 +125,9 @@ export default class WasmVideoDecoder {
     await this.decoder.run(null, threadCount)
     let ret = 0
 
+    const optsP = reinterpret_cast<pointer<pointer<AVDictionary>>>(malloc(sizeof(pointer)))
+    accessof(optsP) <- nullptr
+
     if (object.keys(opts).length) {
       if (this.decoderOptions) {
         dict.freeAVDict2(this.decoderOptions)
@@ -137,15 +140,20 @@ export default class WasmVideoDecoder {
           dict.avDictSet(this.decoderOptions, key, value)
         }
       })
+      accessof(optsP) <- this.decoderOptions
     }
 
     if (support.jspi) {
-      ret = await this.decoder.callAsync<int32>('decoder_open', parameters, nullptr, threadCount, this.decoderOptions)
+      ret = await this.decoder.callAsync<int32>('decoder_open', parameters, nullptr, threadCount, optsP)
     }
     else {
-      ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, threadCount, this.decoderOptions)
+      ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, threadCount, optsP)
       await this.decoder.childThreadsReady()
     }
+
+    this.decoderOptions = accessof(optsP)
+
+    free(reinterpret_cast<pointer<void>>(optsP))
 
     if (ret < 0) {
       logger.fatal(`open video decoder failed, ret: ${ret}`)
