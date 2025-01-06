@@ -60,6 +60,8 @@ export default class IAacFormat extends IFormat {
 
   private latmFilter: LATM2RawFilter
 
+  private encodeSampleRate: int32
+
   constructor() {
     super()
   }
@@ -126,7 +128,7 @@ export default class IAacFormat extends IFormat {
       if (is.number(info)) {
         return errorType.DATA_INVALID
       }
-
+      this.encodeSampleRate = info.sampleRate
       stream.codecpar.profile = info.profile
       stream.codecpar.sampleRate = info.sampleRate
       stream.codecpar.chLayout.nbChannels = info.channels
@@ -138,7 +140,7 @@ export default class IAacFormat extends IFormat {
       stream.timeBase.num = 1
 
       stream.duration = avRescaleQ(
-        static_cast<int64>((await this.estimateTotalBlock(formatContext)) * 1024 / stream.codecpar.sampleRate * AV_TIME_BASE),
+        static_cast<int64>((await this.estimateTotalBlock(formatContext)) * 1024 / this.encodeSampleRate * AV_TIME_BASE),
         AV_TIME_BASE_Q,
         stream.timeBase
       )
@@ -217,7 +219,7 @@ export default class IAacFormat extends IFormat {
         }
 
         const duration = avRescaleQ(
-          static_cast<int64>((numberOfRawDataBlocksInFrame + 1) * 1024 / stream.codecpar.sampleRate * AV_TIME_BASE),
+          static_cast<int64>((numberOfRawDataBlocksInFrame + 1) * 1024 / this.encodeSampleRate * AV_TIME_BASE),
           AV_TIME_BASE_Q,
           stream.timeBase
         )
@@ -391,7 +393,7 @@ export default class IAacFormat extends IFormat {
                 | ((nextFrame[5] & 0xE0) >>> 5)
               const numberOfRawDataBlocksInFrame = nextFrame[6] & 0x03
               const duration = avRescaleQ(
-                static_cast<int64>((numberOfRawDataBlocksInFrame + 1) * 1024 / stream.codecpar.sampleRate * AV_TIME_BASE),
+                static_cast<int64>((numberOfRawDataBlocksInFrame + 1) * 1024 / this.encodeSampleRate * AV_TIME_BASE),
                 AV_TIME_BASE_Q,
                 stream.timeBase
               )
