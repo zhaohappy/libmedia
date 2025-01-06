@@ -115,8 +115,8 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
             return
           }
 
-          const frontBuffer = this.allocBuffer()
-          const backBuffer = this.allocBuffer()
+          const frontBuffer = this.backBuffer ? this.backBuffer : this.allocBuffer()
+          const backBuffer = this.frontBuffer ? this.frontBuffer : this.allocBuffer()
 
           await this.pullIPC.request('pull', {
             buffer: backBuffer

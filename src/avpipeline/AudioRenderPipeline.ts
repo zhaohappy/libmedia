@@ -216,12 +216,10 @@ export default class AudioRenderPipeline extends Pipeline {
           stretchpitcher.flush()
         }
         logger.info(`audio render ended, taskId: ${task.taskId}`)
-        task.controlIPCPort.notify('ended')
         return IOError.END
       }
       else if (audioFrame < 0) {
         logger.error(`pull audio frame failed, taskId: ${task.taskId}`)
-        task.controlIPCPort.notify('ended')
         return audioFrame as number
       }
       else {
