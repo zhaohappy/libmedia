@@ -98,9 +98,16 @@ import FileIOLoader from 'avnetwork/ioLoader/FileIOLoader'
 import HlsIOLoader from 'avnetwork/ioLoader/HlsIOLoader'
 import DashIOLoader from 'avnetwork/ioLoader/DashIOLoader'
 import analyzeUrlIOLoader from 'avutil/function/analyzeUrlIOLoader'
+import getWasmUrl from 'avutil/function/getWasmUrl'
 
 export interface AVTranscoderOptions {
-  getWasm: (type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codec?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
+  /**
+   * 自定义 wasm 请求 base url
+   * 
+   *  `${wasmBaseUrl}/decode/aac.wasm`
+   */
+  wasmBaseUrl?: string
+  getWasm?: (type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codec?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
   onprogress?: (taskId: string, progress: number) => void
 }
 
@@ -336,7 +343,13 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       return AVTranscoder.Resource.get(key)
     }
 
-    const wasmUrl = this.options.getWasm(type, codecId, mediaType)
+    const wasmUrl = this.options.getWasm
+      ? this.options.getWasm(type, codecId, mediaType)
+      : getWasmUrl(
+        this.options.wasmBaseUrl ?? `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@${defined(VERSION).split('-')[0].replace(/^[v|n]/, '')}/dist`,
+        type,
+        codecId
+      )
 
     if (wasmUrl) {
       let resource: WebAssemblyResource | ArrayBuffer

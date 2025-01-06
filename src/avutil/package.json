@@ -145,6 +145,11 @@
       "require": "./dist/cjs/function/analyzeAVFormat.js",
       "types": "./dist/esm/function/analyzeAVFormat.d.ts"
     },
+    "./function/getWasmUrl": {
+      "import": "./dist/esm/function/getWasmUrl.js",
+      "require": "./dist/cjs/function/getWasmUrl.js",
+      "types": "./dist/esm/function/getWasmUrl.d.ts"
+    },
     "./function/analyzeUrlIOLoader": {
       "import": "./dist/esm/function/analyzeUrlIOLoader.js",
       "require": "./dist/cjs/function/analyzeUrlIOLoader.js",

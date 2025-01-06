@@ -98,6 +98,7 @@ import analyzeUrlIOLoader from 'avutil/function/analyzeUrlIOLoader'
 import WebSocketIOLoader from 'avnetwork/ioLoader/WebSocketIOLoader'
 import SocketIOLoader from 'avnetwork/ioLoader/SocketIOLoader'
 import WebTransportIOLoader from 'avnetwork/ioLoader/WebTransportIOLoader'
+import getWasmUrl from 'avutil/function/getWasmUrl'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -131,6 +132,12 @@ export interface AVPlayerOptions {
    */
   container: HTMLDivElement
   /**
+   * 自定义 wasm 请求 base url
+   * 
+   *  `${wasmBaseUrl}/decode/aac.wasm`
+   */
+  wasmBaseUrl?: string
+  /**
    * 获取 wasm 回调
    * 
    * @param type 
@@ -138,7 +145,7 @@ export interface AVPlayerOptions {
    * @param mediaType 
    * @returns 
    */
-  getWasm: (type: 'decoder' | 'resampler' | 'stretchpitcher', codecId?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
+  getWasm?: (type: 'decoder' | 'resampler' | 'stretchpitcher', codecId?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
   /**
    * 是否是直播
    */
@@ -812,7 +819,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       return AVPlayer.Resource.get(key)
     }
 
-    const wasmUrl = this.options.getWasm(type, codecId, mediaType)
+    const wasmUrl = this.options.getWasm
+      ? this.options.getWasm(type, codecId, mediaType)
+      : getWasmUrl(
+        this.options.wasmBaseUrl ?? `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@${defined(VERSION).split('-')[0].replace(/^[v|n]/, '')}/dist`,
+        type,
+        codecId
+      )
 
     if (wasmUrl) {
       let resource: WebAssemblyResource | ArrayBuffer
@@ -3223,6 +3236,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   public onAudioEnded(): void {
     this.audioEnded = true
+    if (this.selectedVideoStream) {
+      this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_VIDEO)
+    }
     this.handleEnded()
   }
 
