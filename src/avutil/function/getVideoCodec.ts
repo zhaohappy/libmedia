@@ -52,7 +52,7 @@ export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extr
   if (codecId === AVCodecID.AV_CODEC_ID_H264) {
     /*
      * avc1.profile_idc.constraint_set.level_idc
-     * 每个参数 1 个字节压缩成 16 进制
+     * 每个参数 1 个字节转成 16 进制
      * url: https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter#iso_base_media_file_format_mp4_quicktime_and_3gp
      */
 
