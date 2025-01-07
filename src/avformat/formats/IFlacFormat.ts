@@ -35,7 +35,7 @@ import { mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
-import { MetaDataBlockType } from './flac/flac'
+import { MetaDataBlockType } from 'avutil/codecs/flac'
 import { FlacContext, FrameInfo } from './flac/type'
 import { decodeFrameHeader } from './flac/iflac'
 import BitReader from 'common/io/BitReader'
@@ -169,7 +169,7 @@ export default class IFlacFormat extends IFormat {
         stream.codecpar.codecTag = await formatContext.ioReader.readUint32()
         stream.codecpar.extradata = avMalloc(blockLen - 4)
         stream.codecpar.extradataSize = blockLen - 4
-        await formatContext.ioReader.readBuffer(blockLen - 4, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+        await formatContext.ioReader.readBuffer(blockLen - 4, mapSafeUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
       }
       else if (blockType === MetaDataBlockType.SEEKTABLE) {
         for (let i = 0; i < blockLen / 18; i++) {

@@ -71,7 +71,7 @@ export default class WebAudioDecoder {
     this.parameters = parameters
     this.extradata = null
     if (parameters.extradata !== nullptr) {
-      this.extradata = mapUint8Array(parameters.extradata, parameters.extradataSize).slice()
+      this.extradata = mapUint8Array(parameters.extradata, reinterpret_cast<size>(parameters.extradataSize)).slice()
     }
 
     const config: AudioDecoderConfig = {
@@ -177,7 +177,7 @@ export default class WebAudioDecoder {
   static async isSupported(parameters: pointer<AVCodecParameters>) {
     let extradata: Uint8Array = null
     if (parameters.extradata !== nullptr) {
-      extradata = mapUint8Array(parameters.extradata, parameters.extradataSize).slice()
+      extradata = mapUint8Array(parameters.extradata, reinterpret_cast<size>(parameters.extradataSize)).slice()
     }
     const config: AudioDecoderConfig = {
       codec: getAudioCodec(parameters),

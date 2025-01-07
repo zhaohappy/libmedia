@@ -27,7 +27,7 @@ import BitReader from 'common/io/BitReader'
 import { FrameInfo } from './type'
 import * as errorType from 'avutil/error'
 import * as logger from 'common/util/logger'
-import { BlockSizeTable, FLAC_MAX_CHANNELS, FlacCHMode, SampleRateTable, SampleSizeTable } from './flac'
+import { BlockSizeTable, FLAC_MAX_CHANNELS, FlacCHMode, SampleRateTable, SampleSizeTable } from 'avutil/codecs/flac'
 import crc8 from 'common/math/crc8'
 
 export function getUtf8(reader: BitReader) {

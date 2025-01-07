@@ -78,7 +78,7 @@ export default class LATM2RawFilter extends AVBSFilter {
 
   public sendAVPacket(avpacket: pointer<AVPacket>): number {
 
-    const buffer = mapUint8Array(avpacket.data, avpacket.size)
+    const buffer = mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
 
     this.bitReader.appendBuffer(buffer)
 

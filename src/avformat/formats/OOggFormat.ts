@@ -205,7 +205,7 @@ export default class OOggFormat extends OFormat {
           commentPage.write(this.cacheWriter)
           this.writePage(stream, formatContext.ioWriter, this.cacheWriter.getBuffer().slice(), 0)
 
-          const extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+          const extradata = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize))
 
           let ioReader = new IOReaderSync(extradata.length, true)
           ioReader.appendBuffer(extradata)
@@ -285,7 +285,7 @@ export default class OOggFormat extends OFormat {
             return errorType.DATA_INVALID
           }
           this.cacheWriter.reset()
-          this.cacheWriter.writeBuffer(mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+          this.cacheWriter.writeBuffer(mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
           this.writePage(stream, formatContext.ioWriter, this.cacheWriter.getBuffer().slice(), 2)
 
           const commentPage = new OggsCommentPage()

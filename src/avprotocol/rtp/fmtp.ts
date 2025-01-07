@@ -69,7 +69,7 @@ export function parseH264Fmtp(stream: AVStream, config: string) {
         stream.codecpar.extradata = avMalloc(extradata.length)
         stream.codecpar.extradataSize = extradata.length
         memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
-        h264.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+        h264.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
         break
     }
   })
@@ -101,7 +101,7 @@ export function parseHevcFmtp(stream: AVStream, config: string) {
     stream.codecpar.extradata = avMalloc(extradata.length)
     stream.codecpar.extradataSize = extradata.length
     memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
-    hevc.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+    hevc.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
   }
   return context
 }
@@ -133,13 +133,13 @@ export function parseMpeg4Fmtp(stream: AVStream, config: string) {
         context.config = value
         stream.codecpar.extradata = avMalloc(value.length / 2)
         stream.codecpar.extradataSize = value.length / 2
-        const buffer = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+        const buffer = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize))
         let offset = 0
         for (let i = 0; i < value.length; i += 2) {
           buffer[offset++] = +('0x' + value.substring(i, i + 2))
         }
         if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
-          aac.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+          aac.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
         }
         break
     }
@@ -188,10 +188,10 @@ export function parseAacLatmFmtp(stream: AVStream, config: string) {
 
         stream.codecpar.extradata = avMalloc(2)
         stream.codecpar.extradataSize = 2
-        const buffer = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+        const buffer = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize))
         buffer[0] = bitReader.readU(8)
         buffer[1] = bitReader.readU(8)
-        aac.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+        aac.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
         break
     }
   })

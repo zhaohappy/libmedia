@@ -91,9 +91,9 @@ export async function readFormatTag(ioReader: IOReader, codecpar: pointer<AVCode
   else if (audioFormat === 0x0165 && size >= 32) {
     size -= 4
 
-    codecpar.extradata = avMalloc(size)
+    codecpar.extradata = avMalloc(reinterpret_cast<size>(size))
     codecpar.extradataSize = size
-    await ioReader.readBuffer(size, mapSafeUint8Array(codecpar.extradata, size))
+    await ioReader.readBuffer(size, mapSafeUint8Array(codecpar.extradata, reinterpret_cast<size>(size)))
 
     const streams = intread.rl16(codecpar.extradata + 4)
     codecpar.sampleRate = intread.rl32(codecpar.extradata + 12)

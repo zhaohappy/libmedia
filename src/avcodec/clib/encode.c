@@ -45,7 +45,7 @@ struct AVBuffer {
   int flags_internal;
 };
 
-int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCodecParameters* codecpar, AVRational* time_base, int thread_count, AVDictionary* opts) {
+int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCodecParameters* codecpar, AVRational* time_base, int thread_count, AVDictionary** opts) {
 
   int ret;
 
@@ -98,7 +98,7 @@ int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCode
   #endif
 
   /* Init the encoders */
-  if ((ret = avcodec_open2(*enc_ctx, enc, &opts)) < 0) {
+  if ((ret = avcodec_open2(*enc_ctx, enc, opts)) < 0) {
     format_log(ERROR, "Failed to open %s codec\n", avcodec_get_name(codec_id));
     return ret;
   }
@@ -154,7 +154,7 @@ int encode_frame(const AVFrame* frame) {
   return 0;
 }
 
-EM_PORT_API(int) encoder_open(AVCodecParameters* codecpar, AVRational* time_base, int thread_count, AVDictionary* opts) {
+EM_PORT_API(int) encoder_open(AVCodecParameters* codecpar, AVRational* time_base, int thread_count, AVDictionary** opts) {
   return open_codec_context(&enc_ctx, codecpar->codec_id, codecpar, time_base, thread_count, opts);
 }
 
@@ -182,7 +182,7 @@ EM_PORT_API(int) encoder_encode(AVFrame* frame) {
   return encode_frame(frame);
 }
 
-EM_PORT_API(int) encoder_flush(AVPacket* packet) {
+EM_PORT_API(int) encoder_flush() {
   return encode_frame(NULL);
 }
 

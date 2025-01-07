@@ -130,12 +130,12 @@ export default class IFlvFormat extends IFormat {
   }
 
   private async readCodecConfigurationRecord(formatContext: AVIFormatContext, stream: AVStream, len: int32) {
-    const data = avMalloc(len)
+    const data = avMalloc(reinterpret_cast<size>(len))
     stream.codecpar.extradata = data
     stream.codecpar.extradataSize = len
-    await formatContext.ioReader.readBuffer(len, mapSafeUint8Array(data, len))
+    await formatContext.ioReader.readBuffer(len, mapSafeUint8Array(data, reinterpret_cast<size>(len)))
 
-    stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = mapUint8Array(data, len).slice()
+    stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = mapUint8Array(data, reinterpret_cast<size>(len)).slice()
 
     if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
       h264.parseAVCodecParameters(stream)
@@ -155,9 +155,9 @@ export default class IFlvFormat extends IFormat {
   }
 
   private async readAVPacketData(formatContext: AVIFormatContext, stream: AVStream, avpacket: pointer<AVPacket>, len: int32) {
-    const data = avMalloc(len)
+    const data = avMalloc(reinterpret_cast<size>(len))
     addAVPacketData(avpacket, data, len)
-    await formatContext.ioReader.readBuffer(len, mapSafeUint8Array(data, len))
+    await formatContext.ioReader.readBuffer(len, mapSafeUint8Array(data, reinterpret_cast<size>(len)))
 
     if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC

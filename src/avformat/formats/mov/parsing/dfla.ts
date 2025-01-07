@@ -30,7 +30,7 @@ import * as logger from 'common/util/logger'
 import { avFree, avMalloc } from 'avutil/util/mem'
 import { mapSafeUint8Array } from 'cheap/std/memory'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import { FlacMetadataType } from 'avutil/codecs/flac'
+import * as flac from 'avutil/codecs/flac'
 
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
@@ -48,7 +48,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   const type = tmp & 0x7f
   const size = await ioReader.readUint24()
 
-  if (type === FlacMetadataType.FLAC_METADATA_TYPE_STREAMINFO && size === 34) {
+  if (type === flac.FlacMetadataType.FLAC_METADATA_TYPE_STREAMINFO && size === 34) {
     const data = avMalloc(size)
     const extradata = await ioReader.readBuffer(size, mapSafeUint8Array(data, size))
 
@@ -59,6 +59,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
     else {
       stream.codecpar.extradata = data
       stream.codecpar.extradataSize = size
+      flac.parseAVCodecParameters(stream, extradata)
     }
   }
   else {

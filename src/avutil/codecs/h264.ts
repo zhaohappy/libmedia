@@ -561,7 +561,7 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
 
 export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
   if (avpacket.bitFormat === BitFormat.ANNEXB) {
-    let nalus = naluUtil.splitNaluByStartCode(mapUint8Array(avpacket.data, avpacket.size))
+    let nalus = naluUtil.splitNaluByStartCode(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)))
     return nalus.some((nalu) => {
       const type = nalu[0] & 0x1f
       return type === H264NaluType.kSliceIDR

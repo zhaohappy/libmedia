@@ -42,13 +42,13 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
     }
     else {
       if (stream.codecpar.extradata) {
-        extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+        extradata = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize))
       }
     }
   }
   else {
     if (stream.codecpar.extradata) {
-      extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+      extradata = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize))
     }
   }
 

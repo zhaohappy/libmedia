@@ -62,7 +62,9 @@ import getMediaSource from '../function/getMediaSource'
 import * as intread from 'avutil/util/intread'
 import * as h264 from 'avutil/codecs/h264'
 import * as hevc from 'avutil/codecs/hevc'
-import { AVCodecParametersSerialize, AVPacketSerialize, unserializeAVCodecParameters, unserializeAVPacket } from 'avutil/util/serialize'
+import { AVCodecParametersSerialize, AVPacketSerialize,
+  unserializeAVCodecParameters, unserializeAVPacket
+} from 'avutil/util/serialize'
 import isPointer from 'cheap/std/function/isPointer'
 import * as is from 'common/util/is'
 import os from 'common/util/os'
@@ -199,7 +201,24 @@ export default class MSEPipeline extends Pipeline {
             }
           }
         }
-        if (task.video.backPacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
+        if ((task.video.backPacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+          || (task.video.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+            && h264.isIDR(
+              task.video.backPacket,
+              task.video.codecpar.extradata
+                ? ((intread.r8(task.video.codecpar.extradata + 4) & 0x03) + 1)
+                : 4
+            )
+          )
+          || (task.video.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+              && hevc.isIDR(
+                task.video.backPacket,
+                task.video.codecpar.extradata
+                  ? ((intread.r8(task.video.codecpar.extradata + 21) & 0x03) + 1)
+                  : 4
+              )
+          )
+        ) {
           break
         }
         firstIsKeyframe = false
@@ -358,7 +377,7 @@ export default class MSEPipeline extends Pipeline {
   }
 
   // TODO avpacket extradata 混入码流
-  private mixExtradata(avpacket: pointer<AVPacket>, resource: MSEResource, extradata: pointer<uint8>, extradataSize: size) {
+  private mixExtradata(avpacket: pointer<AVPacket>, resource: MSEResource, extradata: pointer<uint8>, extradataSize: int32) {
     const codecId = resource.oformatContext.streams[0].codecpar.codecId
     if (codecId === AVCodecID.AV_CODEC_ID_H264
       || codecId === AVCodecID.AV_CODEC_ID_H265
@@ -372,19 +391,19 @@ export default class MSEPipeline extends Pipeline {
     if (codecpar.extradata) {
       avFree(codecpar.extradata)
     }
-    codecpar.extradata = avMalloc(extradataSize)
-    memcpy(codecpar.extradata, extradata, extradataSize)
+    codecpar.extradata = avMalloc(reinterpret_cast<size>(extradataSize))
+    memcpy(codecpar.extradata, extradata, reinterpret_cast<size>(extradataSize))
     codecpar.extradataSize = extradataSize
   }
 
   private async pullAVPacketInternal(task: SelfTask, leftIPCPort: IPCPort) {
-    const data = await leftIPCPort.request<pointer<AVPacketRef> | AVPacketSerialize>('pull')
-    if (is.number(data)) {
-      return data
+    const result = await leftIPCPort.request<pointer<AVPacketRef> | AVPacketSerialize>('pull')
+    if (is.number(result) || isPointer(result)) {
+      return result as pointer<AVPacketRef>
     }
     else {
       const avpacket = task.avpacketPool.alloc()
-      unserializeAVPacket(data, avpacket)
+      unserializeAVPacket(result, avpacket)
       return avpacket
     }
   }
@@ -430,7 +449,7 @@ export default class MSEPipeline extends Pipeline {
             && h264.isIDR(
               avpacket,
               task.video.codecpar.extradata
-                ? (intread.r8(task.video.codecpar.extradata + 4) & 0x03 + 1)
+                ? ((intread.r8(task.video.codecpar.extradata + 4) & 0x03) + 1)
                 : 4
             )
           )
@@ -438,7 +457,7 @@ export default class MSEPipeline extends Pipeline {
               && hevc.isIDR(
                 avpacket,
                 task.video.codecpar.extradata
-                  ? (intread.r8(task.video.codecpar.extradata + 21) & 0x03 + 1)
+                  ? ((intread.r8(task.video.codecpar.extradata + 21) & 0x03) + 1)
                   : 4
               )
           )
@@ -514,7 +533,7 @@ export default class MSEPipeline extends Pipeline {
         resource.track.updateTimestampOffset(static_cast<int32>(offset) / 1000)
         resource.timestampOffsetUpdated = true
       }
-      resource.bufferQueue.write(mapUint8Array(avpacket.data, avpacket.size).slice())
+      resource.bufferQueue.write(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)).slice())
     }
     else {
       mux.writeAVPacket(resource.oformatContext, avpacket)
@@ -636,9 +655,9 @@ export default class MSEPipeline extends Pipeline {
           resource.oformatContext.streams[0].codecpar.extradata,
           resource.oformatContext.streams[0].codecpar.extradataSize,
           extradata.data,
-          extradata.size
+          static_cast<int32>(extradata.size)
         )) {
-          this.mixExtradata(avpacket, resource, extradata.data, extradata.size)
+          this.mixExtradata(avpacket, resource, extradata.data, static_cast<int32>(extradata.size))
         }
 
         this.writeAVPacket(avpacket, resource, true)
@@ -729,9 +748,9 @@ export default class MSEPipeline extends Pipeline {
           resource.oformatContext.streams[0].codecpar.extradata,
           resource.oformatContext.streams[0].codecpar.extradataSize,
           extradata.data,
-          extradata.size
+          static_cast<int32>(extradata.size)
         )) {
-          this.mixExtradata(avpacket, resource, extradata.data, extradata.size)
+          this.mixExtradata(avpacket, resource, extradata.data, static_cast<int32>(extradata.size))
         }
       }
 
@@ -1178,7 +1197,7 @@ export default class MSEPipeline extends Pipeline {
 
       if (task.audio && task.audio.backPacket > 0) {
         if (!firstIsKeyframe || timestamp < 0n) {
-          audioRealTimestamp = avRescaleQ(task.audio.backPacket.pts - task.audio.startPTS, task.audio.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
+          audioRealTimestamp = avRescaleQ(task.audio.backPacket.pts, task.audio.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
         }
         task.audio.backPacket.streamIndex = task.audio.oformatContext.streams[0].index
         this.writeAVPacket(task.audio.backPacket, task.audio)
@@ -1187,7 +1206,7 @@ export default class MSEPipeline extends Pipeline {
       }
       if (task.video && task.video.backPacket > 0) {
         if (!firstIsKeyframe || timestamp < 0n) {
-          videoRealTimestamp = avRescaleQ(task.video.backPacket.pts - task.video.startPTS, task.video.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
+          videoRealTimestamp = avRescaleQ(task.video.backPacket.pts, task.video.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
         }
         task.video.backPacket.streamIndex = task.video.oformatContext.streams[0].index
         this.writeAVPacket(task.video.backPacket, task.video)
@@ -1210,10 +1229,10 @@ export default class MSEPipeline extends Pipeline {
             }
           }
           if (audioRealTimestamp < 0n) {
-            audioRealTimestamp = avRescaleQ(task.audio.backPacket.pts - task.audio.startPTS, task.audio.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
+            audioRealTimestamp = avRescaleQ(task.audio.backPacket.pts, task.audio.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
           }
 
-          if (avRescaleQ((task.audio.backPacket.pts - task.audio.startPTS), task.audio.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
+          if (avRescaleQ((task.audio.backPacket.pts), task.audio.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
             < realTimestamp + task.cacheDuration
           ) {
             task.audio.backPacket.streamIndex = task.audio.oformatContext.streams[0].index
@@ -1241,7 +1260,7 @@ export default class MSEPipeline extends Pipeline {
               break
             }
           }
-          if (avRescaleQ(task.video.backPacket.pts - task.video.startPTS, task.video.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
+          if (avRescaleQ(task.video.backPacket.pts, task.video.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
             < realTimestamp + task.cacheDuration
           ) {
             task.video.backPacket.streamIndex = task.video.oformatContext.streams[0].index

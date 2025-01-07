@@ -71,7 +71,7 @@ export const enum AVPacketFlags {
 export class AVPacketSideData {
   data: pointer<uint8> = nullptr
 
-  size: size = NOPTS_VALUE
+  size: size = 0
 
   type: AVPacketSideDataType = AVPacketSideDataType.AV_PKT_DATA_UNKNOWN
 }

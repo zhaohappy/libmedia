@@ -1,6 +1,7 @@
 decode=pcm
 simd=$1
 atomic=$2
+wasm64=$3
 
 echo "===== start build ffmpeg decoder $decode ====="
 
@@ -14,13 +15,18 @@ source $PROJECT_ROOT_PATH/../emsdk/emsdk_env.sh
 
 DIRNAME=$PROJECT_ROOT_PATH/lib/decode/$decode
 
-if [[ $simd == "1" ]]; then
-  DIRNAME="$DIRNAME-simd"
+if [[ $wasm64 == "1" ]]; then
+  DIRNAME="$DIRNAME-64"
 else
-  if [[ $atomic == "1" ]]; then
-    DIRNAME="$DIRNAME-atomic"
+  if [[ $simd == "1" ]]; then
+    DIRNAME="$DIRNAME-simd"
+  else
+    if [[ $atomic == "1" ]]; then
+      DIRNAME="$DIRNAME-atomic"
+    fi
   fi
 fi
+
 
 if [ ! -d $PROJECT_ROOT_PATH/lib/decode ]; then
   mkdir $PROJECT_ROOT_PATH/lib/decode
@@ -40,17 +46,22 @@ EXTRA_LDFLAGS=""
 
 COMPONENTS=""
 
-if [[ $simd == "1" ]]; then
+if [[ $wasm64 == "1" ]]; then
   COMPONENTS="$COMPONENTS --enable-websimd128 --disable-wasmatomic"
   EXTRA_CFLAGS="$EXTRA_CFLAGS -msimd128 -fvectorize -fslp-vectorize -pthread -mbulk-memory"
 else
-  COMPONENTS="$COMPONENTS --disable-websimd128"
-  if [[ $atomic == "1" ]]; then
-    COMPONENTS="$COMPONENTS --disable-wasmatomic"
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory"
+  if [[ $simd == "1" ]]; then
+    COMPONENTS="$COMPONENTS --enable-websimd128 --disable-wasmatomic"
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -msimd128 -fvectorize -fslp-vectorize -pthread -mbulk-memory"
   else
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory"
-    COMPONENTS="$COMPONENTS --enable-wasmatomic -mno-sign-ext -no-pthread"
+    COMPONENTS="$COMPONENTS --disable-websimd128"
+    if [[ $atomic == "1" ]]; then
+      COMPONENTS="$COMPONENTS --disable-wasmatomic"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory"
+    else
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory -mno-sign-ext -no-pthread"
+      COMPONENTS="$COMPONENTS --enable-wasmatomic"
+    fi
   fi
 fi
 

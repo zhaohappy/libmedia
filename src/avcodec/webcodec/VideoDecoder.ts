@@ -142,7 +142,7 @@ export default class WebVideoDecoder {
     this.currentError = null
     this.extradata = null
     if (parameters.extradata !== nullptr) {
-      this.extradata = mapUint8Array(parameters.extradata, parameters.extradataSize).slice()
+      this.extradata = mapUint8Array(parameters.extradata, reinterpret_cast<size>(parameters.extradataSize)).slice()
     }
     this.parameters = parameters
 
@@ -277,7 +277,7 @@ export default class WebVideoDecoder {
   static async isSupported(parameters: pointer<AVCodecParameters>, enableHardwareAcceleration: boolean) {
     let extradata: Uint8Array = null
     if (parameters.extradata !== nullptr) {
-      extradata = mapUint8Array(parameters.extradata, parameters.extradataSize).slice()
+      extradata = mapUint8Array(parameters.extradata, reinterpret_cast<size>(parameters.extradataSize)).slice()
     }
     const config = {
       codec: getVideoCodec(parameters),

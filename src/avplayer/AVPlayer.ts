@@ -547,7 +547,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
           let extradata = null
           if (videoStream.codecpar.extradata !== nullptr) {
-            extradata = mapUint8Array(videoStream.codecpar.extradata, videoStream.codecpar.extradataSize)
+            extradata = mapUint8Array(videoStream.codecpar.extradata, reinterpret_cast<size>(videoStream.codecpar.extradataSize))
           }
           // 检查视频格式是否支持硬解，不支持使用 mse
           const isWebcodecSupport = await VideoDecoder.isConfigSupported({

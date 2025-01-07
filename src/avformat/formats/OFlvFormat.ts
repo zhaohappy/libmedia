@@ -185,7 +185,7 @@ export default class OFlvFormat extends OFormat {
         const length = flvAAC.writeExtradata(
           formatContext.ioWriter,
           audioStream,
-          mapUint8Array(audioStream.codecpar.extradata, audioStream.codecpar.extradataSize)
+          mapUint8Array(audioStream.codecpar.extradata, reinterpret_cast<size>(audioStream.codecpar.extradataSize))
         )
 
         this.context.filesize += length + 4
@@ -215,13 +215,13 @@ export default class OFlvFormat extends OFormat {
           ? flvEnhanced.writeExtradata(
             formatContext.ioWriter,
             videoStream,
-            mapUint8Array(videoStream.codecpar.extradata, videoStream.codecpar.extradataSize),
+            mapUint8Array(videoStream.codecpar.extradata, reinterpret_cast<size>(videoStream.codecpar.extradataSize)),
             AVPacketFlags.AV_PKT_FLAG_KEY
           )
           : flvH264.writeExtradata(
             formatContext.ioWriter,
             videoStream,
-            mapUint8Array(videoStream.codecpar.extradata, videoStream.codecpar.extradataSize),
+            mapUint8Array(videoStream.codecpar.extradata, reinterpret_cast<size>(videoStream.codecpar.extradataSize)),
             AVPacketFlags.AV_PKT_FLAG_KEY
           )
         this.context.filesize += length + 4
@@ -278,7 +278,7 @@ export default class OFlvFormat extends OFormat {
           flvAAC.writeDataHeader(formatContext.ioWriter, flvAAC.AACPacketType.AAC_RAW)
         }
 
-        formatContext.ioWriter.writeBuffer(mapUint8Array(avpacket.data, avpacket.size))
+        formatContext.ioWriter.writeBuffer(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)))
 
         const previousTagSize = Number(formatContext.ioWriter.getPos() - now)
         formatContext.ioWriter.writeUint32(previousTagSize)
@@ -325,7 +325,7 @@ export default class OFlvFormat extends OFormat {
           flvEnhanced.writeExtradata(
             formatContext.ioWriter,
             stream,
-            mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize),
+            mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)),
             AVPacketFlags.AV_PKT_FLAG_KEY
           )
         }
@@ -384,7 +384,7 @@ export default class OFlvFormat extends OFormat {
           }
         }
 
-        formatContext.ioWriter.writeBuffer(mapUint8Array(avpacket.data, avpacket.size))
+        formatContext.ioWriter.writeBuffer(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)))
 
         const previousTagSize = Number(formatContext.ioWriter.getPos() - now)
         formatContext.ioWriter.writeUint32(previousTagSize)

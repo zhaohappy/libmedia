@@ -488,7 +488,7 @@ export default class OMovFormat extends OFormat {
 
     const ac3Info = this.context.ac3Info
 
-    const info = ac3.parseHeader(mapUint8Array(avpacket.data, avpacket.size))
+    const info = ac3.parseHeader(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)))
 
     if (is.number(info)) {
       ac3Info.done = true

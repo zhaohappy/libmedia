@@ -42,7 +42,7 @@ struct AVBuffer {
   int flags_internal;
 };
 
-int open_codec_context(AVCodecContext** dec_ctx, enum AVCodecID codec_id, AVCodecParameters* codecpar, AVRational* time_base, int thread_count, AVDictionary* opts) {
+int open_codec_context(AVCodecContext** dec_ctx, enum AVCodecID codec_id, AVCodecParameters* codecpar, AVRational* time_base, int thread_count, AVDictionary** opts) {
 
   int ret;
 
@@ -85,7 +85,7 @@ int open_codec_context(AVCodecContext** dec_ctx, enum AVCodecID codec_id, AVCode
   (*dec_ctx)->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 
   /* Init the decoders */
-  if ((ret = avcodec_open2(*dec_ctx, dec, &opts)) < 0) {
+  if ((ret = avcodec_open2(*dec_ctx, dec, opts)) < 0) {
     format_log(ERROR, "Failed to open %s codec\n", avcodec_get_name(codec_id));
     return ret;
   }
@@ -131,7 +131,7 @@ int decode_packet(const AVPacket* packet) {
   return 0;
 }
 
-EM_PORT_API(int) decoder_open(AVCodecParameters* codecpar, AVRational* time_base, int thread_count, AVDictionary* opts) {
+EM_PORT_API(int) decoder_open(AVCodecParameters* codecpar, AVRational* time_base, int thread_count, AVDictionary** opts) {
   // setLogLevel(DEBUG);
   return open_codec_context(&dec_ctx, codecpar->codec_id, codecpar, time_base, thread_count, opts);
 }

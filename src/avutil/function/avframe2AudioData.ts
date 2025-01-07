@@ -77,7 +77,7 @@ function mapTypeBuffer(format: AVSampleFormat, pointer: pointer<void>, size: int
   switch (format) {
     case AVSampleFormat.AV_SAMPLE_FMT_U8:
     case AVSampleFormat.AV_SAMPLE_FMT_U8P:
-      return mapUint8Array(pointer, size)
+      return mapUint8Array(pointer, reinterpret_cast<size>(size))
     case AVSampleFormat.AV_SAMPLE_FMT_S16:
     case AVSampleFormat.AV_SAMPLE_FMT_S16P:
       return mapInt16Array(reinterpret_cast<pointer<int16>>(pointer), size >>> 1)

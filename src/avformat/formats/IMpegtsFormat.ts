@@ -158,14 +158,14 @@ export default class IMpegtsFormat extends IFormat {
       }
       stream.codecpar.extradata = avMalloc(element.size)
       memcpy(stream.codecpar.extradata, element.data, element.size)
-      stream.codecpar.extradataSize = element.size
+      stream.codecpar.extradataSize = static_cast<int32>(element.size)
       deleteAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
 
       if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
-        aac.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+        aac.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
       }
       else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_OPUS) {
-        opus.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+        opus.parseAVCodecParameters(stream, mapSafeUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
       }
     }
   }
@@ -283,6 +283,7 @@ export default class IMpegtsFormat extends IFormat {
             memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
             stream.codecpar.extradataSize = extradata.length
             h264.parseAVCodecParameters(stream, extradata)
+            avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
           }
         }
       }
@@ -294,6 +295,7 @@ export default class IMpegtsFormat extends IFormat {
             memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
             stream.codecpar.extradataSize = extradata.length
             hevc.parseAVCodecParameters(stream, extradata)
+            avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
           }
         }
       }
@@ -305,6 +307,7 @@ export default class IMpegtsFormat extends IFormat {
             memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
             stream.codecpar.extradataSize = extradata.length
             vvc.parseAVCodecParameters(stream, extradata)
+            avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
           }
         }
       }

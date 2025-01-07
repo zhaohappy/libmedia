@@ -2,6 +2,7 @@ echo "===== start build ffmpeg-emcc ====="
 
 simd=$1
 atomic=$2
+wasm64=$3
 
 NOW_PATH=$(cd $(dirname $0); pwd)
 
@@ -17,19 +18,25 @@ EXTRA_CFLAGS="-I$PROJECT_ROOT_PATH/src/cheap/include -O3"
 
 COMPONENTS=""
 
-if [[ $simd == "1" ]]; then
+if [[ $wasm64 == "1" ]]; then
   COMPONENTS="$COMPONENTS --enable-websimd128 --disable-wasmatomic"
   EXTRA_CFLAGS="$EXTRA_CFLAGS -msimd128 -fvectorize -fslp-vectorize -pthread -mbulk-memory"
-  dir="$dir-simd"
+  dir="$dir-64"
 else
-  COMPONENTS="$COMPONENTS --disable-websimd128"
-  if [[ $atomic == "1" ]]; then
-    COMPONENTS="$COMPONENTS --disable-wasmatomic"
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory"
-    dir="$dir-atomic"
+  if [[ $simd == "1" ]]; then
+    COMPONENTS="$COMPONENTS --enable-websimd128 --disable-wasmatomic"
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -msimd128 -fvectorize -fslp-vectorize -pthread -mbulk-memory"
+    dir="$dir-simd"
   else
-    COMPONENTS="$COMPONENTS --enable-wasmatomic"
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory -no-pthread -mno-sign-ext"
+    COMPONENTS="$COMPONENTS --disable-websimd128"
+    if [[ $atomic == "1" ]]; then
+      COMPONENTS="$COMPONENTS --disable-wasmatomic"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory"
+      dir="$dir-atomic"
+    else
+      COMPONENTS="$COMPONENTS --enable-wasmatomic"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory -no-pthread -mno-sign-ext"
+    fi
   fi
 fi
 

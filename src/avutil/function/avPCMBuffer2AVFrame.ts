@@ -49,7 +49,7 @@ export function avPCMBuffer2AVFrame(pcmBuffer: pointer<AVPCMBuffer>, copy: boole
   const planes = planar ? pcmBuffer.channels : 1
 
   if (planes > AV_NUM_DATA_POINTERS) {
-    avframe.extendedData = reinterpret_cast<pointer<pointer<uint8>>>(avMalloc(planes * sizeof(accessof(avframe.extendedData))))
+    avframe.extendedData = reinterpret_cast<pointer<pointer<uint8>>>(avMalloc(planes * reinterpret_cast<int32>(sizeof(accessof(avframe.extendedData)))))
     if (!avframe.extendedData) {
       avFreep(reinterpret_cast<pointer<pointer<uint8>>>(addressof(avframe.extendedData)))
       return reinterpret_cast<pointer<AVFrame>>(errorType.NO_MEMORY)

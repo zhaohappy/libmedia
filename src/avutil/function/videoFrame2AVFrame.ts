@@ -26,7 +26,7 @@ import { createAVFrame, getVideoBuffer } from '../util/avframe'
 import AVFrame from '../struct/avframe'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
 import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
-import { getHeapU8 } from 'cheap/heap'
+import { getHeap } from 'cheap/heap'
 
 export function mapFormat(format: VideoPixelFormat) {
   switch (format) {
@@ -111,10 +111,10 @@ export function videoFrame2AVFrame(videoFrame: VideoFrame, avframe: pointer<AVFr
   avframe.colorRange = videoFrame.colorSpace.fullRange ? AVColorRange.AVCOL_RANGE_JPEG : AVColorRange.AVCOL_RANGE_MPEG
 
   if (videoFrame.visibleRect) {
-    avframe.cropLeft = videoFrame.visibleRect.left
-    avframe.cropRight = videoFrame.visibleRect.right
-    avframe.cropTop = videoFrame.visibleRect.top
-    avframe.cropBottom = videoFrame.visibleRect.bottom
+    avframe.cropLeft = reinterpret_cast<size>(videoFrame.visibleRect.left)
+    avframe.cropRight = reinterpret_cast<size>(videoFrame.visibleRect.right)
+    avframe.cropTop = reinterpret_cast<size>(videoFrame.visibleRect.top)
+    avframe.cropBottom = reinterpret_cast<size>(videoFrame.visibleRect.bottom)
   }
 
   getVideoBuffer(avframe)
@@ -124,13 +124,12 @@ export function videoFrame2AVFrame(videoFrame: VideoFrame, avframe: pointer<AVFr
   for (let i = 0; i < des.nbComponents; i++) {
     if (des.comp[i].plane >= i) {
       layout.push({
-        offset: avframe.data[i],
+        offset: reinterpret_cast<double>(avframe.data[i]),
         stride: avframe.linesize[i]
       })
     }
   }
-
-  videoFrame.copyTo(getHeapU8(), {
+  videoFrame.copyTo(getHeap(), {
     layout
   })
 

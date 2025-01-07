@@ -56,6 +56,10 @@ import { avFree, avMalloc, avMallocz } from 'avutil/util/mem'
 import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
 import { memcpy } from 'cheap/std/memory'
+import * as h264 from 'avutil/codecs/h264'
+import * as hevc from 'avutil/codecs/hevc'
+import * as vvc from 'avutil/codecs/vvc'
+import * as intread from 'avutil/util/intread'
 
 export interface VideoDecodeTaskOptions extends TaskOptions {
   resource: ArrayBuffer | WebAssemblyResource
@@ -187,8 +191,8 @@ export default class VideoDecodePipeline extends Pipeline {
 
   private async pullAVPacketInternal(task: SelfTask, leftIPCPort: IPCPort) {
     const result = await leftIPCPort.request<pointer<AVPacketRef> | AVPacketSerialize>('pull')
-    if (is.number(result)) {
-      return result
+    if (is.number(result) || isPointer(result)) {
+      return result as pointer<AVPacketRef>
     }
     else {
       const avpacket = task.avpacketPool.alloc()
@@ -306,8 +310,31 @@ export default class VideoDecodePipeline extends Pipeline {
               }
               else if (avpacket > 0) {
                 if (task.needKeyFrame) {
-                  if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
+                  if ((avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+                    || task.parameters.codecId === AVCodecID.AV_CODEC_ID_H264
+                      && h264.isIDR(
+                        avpacket,
+                        task.parameters.extradata
+                          ? ((intread.r8(task.parameters.extradata + 4) & 0x03) + 1)
+                          : 4
+                      )
+                    || task.parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
+                      && hevc.isIDR(
+                        avpacket,
+                        task.parameters.extradata
+                          ? ((intread.r8(task.parameters.extradata + 21) & 0x03) + 1)
+                          : 4
+                      )
+                    || task.parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
+                      && vvc.isIDR(
+                        avpacket,
+                        task.parameters.extradata
+                          ? (((intread.r8(task.parameters.extradata) >>> 1) & 0x03) + 1)
+                          : 4
+                      )
+                  ) {
                     task.needKeyFrame = false
+                    avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
                   }
                   else {
                     // 需要关键帧但不是，跳过继续请求新的 avpacket
@@ -329,7 +356,7 @@ export default class VideoDecodePipeline extends Pipeline {
                     if (task.parameters.extradata) {
                       avFree(task.parameters.extradata)
                     }
-                    task.parameters.extradataSize = element.size
+                    task.parameters.extradataSize = static_cast<int32>(element.size)
                     task.parameters.extradata = avMalloc(element.size)
                     memcpy(task.parameters.extradata, element.data, element.size)
                   }

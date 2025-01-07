@@ -32,7 +32,7 @@ import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
 import { AVFormat } from 'avutil/avformat'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
+import { avFree, avMalloc } from 'avutil/util/mem'
 import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/util/avpacket'
 import AVStream, { AVDisposition } from 'avutil/AVStream'
 import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
@@ -54,6 +54,7 @@ import * as av1 from 'avutil/codecs/av1'
 import * as mp3 from 'avutil/codecs/mp3'
 import * as opus from 'avutil/codecs/opus'
 import * as aac from 'avutil/codecs/aac'
+import * as flac from 'avutil/codecs/flac'
 import { avRescaleQ } from 'avutil/util/rational'
 import BufferReader from 'common/io/BufferReader'
 import findStreamByTrackUid from './matroska/function/findStreamByTrackUid'
@@ -271,7 +272,7 @@ export default class IMatroskaFormat extends IFormat {
           if (stream.codecpar.extradata) {
             switch (stream.codecpar.codecId) {
               case AVCodecID.AV_CODEC_ID_H264: {
-                const extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+                const extradata = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize))
                 h264.parseAVCodecParameters(stream, extradata)
                 if (naluUtil.isAnnexb(extradata)) {
                   stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
@@ -282,7 +283,7 @@ export default class IMatroskaFormat extends IFormat {
                 break
               }
               case AVCodecID.AV_CODEC_ID_HEVC: {
-                const extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+                const extradata = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize))
                 hevc.parseAVCodecParameters(stream, extradata)
                 if (naluUtil.isAnnexb(extradata)) {
                   stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
@@ -293,7 +294,7 @@ export default class IMatroskaFormat extends IFormat {
                 break
               }
               case AVCodecID.AV_CODEC_ID_VVC: {
-                const extradata = mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+                const extradata = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize))
                 vvc.parseAVCodecParameters(stream, extradata)
                 if (naluUtil.isAnnexb(extradata)) {
                   stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
@@ -304,23 +305,47 @@ export default class IMatroskaFormat extends IFormat {
                 break
               }
               case AVCodecID.AV_CODEC_ID_AV1:
-                av1.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+                av1.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
                 break
               case AVCodecID.AV_CODEC_ID_VP8:
-                vp8.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+                vp8.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
                 break
               case AVCodecID.AV_CODEC_ID_VP9:
-                vp9.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+                vp9.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
                 break
               case AVCodecID.AV_CODEC_ID_AAC:
-                aac.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+                aac.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
                 break
               case AVCodecID.AV_CODEC_ID_MP3:
-                mp3.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+                mp3.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
                 break
               case AVCodecID.AV_CODEC_ID_OPUS:
-                opus.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+                opus.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
                 break
+              case AVCodecID.AV_CODEC_ID_FLAC: {
+                if (stream.codecpar.extradataSize > flac.FLAC_STREAMINFO_SIZE) {
+                  const bufferReader = new BufferReader(mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
+                  if (bufferReader.readString(4) === 'fLaC') {
+                    while (bufferReader.remainingSize()) {
+                      const blockHeader = bufferReader.readUint8()
+                      const blockLen = bufferReader.readUint24()
+                      const blockType = blockHeader & (~0x80)
+                      if (blockType === flac.FlacMetadataType.FLAC_METADATA_TYPE_STREAMINFO) {
+                        const extradata = bufferReader.readBuffer(blockLen)
+                        avFree(stream.codecpar.extradata)
+                        stream.codecpar.extradata = avMalloc(extradata.length)
+                        stream.codecpar.extradataSize = extradata.length
+                        memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
+                        break
+                      }
+                      bufferReader.skip(blockType)
+                    }
+                  }
+                }
+                if (stream.codecpar.extradataSize === flac.FLAC_STREAMINFO_SIZE) {
+                  flac.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
+                }
+              }
             }
           }
           else {
@@ -334,8 +359,8 @@ export default class IMatroskaFormat extends IFormat {
             }
             if (extradata) {
               stream.codecpar.extradataSize = extradata.length
-              stream.codecpar.extradata = avMalloc(stream.codecpar.extradataSize)
-              memcpyFromUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize, extradata)
+              stream.codecpar.extradata = avMalloc(reinterpret_cast<size>(stream.codecpar.extradataSize))
+              memcpyFromUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize), extradata)
             }
           }
         }
@@ -378,8 +403,8 @@ export default class IMatroskaFormat extends IFormat {
         stream.privData = attachment
         if (attachment.data) {
           stream.codecpar.extradataSize = static_cast<int32>(attachment.data.size)
-          stream.codecpar.extradata = avMalloc(stream.codecpar.extradataSize)
-          memcpyFromUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize, attachment.data.data)
+          stream.codecpar.extradata = avMalloc(reinterpret_cast<size>(stream.codecpar.extradataSize))
+          memcpyFromUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize), attachment.data.data)
         }
       })
     }

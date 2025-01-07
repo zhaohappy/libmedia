@@ -173,10 +173,10 @@ export default class IMp3Format extends IFormat {
     }
 
     stream.codecpar.extradataSize = 4
-    stream.codecpar.extradata = avMalloc(stream.codecpar.extradataSize)
+    stream.codecpar.extradata = avMalloc(reinterpret_cast<size>(stream.codecpar.extradataSize))
     await formatContext.ioReader.peekBuffer(
       stream.codecpar.extradataSize,
-      mapSafeUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize)
+      mapSafeUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize))
     )
     frameHeader.parse(mp3Context.frameHeader, await formatContext.ioReader.readUint32())
 

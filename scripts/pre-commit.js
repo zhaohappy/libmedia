@@ -1,6 +1,6 @@
 const { execSync, spawnSync } = require('child_process');
 
-const modifiedList = execSync('git diff --cached --name-only')
+const modifiedList = execSync('git diff --cached --name-only --diff-filter=ACMR')
   .toString()
   .trim()
   .split('\n')

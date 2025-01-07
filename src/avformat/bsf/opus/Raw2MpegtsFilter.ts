@@ -67,7 +67,7 @@ export default class Raw2MpegtsFilter extends AVBSFilter {
       return
     }
 
-    const packetBuffer = mapUint8Array(avpacket.data, avpacket.size)
+    const packetBuffer = mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
 
     const opusSamples = opus.getBufferSamples(packetBuffer)
     let sideData = null

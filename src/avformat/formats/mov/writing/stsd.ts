@@ -360,7 +360,7 @@ function writeSubtitleTag(ioWriter: IOWriter, stream: Stream, movContext: MOVCon
     esds(ioWriter, stream, movContext)
   }
   else if (stream.codecpar.extradata) {
-    ioWriter.writeBuffer(mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+    ioWriter.writeBuffer(mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
   }
 
   if (!movContext.isom) {

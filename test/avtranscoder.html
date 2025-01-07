@@ -66,7 +66,7 @@
       <el-radio v-model="radio" label="speex">speex</el-radio>
       <el-radio v-model="radio" label="ac3">ac3</el-radio>
       <el-radio v-model="radio" label="eac3">eac3</el-radio>
-      <el-radio v-model="radio" label="dts">dts</el-radio>
+      <el-radio v-model="radio" label="dca">dts</el-radio>
       <el-radio v-model="radio" label="pcm_alaw">pcm_alaw</el-radio>
       <el-radio v-model="radio" label="pcm_mulaw">pcm_mulaw</el-radio>
     </div>
@@ -155,6 +155,7 @@
 
     let startComp;
     let durationComp;
+    let defaultVersion = '-atomic.wasm'
 
     audioDisableComp = new Vue({
       el: '#audioDisable',
@@ -297,64 +298,64 @@
                 case 'decoder': {
 
                   if (codecId >= 65536 && codecId <= 65572) {
-                    return '../dist/decode/pcm-simd.wasm'
+                    return '../dist/decode/pcm' + defaultVersion
                   }
 
                   switch (codecId) {
                     // mpeg1/2
                     case 2:
-                      return `../dist/decode/mpeg2video-simd.wasm`
+                      return `../dist/decode/mpeg2video` + defaultVersion
                     // H264
                     case 27:
-                      return '../dist/decode/h264-simd.wasm'
+                      return '../dist/decode/h264' + defaultVersion
                     // theora
                     case 30:
-                      return '../dist/decode/theora-simd.wasm'
+                      return '../dist/decode/theora' + defaultVersion
                     // AAC
                     case 86018:
-                      return '../dist/decode/aac-simd.wasm'
+                      return '../dist/decode/aac' + defaultVersion
                     // ac3
                     case 86019:
-                      return '../dist/decode/ac3-simd.wasm'
+                      return '../dist/decode/ac3' + defaultVersion
                     // eac3
                     case 86056:
-                      return '../dist/decode/eac3-simd.wasm'
+                      return '../dist/decode/eac3' + defaultVersion
                     // dts
                     case 86020:
-                      return '../dist/decode/dca-simd.wasm'
+                      return '../dist/decode/dca' + defaultVersion
                     // MP3
                     case 86017:
-                      return '../dist/decode/mp3-simd.wasm'
+                      return '../dist/decode/mp3' + defaultVersion
                     // HEVC
                     case 173:
-                      return '../dist/decode/hevc-simd.wasm'
+                      return '../dist/decode/hevc' + defaultVersion
                     // VVC
                     case 196:
-                      return '../dist/decode/vvc-simd.wasm'
+                      return '../dist/decode/vvc' + defaultVersion
                     // Mpeg4
                     case 12:
-                      return '../dist/decode/mpeg4-simd.wasm'
+                      return '../dist/decode/mpeg4' + defaultVersion
                     // AV1
                     case 225:
-                      return '../dist/decode/av1-simd.wasm'
+                      return '../dist/decode/av1' + defaultVersion
                     // Speex
                     case 86051:
-                      return '../dist/decode/speex-simd.wasm'
+                      return '../dist/decode/speex' + defaultVersion
                     // Opus
                     case 86076:
-                      return '../dist/decode/opus-simd.wasm'
+                      return '../dist/decode/opus' + defaultVersion
                     // flac
                     case 86028:
-                      return '../dist/decode/flac-simd.wasm'
+                      return '../dist/decode/flac' + defaultVersion
                     // vorbis
                     case 86021:
-                      return '../dist/decode/vorbis-simd.wasm'
+                      return '../dist/decode/vorbis' + defaultVersion
                     // vp8
                     case 139:
-                      return '../dist/decode/vp8-simd.wasm'
+                      return '../dist/decode/vp8' + defaultVersion
                     // vp9
                     case 167:
-                      return '../dist/decode/vp9-simd.wasm'
+                      return '../dist/decode/vp9' + defaultVersion
                     default:
                       return null
                   }
@@ -363,72 +364,72 @@
                 case 'encoder': {
 
                   if (codecId >= 65536 && codecId <= 65572) {
-                    return '../dist/encode/pcm-simd.wasm'
+                    return '../dist/encode/pcm' + defaultVersion
                   }
 
                   switch (codecId) {
                     // H264
                     case 27:
-                      return '../dist/encode/x264-simd.wasm'
+                      return '../dist/encode/x264' + defaultVersion
                     // theora
                     case 30:
-                      return '../dist/encode/theora-simd.wasm'
+                      return '../dist/encode/theora' + defaultVersion
                     // AAC
                     case 86018:
-                      return '../dist/encode/aac-simd.wasm'
+                      return '../dist/encode/aac' + defaultVersion
                     // ac3
                     case 86019:
-                      return '../dist/encode/ac3-simd.wasm'
+                      return '../dist/encode/ac3' + defaultVersion
                     // eac3
                     case 86056:
-                      return '../dist/encode/eac3-simd.wasm'
+                      return '../dist/encode/eac3' + defaultVersion
                     // dts
                     case 86020:
-                      return '../dist/encode/dca-simd.wasm'
+                      return '../dist/encode/dca' + defaultVersion
                       // MP3
                     case 86017:
-                      return '../dist/encode/mp3lame-simd.wasm'
+                      return '../dist/encode/mp3lame' + defaultVersion
                     // HEVC
                     case 173:
-                      return '../dist/encode/x265-simd.wasm'
+                      return '../dist/encode/x265' + defaultVersion
                     // // VVC
                     // case 196:
-                    //   return '../dist/encode/vvc-simd.wasm'
+                    //   return '../dist/encode/vvc' + defaultVersion
                     // Mpeg4
                     case 12:
-                      return '../dist/encode/mpeg4-simd.wasm'
+                      return '../dist/encode/mpeg4' + defaultVersion
                     // AV1
                     case 225:
-                      return '../dist/encode/av1-simd.wasm'
+                      return '../dist/encode/av1' + defaultVersion
                     // Speex
                     case 86051:
-                      return '../dist/encode/speex-simd.wasm'
+                      return '../dist/encode/speex' + defaultVersion
                     // Opus
                     case 86076:
-                      return '../dist/encode/opus-simd.wasm'
+                      return '../dist/encode/opus' + defaultVersion
                     // flac
                     case 86028:
-                      return '../dist/encode/flac-simd.wasm'
+                      return '../dist/encode/flac' + defaultVersion
                     // vorbis
                     case 86021:
-                      return '../dist/encode/vorbis-simd.wasm'
+                      return '../dist/encode/vorbis' + defaultVersion
                     // vp8
                     case 139:
-                      return '../dist/encode/vp8-simd.wasm'
+                      return '../dist/encode/vp8' + defaultVersion
                     // vp9
                     case 167:
-                      return '../dist/encode/vp9-simd.wasm'
+                      return '../dist/encode/vp9' + defaultVersion
                     default:
                       return null
                   }
                   return null
                 }
                 case 'resampler':
-                  return '../dist/resample/resample-simd.wasm'
+                  return '../dist/resample/resample' + defaultVersion
                 case 'scaler':
-                  return '../dist/scale/scale-simd.wasm'
+                  return '../dist/scale/scale' + defaultVersion
                 case 'stretchpitcher':
-                  return '../dist/stretchpitch/stretchpitch-simd.wasm'
+                  return '../dist/stretchpitch/stretchpitch' + defaultVersion
                 }
             },
           })

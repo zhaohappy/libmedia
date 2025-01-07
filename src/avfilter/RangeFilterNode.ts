@@ -25,7 +25,7 @@ export default class RangeFilterNode extends AVFilterNode {
 
   }
 
-  public async process(inputs: (pointer<AVFrame> | VideoFrame)[], outputs: (pointer<AVFrame> | VideoFrame)[]) {
+  public async process(inputs: (pointer<AVFrame> | VideoFrame | int32)[], outputs: (pointer<AVFrame> | VideoFrame | int32)[]) {
     let avframe = inputs[0]
 
     if (is.number(avframe) && avframe < 0) {
@@ -33,7 +33,7 @@ export default class RangeFilterNode extends AVFilterNode {
       return
     }
 
-    let pts = isPointer(avframe) ? avframe.pts : static_cast<int64>(avframe.timestamp)
+    let pts = isPointer(avframe) ? avframe.pts : static_cast<int64>((avframe as VideoFrame).timestamp)
 
     if (pts < this.options.start) {
       while (true) {
@@ -58,7 +58,7 @@ export default class RangeFilterNode extends AVFilterNode {
       }
     }
     else if (pts > this.options.end && this.options.end >= this.options.start) {
-      outputs[0] = reinterpret_cast<pointer<AVFrame>>(IOError.END)
+      outputs[0] = IOError.END
       return
     }
     else {
@@ -68,7 +68,7 @@ export default class RangeFilterNode extends AVFilterNode {
         outputs[0] = out
       }
       else {
-        outputs[0] = avframe.clone()
+        outputs[0] = (avframe as VideoFrame).clone()
       }
     }
   }

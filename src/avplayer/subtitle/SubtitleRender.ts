@@ -200,7 +200,7 @@ export default class SubtitleRender {
   private getAssHeader(codecpar: pointer<AVCodecParameters>) {
     let header = ''
     if (codecpar.codecId === AVCodecID.AV_CODEC_ID_ASS && codecpar.extradataSize) {
-      header = text.decode(mapUint8Array(codecpar.extradata, codecpar.extradataSize))
+      header = text.decode(mapUint8Array(codecpar.extradata, reinterpret_cast<size>(codecpar.extradataSize)))
       const lines = header.split(/\r?\n/)
       let hasEvent = false
       for (let i = 0; i < lines.length; i++) {

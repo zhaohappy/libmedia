@@ -71,7 +71,7 @@ export function sampleFillArrays(
 ) {
   const planar = sampleFormatIsPlanar(format)
 
-  memset(audioData, 0, planar ? sizeof(accessof(audioData)) * channels : sizeof(accessof(audioData)))
+  memset(audioData, 0, planar ? reinterpret_cast<int32>(sizeof(accessof(audioData))) * channels : sizeof(accessof(audioData)))
 
   if (!buf) {
     return -1

@@ -155,7 +155,7 @@ export function pixelFillLinesizes(linesizes: pointer<int32>, pixfmt: AVPixelFor
   }
 }
 
-export function pixelFillPlaneSizes(sizes: pointer<int32>, pixfmt: AVPixelFormat, height: int32, linesizes: pointer<int32>) {
+export function pixelFillPlaneSizes(sizes: pointer<size>, pixfmt: AVPixelFormat, height: int32, linesizes: pointer<int32>) {
   const hasPlane = [0, 0, 0, 0]
 
   const desc = PixelFormatDescriptorsMap[pixfmt]
@@ -170,10 +170,10 @@ export function pixelFillPlaneSizes(sizes: pointer<int32>, pixfmt: AVPixelFormat
     return errorType.INVALID_ARGUMENT
   }
 
-  sizes[0] = linesizes[0] * height
+  sizes[0] = reinterpret_cast<size>(linesizes[0] * height)
 
   if (desc.flags & PixelFormatFlags.PALETTE) {
-    sizes[1] = 256 * 4
+    sizes[1] = reinterpret_cast<size>(256 * 4)
     return 0
   }
 
@@ -191,7 +191,7 @@ export function pixelFillPlaneSizes(sizes: pointer<int32>, pixfmt: AVPixelFormat
       return errorType.INVALID_ARGUMENT
     }
 
-    sizes[i] = h * linesizes[i]
+    sizes[i] = reinterpret_cast<size>(h * linesizes[i])
   }
   return 0
 }
@@ -226,7 +226,7 @@ export function pixelFillPointer(
       defer()
       return errorType.INVALID_ARGUMENT
     }
-    ret += sizes[i]
+    ret += reinterpret_cast<double>(sizes[i])
   }
 
   if (!ptr) {
@@ -283,10 +283,10 @@ export function pixelAlloc(
     return ret
   }
 
-  let totalSize = align
+  let totalSize: size = static_cast<size>(align)
 
   for (let i = 0; i < 4; i++) {
-    if (totalSize > INT32_MAX - sizes[i]) {
+    if (totalSize > static_cast<size>(INT32_MAX) - sizes[i]) {
       defer()
       return errorType.INVALID_ARGUMENT
     }
@@ -358,10 +358,10 @@ export function pixelGetSize(pixfmt: AVPixelFormat, width: int32, height: int32,
     return ret
   }
 
-  let totalSize = 0
+  let totalSize: size = 0
 
   for (let i = 0; i < 4; i++) {
-    if (totalSize > INT32_MAX - sizes[i]) {
+    if (totalSize > reinterpret_cast<size>(INT32_MAX) - sizes[i]) {
       defer()
       return errorType.INVALID_ARGUMENT
     }

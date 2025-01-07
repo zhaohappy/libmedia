@@ -71,7 +71,7 @@ export default class ADTS2RawFilter extends AVBSFilter {
     let i = 0
 
     let lastDts = avpacket.dts || avpacket.pts
-    const buffer = mapUint8Array(avpacket.data, avpacket.size).slice()
+    const buffer = mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)).slice()
 
     while (i < buffer.length) {
 

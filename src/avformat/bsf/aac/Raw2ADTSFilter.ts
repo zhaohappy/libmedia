@@ -98,7 +98,7 @@ export default class Raw2ADTSFilter extends AVBSFilter {
     buffer[5] |= 0x1f
     buffer[6] = 0xfc
 
-    buffer.set(mapUint8Array(avpacket.data, avpacket.size), 7)
+    buffer.set(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)), 7)
 
     copyAVPacketProps(this.cache, avpacket)
     addAVPacketData(this.cache, bufferPointer, size)

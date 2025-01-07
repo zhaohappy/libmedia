@@ -96,7 +96,7 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
 
   if (stream.codecpar.extradata) {
     writeDescriptorLength(ioWriter, MP4Tag.MP4_DEC_SPECIFIC_DESCR_TAG, stream.codecpar.extradataSize)
-    ioWriter.writeBuffer(mapUint8Array(stream.codecpar.extradata, stream.codecpar.extradataSize))
+    ioWriter.writeBuffer(mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
   }
 
   // SL descriptor

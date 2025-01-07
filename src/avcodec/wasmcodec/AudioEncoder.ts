@@ -31,7 +31,6 @@ import AVPacket, { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
 import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
 import * as logger from 'common/util/logger'
 import { audioData2AVFrame } from 'avutil/function/audioData2AVFrame'
-import * as stack from 'cheap/stack'
 import { createAVFrame, destroyAVFrame, getAudioBuffer, unrefAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
@@ -129,7 +128,7 @@ class AudioFrameResizer {
     getAudioBuffer(avframe)
 
     for (let i = 0; i < this.planes; i++) {
-      memcpyFromUint8Array(avframe.data[i], avframe.linesize[0], this.data[i].subarray(this.pos, this.pos + size))
+      memcpyFromUint8Array(avframe.data[i], reinterpret_cast<size>(avframe.linesize[0]), this.data[i].subarray(this.pos, this.pos + size))
     }
 
     this.pos += size
@@ -210,10 +209,12 @@ export default class WasmAudioEncoder {
   public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, opts: Data = {}) {
     await this.encoder.run()
 
-    const timeBaseP = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
+    const timeBaseP = reinterpret_cast<pointer<Rational>>(malloc(sizeof(Rational)))
+    const optsP = reinterpret_cast<pointer<pointer<AVDictionary>>>(malloc(sizeof(pointer)))
 
     timeBaseP.num = timeBase.num
     timeBaseP.den = timeBase.den
+    accessof(optsP) <- nullptr
 
     this.encoder.call('encoder_set_flags', 1 << 22)
 
@@ -229,21 +230,25 @@ export default class WasmAudioEncoder {
           dict.avDictSet(this.encoderOptions, key, value)
         }
       })
+      accessof(optsP) <- this.encoderOptions
     }
 
     let ret = 0
 
     if (support.jspi) {
-      ret = await this.encoder.callAsync<int32>('encoder_open', parameters, timeBaseP, 1, this.encoderOptions)
+      ret = await this.encoder.callAsync<int32>('encoder_open', parameters, timeBaseP, 1, optsP)
     }
     else {
-      ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, 1, this.encoderOptions)
+      ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, 1, optsP)
       await this.encoder.childThreadsReady()
     }
 
     this.frameSize = this.encoder.call<int32>('encoder_get_framesize_size')
 
-    stack.free(sizeof(Rational))
+    this.encoderOptions = accessof(optsP)
+
+    free(reinterpret_cast<pointer<void>>(optsP))
+    free(timeBaseP)
 
     if (ret < 0) {
       logger.fatal(`open audio encoder failed, ret: ${ret}`)
@@ -318,7 +323,7 @@ export default class WasmAudioEncoder {
       destroyAVFrame(avframe)
     }
 
-    this.encoder.call('encoder_flush')
+    this.encoder.call('encoder_flush', nullptr)
     while (1) {
       const ret = this.receiveAVPacket()
       if (ret < 1) {
@@ -333,7 +338,7 @@ export default class WasmAudioEncoder {
     const size = this.encoder.call<int32>('encoder_get_extradata_size')
 
     if (pointer && size) {
-      return mapUint8Array(pointer, size).slice()
+      return mapUint8Array(pointer, reinterpret_cast<size>(size)).slice()
     }
     return null
   }

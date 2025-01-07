@@ -47,7 +47,7 @@ function copyCodecParametersSideData(
     return
   }
 
-  const dst: pointer<AVPacketSideData> = avMallocz(nbSrc * sizeof(AVPacketSideData))
+  const dst: pointer<AVPacketSideData> = avMallocz(nbSrc * reinterpret_cast<int32>(sizeof(AVPacketSideData)))
 
   for (let i = 0; i < nbSrc; i++) {
     dst[i].type = src[i].type
@@ -97,9 +97,9 @@ export function copyCodecParameters(dst: pointer<AVCodecParameters>, src: pointe
     if (dst.extradata) {
       avFree(dst.extradata)
     }
-    dst.extradata = avMalloc(src.extradataSize)
+    dst.extradata = avMalloc(reinterpret_cast<size>(src.extradataSize))
     dst.extradataSize = src.extradataSize
-    memcpy(dst.extradata, src.extradata, src.extradataSize)
+    memcpy(dst.extradata, src.extradata, reinterpret_cast<size>(src.extradataSize))
   }
 
   if (src.codedSideData) {
