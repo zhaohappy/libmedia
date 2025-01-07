@@ -283,6 +283,7 @@ export default class IMpegtsFormat extends IFormat {
             memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
             stream.codecpar.extradataSize = extradata.length
             h264.parseAVCodecParameters(stream, extradata)
+            avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
           }
         }
       }
@@ -294,6 +295,7 @@ export default class IMpegtsFormat extends IFormat {
             memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
             stream.codecpar.extradataSize = extradata.length
             hevc.parseAVCodecParameters(stream, extradata)
+            avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
           }
         }
       }
@@ -305,6 +307,7 @@ export default class IMpegtsFormat extends IFormat {
             memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
             stream.codecpar.extradataSize = extradata.length
             vvc.parseAVCodecParameters(stream, extradata)
+            avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
           }
         }
       }

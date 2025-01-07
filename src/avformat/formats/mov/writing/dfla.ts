@@ -31,6 +31,7 @@ import { mapUint8Array } from 'cheap/std/memory'
 import { AVPacketSideDataType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import { FlacMetadataType } from 'avutil/codecs/flac'
+import { FLAC_STREAMINFO_SIZE } from 'avutil/codecs/flac'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
   let extradata: Uint8Array
@@ -52,7 +53,7 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
     }
   }
 
-  if (!extradata) {
+  if (!extradata || extradata.length !== FLAC_STREAMINFO_SIZE) {
     logger.error('invalid extradata')
   }
   else {

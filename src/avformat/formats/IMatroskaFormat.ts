@@ -32,7 +32,7 @@ import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
 import { AVFormat } from 'avutil/avformat'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
+import { avFree, avMalloc } from 'avutil/util/mem'
 import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/util/avpacket'
 import AVStream, { AVDisposition } from 'avutil/AVStream'
 import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
@@ -54,6 +54,7 @@ import * as av1 from 'avutil/codecs/av1'
 import * as mp3 from 'avutil/codecs/mp3'
 import * as opus from 'avutil/codecs/opus'
 import * as aac from 'avutil/codecs/aac'
+import * as flac from 'avutil/codecs/flac'
 import { avRescaleQ } from 'avutil/util/rational'
 import BufferReader from 'common/io/BufferReader'
 import findStreamByTrackUid from './matroska/function/findStreamByTrackUid'
@@ -321,6 +322,30 @@ export default class IMatroskaFormat extends IFormat {
               case AVCodecID.AV_CODEC_ID_OPUS:
                 opus.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
                 break
+              case AVCodecID.AV_CODEC_ID_FLAC: {
+                if (stream.codecpar.extradataSize > flac.FLAC_STREAMINFO_SIZE) {
+                  const bufferReader = new BufferReader(mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
+                  if (bufferReader.readString(4) === 'fLaC') {
+                    while (bufferReader.remainingSize()) {
+                      const blockHeader = bufferReader.readUint8()
+                      const blockLen = bufferReader.readUint24()
+                      const blockType = blockHeader & (~0x80)
+                      if (blockType === flac.FlacMetadataType.FLAC_METADATA_TYPE_STREAMINFO) {
+                        const extradata = bufferReader.readBuffer(blockLen)
+                        avFree(stream.codecpar.extradata)
+                        stream.codecpar.extradata = avMalloc(extradata.length)
+                        stream.codecpar.extradataSize = extradata.length
+                        memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
+                        break
+                      }
+                      bufferReader.skip(blockType)
+                    }
+                  }
+                }
+                if (stream.codecpar.extradataSize === flac.FLAC_STREAMINFO_SIZE) {
+                  flac.parseAVCodecParameters(stream, mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
+                }
+              }
             }
           }
           else {
