@@ -47,7 +47,7 @@ export default class ResampleFilterNode extends AVFilterNode {
     }
   }
 
-  public async process(inputs: (pointer<AVFrame> | VideoFrame)[], outputs: (pointer<AVFrame> | VideoFrame)[]) {
+  public async process(inputs: (pointer<AVFrame> | int32)[], outputs: (pointer<AVFrame> | int32)[]) {
     const avframe = inputs[0] as pointer<AVFrame>
 
     if (avframe < 0) {
@@ -96,7 +96,7 @@ export default class ResampleFilterNode extends AVFilterNode {
         }
         catch (error) {
           logger.error(`open resampler failed, error ${error}`)
-          outputs[0] = reinterpret_cast<pointer<AVFrame>>(errorType.FORMAT_NOT_SUPPORT)
+          outputs[0] = errorType.FORMAT_NOT_SUPPORT
           return
         }
       }
@@ -121,7 +121,7 @@ export default class ResampleFilterNode extends AVFilterNode {
         out.extendedData = reinterpret_cast<pointer<pointer<uint8>>>(avMalloc(planes * reinterpret_cast<int32>(sizeof(accessof(out.extendedData)))))
         if (!out.extendedData) {
           avFreep(reinterpret_cast<pointer<pointer<uint8>>>(addressof(out.extendedData)))
-          outputs[0] = reinterpret_cast<pointer<AVFrame>>(errorType.NO_MEMORY)
+          outputs[0] = errorType.NO_MEMORY
           return
         }
       }
@@ -134,7 +134,7 @@ export default class ResampleFilterNode extends AVFilterNode {
           out.buf[i] = avbufferCreate(this.pcm.data[i], this.pcm.linesize * (planar ? this.pcm.channels : 1))
           if (!out.buf[i]) {
             unrefAVFrame(out)
-            outputs[0] = reinterpret_cast<pointer<AVFrame>>(errorType.NO_MEMORY)
+            outputs[0] = errorType.NO_MEMORY
             return
           }
         }

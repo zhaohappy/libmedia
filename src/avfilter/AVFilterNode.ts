@@ -346,5 +346,5 @@ export default abstract class AVFilterNode {
 
   public abstract ready(): void | Promise<void>
   public abstract destroy(): void | Promise<void>
-  public abstract process(inputs: (pointer<AVFrame> | VideoFrame)[], outputs: (pointer<AVFrame> | VideoFrame)[]): void | Promise<void>
+  public abstract process(inputs: (pointer<AVFrame> | VideoFrame | int32)[], outputs: (pointer<AVFrame> | VideoFrame | int32)[]): void | Promise<void>
 }

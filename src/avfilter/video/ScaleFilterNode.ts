@@ -37,7 +37,7 @@ export default class ScaleFilterNode extends AVFilterNode {
     }
   }
 
-  public async process(inputs: (pointer<AVFrame> | VideoFrame)[], outputs: (pointer<AVFrame> | VideoFrame)[]) {
+  public async process(inputs: (pointer<AVFrame> | VideoFrame | int32)[], outputs: (pointer<AVFrame> | VideoFrame | int32)[]) {
     let avframe = inputs[0]
 
     if (is.number(avframe) && avframe < 0) {
@@ -45,9 +45,9 @@ export default class ScaleFilterNode extends AVFilterNode {
       return
     }
 
-    const width = isPointer(avframe) ? avframe.width : avframe.displayWidth
-    const height = isPointer(avframe) ? avframe.height : avframe.displayHeight
-    const format = isPointer(avframe) ? avframe.format : mapFormat(avframe.format)
+    const width = isPointer(avframe) ? avframe.width : (avframe as VideoFrame).displayWidth
+    const height = isPointer(avframe) ? avframe.height : (avframe as VideoFrame).displayHeight
+    const format = isPointer(avframe) ? avframe.format : mapFormat((avframe as VideoFrame).format)
 
     if (width !== this.options.output.width
       || height !== this.options.output.height
@@ -58,7 +58,7 @@ export default class ScaleFilterNode extends AVFilterNode {
 
       if (format === AVPixelFormat.AV_PIX_FMT_NONE) {
         logger.error('src avframe format not support')
-        outputs[0] = reinterpret_cast<pointer<AVFrame>>(errorType.FORMAT_NOT_SUPPORT)
+        outputs[0] = errorType.FORMAT_NOT_SUPPORT
         return
       }
 
@@ -104,7 +104,7 @@ export default class ScaleFilterNode extends AVFilterNode {
         }
         catch (error) {
           logger.error(`open scaler failed, error ${error}`)
-          outputs[0] = reinterpret_cast<pointer<AVFrame>>(errorType.FORMAT_NOT_SUPPORT)
+          outputs[0] = errorType.FORMAT_NOT_SUPPORT
           return
         }
       }
@@ -138,7 +138,7 @@ export default class ScaleFilterNode extends AVFilterNode {
         outputs[0] = out
       }
       else {
-        outputs[0] = avframe.clone()
+        outputs[0] = (avframe as VideoFrame).clone()
       }
     }
   }
