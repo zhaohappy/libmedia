@@ -325,4 +325,11 @@ export default class WasmVideoEncoder {
   public getQueueLength() {
     return this.encodeQueueSize
   }
+
+  public getChildThreadCount() {
+    if (this.encoder) {
+      return this.encoder.getChildThreadCount()
+    }
+    return 0
+  }
 }

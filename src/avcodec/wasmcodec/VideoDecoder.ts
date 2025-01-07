@@ -216,4 +216,11 @@ export default class WasmVideoDecoder {
   public setSkipFrameDiscard(discard: AVDiscard) {
     this.decoder.call('decoder_discard', discard)
   }
+
+  public getChildThreadCount() {
+    if (this.decoder) {
+      return this.decoder.getChildThreadCount()
+    }
+    return 0
+  }
 }

@@ -314,7 +314,15 @@ export default class VideoEncodePipeline extends Pipeline {
                     break
                   }
                 }
-                task.firstEncoded = true
+                if (!task.firstEncoded
+                  && (task.targetEncoder instanceof WebVideoEncoder
+                    || !task.resourceExtraData.enableThreadPool
+                    || !support.jspi
+                    || task.targetEncoder.getChildThreadCount()
+                  )
+                ) {
+                  task.firstEncoded = true
+                }
                 task.gopCounter++
                 if (task.gopCounter === task.gop) {
                   task.gopCounter = 0
