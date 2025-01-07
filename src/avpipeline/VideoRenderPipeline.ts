@@ -923,7 +923,7 @@ export default class VideoRenderPipeline extends Pipeline {
           AV_MILLI_TIME_BASE_Q
         )
 
-        if (pts - task.startPTS >= timestamp) {
+        if (pts >= timestamp) {
           task.ended = false
           task.stats.videoCurrentTime = pts
           task.lastNotifyPTS = pts

@@ -56,6 +56,10 @@ import { avFree, avMalloc, avMallocz } from 'avutil/util/mem'
 import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
 import { memcpy } from 'cheap/std/memory'
+import * as h264 from 'avutil/codecs/h264'
+import * as hevc from 'avutil/codecs/hevc'
+import * as vvc from 'avutil/codecs/vvc'
+import * as intread from 'avutil/util/intread'
 
 export interface VideoDecodeTaskOptions extends TaskOptions {
   resource: ArrayBuffer | WebAssemblyResource
@@ -306,8 +310,31 @@ export default class VideoDecodePipeline extends Pipeline {
               }
               else if (avpacket > 0) {
                 if (task.needKeyFrame) {
-                  if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
+                  if ((avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+                    || task.parameters.codecId === AVCodecID.AV_CODEC_ID_H264
+                      && h264.isIDR(
+                        avpacket,
+                        task.parameters.extradata
+                          ? ((intread.r8(task.parameters.extradata + 4) & 0x03) + 1)
+                          : 4
+                      )
+                    || task.parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
+                      && hevc.isIDR(
+                        avpacket,
+                        task.parameters.extradata
+                          ? ((intread.r8(task.parameters.extradata + 21) & 0x03) + 1)
+                          : 4
+                      )
+                    || task.parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
+                      && vvc.isIDR(
+                        avpacket,
+                        task.parameters.extradata
+                          ? (((intread.r8(task.parameters.extradata) >>> 1) & 0x03) + 1)
+                          : 4
+                      )
+                  ) {
                     task.needKeyFrame = false
+                    avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
                   }
                   else {
                     // 需要关键帧但不是，跳过继续请求新的 avpacket

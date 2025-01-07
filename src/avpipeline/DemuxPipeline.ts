@@ -937,16 +937,8 @@ export default class DemuxPipeline extends Pipeline {
                 task.stats.videoPacketQueueLength++
               }
             }
-
             task.loop.start()
-            let duration = avpacket.pts
-            if (task.formatContext.streams[streamIndex].startTime !== NOPTS_VALUE_BIGINT) {
-              duration -= task.formatContext.streams[streamIndex].startTime
-            }
-            else {
-              duration -= task.formatContext.streams[streamIndex].firstDTS
-            }
-            return avRescaleQ(bigint.max(duration, 0n), avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+            return avRescaleQ(bigint.max(avpacket.pts, 0n), avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
           }
           else {
 

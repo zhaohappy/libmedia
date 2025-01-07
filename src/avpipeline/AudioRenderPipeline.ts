@@ -761,7 +761,7 @@ export default class AudioRenderPipeline extends Pipeline {
           AV_MILLI_TIME_BASE_Q
         )
 
-        if (pts - task.startPTS >= timestamp) {
+        if (pts >= timestamp) {
           task.paddingAVFrame = audioFrame
           task.ended = false
           task.lastNotifyPTS = pts
