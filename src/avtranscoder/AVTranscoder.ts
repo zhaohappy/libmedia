@@ -1092,6 +1092,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           newStream.codecpar.sampleRate = 32000
         }
       }
+      else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_DTS) {
+        newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_S32
+      }
 
       if (newStream.codecpar.profile === NOPTS_VALUE) {
         if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
@@ -1115,10 +1118,12 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             numberOfChannels: stream.codecpar.chLayout.nbChannels
           })
           if (!isSupport.supported) {
+            freeCodecParameters(newStream.codecpar)
             logger.fatal(`AudioDecoder codecId ${stream.codecpar.codecId} not support`)
           }
         }
         else {
+          freeCodecParameters(newStream.codecpar)
           logger.fatal(`audio decoder codecId ${stream.codecpar.codecId} not support`)
         }
       }
@@ -1145,12 +1150,14 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       ret = await this.AudioDecoderThread.open(taskId, stream.codecpar)
 
       if (ret < 0) {
+        freeCodecParameters(newStream.codecpar)
         logger.error(`cannot open audio ${dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} decoder`)
         return ret
       }
 
       let resamplerResource = await this.getResource('resampler')
       if (!resamplerResource) {
+        freeCodecParameters(newStream.codecpar)
         logger.fatal('resampler not found')
       }
 
@@ -1222,10 +1229,12 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             bitrateMode: 'constant'
           })
           if (!isSupport.supported) {
+            freeCodecParameters(newStream.codecpar)
             logger.fatal(`AudioEncoder ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} codecId ${newStream.codecpar.codecId} not support`)
           }
         }
         else {
+          freeCodecParameters(newStream.codecpar)
           logger.fatal(`${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder codecId ${newStream.codecpar.codecId} not support`)
         }
       }
@@ -1248,6 +1257,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       ret = await this.AudioEncoderThread.open(taskId, newStream.codecpar, { num: newStream.timeBase.num, den: newStream.timeBase.den })
 
       if (ret < 0) {
+        freeCodecParameters(newStream.codecpar)
         logger.error(`cannot open audio ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder`)
         return ret
       }
@@ -1436,10 +1446,12 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             codec: getVideoCodec(stream.codecpar)
           })
           if (!isSupport.supported) {
+            freeCodecParameters(newStream.codecpar)
             logger.fatal(`VideoDecoder codecId ${stream.codecpar.codecId} not support`)
           }
         }
         else {
+          freeCodecParameters(newStream.codecpar)
           logger.fatal(`video decoder codecId ${stream.codecpar.codecId} not support`)
         }
       }
@@ -1463,6 +1475,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       ret = await this.VideoDecoderThread.open(taskId, stream.codecpar)
 
       if (ret < 0) {
+        freeCodecParameters(newStream.codecpar)
         logger.error(`cannot open video ${dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} decoder`)
         return ret
       }
@@ -1578,10 +1591,12 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             height: newStream.codecpar.height
           })
           if (!isSupport.supported) {
+            freeCodecParameters(newStream.codecpar)
             logger.fatal(`VideoEncoder ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} codecId ${newStream.codecpar.codecId} not support`)
           }
         }
         else {
+          freeCodecParameters(newStream.codecpar)
           logger.fatal(`${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder codecId ${newStream.codecpar.codecId} not support`)
         }
       }
@@ -1627,6 +1642,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       ret = await this.VideoEncoderThread.open(taskId, newStream.codecpar, { num: newStream.timeBase.num, den: newStream.timeBase.den }, wasmEncoderOptions)
 
       if (ret < 0) {
+        freeCodecParameters(newStream.codecpar)
         logger.error(`cannot open video ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder`)
         return ret
       }
