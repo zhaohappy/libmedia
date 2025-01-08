@@ -175,7 +175,7 @@ async function estimateDurationFromPts(formatContext: AVIFormatContext) {
 export async function analyzeStreams(formatContext: AVIFormatContext): Promise<int32> {
   const needStreams = formatContext.iformat.getAnalyzeStreamsCount()
   const streamFirstGotMap = {}
-  const streamPtsMap: Record<number, bigint[]> = {}
+  const streamDtsMap: Record<number, bigint[]> = {}
   const streamBitMap: Record<number, number> = {}
 
   let avpacket: pointer<AVPacket> = nullptr
@@ -198,13 +198,13 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
   }
 
 
-  function calculate(stream: AVStream, ptsList: int64[]) {
-    if (ptsList && ptsList.length > 1) {
+  function calculate(stream: AVStream, dtsList: int64[]) {
+    if (dtsList && dtsList.length > 1) {
       let count = 0n
-      for (let i = 1; i < ptsList.length; i++) {
-        count += ptsList[i] - ptsList[i - 1]
+      for (let i = 1; i < dtsList.length; i++) {
+        count += dtsList[i] - dtsList[i - 1]
       }
-      let value = static_cast<double>(count) / (ptsList.length - 1)
+      let value = static_cast<double>(count) / (dtsList.length - 1)
 
       if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
         && stream.codecpar.sampleRate > 0
@@ -217,7 +217,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
         stream.codecpar.framerate.num = Math.round(framerate)
         stream.codecpar.framerate.den = 1
       }
-      const duration = static_cast<double>(ptsList[ptsList.length - 1] - stream.startTime) * stream.timeBase.num / stream.timeBase.den
+      const duration = static_cast<double>(dtsList[dtsList.length - 1] - stream.startTime) * stream.timeBase.num / stream.timeBase.den
       if (duration) {
         stream.codecpar.bitrate = static_cast<int64>(streamBitMap[stream.index] * 8 / duration)
       }
@@ -225,7 +225,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
   }
 
   function end() {
-    object.each(streamPtsMap, (list, id) => {
+    object.each(streamDtsMap, (list, id) => {
       calculate(formatContext.getStreamByIndex(+id), list)
     })
   }
@@ -264,18 +264,11 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
       else if (avpacket.pts < stream.startTime) {
         stream.startTime = avpacket.pts
       }
-      if (streamPtsMap[stream.index]) {
-        array.sortInsert(streamPtsMap[stream.index], avpacket.pts, (a) => {
-          if (a < avpacket.pts) {
-            return 1
-          }
-          else {
-            return -1
-          }
-        })
+      if (streamDtsMap[stream.index]) {
+        streamDtsMap[stream.index].push(avpacket.dts)
       }
       else {
-        streamPtsMap[stream.index] = [avpacket.pts]
+        streamDtsMap[stream.index] = [avpacket.dts]
       }
 
       if (streamBitMap[stream.index]) {
@@ -340,8 +333,8 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
     }
 
     // fastOpen 的时候分析到最小 samples 数量
-    if (streamPtsMap[stream.index] && streamPtsMap[stream.index].length === MIN_ANALYZE_SAMPLES) {
-      calculate(stream, streamPtsMap[stream.index])
+    if (streamDtsMap[stream.index] && streamDtsMap[stream.index].length === MIN_ANALYZE_SAMPLES) {
+      calculate(stream, streamDtsMap[stream.index])
     }
 
     if (stream.firstDTS !== NOPTS_VALUE_BIGINT
