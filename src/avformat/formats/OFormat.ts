@@ -83,6 +83,7 @@ export const OFormatSupportedCodecs: Record<Exclude<AVFormat, AVFormat.UNKNOWN>,
     AVCodecID.AV_CODEC_ID_ALAC,
     AVCodecID.AV_CODEC_ID_DTS,
     AVCodecID.AV_CODEC_ID_EAC3,
+    AVCodecID.AV_CODEC_ID_AC3,
     AVCodecID.AV_CODEC_ID_PCM_F32LE,
     AVCodecID.AV_CODEC_ID_PCM_S16BE,
     AVCodecID.AV_CODEC_ID_PCM_S16LE,
@@ -96,7 +97,11 @@ export const OFormatSupportedCodecs: Record<Exclude<AVFormat, AVFormat.UNKNOWN>,
     AVCodecID.AV_CODEC_ID_MPEG4,
     AVCodecID.AV_CODEC_ID_THEORA,
 
-    AVCodecID.AV_CODEC_ID_WEBVTT
+    AVCodecID.AV_CODEC_ID_WEBVTT,
+    AVCodecID.AV_CODEC_ID_SSA,
+    AVCodecID.AV_CODEC_ID_ASS,
+    AVCodecID.AV_CODEC_ID_TEXT,
+    AVCodecID.AV_CODEC_ID_SUBRIP
   ],
   [AVFormat.WEBM]: [
     AVCodecID.AV_CODEC_ID_VORBIS,

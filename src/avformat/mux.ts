@@ -30,7 +30,7 @@ import * as logger from 'common/util/logger'
 import { OFormatSupportedCodecs } from './formats/OFormat'
 import * as array from 'common/util/array'
 import { AVFormat } from 'avutil/avformat'
-import { AVCodecID } from 'avutil/codec'
+import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as errorType from 'avutil/error'
 import { dumpCodecName, dumpFormatName } from './dump'
 
@@ -64,6 +64,7 @@ export function open(formatContext: AVOFormatContext, options: MuxOptions = {}) 
   if (supportCodecs) {
     for (let i = 0; i < formatContext.streams.length; i++) {
       const codecId = formatContext.streams[i].codecpar.codecId
+      const codecType = formatContext.streams[i].codecpar.codecType
       if (formatContext.oformat.type === AVFormat.WAV) {
         if (codecId < AVCodecID.AV_CODEC_ID_PCM_S16LE
           || codecId > AVCodecID.AV_CODEC_ID_ADPCM_XMD
@@ -72,7 +73,10 @@ export function open(formatContext: AVOFormatContext, options: MuxOptions = {}) 
           return errorType.CODEC_NOT_SUPPORT
         }
       }
-      else if (!array.has(supportCodecs, codecId)) {
+      else if (codecType !== AVMediaType.AVMEDIA_TYPE_DATA
+        && codecType !== AVMediaType.AVMEDIA_TYPE_ATTACHMENT
+        && !array.has(supportCodecs, codecId)
+      ) {
         logger.error(`format ${dumpFormatName(formatContext.oformat.type)} not support codecId ${dumpCodecName(formatContext.streams[i].codecpar.codecType, codecId)}`)
         return errorType.CODEC_NOT_SUPPORT
       }

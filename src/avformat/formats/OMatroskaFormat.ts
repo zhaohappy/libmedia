@@ -30,7 +30,7 @@ import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import { AVFormat } from 'avutil/avformat'
 import * as logger from 'common/util/logger'
 import { avRescaleQ } from 'avutil/util/rational'
-import { createAVPacket, destroyAVPacket, getAVPacketData, getAVPacketSideData } from 'avutil/util/avpacket'
+import { createAVPacket, destroyAVPacket, getAVPacketData, getAVPacketSideData, hasAVPacketSideData } from 'avutil/util/avpacket'
 import * as object from 'common/util/object'
 import { OMatroskaContext, TrackEntry } from './matroska/type'
 import IOWriterSync from 'common/io/IOWriterSync'
@@ -49,6 +49,8 @@ import * as naluUtil from 'avutil/util/nalu'
 import * as h264 from 'avutil/codecs/h264'
 import * as hevc from 'avutil/codecs/hevc'
 import * as vvc from 'avutil/codecs/vvc'
+import * as intread from 'avutil/util/intread'
+import { Uint8ArrayInterface } from 'common/io/interface'
 
 export interface OMatroskaFormatOptions {
   isLive?: boolean
@@ -235,7 +237,12 @@ export default class OMatroskaFormat extends OFormat {
             size: static_cast<int64>(stream.codecpar.extradataSize)
           }
         }
-        track.language = stream.metadata['language'] || 'und'
+        if (stream.metadata['language']) {
+          track.language = stream.metadata['language']
+        }
+        if (stream.metadata['name']) {
+          track.name = stream.metadata['name']
+        }
 
         switch (stream.codecpar.codecType) {
           case AVMediaType.AVMEDIA_TYPE_AUDIO: {
@@ -335,9 +342,9 @@ export default class OMatroskaFormat extends OFormat {
     return 0
   }
 
-  private writeBlock(stream: AVStream, avpacket: pointer<AVPacket>) {
+  private writeBlock(stream: AVStream, avpacket: pointer<AVPacket>, id: EBMLId.SIMPLE_BLOCK | EBMLId.BLOCK = EBMLId.SIMPLE_BLOCK) {
     const track = stream.privData as TrackEntry
-    omatroska.writeEbmlId(this.context.eleWriter, EBMLId.SIMPLE_BLOCK)
+    omatroska.writeEbmlId(this.context.eleWriter, id)
     if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
         || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
         || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
@@ -370,6 +377,37 @@ export default class OMatroskaFormat extends OFormat {
       }
     }
     this.context.eleWriter.writeBuffer(getAVPacketData(avpacket))
+  }
+
+  private writeBlockGroup(stream: AVStream, avpacket: pointer<AVPacket>) {
+    omatroska.writeEleData(this.context.eleWriter, this.context, EBMLId.BLOCK_GROUP, (eleWriter) => {
+      if (avpacket.duration > 0) {
+        omatroska.writeEbmlUint(eleWriter, EBMLId.BLOCK_DURATION, avRescaleQ(avpacket.duration, avpacket.timeBase, AV_MILLI_TIME_BASE_Q))
+      }
+      const additions: {
+        additionalId: int64
+        buffer: Uint8ArrayInterface
+      }[] = []
+      for (let i = 0; i < avpacket.sideDataElems; i++) {
+        if (avpacket.sideData[i].type === AVPacketSideDataType.AV_PKT_DATA_MATROSKA_BLOCKADDITIONAL) {
+          additions.push({
+            additionalId: intread.rb64(avpacket.sideData[i].data),
+            buffer: mapUint8Array(avpacket.sideData[i].data + 8, avpacket.sideData[i].size - 8)
+          })
+        }
+      }
+      if (additions.length) {
+        omatroska.writeEleData(this.context.eleWriter, this.context, EBMLId.BLOCK_ADDITIONS, (eleWriter) => {
+          omatroska.writeEleData(eleWriter, this.context, EBMLId.BLOCK_MORE, (eleWriter) => {
+            additions.forEach((addition) => {
+              omatroska.writeEbmlUint(eleWriter, EBMLId.BLOCK_ADD_ID, addition.additionalId)
+              omatroska.writeEbmlBuffer(eleWriter, EBMLId.BLOCK_ADDITIONS, addition.buffer)
+            })
+          })
+        })
+      }
+      this.writeBlock(stream, avpacket, EBMLId.BLOCK)
+    })
   }
 
   private writeCluster(formatContext: AVOFormatContext) {
@@ -442,7 +480,16 @@ export default class OMatroskaFormat extends OFormat {
       })
     }
 
-    this.writeBlock(stream, avpacket)
+    if (avpacket.duration > 0
+      && stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_AUDIO
+      && stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO
+      || hasAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_MATROSKA_BLOCKADDITIONAL)
+    ) {
+      this.writeBlockGroup(stream, avpacket)
+    }
+    else {
+      this.writeBlock(stream, avpacket)
+    }
 
     return 0
   }
@@ -454,7 +501,7 @@ export default class OMatroskaFormat extends OFormat {
     formatContext.streams.forEach((stream) => {
       const track = stream.privData as TrackEntry
 
-      if (!this.options.isLive) {
+      if (!this.options.isLive && track?.maxPts) {
         const duration = track.maxPts
         if (duration > this.context.info.duration) {
           this.context.info.duration = reinterpret_cast<float>(static_cast<int32>(duration))

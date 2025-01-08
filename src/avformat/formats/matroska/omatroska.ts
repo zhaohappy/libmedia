@@ -23,7 +23,7 @@
  *
  */
 
-import { BytesWriterSync } from 'common/io/interface'
+import { BytesWriterSync, Uint8ArrayInterface } from 'common/io/interface'
 import { EBMLId } from './matroska'
 import * as is from 'common/util/is'
 import IOWriterSync from 'common/io/IOWriterSync'
@@ -133,7 +133,7 @@ export function writeEbmlDouble(writer: IOWriterSync, id: EBMLId, value: double)
   writer.writeDouble(value)
 }
 
-export function writeEbmlBuffer(writer: IOWriterSync, id: EBMLId, value: Uint8Array) {
+export function writeEbmlBuffer(writer: IOWriterSync, id: EBMLId, value: Uint8ArrayInterface) {
   writeEbmlId(writer, id)
   writeEbmlLength(writer, value.length)
   writer.writeBuffer(value)
@@ -288,7 +288,12 @@ export function writeTrack(writer: IOWriterSync, context: OMatroskaContext, trac
     writeEbmlUint(eleWriter, EBMLId.TRACK_NUMBER, track.number)
     writeEbmlUid(eleWriter, EBMLId.TRACK_UID, track.uid)
     writeEbmlUint(eleWriter, EBMLId.TRACK_TYPE, track.type)
-    writeEbmlString(eleWriter, EBMLId.TRACK_LANGUAGE, track.language)
+    if (track.language) {
+      writeEbmlString(eleWriter, EBMLId.TRACK_NAME, track.language)
+    }
+    if (track.name) {
+      writeEbmlString(eleWriter, EBMLId.TRACK_NAME, track.name)
+    }
     writeEbmlString(eleWriter, EBMLId.CODEC_ID, track.codecId)
 
     if (track.codecPrivate) {
