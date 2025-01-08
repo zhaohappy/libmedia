@@ -937,7 +937,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         })
     }
 
-    ret = await this.DemuxerThread.openStream(taskId, 10000)
+    ret = await this.DemuxerThread.openStream(taskId, 15000)
     if (ret < 0) {
       logger.fatal(`open stream failed, ret: ${ret}, taskId: ${taskId}`)
     }
@@ -951,7 +951,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     }
 
     if (defined(ENABLE_PROTOCOL_DASH) && subTaskId) {
-      ret = await this.DemuxerThread.openStream(subTaskId, 10000)
+      ret = await this.DemuxerThread.openStream(subTaskId, 15000)
       if (ret < 0) {
         logger.fatal(`open stream failed, ret: ${ret}, taskId: ${taskId}`)
       }
