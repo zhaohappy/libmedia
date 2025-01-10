@@ -93,6 +93,7 @@ export default class WebAudioEncoder {
     avpacket.timeBase.num = this.timeBase.num
 
     this.pts += avpacket.duration
+    avpacket.duration = avRescaleQ(avpacket.duration, AV_TIME_BASE_Q, this.timeBase)
 
     this.options.onReceiveAVPacket(avpacket)
 

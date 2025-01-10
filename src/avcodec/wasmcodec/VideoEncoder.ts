@@ -37,7 +37,6 @@ import { videoFrame2AVFrame } from 'avutil/function/videoFrame2AVFrame'
 import { createAVFrame, destroyAVFrame, unrefAVFrame } from 'avutil/util/avframe'
 import { mapUint8Array } from 'cheap/std/memory'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import { avQ2D } from 'avutil/util/rational'
 import AVBSFilter from 'avformat/bsf/AVBSFilter'
 import Annexb2AvccFilter from 'avformat/bsf/h2645/Annexb2AvccFilter'
 import support from 'common/util/support'
@@ -50,6 +49,7 @@ import * as object from 'common/util/object'
 import * as dict from 'avutil/util/avdict'
 import * as is from 'common/util/is'
 import { avMallocz } from 'avutil/util/mem'
+import { avRescaleQ } from 'avutil/util/rational'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
@@ -65,14 +65,13 @@ export default class WasmVideoEncoder {
   private encoder: WebAssemblyRunner
   private parameters: pointer<AVCodecParameters>
   private timeBase: Rational
+  private framerateTimebase: Rational
 
   private avpacket: pointer<AVPacket>
 
   private avframe: pointer<AVFrame>
 
   private encodeQueueSize: number
-  private framerate: int64
-  private inputCounter: int64
 
   private bitrateFilter: AVBSFilter
 
@@ -133,6 +132,7 @@ export default class WasmVideoEncoder {
 
       this.avpacket.timeBase.den = this.timeBase.den
       this.avpacket.timeBase.num = this.timeBase.num
+      this.avpacket.duration = avRescaleQ(1n, this.framerateTimebase, this.timeBase)
 
       this.options.onReceiveAVPacket(this.avpacket)
       this.avpacket = nullptr
@@ -195,10 +195,12 @@ export default class WasmVideoEncoder {
 
     this.parameters = parameters
     this.timeBase = timeBase
+    this.framerateTimebase = {
+      den: parameters.framerate.num,
+      num: parameters.framerate.den
+    }
 
     this.encodeQueueSize = 0
-    this.framerate = static_cast<int64>(avQ2D(parameters.framerate))
-    this.inputCounter = 0n
   }
 
   private preEncode(frame: pointer<AVFrame> | VideoFrame, key: boolean): pointer<AVFrame> {
@@ -216,17 +218,11 @@ export default class WasmVideoEncoder {
       frame.pictType = AVPictureType.AV_PICTURE_TYPE_I
     }
 
-    frame.duration = static_cast<int64>(this.timeBase.den) / this.framerate
-    frame.pts = this.inputCounter * static_cast<int64>(this.timeBase.den / this.timeBase.num) / this.framerate
-    frame.timeBase.den = this.timeBase.den
-    frame.timeBase.num = this.timeBase.num
-
     return frame
   }
 
   private postEncode() {
     this.encodeQueueSize++
-    this.inputCounter++
     while (true) {
       let ret = this.receiveAVPacket()
       if (ret === 1) {

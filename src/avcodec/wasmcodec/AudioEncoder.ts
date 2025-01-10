@@ -31,7 +31,7 @@ import AVPacket, { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
 import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
 import * as logger from 'common/util/logger'
 import { audioData2AVFrame } from 'avutil/function/audioData2AVFrame'
-import { createAVFrame, destroyAVFrame, getAudioBuffer, unrefAVFrame } from 'avutil/util/avframe'
+import { createAVFrame, destroyAVFrame, getAudioBuffer, refAVFrame, unrefAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { getBytesPerSample, sampleFormatIsPlanar, sampleSetSilence } from 'avutil/util/sample'
@@ -281,19 +281,20 @@ export default class WasmAudioEncoder {
   }
 
   public encode(avframe: pointer<AVFrame> | AudioData) {
-
-    if (!isPointer(avframe)) {
-      if (this.avframe) {
-        unrefAVFrame(this.avframe)
-      }
-      else {
-        this.avframe = createAVFrame()
-      }
-      avframe = audioData2AVFrame(avframe, this.avframe)
+    if (this.avframe) {
+      unrefAVFrame(this.avframe)
+    }
+    else {
+      this.avframe = createAVFrame()
     }
 
-    avframe.timeBase.den = this.timeBase.den
-    avframe.timeBase.num = this.timeBase.num
+    if (!isPointer(avframe)) {
+      avframe = audioData2AVFrame(avframe, this.avframe)
+    }
+    else {
+      refAVFrame(this.avframe, avframe)
+      avframe = this.avframe
+    }
 
     if (this.frameSize > 0 && avframe.nbSamples !== this.frameSize || this.audioFrameResizer) {
       if (!this.audioFrameResizer) {
@@ -305,7 +306,6 @@ export default class WasmAudioEncoder {
         if (ret < 0) {
           return 0
         }
-        avframe.pts = avRescaleQ(avframe.pts, avframe.timeBase, this.timeBase)
         this.encode_(avframe)
       }
     }

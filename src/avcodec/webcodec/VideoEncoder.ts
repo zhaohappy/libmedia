@@ -32,7 +32,6 @@ import { getHardwarePreference } from 'avutil/function/getHardwarePreference'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import { avframe2VideoFrame } from 'avutil/function/avframe2VideoFrame'
 import { createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
-import { AV_TIME_BASE_Q } from 'avutil/constant'
 import { BitFormat } from 'avutil/codecs/h264'
 import { PixelFormatDescriptorsMap, PixelFormatFlags } from 'avutil/pixelFormatDescriptor'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
@@ -82,7 +81,7 @@ export default class WebVideoEncoder {
 
   private avframeMap: Map<int64, pointer<AVFrame>>
 
-  private framerate: int64
+  private framerateTimebase: Rational
 
   private inputCounter: int64
   private outputCounter: int64
@@ -104,8 +103,8 @@ export default class WebVideoEncoder {
   }) {
 
     const inputCounter = static_cast<int64>(chunk.timestamp)
-    const pts = inputCounter * 1000000n / this.framerate
-    const dts = static_cast<int64>(this.outputCounter++) * 1000000n / this.framerate
+    const pts = avRescaleQ(inputCounter, this.framerateTimebase, this.timeBase)
+    const dts = avRescaleQ(this.outputCounter++, this.framerateTimebase, this.timeBase)
 
     const avpacket = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
 
@@ -148,10 +147,11 @@ export default class WebVideoEncoder {
       encodedVideoChunk2AVPacket(chunk, avpacket, metadata)
     }
 
-    avpacket.pts = avRescaleQ(pts, AV_TIME_BASE_Q, this.timeBase)
-    avpacket.dts = avRescaleQ(dts, AV_TIME_BASE_Q, this.timeBase)
+    avpacket.pts = pts
+    avpacket.dts = dts
     avpacket.timeBase.den = this.timeBase.den
     avpacket.timeBase.num = this.timeBase.num
+    avpacket.duration = avRescaleQ(1n, this.framerateTimebase, this.timeBase)
 
     if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_H264
       || this.parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
@@ -233,7 +233,10 @@ export default class WebVideoEncoder {
     this.timeBase = timeBase
     this.inputCounter = 0n
     this.outputCounter = 0n
-    this.framerate = static_cast<int64>(avQ2D(parameters.framerate))
+    this.framerateTimebase = {
+      den: parameters.framerate.num,
+      num: parameters.framerate.den
+    }
   }
 
   public encode(frame: VideoFrame | pointer<AVFrame>, key: boolean) {
@@ -241,19 +244,12 @@ export default class WebVideoEncoder {
       const cache = this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame()
       refAVFrame(cache, frame)
       cache.pts = this.inputCounter
-      if (cache.duration) {
-        cache.duration = avRescaleQ(cache.duration, frame.timeBase, AV_TIME_BASE_Q)
-      }
-      else {
-        cache.duration = 1000000n / this.framerate
-      }
       this.avframeMap.set(cache.pts, cache)
       frame = avframe2VideoFrame(cache)
     }
     else {
       frame = new VideoFrame(frame, {
-        timestamp: static_cast<double>(this.inputCounter),
-        duration: static_cast<double>(1000000n / this.framerate)
+        timestamp: static_cast<double>(this.inputCounter)
       })
     }
     try {
