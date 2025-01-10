@@ -48,6 +48,8 @@ import { AVMediaType } from 'avutil/codec'
 import { Data } from 'common/types/type'
 import * as object from 'common/util/object'
 
+const MIN_QUEUE_CACHE = 30
+
 export interface MuxTaskOptions extends TaskOptions {
   isLive?: boolean
   format: AVFormat
@@ -65,8 +67,9 @@ type SelfTask = MuxTaskOptions & {
   streams: {
     stream: AVStreamInterface
     pullIPC: IPCPort
-    avpacket: pointer<AVPacketRef>
+    avpacketQueue: pointer<AVPacketRef>[]
     ended: boolean
+    pulling: Promise<void>
   }[]
 }
 
@@ -201,6 +204,13 @@ export default class MuxPipeline extends Pipeline {
       task.formatContext.oformat = oformat
 
       for (let i = 0; i < task.streams.length; i++) {
+        if (task.streams[i].ended
+          || (task.streams[i].stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_AUDIO
+            && task.streams[i].stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO
+          )
+        ) {
+          continue
+        }
         const avpacket = await task.streams[i].pullIPC.request<pointer<AVPacketRef>>('pull')
         if (avpacket === IOError.END) {
           task.streams[i].ended = true
@@ -212,8 +222,8 @@ export default class MuxPipeline extends Pipeline {
         }
         else {
           avpacket.streamIndex = task.streams[i].stream.index
-          task.streams[i].avpacket = avpacket
-          const currentDts = avRescaleQ(task.streams[i].avpacket.dts, task.streams[i].avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+          task.streams[i].avpacketQueue.push(avpacket)
+          const currentDts = avRescaleQ(avpacket.dts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
           if (task.streams[i].stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
             task.stats.firstAudioMuxDts = currentDts
           }
@@ -235,8 +245,10 @@ export default class MuxPipeline extends Pipeline {
       task.streams.push({
         stream,
         pullIPC: new IPCPort(port),
-        avpacket: nullptr,
-        ended: false
+        avpacketQueue: [],
+        ended: stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_ATTACHMENT
+          || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_DATA,
+        pulling: null
       })
       const ostream = task.formatContext.createStream()
       ostream.id = stream.id
@@ -287,25 +299,49 @@ export default class MuxPipeline extends Pipeline {
         return errorType.INVALID_OPERATE
       }
 
-      task.loop = new LoopTask(async () => {
+      function process(index: number, avpacket: pointer<AVPacketRef>) {
+        if (avpacket === IOError.END) {
+          task.streams[index].ended = true
+        }
+        else if (avpacket < 0) {
+          logger.error(`pull stream ${index} avpacket error, ret: ${avpacket}`)
+          task.streams[index].ended = true
+          task.loop.stop()
+          task.ended = true
+          task.rightIPCPort.notify('error')
+        }
+        else {
+          avpacket.streamIndex = task.streams[index].stream.index
+          task.streams[index].avpacketQueue.push(avpacket)
+        }
+      }
 
+      function pull(index: number) {
+        if (task.streams[index].pulling) {
+          return
+        }
+        task.streams[index].pulling = task.streams[index].pullIPC.request<pointer<AVPacketRef>>('pull').then((avpacket) => {
+          process(index, avpacket)
+          task.streams[index].pulling = null
+        })
+      }
+
+      task.loop = new LoopTask(async () => {
         for (let i = 0; i < task.streams.length; i++) {
-          if (!task.streams[i].ended && !task.streams[i].avpacket) {
-            const avpacket = await task.streams[i].pullIPC.request<pointer<AVPacketRef>>('pull')
-            if (avpacket === IOError.END) {
-              task.streams[i].ended = true
-            }
-            else if (avpacket < 0) {
-              logger.error(`pull stream ${i} avpacket error, ret: ${avpacket}`)
-              task.streams[i].ended = true
-              task.loop.stop()
-              task.ended = true
-              task.rightIPCPort.notify('error')
-              return
+          if (!task.streams[i].ended && task.streams[i].avpacketQueue.length < MIN_QUEUE_CACHE) {
+            const mediaType = task.streams[i].stream.codecpar.codecType
+            if ((mediaType === AVMediaType.AVMEDIA_TYPE_AUDIO || mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO)
+              && !task.streams[i].avpacketQueue.length
+            ) {
+              if (task.streams[i].pulling) {
+                await task.streams[i].pulling
+              }
+              else {
+                process(i, await task.streams[i].pullIPC.request<pointer<AVPacketRef>>('pull'))
+              }
             }
             else {
-              avpacket.streamIndex = task.streams[i].stream.index
-              task.streams[i].avpacket = avpacket
+              pull(i)
             }
           }
         }
@@ -316,10 +352,10 @@ export default class MuxPipeline extends Pipeline {
         let type: AVMediaType = AVMediaType.AVMEDIA_TYPE_UNKNOWN
 
         for (let i = 0; i < task.streams.length; i++) {
-          if (task.streams[i].avpacket) {
-            const currentDts = avRescaleQ(task.streams[i].avpacket.dts, task.streams[i].avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+          if (task.streams[i].avpacketQueue.length) {
+            const currentDts = avRescaleQ(task.streams[i].avpacketQueue[0].dts, task.streams[i].avpacketQueue[0].timeBase, AV_MILLI_TIME_BASE_Q)
             if (dts === NOPTS_VALUE_BIGINT || currentDts < dts) {
-              avpacket = task.streams[i].avpacket
+              avpacket = task.streams[i].avpacketQueue[0]
               dts = currentDts
               index = i
               type = task.streams[i].stream.codecpar.codecType
@@ -331,7 +367,7 @@ export default class MuxPipeline extends Pipeline {
           mux.writeAVPacket(task.formatContext, avpacket)
           task.stats.bufferOutputBytes += task.formatContext.ioWriter.getPos() - now
           task.avpacketPool.release(avpacket)
-          task.streams[index].avpacket = nullptr
+          task.streams[index].avpacketQueue.shift()
 
           if (type === AVMediaType.AVMEDIA_TYPE_AUDIO) {
             task.stats.lastAudioMuxDts = dts
@@ -340,7 +376,7 @@ export default class MuxPipeline extends Pipeline {
             task.stats.lastVideoMuxDts = dts
           }
         }
-        else {
+        else if (!task.streams.some((s) => !s.ended)) {
           mux.writeTrailer(task.formatContext)
           mux.flush(task.formatContext)
           task.rightIPCPort.notify('end')
@@ -397,9 +433,11 @@ export default class MuxPipeline extends Pipeline {
         task.loop.destroy()
       }
       array.each(task.streams, (stream) => {
-        if (stream.avpacket) {
-          task.avpacketPool.release(stream.avpacket)
-          stream.avpacket = nullptr
+        if (stream.avpacketQueue.length) {
+          stream.avpacketQueue.forEach((avpacket) => {
+            task.avpacketPool.release(avpacket)
+          })
+          stream.avpacketQueue.length = 0
         }
         stream.pullIPC.destroy()
       })
