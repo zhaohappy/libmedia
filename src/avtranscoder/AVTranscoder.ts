@@ -114,6 +114,7 @@ export interface TaskOptions {
   input: {
     file: string | File | CustomIOLoader
     format?: keyof (typeof Format2AVFormat)
+    formatOptions?: Data
     /**
      * 源扩展名
      * 强制指定扩展名，对没有扩展名的 url 链接使用
@@ -200,9 +201,7 @@ export interface TaskOptions {
       /**
        * 编码器的参数设置
        */
-      encoderOptions?: {
-        preset?: string
-      }
+      encoderOptions?: Data
     }
     audio?: {
       /**
@@ -886,6 +885,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             },
             avpacketList: addressof(this.GlobalData.avpacketList),
             avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+            formatOptions: task.options.input.formatOptions
           })
         await this.DemuxerThread.registerTask({
           taskId: subTaskId,
@@ -898,7 +898,8 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             mediaType: 'video'
           },
           avpacketList: addressof(this.GlobalData.avpacketList),
-          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex)
+          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+          formatOptions: task.options.input.formatOptions
         })
       }
       else {
@@ -918,6 +919,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             },
             avpacketList: addressof(this.GlobalData.avpacketList),
             avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+            formatOptions: task.options.input.formatOptions
           })
       }
     }
@@ -933,7 +935,8 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           isLive: false,
           flags: this.isHls(task) ? IOFlags.SLICE : 0,
           avpacketList: addressof(this.GlobalData.avpacketList),
-          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex)
+          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+          formatOptions: task.options.input.formatOptions
         })
     }
 
