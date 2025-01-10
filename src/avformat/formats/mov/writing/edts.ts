@@ -29,11 +29,12 @@ import IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
 import { INT32_MAX, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'
+import getSampleDuration from '../function/getSampleDuration'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
   const streamContext = stream.privData as MOVStreamContext
   let duration = avRescaleQ(
-    streamContext.lastPts,
+    getSampleDuration(streamContext),
     stream.timeBase,
     {
       den: movContext.timescale,

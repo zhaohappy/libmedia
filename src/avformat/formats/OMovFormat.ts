@@ -40,7 +40,7 @@ import * as array from 'common/util/array'
 import * as logger from 'common/util/logger'
 import concatTypeArray from 'common/function/concatTypeArray'
 import updatePositionSize from './mov/function/updatePositionSize'
-import { AV_TIME_BASE, AV_TIME_BASE_Q, UINT32_MAX } from 'avutil/constant'
+import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT, UINT32_MAX } from 'avutil/constant'
 import { FragmentMode, MovMode } from './mov/mov'
 import * as object from 'common/util/object'
 import rewriteIO from '../function/rewriteIO'
@@ -54,9 +54,11 @@ import { Rational } from 'avutil/struct/rational'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
 import { BitFormat } from 'avutil/codecs/h264'
 import * as is from 'common/util/is'
+import * as bigint from 'common/util/bigint'
 
 import * as ac3 from 'avutil/codecs/ac3'
 import { mapUint8Array } from 'cheap/std/memory'
+import getSampleDuration from './mov/function/getSampleDuration'
 
 const defaultOptions: MovFormatOptions = {
   fragmentMode: FragmentMode.GOP,
@@ -316,7 +318,7 @@ export default class OMovFormat extends OFormat {
 
     const pos = formatContext.ioWriter.getPos()
 
-    const size = Number(pos - mdat.pos)
+    const size = static_cast<double>(pos - mdat.pos)
 
     if (size + len > UINT32_MAX) {
       mdat.size = size
@@ -349,17 +351,17 @@ export default class OMovFormat extends OFormat {
         if (!track.sampleDurations.length) {
           if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
             if (currentDts) {
-              track.sampleDurations.push(Number(currentDts - streamContext.lastDts))
+              track.sampleDurations.push(static_cast<double>(currentDts - streamContext.lastDts))
             }
             else if (stream.codecpar.frameSize > 0) {
-              track.sampleDurations.push(Number(avRescaleQ(
+              track.sampleDurations.push(static_cast<double>(avRescaleQ(
                 static_cast<int64>(stream.codecpar.frameSize / stream.codecpar.sampleRate * AV_TIME_BASE),
                 AV_TIME_BASE_Q,
                 stream.timeBase
               )))
             }
             else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
-              track.sampleDurations.push(Number(avRescaleQ(
+              track.sampleDurations.push(static_cast<double>(avRescaleQ(
                 static_cast<int64>(1024 / stream.codecpar.sampleRate * AV_TIME_BASE),
                 AV_TIME_BASE_Q,
                 stream.timeBase
@@ -367,7 +369,7 @@ export default class OMovFormat extends OFormat {
             }
             else {
               // 随便猜一个？每帧一个 fragment 没有 sampleDuration QuickTime 无法播放
-              track.sampleDurations.push(Number(avRescaleQ(
+              track.sampleDurations.push(static_cast<double>(avRescaleQ(
                 static_cast<int64>(1024 / stream.codecpar.sampleRate * AV_TIME_BASE),
                 AV_TIME_BASE_Q,
                 stream.timeBase
@@ -376,10 +378,10 @@ export default class OMovFormat extends OFormat {
           }
           else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
             if (currentDts) {
-              track.sampleDurations.push(Number(currentDts - streamContext.lastDts))
+              track.sampleDurations.push(static_cast<double>(currentDts - streamContext.lastDts))
             }
             else if (avQ2D(stream.codecpar.framerate) > 0) {
-              track.sampleDurations.push(Number(avRescaleQ(
+              track.sampleDurations.push(static_cast<double>(avRescaleQ(
                 static_cast<int64>(1 / avQ2D(stream.codecpar.framerate) * AV_TIME_BASE),
                 AV_TIME_BASE_Q,
                 stream.timeBase
@@ -396,7 +398,7 @@ export default class OMovFormat extends OFormat {
           }
         }
         else if (currentDts && track.sampleDurations.length === track.sampleSizes.length - 1) {
-          track.sampleDurations.push(Number(currentDts - streamContext.lastDts))
+          track.sampleDurations.push(static_cast<double>(currentDts - streamContext.lastDts))
         }
 
         streamContext.lastDuration = track.sampleDurations[track.sampleSizes.length - 1]
@@ -565,7 +567,8 @@ export default class OMovFormat extends OFormat {
     const streamContext = stream.privData as MOVStreamContext
 
     const dts = avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase)
-    const pts = avRescaleQ(avpacket.pts < 0n ? avpacket.dts : avpacket.pts, avpacket.timeBase, stream.timeBase)
+    const pts = avRescaleQ(avpacket.pts !== NOPTS_VALUE_BIGINT ? avpacket.pts : avpacket.dts, avpacket.timeBase, stream.timeBase)
+    const duration = avpacket.duration !== NOPTS_VALUE_BIGINT ? avRescaleQ(avpacket.duration, avpacket.timeBase, stream.timeBase) : -1n
 
     if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
@@ -615,10 +618,10 @@ export default class OMovFormat extends OFormat {
             || track.sampleDurations[track.sampleSizes.length - 1] <= 0
           )
         ) {
-          track.sampleDurations[track.sampleSizes.length - 1] = Number(dts - streamContext.lastDts)
+          track.sampleDurations[track.sampleSizes.length - 1] = static_cast<double>(dts - streamContext.lastDts)
         }
         if (avpacket.duration > 0) {
-          track.sampleDurations.push(Number(avRescaleQ(
+          track.sampleDurations.push(static_cast<double>(avRescaleQ(
             avpacket.duration,
             avpacket.timeBase,
             stream.timeBase
@@ -634,13 +637,13 @@ export default class OMovFormat extends OFormat {
           else {
             flag |= (SampleFlags.DEPENDS_YES | SampleFlags.IS_NON_SYN)
           }
-          track.sampleCompositionTimeOffset.push(Number((pts || dts) - dts))
+          track.sampleCompositionTimeOffset.push(static_cast<double>((pts !== NOPTS_VALUE_BIGINT ? pts : dts) - dts))
 
           track.sampleFlags.push(flag)
         }
 
         track.sampleCount++
-        streamContext.lastPts = pts > streamContext.lastPts ? pts : streamContext.lastPts
+        streamContext.lastPts = bigint.max(streamContext.lastPts, pts + (duration !== NOPTS_VALUE_BIGINT ? duration : 0n))
         streamContext.lastDts = dts
         this.context.currentFragment.firstWrote = true
       }
@@ -684,11 +687,11 @@ export default class OMovFormat extends OFormat {
 
       if (!streamContext.firstWrote) {
         streamContext.startDts = dts
-        streamContext.startCT = Number((pts || dts) - dts)
+        streamContext.startCT = static_cast<double>((pts !== NOPTS_VALUE_BIGINT ? pts : dts) - dts)
         streamContext.firstWrote = true
       }
       else {
-        const deltas = Number(dts - streamContext.lastDts)
+        const deltas = static_cast<double>(dts - streamContext.lastDts)
         if (!streamContext.sttsSampleCounts.length) {
           streamContext.sttsSampleCounts.push(1)
           streamContext.sttsSampleDeltas.push(deltas)
@@ -704,16 +707,23 @@ export default class OMovFormat extends OFormat {
         }
       }
 
+      if (pts >= 0) {
+        if (streamContext.startPts === NOPTS_VALUE_BIGINT) {
+          streamContext.startPts = pts
+        }
+        else {
+          streamContext.startPts = bigint.min(streamContext.startPts, pts)
+        }
+      }
+
       if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-        const ctts = Number((pts || dts) - dts)
+        const ctts = static_cast<double>((pts !== NOPTS_VALUE_BIGINT ? pts : dts) - dts)
         if (!streamContext.cttsSampleCounts.length) {
           streamContext.cttsSampleCounts.push(1)
           streamContext.cttsSampleOffsets.push(ctts)
         }
         else {
-          if (streamContext.cttsSampleOffsets[streamContext.cttsSampleOffsets.length - 1]
-            === ctts
-          ) {
+          if (streamContext.cttsSampleOffsets[streamContext.cttsSampleOffsets.length - 1] === ctts) {
             streamContext.cttsSampleCounts[streamContext.cttsSampleCounts.length - 1]++
           }
           else {
@@ -723,8 +733,9 @@ export default class OMovFormat extends OFormat {
         }
       }
 
-      streamContext.lastPts = (pts || dts) > streamContext.lastPts ? (pts || dts) : streamContext.lastPts
+      streamContext.lastPts = bigint.max(streamContext.lastPts, pts + (duration !== NOPTS_VALUE_BIGINT ? duration : 0n))
       streamContext.lastDts = dts
+      streamContext.lastDuration = static_cast<double>(duration as int64)
     }
 
     return 0
@@ -734,29 +745,38 @@ export default class OMovFormat extends OFormat {
     if (!this.context.fragment) {
       this.updateCurrentChunk(formatContext)
 
-      let lastPts = 0n
-      let timeBase: Rational
+      let duration = 0n
 
       array.each(formatContext.streams, (stream) => {
         const streamContext = stream.privData as MOVStreamContext
         if (streamContext.sampleSizes.length) {
           if (streamContext.sttsSampleDeltas.length) {
-            streamContext.sttsSampleCounts[streamContext.sttsSampleCounts.length - 1]++
+            if (streamContext.lastDuration > 0
+              && streamContext.lastDuration !== streamContext.sttsSampleDeltas[streamContext.sttsSampleDeltas.length - 1]
+            ) {
+              streamContext.sttsSampleCounts.push(1)
+              streamContext.sttsSampleDeltas.push(streamContext.lastDuration)
+            }
+            else {
+              streamContext.sttsSampleCounts[streamContext.sttsSampleCounts.length - 1]++
+            }
           }
           else {
             streamContext.sttsSampleCounts = [1]
             streamContext.sttsSampleDeltas = [0]
           }
         }
-        if (streamContext.lastPts > lastPts) {
-          lastPts = streamContext.lastPts
-          timeBase = stream.timeBase
+        const streamDuration = avRescaleQ(
+          getSampleDuration(streamContext),
+          stream.timeBase,
+          { den: 1000, num: 1 }
+        )
+        if (streamDuration > duration) {
+          duration = streamDuration
         }
       })
 
-      if (lastPts) {
-        this.context.duration = avRescaleQ(lastPts, timeBase, { den: 1000, num: 1 })
-      }
+      this.context.duration = duration
 
       const mdat = this.context.boxsPositionInfo[this.context.boxsPositionInfo.length - 1]
 
@@ -764,7 +784,7 @@ export default class OMovFormat extends OFormat {
         logger.error('last box is not mdat')
       }
 
-      mdat.size = Number(formatContext.ioWriter.getPos() - mdat.pos)
+      mdat.size = static_cast<double>(formatContext.ioWriter.getPos() - mdat.pos)
 
       updatePositionSize(formatContext.ioWriter, this.context)
 

@@ -40,7 +40,7 @@ import * as crypto from 'avutil/util/crypto'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { mapUint8Array } from 'cheap/std/memory'
 import { chromaLocation2Pos } from 'avutil/util/pixel'
-import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
+import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as string from 'common/util/string'
 import AVStream from 'avutil/AVStream'
 import concatTypeArray from 'common/function/concatTypeArray'
@@ -454,10 +454,14 @@ export default class OMatroskaFormat extends OFormat {
 
     const track = stream.privData as TrackEntry
 
-    const pts = avRescaleQ(avpacket.pts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+    const pts = avRescaleQ(avpacket.pts !== NOPTS_VALUE_BIGINT ? avpacket.pts : avpacket.dts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
 
     if (!track.maxPts || track.maxPts < pts) {
       track.maxPts = pts
+      track.duration = pts
+      if (avpacket.duration !== NOPTS_VALUE_BIGINT) {
+        track.duration += avRescaleQ(avpacket.duration, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+      }
     }
 
     if (this.options.isLive
@@ -481,8 +485,6 @@ export default class OMatroskaFormat extends OFormat {
     }
 
     if (avpacket.duration > 0
-      && stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_AUDIO
-      && stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO
       || hasAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_MATROSKA_BLOCKADDITIONAL)
     ) {
       this.writeBlockGroup(stream, avpacket)
@@ -501,11 +503,9 @@ export default class OMatroskaFormat extends OFormat {
     formatContext.streams.forEach((stream) => {
       const track = stream.privData as TrackEntry
 
-      if (!this.options.isLive && track?.maxPts) {
-        const duration = track.maxPts
-        if (duration > this.context.info.duration) {
-          this.context.info.duration = reinterpret_cast<float>(static_cast<int32>(duration))
-        }
+      if (!this.options.isLive && track?.duration) {
+        const duration = track.duration
+        this.context.info.duration = reinterpret_cast<float>(static_cast<int32>(duration))
         this.context.tags.entry.push({
           tag: {
             name: 'DURATION',

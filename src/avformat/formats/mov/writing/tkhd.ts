@@ -31,13 +31,14 @@ import { UINT16_MAX, UINT32_MAX } from 'avutil/constant'
 import writeMatrix from './function/writeMatrix'
 import { AVMediaType } from 'avutil/codec'
 import { avRescaleQ } from 'avutil/util/rational'
+import getSampleDuration from '../function/getSampleDuration'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
 
   const streamContext = stream.privData as MOVStreamContext
 
   const duration = avRescaleQ(
-    streamContext.lastPts,
+    getSampleDuration(streamContext),
     stream.timeBase,
     {
       den: movContext.timescale,

@@ -164,6 +164,7 @@ export interface MOVStreamContext {
   lastDts: bigint
   startDts: bigint
   startCT: number
+  startPts: bigint
   lastDuration: number
   chunkCount: number
   firstWrote: boolean

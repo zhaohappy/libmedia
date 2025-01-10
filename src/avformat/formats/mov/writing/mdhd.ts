@@ -28,12 +28,14 @@ import { MOVContext, MOVStreamContext } from '../type'
 import IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
 import { UINT32_MAX } from 'avutil/constant'
+import getSampleDuration from '../function/getSampleDuration'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
 
   const streamContext = stream.privData as MOVStreamContext
 
-  const duration = streamContext.lastPts
+  const duration = getSampleDuration(streamContext)
+
   const creationTime = stream.metadata['creationTime'] || 0
   const modificationTime = stream.metadata['modificationTime'] || 0
   const languge = stream.metadata['language'] || 21956

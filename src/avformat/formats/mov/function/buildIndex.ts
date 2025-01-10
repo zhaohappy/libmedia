@@ -29,7 +29,7 @@ import { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import { avRescaleQ } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
+import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 
 export function buildIndex(stream: Stream, movContext: MOVContext) {
@@ -99,9 +99,9 @@ export function buildIndex(stream: Stream, movContext: MOVContext) {
       if (startTime > 0) {
         // 第一帧小于 400ms 调整为从 0 开始
         // 这种情况并不是裁剪，只是相对于 0 的少许偏移偏移
-        if (avRescaleQ(startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q) < 400n) {
-          startTime = 0n
-        }
+        // if (avRescaleQ(startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q) < 400n) {
+        //   startTime = 0n
+        // }
       }
       timeOffset = startTime - emptyDuration
       currentDts = -timeOffset
@@ -121,7 +121,7 @@ export function buildIndex(stream: Stream, movContext: MOVContext) {
         pts: currentDts,
         pos: currentOffset,
         size: sampleSizes[currentSample],
-        duration: 0,
+        duration: sttsSampleDeltas[sttsIndex],
         flags: 0
       }
 
@@ -138,11 +138,6 @@ export function buildIndex(stream: Stream, movContext: MOVContext) {
           cttsIndex++
           cttsCurrentIndex = 0
         }
-      }
-
-
-      if (currentSample) {
-        samplesIndex[currentSample - 1].duration = Number(sample.dts - samplesIndex[currentSample - 1].dts)
       }
 
       currentOffset += static_cast<int64>(sample.size)
@@ -162,11 +157,11 @@ export function buildIndex(stream: Stream, movContext: MOVContext) {
     }
   }
 
-  if (samplesIndex.length > 1) {
-    // 最后一个 sample 使用前一个的 duration
-    samplesIndex[currentSample - 1].duration = samplesIndex[currentSample - 2].duration
-    stream.duration = static_cast<int64>(samplesIndex[currentSample - 1].duration)
-      + samplesIndex[currentSample - 1].dts
+  if (samplesIndex.length) {
+    if (stream.duration === NOPTS_VALUE_BIGINT) {
+      stream.duration = samplesIndex[currentSample - 1].pts
+        + static_cast<int64>(samplesIndex[currentSample - 1].duration)
+    }
   }
 
   context.samplesIndex = samplesIndex

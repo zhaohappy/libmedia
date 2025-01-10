@@ -1,5 +1,5 @@
 /*
- * libmedia create mov stream context
+ * libmedia get sample duration
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -23,53 +23,12 @@
  *
  */
 
+import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { MOVStreamContext } from '../type'
-import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
-export default function createMovStreamContext(): MOVStreamContext {
-  return {
-    chunkOffsets: null,
-    cttsSampleCounts: null,
-    cttsSampleOffsets: null,
-    stscFirstChunk: null,
-    stscSamplesPerChunk: null,
-    stscSampleDescriptionIndex: null,
-    stssSampleNumbersMap: null,
-    stssSampleNumbers: null,
-    sampleSizes: null,
-    sttsSampleCounts: null,
-    sttsSampleDeltas: null,
-
-    timescale: 0,
-    duration: 0n,
-    trackId: NOPTS_VALUE,
-    layer: 0,
-    alternateGroup: 0,
-    volume: 0,
-    matrix: null,
-    width: 0,
-    height: 0,
-
-    audioCid: 0,
-    samplesPerFrame: 0,
-    bytesPerFrame: 0,
-
-    currentSample: 0,
-    sampleEnd: false,
-    samplesIndex: [],
-    fragIndexes: [],
-
-    lastPts: NOPTS_VALUE_BIGINT,
-    lastDts: NOPTS_VALUE_BIGINT,
-    startDts: NOPTS_VALUE_BIGINT,
-    startCT: NOPTS_VALUE,
-    startPts: NOPTS_VALUE_BIGINT,
-    lastDuration: 0,
-    chunkCount: 0,
-    firstWrote: false,
-    lastStscCount: 0,
-    perStreamGrouping: false,
-    index: 0,
-    flags: 0
+export default function getSampleDuration(context: MOVStreamContext) {
+  if (context.startPts !== NOPTS_VALUE_BIGINT) {
+    return context.lastPts - context.startPts
   }
+  return context.lastPts - (context.startDts + static_cast<int64>(context.startCT as int32))
 }
