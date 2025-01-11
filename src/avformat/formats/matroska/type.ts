@@ -185,6 +185,7 @@ export interface TrackEntry {
   currentDts?: int64
   dtsDelta?: int64
   firstGopGot?: boolean
+  duration?: int64
 
   needDecompression?: boolean
   needDecryption?: boolean
