@@ -137,6 +137,11 @@ module.exports = (env) => {
       aggregateTimeout: 1000,
       ignored: /node_modules|output/
     },
+    ...(env.transformer ? {
+      node: {
+        __dirname: false
+      }
+    } : {}),
     resolve: {
       extensions: ['.js', '.ts', '.json'],
       modules: [
