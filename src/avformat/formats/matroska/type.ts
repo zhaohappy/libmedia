@@ -178,17 +178,14 @@ export interface TrackEntry {
   maxBlockAdditionalId?: int32
   operations?: TrackOperation
   encodings?: TrackEncodings
-
-  minPts?: int64
-  maxPts?: int64
-  gopCount?: int32
-  currentDts?: int64
-  dtsDelta?: int64
-  firstGopGot?: boolean
-  duration?: int64
-
   needDecompression?: boolean
   needDecryption?: boolean
+  duration?: int64
+
+  maxPts?: int64
+  ptsQueue?: int64[]
+  ptsMaxDelay?: int32
+  ptsQueueReady?: boolean
 }
 
 export interface Tracks {
@@ -319,6 +316,7 @@ export interface MatroskaContext {
   cues: Cues
   tags: Tags
 
+  maxPts: int64
   currentCluster: Cluster
   clusterIndexes: ClusterIndex[]
   clusterIndexesPosMap: Map<int64, int32>

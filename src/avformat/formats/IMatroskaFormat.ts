@@ -33,9 +33,9 @@ import IFormat from './IFormat'
 import { AVFormat } from 'avutil/avformat'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avFree, avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/util/avpacket'
+import { addAVPacketData, addAVPacketSideData, createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
 import AVStream, { AVDisposition } from 'avutil/AVStream'
-import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { EBMLId, MATROSKABlockAddIdType, MATROSKALacingMode, MATROSKATrackEncodingComp, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
 import { IOFlags } from 'avutil/avformat'
 import { Additions, ClusterIndex, MatroskaContext, TrackEntry } from './matroska/type'
@@ -68,6 +68,8 @@ import concatTypeArray from 'common/function/concatTypeArray'
 import * as text from 'common/util/text'
 import isDef from 'common/function/isDef'
 import * as naluUtil from 'avutil/util/nalu'
+
+const MAX_DELAY = 16
 
 export default class IMatroskaFormat extends IFormat {
 
@@ -106,6 +108,7 @@ export default class IMatroskaFormat extends IFormat {
       cues: null,
       tags: null,
 
+      maxPts: NOPTS_VALUE_BIGINT,
       currentCluster: {
         timeCode: 0n,
         pos: -1n,
@@ -152,7 +155,6 @@ export default class IMatroskaFormat extends IFormat {
         if (track.name) {
           stream.metadata['name'] = track.name
         }
-        track.currentDts = -1n
 
         if (track.audio) {
           if (track.codecName === 'A_PCM/FLOAT/IEEE') {
@@ -280,6 +282,7 @@ export default class IMatroskaFormat extends IFormat {
                 else {
                   stream.codecpar.bitFormat = h264.BitFormat.AVCC
                 }
+                track.ptsQueue = []
                 break
               }
               case AVCodecID.AV_CODEC_ID_HEVC: {
@@ -291,6 +294,7 @@ export default class IMatroskaFormat extends IFormat {
                 else {
                   stream.codecpar.bitFormat = h264.BitFormat.AVCC
                 }
+                track.ptsQueue = []
                 break
               }
               case AVCodecID.AV_CODEC_ID_VVC: {
@@ -302,6 +306,7 @@ export default class IMatroskaFormat extends IFormat {
                 else {
                   stream.codecpar.bitFormat = h264.BitFormat.AVCC
                 }
+                track.ptsQueue = []
                 break
               }
               case AVCodecID.AV_CODEC_ID_AV1:
@@ -550,6 +555,90 @@ export default class IMatroskaFormat extends IFormat {
 
     this.analyzeStreams(formatContext)
 
+    while (formatContext.streams.some((stream) => {
+      const track = stream.privData as TrackEntry
+      return is.array(track.ptsQueue) && track.ptsQueue.length < MAX_DELAY
+    })) {
+      const avpacket = createAVPacket()
+      const ret = await this.readAVPacket(formatContext, avpacket)
+      if (ret) {
+        destroyAVPacket(avpacket)
+        break
+      }
+      const stream = formatContext.streams.find((stream) => {
+        return stream.index === avpacket.streamIndex
+      })
+      if (stream) {
+        const track = stream.privData as TrackEntry
+        if (is.array(track.ptsQueue)) {
+          track.ptsQueue.push(avpacket.pts)
+        }
+      }
+      formatContext.interval.packetBuffer.push(avpacket)
+    }
+
+    formatContext.streams.forEach((stream) => {
+      const track = stream.privData as TrackEntry
+      if (is.array(track.ptsQueue) && track.ptsQueue.length > 2) {
+        const map: Map<int64, number> = new Map()
+        for (let i = 0; i < track.ptsQueue.length; i++) {
+          map.set(track.ptsQueue[i], i)
+        }
+        const dtsList = track.ptsQueue.slice().sort((a, b) => {
+          if (a > b) {
+            return 1
+          }
+          else {
+            return -1
+          }
+        })
+        let maxDelay = 0
+        for (let i = 0; i < dtsList.length; i++) {
+          maxDelay = Math.max(maxDelay, Math.abs(i - map.get(dtsList[i])))
+        }
+        track.ptsQueueReady = true
+
+        const pre: int64[] = []
+        if (maxDelay) {
+          for (let i = maxDelay; i > 0; i-- ) {
+            pre.push((pre.length ? pre[pre.length - 1] : 0n) + (dtsList[i] - dtsList[i - 1]))
+          }
+          pre.reverse()
+        }
+
+        let i = 0
+        formatContext.interval.packetBuffer.forEach((avpacket) => {
+          if (avpacket.streamIndex === stream.index) {
+            if (i >= maxDelay) {
+              avpacket.dts = dtsList[i - maxDelay]
+            }
+            else {
+              avpacket.dts = dtsList[0] - pre[i]
+            }
+            i++
+          }
+        })
+        track.ptsQueue = dtsList.slice(i - maxDelay)
+        track.ptsMaxDelay = maxDelay
+      }
+      else if (is.array(track.ptsQueue)) {
+        const dtsList = track.ptsQueue.slice().sort((a, b) => {
+          if (a > b) {
+            return 1
+          }
+          else {
+            return -1
+          }
+        })
+        let i = 0
+        formatContext.interval.packetBuffer.forEach((avpacket) => {
+          if (avpacket.streamIndex === stream.index) {
+            avpacket.dts = dtsList[i]
+            i++
+          }
+        })
+      }
+    })
     return 0
   }
 
@@ -739,63 +828,34 @@ export default class IMatroskaFormat extends IFormat {
       addAVPacketData(avpacket, data, size)
 
       if (stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO) {
-        if (isKey) {
-          avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
-        }
+        avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
         avpacket.dts = pts
       }
       else {
+        if (isKey) {
+          avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+        }
         if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
         ) {
           avpacket.bitFormat = stream.codecpar.bitFormat
-        }
-        if (isKey) {
-          avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
-          if (track.gopCount > 1) {
-            track.dtsDelta = avRescaleQ(track.maxPts - track.minPts, stream.timeBase, AV_TIME_BASE_Q) / static_cast<int64>(track.gopCount - 1)
-            track.firstGopGot = true
-          }
-          else if (!track.dtsDelta) {
-            // 以 30 帧开始
-            track.dtsDelta = avRescaleQ(33n, AV_MILLI_TIME_BASE_Q, AV_TIME_BASE_Q)
-          }
-          track.gopCount = 1
-          track.minPts = pts
-          track.maxPts = pts
-        }
-        else {
-          if (!track.firstGopGot && track.gopCount > 2 && pts > track.maxPts) {
-            track.dtsDelta = avRescaleQ(track.maxPts - track.minPts, stream.timeBase, AV_TIME_BASE_Q) / static_cast<int64>(track.gopCount - 1)
-          }
-          else if (!track.dtsDelta) {
-            // 以 30 帧开始
-            track.dtsDelta = avRescaleQ(33n, AV_MILLI_TIME_BASE_Q, AV_TIME_BASE_Q)
-          }
-          track.gopCount++
-        }
-        if (pts > track.maxPts) {
-          track.maxPts = pts
-        }
-        if (track.currentDts >= 0n) {
-          if (duration) {
-            track.currentDts = track.currentDts + avRescaleQ(duration, stream.timeBase, AV_TIME_BASE_Q)
-            avpacket.dts = avRescaleQ(track.currentDts, AV_TIME_BASE_Q, stream.timeBase)
-          }
-          else {
-            track.currentDts = track.currentDts + track.dtsDelta
-            avpacket.dts = avRescaleQ(track.currentDts, AV_TIME_BASE_Q, stream.timeBase)
+          if (track.ptsQueueReady) {
+            array.sortInsert(track.ptsQueue, pts, (a) => {
+              if (a < pts) {
+                return 1
+              }
+              else {
+                return -1
+              }
+            })
+            if (track.ptsQueue.length > track.ptsMaxDelay) {
+              avpacket.dts = track.ptsQueue.shift()
+            }
           }
         }
         else {
-          track.currentDts = avRescaleQ(avpacket.pts, stream.timeBase, AV_TIME_BASE_Q)
-          avpacket.dts = avpacket.pts
-          // 第一个包从 0 开始
-          if (track.currentDts < 100000n) {
-            track.currentDts = 0n
-            avpacket.dts = 0n
-          }
+          avpacket.dts = pts
         }
       }
 
@@ -805,6 +865,10 @@ export default class IMatroskaFormat extends IFormat {
 
       if (i !== 0) {
         formatContext.interval.packetBuffer.push(avpacket)
+      }
+
+      if (this.context.maxPts < pts) {
+        this.context.maxPts = pts
       }
     }
 
@@ -1061,8 +1125,65 @@ export default class IMatroskaFormat extends IFormat {
     if (pos !== NOPTS_VALUE_BIGINT) {
       await formatContext.ioReader.seek(pos)
       array.each(this.context.tracks.entry, (track) => {
-        track.currentDts = -1n
+        if (track.ptsQueue) {
+          track.ptsQueue.length = 0
+          track.ptsQueueReady = false
+        }
       })
+
+      while (formatContext.streams.some((stream) => {
+        const track = stream.privData as TrackEntry
+        return is.array(track.ptsQueue) && track.ptsQueue.length < track.ptsMaxDelay * 2
+      })) {
+        const avpacket = createAVPacket()
+        const ret = await this.readAVPacket(formatContext, avpacket)
+        if (ret) {
+          destroyAVPacket(avpacket)
+          break
+        }
+        const stream = formatContext.streams.find((stream) => {
+          return stream.index === avpacket.streamIndex
+        })
+        if (stream) {
+          const track = stream.privData as TrackEntry
+          if (is.array(track.ptsQueue)) {
+            track.ptsQueue.push(avpacket.pts)
+          }
+        }
+        destroyAVPacket(avpacket)
+      }
+      await formatContext.ioReader.seek(pos)
+      formatContext.streams.forEach((stream) => {
+        const track = stream.privData as TrackEntry
+        if (is.array(track.ptsQueue)) {
+          track.ptsQueueReady = true
+          if (track.ptsMaxDelay && track.ptsQueue.length) {
+            const dtsList = track.ptsQueue.slice().sort((a, b) => {
+              if (a > b) {
+                return 1
+              }
+              else {
+                return -1
+              }
+            })
+            track.ptsQueue.length = 0
+            const defaultDuration = avRescaleQ(1n, { num: stream.codecpar.framerate.den, den: stream.codecpar.framerate.num}, stream.timeBase)
+            const pre: int64[] = []
+            const end = Math.min(dtsList.length - 1, track.ptsMaxDelay)
+            for (let i = end; i > 0; i-- ) {
+              pre.push((pre.length ? pre[pre.length - 1] : 0n) + (dtsList[i] - dtsList[i - 1]))
+            }
+            for (let i = pre.length; i < track.ptsMaxDelay; i++) {
+              pre.push((pre.length ? pre[pre.length - 1] : 0n) + defaultDuration)
+            }
+            pre.reverse()
+            for (let i = 0; i < pre.length; i++) {
+              track.ptsQueue.push(dtsList[0] - pre[i])
+            }
+          }
+        }
+      })
+
       return now
     }
 
@@ -1070,6 +1191,7 @@ export default class IMatroskaFormat extends IFormat {
   }
 
   public getAnalyzeStreamsCount(): number {
-    return this.context.tracks?.entry.length ?? 2
+    // mkv 在 readheader 时分析了 track element，不需要在进行流分析
+    return 0
   }
 }
