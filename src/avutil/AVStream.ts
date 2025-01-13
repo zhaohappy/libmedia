@@ -103,7 +103,10 @@ export default class AVStream {
    */
   id: int32 = NOPTS_VALUE
 
-  privData: any = null
+  /**
+   * format private data
+   */
+  privData: Data = null
 
   codecpar: AVCodecParameters = make<AVCodecParameters>(new AVCodecParameters())
 

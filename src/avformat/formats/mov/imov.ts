@@ -232,9 +232,9 @@ export async function readMoov(
           buildIndex(stream, movContext)
         }
         else {
-          const streamContext: MOVStreamContext = stream.privData
+          const streamContext = stream.privData as MOVStreamContext
           const old = formatContext.streams.find((st) => {
-            const context: MOVStreamContext = st.privData
+            const context = st.privData as MOVStreamContext
             if (st.index !== stream.index && context.trackId === streamContext.trackId) {
               return true
             }
