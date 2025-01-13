@@ -45,7 +45,7 @@ import WasmVideoDecoder from 'avcodec/wasmcodec/VideoDecoder'
 import WasmAudioDecoder from 'avcodec/wasmcodec/AudioDecoder'
 import { destroyAVFrame } from 'avutil/util/avframe'
 import { mapUint8Array } from 'cheap/std/memory'
-
+import roundStandardFramerate from './function/roundStandardFramerate'
 
 const MIN_ANALYZE_SAMPLES = 12
 
@@ -175,15 +175,15 @@ async function estimateDurationFromPts(formatContext: AVIFormatContext) {
 export async function analyzeStreams(formatContext: AVIFormatContext): Promise<int32> {
   const needStreams = formatContext.iformat.getAnalyzeStreamsCount()
   const streamFirstGotMap = {}
-  const streamDtsMap: Record<number, bigint[]> = {}
-  const streamBitMap: Record<number, number> = {}
+  const streamDtsMap: Record<int32, bigint[]> = {}
+  const streamBitMap: Record<int32, number> = {}
 
   let avpacket: pointer<AVPacket> = nullptr
   const caches: pointer<AVPacket>[] = []
   let ret = 0
 
-  const decoderMap: Record<number, WasmVideoDecoder | WasmAudioDecoder> = {}
-  const pictureGot: Record<number, boolean> = {}
+  const decoderMap: Record<int32, WasmVideoDecoder | WasmAudioDecoder> = {}
+  const pictureGot: Record<int32, boolean> = {}
 
   function checkPictureGot() {
     if (!formatContext.getDecoderResource) {
@@ -196,7 +196,6 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
     }
     return true
   }
-
 
   function calculate(stream: AVStream, dtsList: int64[]) {
     if (dtsList && dtsList.length > 1) {
@@ -214,6 +213,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
       else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
         stream.codecpar.framerate.num = stream.timeBase.den * stream.timeBase.num * (dtsList.length - 1)
         stream.codecpar.framerate.den = static_cast<int32>(count)
+        roundStandardFramerate(stream.codecpar.framerate)
       }
       const duration = static_cast<double>(dtsList[dtsList.length - 1] - stream.startTime) * stream.timeBase.num / stream.timeBase.den
       if (duration) {
