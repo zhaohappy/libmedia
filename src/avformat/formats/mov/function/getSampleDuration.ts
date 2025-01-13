@@ -30,5 +30,8 @@ export default function getSampleDuration(context: MOVStreamContext) {
   if (context.startPts !== NOPTS_VALUE_BIGINT) {
     return context.lastPts - context.startPts
   }
+  if (context.startDts === NOPTS_VALUE_BIGINT) {
+    return context.lastPts
+  }
   return context.lastPts - (context.startDts + static_cast<int64>(context.startCT as int32))
 }
