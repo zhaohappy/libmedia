@@ -651,6 +651,6 @@ export default class IMpegtsFormat extends IFormat {
   }
 
   public getAnalyzeStreamsCount(): number {
-    return this.context.pmt?.pid2StreamType.size ?? 0
+    return this.context.pmt?.pid2StreamType.size ?? 1
   }
 }
