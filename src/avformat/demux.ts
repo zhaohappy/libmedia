@@ -344,6 +344,13 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
         AV_MILLI_TIME_BASE_Q,
         stream.timeBase
       )
+      && (formatContext.streams.length >= needStreams
+        || (avpacket.dts - stream.firstDTS) > avRescaleQ(
+          15000n,
+          AV_MILLI_TIME_BASE_Q,
+          stream.timeBase
+        )
+      )
     ) {
       end()
       if (packetCached) {
