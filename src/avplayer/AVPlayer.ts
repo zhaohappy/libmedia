@@ -1462,15 +1462,19 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }]))
 
     if (!this.options.isLive) {
-      let start = -1n
+      let start = NOPTS_VALUE_BIGINT
       formatContext.streams.forEach((stream) => {
         const s = avRescaleQ(stream.startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q)
-        if (s < start || start === -1n) {
-          start = s
+        if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
+          || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
+        ) {
+          if (s < start || start === -1n) {
+            start = s
+          }
         }
       })
       // 一些文件会裁剪内容导致前面的 pts 为负数，我们需要从 0 开始播放
-      if (start < 0n) {
+      if (start < 0n && start !== NOPTS_VALUE_BIGINT) {
         await this.seek(0n)
       }
     }
