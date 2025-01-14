@@ -137,7 +137,7 @@ module.exports = (env) => {
       aggregateTimeout: 1000,
       ignored: /node_modules|output/
     },
-    ...(env.transformer ? {
+    ...((env.transformer || env.webassembly_runner) ? {
       node: {
         __dirname: false
       }

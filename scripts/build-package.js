@@ -733,6 +733,9 @@ function buildAll() {
   spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=videoscale'], {
     stdio: 'inherit'
   })
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=avutil'], {
+    stdio: 'inherit'
+  })
   spawnSync('node', [`${path.resolve(__dirname, '../')}/scripts/build-package.js`, '--package=avcodec'], {
     stdio: 'inherit'
   })
