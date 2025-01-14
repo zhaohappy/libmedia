@@ -73,17 +73,31 @@ function packageMapTransformer() {
           return context.factory.createStringLiteral(path)
         }
         else if (ts.isCallExpression(node)
-          && ts.isIdentifier(node.expression)
-          && node.expression.escapedText === 'import'
+          && (ts.isIdentifier(node.expression) && node.expression.escapedText === 'import'
+            || node.kind === ts.SyntaxKind.ImportKeyword
+          )
           && ts.isStringLiteral(node.arguments[0])
         ) {
           let path = replacePath(node.arguments[0].text)
           return context.factory.createCallExpression(
-            context.factory.createIdentifier('import'),
+            context.factory.createToken(ts.SyntaxKind.ImportKeyword),
             undefined,
             [
               context.factory.createStringLiteral(path)
             ]
+          )
+        }
+        else if (ts.isImportTypeNode(node)
+          && ts.isLiteralTypeNode(node.argument)
+          && ts.isStringLiteral(node.argument.literal)
+        ) {
+          let path = replacePath(node.argument.literal.text)
+          return context.factory.createImportTypeNode(
+            context.factory.createLiteralTypeNode(context.factory.createStringLiteral(path)),
+            node.attributes,
+            node.qualifier,
+            node.typeArguments,
+            node.isTypeOf
           )
         }
         return ts.visitEachChild(node, visitor, context);
@@ -108,6 +122,7 @@ function compile(fileNames, options, writeCallback, cjs = false, defined = {}) {
     before: [
       packageMapTransformer(),
       transformer.before(program, {
+        tmpPath: path.join(__dirname, '../dist'),
         cheapPacketName: '@libmedia/cheap',
         defined: Object.assign({
           ENV_NODE: cjs,
@@ -358,13 +373,13 @@ function buildWgsl(file, to, sourcePath, cjs) {
   // fs.writeFileSync(to + '.map', JSON.stringify(map))
 }
 
-function buildPackage(package, taskLevel = 1) {
-  let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${package}/tsconfig.esm.json`))
+function buildPackage(packageName, taskLevel = 1) {
+  let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${packageName}/tsconfig.esm.json`))
 
-  const esmReg = new RegExp(`dist\/esm\/${package}\/?`)
-  const cjsReg = new RegExp(`dist\/cjs\/${package}\/?`)
+  const esmReg = new RegExp(`dist\/esm\/${packageName}\/?`)
+  const cjsReg = new RegExp(`dist\/cjs\/${packageName}\/?`)
 
-  printTaskLog(taskLevel, package, 'START', `starting built ${package} esm package`);
+  printTaskLog(taskLevel, packageName, 'START', `starting built ${packageName} esm package`);
 
   compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     let dir = path.dirname(fileName);
@@ -402,11 +417,11 @@ function buildPackage(package, taskLevel = 1) {
     }
   });
 
-  printTaskLog(taskLevel, package, 'SUCCESS', `built ${package} esm package completed`);
+  printTaskLog(taskLevel, packageName, 'SUCCESS', `built ${packageName} esm package completed`);
 
-  printTaskLog(taskLevel, package, 'START', `starting built ${package} cjs package`);
+  printTaskLog(taskLevel, packageName, 'START', `starting built ${packageName} cjs package`);
 
-  parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${package}/tsconfig.cjs.json`))
+  parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${packageName}/tsconfig.cjs.json`))
   compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     let dir = path.dirname(fileName);
     if (cjsReg.test(dir)) {
@@ -443,7 +458,7 @@ function buildPackage(package, taskLevel = 1) {
     }
   }, true);
 
-  printTaskLog(taskLevel, package, 'SUCCESS', `built ${package} cjs package completed`);
+  printTaskLog(taskLevel, packageName, 'SUCCESS', `built ${packageName} cjs package completed`);
 }
 
 function buildCommon() {
