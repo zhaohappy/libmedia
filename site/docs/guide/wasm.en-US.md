@@ -60,7 +60,7 @@ Codecs are compiled into separate wasm modules, the decoders are in the ```dist/
 | ----------- | -----------|----------- | ----------- | -----------   | -----------        |
 | h264        | ✅         | ✅          | ✅          | ✅            | ✅                 |
 | hevc        | ❌         | ✅          | ✅          | ✅            | ❌                 |
-| vvc         | ❌         | ❌          | ❌          | ✅            | ❌                 |
+| vvc         | ❌         | ❌          | ❌          | ❌            | ❌                 |
 | av1         | ❌         | ✅          | ✅          | ✅            | ✅                 |
 | vp8         | ✅         | ✅          | ✅          | ✅            | ✅                 |
 | vp9         | ✅         | ✅          | ✅          | ✅            | ✅                 |
