@@ -17,8 +17,10 @@ But some dependent libraries are under GPL license. If you use these dependent l
  - dist/encoder/x264.wasm
  - dist/encoder/x264-atomic.wasm
  - dist/encoder/x264-simd.wasm
+ - dist/encoder/x264-64.wasm
  - dist/encoder/x265-atomic.wasm
  - dist/encoder/x265-simd.wasm
+ - dist/encoder/x265-64.wasm
 
 Any commercial disputes or infringement caused by using this project have nothing to do with the project and developers and shall be at your own legal risk. When using the code of this project, the license agreement should also indicate the license of the third-party libraries that this project depends on.
 

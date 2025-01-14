@@ -162,8 +162,10 @@ But some dependent libraries are under GPL license. If you use these dependent l
  - dist/encoder/x264.wasm
  - dist/encoder/x264-atomic.wasm
  - dist/encoder/x264-simd.wasm
+ - dist/encoder/x264-64.wasm
  - dist/encoder/x265-atomic.wasm
  - dist/encoder/x265-simd.wasm
+ - dist/encoder/x265-64.wasm
 
 #### Dependencies Licence
  - [ffmpeg](https://github.com/FFmpeg/FFmpeg): LGPL v2.1+

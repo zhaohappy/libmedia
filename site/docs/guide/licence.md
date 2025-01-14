@@ -17,8 +17,10 @@ libmedia 使用 LGPL 开源协议，你需要遵守协议要求，详情查看 [
  - dist/encoder/x264.wasm
  - dist/encoder/x264-atomic.wasm
  - dist/encoder/x264-simd.wasm
+ - dist/encoder/x264-64.wasm
  - dist/encoder/x265-atomic.wasm
  - dist/encoder/x265-simd.wasm
+ - dist/encoder/x265-64.wasm
 
 由于使用本项目而产生的商业纠纷或侵权行为一概与本项目及开发者无关，请自行承担法律风险。 在使用本项目代码时，也应该在授权协议中同时表明本项目依赖的第三方库的协议。
 
