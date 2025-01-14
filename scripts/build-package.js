@@ -74,7 +74,7 @@ function packageMapTransformer() {
         }
         else if (ts.isCallExpression(node)
           && (ts.isIdentifier(node.expression) && node.expression.escapedText === 'import'
-            || node.kind === ts.SyntaxKind.ImportKeyword
+            || node.expression.kind === ts.SyntaxKind.ImportKeyword
           )
           && ts.isStringLiteral(node.arguments[0])
         ) {
