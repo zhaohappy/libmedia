@@ -288,7 +288,7 @@ export default class SubtitleRender {
     const avpacket = await this.leftPorts.get(this.currentPort).request<pointer<AVPacketRef>>('pull')
     if (avpacket === IOError.END) {
       logger.debug('SubtitleRender end')
-      this.decoder.flush()
+      this.decoder?.flush()
       this.ended = true
     }
     else if (avpacket < 0) {
