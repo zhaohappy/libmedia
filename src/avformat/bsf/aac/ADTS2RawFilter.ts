@@ -28,7 +28,7 @@ import AVBSFilter from '../AVBSFilter'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
-import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE } from 'avutil/constant'
+import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { MPEG4Channels, MPEG4SamplingFrequencies, avCodecParameters2Extradata } from 'avutil/codecs/aac'
 import { avRescaleQ } from 'avutil/util/rational'
 import { avFree, avMalloc } from 'avutil/util/mem'
@@ -70,7 +70,7 @@ export default class ADTS2RawFilter extends AVBSFilter {
   public sendAVPacket(avpacket: pointer<AVPacket>): number {
     let i = 0
 
-    let lastDts = avpacket.dts || avpacket.pts
+    let lastDts = avpacket.dts !== NOPTS_VALUE_BIGINT ? avpacket.dts : avpacket.pts
     const buffer = mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)).slice()
 
     while (i < buffer.length) {

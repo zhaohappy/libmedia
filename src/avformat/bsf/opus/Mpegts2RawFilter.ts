@@ -27,7 +27,7 @@ import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { Rational } from 'avutil/struct/rational'
-import { AV_TIME_BASE, AV_TIME_BASE_Q } from 'avutil/constant'
+import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'
 import * as opus from 'avutil/codecs/opus'
 import * as logger from 'common/util/logger'
@@ -55,7 +55,7 @@ export default class Mpegts2RawFilter extends AVBSFilter {
   public sendAVPacket(avpacket: pointer<AVPacket>): number {
     let i = 0
 
-    let lastDts = avpacket.dts || avpacket.pts
+    let lastDts = avpacket.dts !== NOPTS_VALUE_BIGINT ? avpacket.dts : avpacket.pts
 
     const buffer = getAVPacketData(avpacket)
 

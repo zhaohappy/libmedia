@@ -28,7 +28,7 @@ import AVBSFilter from '../AVBSFilter'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
-import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE } from 'avutil/constant'
+import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { avCodecParameters2Extradata } from 'avutil/codecs/aac'
 import { avRescaleQ } from 'avutil/util/rational'
 import { avFree, avMalloc } from 'avutil/util/mem'
@@ -82,7 +82,7 @@ export default class LATM2RawFilter extends AVBSFilter {
 
     this.bitReader.appendBuffer(buffer)
 
-    let lastDts = avpacket.dts || avpacket.pts
+    let lastDts = avpacket.dts !== NOPTS_VALUE_BIGINT ? avpacket.dts : avpacket.pts
 
     while (this.bitReader.remainingLength() >= 20) {
 
