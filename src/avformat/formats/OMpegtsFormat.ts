@@ -439,11 +439,15 @@ export default class OMpegtsFormat extends OFormat {
         if (avpacket.pts !== NOPTS_VALUE_BIGINT) {
           streamContext.pes.pts = avRescaleQ(avpacket.pts, avpacket.timeBase, stream.timeBase) + this.context.delay
         }
+        if (stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO
+          || avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
+        ) {
+          streamContext.pes.randomAccessIndicator = 1
+        }
+        else {
+          streamContext.pes.randomAccessIndicator = 0
+        }
         currentWrote = true
-      }
-
-      if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
-        streamContext.pes.randomAccessIndicator = 1
       }
 
       ompegts.writePES(formatContext.ioWriter, streamContext.pes, streamContext.pesSlices, stream, this.context)
@@ -460,8 +464,13 @@ export default class OMpegtsFormat extends OFormat {
         if (avpacket.pts !== NOPTS_VALUE_BIGINT) {
           streamContext.pes.pts = avRescaleQ(avpacket.pts, avpacket.timeBase, stream.timeBase) + this.context.delay
         }
-        if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
+        if (stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO
+          || avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
+        ) {
           streamContext.pes.randomAccessIndicator = 1
+        }
+        else {
+          streamContext.pes.randomAccessIndicator = 0
         }
       }
       streamContext.pesSlices.total += buffer.length
