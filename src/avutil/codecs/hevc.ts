@@ -38,6 +38,9 @@ import { Uint8ArrayInterface } from 'common/io/interface'
 import { BitFormat } from './h264'
 import * as intread from '../util/intread'
 import * as intwrite from '../util/intwrite'
+import { AVPixelFormat } from '../pixfmt'
+
+export const HEVC_MAX_DPB_FRAMES = 16
 
 export const enum HEVCProfile {
   Main = 1,
@@ -534,6 +537,39 @@ export function nalus2Annexb(
 }
 
 /**
+ * annexb 添加 sps pps
+ * 
+ * @param data 
+ * @param extradata 
+ */
+export function annexbAddExtradata(data: Uint8ArrayInterface, extradata: Uint8ArrayInterface) {
+  let nalus = naluUtil.splitNaluByStartCode(data).concat(naluUtil.splitNaluByStartCode(extradata))
+  if (nalus.length) {
+    let vpss: Uint8ArrayInterface[] = []
+    let spss: Uint8ArrayInterface[] = []
+    let ppss: Uint8ArrayInterface[] = []
+    let others: Uint8ArrayInterface[] = []
+
+    nalus.forEach((nalu) => {
+      const type = (nalu[0] >>> 1) & 0x3f
+      if (type === HEVCNaluType.kSliceVPS) {
+        vpss.push(nalu)
+      }
+      else if (type === HEVCNaluType.kSliceSPS) {
+        spss.push(nalu)
+      }
+      else if (type === HEVCNaluType.kSlicePPS) {
+        ppss.push(nalu)
+      }
+      else if (type !== HEVCNaluType.kSliceAUD) {
+        others.push(nalu)
+      }
+    })
+    return nalus2Annexb(vpss, spss, ppss, others)
+  }
+}
+
+/**
  * avcc 格式的 NALU 转 annexb NALU 
  * 
  * 需要保证 data 是 safe 的
@@ -566,6 +602,8 @@ export function avcc2Annexb(data: Uint8ArrayInterface, extradata?: Uint8ArrayInt
   }
 }
 
+/* eslint-disable camelcase */
+
 export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayInterface) {
   if (!extradata && stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
     extradata = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
@@ -588,11 +626,37 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
     }
   }
   if (sps) {
-    const { profile, level, width, height } = parseSPS(sps)
+    const { profile, level, width, height, video_delay, chroma_format_idc, bit_depth_luma_minus8 } = parseSPS(sps)
     stream.codecpar.profile = profile
     stream.codecpar.level = level
     stream.codecpar.width = width
     stream.codecpar.height = height
+    stream.codecpar.videoDelay = video_delay
+
+    switch (bit_depth_luma_minus8) {
+      case 0:
+        if (chroma_format_idc === 3) {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV444P
+        }
+        else if (chroma_format_idc === 2) {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV422P
+        }
+        else {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV420P
+        }
+        break
+      case 2:
+        if (chroma_format_idc === 3) {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV444P10LE
+        }
+        else if (chroma_format_idc === 2) {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV422P10LE
+        }
+        else {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV420P10LE
+        }
+        break
+    }
   }
 }
 
@@ -629,8 +693,6 @@ export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
     return false
   }
 }
-
-/* eslint-disable camelcase */
 export interface HevcSPS {
   profile: number
   level: number
@@ -661,6 +723,7 @@ export interface HevcSPS {
   min_pu_width: number
   min_pu_height: number
   log2_max_poc_lsb: number
+  video_delay: number
 }
 
 export function parseSPS(sps: Uint8ArrayInterface): HevcSPS {
@@ -838,11 +901,12 @@ export function parseSPS(sps: Uint8ArrayInterface): HevcSPS {
 
   const sublayer_ordering_info_flag = bitReader.readU1()
   const start = sublayer_ordering_info_flag ? 0 : spsMaxSubLayersMinus1
+  let video_delay = 0
   for (let i = start; i < (spsMaxSubLayersMinus1 + 1); i++) {
     // max_dec_pic_buffering
     expgolomb.readUE(bitReader)
     // num_reorder_pics
-    expgolomb.readUE(bitReader)
+    video_delay = Math.max(video_delay, Math.min(expgolomb.readUE(bitReader), HEVC_MAX_DPB_FRAMES))
     // max_latency_increase
     expgolomb.readUE(bitReader)
   }
@@ -896,7 +960,8 @@ export function parseSPS(sps: Uint8ArrayInterface): HevcSPS {
     min_tb_height,
     min_pu_width,
     min_pu_height,
-    log2_max_poc_lsb
+    log2_max_poc_lsb,
+    video_delay
   }
 }
 

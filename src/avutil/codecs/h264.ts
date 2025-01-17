@@ -38,6 +38,9 @@ import * as expgolomb from '../util/expgolomb'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import * as intread from '../util/intread'
 import * as intwrite from '../util/intwrite'
+import { AVPixelFormat } from '../pixfmt'
+
+export const H264_MAX_DPB_FRAMES = 16
 
 export const NALULengthSizeMinusOne = 3
 
@@ -487,6 +490,43 @@ export function nalus2Annexb(
 }
 
 /**
+ * annexb 添加 sps pps
+ * 
+ * @param data 
+ * @param extradata 
+ */
+export function annexbAddExtradata(data: Uint8ArrayInterface, extradata: Uint8ArrayInterface) {
+  let nalus = naluUtil.splitNaluByStartCode(data).concat(naluUtil.splitNaluByStartCode(extradata))
+  if (nalus.length) {
+    const spss: Uint8ArrayInterface[] = []
+    const ppss: Uint8ArrayInterface[] = []
+    const spsExts: Uint8ArrayInterface[] = []
+    const seis: Uint8ArrayInterface[] = []
+    const others: Uint8ArrayInterface[] = []
+
+    nalus.forEach((nalu) => {
+      const type = nalu[0] & 0x1f
+      if (type === H264NaluType.kSliceSPS) {
+        spss.push(nalu)
+      }
+      else if (type === H264NaluType.kSlicePPS) {
+        ppss.push(nalu)
+      }
+      else if (type === H264NaluType.kSPSExt) {
+        spsExts.push(nalu)
+      }
+      else if (type === H264NaluType.kSliceSEI) {
+        seis.push(nalu)
+      }
+      else if (type !== H264NaluType.kSliceAUD) {
+        others.push(nalu)
+      }
+    })
+    return nalus2Annexb(spss, ppss, spsExts, seis, others)
+  }
+}
+
+/**
  * avcc 格式的 NALU 转 annexb NALU 
  * 
  * 需要保证 data 是 safe 的
@@ -551,11 +591,47 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
     }
   }
   if (sps) {
-    const { profile, level, width, height } = parseSPS(sps)
+    const { profile, level, width, height, videoDelay, chromaFormatIdc, bitDepthLumaMinus8 } = parseSPS(sps)
     stream.codecpar.profile = profile
     stream.codecpar.level = level
     stream.codecpar.width = width
     stream.codecpar.height = height
+    stream.codecpar.videoDelay = videoDelay
+    switch (bitDepthLumaMinus8) {
+      case 0:
+        if (chromaFormatIdc === 3) {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV444P
+        }
+        else if (chromaFormatIdc === 2) {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV422P
+        }
+        else {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV420P
+        }
+        break
+      case 1:
+        if (chromaFormatIdc === 3) {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV444P9LE
+        }
+        else if (chromaFormatIdc === 2) {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV422P9LE
+        }
+        else {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV420P9LE
+        }
+        break
+      case 2:
+        if (chromaFormatIdc === 3) {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV444P10LE
+        }
+        else if (chromaFormatIdc === 2) {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV422P10LE
+        }
+        else {
+          stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV420P10LE
+        }
+        break
+    }
   }
 }
 
@@ -606,6 +682,7 @@ export interface H264SPS {
   log2MaxPicOrderCntLsbMinus4: number
   deltaPicOrderAlwaysZeroFlag: number
   log2MaxFrameNumMinus4: number
+  videoDelay: number
 }
 
 export function parseSPS(sps: Uint8ArrayInterface): H264SPS {
@@ -754,6 +831,121 @@ export function parseSPS(sps: Uint8ArrayInterface): H264SPS {
 
     width -= cropUnitX * (frameCropLeftOffset + frameCropRightOffset)
     height -= cropUnitY * (frameCropTopOffset + frameCropBottomOffset)
+
+  }
+
+  let videoDelay = 0
+
+  const vuiParametersPresentFlag = bitReader.readU1()
+  if (vuiParametersPresentFlag) {
+    // aspect_ratio_info_present_flag
+    let flag = bitReader.readU1()
+    if (flag) {
+      const aspectRatioIdc = bitReader.readU(8)
+      if (aspectRatioIdc >= 17) {
+        // sar.num
+        bitReader.readU(16)
+        // sar.num
+        bitReader.readU(16)
+      }
+    }
+    // overscan_info_present_flag
+    flag = bitReader.readU1()
+    if (flag) {
+      // overscan_appropriate_flag
+      bitReader.readU1()
+    }
+    // video_signal_type_present_flag
+    flag = bitReader.readU1()
+    if (flag) {
+      // video_format
+      bitReader.readU(3)
+      // video_full_range_flag
+      bitReader.readU1()
+      // colour_description_present_flag
+      flag = bitReader.readU1()
+      if (flag) {
+        // colour_primaries
+        bitReader.readU(8)
+        // transfer_characteristics
+        bitReader.readU(8)
+        // matrix_coeffs
+        bitReader.readU(8)
+      }
+    }
+    // chroma_loc_info_present_flag
+    flag = bitReader.readU1()
+    if (flag) {
+      // chroma_sample_loc_type_top_field
+      expgolomb.readUE(bitReader)
+      // chroma_sample_loc_type_bottom_field
+      expgolomb.readUE(bitReader)
+    }
+    // timing_info_present_flag
+    flag = bitReader.readU1()
+    if (flag) {
+      // num_units_in_tick
+      bitReader.readU(32)
+      // time_scale
+      bitReader.readU(32)
+      // fixed_frame_rate_flag
+      bitReader.readU1()
+    }
+    function parseHrdParameters() {
+      const cpbCount = expgolomb.readUE(bitReader) + 1
+      // bit_rate_scale
+      bitReader.readU(4)
+      // cpb_size_scale
+      bitReader.readU(4)
+      for (let i = 0; i < cpbCount; i++) {
+        // bit_rate_value
+        expgolomb.readUE(bitReader)
+        // cpb_size_value
+        expgolomb.readUE(bitReader)
+        // cpr_flag
+        bitReader.readU1()
+      }
+      // initial_cpb_removal_delay_length
+      bitReader.readU(5)
+      // cpb_removal_delay_length
+      bitReader.readU(5)
+      // dpb_output_delay_length
+      bitReader.readU(5)
+      // time_offset_length
+      bitReader.readU(5)
+    }
+    // nal_hrd_parameters_present_flag
+    let flag1 = bitReader.readU1()
+    if (flag1) {
+      parseHrdParameters()
+    }
+    // vcl_hrd_parameters_present_flag
+    let flag2 = bitReader.readU1()
+    if (flag2) {
+      parseHrdParameters()
+    }
+    if (flag1 || flag2) {
+      // low_delay_hrd_flag
+      bitReader.readU1()
+    }
+    // pic_struct_present_flag
+    bitReader.readU1()
+    // bitstream_restriction_flag
+    flag = bitReader.readU1()
+    if (flag) {
+      // motion_vectors_over_pic_boundaries_flag
+      bitReader.readU1()
+      // max_bytes_per_pic_denom
+      expgolomb.readUE(bitReader)
+      // max_bits_per_mb_denom
+      expgolomb.readUE(bitReader)
+      // log2_max_mv_length_horizontal
+      expgolomb.readUE(bitReader)
+      // log2_max_mv_length_vertical
+      expgolomb.readUE(bitReader)
+
+      videoDelay = Math.min(expgolomb.readUE(bitReader), H264_MAX_DPB_FRAMES)
+    }
   }
 
   return {
@@ -768,6 +960,7 @@ export function parseSPS(sps: Uint8ArrayInterface): H264SPS {
     picOrderCntType,
     log2MaxPicOrderCntLsbMinus4,
     deltaPicOrderAlwaysZeroFlag,
-    log2MaxFrameNumMinus4
+    log2MaxFrameNumMinus4,
+    videoDelay
   }
 }

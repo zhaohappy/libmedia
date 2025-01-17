@@ -40,6 +40,7 @@ import { Data } from 'common/types/type'
 import { BitFormat } from './h264'
 import * as intread from '../util/intread'
 import * as intwrite from '../util/intwrite'
+import { AVPixelFormat } from '../pixfmt'
 
 const NALULengthSizeMinusOne = 3
 
@@ -639,6 +640,39 @@ export function nalus2Annexb(
 }
 
 /**
+ * annexb 添加 sps pps
+ * 
+ * @param data 
+ * @param extradata 
+ */
+export function annexbAddExtradata(data: Uint8ArrayInterface, extradata: Uint8ArrayInterface) {
+  let nalus = naluUtil.splitNaluByStartCode(data).concat(naluUtil.splitNaluByStartCode(extradata))
+  if (nalus.length) {
+    let vpss: Uint8ArrayInterface[] = []
+    let spss: Uint8ArrayInterface[] = []
+    let ppss: Uint8ArrayInterface[] = []
+    let others: Uint8ArrayInterface[] = []
+
+    nalus.forEach((nalu) => {
+      const type = (nalu[1] >>> 3) & 0x1f
+      if (type === VVCNaluType.kVPS_NUT) {
+        vpss.push(nalu)
+      }
+      else if (type === VVCNaluType.kSPS_NUT) {
+        spss.push(nalu)
+      }
+      else if (type === VVCNaluType.kPPS_NUT) {
+        ppss.push(nalu)
+      }
+      else if (type !== VVCNaluType.kAUD_NUT) {
+        others.push(nalu)
+      }
+    })
+    return nalus2Annexb(vpss, spss, ppss, others, true)
+  }
+}
+
+/**
  * avcc 格式的 NALU 转 annexb NALU 
  * 
  * 需要保证 data 是 safe 的
@@ -672,11 +706,37 @@ export function avcc2Annexb(data: Uint8ArrayInterface, extradata?: Uint8ArrayInt
 }
 
 export function parseAVCodecParametersBySps(stream: AVStream, sps: Uint8ArrayInterface) {
-  const { profile, level, width, height } = parseSPS(sps)
+  const { profile, level, width, height, videoDelay, chromaFormatIdc, bitDepthMinus8 } = parseSPS(sps)
   stream.codecpar.profile = profile
   stream.codecpar.level = level
   stream.codecpar.width = width
   stream.codecpar.height = height
+  stream.codecpar.videoDelay = videoDelay
+
+  switch (bitDepthMinus8) {
+    case 0:
+      if (chromaFormatIdc === 3) {
+        stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV444P
+      }
+      else if (chromaFormatIdc === 2) {
+        stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV422P
+      }
+      else {
+        stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV420P
+      }
+      break
+    case 2:
+      if (chromaFormatIdc === 3) {
+        stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV444P10LE
+      }
+      else if (chromaFormatIdc === 2) {
+        stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV422P10LE
+      }
+      else {
+        stream.codecpar.format = AVPixelFormat.AV_PIX_FMT_YUV420P10LE
+      }
+      break
+  }
 }
 
 export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayInterface) {
@@ -748,6 +808,7 @@ export interface VvcSPS {
   level: number
   width: number
   height: number
+  videoDelay: number
   chromaFormatIdc: number
   bitDepthMinus8: number
   generalProfileSpace: number
@@ -943,11 +1004,14 @@ export function parseSPS(sps: Uint8ArrayInterface): VvcSPS {
     sps_extra_ph_bit_present_flag[i] = bitReader.readU(1)
   }
 
+  const videoDelay = (spsMaxSublayersMinus1 + 1)  > 2 ? 2 : spsMaxSublayersMinus1
+
   return {
     profile,
     level,
     width,
     height,
+    videoDelay,
     chromaFormatIdc,
     bitDepthMinus8,
     generalProfileSpace,
