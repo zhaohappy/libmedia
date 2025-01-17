@@ -115,7 +115,7 @@ export function getVideoColorSpaceInit(avframe: pointer<AVFrame>) {
   return init
 }
 
-export function avframe2VideoFrame(avframe: pointer<AVFrame>, timeBase?: Rational) {
+export function avframe2VideoFrame(avframe: pointer<AVFrame>, pts?: int64) {
 
   let height = avframe.height
 
@@ -133,9 +133,9 @@ export function avframe2VideoFrame(avframe: pointer<AVFrame>, timeBase?: Rationa
   const init: VideoFrameBufferInit = {
     codedWidth: avframe.width,
     codedHeight: height,
-    timestamp: static_cast<double>(timeBase ? avRescaleQ(avframe.pts, timeBase, AV_TIME_BASE_Q) : avframe.pts),
+    timestamp: pts ? static_cast<double>(pts) : static_cast<double>(avRescaleQ(avframe.pts, avframe.timeBase, AV_TIME_BASE_Q)),
     format: avPixelFormat2Format(avframe.format),
-    duration: static_cast<double>(timeBase ? avRescaleQ(avframe.duration, timeBase, AV_TIME_BASE_Q) : avframe.duration),
+    duration: static_cast<double>(avRescaleQ(avframe.duration, avframe.timeBase, AV_TIME_BASE_Q)),
     layout,
     colorSpace: getVideoColorSpaceInit(avframe),
     visibleRect: {

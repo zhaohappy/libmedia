@@ -41,9 +41,8 @@ import StretchPitcher from 'audiostretchpitch/StretchPitcher'
 import { REQUEST, RpcMessage } from 'common/network/IPCPort'
 import { IOError } from 'common/io/error'
 import { memcpy, memset, mapUint8Array } from 'cheap/std/memory'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ2 } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { Rational } from 'avutil/struct/rational'
 import getTimestamp from 'common/function/getTimestamp'
 import { Timeout } from 'common/types/type'
 import Sleep from 'common/timer/Sleep'
@@ -61,7 +60,6 @@ export interface AudioRenderTaskOptions extends TaskOptions {
   playChannels: int32
   resamplerResource: ArrayBuffer | WebAssemblyResource
   stretchpitcherResource: ArrayBuffer | WebAssemblyResource
-  timeBase: Rational
   startPTS: int64
   avframeList: pointer<List<pointer<AVFrameRef>>>
   avframeListMutex: pointer<Mutex>
@@ -181,8 +179,6 @@ export default class AudioRenderPipeline extends Pipeline {
       avframePool: new AVFramePoolImpl(accessof(options.avframeList), options.avframeListMutex)
     }
 
-    task.startPTS = avRescaleQ(task.startPTS, task.timeBase, AV_MILLI_TIME_BASE_Q)
-
     for (let i = 0; i < options.playChannels; i++) {
 
       const stretchpitcher = new StretchPitcher({
@@ -235,16 +231,16 @@ export default class AudioRenderPipeline extends Pipeline {
         }
 
         if (!task.firstPlayed) {
-          const start = avRescaleQ(
+          const start = avRescaleQ2(
             audioFrame.pts,
-            task.timeBase,
+            addressof(audioFrame.timeBase),
             AV_MILLI_TIME_BASE_Q
           )
           task.firstPlayed = true
           logger.debug(`got first audio frame, pts: ${audioFrame.pts}(${start}ms), taskId: ${task.taskId}`)
         }
 
-        const pts = avRescaleQ(audioFrame.pts, task.timeBase, AV_MILLI_TIME_BASE_Q)
+        const pts = avRescaleQ2(audioFrame.pts, addressof(audioFrame.timeBase), AV_MILLI_TIME_BASE_Q)
         if (pts > 0n && (task.masterTimer.getMasterTime() - pts > MASTER_SYNC_THRESHOLD)) {
           task.masterTimer.setMasterTime(pts)
         }
@@ -755,9 +751,9 @@ export default class AudioRenderPipeline extends Pipeline {
           break
         }
 
-        const pts = avRescaleQ(
+        const pts = avRescaleQ2(
           audioFrame.pts,
-          task.timeBase,
+          addressof(audioFrame.timeBase),
           AV_MILLI_TIME_BASE_Q
         )
 
@@ -894,7 +890,7 @@ export default class AudioRenderPipeline extends Pipeline {
 
     next /= (task.playRate * task.playTempo)
 
-    const pts = avRescaleQ(audioFrame.pts, task.timeBase, AV_MILLI_TIME_BASE_Q)
+    const pts = avRescaleQ2(audioFrame.pts, addressof(audioFrame.timeBase), AV_MILLI_TIME_BASE_Q)
     if (pts > 0n && (task.masterTimer.getMasterTime() - pts > MASTER_SYNC_THRESHOLD)) {
       task.masterTimer.setMasterTime(pts)
     }

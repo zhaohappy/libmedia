@@ -22,15 +22,16 @@
  *
  */
 
+import { avRescaleQ } from '../util/rational'
 import AVPacket, { AVPacketFlags } from '../struct/avpacket'
 import { mapUint8Array } from 'cheap/std/memory'
+import { AV_TIME_BASE_Q } from '../constant'
 
-export default function avpacket2EncodedAudioChunk(avpacket: pointer<AVPacket>, pts?: int64) {
-  const timestamp = static_cast<double>(pts ?? avpacket.pts)
+export default function avpacket2EncodedAudioChunk(avpacket: pointer<AVPacket>) {
   const key = avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
   return new EncodedAudioChunk({
     type: key ? 'key' : 'delta',
-    timestamp,
+    timestamp: static_cast<double>(avRescaleQ(avpacket.pts, avpacket.timeBase, AV_TIME_BASE_Q)),
     data: mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
   })
 }

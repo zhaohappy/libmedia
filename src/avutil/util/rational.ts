@@ -34,8 +34,8 @@ import gcd from 'common/math/gcd'
  * @param cq 目标时间基
  */
 export function avRescaleQ(a: int64, bq: Rational, cq: Rational) {
-  const b = a * static_cast<int64>(bq.num) * static_cast<int64>(cq.den)
-  const c = static_cast<int64>(bq.den) * static_cast<int64>(cq.num)
+  const b = a * static_cast<int64>(bq.num as unknown as uint32) * static_cast<int64>(cq.den as unknown as uint32)
+  const c = static_cast<int64>(bq.den as unknown as uint32) * static_cast<int64>(cq.num as unknown as uint32)
   return b / c
 }
 
@@ -46,9 +46,9 @@ export function avRescaleQ(a: int64, bq: Rational, cq: Rational) {
  * @param bp 待转换时间戳的时间基
  * @param cq 目标时间基
  */
-export function avRescaleQ2(a: int64, bq: pointer<Rational>, cq: pointer<Rational>) {
-  const b = a * static_cast<int64>(bq.num) * static_cast<int64>(cq.den)
-  const c = static_cast<int64>(bq.den) * static_cast<int64>(cq.num)
+export function avRescaleQ2(a: int64, bq: pointer<Rational>, cq: Rational) {
+  const b = a * static_cast<int64>(bq.num as unknown as uint32) * static_cast<int64>(cq.den as unknown as uint32)
+  const c = static_cast<int64>(bq.den as unknown as uint32) * static_cast<int64>(cq.num as unknown as uint32)
   return b / c
 }
 

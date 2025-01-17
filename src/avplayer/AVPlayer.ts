@@ -1739,10 +1739,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             leftPort: this.demuxer2AudioDecoderChannel.port2,
             rightPort: this.audioDecoder2AudioRenderChannel.port1,
             stats: addressof(this.GlobalData.stats),
-            timeBase: {
-              num: audioStream.timeBase.num,
-              den: audioStream.timeBase.den,
-            },
             avpacketList: addressof(this.GlobalData.avpacketList),
             avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
             avframeList: addressof(this.GlobalData.avframeList),
@@ -1794,18 +1790,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             renderRotate: this.renderRotate,
             flipHorizontal: this.flipHorizontal,
             flipVertical: this.flipVertical,
-            timeBase: {
-              num: videoStream.timeBase.num,
-              den: videoStream.timeBase.den,
-            },
             viewportWidth: this.options.container.offsetWidth,
             viewportHeight: this.options.container.offsetHeight,
             devicePixelRatio: devicePixelRatio,
             stats: addressof(this.GlobalData.stats),
             enableWebGPU: this.options.enableWebGPU,
             startPTS: this.options.isLive
-              ? (videoStream.startTime < 1000n ? 0n : videoStream.startTime)
-              : avRescaleQ(this.getMinStartPTS(), AV_MILLI_TIME_BASE_Q, videoStream.timeBase),
+              ? avRescaleQ(videoStream.startTime < 1000n ? 0n : videoStream.startTime, videoStream.timeBase, AV_MILLI_TIME_BASE_Q)
+              : this.getMinStartPTS(),
             avframeList: addressof(this.GlobalData.avframeList),
             avframeListMutex: addressof(this.GlobalData.avframeListMutex),
             enableJitterBuffer: !!this.jitterBufferController && !this.audioDecoder2AudioRenderChannel
@@ -1849,13 +1841,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             resamplerResource,
             stretchpitcherResource,
             stats: addressof(this.GlobalData.stats),
-            timeBase: {
-              num: audioStream.timeBase.num,
-              den: audioStream.timeBase.den,
-            },
             startPTS: this.options.isLive
-              ? (audioStream.startTime < 1000n ? 0n : audioStream.startTime)
-              : avRescaleQ(this.getMinStartPTS(), AV_MILLI_TIME_BASE_Q, audioStream.timeBase),
+              ? avRescaleQ(audioStream.startTime < 1000n ? 0n : audioStream.startTime, audioStream.timeBase, AV_MILLI_TIME_BASE_Q)
+              : this.getMinStartPTS(),
             avframeList: addressof(this.GlobalData.avframeList),
             avframeListMutex: addressof(this.GlobalData.avframeListMutex),
             enableJitterBuffer: !!this.jitterBufferController

@@ -138,7 +138,7 @@ export default class WebAudioDecoder {
     }
   }
 
-  public decode(avpacket: pointer<AVPacket>, pts?: int64) {
+  public decode(avpacket: pointer<AVPacket>) {
 
     const element = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
 
@@ -146,7 +146,7 @@ export default class WebAudioDecoder {
       this.changeExtraData(mapUint8Array(element.data, element.size))
     }
 
-    const audioChunk = avpacket2EncodedAudioChunk(avpacket, pts)
+    const audioChunk = avpacket2EncodedAudioChunk(avpacket)
 
     try {
       this.decoder.decode(audioChunk)

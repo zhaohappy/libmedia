@@ -173,9 +173,9 @@ export default class VideoDecodePipeline extends Pipeline {
           task.openReject = null
         }
       },
-      onReceiveAVFrame(frame) {
+      onReceiveAVFrame(avframe) {
         task.firstDecoded = true
-        task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
+        task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(avframe))
         task.stats.videoFrameDecodeCount++
         if (task.lastDecodeTimestamp !== NOPTS_VALUE) {
           task.stats.videoFrameDecodeIntervalMax = Math.max(

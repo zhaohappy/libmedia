@@ -9,7 +9,6 @@ import isPointer from 'cheap/std/function/isPointer'
 
 export interface FramerateFilterNodeOptions extends AVFilterNodeOptions {
   framerate: Rational
-  timeBase: Rational
 }
 
 export default class FramerateFilterNode extends AVFilterNode {
@@ -54,7 +53,7 @@ export default class FramerateFilterNode extends AVFilterNode {
 
     let pts = avRescaleQ(
       isPointer(avframe) ? avframe.pts : static_cast<int64>((avframe as VideoFrame).timestamp),
-      this.options.timeBase,
+      isPointer(avframe) ? avframe.timeBase : AV_TIME_BASE_Q,
       this.timeBase
     )
     let diff = pts - this.lastPts + this.delta
@@ -68,7 +67,7 @@ export default class FramerateFilterNode extends AVFilterNode {
         }
         pts = avRescaleQ(
           isPointer(next) ? next.pts : static_cast<int64>(next.timestamp),
-          this.options.timeBase,
+          isPointer(next) ? next.timeBase : AV_TIME_BASE_Q,
           this.timeBase
         )
         diff = pts - this.lastPts

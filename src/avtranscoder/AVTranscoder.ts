@@ -43,7 +43,7 @@ import * as logger from 'common/util/logger'
 import support from 'common/util/support'
 import browser from 'common/util/browser'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE } from 'avutil/constant'
+import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import getVideoCodec from 'avutil/function/getVideoCodec'
 import * as mutex from 'cheap/thread/mutex'
@@ -98,6 +98,8 @@ import analyzeUrlIOLoader from 'avutil/function/analyzeUrlIOLoader'
 import getWasmUrl from 'avutil/function/getWasmUrl'
 import * as bigint from 'common/util/bigint'
 import align from 'common/math/align'
+import { Rational } from 'avutil/struct/rational'
+import { PixelFormatDescriptorsMap } from 'avutil/pixelFormatDescriptor'
 
 export interface AVTranscoderOptions {
   /**
@@ -544,6 +546,24 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     await this.startVideoPipeline()
     await this.startMuxPipeline()
     logger.info('AVTranscoder pipelines started')
+  }
+
+  private changeAVStreamTimebase(stream: AVStreamInterface, timeBase: Rational) {
+    let startTime = stream.startTime
+    let duration = stream.duration
+
+    if (startTime !== NOPTS_VALUE_BIGINT) {
+      startTime = avRescaleQ(startTime, stream.timeBase, timeBase)
+    }
+    if (duration !== NOPTS_VALUE_BIGINT) {
+      duration = avRescaleQ(duration, stream.timeBase, timeBase)
+    }
+
+    stream.duration = duration
+    stream.startTime = startTime
+
+    stream.timeBase.den = timeBase.den
+    stream.timeBase.num = timeBase.num
   }
 
   private copyAVStreamInterface(task: SelfTask, stream: AVStreamInterface) {
@@ -1115,6 +1135,10 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         }
       }
 
+      if (task.format === AVFormat.MOV) {
+        this.changeAVStreamTimebase(newStream, { num: 1, den: newStream.codecpar.sampleRate })
+      }
+
       await this.DemuxerThread.connectStreamTask
         .transfer(demuxer2DecoderChannel.port1)
         .invoke(task.taskId, stream.index, demuxer2DecoderChannel.port1)
@@ -1152,11 +1176,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           avframeList: addressof(this.GlobalData.avframeList),
-          avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-          timeBase: {
-            num: stream.timeBase.num,
-            den: stream.timeBase.den
-          }
+          avframeListMutex: addressof(this.GlobalData.avframeListMutex)
         })
 
       ret = await this.AudioDecoderThread.open(taskId, stream.codecpar)
@@ -1202,7 +1222,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         const rangeNode = createGraphDesVertex('range', {
           start: start,
           end: task.options.duration
-            ? (avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, stream.timeBase) + start)
+            ? (avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, AV_TIME_BASE_Q) + start)
             : -1n
         })
         vertices.push(rangeNode)
@@ -1380,10 +1400,12 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
 
       if (newStream.codecpar.profile === NOPTS_VALUE) {
         if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
-          newStream.codecpar.profile = h264.H264Profile.kHigh
+          const description = PixelFormatDescriptorsMap[newStream.codecpar.format]
+          newStream.codecpar.profile = description?.comp[0]?.depth === 10 ? h264.H264Profile.kHigh10 : h264.H264Profile.kHigh
         }
         else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
-          newStream.codecpar.profile = hevc.HEVCProfile.Main
+          const description = PixelFormatDescriptorsMap[newStream.codecpar.format]
+          newStream.codecpar.profile = description?.comp[0]?.depth === 10 ? hevc.HEVCProfile.Main10 : hevc.HEVCProfile.Main
         }
         else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
 
@@ -1412,7 +1434,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           )
         }
         else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
-
+          // TODO 现在还没有 vvc 编码器，将来如果加入了 vvc 编码器再来实现
         }
         else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1) {
           newStream.codecpar.level = av1.getLevelByResolution(newStream.codecpar.width, newStream.codecpar.height, avQ2D(newStream.codecpar.framerate))
@@ -1423,6 +1445,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       }
 
       if (!videoConfig || videoConfig.delay == null) {
+        // 这个用来设置 max_b_frame_count，只针对 wasm 编码器，webcodecs 目前无法编码出 B 帧
         newStream.codecpar.videoDelay = 4
       }
 
@@ -1440,14 +1463,14 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       }
 
       if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4 && newStream.timeBase.den > 65535) {
-        const newTimebase = {
-          den: 65535,
-          num: 1
+        this.changeAVStreamTimebase(newStream, { num: 1, den: 65535 })
+      }
+      else if (task.format === AVFormat.MOV) {
+        // 如果是整数帧率，调整时间基为 framerate 的倍数，节省 stts box 的大小
+        const framerate = avQ2D(newStream.codecpar.framerate)
+        if (framerate === Math.floor(framerate)) {
+          this.changeAVStreamTimebase(newStream, { num: 1, den: framerate * 256 })
         }
-        newStream.startTime = avRescaleQ(newStream.startTime, newStream.timeBase, newTimebase)
-        newStream.duration = avRescaleQ(newStream.duration, newStream.timeBase, newTimebase)
-        newStream.timeBase.den = newTimebase.den
-        newStream.timeBase.num = newTimebase.num
       }
 
       await this.DemuxerThread.connectStreamTask
@@ -1473,6 +1496,13 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         }
       }
 
+      const description = PixelFormatDescriptorsMap[stream.codecpar.format]
+      let canUseHardware = true
+      // 硬解只能支持 8 位，webcodecs 10 位的解出来无法拿数据出来编码
+      if (description?.comp[0]?.depth > 8) {
+        canUseHardware = false
+      }
+
       // 注册一个视频解码任务
       await this.VideoDecoderThread.registerTask
         .transfer(demuxer2DecoderChannel.port2, decoder2FilterChannel.port1)
@@ -1482,7 +1512,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           leftPort: demuxer2DecoderChannel.port2,
           rightPort: decoder2FilterChannel.port1,
           stats: addressof(task.stats),
-          enableHardware: !!videoConfig.enableHardware,
+          enableHardware: !!videoConfig.enableHardware && canUseHardware,
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           avframeList: addressof(this.GlobalData.avframeList),
@@ -1529,11 +1559,11 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       }
 
       if (task.options.start || task.options.duration) {
-        const start = avRescaleQ(static_cast<int64>(task.options.start || 0), AV_MILLI_TIME_BASE_Q, stream.timeBase)
+        const start = avRescaleQ(static_cast<int64>(task.options.start || 0), AV_MILLI_TIME_BASE_Q, AV_TIME_BASE_Q)
         const rangeNode = createGraphDesVertex('range', {
           start: start,
           end: task.options.duration
-            ? (avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, stream.timeBase) + start)
+            ? (avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, AV_TIME_BASE_Q) + start)
             : -1n
         })
         vertices.push(rangeNode)
@@ -1553,10 +1583,6 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           framerate: {
             num: newStream.codecpar.framerate.num,
             den: newStream.codecpar.framerate.den
-          },
-          timeBase: {
-            num: stream.timeBase.num,
-            den: stream.timeBase.den
           }
         })
         vertices.push(framerateNode)

@@ -37,14 +37,11 @@ import AVFramePoolImpl from 'avutil/implement/AVFramePoolImpl'
 import { IOError } from 'common/io/error'
 import { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { Rational } from 'avutil/struct/rational'
 import WebAudioDecoder from 'avcodec/webcodec/AudioDecoder'
 import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
 import * as array from 'common/util/array'
 import getTimestamp from 'common/function/getTimestamp'
 import { audioData2AVFrame } from 'avutil/function/audioData2AVFrame'
-import { avRescaleQ } from 'avutil/util/rational'
-import { AV_TIME_BASE_Q } from 'avutil/constant'
 import * as errorType from 'avutil/error'
 import { Data } from 'common/types/type'
 import compileResource from 'avutil/function/compileResource'
@@ -60,7 +57,6 @@ export interface AudioDecodeTaskOptions extends TaskOptions {
   avpacketListMutex: pointer<Mutex>
   avframeList: pointer<List<pointer<AVFrameRef>>>
   avframeListMutex: pointer<Mutex>
-  timeBase: Rational
 }
 
 type SelfTask = Omit<AudioDecodeTaskOptions, 'resource'> & {
@@ -98,12 +94,6 @@ export default class AudioDecodePipeline extends Pipeline {
       },
       onReceiveAudioData(audioData) {
         const avframe = audioData2AVFrame(audioData, task.avframePool.alloc())
-
-        avframe.pts = avRescaleQ(avframe.pts, AV_TIME_BASE_Q, task.timeBase)
-        avframe.duration = avRescaleQ(avframe.duration, AV_TIME_BASE_Q, task.timeBase)
-        avframe.timeBase.den = task.timeBase.den
-        avframe.timeBase.num = task.timeBase.num
-
         task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(avframe))
         task.stats.audioFrameDecodeCount++
         task.stats.audioFrameDecodeIntervalMax = Math.max(
@@ -125,8 +115,8 @@ export default class AudioDecodePipeline extends Pipeline {
           task.openReject = null
         }
       },
-      onReceiveAVFrame(frame) {
-        task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(frame))
+      onReceiveAVFrame(avframe) {
+        task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(avframe))
         task.stats.audioFrameDecodeCount++
         task.stats.audioFrameDecodeIntervalMax = Math.max(
           getTimestamp() - task.lastDecodeTimestamp,
@@ -218,7 +208,7 @@ export default class AudioDecodePipeline extends Pipeline {
               }
               else if (avpacket > 0) {
 
-                const ret = task.decoder.decode(avpacket, avRescaleQ(avpacket.pts, avpacket.timeBase, AV_TIME_BASE_Q))
+                const ret = task.decoder.decode(avpacket)
 
                 task.avpacketPool.release(avpacket)
 

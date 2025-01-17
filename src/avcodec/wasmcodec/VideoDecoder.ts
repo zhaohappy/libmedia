@@ -37,6 +37,7 @@ import * as object from 'common/util/object'
 import * as dict from 'avutil/util/avdict'
 import * as is from 'common/util/is'
 import { avMallocz } from 'avutil/util/mem'
+import { Rational } from 'avutil/struct/rational'
 
 export type WasmVideoDecoderOptions = {
   resource: WebAssemblyResource
@@ -92,6 +93,8 @@ export default class WasmVideoDecoder {
 
   private decoderOptions: pointer<AVDictionary> = nullptr
 
+  private timeBase: Rational
+
   constructor(options: WasmVideoDecoderOptions) {
     this.options = options
     this.decoder = new WebAssemblyRunner(this.options.resource)
@@ -107,6 +110,8 @@ export default class WasmVideoDecoder {
   private outputAVFrame() {
     if (this.frame) {
       if (this.options.onReceiveAVFrame) {
+        this.frame.timeBase.den = this.timeBase.den
+        this.frame.timeBase.num = this.timeBase.num
         this.options.onReceiveAVFrame(this.frame)
       }
       else {
@@ -159,9 +164,18 @@ export default class WasmVideoDecoder {
       logger.fatal(`open video decoder failed, ret: ${ret}`)
     }
     this.parameters = parameters
+    this.timeBase = null
   }
 
   public decode(avpacket: pointer<AVPacket>) {
+
+    if (!this.timeBase) {
+      this.timeBase = {
+        den: avpacket.timeBase.den,
+        num: avpacket.timeBase.num
+      }
+    }
+
     let ret = this.decoder.call<int32>('decoder_decode', avpacket)
 
     if (ret) {

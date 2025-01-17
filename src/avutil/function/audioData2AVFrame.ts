@@ -27,6 +27,7 @@ import { AVSampleFormat } from '../audiosamplefmt'
 import AVFrame from '../struct/avframe'
 import { sampleFormatIsPlanar } from '../util/sample'
 import { mapUint8Array } from 'cheap/std/memory'
+import { AV_TIME_BASE } from '../constant'
 
 function mapFormat(format: AudioSampleFormat) {
   switch (format) {
@@ -62,6 +63,8 @@ export function audioData2AVFrame(audioData: AudioData, avframe: pointer<AVFrame
   avframe.format = mapFormat(audioData.format)
   avframe.pts = static_cast<int64>(audioData.timestamp)
   avframe.duration = static_cast<int64>(audioData.duration)
+  avframe.timeBase.den = AV_TIME_BASE
+  avframe.timeBase.num = 1
 
   getAudioBuffer(avframe)
 

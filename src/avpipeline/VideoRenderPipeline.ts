@@ -35,11 +35,10 @@ import AVFramePoolImpl from 'avutil/implement/AVFramePoolImpl'
 import ImageRender from 'avrender/image/ImageRender'
 import support from 'common/util/support'
 import { RenderMode } from 'avrender/image/ImageRender'
-import { Rational } from 'avutil/struct/rational'
 import LoopTask from 'common/timer/LoopTask'
 import getTimestamp from 'common/function/getTimestamp'
-import { avRescaleQ } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
+import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { NOTIFY, RpcMessage } from 'common/network/IPCPort'
 import browser from 'common/util/browser'
 
@@ -101,7 +100,6 @@ export interface VideoRenderTaskOptions extends TaskOptions {
   renderRotate: double
   flipHorizontal: boolean
   flipVertical: boolean
-  timeBase: Rational
   viewportWidth: int32
   viewportHeight: int32
   devicePixelRatio: double
@@ -216,8 +214,6 @@ export default class VideoRenderPipeline extends Pipeline {
       lastRenderTimestamp: 0,
       avframePool: new AVFramePoolImpl(accessof(options.avframeList), options.avframeListMutex)
     }
-
-    task.startPTS = avRescaleQ(task.startPTS, task.timeBase, AV_MILLI_TIME_BASE_Q)
 
     controlIPCPort.on(NOTIFY, async (request: RpcMessage) => {
       switch (request.method) {
@@ -471,14 +467,20 @@ export default class VideoRenderPipeline extends Pipeline {
 
       await this.createRender(task, task.backFrame)
 
-      task.currentPTS = avRescaleQ(
-        (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
-        task.timeBase,
-        AV_MILLI_TIME_BASE_Q
-      )
+      task.currentPTS = isPointer(task.backFrame)
+        ? avRescaleQ2(
+          task.backFrame.pts,
+          addressof(task.backFrame.timeBase),
+          AV_MILLI_TIME_BASE_Q
+        )
+        : avRescaleQ(
+          static_cast<int64>(task.backFrame.timestamp as uint32),
+          AV_TIME_BASE_Q,
+          AV_MILLI_TIME_BASE_Q
+        )
 
       logger.debug(`got first video frame, pts: ${!isPointer(task.backFrame)
-        ? static_cast<int64>(task.backFrame.timestamp)
+        ? static_cast<int64>(task.backFrame.timestamp as uint32)
         : task.backFrame.pts
       }(${task.currentPTS}ms), taskId: ${task.taskId}`)
 
@@ -518,11 +520,17 @@ export default class VideoRenderPipeline extends Pipeline {
           }
         }
 
-        const pts = avRescaleQ(
-          (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
-          task.timeBase,
-          AV_MILLI_TIME_BASE_Q
-        )
+        const pts = isPointer(task.backFrame)
+          ? avRescaleQ2(
+            task.backFrame.pts,
+            addressof(task.backFrame.timeBase),
+            AV_MILLI_TIME_BASE_Q
+          )
+          : avRescaleQ(
+            static_cast<int64>(task.backFrame.timestamp as uint32),
+            AV_TIME_BASE_Q,
+            AV_MILLI_TIME_BASE_Q
+          )
 
         if (pts < task.currentPTS) {
           // 差值大于 5s 认为从头开始了
@@ -683,11 +691,17 @@ export default class VideoRenderPipeline extends Pipeline {
       task.lastNotifyPTS = NOPTS_VALUE_BIGINT
       task.firstRendered = false
 
-      task.currentPTS = avRescaleQ(
-        (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
-        task.timeBase,
-        AV_MILLI_TIME_BASE_Q
-      )
+      task.currentPTS = isPointer(task.backFrame)
+        ? avRescaleQ2(
+          task.backFrame.pts,
+          addressof(task.backFrame.timeBase),
+          AV_MILLI_TIME_BASE_Q
+        )
+        : avRescaleQ(
+          static_cast<int64>(task.backFrame.timestamp as uint32),
+          AV_TIME_BASE_Q,
+          AV_MILLI_TIME_BASE_Q
+        )
 
       task.masterTimer.setMasterTime(task.startPTS)
 
@@ -917,11 +931,17 @@ export default class VideoRenderPipeline extends Pipeline {
           break
         }
 
-        const pts = avRescaleQ(
-          (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
-          task.timeBase,
-          AV_MILLI_TIME_BASE_Q
-        )
+        const pts = isPointer(task.backFrame)
+          ? avRescaleQ2(
+            task.backFrame.pts,
+            addressof(task.backFrame.timeBase),
+            AV_MILLI_TIME_BASE_Q
+          )
+          : avRescaleQ(
+            static_cast<int64>(task.backFrame.timestamp as uint32),
+            AV_TIME_BASE_Q,
+            AV_MILLI_TIME_BASE_Q
+          )
 
         if (pts >= timestamp) {
           task.ended = false
@@ -1007,15 +1027,21 @@ export default class VideoRenderPipeline extends Pipeline {
       task.adjust = AdjustStatus.None
       task.lastRenderTimestamp = getTimestamp()
 
-      task.currentPTS = avRescaleQ(
-        (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
-        task.timeBase,
-        AV_MILLI_TIME_BASE_Q
-      )
+      task.currentPTS = isPointer(task.backFrame)
+        ? avRescaleQ2(
+          task.backFrame.pts,
+          addressof(task.backFrame.timeBase),
+          AV_MILLI_TIME_BASE_Q
+        )
+        : avRescaleQ(
+          static_cast<int64>(task.backFrame.timestamp as uint32),
+          AV_TIME_BASE_Q,
+          AV_MILLI_TIME_BASE_Q
+        )
       task.stats.videoCurrentTime = task.currentPTS
 
       logger.debug(`got first video frame, pts: ${!isPointer(task.backFrame)
-        ? static_cast<int64>(task.backFrame.timestamp)
+        ? static_cast<int64>(task.backFrame.timestamp as uint32)
         : task.backFrame.pts
       }(${task.currentPTS}ms), taskId: ${task.taskId}`)
 
@@ -1035,11 +1061,17 @@ export default class VideoRenderPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       if (task.backFrame) {
-        const pts = avRescaleQ(
-          (!isPointer(task.backFrame)) ? static_cast<int64>(task.backFrame.timestamp) : task.backFrame.pts,
-          task.timeBase,
-          AV_MILLI_TIME_BASE_Q
-        )
+        const pts = isPointer(task.backFrame)
+          ? avRescaleQ2(
+            task.backFrame.pts,
+            addressof(task.backFrame.timeBase),
+            AV_MILLI_TIME_BASE_Q
+          )
+          : avRescaleQ(
+            static_cast<int64>(task.backFrame.timestamp as uint32),
+            AV_TIME_BASE_Q,
+            AV_MILLI_TIME_BASE_Q
+          )
         task.render.render(task.backFrame)
         task.stats.videoCurrentTime = pts
         task.stats.videoFrameRenderCount++

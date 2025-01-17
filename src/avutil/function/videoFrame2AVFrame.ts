@@ -22,11 +22,12 @@
  *
  */
 
-import { createAVFrame, getVideoBuffer } from '../util/avframe'
+import { createAVFrame, getVideoBuffer, unrefAVFrame } from '../util/avframe'
 import AVFrame from '../struct/avframe'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
 import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
 import { getHeap } from 'cheap/heap'
+import { AV_TIME_BASE } from '../constant'
 
 export function mapFormat(format: VideoPixelFormat) {
   switch (format) {
@@ -98,12 +99,18 @@ export function videoFrame2AVFrame(videoFrame: VideoFrame, avframe: pointer<AVFr
   if (avframe === nullptr) {
     avframe = createAVFrame()
   }
+  else {
+    unrefAVFrame(avframe)
+  }
 
   avframe.format = mapFormat(videoFrame.format)
   avframe.pts = static_cast<int64>(videoFrame.timestamp)
+  avframe.bestEffortTimestamp = avframe.pts
   avframe.width = videoFrame.codedWidth
   avframe.height = videoFrame.codedHeight
   avframe.duration = static_cast<int64>(videoFrame.duration)
+  avframe.timeBase.den = AV_TIME_BASE
+  avframe.timeBase.num = 1
 
   avframe.colorSpace = mapColorSpace(videoFrame.colorSpace.matrix)
   avframe.colorPrimaries = mapColorPrimaries(videoFrame.colorSpace.primaries)
@@ -112,9 +119,9 @@ export function videoFrame2AVFrame(videoFrame: VideoFrame, avframe: pointer<AVFr
 
   if (videoFrame.visibleRect) {
     avframe.cropLeft = reinterpret_cast<size>(videoFrame.visibleRect.left)
-    avframe.cropRight = reinterpret_cast<size>(videoFrame.visibleRect.right)
+    avframe.cropRight = reinterpret_cast<size>(videoFrame.codedWidth - videoFrame.visibleRect.right)
     avframe.cropTop = reinterpret_cast<size>(videoFrame.visibleRect.top)
-    avframe.cropBottom = reinterpret_cast<size>(videoFrame.visibleRect.bottom)
+    avframe.cropBottom = reinterpret_cast<size>(videoFrame.codedHeight - videoFrame.visibleRect.bottom)
   }
 
   getVideoBuffer(avframe)

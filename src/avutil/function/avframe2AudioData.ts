@@ -92,7 +92,7 @@ function mapTypeBuffer(format: AVSampleFormat, pointer: pointer<void>, size: int
   }
 }
 
-export function avframe2AudioData(avframe: pointer<AVFrame>, timeBase?: Rational) {
+export function avframe2AudioData(avframe: pointer<AVFrame>, pts?: int64) {
 
   const planar = sampleFormatIsPlanar(avframe.format)
   const planes = planar ? avframe.chLayout.nbChannels : 1
@@ -121,7 +121,7 @@ export function avframe2AudioData(avframe: pointer<AVFrame>, timeBase?: Rational
     sampleRate: avframe.sampleRate,
     numberOfFrames: avframe.nbSamples,
     numberOfChannels: avframe.chLayout.nbChannels,
-    timestamp: static_cast<double>(timeBase ? avRescaleQ(avframe.pts, timeBase, AV_TIME_BASE_Q) : avframe.pts)
+    timestamp: pts ? static_cast<double>(pts) : static_cast<double>(avRescaleQ(avframe.pts, avframe.timeBase, AV_TIME_BASE_Q))
   })
   return audioData
 }
