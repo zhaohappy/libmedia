@@ -44,6 +44,7 @@ import * as logger from 'common/util/logger'
 import * as av1 from 'avutil/codecs/av1'
 import * as vp9 from 'avutil/codecs/vp9'
 import isPointer from 'cheap/std/function/isPointer'
+import { AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 export type WebVideoEncoderOptions = {
   onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
@@ -102,8 +103,7 @@ export default class WebVideoEncoder {
     alphaSideData?: BufferSource
   }) {
 
-    const inputCounter = static_cast<int64>(chunk.timestamp)
-    const pts = avRescaleQ(inputCounter, this.framerateTimebase, this.timeBase)
+    const pts = static_cast<int64>(chunk.timestamp as uint32)
     const dts = avRescaleQ(this.outputCounter++, this.framerateTimebase, this.timeBase)
 
     const avpacket = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
@@ -162,14 +162,14 @@ export default class WebVideoEncoder {
 
     this.options.onReceiveAVPacket(avpacket)
 
-    const avframe = this.avframeMap.get(inputCounter)
+    const avframe = this.avframeMap.get(pts)
 
     if (avframe) {
       this.options.avframePool
         ? this.options.avframePool.release(reinterpret_cast<pointer<AVFrameRef>>(avframe))
         : destroyAVFrame(avframe)
     }
-    this.avframeMap.delete(inputCounter)
+    this.avframeMap.delete(pts)
   }
 
   private error(error: Error) {
@@ -240,16 +240,31 @@ export default class WebVideoEncoder {
   }
 
   public encode(frame: VideoFrame | pointer<AVFrame>, key: boolean) {
+
+    let pts = avRescaleQ(this.inputCounter, this.framerateTimebase, this.timeBase)
+
+    if (isPointer(frame) && frame.pts !== NOPTS_VALUE_BIGINT
+      || !isPointer(frame) && frame.timestamp >= 0
+    ) {
+      pts = avRescaleQ(
+        isPointer(frame) ? frame.pts : static_cast<int64>(frame.timestamp as uint32),
+        isPointer(frame) ? frame.timeBase : AV_TIME_BASE_Q,
+        this.timeBase
+      )
+    }
+
     if (isPointer(frame)) {
       const cache = this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame()
       refAVFrame(cache, frame)
-      cache.pts = this.inputCounter
+      cache.pts = pts
       this.avframeMap.set(cache.pts, cache)
-      frame = avframe2VideoFrame(cache)
+      cache.duration = avRescaleQ(1n, this.framerateTimebase, cache.timeBase)
+      frame = avframe2VideoFrame(cache, pts)
     }
     else {
       frame = new VideoFrame(frame, {
-        timestamp: static_cast<double>(this.inputCounter)
+        timestamp: static_cast<double>(pts),
+        duration: static_cast<double>(avRescaleQ(1n, this.framerateTimebase, this.timeBase))
       })
     }
     try {

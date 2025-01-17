@@ -34,7 +34,7 @@ import * as stack from 'cheap/stack'
 import { Rational } from 'avutil/struct/rational'
 import { BitFormat } from 'avutil/codecs/h264'
 import { videoFrame2AVFrame } from 'avutil/function/videoFrame2AVFrame'
-import { createAVFrame, destroyAVFrame, unrefAVFrame } from 'avutil/util/avframe'
+import { createAVFrame, destroyAVFrame, refAVFrame, unrefAVFrame } from 'avutil/util/avframe'
 import { mapUint8Array } from 'cheap/std/memory'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import AVBSFilter from 'avformat/bsf/AVBSFilter'
@@ -50,6 +50,7 @@ import * as dict from 'avutil/util/avdict'
 import * as is from 'common/util/is'
 import { avMallocz } from 'avutil/util/mem'
 import { avRescaleQ } from 'avutil/util/rational'
+import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
@@ -66,6 +67,7 @@ export default class WasmVideoEncoder {
   private parameters: pointer<AVCodecParameters>
   private timeBase: Rational
   private framerateTimebase: Rational
+  private inputCounter: int64
 
   private avpacket: pointer<AVPacket>
 
@@ -195,6 +197,7 @@ export default class WasmVideoEncoder {
 
     this.parameters = parameters
     this.timeBase = timeBase
+    this.inputCounter = 0n
     this.framerateTimebase = {
       den: parameters.framerate.num,
       num: parameters.framerate.den
@@ -204,19 +207,33 @@ export default class WasmVideoEncoder {
   }
 
   private preEncode(frame: pointer<AVFrame> | VideoFrame, key: boolean): pointer<AVFrame> {
+    if (this.avframe) {
+      unrefAVFrame(this.avframe)
+    }
+    else {
+      this.avframe = createAVFrame()
+    }
     if (!isPointer(frame)) {
-      if (this.avframe) {
-        unrefAVFrame(this.avframe)
-      }
-      else {
-        this.avframe = createAVFrame()
-      }
       frame = videoFrame2AVFrame(frame, this.avframe)
+    }
+    else {
+      refAVFrame(this.avframe, frame)
+      frame = this.avframe
     }
 
     if (key) {
       frame.pictType = AVPictureType.AV_PICTURE_TYPE_I
     }
+
+    if (frame.pts !== NOPTS_VALUE_BIGINT) {
+      frame.pts = avRescaleQ(frame.pts, frame.timeBase, this.timeBase)
+    }
+    else {
+      frame.pts = avRescaleQ(this.inputCounter, this.framerateTimebase, this.timeBase)
+    }
+    this.inputCounter++
+    frame.timeBase.den = this.timeBase.den
+    frame.timeBase.num = this.timeBase.num
 
     return frame
   }
