@@ -23,18 +23,21 @@
  *
  */
 
-import { AVPacketSideDataType } from 'avutil/codec'
+import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import browser from 'common/util/browser'
 import getVideoCodec from 'avutil/function/getVideoCodec'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import { mapUint8Array } from 'cheap/std/memory'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { getAVPacketSideData } from 'avutil/util/avpacket'
+import { addAVPacketData, getAVPacketData, getAVPacketSideData } from 'avutil/util/avpacket'
 import { getHardwarePreference } from 'avutil/function/getHardwarePreference'
 import { BitFormat } from 'avutil/codecs/h264'
 import avpacket2EncodedVideoChunk from 'avutil/function/avpacket2EncodedVideoChunk'
 import * as logger from 'common/util/logger'
 import os from 'common/util/os'
+import * as h264 from 'avutil/codecs/h264'
+import * as hevc from 'avutil/codecs/hevc'
+import * as vvc from 'avutil/codecs/vvc'
 
 export type WebVideoDecoderOptions = {
   onReceiveVideoFrame: (frame: VideoFrame) => void
@@ -59,6 +62,7 @@ export default class WebVideoDecoder {
   private sort: boolean
 
   private keyframeRequire: boolean
+  private extradataRequire: boolean
 
   constructor(options: WebVideoDecoderOptions) {
 
@@ -182,6 +186,9 @@ export default class WebVideoDecoder {
     }
 
     this.keyframeRequire = true
+    if (this.parameters.bitFormat === BitFormat.ANNEXB) {
+      this.extradataRequire = true
+    }
 
     this.inputQueue.length = 0
     this.outputQueue.length = 0
@@ -197,13 +204,42 @@ export default class WebVideoDecoder {
 
     const key = avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
 
-    if (this.keyframeRequire && !key) {
-      return 0
+    if (this.keyframeRequire) {
+      if (!key) {
+        return 0
+      }
+      if (this.parameters.bitFormat === BitFormat.ANNEXB && this.extradata && this.extradataRequire) {
+        if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_H264) {
+          if (!h264.generateAnnexbExtradata(getAVPacketData(avpacket))) {
+            const data = h264.annexbAddExtradata(getAVPacketData(avpacket), this.extradata)
+            if (data) {
+              addAVPacketData(avpacket, data.bufferPointer, data.length)
+            }
+          }
+        }
+        else if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+          if (!hevc.generateAnnexbExtradata(getAVPacketData(avpacket))) {
+            const data = hevc.annexbAddExtradata(getAVPacketData(avpacket), this.extradata)
+            if (data) {
+              addAVPacketData(avpacket, data.bufferPointer, data.length)
+            }
+          }
+        }
+        else if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_VVC) {
+          if (!vvc.generateAnnexbExtradata(getAVPacketData(avpacket))) {
+            const data = vvc.annexbAddExtradata(getAVPacketData(avpacket), this.extradata)
+            if (data) {
+              addAVPacketData(avpacket, data.bufferPointer, data.length)
+            }
+          }
+        }
+        this.extradataRequire = false
+      }
     }
 
-    const timestamp = static_cast<double>(avpacket.pts)
-
     const videoChunk = avpacket2EncodedVideoChunk(avpacket)
+
+    const timestamp = videoChunk.timestamp
 
     if (this.sort) {
       let i = 0
