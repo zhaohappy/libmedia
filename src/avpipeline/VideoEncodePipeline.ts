@@ -280,6 +280,8 @@ export default class VideoEncodePipeline extends Pipeline {
                     else if (task.resource) {
                       task.softwareEncoder.close()
                       task.softwareEncoder = this.createWasmcodecEncoder(task, task.resource)
+                      task.softwareEncoderOpened = false
+                      task.firstEncoded = false
                     }
                     else {
                       logger.error(`cannot fallback to wasm video encoder because of resource not found , taskId: ${options.taskId}`)
