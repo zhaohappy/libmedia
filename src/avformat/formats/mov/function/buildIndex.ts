@@ -95,13 +95,9 @@ export function buildIndex(stream: Stream, movContext: MOVContext) {
     if ((emptyDuration || startTime) && movContext.timescale > 0) {
       if (emptyDuration) {
         emptyDuration = avRescaleQ(emptyDuration, { num: 1, den: movContext.timescale }, stream.timeBase)
-      }
-      if (startTime > 0) {
-        // 第一帧小于 400ms 调整为从 0 开始
-        // 这种情况并不是裁剪，只是相对于 0 的少许偏移偏移
-        // if (avRescaleQ(startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q) < 400n) {
-        //   startTime = 0n
-        // }
+        if (stream.duration !== NOPTS_VALUE_BIGINT) {
+          stream.duration += emptyDuration
+        }
       }
       timeOffset = startTime - emptyDuration
       currentDts = -timeOffset
