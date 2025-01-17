@@ -86,6 +86,7 @@ export interface AVIFormatContext {
   chapters: AVChapter[]
 
   privateData: Record<string, any>
+  privateData2: Record<string, any>
 
   format: AVFormat
   iformat: IFormat
@@ -131,7 +132,7 @@ export interface AVOFormatContext {
   chapters: AVChapter[]
 
   privateData: Record<string, any>
-  processPrivateData: Record<string, any>
+  privateData2: Record<string, any>
 
   format: AVFormat
   oformat: OFormat
@@ -181,7 +182,7 @@ export class AVFormatContext {
   public chapters: AVChapter[]
 
   public privateData: Record<string, any>
-  public processPrivateData: Record<string, any>
+  public privateData2: Record<string, any>
 
   public iformat: IFormat
   public oformat: OFormat

@@ -33,17 +33,21 @@ import { AVFormat } from 'avutil/avformat'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as errorType from 'avutil/error'
 import { dumpCodecName, dumpFormatName } from './dump'
+import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 export type MuxOptions = {
   zeroStart?: boolean
+  nonnegative?: boolean
 }
 
 interface MuxPrivateData {
-  first: Map<number, bigint>
+  firstPts: Map<number, int64>
+  firstDts: Map<number, int64>
 }
 
 const defaultMuxOptions: MuxOptions = {
-  zeroStart: false
+  zeroStart: false,
+  nonnegative: false
 }
 
 export function open(formatContext: AVOFormatContext, options: MuxOptions = {}) {
@@ -56,8 +60,9 @@ export function open(formatContext: AVOFormatContext, options: MuxOptions = {}) 
   }
   formatContext.options = opts
 
-  formatContext.processPrivateData = {
-    first: new Map()
+  formatContext.privateData2 = {
+    firstPts: new Map(),
+    firstDts: new Map()
   }
 
   let supportCodecs = OFormatSupportedCodecs[formatContext.oformat.type]
@@ -91,13 +96,24 @@ export function writeHeader(formatContext: AVOFormatContext): number {
 }
 
 export function writeAVPacket(formatContext: AVOFormatContext, avpacket: pointer<AVPacket>): number {
-  const privateData = formatContext.processPrivateData as MuxPrivateData
-  if (!privateData.first.has(avpacket.streamIndex)) {
-    privateData.first.set(avpacket.streamIndex, avpacket.dts)
+  const privateData = formatContext.privateData2 as MuxPrivateData
+  if (!privateData.firstDts.has(avpacket.streamIndex)) {
+    privateData.firstDts.set(avpacket.streamIndex, avpacket.dts === NOPTS_VALUE_BIGINT ? 0n : avpacket.dts)
+  }
+  if (!privateData.firstPts.has(avpacket.streamIndex)) {
+    privateData.firstPts.set(avpacket.streamIndex, avpacket.pts === NOPTS_VALUE_BIGINT ? 0n : avpacket.pts)
   }
   if ((formatContext.options as MuxOptions).zeroStart) {
-    avpacket.dts -= privateData.first.get(avpacket.streamIndex)
-    avpacket.pts -= privateData.first.get(avpacket.streamIndex)
+    avpacket.dts -= privateData.firstDts.get(avpacket.streamIndex)
+    avpacket.pts -= privateData.firstPts.get(avpacket.streamIndex)
+  }
+  else if ((formatContext.options as MuxOptions).nonnegative) {
+    if (privateData.firstDts.get(avpacket.streamIndex) < 0) {
+      avpacket.dts -= privateData.firstDts.get(avpacket.streamIndex)
+    }
+    if (privateData.firstPts.get(avpacket.streamIndex) < 0) {
+      avpacket.pts -= privateData.firstPts.get(avpacket.streamIndex)
+    }
   }
 
   return formatContext.oformat.writeAVPacket(formatContext, avpacket)

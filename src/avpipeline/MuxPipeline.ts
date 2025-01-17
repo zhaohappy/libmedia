@@ -285,7 +285,10 @@ export default class MuxPipeline extends Pipeline {
         return errorType.INVALID_OPERATE
       }
 
-      let ret = mux.open(task.formatContext)
+      let ret = mux.open(task.formatContext, {
+        nonnegative: task.format !== AVFormat.MOV
+          && task.format !== AVFormat.MATROSKA
+      })
 
       if (ret < 0) {
         logger.error('mux task open error')
