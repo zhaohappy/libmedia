@@ -107,6 +107,10 @@ export default class AVStream {
    * format private data
    */
   privData: Data = null
+  /**
+   * demuxer or muxer's private data
+   */
+  privateData2: Data = null
 
   codecpar: AVCodecParameters = make<AVCodecParameters>(new AVCodecParameters())
 

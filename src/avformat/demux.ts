@@ -46,8 +46,10 @@ import WasmAudioDecoder from 'avcodec/wasmcodec/AudioDecoder'
 import { destroyAVFrame } from 'avutil/util/avframe'
 import { mapUint8Array } from 'cheap/std/memory'
 import roundStandardFramerate from './function/roundStandardFramerate'
+import guessDelayFromPts from './function/guessDelayFromPts'
+import guessDtsFromPts from './function/guessDtsFromPts'
 
-const MIN_ANALYZE_SAMPLES = 12
+const MIN_ANALYZE_SAMPLES = 16
 
 export interface DemuxOptions {
   /**
@@ -60,9 +62,14 @@ export interface DemuxOptions {
   maxAnalyzeDuration?: number
 }
 
+interface StreamDemuxPrivateData {
+  delay?: int32
+  dtsQueue?: int64[]
+}
+
 export const DefaultDemuxOptions = {
   fastOpen: false,
-  maxAnalyzeDuration: 1000
+  maxAnalyzeDuration: 15000
 }
 
 /**
@@ -176,7 +183,9 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
   const needStreams = formatContext.iformat.getAnalyzeStreamsCount()
   const streamFirstGotMap = {}
   const streamDtsMap: Record<int32, bigint[]> = {}
+  const streamPtsMap: Record<int32, bigint[]> = {}
   const streamBitMap: Record<int32, number> = {}
+  const streamContextMap: Record<int32, StreamDemuxPrivateData> = {}
 
   let avpacket: pointer<AVPacket> = nullptr
   const caches: pointer<AVPacket>[] = []
@@ -197,7 +206,51 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
     return true
   }
 
-  function calculate(stream: AVStream, dtsList: int64[]) {
+  function calculate(stream: AVStream, end: boolean) {
+
+    let dtsList = streamDtsMap[stream.index]
+    const ptsList = streamPtsMap[stream.index]
+
+    let delay = stream.codecpar.videoDelay
+
+    if (ptsList?.length) {
+      delay = Math.min(
+        Math.max(guessDelayFromPts(ptsList), stream.codecpar.videoDelay),
+        16
+      )
+      if (end) {
+        stream.codecpar.videoDelay = delay
+      }
+    }
+
+    if (!dtsList && ptsList?.length) {
+      if (delay) {
+        dtsList = guessDtsFromPts(delay, ptsList)
+      }
+      else {
+        dtsList = ptsList.slice()
+      }
+      const context: StreamDemuxPrivateData = {
+        delay,
+        dtsQueue: dtsList
+      }
+      dtsList = []
+      streamContextMap[stream.index] = context
+      for (let i = 0; i < caches.length; i++) {
+        if (stream.index === caches[i].streamIndex) {
+          const dts = context.dtsQueue.shift()
+          caches[i].dts = dts
+          dtsList.push(dts)
+          const sample = stream.sampleIndexes.find((sample) => {
+            return sample.pts === caches[i].pts
+          })
+          if (sample) {
+            sample.dts = caches[i].dts
+          }
+        }
+      }
+    }
+
     if (dtsList && dtsList.length > 1) {
       let count = 0n
       for (let i = 1; i < dtsList.length; i++) {
@@ -222,18 +275,18 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
     }
   }
 
-  function end() {
-    object.each(streamDtsMap, (list, id) => {
-      calculate(formatContext.getStreamByIndex(+id), list)
+  function finalizeAnalyze() {
+    formatContext.streams.forEach((stream) => {
+      calculate(stream, true)
     })
   }
 
   while (true) {
     if (formatContext.streams.length >= needStreams
-      && checkStreamParameters(formatContext)
       && (formatContext.options as DemuxOptions).fastOpen
-      && checkPictureGot()
+      && checkStreamParameters(formatContext)
     ) {
+      finalizeAnalyze()
       break
     }
 
@@ -244,7 +297,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
     ret = await readAVPacket(formatContext, avpacket)
 
     if (ret !== 0) {
-      end()
+      finalizeAnalyze()
       break
     }
 
@@ -271,6 +324,12 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
           streamDtsMap[stream.index] = [avpacket.dts]
         }
       }
+      if (streamPtsMap[stream.index]) {
+        streamPtsMap[stream.index].push(avpacket.pts)
+      }
+      else {
+        streamPtsMap[stream.index] = [avpacket.pts]
+      }
 
       if (streamBitMap[stream.index]) {
         streamBitMap[stream.index] += avpacket.size
@@ -279,7 +338,10 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
         streamBitMap[stream.index] = avpacket.size
       }
 
-      if (!pictureGot[stream.index] && formatContext.getDecoderResource) {
+      if (!pictureGot[stream.index]
+        && formatContext.getDecoderResource
+        && !(formatContext.options as DemuxOptions).fastOpen
+      ) {
         let decoder = decoderMap[stream.index]
         if (!decoder) {
           const resource = await formatContext.getDecoderResource(stream.codecpar.codecType, stream.codecpar.codecId)
@@ -334,25 +396,26 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
     }
 
     // fastOpen 的时候分析到最小 samples 数量
-    if (streamDtsMap[stream.index] && streamDtsMap[stream.index].length === MIN_ANALYZE_SAMPLES) {
-      calculate(stream, streamDtsMap[stream.index])
+    if (streamPtsMap[stream.index] && streamPtsMap[stream.index].length === MIN_ANALYZE_SAMPLES) {
+      calculate(stream, false)
     }
 
-    if (stream.firstDTS !== NOPTS_VALUE_BIGINT
-      && (avpacket.dts - stream.firstDTS) > avRescaleQ(
+    if (stream.startTime !== NOPTS_VALUE_BIGINT
+      && (avpacket.pts - stream.startTime) > avRescaleQ(
         static_cast<int64>((formatContext.options as DemuxOptions).maxAnalyzeDuration),
         AV_MILLI_TIME_BASE_Q,
         stream.timeBase
       )
       && (formatContext.streams.length >= needStreams
-        || (avpacket.dts - stream.firstDTS) > avRescaleQ(
+        || (avpacket.pts - stream.startTime) > avRescaleQ(
           15000n,
           AV_MILLI_TIME_BASE_Q,
           stream.timeBase
         )
       )
+      && checkPictureGot()
     ) {
-      end()
+      finalizeAnalyze()
       if (packetCached) {
         avpacket = nullptr
       }
@@ -373,6 +436,16 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
   object.each(decoderMap, (decoder) => {
     if (decoder) {
       decoder.close()
+    }
+  })
+
+  object.each(streamContextMap, (context, index) => {
+    const stream = formatContext.getStreamByIndex(+index)
+    if (stream.privateData2) {
+      object.extend(stream.privateData2, context)
+    }
+    else {
+      stream.privateData2 = context
     }
   })
 
@@ -420,6 +493,28 @@ function addSample(stream: AVStream, avpacket: pointer<AVPacket>) {
 
 async function packetNeedRead(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<int32> {
   const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
+  if (avpacket.dts === NOPTS_VALUE_BIGINT) {
+    const demuxContext = stream.privateData2 as StreamDemuxPrivateData
+    if (demuxContext) {
+      if (demuxContext.delay) {
+        array.sortInsert(demuxContext.dtsQueue, avpacket.pts, (a) => {
+          if (a < avpacket.pts) {
+            return 1
+          }
+          else {
+            return -1
+          }
+        })
+        if (demuxContext.dtsQueue.length > demuxContext.delay) {
+          avpacket.dts = demuxContext.dtsQueue.shift()
+        }
+      }
+      else {
+        avpacket.dts = avpacket.pts
+      }
+    }
+  }
+
   let ret = 0
   // h264 hevc aac 解析到 extradata，继续
   if (stream
@@ -615,6 +710,51 @@ export async function seek(formatContext: AVIFormatContext, streamIndex: number,
       destroyAVPacket(avpacket)
     })
     formatContext.interval.packetBuffer.length = 0
+
+    // 重新分析 dts
+    const oldDelay: Record<int32, int32> = {}
+    formatContext.streams.forEach((stream) => {
+      const context = stream.privateData2 as StreamDemuxPrivateData
+      if (context?.dtsQueue) {
+        context.dtsQueue.length = 0
+        if (context.delay) {
+          oldDelay[stream.index] = context.delay
+          context.delay = MIN_ANALYZE_SAMPLES
+        }
+      }
+    })
+    const cache: pointer<AVPacket>[] = []
+    while (formatContext.streams.some((stream) => {
+      const context = stream.privateData2 as StreamDemuxPrivateData
+      return context && context.dtsQueue && context.dtsQueue.length < context.delay
+    })) {
+      const avpacket = createAVPacket()
+      const ret = await readAVPacket(formatContext, avpacket)
+      if (ret) {
+        destroyAVPacket(avpacket)
+        break
+      }
+      cache.push(avpacket)
+    }
+    formatContext.streams.forEach((stream) => {
+      const context = stream.privateData2 as StreamDemuxPrivateData
+      if (context?.delay) {
+        context.delay = oldDelay[stream.index]
+        context.dtsQueue = guessDtsFromPts(context.delay, context.dtsQueue)
+        for (let i = 0; i < cache.length; i++) {
+          if (stream.index === cache[i].streamIndex) {
+            cache[i].dts = context.dtsQueue.shift()
+            const sample = stream.sampleIndexes.find((sample) => {
+              return sample.pts === cache[i].pts
+            })
+            if (sample) {
+              sample.dts = cache[i].dts
+            }
+          }
+        }
+      }
+    })
+    formatContext.interval.packetBuffer = cache.concat(formatContext.interval.packetBuffer)
     return 0n
   }
 

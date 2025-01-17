@@ -183,9 +183,6 @@ export interface TrackEntry {
   duration?: int64
 
   maxPts?: int64
-  ptsQueue?: int64[]
-  ptsMaxDelay?: int32
-  ptsQueueReady?: boolean
 }
 
 export interface Tracks {

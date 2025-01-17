@@ -77,11 +77,6 @@ interface RtspStreamContext {
   payloadType: uint8
   payloadContext: Data
   queue: RTPFrameQueue
-  currentDTS: int64
-  gopCount: int32
-  maxPts: int64
-  minPts: int64
-  dtsDelta: int64
 
   rangeStartOffset: int64
   lastRtcpNtpTime: int64
@@ -203,12 +198,7 @@ export default class IRtspFormat extends IFormat {
           interleaved: interleaved,
           payloadContext: null,
           queue: null,
-          currentDTS: 0n,
-          gopCount: 0,
-          maxPts: 0n,
-          minPts: 0n,
           payloadType: sdpDes.media[i].rtp[0].payload,
-          dtsDelta: avRescaleQ(33n, AV_MILLI_TIME_BASE_Q, stream.timeBase),
 
           rangeStartOffset: 0n,
           lastRtcpNtpTime: NOPTS_VALUE_BIGINT,
@@ -358,9 +348,6 @@ export default class IRtspFormat extends IFormat {
               context.baseTimestamp = sr.timestamp
             }
             context.rtcpTsOffset = static_cast<int64>(context.lastRtcpTimestamp - context.baseTimestamp)
-            if (context.timestamp) {
-              context.currentDTS = this.getPacketPts(formatContext, stream, context.timestamp)
-            }
           }
         }
         break
@@ -532,7 +519,6 @@ export default class IRtspFormat extends IFormat {
                 }
 
                 if (!isKey && !this.context.canOutputPacket) {
-                  context.currentDTS = pts
                   continue
                 }
 
@@ -540,26 +526,8 @@ export default class IRtspFormat extends IFormat {
 
                 const p = handleVideoFrame(frame, isKey, pts)
                 p.bitFormat = stream.codecpar.bitFormat
-                p.dts = context.currentDTS
-                context.currentDTS += context.dtsDelta
-
-                if (isKey) {
-                  if (context.gopCount > 1) {
-                    context.dtsDelta = (context.maxPts - context.minPts) / static_cast<int64>(context.gopCount - 1)
-                  }
-                  context.gopCount = 1
-                  context.minPts = pts
-                  context.maxPts = pts
-                }
-                else {
-                  context.gopCount++
-                  if (context.gopCount > 5 && context.gopCount < 200) {
-                    context.dtsDelta = (context.maxPts - context.minPts) / static_cast<int64>(context.gopCount - 1)
-                  }
-                }
-                if (pts > context.maxPts) {
-                  context.maxPts = pts
-                }
+                // 让 demuxer 去生成 dts
+                p.dts = NOPTS_VALUE_BIGINT
               }
               else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
                 const frames = depacketizer.mpeg4(packets, (stream.privData as RtspStreamContext).payloadContext as Mpeg4PayloadContext)
@@ -570,7 +538,6 @@ export default class IRtspFormat extends IFormat {
                 const byte = frame[4]
                 const isKey = (byte >>> 6) === mpeg4.Mpeg4PictureType.I
                 if (!isKey && !this.context.canOutputPacket) {
-                  context.currentDTS = pts
                   continue
                 }
                 handleVideoFrame(frame, isKey, pts)
@@ -601,7 +568,6 @@ export default class IRtspFormat extends IFormat {
                 const frame = depacketizer.mpeg12(packets, stream.codecpar.codecType)
                 const isKey = ((frame[5] >> 3) & 7) === mpegvideo.MpegVideoPictureType.I
                 if (!isKey && !this.context.canOutputPacket) {
-                  context.currentDTS = pts
                   continue
                 }
                 handleVideoFrame(frame, isKey, pts)
@@ -609,7 +575,6 @@ export default class IRtspFormat extends IFormat {
               else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP8) {
                 const { payload, isKey } = depacketizer.vp8(packets)
                 if (!isKey && !this.context.canOutputPacket) {
-                  context.currentDTS = pts
                   continue
                 }
                 handleVideoFrame(payload, isKey, pts)
@@ -617,7 +582,6 @@ export default class IRtspFormat extends IFormat {
               else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9) {
                 const { payload, isKey } = depacketizer.vp9(packets)
                 if (!isKey && !this.context.canOutputPacket) {
-                  context.currentDTS = pts
                   continue
                 }
                 handleVideoFrame(payload, isKey, pts)
@@ -625,7 +589,6 @@ export default class IRtspFormat extends IFormat {
               else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1) {
                 const { payload, isKey } = depacketizer.av1(packets)
                 if (!isKey && !this.context.canOutputPacket) {
-                  context.currentDTS = pts
                   continue
                 }
                 handleVideoFrame(payload, isKey, pts)
