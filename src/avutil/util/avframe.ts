@@ -29,7 +29,7 @@ import { memcpy, memset } from 'cheap/std/memory'
 import { INT32_MAX, NOPTS_VALUE_BIGINT } from '../constant'
 import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from '../pixfmt'
 import { avbufferAlloc, avbufferRef, avbufferReplace, avbufferUnref } from './avbuffer'
-import { freeAVDict } from './avdict'
+import { avDictCopy, freeAVDict } from './avdict'
 import { INVALID_ARGUMENT, NO_MEMORY } from '../error'
 import { getChannelLayoutNBChannels } from './channel'
 import { sampleFormatGetLinesize, sampleFormatIsPlanar } from './sample'
@@ -375,6 +375,7 @@ export function copyAVFrameProps(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
   dst.cropLeft = src.cropLeft
   dst.cropRight = src.cropRight
   dst.pts = src.pts
+  dst.duration = src.duration
   dst.repeatPict = src.repeatPict
   if (defined(API_INTERLACED_FRAME)) {
     dst.interlacedFrame = src.interlacedFrame
@@ -390,6 +391,7 @@ export function copyAVFrameProps(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
     dst.pktPos = src.pktPos
     dst.pktSize = src.pktSize
   }
+  dst.timeBase = src.timeBase
   dst.quality = src.quality
   dst.bestEffortTimestamp = src.bestEffortTimestamp
 
@@ -400,6 +402,8 @@ export function copyAVFrameProps(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
   dst.colorSpace = src.colorSpace
   dst.colorRange = src.colorRange
   dst.chromaLocation = src.chromaLocation
+
+  avDictCopy(dst.metadata, src.metadata, 0)
 
   let ret = avbufferReplace(addressof(dst.opaqueRef), src.opaqueRef)
   ret |= avbufferReplace(addressof(dst.privateRef), src.privateRef)
