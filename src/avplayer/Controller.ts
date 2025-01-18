@@ -163,6 +163,12 @@ export default class Controller {
     this.enableAudioVideoSync = enable
   }
 
+  public syncPts(pts: int64) {
+    this.videoRenderControlIPCPort.notify('syncPts', {
+      pts
+    })
+  }
+
   public destroy() {
     if (this.videoRenderControlIPCPort) {
       this.videoRenderControlIPCPort.destroy()

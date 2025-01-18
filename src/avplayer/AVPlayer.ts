@@ -201,6 +201,10 @@ export interface AVPlayerOptions {
    * 默认 桌面端 10 移动端 20
    */
   audioWorkletBufferLength?: int32
+  /**
+   * 音频使用 mse 播放，视频自己解码播放
+   */
+  audioMSE?: boolean
 }
 
 export interface AVPlayerLoadOptions {
@@ -462,7 +466,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * 当前播放时间戳（毫秒）
    */
   get currentTime(): int64 {
-    if (this.useMSE) {
+    if (this.useMSE || this.options.audioMSE && this.audio) {
       return static_cast<int64>((((this.video || this.audio)?.currentTime || 0) * 1000) as double)
     }
     if (this.selectedAudioStream && this.selectedVideoStream) {
@@ -640,6 +644,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         if (this.status === AVPlayerStatus.PLAYED) {
           this.fire(eventType.TIME, [this.currentTime])
           AVPlayer.MSEThread.setCurrentTime(this.taskId, time)
+          if (this.options.audioMSE && this.selectedVideoStream) {
+            const pts = static_cast<int64>(time * 1000)
+            this.controller.syncPts(pts)
+            this.GlobalData.stats.audioCurrentTime = pts
+          }
         }
         lastNotifyTime = time
       }
@@ -728,6 +737,26 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             await AVPlayer.AudioDecoderThread.resetTask(this.taskId)
             await AVPlayer.AudioRenderThread.restart(this.taskId)
             this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_AUDIO)
+          }
+          if (this.options.audioMSE && this.audio) {
+            if (this.audio.src) {
+              URL.revokeObjectURL(this.audio.src)
+            }
+            await AVPlayer.MSEThread.restart(this.taskId)
+            const mediaSource = await AVPlayer.MSEThread.getMediaSource(this.taskId)
+            if (mediaSource) {
+              if (support.workerMSE && mediaSource instanceof MediaSourceHandle) {
+                this.audio.srcObject = mediaSource
+              }
+              else {
+                this.audio.src = URL.createObjectURL(mediaSource)
+              }
+              this.audio.currentTime = 0
+              this.audio.playbackRate = this.playRate
+              await Promise.all([
+                this.audio.play()
+              ])
+            }
           }
 
           if (this.audioSourceNode) {
@@ -1887,12 +1916,31 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
       else {
         // 逐帧播放之后视频与音频相差可能过大，这里同步一下
-        if (this.selectedAudioStream && this.selectedVideoStream && (this.GlobalData.stats.videoCurrentTime - this.GlobalData.stats.audioCurrentTime > 400n)) {
-          await AVPlayer.AudioRenderThread.syncSeekTime(this.taskId, this.GlobalData.stats.videoCurrentTime)
+        if (this.selectedAudioStream
+          && this.selectedVideoStream
+          && (this.GlobalData.stats.videoCurrentTime - (
+            this.options.audioMSE
+              ? static_cast<int64>(this.audio.currentTime * 1000)
+              : this.GlobalData.stats.audioCurrentTime)
+            > 400n
+          )
+        ) {
+          if (this.options.audioMSE) {
+            await AVPlayer.MSEThread?.beforeSeek(this.taskId)
+            const time = await AVPlayer.MSEThread?.afterSeek(this.taskId, this.GlobalData.stats.videoCurrentTime)
+            this.audio.currentTime = time
+          }
+          else {
+            await AVPlayer.AudioRenderThread?.syncSeekTime(this.taskId, this.GlobalData.stats.videoCurrentTime)
+          }
         }
         if (this.audioSourceNode) {
           promises.push(this.audioSourceNode.request('unpause'))
           promises.push(AVPlayer.AudioRenderThread.unpause(this.taskId))
+        }
+        if (this.options.audioMSE && this.audio) {
+          promises.push(AVPlayer.MSEThread.unpause(this.taskId))
+          this.audio.play()
         }
         if (this.videoDecoder2VideoRenderChannel) {
           promises.push(this.VideoRenderThread.unpause(this.taskId))
@@ -1922,7 +1970,21 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await this.playUseMSE(options)
     }
     else {
-      await this.playUseDecoder(options)
+      if (this.options.audioMSE) {
+        if (options.audio) {
+          await this.playUseMSE({
+            audio: true
+          })
+        }
+        if (options.video) {
+          await this.playUseDecoder({
+            video: true
+          })
+        }
+      }
+      else {
+        await this.playUseDecoder(options)
+      }
     }
 
     if (defined(ENABLE_SUBTITLE_RENDER)) {
@@ -2007,7 +2069,20 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             channels: this.playChannels
           }, [this.audioRender2AudioWorkletChannel.port2]))
         }
-        await Promise.all(promises)
+        if (this.options.audioMSE && this.audio) {
+          promises.push(this.audio.play())
+        }
+        await Promise.all(promises).catch((error) => {
+          if (this.videoDecoder2VideoRenderChannel) {
+            this.audio.muted = true
+            this.fire(eventType.RESUME)
+            logger.warn('the audioContext was not started. It must be resumed after a user gesture')
+            return this.audio.play()
+          }
+          else {
+            throw error
+          }
+        })
         if (this.audioSourceNode && AVPlayer.audioContext.state === 'suspended') {
           if (AVPlayer.audioContext.state === 'suspended') {
             this.fire(eventType.RESUME)
@@ -2059,6 +2134,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           // stop fake play
           promises.push(AVPlayer.AudioRenderThread.pause(this.taskId))
         }
+        if (this.options.audioMSE && this.audio) {
+          this.audio.pause()
+          promises.push(AVPlayer.MSEThread.pause(this.taskId))
+        }
         if (this.videoDecoder2VideoRenderChannel) {
           promises.push(this.VideoRenderThread.pause(this.taskId))
         }
@@ -2096,6 +2175,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         AVPlayer.AudioRenderThread?.beforeSeek(this.taskId),
         this.VideoRenderThread?.beforeSeek(this.taskId)
       ])
+      if (this.options.audioMSE && this.audio) {
+        await Promise.all([
+          AVPlayer.MSEThread?.beforeSeek(this.taskId)
+        ])
+      }
     }
 
     if (options.onBeforeSeek) {
@@ -2166,10 +2250,17 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             maxQueueLength
           )
         ])
+        let time = -1
+        if (this.options.audioMSE && this.audio) {
+          time = await AVPlayer.MSEThread.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp)
+        }
         await Promise.all([
           AVPlayer.AudioRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp),
           this.VideoRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp),
         ])
+        if (time > -1) {
+          this.audio.currentTime = time
+        }
       }
       else {
         await Promise.all([
@@ -2180,6 +2271,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           AVPlayer.AudioRenderThread?.afterSeek(this.taskId, NOPTS_VALUE_BIGINT),
           this.VideoRenderThread?.afterSeek(this.taskId, NOPTS_VALUE_BIGINT),
         ])
+        if (this.options.audioMSE && this.audio) {
+          await AVPlayer.MSEThread.afterSeek(this.taskId, NOPTS_VALUE_BIGINT)
+        }
       }
       if (this.jitterBufferController) {
         this.jitterBufferController.reset()
@@ -2488,6 +2582,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         AVPlayer.AudioRenderThread?.setPlayTempo(this.taskId, this.playRate)
         this.VideoRenderThread?.setPlayRate(this.taskId, this.playRate)
         this.VideoDecoderThread?.setPlayRate(this.taskId, this.playRate)
+        if (this.options.audioMSE && this.audio) {
+          AVPlayer.MSEThread?.setPlayRate(this.taskId, this.playRate)
+          this.audio.playbackRate = this.playRate
+        }
       }
       logger.info(`player call setPlaybackRate, set ${this.playRate}, taskId: ${this.taskId}`)
     }

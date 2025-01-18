@@ -693,6 +693,7 @@
             jitterBufferMax: 4,
             jitterBufferMin: 1,
             lowLatency: true,
+            audioMSE: true,
             // audioWorkletBufferLength: 40
           })
         }
@@ -1208,7 +1209,12 @@
 
         document.querySelector('#jitterMin').textContent = stats.jitterBuffer.min
         document.querySelector('#jitterMax').textContent = stats.jitterBuffer.max
-        document.querySelector('#A_V').textContent = stats.audioCurrentTime - stats.videoCurrentTime
+        if (player.options.audioMSE) {
+          document.querySelector('#A_V').textContent = BigInt(Math.floor(player.audio.currentTime * 1000)) - stats.videoCurrentTime
+        }
+        else {
+          document.querySelector('#A_V').textContent = stats.audioCurrentTime - stats.videoCurrentTime
+        }
       }
       
       urlComponent = new Vue({
