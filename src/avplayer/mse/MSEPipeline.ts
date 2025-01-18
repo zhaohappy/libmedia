@@ -346,7 +346,8 @@ export default class MSEPipeline extends Pipeline {
         })
       }
       // safari 播放某些视频会卡主，开始时间不是从 0 开始的 seek 到 min buffer 处
-      else if (browser.safari || os.ios || min > 0.1) {
+      // 倍速的时候也 seek，chrome 会卡主
+      else if (browser.safari || os.ios || min > 0.1 || task.playRate > 100n) {
         task.currentTime = min
         task.currentTimeNTP = getTimestamp()
         task.controlIPCPort.notify('seek', {
@@ -947,6 +948,8 @@ export default class MSEPipeline extends Pipeline {
           task.cacheDuration = bigint.max(3000n, task.cacheDuration)
         }
       }
+
+      logger.debug(`add stream ${streamIndex}, taskId: ${taskId}`)
     }
     else {
       logger.fatal('task not found')
@@ -1033,6 +1036,8 @@ export default class MSEPipeline extends Pipeline {
       else {
         freeCodecParameters(codecpar)
       }
+
+      logger.debug(`readd stream ${streamIndex}, taskId: ${taskId}`)
     }
     else {
       logger.fatal('task not found')
@@ -1049,6 +1054,8 @@ export default class MSEPipeline extends Pipeline {
       task.pauseTimestamp = getTimestamp()
       task.audio?.loop.stop()
       task.video?.loop.stop()
+
+      logger.debug(`pause taskId: ${taskId}`)
     }
     else {
       logger.fatal('task not found')
@@ -1074,6 +1081,7 @@ export default class MSEPipeline extends Pipeline {
           task.video.loop.start()
         }
       }
+      logger.debug(`unpause taskId: ${taskId}`)
     }
     else {
       logger.fatal('task not found')
@@ -1184,6 +1192,8 @@ export default class MSEPipeline extends Pipeline {
         task.video.pullQueue.lastPTS = 0n
         task.video.pullQueue.lastDTS = 0n
       }
+
+      logger.debug(`before seek end taskId: ${taskId}`)
     }
   }
 
@@ -1374,9 +1384,24 @@ export default class MSEPipeline extends Pipeline {
         }
       }
 
-      if (!firstIsKeyframe) {
-        await new Sleep(0.5)
-      }
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          if (task.audio) {
+            task.audio.track.insertEnqueueCallback(resolve)
+          }
+          else {
+            resolve()
+          }
+        }),
+        new Promise<void>((resolve) => {
+          if (task.video) {
+            task.video.track.insertEnqueueCallback(resolve)
+          }
+          else {
+            resolve()
+          }
+        })
+      ])
 
       let min = 0
       let max = 0
@@ -1405,6 +1430,9 @@ export default class MSEPipeline extends Pipeline {
       task.currentTimeNTP = getTimestamp()
       task.currentTime = seekTime
       task.seeking = false
+
+      logger.debug(`after seek end, seekTime: ${seekTime} taskId: ${taskId}`)
+
       return seekTime
     }
     return 0

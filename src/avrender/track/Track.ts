@@ -29,7 +29,8 @@ import * as logger from 'common/util/logger'
 enum Operator {
   ADD,
   REMOVE,
-  UPDATE_TIMESTAMP_OFFSET
+  UPDATE_TIMESTAMP_OFFSET,
+  CALLBACK
 }
 
 export type TrackOptions = {
@@ -146,12 +147,28 @@ export default class Track {
         if (operator.callback) {
           operator.callback()
         }
-        this.enqueue()
+        if (this.operatorQueue.length) {
+          this.enqueue()
+        }
+        else {
+          this.updating = false
+        }
+      }
+      else if (operator.operator === Operator.CALLBACK) {
+        if (operator.callback) {
+          operator.callback()
+        }
+        if (this.operatorQueue.length) {
+          this.enqueue()
+        }
+        else {
+          this.updating = false
+        }
       }
     }
   }
 
-  public addBuffer(buffer: Uint8Array, callback?: (...args: any[]) => void) {
+  public addBuffer(buffer: Uint8Array, callback?: () => void) {
 
     if (!buffer) {
       if (callback) {
@@ -171,7 +188,18 @@ export default class Track {
     }
   }
 
-  public updateTimestampOffset(timestampOffset: number, callback?: (...args: any[]) => void) {
+  public insertEnqueueCallback(callback: () => void) {
+    this.operatorQueue.push({
+      operator: Operator.CALLBACK,
+      callback
+    })
+
+    if (!this.updating) {
+      this.enqueue()
+    }
+  }
+
+  public updateTimestampOffset(timestampOffset: number, callback?: () => void) {
 
     this.operatorQueue.push({
       operator: Operator.UPDATE_TIMESTAMP_OFFSET,
@@ -184,7 +212,7 @@ export default class Track {
     }
   }
 
-  public removeBuffer(time: number, callback?: (...args: any[]) => void) {
+  public removeBuffer(time: number, callback?: () => void) {
 
     if (this.ending) {
       return
@@ -210,7 +238,7 @@ export default class Track {
     this.lastRemoveTime = time - this.options.mediaBufferMax
   }
 
-  public removeAllBuffer(callback?: (...args: any[]) => void) {
+  public removeAllBuffer(callback?: () => void) {
     if (this.sourceBuffer.buffered.length) {
       this.operatorQueue.push({
         operator: Operator.REMOVE,
