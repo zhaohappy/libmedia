@@ -75,14 +75,14 @@ async function render() {
     for (let i = 0; i < channels; i++) {
       if (audioBuffer.copyToChannel && !cheapConfig.USE_THREADS) {
         audioBuffer.copyToChannel(
-          mapFloat32Array(data[i], nbSamples),
+          mapFloat32Array(data[i], reinterpret_cast<size>(nbSamples)),
           i,
           0
         )
       }
       else {
         const audioData = audioBuffer.getChannelData(i)
-        audioData.set(mapFloat32Array(data[i], nbSamples), 0)
+        audioData.set(mapFloat32Array(data[i], reinterpret_cast<size>(nbSamples)), 0)
       }
     }
     const bufferSource = audioContext.createBufferSource()

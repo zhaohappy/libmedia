@@ -12,8 +12,6 @@ import { destroyAVFrame } from '@libmedia/avutil/util/avframe'
 import WebAudioDecoder from '@libmedia/avcodec/webcodec/AudioDecoder'
 import { audioData2AVFrame } from '@libmedia/avutil/function/audioData2AVFrame'
 import * as cheapConfig from '@libmedia/cheap/config'
-import { avRescaleQ } from '@libmedia/avutil/util/rational'
-import { AV_TIME_BASE_Q } from '@libmedia/avutil/constant'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
 import { useEffect } from 'react'
@@ -79,14 +77,14 @@ async function render() {
     for (let i = 0; i < channels; i++) {
       if (audioBuffer.copyToChannel && !cheapConfig.USE_THREADS) {
         audioBuffer.copyToChannel(
-          mapFloat32Array(data[i], nbSamples),
+          mapFloat32Array(data[i], reinterpret_cast<size>(nbSamples)),
           i,
           0
         )
       }
       else {
         const audioData = audioBuffer.getChannelData(i)
-        audioData.set(mapFloat32Array(data[i], nbSamples), 0)
+        audioData.set(mapFloat32Array(data[i], reinterpret_cast<size>(nbSamples)), 0)
       }
     }
     const bufferSource = audioContext.createBufferSource()
@@ -116,11 +114,6 @@ async function render() {
     },
     onReceiveAudioData: (audioData) => {
       const frame = audioData2AVFrame(audioData)
-      frame.pts = avRescaleQ(frame.pts, AV_TIME_BASE_Q, stream.timeBase)
-      frame.duration = avRescaleQ(frame.duration, AV_TIME_BASE_Q, stream.timeBase)
-      frame.timeBase.den = stream.timeBase.den
-      frame.timeBase.num = stream.timeBase.num
-
       if (frame.format !== AVSampleFormat.AV_SAMPLE_FMT_FLTP) {
         resampler.resample(frame.extendedData, addressof(pcmBuffer), frame.nbSamples)
         play(reinterpret_cast<pointer<pointer<float>>>(pcmBuffer.data), pcmBuffer.nbSamples, pcmBuffer.sampleRate)

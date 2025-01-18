@@ -35,9 +35,7 @@ async function render(canvas: HTMLCanvasElement) {
 
   const avpacket = createAVPacket()
 
-  await demux.open(iformatContext, {
-    maxAnalyzeDuration: 3000
-  })
+  await demux.open(iformatContext)
   await demux.analyzeStreams(iformatContext)
 
   const stream = iformatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)

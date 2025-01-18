@@ -8,7 +8,7 @@ import WebVideoDecoder from '@libmedia/avcodec/webcodec/VideoDecoder'
 import Timer from '@libmedia/common/timer/Timer'
 import Sleep from '@libmedia/common/timer/Sleep'
 
-import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
+import { formatUrl, getIOReader, getAVFormat, getAccept } from './utils'
 import { useEffect, useRef } from 'react'
 import React from 'react'
 
@@ -33,9 +33,7 @@ async function render(canvas: HTMLCanvasElement) {
 
   const avpacket = createAVPacket()
 
-  await demux.open(iformatContext, {
-    maxAnalyzeDuration: 3000
-  })
+  await demux.open(iformatContext)
   await demux.analyzeStreams(iformatContext)
 
   const stream = iformatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
