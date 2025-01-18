@@ -95,9 +95,6 @@ async function encode(set: (v: string) => void) {
       if (resampler) {
         resampler.resample(frame.extendedData, addressof(pcmBuffer), frame.nbSamples)
         newFrame = avPCMBuffer2AVFrame(addressof(pcmBuffer), false, frame)
-        newFrame.pts = frame.pts
-        newFrame.duration = frame.duration
-        newFrame.timeBase = frame.timeBase
       }
       let ret = encoder.encode(newFrame)
       if (ret < 0) {

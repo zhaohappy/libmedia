@@ -2,7 +2,7 @@ import { AV_TIME_BASE_Q } from 'avutil/constant'
 import AVFilterNode, { AVFilterNodeOptions } from './AVFilterNode'
 import AVFrame, { AVFrameRef } from 'avutil/struct/avframe'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ2 } from 'avutil/util/rational'
 import isPointer from 'cheap/std/function/isPointer'
 import { IOError } from 'common/io/error'
 import * as is from 'common/util/is'
@@ -41,11 +41,13 @@ export default class RangeFilterNode extends AVFilterNode {
       return
     }
 
-    let pts = avRescaleQ(
-      isPointer(avframe) ? avframe.pts : static_cast<int64>((avframe as VideoFrame).timestamp as uint32),
-      isPointer(avframe) ? avframe.timeBase : AV_TIME_BASE_Q,
-      AV_TIME_BASE_Q
-    )
+    let pts = isPointer(avframe)
+      ? avRescaleQ2(
+        avframe.pts,
+        addressof(avframe.timeBase),
+        AV_TIME_BASE_Q
+      )
+      : static_cast<int64>((avframe as VideoFrame).timestamp as uint32)
 
     if (pts < this.options.start) {
       while (true) {
@@ -54,11 +56,13 @@ export default class RangeFilterNode extends AVFilterNode {
           outputs[0] = next
           return
         }
-        pts = avRescaleQ(
-          isPointer(next) ? next.pts : static_cast<int64>(next.timestamp as uint32),
-          isPointer(next) ? next.timeBase : AV_TIME_BASE_Q,
-          AV_TIME_BASE_Q
-        )
+        pts = isPointer(next)
+          ? avRescaleQ2(
+            next.pts,
+            addressof(next.timeBase),
+            AV_TIME_BASE_Q
+          )
+          : static_cast<int64>(next.timestamp as uint32)
         if (pts >= this.options.start) {
           outputs[0] = next
           return

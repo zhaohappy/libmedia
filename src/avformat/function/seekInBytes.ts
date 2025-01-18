@@ -26,7 +26,7 @@
 import { AVIFormatContext } from '../AVFormatContext'
 import AVStream from 'avutil/AVStream'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { getBytesByDuration } from './getBytesByDuration'
 import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
 import * as errorType from 'avutil/error'
@@ -94,7 +94,7 @@ export default async function seekInBytes(
     let ret = await readAVPacket(context, avpacket)
 
     if (ret >= 0) {
-      const currentPts = avRescaleQ(avpacket.pts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+      const currentPts = avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q)
       const diff = currentPts - pointPts
 
       logger.debug(`try to seek to pos: ${bytes}, got packet pts: ${avpacket.pts}(${currentPts}ms), diff: ${diff}ms`)

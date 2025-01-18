@@ -29,7 +29,7 @@ import OFormat from './OFormat'
 import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import { AVFormat } from 'avutil/avformat'
 import * as logger from 'common/util/logger'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ2 } from 'avutil/util/rational'
 import { createAVPacket, destroyAVPacket, getAVPacketData, getAVPacketSideData, hasAVPacketSideData } from 'avutil/util/avpacket'
 import * as object from 'common/util/object'
 import { OMatroskaContext, TrackEntry } from './matroska/type'
@@ -356,7 +356,7 @@ export default class OMatroskaFormat extends OFormat {
     }
     omatroska.writeEbmlLength(this.context.eleWriter, omatroska.ebmlLengthSize(track.number) + 2 + 1 + avpacket.size)
     omatroska.writeEbmlNum(this.context.eleWriter, track.number, omatroska.ebmlLengthSize(track.number))
-    const pts = avRescaleQ(avpacket.pts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+    const pts = avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q)
 
     this.context.eleWriter.writeInt16(static_cast<int32>(pts - this.context.currentCluster.timeCode))
 
@@ -382,7 +382,7 @@ export default class OMatroskaFormat extends OFormat {
   private writeBlockGroup(stream: AVStream, avpacket: pointer<AVPacket>) {
     omatroska.writeEleData(this.context.eleWriter, this.context, EBMLId.BLOCK_GROUP, (eleWriter) => {
       if (avpacket.duration > 0) {
-        omatroska.writeEbmlUint(eleWriter, EBMLId.BLOCK_DURATION, avRescaleQ(avpacket.duration, avpacket.timeBase, AV_MILLI_TIME_BASE_Q))
+        omatroska.writeEbmlUint(eleWriter, EBMLId.BLOCK_DURATION, avRescaleQ2(avpacket.duration, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q))
       }
       const additions: {
         additionalId: int64
@@ -454,13 +454,13 @@ export default class OMatroskaFormat extends OFormat {
 
     const track = stream.privData as TrackEntry
 
-    const pts = avRescaleQ(avpacket.pts !== NOPTS_VALUE_BIGINT ? avpacket.pts : avpacket.dts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+    const pts = avRescaleQ2(avpacket.pts !== NOPTS_VALUE_BIGINT ? avpacket.pts : avpacket.dts, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q)
 
     if (!track.maxPts || track.maxPts < pts) {
       track.maxPts = pts
       track.duration = pts
       if (avpacket.duration !== NOPTS_VALUE_BIGINT) {
-        track.duration += avRescaleQ(avpacket.duration, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+        track.duration += avRescaleQ2(avpacket.duration, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q)
       }
     }
 

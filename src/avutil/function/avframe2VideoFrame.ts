@@ -26,8 +26,7 @@
 import AVFrame from '../struct/avframe'
 import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
-import { Rational } from '../struct/rational'
-import { avRescaleQ } from '../util/rational'
+import { avRescaleQ2 } from '../util/rational'
 import { AV_TIME_BASE_Q } from '../constant'
 import { getHeap } from 'cheap/heap'
 
@@ -133,9 +132,9 @@ export function avframe2VideoFrame(avframe: pointer<AVFrame>, pts?: int64) {
   const init: VideoFrameBufferInit = {
     codedWidth: avframe.width,
     codedHeight: height,
-    timestamp: pts ? static_cast<double>(pts) : static_cast<double>(avRescaleQ(avframe.pts, avframe.timeBase, AV_TIME_BASE_Q)),
+    timestamp: pts ? static_cast<double>(pts) : static_cast<double>(avRescaleQ2(avframe.pts, addressof(avframe.timeBase), AV_TIME_BASE_Q)),
     format: avPixelFormat2Format(avframe.format),
-    duration: static_cast<double>(avRescaleQ(avframe.duration, avframe.timeBase, AV_TIME_BASE_Q)),
+    duration: static_cast<double>(avRescaleQ2(avframe.duration, addressof(avframe.timeBase), AV_TIME_BASE_Q)),
     layout,
     colorSpace: getVideoColorSpaceInit(avframe),
     visibleRect: {

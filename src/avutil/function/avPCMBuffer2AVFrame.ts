@@ -36,7 +36,15 @@ export function avPCMBuffer2AVFrame(pcmBuffer: pointer<AVPCMBuffer>, copy: boole
     avframe = createAVFrame()
   }
   else {
+    const pts = avframe.pts
+    const duration = avframe.duration
+    const den = avframe.timeBase.den
+    const num = avframe.timeBase.num
     unrefAVFrame(avframe)
+    avframe.pts = pts
+    avframe.duration = duration
+    avframe.timeBase.den = den
+    avframe.timeBase.num = num
   }
 
   avframe.nbSamples = pcmBuffer.nbSamples

@@ -48,7 +48,7 @@ import rewriteIO from '../function/rewriteIO'
 import arrayItemSame from '../function/arrayItemSame'
 import AVStream, { AVDisposition } from 'avutil/AVStream'
 import { AVFormat } from 'avutil/avformat'
-import { avQ2D, avRescaleQ } from 'avutil/util/rational'
+import { avQ2D, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { createAVPacket, destroyAVPacket, getAVPacketData } from 'avutil/util/avpacket'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
 import { BitFormat } from 'avutil/codecs/h264'
@@ -565,9 +565,9 @@ export default class OMovFormat extends OFormat {
 
     const streamContext = stream.privData as MOVStreamContext
 
-    const dts = avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase)
-    const pts = avRescaleQ(avpacket.pts !== NOPTS_VALUE_BIGINT ? avpacket.pts : avpacket.dts, avpacket.timeBase, stream.timeBase)
-    const duration = avpacket.duration !== NOPTS_VALUE_BIGINT ? avRescaleQ(avpacket.duration, avpacket.timeBase, stream.timeBase) : -1n
+    const dts = avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
+    const pts = avRescaleQ2(avpacket.pts !== NOPTS_VALUE_BIGINT ? avpacket.pts : avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
+    const duration = avpacket.duration !== NOPTS_VALUE_BIGINT ? avRescaleQ2(avpacket.duration, addressof(avpacket.timeBase), stream.timeBase) : -1n
 
     if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC

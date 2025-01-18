@@ -24,6 +24,7 @@ export default function (api) {
         configFile: path.resolve(__dirname, '../../tsconfig.json'),
         getCustomTransformers: function(program) {
           const before = transformer.before(program, {
+            tmpPath: path.resolve(__dirname, '../../dist/'),
             projectPath: path.resolve(__dirname, '../../../'),
             exclude: /__test__/,
             reportError: (message) => {

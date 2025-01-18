@@ -43,7 +43,7 @@ import Avcc2AnnexbFilter from '../bsf/h2645/Avcc2AnnexbFilter'
 import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { AVFormat } from 'avutil/avformat'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ2 } from 'avutil/util/rational'
 import { addAVPacketData, addAVPacketSideData, createAVPacket, destroyAVPacket, getAVPacketData, hasAVPacketSideData } from 'avutil/util/avpacket'
 import { avMalloc } from 'avutil/util/mem'
 import * as logger from 'common/util/logger'
@@ -233,23 +233,23 @@ export default class OMpegtsFormat extends OFormat {
     }
 
     if (!this.firstDtsCheck) {
-      if (avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase)
+      if (avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
         < static_cast<int64>(this.options.delay * 90000)
       ) {
         this.context.delay = static_cast<int64>(this.options.delay * 90000)
-        - avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase)
+        - avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
       }
       this.firstDtsCheck = true
-      this.lastPatDst = avRescaleQ(avpacket.dts, avpacket.timeBase, AV_TIME_BASE_Q)
+      this.lastPatDst = avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), AV_TIME_BASE_Q)
     }
 
     if (this.patPeriod > 0n
-      && avRescaleQ(avpacket.dts, avpacket.timeBase, AV_TIME_BASE_Q) - this.lastPatDst > this.patPeriod
+      && avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), AV_TIME_BASE_Q) - this.lastPatDst > this.patPeriod
     ) {
       ompegts.writeSection(formatContext.ioWriter, this.sdtPacket, this.context)
       ompegts.writeSection(formatContext.ioWriter, this.patPacket, this.context)
       ompegts.writeSection(formatContext.ioWriter, this.pmtPacket, this.context)
-      this.lastPatDst = avRescaleQ(avpacket.dts, avpacket.timeBase, AV_TIME_BASE_Q)
+      this.lastPatDst = avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), AV_TIME_BASE_Q)
     }
 
     const streamContext = stream.privData as MpegtsStreamContext
@@ -434,10 +434,10 @@ export default class OMpegtsFormat extends OFormat {
         streamContext.pesSlices.total = buffer.length
         streamContext.pesSlices.buffers.push(buffer)
         if (avpacket.dts !== NOPTS_VALUE_BIGINT) {
-          streamContext.pes.dts = avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase) + this.context.delay
+          streamContext.pes.dts = avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase) + this.context.delay
         }
         if (avpacket.pts !== NOPTS_VALUE_BIGINT) {
-          streamContext.pes.pts = avRescaleQ(avpacket.pts, avpacket.timeBase, stream.timeBase) + this.context.delay
+          streamContext.pes.pts = avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), stream.timeBase) + this.context.delay
         }
         if (stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO
           || avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
@@ -459,10 +459,10 @@ export default class OMpegtsFormat extends OFormat {
     if (!currentWrote) {
       if (streamContext.pesSlices.total === 0) {
         if (avpacket.dts !== NOPTS_VALUE_BIGINT) {
-          streamContext.pes.dts = avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase) + this.context.delay
+          streamContext.pes.dts = avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase) + this.context.delay
         }
         if (avpacket.pts !== NOPTS_VALUE_BIGINT) {
-          streamContext.pes.pts = avRescaleQ(avpacket.pts, avpacket.timeBase, stream.timeBase) + this.context.delay
+          streamContext.pes.pts = avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), stream.timeBase) + this.context.delay
         }
         if (stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO
           || avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY

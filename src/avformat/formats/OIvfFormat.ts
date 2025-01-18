@@ -29,7 +29,7 @@ import OFormat from './OFormat'
 import { AVMediaType } from 'avutil/codec'
 import { AVFormat } from 'avutil/avformat'
 import * as logger from 'common/util/logger'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ2 } from 'avutil/util/rational'
 import { getAVPacketData } from 'avutil/util/avpacket'
 
 export const enum IVFCodec {
@@ -132,7 +132,7 @@ export default class OIVFFormat extends OFormat {
       const stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
       if (stream) {
         formatContext.ioWriter.writeUint32(avpacket.size)
-        formatContext.ioWriter.writeUint64(avRescaleQ(avpacket.pts || avpacket.dts, avpacket.timeBase, stream.timeBase))
+        formatContext.ioWriter.writeUint64(avRescaleQ2(avpacket.pts || avpacket.dts, addressof(avpacket.timeBase), stream.timeBase))
         formatContext.ioWriter.writeBuffer(getAVPacketData(avpacket))
         this.header.framesCount++
       }

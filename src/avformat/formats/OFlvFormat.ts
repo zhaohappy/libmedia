@@ -45,7 +45,7 @@ import { AVFormat } from 'avutil/avformat'
 import { mapUint8Array } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'
 import { createAVPacket, destroyAVPacket, getAVPacketSideData } from 'avutil/util/avpacket'
-import { avQ2D, avRescaleQ } from 'avutil/util/rational'
+import { avQ2D, avRescaleQ2 } from 'avutil/util/rational'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
 import { BitFormat } from 'avutil/codecs/h264'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
@@ -269,7 +269,7 @@ export default class OFlvFormat extends OFormat {
           formatContext.ioWriter,
           FlvTag.AUDIO,
           avpacket.size + 1 + FlvCodecHeaderLength[stream.codecpar.codecId],
-          avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase)
+          avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
         )
 
         oflv.writeAudioTagDataHeader(formatContext.ioWriter, stream)
@@ -285,7 +285,7 @@ export default class OFlvFormat extends OFormat {
 
         this.context.audioSize += previousTagSize
         this.context.filesize += previousTagSize + 4
-        this.context.lasttimestamp = avRescaleQ(avpacket.pts, avpacket.timeBase, stream.timeBase)
+        this.context.lasttimestamp = avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), stream.timeBase)
         this.context.datasize += avpacket.size || 0
       }
     }
@@ -350,7 +350,7 @@ export default class OFlvFormat extends OFormat {
             FlvTag.VIDEO,
             avpacket.size + 1 + FlvCodecHeaderLength[stream.codecpar.codecId]
               + (packetType === PacketTypeExt.PacketTypeCodedFrames ? 3 : 0),
-            avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase)
+            avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
           )
           oflv.writeVideoTagExtDataHeader(formatContext.ioWriter, stream, packetType, avpacket.flags)
 
@@ -359,7 +359,7 @@ export default class OFlvFormat extends OFormat {
           if (packetType === PacketTypeExt.PacketTypeCodedFrames) {
             let ct = 0
             if (avpacket.pts !== NOPTS_VALUE_BIGINT) {
-              ct = static_cast<int32>(avRescaleQ(avpacket.pts - avpacket.dts, avpacket.timeBase, stream.timeBase))
+              ct = static_cast<int32>(avRescaleQ2(avpacket.pts - avpacket.dts, addressof(avpacket.timeBase), stream.timeBase))
             }
             formatContext.ioWriter.writeUint24(ct)
           }
@@ -369,7 +369,7 @@ export default class OFlvFormat extends OFormat {
             formatContext.ioWriter,
             FlvTag.VIDEO,
             avpacket.size + 1 + FlvCodecHeaderLength[stream.codecpar.codecId],
-            avRescaleQ(avpacket.dts, avpacket.timeBase, stream.timeBase)
+            avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
           )
           if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
             || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG4
@@ -378,7 +378,7 @@ export default class OFlvFormat extends OFormat {
 
             let ct = 0
             if (avpacket.pts !== NOPTS_VALUE_BIGINT) {
-              ct = static_cast<int32>(avRescaleQ(avpacket.pts - avpacket.dts, avpacket.timeBase, stream.timeBase))
+              ct = static_cast<int32>(avRescaleQ2(avpacket.pts - avpacket.dts, addressof(avpacket.timeBase), stream.timeBase))
             }
             flvH264.writeDataHeader(formatContext.ioWriter, AVCPacketType.AVC_NALU, ct)
           }
@@ -391,13 +391,13 @@ export default class OFlvFormat extends OFormat {
 
         this.context.videosize += previousTagSize
         this.context.filesize += previousTagSize + 4
-        this.context.lasttimestamp = avRescaleQ(avpacket.pts, avpacket.timeBase, stream.timeBase)
+        this.context.lasttimestamp = avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), stream.timeBase)
         this.context.datasize += avpacket.size || 0
         this.context.frameCount++
 
         if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY) {
           if (this.context.firstKeyframePositionWrote || !this.context.videoMetadataWrote) {
-            this.context.lastkeyframetimestamp = avRescaleQ(avpacket.pts, avpacket.timeBase, stream.timeBase)
+            this.context.lastkeyframetimestamp = avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), stream.timeBase)
             this.context.lastkeyframelocation = Number(keyframePos)
             this.context.keyFrameTimes.push(Number((Number(this.context.lastkeyframetimestamp) * avQ2D(stream.timeBase)).toFixed(2)))
             this.context.keyframeFilePositions.push(this.context.lastkeyframelocation)

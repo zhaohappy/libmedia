@@ -40,7 +40,7 @@ import * as iass from 'avformat/formats/ass/iass'
 import List from 'cheap/std/collection/List'
 import { Mutex } from 'cheap/thread/mutex'
 import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ2 } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 import * as object from 'common/util/object'
 import { destroyAVPacket } from 'avutil/util/avpacket'
@@ -296,8 +296,8 @@ export default class SubtitleRender {
       this.ended = true
     }
     else if (this.loop && currentPort === this.currentPort) {
-      avpacket.pts = avRescaleQ(avpacket.pts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
-      avpacket.duration = avRescaleQ(avpacket.duration, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+      avpacket.pts = avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q)
+      avpacket.duration = avRescaleQ2(avpacket.duration, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q)
       const ret = this.decoder.decode(avpacket)
       if (this.avpacketPool) {
         this.avpacketPool.release(avpacket)

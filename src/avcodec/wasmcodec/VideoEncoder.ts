@@ -49,7 +49,7 @@ import * as object from 'common/util/object'
 import * as dict from 'avutil/util/avdict'
 import * as is from 'common/util/is'
 import { avMallocz } from 'avutil/util/mem'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 export type WasmVideoEncoderOptions = {
@@ -226,7 +226,7 @@ export default class WasmVideoEncoder {
     }
 
     if (frame.pts !== NOPTS_VALUE_BIGINT) {
-      frame.pts = avRescaleQ(frame.pts, frame.timeBase, this.timeBase)
+      frame.pts = avRescaleQ2(frame.pts, addressof(frame.timeBase), this.timeBase)
     }
     else {
       frame.pts = avRescaleQ(this.inputCounter, this.framerateTimebase, this.timeBase)

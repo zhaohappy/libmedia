@@ -31,7 +31,7 @@ import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { AVPacketSideDataType, AVCodecID, AVMediaType } from 'avutil/codec'
 import { AVFormat, AVSeekFlags, IOFlags } from 'avutil/avformat'
 import { checkStreamParameters } from './function/checkStreamParameters'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { copyAVPacketData, createAVPacket, destroyAVPacket,
   getAVPacketSideData,
   hasAVPacketSideData, refAVPacket, unrefAVPacket
@@ -604,24 +604,24 @@ async function packetNeedRead(formatContext: AVIFormatContext, avpacket: pointer
 
         if (!stream.sampleIndexes.length
           || (index < 0
-            && avRescaleQ(
+            && avRescaleQ2(
               avpacket.pts - stream.sampleIndexes[stream.sampleIndexes.length - 1].pts,
-              avpacket.timeBase,
+              addressof(avpacket.timeBase),
               AV_MILLI_TIME_BASE_Q
             ) >= SAMPLE_INDEX_STEP
           )
           || (index > 0
             && index < stream.sampleIndexes.length - 1
-            && avRescaleQ(
+            && avRescaleQ2(
               avpacket.pts - stream.sampleIndexes[index - 1].pts,
-              avpacket.timeBase,
+              addressof(avpacket.timeBase),
               AV_MILLI_TIME_BASE_Q
             ) >= SAMPLE_INDEX_STEP
           )
           || (index === 0
-            && avRescaleQ(
+            && avRescaleQ2(
               stream.sampleIndexes[0].pts - avpacket.pts,
-              avpacket.timeBase,
+              addressof(avpacket.timeBase),
               AV_MILLI_TIME_BASE_Q
             ) >= SAMPLE_INDEX_STEP
           )

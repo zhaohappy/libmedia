@@ -37,7 +37,7 @@ import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
 import { IOError } from 'common/io/error'
 import LoopTask from 'common/timer/LoopTask'
 import * as array from 'common/util/array'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ2 } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import OFormat from 'avformat/formats/OFormat'
 import IOWriterSync from 'common/io/IOWriterSync'
@@ -223,7 +223,7 @@ export default class MuxPipeline extends Pipeline {
         else {
           avpacket.streamIndex = task.streams[i].stream.index
           task.streams[i].avpacketQueue.push(avpacket)
-          const currentDts = avRescaleQ(avpacket.dts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+          const currentDts = avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q)
           if (task.streams[i].stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
             task.stats.firstAudioMuxDts = currentDts
           }
@@ -356,7 +356,7 @@ export default class MuxPipeline extends Pipeline {
 
         for (let i = 0; i < task.streams.length; i++) {
           if (task.streams[i].avpacketQueue.length) {
-            const currentDts = avRescaleQ(task.streams[i].avpacketQueue[0].dts, task.streams[i].avpacketQueue[0].timeBase, AV_MILLI_TIME_BASE_Q)
+            const currentDts = avRescaleQ2(task.streams[i].avpacketQueue[0].dts, addressof(task.streams[i].avpacketQueue[0].timeBase), AV_MILLI_TIME_BASE_Q)
             if (dts === NOPTS_VALUE_BIGINT || currentDts < dts) {
               avpacket = task.streams[i].avpacketQueue[0]
               dts = currentDts

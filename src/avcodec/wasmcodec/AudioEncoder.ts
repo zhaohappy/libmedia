@@ -36,7 +36,7 @@ import { Rational } from 'avutil/struct/rational'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { getBytesPerSample, sampleFormatIsPlanar, sampleSetSilence } from 'avutil/util/sample'
 import { AVSampleFormat } from 'avutil/audiosamplefmt'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ2 } from 'avutil/util/rational'
 import support from 'common/util/support'
 import isPointer from 'cheap/std/function/isPointer'
 import { AVDictionary } from 'avutil/struct/avdict'
@@ -318,7 +318,7 @@ export default class WasmAudioEncoder {
     if (this.audioFrameResizer && this.audioFrameResizer.remainFrameSize() > 0) {
       const avframe = createAVFrame()
       this.audioFrameResizer.flush(avframe)
-      avframe.pts = avRescaleQ(avframe.pts, avframe.timeBase, this.timeBase)
+      avframe.pts = avRescaleQ2(avframe.pts, addressof(avframe.timeBase), this.timeBase)
       this.encode_(avframe)
       destroyAVFrame(avframe)
     }

@@ -44,7 +44,7 @@ import List from 'cheap/std/collection/List'
 import { Mutex } from 'cheap/thread/mutex'
 import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { avQ2D, avRescaleQ } from 'avutil/util/rational'
+import { avQ2D, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import getTimestamp from 'common/function/getTimestamp'
 import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
@@ -180,8 +180,8 @@ export default class MSEPipeline extends Pipeline {
         if (task.audio
           && !task.audio.packetEnded
           && (!task.audio.backPacket
-            || avRescaleQ(task.audio.backPacket.pts, task.audio.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
-              < avRescaleQ(task.video.backPacket.pts, task.video.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
+            || avRescaleQ2(task.audio.backPacket.pts, addressof(task.audio.backPacket.timeBase), AV_MILLI_TIME_BASE_Q)
+              < avRescaleQ2(task.video.backPacket.pts, addressof(task.video.backPacket.timeBase), AV_MILLI_TIME_BASE_Q)
           )
         ) {
           while (true) {
@@ -194,8 +194,8 @@ export default class MSEPipeline extends Pipeline {
               task.audio.backPacket = nullptr
               break
             }
-            if (avRescaleQ(task.audio.backPacket.pts, task.audio.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
-              > avRescaleQ(task.video.backPacket.pts, task.video.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
+            if (avRescaleQ2(task.audio.backPacket.pts, addressof(task.audio.backPacket.timeBase), AV_MILLI_TIME_BASE_Q)
+              > avRescaleQ2(task.video.backPacket.pts, addressof(task.video.backPacket.timeBase), AV_MILLI_TIME_BASE_Q)
             ) {
               break
             }
@@ -514,7 +514,7 @@ export default class MSEPipeline extends Pipeline {
     // 并将 avpacket 的时间基调整为采样率
     if (resource.type === 'audio' && pullQueue.useSampleRateTimeBase) {
       if (pullQueue.frameCount === NOPTS_VALUE_BIGINT) {
-        pullQueue.frameCount = avRescaleQ(avpacket.dts, avpacket.timeBase, resource.oformatContext.streams[0].timeBase)
+        pullQueue.frameCount = avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), resource.oformatContext.streams[0].timeBase)
         avpacket.dts = avpacket.pts = pullQueue.frameCount
       }
       else {
@@ -529,7 +529,7 @@ export default class MSEPipeline extends Pipeline {
   private writeAVPacket(avpacket: pointer<AVPacketRef>, resource: MSEResource, flush: boolean = false) {
     if (resource.enableRawMpeg) {
       if (!resource.timestampOffsetUpdated) {
-        const offset = avRescaleQ(avpacket.pts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+        const offset = avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q)
         resource.track.updateTimestampOffset(static_cast<int32>(offset) / 1000)
         resource.timestampOffsetUpdated = true
       }
@@ -621,9 +621,9 @@ export default class MSEPipeline extends Pipeline {
 
       let avpacket: pointer<AVPacketRef> = resource.backPacket
 
-      const dts = avRescaleQ(
+      const dts = avRescaleQ2(
         avpacket.dts,
-        avpacket.timeBase,
+        addressof(avpacket.timeBase),
         AV_MILLI_TIME_BASE_Q
       )
 
@@ -1197,7 +1197,7 @@ export default class MSEPipeline extends Pipeline {
 
       if (task.audio && task.audio.backPacket > 0) {
         if (!firstIsKeyframe || timestamp < 0n) {
-          audioRealTimestamp = avRescaleQ(task.audio.backPacket.pts, task.audio.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
+          audioRealTimestamp = avRescaleQ2(task.audio.backPacket.pts, addressof(task.audio.backPacket.timeBase), AV_MILLI_TIME_BASE_Q)
         }
         task.audio.backPacket.streamIndex = task.audio.oformatContext.streams[0].index
         this.writeAVPacket(task.audio.backPacket, task.audio)
@@ -1206,7 +1206,7 @@ export default class MSEPipeline extends Pipeline {
       }
       if (task.video && task.video.backPacket > 0) {
         if (!firstIsKeyframe || timestamp < 0n) {
-          videoRealTimestamp = avRescaleQ(task.video.backPacket.pts, task.video.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
+          videoRealTimestamp = avRescaleQ2(task.video.backPacket.pts, addressof(task.video.backPacket.timeBase), AV_MILLI_TIME_BASE_Q)
         }
         task.video.backPacket.streamIndex = task.video.oformatContext.streams[0].index
         this.writeAVPacket(task.video.backPacket, task.video)
@@ -1229,10 +1229,10 @@ export default class MSEPipeline extends Pipeline {
             }
           }
           if (audioRealTimestamp < 0n) {
-            audioRealTimestamp = avRescaleQ(task.audio.backPacket.pts, task.audio.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
+            audioRealTimestamp = avRescaleQ2(task.audio.backPacket.pts, addressof(task.audio.backPacket.timeBase), AV_MILLI_TIME_BASE_Q)
           }
 
-          if (avRescaleQ((task.audio.backPacket.pts), task.audio.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
+          if (avRescaleQ2((task.audio.backPacket.pts), addressof(task.audio.backPacket.timeBase), AV_MILLI_TIME_BASE_Q)
             < realTimestamp + task.cacheDuration
           ) {
             task.audio.backPacket.streamIndex = task.audio.oformatContext.streams[0].index
@@ -1260,7 +1260,7 @@ export default class MSEPipeline extends Pipeline {
               break
             }
           }
-          if (avRescaleQ(task.video.backPacket.pts, task.video.backPacket.timeBase, AV_MILLI_TIME_BASE_Q)
+          if (avRescaleQ2(task.video.backPacket.pts, addressof(task.video.backPacket.timeBase), AV_MILLI_TIME_BASE_Q)
             < realTimestamp + task.cacheDuration
           ) {
             task.video.backPacket.streamIndex = task.video.oformatContext.streams[0].index

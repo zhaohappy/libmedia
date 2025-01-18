@@ -3,7 +3,7 @@ import AVFrame, { AVFrameRef } from 'avutil/struct/avframe'
 import * as is from 'common/util/is'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
 import isPointer from 'cheap/std/function/isPointer'
 
@@ -51,11 +51,13 @@ export default class FramerateFilterNode extends AVFilterNode {
       return
     }
 
-    let pts = avRescaleQ(
-      isPointer(avframe) ? avframe.pts : static_cast<int64>((avframe as VideoFrame).timestamp),
-      isPointer(avframe) ? avframe.timeBase : AV_TIME_BASE_Q,
-      this.timeBase
-    )
+    let pts = isPointer(avframe)
+      ? avRescaleQ2(
+        avframe.pts,
+        addressof(avframe.timeBase),
+        this.timeBase
+      )
+      : static_cast<int64>((avframe as VideoFrame).timestamp)
     let diff = pts - this.lastPts + this.delta
 
     if (diff < this.step && this.lastPts > -1n) {
@@ -65,11 +67,13 @@ export default class FramerateFilterNode extends AVFilterNode {
           outputs[0] = next
           return
         }
-        pts = avRescaleQ(
-          isPointer(next) ? next.pts : static_cast<int64>(next.timestamp),
-          isPointer(next) ? next.timeBase : AV_TIME_BASE_Q,
-          this.timeBase
-        )
+        pts = isPointer(next)
+          ? avRescaleQ2(
+            next.pts,
+            addressof(next.timeBase),
+            this.timeBase
+          )
+          : static_cast<int64>(next.timestamp)
         diff = pts - this.lastPts
         if (diff >= this.step) {
           this.delta += diff - this.step

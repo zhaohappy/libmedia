@@ -29,7 +29,7 @@ import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
 import getVideoCodec from 'avutil/function/getVideoCodec'
 import { getHardwarePreference } from 'avutil/function/getHardwarePreference'
-import { avQ2D, avRescaleQ } from 'avutil/util/rational'
+import { avQ2D, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { avframe2VideoFrame } from 'avutil/function/avframe2VideoFrame'
 import { createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
 import { BitFormat } from 'avutil/codecs/h264'
@@ -246,11 +246,17 @@ export default class WebVideoEncoder {
     if (isPointer(frame) && frame.pts !== NOPTS_VALUE_BIGINT
       || !isPointer(frame) && frame.timestamp >= 0
     ) {
-      pts = avRescaleQ(
-        isPointer(frame) ? frame.pts : static_cast<int64>(frame.timestamp as uint32),
-        isPointer(frame) ? frame.timeBase : AV_TIME_BASE_Q,
-        this.timeBase
-      )
+      pts = isPointer(frame)
+        ? avRescaleQ2(
+          frame.pts,
+          addressof(frame.timeBase),
+          this.timeBase
+        )
+        : avRescaleQ(
+          static_cast<int64>(frame.timestamp as uint32),
+          AV_TIME_BASE_Q,
+          this.timeBase
+        )
     }
 
     if (isPointer(frame)) {
