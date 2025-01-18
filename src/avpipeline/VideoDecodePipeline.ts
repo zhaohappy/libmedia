@@ -44,7 +44,7 @@ import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
 import isWorker from 'common/function/isWorker'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import { avQ2D, avRescaleQ } from 'avutil/util/rational'
+import { avQ2D, avRescaleQ2 } from 'avutil/util/rational'
 import getTimestamp from 'common/function/getTimestamp'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE } from 'avutil/constant'
 import support from 'common/util/support'
@@ -340,7 +340,7 @@ export default class VideoDecodePipeline extends Pipeline {
                     // 需要关键帧但不是，跳过继续请求新的 avpacket
                     if (defined(ENABLE_LOG_TRACE)) {
                       logger.trace(`skip the packet because of not got one keyframe, dts: ${avpacket.dts}(${
-                        avRescaleQ(avpacket.dts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+                        avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q)
                       }ms) taskId: ${task.taskId}`)
                     }
                     task.avpacketPool.release(avpacket)

@@ -45,7 +45,7 @@ import { IOError } from 'common/io/error'
 import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import LoopTask from 'common/timer/LoopTask'
 import * as array from 'common/util/array'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avRescaleQ2 } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE } from 'avutil/constant'
 import * as bigint from 'common/util/bigint'
 import { AVStreamInterface } from 'avutil/AVStream'
@@ -718,9 +718,9 @@ export default class DemuxPipeline extends Pipeline {
             if (task.stats.keyFrameCount > 1 && avpacket.pts > task.lastKeyFramePts) {
               task.stats.gop = task.gopCounter
               task.gopCounter = 1
-              task.stats.keyFrameInterval = static_cast<int32>(avRescaleQ(
+              task.stats.keyFrameInterval = static_cast<int32>(avRescaleQ2(
                 avpacket.pts - task.lastKeyFramePts,
-                avpacket.timeBase,
+                addressof(avpacket.timeBase),
                 AV_MILLI_TIME_BASE_Q
               ))
             }
@@ -938,7 +938,7 @@ export default class DemuxPipeline extends Pipeline {
               }
             }
             task.loop.start()
-            return avRescaleQ(bigint.max(avpacket.pts, 0n), avpacket.timeBase, AV_MILLI_TIME_BASE_Q)
+            return avRescaleQ2(bigint.max(avpacket.pts, 0n), addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q)
           }
           else {
 
@@ -1006,8 +1006,8 @@ export default class DemuxPipeline extends Pipeline {
           let i = list.length - 2
           for (i = list.length - 2; i >= 0; i--) {
             if ((list[i].flags & AVPacketFlags.AV_PKT_FLAG_KEY)) {
-              if (avRescaleQ(lastDts - list[i].dts, list[i].timeBase, AV_MILLI_TIME_BASE_Q) >= max) {
-                croppingMax = bigint.max(croppingMax, avRescaleQ(lastDts - list[i].dts, list[i].timeBase, AV_MILLI_TIME_BASE_Q))
+              if (avRescaleQ2(lastDts - list[i].dts, addressof(list[i].timeBase), AV_MILLI_TIME_BASE_Q) >= max) {
+                croppingMax = bigint.max(croppingMax, avRescaleQ2(lastDts - list[i].dts, addressof(list[i].timeBase), AV_MILLI_TIME_BASE_Q))
                 break
               }
             }
@@ -1021,7 +1021,7 @@ export default class DemuxPipeline extends Pipeline {
                 if ((list[j].flags & AVPacketFlags.AV_PKT_FLAG_KEY)) {
                   // 前面有新的 sps，裁剪到最新的 sps 处
                   if (hasSps(list[j], codecId)) {
-                    croppingMax = bigint.max(croppingMax, avRescaleQ(lastDts - list[j].dts, list[j].timeBase, AV_MILLI_TIME_BASE_Q))
+                    croppingMax = bigint.max(croppingMax, avRescaleQ2(lastDts - list[j].dts, addressof(list[j].timeBase), AV_MILLI_TIME_BASE_Q))
                     i = j
                     break
                   }
@@ -1043,7 +1043,7 @@ export default class DemuxPipeline extends Pipeline {
           let i = list.length - 2
           for (i = list.length - 2; i >= 0; i--) {
             // 使用视频的裁剪时间
-            if (avRescaleQ(lastDts - list[i].dts, list[i].timeBase, AV_MILLI_TIME_BASE_Q) >= croppingMax) {
+            if (avRescaleQ2(lastDts - list[i].dts, addressof(list[i].timeBase), AV_MILLI_TIME_BASE_Q) >= croppingMax) {
               break
             }
           }
