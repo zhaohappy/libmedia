@@ -11,6 +11,7 @@ import * as errorType from 'avutil/error'
 import * as logger from 'common/util/logger'
 import isPointer from 'cheap/std/function/isPointer'
 import compileResource from 'avutil/function/compileResource'
+import { Data } from 'common/types/type'
 
 export interface ScaleFilterNodeOptions extends AVFilterNodeOptions {
   resource: WebAssemblyResource | ArrayBuffer
@@ -37,7 +38,7 @@ export default class ScaleFilterNode extends AVFilterNode {
     }
   }
 
-  public async process(inputs: (pointer<AVFrame> | VideoFrame | int32)[], outputs: (pointer<AVFrame> | VideoFrame | int32)[]) {
+  public async process(inputs: (pointer<AVFrame> | VideoFrame | int32)[], outputs: (pointer<AVFrame> | VideoFrame | int32)[], options?: Data) {
     let avframe = inputs[0]
 
     if (is.number(avframe) && avframe < 0) {
@@ -54,6 +55,7 @@ export default class ScaleFilterNode extends AVFilterNode {
       || format !== this.options.output.format
         && this.options.output.format !== NOPTS_VALUE
         && format !== AVPixelFormat.AV_PIX_FMT_NONE
+        && (!options || !options.preferVideoFrame || isPointer(avframe))
     ) {
 
       if (format === AVPixelFormat.AV_PIX_FMT_NONE) {

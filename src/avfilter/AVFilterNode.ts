@@ -31,6 +31,7 @@ import * as array from 'common/util/array'
 import isPointer from 'cheap/std/function/isPointer'
 import * as is from 'common/util/is'
 import AVOutputNode from './AVOutputNode'
+import { Data } from 'common/types/type'
 
 export interface AVFilterNodeOptions {
   avframePool?: AVFramePool
@@ -157,10 +158,10 @@ export default abstract class AVFilterNode {
             const input: (pointer<AVFrame> | VideoFrame)[] = []
             this.currentOutput.length = 0
             for (let i = 0; i < this.inputCount; i++) {
-              input.push(await this.inputInnerNodePort[i].request('pull'))
+              input.push(await this.inputInnerNodePort[i].request('pull', request.params))
             }
 
-            await this.process(input, this.currentOutput)
+            await this.process(input, this.currentOutput, request.params)
 
             input.forEach((frame) => {
               if (is.number(frame) && frame < 0) {
@@ -346,5 +347,5 @@ export default abstract class AVFilterNode {
 
   public abstract ready(): void | Promise<void>
   public abstract destroy(): void | Promise<void>
-  public abstract process(inputs: (pointer<AVFrame> | VideoFrame | int32)[], outputs: (pointer<AVFrame> | VideoFrame | int32)[]): void | Promise<void>
+  public abstract process(inputs: (pointer<AVFrame> | VideoFrame | int32)[], outputs: (pointer<AVFrame> | VideoFrame | int32)[], options?: Data): void | Promise<void>
 }

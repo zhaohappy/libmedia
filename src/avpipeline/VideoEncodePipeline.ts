@@ -51,6 +51,7 @@ import { Rational } from 'avutil/struct/rational'
 import isPointer from 'cheap/std/function/isPointer'
 import { Data } from 'common/types/type'
 import compileResource from 'avutil/function/compileResource'
+import { mapFormat } from 'avutil/function/videoFrame2AVFrame'
 
 export interface VideoEncodeTaskOptions extends TaskOptions {
   resource: ArrayBuffer | WebAssemblyResource
@@ -221,14 +222,18 @@ export default class VideoEncodePipeline extends Pipeline {
           if (pullPadding) {
             await pullPadding
           }
-          const avframe = await leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
+          const avframe = await leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull', {
+            preferVideoFrame: task.targetEncoder instanceof WebVideoEncoder && task.firstEncoded
+          })
           if (is.number(avframe) && avframe < 0) {
             task.inputEnd = true
           }
           caches.push(avframe)
         }
-        if (caches.length < MAX && !pullPadding) {
-          pullPadding = leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull').then((avframe) => {
+        if (caches.length < MAX && !pullPadding && task.firstEncoded) {
+          pullPadding = leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull',  {
+            preferVideoFrame: task.targetEncoder instanceof WebVideoEncoder && task.firstEncoded
+          }).then((avframe) => {
             if (is.number(avframe) && avframe < 0) {
               task.inputEnd = true
             }
@@ -282,6 +287,16 @@ export default class VideoEncodePipeline extends Pipeline {
                       task.softwareEncoder = this.createWasmcodecEncoder(task, task.resource)
                       task.softwareEncoderOpened = false
                       task.firstEncoded = false
+                      while (caches.length) {
+                        if (caches[0] instanceof VideoFrame
+                          && mapFormat(caches[0].format) !== task.parameters.format
+                        ) {
+                          caches.shift().close()
+                        }
+                        else {
+                          break
+                        }
+                      }
                     }
                     else {
                       logger.error(`cannot fallback to wasm video encoder because of resource not found , taskId: ${options.taskId}`)
@@ -301,8 +316,27 @@ export default class VideoEncodePipeline extends Pipeline {
                     task.gopCounter = 0
 
                     ret = task.targetEncoder instanceof WasmVideoEncoder
-                      ? await task.targetEncoder.encodeAsync(avframe, task.gopCounter === 0)
-                      : task.targetEncoder.encode(avframe, task.gopCounter === 0)
+                      ? await task.targetEncoder.encodeAsync(avframe, true)
+                      : task.targetEncoder.encode(avframe, true)
+
+                    if (ret < 0 && task.targetEncoder instanceof WebVideoEncoder && task.resource) {
+                      logger.warn(`video encode error from webcodecs soft encoder, taskId: ${task.taskId}, error: ${ret}, try to fallback to wasm software encoder`)
+                      task.softwareEncoder.close()
+                      task.softwareEncoder = this.createWasmcodecEncoder(task, task.resource)
+                      task.softwareEncoderOpened = false
+                      task.firstEncoded = false
+                      task.gopCounter = 0
+                      try {
+                        await this.openSoftwareEncoder(task)
+                        task.targetEncoder = task.softwareEncoder
+                      }
+                      catch (error) {
+                        logger.error(`video software encoder open error, taskId: ${options.taskId}`)
+                        rightIPCPort.reply(request, errorType.CODEC_NOT_SUPPORT)
+                        break
+                      }
+                      ret = await task.targetEncoder.encodeAsync(avframe, true)
+                    }
                   }
                   if (ret < 0) {
                     if (isPointer(avframe)) {
