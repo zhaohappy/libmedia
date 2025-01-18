@@ -194,7 +194,7 @@ export default class IMovFormat extends IFormat {
       avpacket.timeBase.num = stream.timeBase.num
 
       if (stream.startTime === NOPTS_VALUE_BIGINT) {
-        stream.startTime = avpacket.pts || avpacket.dts
+        stream.startTime = avpacket.pts
       }
 
       const skip = static_cast<int32>(avpacket.pos - formatContext.ioReader.getPos())
