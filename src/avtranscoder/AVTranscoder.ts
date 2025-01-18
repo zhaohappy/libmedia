@@ -100,6 +100,8 @@ import * as bigint from 'common/util/bigint'
 import align from 'common/math/align'
 import { Rational } from 'avutil/struct/rational'
 import { PixelFormatDescriptorsMap } from 'avutil/pixelFormatDescriptor'
+import isHdr from 'avutil/function/isHdr'
+import hasAlphaChannel from 'avutil/function/hasAlphaChannel'
 
 export interface AVTranscoderOptions {
   /**
@@ -143,6 +145,16 @@ export interface TaskOptions {
      * webtransport 配置
      */
     webtransport?: WebTransportOptions
+
+    /**
+     * 是否启动 WebCodecs 解码
+     */
+    enableWebCodecs?: boolean
+
+    /**
+     * 是否启动硬件解码
+     */
+    enableHardware?: boolean
   }
   start?: number
   duration?: number
@@ -191,6 +203,11 @@ export interface TaskOptions {
        * 输出关键帧间隔（毫秒）
        */
       keyFrameInterval?: number
+
+      /**
+       * 是否启动 WebCodecs 编码
+       */
+      enableWebCodecs?: boolean
 
       /**
        * 是否启动硬件编码
@@ -1512,11 +1529,12 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           leftPort: demuxer2DecoderChannel.port2,
           rightPort: decoder2FilterChannel.port1,
           stats: addressof(task.stats),
-          enableHardware: !!videoConfig.enableHardware && canUseHardware,
+          enableHardware: !!task.options.input.enableHardware && canUseHardware,
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           avframeList: addressof(this.GlobalData.avframeList),
-          avframeListMutex: addressof(this.GlobalData.avframeListMutex)
+          avframeListMutex: addressof(this.GlobalData.avframeListMutex),
+          preferWebCodecs: !isHdr(stream.codecpar) && !hasAlphaChannel(stream.codecpar) && !!task.options.input.enableWebCodecs
         })
 
       ret = await this.VideoDecoderThread.open(taskId, stream.codecpar)
@@ -1680,8 +1698,8 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           avframeList: addressof(this.GlobalData.avframeList),
           avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-          gop: static_cast<int32>(avQ2D(newStream.codecpar.framerate) * (videoConfig?.keyFrameInterval ?? 5000) / 1000),
-          preferWebCodecs: array.has([AVCodecID.AV_CODEC_ID_AV1, AVCodecID.AV_CODEC_ID_VP9, AVCodecID.AV_CODEC_ID_VP8], newStream.codecpar.codecId)
+          gop: static_cast<int32>(avQ2D(newStream.codecpar.framerate) * (videoConfig.keyFrameInterval ?? 5000) / 1000),
+          preferWebCodecs: !isHdr(newStream.codecpar) && !hasAlphaChannel(newStream.codecpar) && !!videoConfig.enableWebCodecs
         })
 
       ret = await this.VideoEncoderThread.open(taskId, newStream.codecpar, { num: newStream.timeBase.num, den: newStream.timeBase.den }, wasmEncoderOptions)

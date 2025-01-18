@@ -101,7 +101,10 @@
     </div>
   </div>
 
-  <div id="enableWebcodec">
+  <div id="enableWebCodecs">
+    enable webcodecs: <el-checkbox v-model="enableWebCodecs"></el-checkbox>
+  </div>
+  <div id="enableHardwareAcceleration">
     enable hardwareAcceleration: <el-checkbox v-model="enableHardwareAcceleration"></el-checkbox>
   </div>
 
@@ -131,7 +134,7 @@
   <textarea name="logcatbox" class="logcatBox" rows="10" readonly style="display: block; margin-top: 20px; width: 800px;"></textarea>
 
   <script>
-    window.CHEAP_DISABLE_THREAD = false
+    window.CHEAP_DISABLE_THREAD = true
   </script>
   <script src="../dist/avtranscoder/avtranscoder.js"></script>
   <script src="./vue.js" crossorigin></script>
@@ -142,6 +145,7 @@
     let outputFormatComp;
 
     let enableWebcodecComponent;
+    let enableHardwareComponent;
     let outputAudioCodecComp;
     let outputVideoCodecComp;
     let audioBitrateComp;
@@ -273,7 +277,16 @@
     })
 
     enableWebcodecComponent = new Vue({
-      el: '#enableWebcodec',
+      el: '#enableWebCodecs',
+      data: function () {
+        return {
+          enableWebCodecs: true
+        }
+      }
+    })
+
+    enableHardwareComponent = new Vue({
+      el: '#enableHardwareAcceleration',
       data: function () {
         return {
           enableHardwareAcceleration: true
@@ -446,7 +459,9 @@
 
         transcoder.addTask({
           input: {
-            file
+            file,
+            enableWebCodecs: enableWebcodecComponent.enableWebCodecs,
+            enableHardware: enableHardwareComponent.enableHardwareAcceleration,
           },
           start: startComp.start,
           duration: durationComp.duration,
@@ -466,7 +481,8 @@
               height: videoHeightComp.height,
               bitrate: videoBitrateComp.bitrate,
               framerate: videoFramerateComp.framerate,
-              enableHardware: enableWebcodecComponent.enableHardwareAcceleration,
+              enableWebCodecs: enableWebcodecComponent.enableWebCodecs,
+              enableHardware: enableHardwareComponent.enableHardwareAcceleration,
               encoderOptions: {
                 preset: 'fast',
                 'cpu-used': 5
