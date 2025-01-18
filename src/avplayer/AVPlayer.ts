@@ -1485,6 +1485,371 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
+   * @internal
+   */
+  private async playUseMSE(options: AVPlayerPlayOptions) {
+    await AVPlayer.startMSEPipeline(this.options.enableWorker)
+
+    const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
+    const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
+
+    let hasVideo = false
+
+    // 注册一个 mse 处理任务
+    await AVPlayer.MSEThread.registerTask.transfer(this.controller.getMuxerControlPort())
+      .invoke({
+        taskId: this.taskId,
+        stats: addressof(this.GlobalData.stats),
+        controlPort: this.controller.getMuxerControlPort(),
+        isLive: this.options.isLive,
+        avpacketList: addressof(this.GlobalData.avpacketList),
+        avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+        enableJitterBuffer: !!this.jitterBufferController
+      }, this.seekedTimestamp >= 0n ? this.seekedTimestamp : NOPTS_VALUE_BIGINT)
+
+    if (videoStream && options.video) {
+      this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_VIDEO_DECODER, videoStream])
+      hasVideo = true
+      this.selectedVideoStream = videoStream
+      this.videoEnded = false
+      this.demuxer2VideoDecoderChannel = createMessageChannel(this.options.enableWorker)
+      await AVPlayer.DemuxerThread.connectStreamTask
+        .transfer(this.demuxer2VideoDecoderChannel.port1)
+        .invoke(this.subTaskId || this.taskId, videoStream.index, this.demuxer2VideoDecoderChannel.port1)
+      await AVPlayer.MSEThread.addStream.transfer(this.demuxer2VideoDecoderChannel.port2)
+        .invoke(
+          this.taskId,
+          videoStream.index,
+          serializeAVCodecParameters(videoStream.codecpar),
+          videoStream.timeBase,
+          videoStream.startTime,
+          this.demuxer2VideoDecoderChannel.port2
+        )
+    }
+    if (audioStream && options.audio) {
+      this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_AUDIO_DECODER, audioStream])
+      this.selectedAudioStream = audioStream
+      this.audioEnded = false
+      this.demuxer2AudioDecoderChannel = createMessageChannel(this.options.enableWorker)
+      await AVPlayer.DemuxerThread.connectStreamTask
+        .transfer(this.demuxer2AudioDecoderChannel.port1)
+        .invoke(this.taskId, audioStream.index, this.demuxer2AudioDecoderChannel.port1)
+      await AVPlayer.MSEThread.addStream.transfer(this.demuxer2AudioDecoderChannel.port2)
+        .invoke(
+          this.taskId,
+          audioStream.index,
+          serializeAVCodecParameters(audioStream.codecpar),
+          audioStream.timeBase,
+          audioStream.startTime,
+          this.demuxer2AudioDecoderChannel.port2
+        )
+    }
+
+    if (hasVideo) {
+      this.createVideo()
+    }
+    else {
+      this.createAudio()
+    }
+
+    AVPlayer.MSEThread.setPlayRate(this.taskId, this.playRate)
+
+    const mediaSource = await AVPlayer.MSEThread.getMediaSource(this.taskId)
+
+    if (mediaSource) {
+      if (support.workerMSE && mediaSource instanceof MediaSourceHandle) {
+        (this.video || this.audio).srcObject = mediaSource
+      }
+      else {
+        (this.video || this.audio).src = URL.createObjectURL(mediaSource)
+      }
+      this.handleTimeupdate(this.video || this.audio)
+    }
+    (this.video || this.audio).playbackRate = this.playRate
+  }
+
+  /**
+   * @internal
+   */
+  private async playUseDecoder(options: AVPlayerPlayOptions) {
+
+    let audioStartTime: int64 = 0n
+    let videoStartTime: int64 = 0n
+
+    const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
+    const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
+
+    if (videoStream && options.video) {
+      this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_VIDEO_DECODER, videoStream])
+      this.selectedVideoStream = videoStream
+
+      await AVPlayer.startVideoRenderPipeline(this.options.enableWorker)
+      await this.createVideoDecoderThread(this.options.enableWorker)
+
+      videoStartTime = avRescaleQ(videoStream.startTime, videoStream.timeBase, AV_MILLI_TIME_BASE_Q)
+
+      this.demuxer2VideoDecoderChannel = createMessageChannel(this.options.enableWorker)
+      this.videoDecoder2VideoRenderChannel = createMessageChannel(this.options.enableWorker)
+
+      let resource = await this.getResource('decoder', videoStream.codecpar.codecId, videoStream.codecpar.codecType)
+      if (!resource) {
+        if (support.videoDecoder) {
+          const isSupport = await VideoDecoder.isConfigSupported({
+            codec: getVideoCodec(videoStream.codecpar)
+          })
+          if (!isSupport.supported) {
+            logger.fatal(`${dumpCodecName(videoStream.codecpar.codecType, videoStream.codecpar.codecId)} codecId ${videoStream.codecpar.codecId} not support`)
+          }
+        }
+        else {
+          logger.fatal(`${dumpCodecName(videoStream.codecpar.codecType, videoStream.codecpar.codecId)} codecId ${videoStream.codecpar.codecId} not support`)
+        }
+      }
+
+      // 注册一个视频解码任务
+      await this.VideoDecoderThread.registerTask
+        .transfer(this.demuxer2VideoDecoderChannel.port2, this.videoDecoder2VideoRenderChannel.port1)
+        .invoke({
+          taskId: this.taskId,
+          resource,
+          leftPort: this.demuxer2VideoDecoderChannel.port2,
+          rightPort: this.videoDecoder2VideoRenderChannel.port1,
+          stats: addressof(this.GlobalData.stats),
+          enableHardware: this.options.enableHardware && this.options.enableWebCodecs,
+          avpacketList: addressof(this.GlobalData.avpacketList),
+          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+          avframeList: addressof(this.GlobalData.avframeList),
+          avframeListMutex: addressof(this.GlobalData.avframeListMutex),
+          preferWebCodecs: !isHdr(videoStream.codecpar) && !hasAlphaChannel(videoStream.codecpar) && !!this.options.enableWebCodecs
+        })
+
+      let ret = await this.VideoDecoderThread.open(this.taskId, serializeAVCodecParameters(videoStream.codecpar))
+      if (ret < 0) {
+        logger.fatal(`cannot open video ${dumpCodecName(videoStream.codecpar.codecType, videoStream.codecpar.codecId)} decoder`)
+      }
+
+      await AVPlayer.DemuxerThread.connectStreamTask
+        .transfer(this.demuxer2VideoDecoderChannel.port1)
+        .invoke(this.subTaskId || this.taskId, videoStream.index, this.demuxer2VideoDecoderChannel.port1)
+
+      this.VideoDecoderThread.setPlayRate(this.taskId, this.playRate)
+    }
+    if (audioStream && options.audio) {
+      this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_AUDIO_DECODER, audioStream])
+      this.selectedAudioStream = audioStream
+      await AVPlayer.startAudioPipeline(this.options.enableWorker)
+
+      if (AVPlayer.audioContext.state === 'suspended') {
+        await Promise.race([
+          AVPlayer.audioContext.resume(),
+          new Sleep(0.1)
+        ])
+      }
+
+      audioStartTime = avRescaleQ(audioStream.startTime, audioStream.timeBase, AV_MILLI_TIME_BASE_Q)
+
+      this.demuxer2AudioDecoderChannel = createMessageChannel(this.options.enableWorker)
+      this.audioDecoder2AudioRenderChannel = createMessageChannel(this.options.enableWorker)
+
+      let resource = await this.getResource('decoder', audioStream.codecpar.codecId, audioStream.codecpar.codecType)
+
+      if (!resource) {
+        if (support.audioDecoder) {
+          const isSupport = await AudioDecoder.isConfigSupported({
+            codec: getAudioCodec(audioStream.codecpar),
+            sampleRate: audioStream.codecpar.sampleRate,
+            numberOfChannels: audioStream.codecpar.chLayout.nbChannels
+          })
+          if (!isSupport.supported) {
+            logger.fatal(`${dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} codecId ${audioStream.codecpar.codecId} not support`)
+          }
+        }
+        else {
+          logger.fatal(`${dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} codecId ${audioStream.codecpar.codecId} not support`)
+        }
+      }
+
+      // 注册一个音频解码任务
+      await AVPlayer.AudioDecoderThread.registerTask
+        .transfer(this.demuxer2AudioDecoderChannel.port2, this.audioDecoder2AudioRenderChannel.port1)
+        .invoke({
+          taskId: this.taskId,
+          resource,
+          leftPort: this.demuxer2AudioDecoderChannel.port2,
+          rightPort: this.audioDecoder2AudioRenderChannel.port1,
+          stats: addressof(this.GlobalData.stats),
+          avpacketList: addressof(this.GlobalData.avpacketList),
+          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+          avframeList: addressof(this.GlobalData.avframeList),
+          avframeListMutex: addressof(this.GlobalData.avframeListMutex)
+        })
+
+      let ret = await AVPlayer.AudioDecoderThread.open(this.taskId, serializeAVCodecParameters(audioStream.codecpar))
+      if (ret < 0) {
+        logger.fatal(`cannot open audio ${dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} decoder`)
+      }
+
+      await AVPlayer.DemuxerThread.connectStreamTask
+        .transfer(this.demuxer2AudioDecoderChannel.port1)
+        .invoke(this.taskId, audioStream.index, this.demuxer2AudioDecoderChannel.port1)
+    }
+
+    if (this.videoDecoder2VideoRenderChannel) {
+      this.canvas = this.createCanvas()
+      this.options.container.appendChild(this.canvas)
+      const canvas = (supportOffscreenCanvas()
+          && (cheapConfig.USE_THREADS
+              && defined(ENABLE_THREADS)
+            || support.worker
+              && this.options.enableWorker
+          )
+      )
+        ? this.canvas.transferControlToOffscreen()
+        : this.canvas
+
+      // 处理旋转
+      if (videoStream.metadata['matrix']) {
+        this.renderRotate = -(Math.atan2(videoStream.metadata['matrix'][3], videoStream.metadata['matrix'][0]) * (180 / Math.PI))
+      }
+
+      // 注册一个视频渲染任务
+      await this.VideoRenderThread.registerTask
+        .transfer(
+          this.videoDecoder2VideoRenderChannel.port2,
+          this.controller.getVideoRenderControlPort(),
+          canvas as OffscreenCanvas
+        )
+        .invoke({
+          taskId: this.taskId,
+          isLive: this.options.isLive,
+          leftPort: this.videoDecoder2VideoRenderChannel.port2,
+          controlPort: this.controller.getVideoRenderControlPort(),
+          canvas,
+          renderMode: this.renderMode,
+          renderRotate: this.renderRotate,
+          flipHorizontal: this.flipHorizontal,
+          flipVertical: this.flipVertical,
+          viewportWidth: this.options.container.offsetWidth,
+          viewportHeight: this.options.container.offsetHeight,
+          devicePixelRatio: devicePixelRatio,
+          stats: addressof(this.GlobalData.stats),
+          enableWebGPU: this.options.enableWebGPU,
+          startPTS: this.options.isLive
+            ? avRescaleQ(videoStream.startTime < 1000n ? 0n : videoStream.startTime, videoStream.timeBase, AV_MILLI_TIME_BASE_Q)
+            : this.getMinStartPTS(),
+          avframeList: addressof(this.GlobalData.avframeList),
+          avframeListMutex: addressof(this.GlobalData.avframeListMutex),
+          enableJitterBuffer: !!this.jitterBufferController && !this.audioDecoder2AudioRenderChannel
+        })
+
+      this.videoEnded = false
+      this.VideoRenderThread.setPlayRate(this.taskId, this.playRate)
+    }
+    if (this.audioDecoder2AudioRenderChannel) {
+
+      this.audioRender2AudioWorkletChannel = new MessageChannel()
+
+      this.playChannels = Math.max(audioStream.codecpar.chLayout.nbChannels, Math.min(AVPlayer.audioContext.destination.channelCount, 2))
+
+      let resamplerResource = await this.getResource('resampler')
+      let stretchpitcherResource = await this.getResource('stretchpitcher')
+
+      if (!resamplerResource) {
+        logger.fatal('resampler not found')
+      }
+      if (!stretchpitcherResource) {
+        logger.fatal('stretch pitcher not found')
+      }
+
+      // 注册一个音频渲染任务
+      await AVPlayer.AudioRenderThread.registerTask
+        .transfer(
+          this.audioDecoder2AudioRenderChannel.port2,
+          this.audioRender2AudioWorkletChannel.port1,
+          this.controller.getAudioRenderControlPort()
+        )
+        .invoke({
+          taskId: this.taskId,
+          isLive: this.options.isLive,
+          leftPort: this.audioDecoder2AudioRenderChannel.port2,
+          rightPort: this.audioRender2AudioWorkletChannel.port1,
+          controlPort: this.controller.getAudioRenderControlPort(),
+          playFormat: AVSampleFormat.AV_SAMPLE_FMT_FLTP,
+          playSampleRate: AVPlayer.audioContext.sampleRate,
+          playChannels: this.playChannels,
+          resamplerResource,
+          stretchpitcherResource,
+          stats: addressof(this.GlobalData.stats),
+          startPTS: this.options.isLive
+            ? avRescaleQ(audioStream.startTime < 1000n ? 0n : audioStream.startTime, audioStream.timeBase, AV_MILLI_TIME_BASE_Q)
+            : this.getMinStartPTS(),
+          avframeList: addressof(this.GlobalData.avframeList),
+          avframeListMutex: addressof(this.GlobalData.avframeListMutex),
+          enableJitterBuffer: !!this.jitterBufferController
+        })
+
+      // 创建一个音频源节点
+      let AudioSource: typeof AudioSourceWorkletNode | typeof AudioSourceBufferNode
+      if (support.audioWorklet) {
+        AudioSource = AudioSourceWorkletNode
+      }
+      else {
+        AudioSource = AudioSourceBufferNode
+      }
+      this.audioSourceNode = new AudioSource(
+        AVPlayer.audioContext,
+        {
+          onEnded: () => {
+            this.onAudioEnded()
+          },
+          onFirstRendered: () => {
+            this.onFirstAudioRendered()
+          },
+          onStutter: () => {
+            this.onAudioStutter()
+          }
+        },
+        {
+          numberOfInputs: 1,
+          numberOfOutputs: 1,
+          outputChannelCount: [this.playChannels],
+          isMainWorker: !!AVPlayer.AudioPipelineProxy
+        }
+      )
+
+      await this.audioSourceNode.request('init', {
+        memory: cheapConfig.USE_THREADS ? Memory : null,
+        bufferLength: this.options.audioWorkletBufferLength
+      })
+
+      AVPlayer.AudioRenderThread.setPlayTempo(this.taskId, this.playRate)
+
+      this.gainNode = AVPlayer.audioContext.createGain()
+      this.gainNode.connect(AVPlayer.audioContext.destination)
+      this.audioSourceNode.connect(this.gainNode)
+
+      this.setVolume(this.volume)
+
+      this.audioEnded = false
+    }
+    if (this.audioDecoder2AudioRenderChannel) {
+      this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_AUDIO)
+    }
+    else if (this.videoDecoder2VideoRenderChannel) {
+      this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_VIDEO)
+    }
+
+    // 开始时间戳超过 10 秒不对齐就不再同步音视频了
+    // 这种情况下可视为音频和视频本身就是独立的，各自播放
+    if (this.videoDecoder2VideoRenderChannel
+      && this.audioDecoder2AudioRenderChannel
+      && bigint.abs(videoStartTime - audioStartTime) > 10000n
+    ) {
+      this.controller.setEnableAudioVideoSync(false)
+    }
+  }
+
+  /**
    * 播放
    * 
    * @param options 
@@ -1554,360 +1919,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.videoEnded = true
 
     if (defined(ENABLE_MSE) && this.useMSE) {
-      await AVPlayer.startMSEPipeline(this.options.enableWorker)
-
-      AVPlayer.MSEThread.setPlayRate(this.taskId, this.playRate)
-
-      const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
-      const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
-
-      let hasVideo = false
-
-      // 注册一个 mse 处理任务
-      await AVPlayer.MSEThread.registerTask.transfer(this.controller.getMuxerControlPort())
-        .invoke({
-          taskId: this.taskId,
-          stats: addressof(this.GlobalData.stats),
-          controlPort: this.controller.getMuxerControlPort(),
-          isLive: this.options.isLive,
-          avpacketList: addressof(this.GlobalData.avpacketList),
-          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
-          enableJitterBuffer: !!this.jitterBufferController
-        }, this.seekedTimestamp >= 0n ? this.seekedTimestamp : NOPTS_VALUE_BIGINT)
-
-      if (videoStream && options.video) {
-        this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_VIDEO_DECODER, videoStream])
-        hasVideo = true
-        this.selectedVideoStream = videoStream
-        this.videoEnded = false
-        this.demuxer2VideoDecoderChannel = createMessageChannel(this.options.enableWorker)
-        await AVPlayer.DemuxerThread.connectStreamTask
-          .transfer(this.demuxer2VideoDecoderChannel.port1)
-          .invoke(this.subTaskId || this.taskId, videoStream.index, this.demuxer2VideoDecoderChannel.port1)
-        await AVPlayer.MSEThread.addStream.transfer(this.demuxer2VideoDecoderChannel.port2)
-          .invoke(
-            this.taskId,
-            videoStream.index,
-            serializeAVCodecParameters(videoStream.codecpar),
-            videoStream.timeBase,
-            videoStream.startTime,
-            this.demuxer2VideoDecoderChannel.port2
-          )
-      }
-      if (audioStream && options.audio) {
-        this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_AUDIO_DECODER, audioStream])
-        this.selectedAudioStream = audioStream
-        this.audioEnded = false
-        this.demuxer2AudioDecoderChannel = createMessageChannel(this.options.enableWorker)
-        await AVPlayer.DemuxerThread.connectStreamTask
-          .transfer(this.demuxer2AudioDecoderChannel.port1)
-          .invoke(this.taskId, audioStream.index, this.demuxer2AudioDecoderChannel.port1)
-        await AVPlayer.MSEThread.addStream.transfer(this.demuxer2AudioDecoderChannel.port2)
-          .invoke(
-            this.taskId,
-            audioStream.index,
-            serializeAVCodecParameters(audioStream.codecpar),
-            audioStream.timeBase,
-            audioStream.startTime,
-            this.demuxer2AudioDecoderChannel.port2
-          )
-      }
-
-      if (hasVideo) {
-        this.createVideo()
-      }
-      else {
-        this.createAudio()
-      }
-
-      const mediaSource = await AVPlayer.MSEThread.getMediaSource(this.taskId)
-
-      if (mediaSource) {
-        if (support.workerMSE && mediaSource instanceof MediaSourceHandle) {
-          (this.video || this.audio).srcObject = mediaSource
-        }
-        else {
-          (this.video || this.audio).src = URL.createObjectURL(mediaSource)
-        }
-        this.handleTimeupdate(this.video || this.audio)
-      }
+      await this.playUseMSE(options)
     }
     else {
-
-      let audioStartTime: int64 = 0n
-      let videoStartTime: int64 = 0n
-
-      const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
-      const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
-
-      if (videoStream && options.video) {
-        this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_VIDEO_DECODER, videoStream])
-        this.selectedVideoStream = videoStream
-
-        await AVPlayer.startVideoRenderPipeline(this.options.enableWorker)
-        await this.createVideoDecoderThread(this.options.enableWorker)
-
-        videoStartTime = avRescaleQ(videoStream.startTime, videoStream.timeBase, AV_MILLI_TIME_BASE_Q)
-
-        this.demuxer2VideoDecoderChannel = createMessageChannel(this.options.enableWorker)
-        this.videoDecoder2VideoRenderChannel = createMessageChannel(this.options.enableWorker)
-
-        let resource = await this.getResource('decoder', videoStream.codecpar.codecId, videoStream.codecpar.codecType)
-        if (!resource) {
-          if (support.videoDecoder) {
-            const isSupport = await VideoDecoder.isConfigSupported({
-              codec: getVideoCodec(videoStream.codecpar)
-            })
-            if (!isSupport.supported) {
-              logger.fatal(`${dumpCodecName(videoStream.codecpar.codecType, videoStream.codecpar.codecId)} codecId ${videoStream.codecpar.codecId} not support`)
-            }
-          }
-          else {
-            logger.fatal(`${dumpCodecName(videoStream.codecpar.codecType, videoStream.codecpar.codecId)} codecId ${videoStream.codecpar.codecId} not support`)
-          }
-        }
-
-        // 注册一个视频解码任务
-        await this.VideoDecoderThread.registerTask
-          .transfer(this.demuxer2VideoDecoderChannel.port2, this.videoDecoder2VideoRenderChannel.port1)
-          .invoke({
-            taskId: this.taskId,
-            resource,
-            leftPort: this.demuxer2VideoDecoderChannel.port2,
-            rightPort: this.videoDecoder2VideoRenderChannel.port1,
-            stats: addressof(this.GlobalData.stats),
-            enableHardware: this.options.enableHardware && this.options.enableWebCodecs,
-            avpacketList: addressof(this.GlobalData.avpacketList),
-            avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
-            avframeList: addressof(this.GlobalData.avframeList),
-            avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-            preferWebCodecs: !isHdr(videoStream.codecpar) && !hasAlphaChannel(videoStream.codecpar) && !!this.options.enableWebCodecs
-          })
-
-        let ret = await this.VideoDecoderThread.open(this.taskId, serializeAVCodecParameters(videoStream.codecpar))
-        if (ret < 0) {
-          logger.fatal(`cannot open video ${dumpCodecName(videoStream.codecpar.codecType, videoStream.codecpar.codecId)} decoder`)
-        }
-
-        await AVPlayer.DemuxerThread.connectStreamTask
-          .transfer(this.demuxer2VideoDecoderChannel.port1)
-          .invoke(this.subTaskId || this.taskId, videoStream.index, this.demuxer2VideoDecoderChannel.port1)
-
-        this.VideoDecoderThread.setPlayRate(this.taskId, this.playRate)
-      }
-      if (audioStream && options.audio) {
-        this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_AUDIO_DECODER, audioStream])
-        this.selectedAudioStream = audioStream
-        await AVPlayer.startAudioPipeline(this.options.enableWorker)
-
-        if (AVPlayer.audioContext.state === 'suspended') {
-          await Promise.race([
-            AVPlayer.audioContext.resume(),
-            new Sleep(0.1)
-          ])
-        }
-
-        audioStartTime = avRescaleQ(audioStream.startTime, audioStream.timeBase, AV_MILLI_TIME_BASE_Q)
-
-        this.demuxer2AudioDecoderChannel = createMessageChannel(this.options.enableWorker)
-        this.audioDecoder2AudioRenderChannel = createMessageChannel(this.options.enableWorker)
-
-        let resource = await this.getResource('decoder', audioStream.codecpar.codecId, audioStream.codecpar.codecType)
-
-        if (!resource) {
-          if (support.audioDecoder) {
-            const isSupport = await AudioDecoder.isConfigSupported({
-              codec: getAudioCodec(audioStream.codecpar),
-              sampleRate: audioStream.codecpar.sampleRate,
-              numberOfChannels: audioStream.codecpar.chLayout.nbChannels
-            })
-            if (!isSupport.supported) {
-              logger.fatal(`${dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} codecId ${audioStream.codecpar.codecId} not support`)
-            }
-          }
-          else {
-            logger.fatal(`${dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} codecId ${audioStream.codecpar.codecId} not support`)
-          }
-        }
-
-        // 注册一个音频解码任务
-        await AVPlayer.AudioDecoderThread.registerTask
-          .transfer(this.demuxer2AudioDecoderChannel.port2, this.audioDecoder2AudioRenderChannel.port1)
-          .invoke({
-            taskId: this.taskId,
-            resource,
-            leftPort: this.demuxer2AudioDecoderChannel.port2,
-            rightPort: this.audioDecoder2AudioRenderChannel.port1,
-            stats: addressof(this.GlobalData.stats),
-            avpacketList: addressof(this.GlobalData.avpacketList),
-            avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
-            avframeList: addressof(this.GlobalData.avframeList),
-            avframeListMutex: addressof(this.GlobalData.avframeListMutex)
-          })
-
-        let ret = await AVPlayer.AudioDecoderThread.open(this.taskId, serializeAVCodecParameters(audioStream.codecpar))
-        if (ret < 0) {
-          logger.fatal(`cannot open audio ${dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} decoder`)
-        }
-
-        await AVPlayer.DemuxerThread.connectStreamTask
-          .transfer(this.demuxer2AudioDecoderChannel.port1)
-          .invoke(this.taskId, audioStream.index, this.demuxer2AudioDecoderChannel.port1)
-      }
-
-      if (this.videoDecoder2VideoRenderChannel) {
-        this.canvas = this.createCanvas()
-        this.options.container.appendChild(this.canvas)
-        const canvas = (supportOffscreenCanvas()
-            && (cheapConfig.USE_THREADS
-                && defined(ENABLE_THREADS)
-              || support.worker
-                && this.options.enableWorker
-            )
-        )
-          ? this.canvas.transferControlToOffscreen()
-          : this.canvas
-
-        // 处理旋转
-        if (videoStream.metadata['matrix']) {
-          this.renderRotate = -(Math.atan2(videoStream.metadata['matrix'][3], videoStream.metadata['matrix'][0]) * (180 / Math.PI))
-        }
-
-        // 注册一个视频渲染任务
-        await this.VideoRenderThread.registerTask
-          .transfer(
-            this.videoDecoder2VideoRenderChannel.port2,
-            this.controller.getVideoRenderControlPort(),
-            canvas as OffscreenCanvas
-          )
-          .invoke({
-            taskId: this.taskId,
-            isLive: this.options.isLive,
-            leftPort: this.videoDecoder2VideoRenderChannel.port2,
-            controlPort: this.controller.getVideoRenderControlPort(),
-            canvas,
-            renderMode: this.renderMode,
-            renderRotate: this.renderRotate,
-            flipHorizontal: this.flipHorizontal,
-            flipVertical: this.flipVertical,
-            viewportWidth: this.options.container.offsetWidth,
-            viewportHeight: this.options.container.offsetHeight,
-            devicePixelRatio: devicePixelRatio,
-            stats: addressof(this.GlobalData.stats),
-            enableWebGPU: this.options.enableWebGPU,
-            startPTS: this.options.isLive
-              ? avRescaleQ(videoStream.startTime < 1000n ? 0n : videoStream.startTime, videoStream.timeBase, AV_MILLI_TIME_BASE_Q)
-              : this.getMinStartPTS(),
-            avframeList: addressof(this.GlobalData.avframeList),
-            avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-            enableJitterBuffer: !!this.jitterBufferController && !this.audioDecoder2AudioRenderChannel
-          })
-
-        this.videoEnded = false
-        this.VideoRenderThread.setPlayRate(this.taskId, this.playRate)
-      }
-      if (this.audioDecoder2AudioRenderChannel) {
-
-        this.audioRender2AudioWorkletChannel = new MessageChannel()
-
-        this.playChannels = Math.max(audioStream.codecpar.chLayout.nbChannels, Math.min(AVPlayer.audioContext.destination.channelCount, 2))
-
-        let resamplerResource = await this.getResource('resampler')
-        let stretchpitcherResource = await this.getResource('stretchpitcher')
-
-        if (!resamplerResource) {
-          logger.fatal('resampler not found')
-        }
-        if (!stretchpitcherResource) {
-          logger.fatal('stretch pitcher not found')
-        }
-
-        // 注册一个音频渲染任务
-        await AVPlayer.AudioRenderThread.registerTask
-          .transfer(
-            this.audioDecoder2AudioRenderChannel.port2,
-            this.audioRender2AudioWorkletChannel.port1,
-            this.controller.getAudioRenderControlPort()
-          )
-          .invoke({
-            taskId: this.taskId,
-            isLive: this.options.isLive,
-            leftPort: this.audioDecoder2AudioRenderChannel.port2,
-            rightPort: this.audioRender2AudioWorkletChannel.port1,
-            controlPort: this.controller.getAudioRenderControlPort(),
-            playFormat: AVSampleFormat.AV_SAMPLE_FMT_FLTP,
-            playSampleRate: AVPlayer.audioContext.sampleRate,
-            playChannels: this.playChannels,
-            resamplerResource,
-            stretchpitcherResource,
-            stats: addressof(this.GlobalData.stats),
-            startPTS: this.options.isLive
-              ? avRescaleQ(audioStream.startTime < 1000n ? 0n : audioStream.startTime, audioStream.timeBase, AV_MILLI_TIME_BASE_Q)
-              : this.getMinStartPTS(),
-            avframeList: addressof(this.GlobalData.avframeList),
-            avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-            enableJitterBuffer: !!this.jitterBufferController
-          })
-
-        // 创建一个音频源节点
-        let AudioSource: typeof AudioSourceWorkletNode | typeof AudioSourceBufferNode
-        if (support.audioWorklet) {
-          AudioSource = AudioSourceWorkletNode
-        }
-        else {
-          AudioSource = AudioSourceBufferNode
-        }
-        this.audioSourceNode = new AudioSource(
-          AVPlayer.audioContext,
-          {
-            onEnded: () => {
-              this.onAudioEnded()
-            },
-            onFirstRendered: () => {
-              this.onFirstAudioRendered()
-            },
-            onStutter: () => {
-              this.onAudioStutter()
-            }
-          },
-          {
-            numberOfInputs: 1,
-            numberOfOutputs: 1,
-            outputChannelCount: [this.playChannels],
-            isMainWorker: !!AVPlayer.AudioPipelineProxy
-          }
-        )
-
-        await this.audioSourceNode.request('init', {
-          memory: cheapConfig.USE_THREADS ? Memory : null,
-          bufferLength: this.options.audioWorkletBufferLength
-        })
-
-        AVPlayer.AudioRenderThread.setPlayTempo(this.taskId, this.playRate)
-
-        this.gainNode = AVPlayer.audioContext.createGain()
-        this.gainNode.connect(AVPlayer.audioContext.destination)
-        this.audioSourceNode.connect(this.gainNode)
-
-        this.setVolume(this.volume)
-
-        this.audioEnded = false
-      }
-      if (this.audioDecoder2AudioRenderChannel) {
-        this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_AUDIO)
-      }
-      else if (this.videoDecoder2VideoRenderChannel) {
-        this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_VIDEO)
-      }
-
-      // 开始时间戳超过 10 秒不对齐就不再同步音视频了
-      // 这种情况下可视为音频和视频本身就是独立的，各自播放
-      if (this.videoDecoder2VideoRenderChannel
-        && this.audioDecoder2AudioRenderChannel
-        && bigint.abs(videoStartTime - audioStartTime) > 10000n
-      ) {
-        this.controller.setEnableAudioVideoSync(false)
-      }
+      await this.playUseDecoder(options)
     }
 
     if (defined(ENABLE_SUBTITLE_RENDER)) {
