@@ -1488,84 +1488,86 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @internal
    */
   private async playUseMSE(options: AVPlayerPlayOptions) {
-    await AVPlayer.startMSEPipeline(this.options.enableWorker)
+    if (defined(ENABLE_MSE)) {
+      await AVPlayer.startMSEPipeline(this.options.enableWorker)
 
-    const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
-    const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
+      const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
+      const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
 
-    let hasVideo = false
+      let hasVideo = false
 
-    // 注册一个 mse 处理任务
-    await AVPlayer.MSEThread.registerTask.transfer(this.controller.getMuxerControlPort())
-      .invoke({
-        taskId: this.taskId,
-        stats: addressof(this.GlobalData.stats),
-        controlPort: this.controller.getMuxerControlPort(),
-        isLive: this.options.isLive,
-        avpacketList: addressof(this.GlobalData.avpacketList),
-        avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
-        enableJitterBuffer: !!this.jitterBufferController
-      }, this.seekedTimestamp >= 0n ? this.seekedTimestamp : NOPTS_VALUE_BIGINT)
+      // 注册一个 mse 处理任务
+      await AVPlayer.MSEThread.registerTask.transfer(this.controller.getMuxerControlPort())
+        .invoke({
+          taskId: this.taskId,
+          stats: addressof(this.GlobalData.stats),
+          controlPort: this.controller.getMuxerControlPort(),
+          isLive: this.options.isLive,
+          avpacketList: addressof(this.GlobalData.avpacketList),
+          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+          enableJitterBuffer: !!this.jitterBufferController
+        }, this.seekedTimestamp >= 0n ? this.seekedTimestamp : NOPTS_VALUE_BIGINT)
 
-    if (videoStream && options.video) {
-      this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_VIDEO_DECODER, videoStream])
-      hasVideo = true
-      this.selectedVideoStream = videoStream
-      this.videoEnded = false
-      this.demuxer2VideoDecoderChannel = createMessageChannel(this.options.enableWorker)
-      await AVPlayer.DemuxerThread.connectStreamTask
-        .transfer(this.demuxer2VideoDecoderChannel.port1)
-        .invoke(this.subTaskId || this.taskId, videoStream.index, this.demuxer2VideoDecoderChannel.port1)
-      await AVPlayer.MSEThread.addStream.transfer(this.demuxer2VideoDecoderChannel.port2)
-        .invoke(
-          this.taskId,
-          videoStream.index,
-          serializeAVCodecParameters(videoStream.codecpar),
-          videoStream.timeBase,
-          videoStream.startTime,
-          this.demuxer2VideoDecoderChannel.port2
-        )
-    }
-    if (audioStream && options.audio) {
-      this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_AUDIO_DECODER, audioStream])
-      this.selectedAudioStream = audioStream
-      this.audioEnded = false
-      this.demuxer2AudioDecoderChannel = createMessageChannel(this.options.enableWorker)
-      await AVPlayer.DemuxerThread.connectStreamTask
-        .transfer(this.demuxer2AudioDecoderChannel.port1)
-        .invoke(this.taskId, audioStream.index, this.demuxer2AudioDecoderChannel.port1)
-      await AVPlayer.MSEThread.addStream.transfer(this.demuxer2AudioDecoderChannel.port2)
-        .invoke(
-          this.taskId,
-          audioStream.index,
-          serializeAVCodecParameters(audioStream.codecpar),
-          audioStream.timeBase,
-          audioStream.startTime,
-          this.demuxer2AudioDecoderChannel.port2
-        )
-    }
+      if (videoStream && options.video) {
+        this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_VIDEO_DECODER, videoStream])
+        hasVideo = true
+        this.selectedVideoStream = videoStream
+        this.videoEnded = false
+        this.demuxer2VideoDecoderChannel = createMessageChannel(this.options.enableWorker)
+        await AVPlayer.DemuxerThread.connectStreamTask
+          .transfer(this.demuxer2VideoDecoderChannel.port1)
+          .invoke(this.subTaskId || this.taskId, videoStream.index, this.demuxer2VideoDecoderChannel.port1)
+        await AVPlayer.MSEThread.addStream.transfer(this.demuxer2VideoDecoderChannel.port2)
+          .invoke(
+            this.taskId,
+            videoStream.index,
+            serializeAVCodecParameters(videoStream.codecpar),
+            videoStream.timeBase,
+            videoStream.startTime,
+            this.demuxer2VideoDecoderChannel.port2
+          )
+      }
+      if (audioStream && options.audio) {
+        this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_AUDIO_DECODER, audioStream])
+        this.selectedAudioStream = audioStream
+        this.audioEnded = false
+        this.demuxer2AudioDecoderChannel = createMessageChannel(this.options.enableWorker)
+        await AVPlayer.DemuxerThread.connectStreamTask
+          .transfer(this.demuxer2AudioDecoderChannel.port1)
+          .invoke(this.taskId, audioStream.index, this.demuxer2AudioDecoderChannel.port1)
+        await AVPlayer.MSEThread.addStream.transfer(this.demuxer2AudioDecoderChannel.port2)
+          .invoke(
+            this.taskId,
+            audioStream.index,
+            serializeAVCodecParameters(audioStream.codecpar),
+            audioStream.timeBase,
+            audioStream.startTime,
+            this.demuxer2AudioDecoderChannel.port2
+          )
+      }
 
-    if (hasVideo) {
-      this.createVideo()
-    }
-    else {
-      this.createAudio()
-    }
-
-    AVPlayer.MSEThread.setPlayRate(this.taskId, this.playRate)
-
-    const mediaSource = await AVPlayer.MSEThread.getMediaSource(this.taskId)
-
-    if (mediaSource) {
-      if (support.workerMSE && mediaSource instanceof MediaSourceHandle) {
-        (this.video || this.audio).srcObject = mediaSource
+      if (hasVideo) {
+        this.createVideo()
       }
       else {
-        (this.video || this.audio).src = URL.createObjectURL(mediaSource)
+        this.createAudio()
       }
-      this.handleTimeupdate(this.video || this.audio)
+
+      AVPlayer.MSEThread.setPlayRate(this.taskId, this.playRate)
+
+      const mediaSource = await AVPlayer.MSEThread.getMediaSource(this.taskId)
+
+      if (mediaSource) {
+        if (support.workerMSE && mediaSource instanceof MediaSourceHandle) {
+          (this.video || this.audio).srcObject = mediaSource
+        }
+        else {
+          (this.video || this.audio).src = URL.createObjectURL(mediaSource)
+        }
+        this.handleTimeupdate(this.video || this.audio)
+      }
+      (this.video || this.audio).playbackRate = this.playRate
     }
-    (this.video || this.audio).playbackRate = this.playRate
   }
 
   /**
