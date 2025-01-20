@@ -1,0 +1,24 @@
+version 0.5.0:
+
+feat:
+  - 支持 wasm64
+  - 对于 rtsp 和 matroska 等没有 dts 信息的封装格式使用 pts 来生成 dts 数据
+  - 分析流的帧率时自动调整到标准帧率
+  - maxAnalyzeDuration 默认值调整到 15 秒
+  - 优化 mux 对 stream 的 AVPacket 的请求处理，维持一个队列提高吞吐量
+  - VideoEncodePipeline 中 webcodecs 编码器优先使用 VideoFrame 提高编码效率
+  - 所有 pipeline 中使用性能更好的 avRescaleQ2 来做时间基转换
+  - 调整 VideoFrame 和 AudioData 使用 web 标准的微秒时间基
+  - 添加 getWasmUrl 方法作为内部获取 wasm url 的默认方法，getWasm 配置可选
+  - VideoDecodePipeline 兼容封装格式里面不能获取关键帧信息的情况，自己根据码流判断 h264、h265、h266 是否是关键帧
+
+bugfix:
+  - mp4 轨道时长计算不正确的问题
+  - matroska 当非音视频有 duration 或者 additional 时使用 blockGroup 来封装数据
+  - 分析流信息时到达 maxAnalyzeDuration 时长没有得到所有流信息继续分析直到得到所有流信息或者超过 15 秒
+  - 修复 VideoEncodePipeline 中硬编无法回退到软编 
+  - WebVideoDecoder annexb 码流支持 sps 和视频 nalu 分离的情况
+  - 修复音频渲染 loop 播放出现 frontBuffer 和 backBuffer 被释放的情况导致崩溃
+  - aac format 使用 adts 头里面的 samplerate 计算 dts，避免计算错误
+  - 一些构建系统的错误修复
+  - avplayer mse 在倍速条件下 loop 播放卡主的问题
