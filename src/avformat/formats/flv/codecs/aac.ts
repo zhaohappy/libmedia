@@ -38,7 +38,7 @@ export function writeDataHeader(ioWriter: IOWriter, type: AACPacketType) {
   ioWriter.writeUint8(type)
 }
 
-export function writeExtradata(ioWriter: IOWriter, stream: Stream, metadata: Uint8Array) {
+export function writeExtradata(ioWriter: IOWriter, stream: Stream, metadata: Uint8Array, timestamp: int64) {
 
   const now = ioWriter.getPos()
 
@@ -46,7 +46,7 @@ export function writeExtradata(ioWriter: IOWriter, stream: Stream, metadata: Uin
     ioWriter,
     FlvTag.AUDIO,
     metadata.length + 1 + FlvCodecHeaderLength[AVCodecID.AV_CODEC_ID_AAC],
-    0n
+    timestamp
   )
   // tag header
   flv.writeAudioTagDataHeader(ioWriter, stream)

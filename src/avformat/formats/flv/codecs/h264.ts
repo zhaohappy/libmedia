@@ -52,7 +52,8 @@ export function writeExtradata(
   ioWriter: IOWriter,
   stream: Stream,
   extradata: Uint8Array,
-  flags: AVPacketFlags
+  flags: AVPacketFlags,
+  timestamp: int64
 ) {
 
   const now = ioWriter.getPos()
@@ -78,7 +79,7 @@ export function writeExtradata(
     ioWriter,
     FlvTag.VIDEO,
     extradata.length + 1 + FlvCodecHeaderLength[AVCodecID.AV_CODEC_ID_H264],
-    0n
+    timestamp
   )
   flv.writeVideoTagDataHeader(ioWriter, stream, flags)
 

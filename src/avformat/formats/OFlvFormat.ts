@@ -185,7 +185,8 @@ export default class OFlvFormat extends OFormat {
         const length = flvAAC.writeExtradata(
           formatContext.ioWriter,
           audioStream,
-          mapUint8Array(audioStream.codecpar.extradata, reinterpret_cast<size>(audioStream.codecpar.extradataSize))
+          mapUint8Array(audioStream.codecpar.extradata, reinterpret_cast<size>(audioStream.codecpar.extradataSize)),
+          0n
         )
 
         this.context.filesize += length + 4
@@ -216,13 +217,15 @@ export default class OFlvFormat extends OFormat {
             formatContext.ioWriter,
             videoStream,
             mapUint8Array(videoStream.codecpar.extradata, reinterpret_cast<size>(videoStream.codecpar.extradataSize)),
-            AVPacketFlags.AV_PKT_FLAG_KEY
+            AVPacketFlags.AV_PKT_FLAG_KEY,
+            0n
           )
           : flvH264.writeExtradata(
             formatContext.ioWriter,
             videoStream,
             mapUint8Array(videoStream.codecpar.extradata, reinterpret_cast<size>(videoStream.codecpar.extradataSize)),
-            AVPacketFlags.AV_PKT_FLAG_KEY
+            AVPacketFlags.AV_PKT_FLAG_KEY,
+            0n
           )
         this.context.filesize += length + 4
         this.context.videosize += videoStream.codecpar.extradataSize
@@ -257,7 +260,8 @@ export default class OFlvFormat extends OFormat {
           flvAAC.writeExtradata(
             formatContext.ioWriter,
             stream,
-            extradata
+            extradata,
+            avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), stream.timeBase)
           )
         }
       }
@@ -269,7 +273,7 @@ export default class OFlvFormat extends OFormat {
           formatContext.ioWriter,
           FlvTag.AUDIO,
           avpacket.size + 1 + FlvCodecHeaderLength[stream.codecpar.codecId],
-          avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
+          avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), stream.timeBase)
         )
 
         oflv.writeAudioTagDataHeader(formatContext.ioWriter, stream)
@@ -314,7 +318,8 @@ export default class OFlvFormat extends OFormat {
             formatContext.ioWriter,
             stream,
             extradata,
-            AVPacketFlags.AV_PKT_FLAG_KEY
+            AVPacketFlags.AV_PKT_FLAG_KEY,
+            avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), stream.timeBase)
           )
         }
         else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
@@ -326,7 +331,8 @@ export default class OFlvFormat extends OFormat {
             formatContext.ioWriter,
             stream,
             mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)),
-            AVPacketFlags.AV_PKT_FLAG_KEY
+            AVPacketFlags.AV_PKT_FLAG_KEY,
+            avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), stream.timeBase)
           )
         }
       }
@@ -433,7 +439,7 @@ export default class OFlvFormat extends OFormat {
         formatContext.ioWriter,
         FlvTag.VIDEO,
         1 + FlvCodecHeaderLength[videoStream.codecpar.codecId],
-        0n
+        this.context.lasttimestamp
       )
       if (usdEnhanced) {
         oflv.writeVideoTagExtDataHeader(formatContext.ioWriter, videoStream, PacketTypeExt.PacketTypeSequenceEnd, AVPacketFlags.AV_PKT_FLAG_KEY)
