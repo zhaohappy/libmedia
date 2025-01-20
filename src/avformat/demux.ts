@@ -543,6 +543,8 @@ async function packetNeedRead(formatContext: AVIFormatContext, avpacket: pointer
         if (tmpPacket.streamIndex === avpacket.streamIndex) {
           if (tmpPacket.size) {
             copyAVPacketData(avpacket, tmpPacket)
+            avpacket.dts = tmpPacket.dts
+            avpacket.pts = tmpPacket.pts
             destroyAVPacket(tmpPacket)
             return 0
           }
