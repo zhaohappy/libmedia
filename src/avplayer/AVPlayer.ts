@@ -2186,14 +2186,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (this.jitterBufferController) {
         this.jitterBufferController.reset()
       }
-
-      if ((this.lastStatus === AVPlayerStatus.LOADED
-          || this.lastStatus === AVPlayerStatus.LOADING
-      )
-        && seekedTimestamp >= 0n
-      ) {
-        this.seekedTimestamp = seekedTimestamp > timestamp ? seekedTimestamp : timestamp
-      }
+    }
+    if ((this.lastStatus === AVPlayerStatus.LOADED
+      || this.lastStatus === AVPlayerStatus.LOADING
+    )
+      && seekedTimestamp >= 0n
+    ) {
+      this.seekedTimestamp = seekedTimestamp > timestamp ? seekedTimestamp : timestamp
     }
     for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
       await AVPlayer.DemuxerThread.seek(this.externalSubtitleTasks[i].taskId, this.currentTime, AVSeekFlags.FRAME)
