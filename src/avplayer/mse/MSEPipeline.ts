@@ -49,8 +49,8 @@ import getTimestamp from 'common/function/getTimestamp'
 import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
 import SeekableWriteBuffer from 'common/io/SeekableWriteBuffer'
-import { getAVPacketSideData } from 'avutil/util/avpacket'
-import { mapUint8Array, memcpy } from 'cheap/std/memory'
+import { addAVPacketData, getAVPacketSideData, refAVPacket } from 'avutil/util/avpacket'
+import { mapUint8Array, memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avFree, avMalloc, avMallocz } from 'avutil/util/mem'
 import browser from 'common/util/browser'
 import { milliSecond2Second } from 'avutil/util/common'
@@ -68,9 +68,7 @@ import { AVCodecParametersSerialize, AVPacketSerialize,
 import isPointer from 'cheap/std/function/isPointer'
 import * as is from 'common/util/is'
 import os from 'common/util/os'
-
-const BUFFER_MIN = 0.5
-const BUFFER_MAX = 1
+import { MPEG4AudioObjectTypes } from 'avutil/codecs/aac'
 
 export interface MSETaskOptions extends TaskOptions {
   isLive: boolean
@@ -113,6 +111,7 @@ interface MSEResource {
   seekSync: () => void
 
   startPTS: int64
+  lastDTS: int64
 
   pullQueue: PullQueue
 
@@ -140,6 +139,8 @@ type SelfTask = MSETaskOptions & {
   currentTimeNTP: int32
 
   avpacketPool: AVPacketPool
+  maxBuffer: float
+  minBuffer: float
 }
 
 function checkExtradataChanged(old: pointer<uint8>, oldSize: int32, newer: pointer<uint8>, newSize: int32) {
@@ -233,6 +234,72 @@ export default class MSEPipeline extends Pipeline {
 
       await this.syncToKeyframe(task)
 
+      let audioStartTimestamp = startTimestamp
+      let videoStartTimestamp = startTimestamp
+
+      if (task.audio && !task.audio.backPacket && !task.audio.packetEnded) {
+        task.audio.backPacket = await this.pullAVPacket(task.audio, task)
+        if (task.audio.backPacket < 0) {
+          task.audio.packetEnded = true
+          task.audio.backPacket = nullptr
+        }
+      }
+      if (task.video && !task.video.backPacket && task.video.packetEnded) {
+        task.video.backPacket = await this.pullAVPacket(task.video, task)
+        if (task.video.backPacket < 0) {
+          task.video.packetEnded = true
+          task.video.backPacket = nullptr
+        }
+      }
+      if (task.audio?.backPacket > 0) {
+        audioStartTimestamp = bigint.max(audioStartTimestamp, avRescaleQ2(task.audio.backPacket.dts, addressof(task.audio.backPacket.timeBase), AV_MILLI_TIME_BASE_Q))
+      }
+      if (task.video?.backPacket > 0) {
+        videoStartTimestamp = bigint.max(videoStartTimestamp, avRescaleQ2(task.video.backPacket.dts, addressof(task.video.backPacket.timeBase), AV_MILLI_TIME_BASE_Q))
+      }
+      if (task.audio && task.video && bigint.abs(audioStartTimestamp - videoStartTimestamp) > 1000) {
+        if (videoStartTimestamp > audioStartTimestamp) {
+          const dts = avRescaleQ(audioStartTimestamp, AV_MILLI_TIME_BASE_Q, task.video.backPacket.timeBase)
+          task.video.backPacket.duration = task.video.backPacket.dts - dts
+          task.video.backPacket.dts = task.video.backPacket.pts
+            = dts
+          videoStartTimestamp = audioStartTimestamp
+        }
+        else if (audioStartTimestamp > videoStartTimestamp
+          && task.audio.oformatContext.streams[0].codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC
+          && task.audio.oformatContext.streams[0].codecpar.profile === MPEG4AudioObjectTypes.AAC_LC
+          && task.audio.oformatContext.streams[0].codecpar.chLayout.nbChannels < 3
+        ) {
+          const avpacket = task.avpacketPool.alloc()
+          refAVPacket(avpacket, task.audio.backPacket)
+          const sliceData = task.audio.oformatContext.streams[0].codecpar.chLayout.nbChannels === 1
+            ? new Uint8Array([0x00, 0xc8, 0x00, 0x80, 0x23, 0x80])
+            : new Uint8Array([0x21, 0x00, 0x49, 0x90, 0x02, 0x19, 0x00, 0x23, 0x80])
+
+          const data = avMalloc(sliceData.length)
+          memcpyFromUint8Array(data, sliceData.length, sliceData)
+          addAVPacketData(avpacket, data, sliceData.length)
+          avpacket.dts = avpacket.pts
+            = avRescaleQ(videoStartTimestamp, AV_MILLI_TIME_BASE_Q, avpacket.timeBase)
+
+          const sampleDuration = 1024000n / static_cast<int64>(task.audio.oformatContext.streams[0].codecpar.sampleRate)
+          const samples = static_cast<int32>((audioStartTimestamp - videoStartTimestamp) / sampleDuration)
+          let dts = avpacket.dts + avRescaleQ(sampleDuration, AV_MILLI_TIME_BASE_Q, task.audio.backPacket.timeBase)
+          for (let i = 0; i < samples - 1; i++) {
+            const p = task.avpacketPool.alloc()
+            refAVPacket(p, avpacket)
+            p.dts = p.pts = dts
+            task.audio.pullQueue.queue.push(p)
+            dts += avRescaleQ(sampleDuration, AV_MILLI_TIME_BASE_Q, task.audio.backPacket.timeBase)
+          }
+
+          task.audio.pullQueue.queue.push(task.audio.backPacket)
+          task.audio.backPacket = avpacket
+
+          audioStartTimestamp = videoStartTimestamp
+        }
+      }
+
       const promises = []
       if (task.audio) {
         task.audio.track.setSourceBuffer(this.createSourceBuffer(task.mediaSource, addressof(task.audio.oformatContext.streams[0].codecpar)))
@@ -240,7 +307,7 @@ export default class MSEPipeline extends Pipeline {
           mux.open(task.audio.oformatContext)
           mux.writeHeader(task.audio.oformatContext)
         }
-        promises.push(this.startMux(task.audio, task, startTimestamp))
+        promises.push(this.startMux(task.audio, task, bigint.max(audioStartTimestamp, videoStartTimestamp)))
       }
       if (task.video) {
         task.video.track.setSourceBuffer(this.createSourceBuffer(task.mediaSource, addressof(task.video.oformatContext.streams[0].codecpar)))
@@ -249,7 +316,7 @@ export default class MSEPipeline extends Pipeline {
           mux.open(task.video.oformatContext)
           mux.writeHeader(task.video.oformatContext)
         }
-        promises.push(this.startMux(task.video, task, startTimestamp))
+        promises.push(this.startMux(task.video, task, bigint.max(audioStartTimestamp, videoStartTimestamp)))
       }
 
       await Promise.all(promises)
@@ -435,6 +502,10 @@ export default class MSEPipeline extends Pipeline {
       logger.warn(`got packet with dts ${avpacket.dts}, which is earlier then the last packet(${pullQueue.lastDTS})`)
     }
 
+    // 让 muxer 模块去根据 pts 计算 duration
+    // 防止中间缺帧导致卡主
+    avpacket.duration = NOPTS_VALUE_BIGINT
+
     // 音频直接让 pts 等于 dts，dts 是递增的可以保证 mse 不会卡主（但声音可能会出现嗒嗒声）
     if (resource.type === 'audio' && avpacket.dts > 0) {
       avpacket.pts = avpacket.dts
@@ -465,7 +536,7 @@ export default class MSEPipeline extends Pipeline {
         )
       ) {
         if (avpacket.pts < pullQueue.lastPTS) {
-          logger.warn(`got packet with pts ${avpacket.pts}, which is earlier then the last packet(${pullQueue.lastPTS}), try to fix it!`)
+          logger.warn(`got video packet with pts ${avpacket.pts}, which is earlier then the last packet(${pullQueue.lastPTS}), try to fix it!`)
           avpacket.pts = pullQueue.lastPTS + (avpacket.dts - pullQueue.lastDTS)
 
           const next = await this.pullAVPacketInternal(task, resource.pullIPC)
@@ -593,10 +664,11 @@ export default class MSEPipeline extends Pipeline {
   private createLoop(resource: MSEResource, task: SelfTask) {
     resource.loop = new LoopTask(() => {
 
-      const canPlayBufferTime = resource.track.getBufferedEnd() - (task.currentTime + (getTimestamp() - task.currentTimeNTP) / 1000)
+      const canPlayBufferTime = resource.track.getBufferedDuration(task.currentTime + (getTimestamp() - task.currentTimeNTP) / 1000)
 
-      if (canPlayBufferTime > BUFFER_MAX * (task.playRate > 100n ? (Number(task.playRate) / 100) : 1)) {
+      if (canPlayBufferTime > task.maxBuffer * (task.playRate > 100n ? (Number(task.playRate) / 100) : 1)) {
         resource.loop.emptyTask()
+        this.checkWaiting(task)
         return
       }
 
@@ -628,6 +700,16 @@ export default class MSEPipeline extends Pipeline {
         AV_MILLI_TIME_BASE_Q
       )
 
+      // 间距太大先 flush，防止 muxer 计算出一个非常大的 duration
+      // 此时会将 buffered 分成两段 
+      if (resource.lastDTS !== NOPTS_VALUE_BIGINT
+        && dts - resource.lastDTS > 1000
+      ) {
+        mux.flush(resource.oformatContext)
+        resource.startTimestamp -= static_cast<int64>(dts - resource.lastDTS)
+      }
+      resource.lastDTS = dts
+
       if (task.enableJitterBuffer) {
         let buffer = task.stats.audioEncodeFramerate
           ? (task.stats.audioPacketQueueLength / task.stats.audioEncodeFramerate * 1000)
@@ -643,7 +725,7 @@ export default class MSEPipeline extends Pipeline {
 
       const diff = dts * 100n / task.playRate + resource.startTimestamp - static_cast<int64>(getTimestamp())
 
-      if (diff <= 0 || canPlayBufferTime < BUFFER_MIN * (task.playRate > 100n ? (Number(task.playRate) / 100) : 1)) {
+      if (diff <= 0 || canPlayBufferTime < task.minBuffer * (task.playRate > 100n ? (Number(task.playRate) / 100) : 1)) {
 
         if (resource.track.isPaused()) {
           resource.track.enqueue()
@@ -820,6 +902,7 @@ export default class MSEPipeline extends Pipeline {
     resource.pullQueue.lastPTS = 0n
     resource.pullQueue.lastDTS = 0n
     resource.pullQueue.diff = 0n
+    resource.lastDTS = NOPTS_VALUE_BIGINT
   }
 
   public async addStream(
@@ -909,6 +992,7 @@ export default class MSEPipeline extends Pipeline {
         ended: false,
         seekSync: null,
         startPTS,
+        lastDTS: NOPTS_VALUE_BIGINT,
         pullQueue: {
           queue: [],
           index: 0,
@@ -1153,6 +1237,7 @@ export default class MSEPipeline extends Pipeline {
         task.audio.pullQueue.lastDTS = 0n
         task.audio.pullQueue.diff = 0n
         task.audio.pullQueue.frameCount = NOPTS_VALUE_BIGINT
+        task.audio.lastDTS = NOPTS_VALUE_BIGINT
       }
       if (task.video) {
         if (!task.video.enableRawMpeg) {
@@ -1191,6 +1276,7 @@ export default class MSEPipeline extends Pipeline {
         task.video.pullQueue.diff = 0n
         task.video.pullQueue.lastPTS = 0n
         task.video.pullQueue.lastDTS = 0n
+        task.video.lastDTS = NOPTS_VALUE_BIGINT
       }
 
       logger.debug(`before seek end taskId: ${taskId}`)
@@ -1508,6 +1594,55 @@ export default class MSEPipeline extends Pipeline {
     }
   }
 
+  private async checkWaiting(task: SelfTask) {
+    let seekAudio = -1
+    let seekVideo = -1
+    const currentTime = task.currentTime + (getTimestamp() - task.currentTimeNTP) / 1000
+    if (task.audio) {
+      const sourceBuffer = task.audio.track.getSourceBuffer()
+      if (sourceBuffer && sourceBuffer.buffered.length === 2) {
+        if (sourceBuffer.buffered.end(1) - sourceBuffer.buffered.start(1) >= task.maxBuffer
+          && sourceBuffer.buffered.end(0) < currentTime
+          && task.currentTime < sourceBuffer.buffered.start(1)
+        ) {
+          seekAudio = sourceBuffer.buffered.start(1)
+        }
+      }
+    }
+    if (task.video) {
+      const sourceBuffer = task.video.track.getSourceBuffer()
+      if (sourceBuffer && sourceBuffer.buffered.length === 2) {
+        if (sourceBuffer.buffered.end(1) - sourceBuffer.buffered.start(1) >= task.maxBuffer
+          && sourceBuffer.buffered.end(0) < currentTime
+          && task.currentTime < sourceBuffer.buffered.start(1)
+        ) {
+          seekVideo = sourceBuffer.buffered.start(1)
+        }
+      }
+    }
+    if (task.audio && task.video) {
+      if (seekAudio > 0 && seekVideo > 0) {
+        const seek = Math.min(seekAudio, seekVideo)
+        task.currentTime = seek
+        task.controlIPCPort.notify('seek', {
+          time: seek
+        })
+      }
+    }
+    else if (seekAudio > 0) {
+      task.currentTime = seekAudio
+      task.controlIPCPort.notify('seek', {
+        time: seekAudio
+      })
+    }
+    else if (seekVideo > 0) {
+      task.currentTime = seekVideo
+      task.controlIPCPort.notify('seek', {
+        time: seekVideo
+      })
+    }
+  }
+
   public async getMediaSource(taskId: string): Promise<MediaSource> {
     const task = this.tasks.get(taskId)
     if (task) {
@@ -1542,8 +1677,10 @@ export default class MSEPipeline extends Pipeline {
       controlIPCPort,
       currentTime: 0,
       currentTimeNTP: 0,
-      cacheDuration: static_cast<int64>(BUFFER_MIN * 1000),
-      avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex)
+      cacheDuration: static_cast<int64>(0.5 * 1000),
+      avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex),
+      maxBuffer: options.isLive ? 1 : 4,
+      minBuffer: options.isLive ? 0.5 : 2
     }
     this.tasks.set(options.taskId, task)
 

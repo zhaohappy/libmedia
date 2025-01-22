@@ -330,6 +330,19 @@ export default class Track {
     return 0
   }
 
+  public getBufferedDuration(currentTime: number) {
+    if (this.sourceBuffer && this.sourceBuffer.buffered.length) {
+      let duration = 0
+      for (let i = 0; i < this.sourceBuffer.buffered.length; i++) {
+        const start = Math.max(currentTime, this.sourceBuffer.buffered.start(i))
+        const end = Math.max(currentTime, this.sourceBuffer.buffered.end(i))
+        duration += end - start
+      }
+      return duration
+    }
+    return 0
+  }
+
   public getSourceBuffer() {
     return this.sourceBuffer
   }
