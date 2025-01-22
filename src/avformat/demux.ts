@@ -180,19 +180,18 @@ async function estimateDurationFromPts(formatContext: AVIFormatContext) {
  * @returns 成功返回 0，否则返回错误码
  */
 export async function analyzeStreams(formatContext: AVIFormatContext): Promise<int32> {
-  const needStreams = formatContext.iformat.getAnalyzeStreamsCount()
-  const streamFirstGotMap = {}
-  const streamDtsMap: Record<int32, bigint[]> = {}
-  const streamPtsMap: Record<int32, bigint[]> = {}
+  const streamFirstGotMap: Record<int32, boolean> = {}
+  const streamDtsMap: Record<int32, int64[]> = {}
+  const streamPtsMap: Record<int32, int64[]> = {}
   const streamBitMap: Record<int32, number> = {}
   const streamContextMap: Record<int32, StreamDemuxPrivateData> = {}
+  const decoderMap: Record<int32, WasmVideoDecoder | WasmAudioDecoder> = {}
+  const pictureGot: Record<int32, boolean> = {}
 
+  const needStreams = formatContext.iformat.getAnalyzeStreamsCount()
   let avpacket: pointer<AVPacket> = nullptr
   const caches: pointer<AVPacket>[] = []
   let ret = 0
-
-  const decoderMap: Record<int32, WasmVideoDecoder | WasmAudioDecoder> = {}
-  const pictureGot: Record<int32, boolean> = {}
 
   function checkPictureGot() {
     if (!formatContext.getDecoderResource) {
