@@ -798,7 +798,7 @@ export default class MSEPipeline extends Pipeline {
     if (resource.backPacket > 0) {
       startDTS = resource.backPacket.dts
       startPTS = resource.backPacket.pts
-      if (startTimestamp > 0n) {
+      if (startTimestamp > startPTS) {
         cacheDuration += startTimestamp - avRescaleQ(startDTS, timeBase, AV_MILLI_TIME_BASE_Q)
       }
 
@@ -808,7 +808,7 @@ export default class MSEPipeline extends Pipeline {
       resource.backPacket = nullptr
     }
 
-    while (startDTS < 0n || avRescaleQ((lastDTS - startDTS), timeBase, AV_MILLI_TIME_BASE_Q) < cacheDuration) {
+    while (startDTS === NOPTS_VALUE_BIGINT || avRescaleQ((lastDTS - startDTS), timeBase, AV_MILLI_TIME_BASE_Q) < cacheDuration) {
       avpacket = await this.pullAVPacket(resource, task)
 
       if (avpacket < 0) {
@@ -817,7 +817,7 @@ export default class MSEPipeline extends Pipeline {
       }
 
       lastDTS = avpacket.dts
-      if (startDTS < 0n) {
+      if (startDTS === NOPTS_VALUE_BIGINT) {
         startDTS = lastDTS
         startPTS = avpacket.pts
       }
