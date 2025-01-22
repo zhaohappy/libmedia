@@ -24,7 +24,7 @@
  */
 
 import AVFrame, { AVFrameSideData, AVFrameSideDataType, AV_NUM_DATA_POINTERS } from '../struct/avframe'
-import { avFree, avFreep, avMalloc, avMallocz } from './mem'
+import { avFree, avFreep, avMalloc, avMallocz, avRealloc } from './mem'
 import { memcpy, memset } from 'cheap/std/memory'
 import { INT32_MAX, NOPTS_VALUE_BIGINT } from '../constant'
 import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from '../pixfmt'
@@ -39,6 +39,10 @@ import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
 import * as stack from 'cheap/stack'
 import { pixelFillLinesizes, pixelFillPlaneSizes, pixelFillPointer } from './pixel'
 import alignFunc from 'common/math/align'
+
+export enum AV_FRAME_SIDE_DATA_FLAG {
+  UNIQUE = 1
+}
 
 export function createAVFrame(): pointer<AVFrame> {
   const frame: pointer<AVFrame> = avMallocz(sizeof(AVFrame))
@@ -58,12 +62,82 @@ export function freeSideData(ptr: pointer<pointer<AVFrameSideData>>) {
   avFreep(ptr)
 }
 
-export function wipeSideData(frame: pointer<AVFrame>) {
-  for (let i = 0; i < frame.nbSideData; i++) {
-    freeSideData(addressof(frame.sideData[i]))
+export function wipeSideData(sideData: pointer<pointer<pointer<AVFrameSideData>>>, nbSideData: pointer<int32>) {
+  const count = accessof(nbSideData)
+  const data = accessof(sideData)
+  for (let i = 0; i < count; i++) {
+    freeSideData(addressof(data[i]))
   }
-  frame.nbSideData = 0
-  avFreep(reinterpret_cast<pointer<pointer<void>>>(addressof(frame.sideData)))
+  accessof(nbSideData) <- reinterpret_cast<int32>(0)
+  avFreep(reinterpret_cast<pointer<pointer<void>>>(sideData))
+}
+
+export function wipeAVFrameSideData(frame: pointer<AVFrame>) {
+  wipeSideData(addressof(frame.sideData), addressof(frame.nbSideData))
+}
+
+export function removeAVFrameSideData(sideData: pointer<pointer<pointer<AVFrameSideData>>>, nbSideData: pointer<int32>, type: AVFrameSideDataType) {
+  const data = accessof(sideData)
+  for (let i = accessof(nbSideData) - 1; i >= 0; i--) {
+    if (data[i].type !== type) {
+      continue
+    }
+    freeSideData(addressof(data[i]))
+    data[i] = data[accessof(nbSideData) - 1]
+    accessof(nbSideData) <- reinterpret_cast<int32>(accessof(nbSideData) - 1)
+  }
+}
+
+function addAVFrameSideDataFromExt(
+  sideData: pointer<pointer<pointer<AVFrameSideData>>>,
+  nbSideData: pointer<int32>,
+  type: AVFrameSideDataType,
+  buf: pointer<AVBufferRef>,
+  data: pointer<uint8>,
+  size: size
+): pointer<AVFrameSideData> {
+  const tmp = reinterpret_cast<pointer<pointer<AVFrameSideData>>>(avRealloc(
+    reinterpret_cast<pointer<void>>(accessof(sideData)),
+    sizeof(accessof(accessof(sideData))) * static_cast<size>(accessof(nbSideData) + 1)
+  ))
+  accessof(sideData) <- tmp
+
+  const ret = reinterpret_cast<pointer<AVFrameSideData>>(avMallocz(sizeof(AVFrameSideData)))
+  ret.buf = buf
+  ret.data = data
+  ret.size = size
+  ret.type = type
+
+  tmp[accessof(nbSideData)] = ret
+  accessof(nbSideData) <- reinterpret_cast<int32>(accessof(nbSideData) + 1)
+
+  return ret
+}
+
+function addAVFrameSideDataFromBuf(
+  sideData: pointer<pointer<pointer<AVFrameSideData>>>,
+  nbSideData: pointer<int32>,
+  type: AVFrameSideDataType,
+  buf: pointer<AVBufferRef>
+): pointer<AVFrameSideData> {
+  if (!buf) {
+    return nullptr
+  }
+  return addAVFrameSideDataFromExt(sideData, nbSideData, type, buf, buf.data, buf.size)
+}
+
+export function newAVFrameSideData(
+  sideData: pointer<pointer<pointer<AVFrameSideData>>>,
+  nbSideData: pointer<int32>,
+  type: AVFrameSideDataType,
+  size: size,
+  flags: uint32
+) {
+  const buf = avbufferAlloc(size)
+  if (flags & AV_FRAME_SIDE_DATA_FLAG.UNIQUE) {
+    removeAVFrameSideData(sideData, nbSideData, type)
+  }
+  return addAVFrameSideDataFromBuf(sideData, nbSideData, type, buf)
 }
 
 export function getAVFrameSideData(frame: pointer<AVFrame>, type: AVFrameSideDataType): pointer<AVFrameSideData> {
@@ -345,7 +419,12 @@ export function refAVFrame(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
 }
 
 export function unrefAVFrame(frame: pointer<AVFrame>) {
-  wipeSideData(frame)
+
+  if (!frame) {
+    return
+  }
+
+  wipeAVFrameSideData(frame)
 
   for (let i = 0; i < (reinterpret_cast<int32>(sizeof(frame.buf)) / reinterpret_cast<int32>(sizeof(frame.buf[0]))); i++) {
     avbufferUnref(addressof(frame.buf[i]))
@@ -403,7 +482,19 @@ export function copyAVFrameProps(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
   dst.colorRange = src.colorRange
   dst.chromaLocation = src.chromaLocation
 
-  avDictCopy(dst.metadata, src.metadata, 0)
+  avDictCopy(addressof(dst.metadata), src.metadata, 0)
+
+  for (let i = 0; i < src.nbSideData; i++) {
+    const sdSrc = src.sideData[i]
+    const ref = avbufferRef(sdSrc.buf)
+    const sdDst = addAVFrameSideDataFromBuf(
+      addressof(dst.sideData),
+      addressof(dst.nbSideData),
+      sdSrc.type,
+      ref
+    )
+    avDictCopy(addressof(sdDst.metadata), sdSrc.metadata, 0)
+  }
 
   let ret = avbufferReplace(addressof(dst.opaqueRef), src.opaqueRef)
   ret |= avbufferReplace(addressof(dst.privateRef), src.privateRef)

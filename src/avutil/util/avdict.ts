@@ -25,7 +25,7 @@
 
 import { readCString, writeCString } from 'cheap/std/memory'
 import { AVDictFlags, AVDictionary, AVDictionaryEntry } from '../struct/avdict'
-import { avFreep } from './mem'
+import { avFreep, avMallocz } from './mem'
 import * as is from 'common/util/is'
 import toString from 'common/function/toString'
 
@@ -136,15 +136,24 @@ export function avDictSet(m: pointer<AVDictionary>, key: string, value: string, 
   return 0
 }
 
-export function avDictCopy(dst: pointer<AVDictionary>, src: pointer<AVDictionary>, flags: int32) {
-  if (!dst || !src) {
+function avDictSet2(pm: pointer<pointer<AVDictionary>>, key: string, value: string, flags: int32 = 0) {
+  let m = accessof(pm)
+  if (!m) {
+    m = avMallocz(sizeof(accessof(m)))
+    accessof(pm) <- m
+  }
+  return avDictSet(m, key, value, flags)
+}
+
+export function avDictCopy(dst: pointer<pointer<AVDictionary>>, src: pointer<AVDictionary>, flags: int32) {
+  if (!src) {
     return -1
   }
 
   let t: pointer<AVDictionaryEntry> = nullptr
 
   while ((t = avDictIterate(src, t))) {
-    let ret = avDictSet(dst, readCString(t.key), readCString(t.value), flags)
+    let ret = avDictSet2(dst, readCString(t.key), readCString(t.value), flags)
     if (ret < 0) {
       return ret
     }
