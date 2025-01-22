@@ -476,20 +476,6 @@ export default class AudioRenderPipeline extends Pipeline {
       }
       pcmBuffer.nbSamples = receive
 
-      const latency = (((task.useStretchpitcher ? task.stretchpitcher.get(0).getLatency() : 0)
-          // 双缓冲，假定后缓冲播放到中间
-          + (pcmBuffer.maxnbSamples * 3 >>> 1)) / task.playSampleRate * 1000) >>> 0
-      const currentPts = bigint.max(task.currentPTS - static_cast<int64>(latency), 0n)
-
-      task.stats.audioCurrentTime = currentPts
-
-      if (task.currentPTS - task.lastNotifyPTS >= 1000n) {
-        task.lastNotifyPTS = task.currentPTS
-        task.controlIPCPort.notify('syncPts', {
-          pts: currentPts
-        })
-      }
-
       if (task.seekSync) {
         task.seekSync()
         task.seekSync = null
@@ -530,6 +516,9 @@ export default class AudioRenderPipeline extends Pipeline {
             rightIPCPort.reply(request, 0)
             this.fakeSyncPts(task)
             break
+          }
+          else {
+            this.syncPts(task, pcmBuffer.maxnbSamples)
           }
 
           const ret = await receiveToPCMBuffer(pcmBuffer)
@@ -584,6 +573,9 @@ export default class AudioRenderPipeline extends Pipeline {
             rightIPCPort.reply(request, pcm.buffer, null, [pcm.buffer])
             this.fakeSyncPts(task)
             break
+          }
+          else {
+            this.syncPts(task, task.outPCMBuffer.maxnbSamples)
           }
 
           const ret = await receiveToPCMBuffer(addressof(task.outPCMBuffer))
@@ -841,6 +833,20 @@ export default class AudioRenderPipeline extends Pipeline {
     }
   }
 
+  private syncPts(task: SelfTask, maxnbSamples: int32) {
+    const latency = (((task.useStretchpitcher ? task.stretchpitcher.get(0).getLatency() : 0)
+        // 双缓冲，假定后缓冲播放到中间
+        + (maxnbSamples * 3 >>> 1)) / task.playSampleRate * 1000) >>> 0
+    const currentPts = bigint.max(task.currentPTS - static_cast<int64>(latency), 0n)
+    task.stats.audioCurrentTime = currentPts
+    if (task.currentPTS - task.lastNotifyPTS >= 1000n) {
+      task.lastNotifyPTS = task.currentPTS
+      task.controlIPCPort.notify('syncPts', {
+        pts: currentPts
+      })
+    }
+  }
+
   private clearFakePlayTimer(task: SelfTask) {
     if (task.fakePlayTimer) {
       if (task.fakePlayWorkerTimer) {
@@ -909,6 +915,9 @@ export default class AudioRenderPipeline extends Pipeline {
         this.fakePlayNext(task)
       }, next)
       return
+    }
+    else {
+      this.syncPts(task, 0)
     }
 
     let targetSamples = static_cast<int64>(getTimestamp() - task.fakePlayStartTimestamp) * static_cast<int64>(audioFrame.sampleRate) / 1000n
