@@ -77,6 +77,8 @@ order: 6
 | G.711 A-law | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | G.711 μ-law | ✅         | ✅          | ✅          | ✅            | ❌                 |
 
+> x265 wasm 编码器比较特殊，无法在非多线程环境下运行
+
 ## 使用
 
 解码器在项目的 ```dist/decode``` 目录下，编码器在项目的 ```dist/encode``` 目录下。wasm 模块并没有发布 npm 包，建议自己将 wasm 文件托管到自己的 cdn 上。你也可以使用一些公共 cdn 来访问 github 上托管的文件。下面以 ```cdn.jsdelivr.net``` 举例。

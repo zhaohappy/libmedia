@@ -153,6 +153,8 @@ Codecs are compiled into separate wasm modules, the decoders are in the ```dist/
 | G.711 A-law | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | G.711 μ-law | ✅         | ✅          | ✅          | ✅            | ❌                 |
 
+> X265 wasm encoder is special and cannot run in a non-multi-threaded environment
+
 ### License
 
 libmedia uses the LGPL open source license. You need to comply with the license requirements. For details, see [LGPL](https://github.com/zhaohappy/libmedia/blob/master/COPYING.LGPLv3)

@@ -147,12 +147,12 @@ export interface TaskOptions {
     webtransport?: WebTransportOptions
 
     /**
-     * 是否启动 WebCodecs 解码
+     * 是否启用 WebCodecs 解码
      */
     enableWebCodecs?: boolean
 
     /**
-     * 是否启动硬件解码
+     * 是否启用硬件解码
      */
     enableHardware?: boolean
   }
@@ -205,20 +205,32 @@ export interface TaskOptions {
       keyFrameInterval?: number
 
       /**
-       * 是否启动 WebCodecs 编码
+       * 是否启用 WebCodecs 编码
        */
       enableWebCodecs?: boolean
 
       /**
-       * 是否启动硬件编码
+       * 是否启用硬件编码
        */
       enableHardware?: boolean
 
+      /**
+       * 配置编码器 profile
+       */
       profile?: number
+      /**
+       * 配置编码器 level
+       */
       level?: number
+      /**
+       * 配置最大 b 帧长度（默认 4）
+       * 只有 wasm 的 h264/h265 编码器支持
+       */
       delay?: number
       /**
-       * 编码器的参数设置
+       * 编码器的参数设置 wasm 编码器生效
+       * 
+       * 详情参考 ffmpeg 的编码器 options 配置
        */
       encoderOptions?: Data
     }
@@ -247,7 +259,9 @@ export interface TaskOptions {
        * 输出采样格式
        */
       sampleFmt?: keyof (typeof SampleFmtString2SampleFormat)
-
+      /**
+       * 配置编码器 profile
+       */
       profile?: number
     }
   }

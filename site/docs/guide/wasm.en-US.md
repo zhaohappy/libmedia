@@ -78,6 +78,8 @@ Codecs are compiled into separate wasm modules, the decoders are in the ```dist/
 | G.711 A-law | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | G.711 μ-law | ✅         | ✅          | ✅          | ✅            | ❌                 |
 
+> X265 wasm encoder is special and cannot run in a non-multi-threaded environment
+
 ## Usage
 
 The decoder is in the project's ```dist/decode``` directory, and the encoder is in the project's ```dist/encode``` directory. The wasm module does not publish an npm package, so it is recommended that you host the wasm file on your own cdn. You can also use some public cdns to access files hosted on github. The following takes ```cdn.jsdelivr.net``` as an example.
