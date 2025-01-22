@@ -854,6 +854,7 @@ export default class MSEPipeline extends Pipeline {
 
   private resetResource(resource: MSEResource, task: SelfTask) {
     resource.bufferQueue.flush()
+    resource.oformatContext.oformat.destroy(resource.oformatContext)
     const oformat = new OMovFormat({
       fragmentMode: FragmentMode.FRAME,
       fragment: true,
