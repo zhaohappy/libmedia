@@ -262,6 +262,17 @@ export default class VideoRenderPipeline extends Pipeline {
     if (task.frontBuffered) {
       task.backFrame = task.frontFrame
       task.frontFrame = null
+      task.stats.videoNextTime = isPointer(task.backFrame)
+        ? avRescaleQ2(
+          task.backFrame.pts,
+          addressof(task.backFrame.timeBase),
+          AV_MILLI_TIME_BASE_Q
+        )
+        : avRescaleQ(
+          static_cast<int64>(task.backFrame.timestamp as uint32),
+          AV_TIME_BASE_Q,
+          AV_MILLI_TIME_BASE_Q
+        )
     }
     else {
       return false
@@ -486,6 +497,7 @@ export default class VideoRenderPipeline extends Pipeline {
 
       task.masterTimer.setMasterTime(task.lastMasterPts === NOPTS_VALUE_BIGINT ? task.startPTS : task.lastMasterPts)
       task.lastMasterPts = NOPTS_VALUE_BIGINT
+      task.stats.videoNextTime = task.currentPTS
 
       const inWorker = isWorker()
 

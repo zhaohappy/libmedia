@@ -267,4 +267,12 @@ export default class Stats {
    * 当前视频播放时间戳
    */
   videoCurrentTime: int64
+  /**
+   * 下一个音频帧播放时间戳
+   */
+  audioNextTime: int64
+  /**
+   * 下一个视频帧播放时间戳
+   */
+  videoNextTime: int64
 }

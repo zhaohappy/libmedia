@@ -25,10 +25,12 @@
 
 import Stats from 'avpipeline/struct/stats'
 import Timer from 'common/timer/Timer'
+import * as bigint from 'common/util/bigint'
 
 export interface StatsControllerObserver {
   onVideoStutter: () => void
   onVideoDiscard: () => void
+  onMasterTimerUpdate: (time: int64) => void
 }
 
 export default class StatsController {
@@ -127,5 +129,30 @@ export default class StatsController {
     this.lastAudioStutterCount = this.stats.audioStutter
     this.lastAVDelta = this.stats.audioCurrentTime - this.stats.videoCurrentTime
     this.reset()
+
+    const audioNextTime = this.stats.audioNextTime
+    const videoNextTime = this.stats.videoNextTime
+    const audioCurrentTime = this.stats.audioCurrentTime
+    const videoCurrentTime = this.stats.videoCurrentTime
+    if (audioNextTime
+        && videoNextTime
+        && (audioNextTime - audioCurrentTime) > 2000
+        && (videoNextTime - videoCurrentTime) > 2000
+      || audioNextTime
+        && !videoNextTime
+        && (audioNextTime - audioCurrentTime) > 2000
+      || videoNextTime
+        && !audioNextTime
+        && (videoNextTime - videoCurrentTime) > 2000
+    ) {
+      const min = (audioNextTime && videoNextTime)
+        ? bigint.min(audioNextTime, videoNextTime)
+        : (audioNextTime
+          ? audioNextTime
+          : videoNextTime
+        )
+      // 音视频都空了，直接跳过
+      this.observer.onMasterTimerUpdate(min)
+    }
   }
 }

@@ -250,6 +250,7 @@ export default class AudioRenderPipeline extends Pipeline {
         }
         task.currentPTS = pts
         task.stats.audioFrameRenderCount++
+        task.stats.audioNextTime = pts
 
         if (task.lastRenderTimestamp) {
           task.stats.audioFrameRenderIntervalMax = Math.max(

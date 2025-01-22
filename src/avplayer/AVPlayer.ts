@@ -3350,6 +3350,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.video.currentTime = time
     }
   }
+  /**
+   * @internal
+   */
+  public onMasterTimerUpdate(time: int64) {
+    AVPlayer.AudioRenderThread?.setMasterTime(this.taskId, time)
+    AVPlayer.VideoRenderThread?.setMasterTime(this.taskId, time)
+  }
 
   /**
    * @internal
