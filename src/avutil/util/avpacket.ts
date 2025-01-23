@@ -34,7 +34,7 @@ import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
 
 const AV_INPUT_BUFFER_PADDING_SIZE = 64
 
-export function getAVPacketData(avpacket: pointer<AVPacket>): Uint8Array
+export function getAVPacketData(avpacket: pointer<AVPacket>): Uint8Array<ArrayBufferLike>
 export function getAVPacketData(avpacket: pointer<AVPacket>, safe: boolean): SafeUint8Array
 export function getAVPacketData(avpacket: pointer<AVPacket>, safe?: boolean) {
   return safe ? mapSafeUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)) : mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
