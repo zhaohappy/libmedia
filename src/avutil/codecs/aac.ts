@@ -136,9 +136,9 @@ export function getAVCodecParameters(extradata: Uint8ArrayInterface) {
   if (extradata.length >= 2) {
     profile = (extradata[0] >> 3) & 0x1f
     sampleRate = MPEG4SamplingFrequencies[((extradata[0] & 0x07) << 1)
-      | (extradata[1] >> 7)] ?? 48000
+      | (extradata[1] >> 7)]
 
-    channels = MPEG4Channels[(extradata[1] >> 3) & 0x0f] ?? 2
+    channels = MPEG4Channels[(extradata[1] >> 3) & 0x0f]
   }
 
   return {
