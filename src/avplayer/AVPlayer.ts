@@ -324,7 +324,9 @@ export const enum AVPlayerProgress {
 }
 
 export default class AVPlayer extends Emitter implements ControllerObserver {
-
+  /**
+   * @internal
+   */
   static Instances: AVPlayer[] = []
 
   static Util = {
@@ -343,32 +345,72 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   static level: number = logger.INFO
-
+  /**
+   * @internal
+   */
   static DemuxThreadReady: Promise<void>
+  /**
+   * @internal
+   */
   static AudioThreadReady: Promise<void>
+  /**
+   * @internal
+   */
   static VideoThreadReady: Promise<void>
+  /**
+   * @internal
+   */
   static MSEThreadReady: Promise<void>
-
+  /**
+   * @internal
+   */
   static IODemuxProxy: IODemuxPipelineProxy
+  /**
+   * @internal
+   */
   static AudioPipelineProxy: AudioPipelineProxy
+  /**
+   * @internal
+   */
   static MSEPipelineProxy: MSEPipelineProxy
 
-  // 下面的线程所有 AVPlayer 实例共享
+  /**
+   * @internal
+   * 下面的线程所有 AVPlayer 实例共享
+   */
   static IOThread: Thread<IOPipeline>
+  /**
+   * @internal
+   */
   static DemuxerThread: Thread<DemuxPipeline>
+  /**
+   * @internal
+   */
   static AudioDecoderThread: Thread<AudioDecodePipeline>
+  /**
+   * @internal
+   */
   static AudioRenderThread: Thread<AudioRenderPipeline>
+  /**
+   * @internal
+   */
   static VideoRenderThread: Thread<VideoRenderPipeline>
+  /**
+   * @internal
+   */
   static MSEThread: Thread<MSEPipeline>
 
   static audioContext: AudioContext
+  /**
+   * @internal
+   */
   static Resource: Map<string, WebAssemblyResource | ArrayBuffer> = new Map()
 
   // 解码线程每个 player 独占一个
   // TODO 若需要同时播放大量视频，可以考虑实现一个 VideoDecoderThreadPool
   // 来根据各个视频规格做线程解码任务调度，降低系统线程切换开销，这里就不实现了
-  public VideoDecoderThread: Thread<VideoDecodePipeline>
-  public VideoRenderThread: Thread<VideoRenderPipeline>
+  private VideoDecoderThread: Thread<VideoDecodePipeline>
+  private VideoRenderThread: Thread<VideoRenderPipeline>
   private VideoPipelineProxy: VideoPipelineProxy
 
   // AVPlayer 各个线程间共享的数据
@@ -477,6 +519,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return 0n
   }
 
+  /**
+   * @internal
+   */
   private isCodecIdSupported(codecId: AVCodecID) {
     if (codecId > AVCodecID.AV_CODEC_ID_FIRST_AUDIO && codecId <= AVCodecID.AV_CODEC_ID_PCM_SGA) {
       return true
@@ -484,6 +529,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return array.has(AVPlayerSupportedCodecs, codecId)
   }
 
+  /**
+   * @internal
+   */
   private findBestStream(streams: AVStreamInterface[], mediaType: AVMediaType) {
     if (this.options.findBestStream) {
       return this.options.findBestStream(streams, mediaType)
@@ -1484,9 +1532,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.fire(eventType.LOADED)
   }
 
-  /**
-   * @internal
-   */
   private async playUseMSE(options: AVPlayerPlayOptions) {
     if (defined(ENABLE_MSE)) {
       await AVPlayer.startMSEPipeline(this.options.enableWorker)
@@ -1570,9 +1615,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
-  /**
-   * @internal
-   */
   private async playUseDecoder(options: AVPlayerPlayOptions) {
 
     let audioStartTime: int64 = 0n
@@ -3396,6 +3438,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  /**
+   * @internal
+   */
   static async startDemuxPipeline(enableWorker: boolean = true) {
     if (AVPlayer.DemuxThreadReady) {
       return AVPlayer.DemuxThreadReady
@@ -3424,6 +3469,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     })
   }
 
+  /**
+   * @internal
+   */
   static async startAudioPipeline(enableWorker: boolean = true) {
     if (AVPlayer.AudioThreadReady) {
       return AVPlayer.AudioThreadReady
@@ -3484,6 +3532,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     })
   }
 
+  /**
+   * @internal
+   */
   static async startVideoRenderPipeline(enableWorker: boolean = true) {
     if (AVPlayer.VideoThreadReady) {
       return AVPlayer.VideoThreadReady
@@ -3501,6 +3552,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     })
   }
 
+  /**
+   * @internal
+   */
   static async startMSEPipeline(enableWorker: boolean = true) {
     if (defined(ENABLE_MSE)) {
       if (AVPlayer.MSEThreadReady) {
