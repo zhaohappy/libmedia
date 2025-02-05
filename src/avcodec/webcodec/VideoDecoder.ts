@@ -38,6 +38,7 @@ import os from 'common/util/os'
 import * as h264 from 'avutil/codecs/h264'
 import * as hevc from 'avutil/codecs/hevc'
 import * as vvc from 'avutil/codecs/vvc'
+import * as errorType from 'avutil/error'
 
 export type WebVideoDecoderOptions = {
   onReceiveVideoFrame: (frame: VideoFrame) => void
@@ -125,9 +126,11 @@ export default class WebVideoDecoder {
         }
       }
       if (same) {
-        return
+        return 0
       }
     }
+
+    this.currentError = null
 
     this.extradata = buffer.slice()
 
@@ -139,10 +142,17 @@ export default class WebVideoDecoder {
       hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true)
     })
 
+    if (this.currentError) {
+      logger.error(`change extra data error, ${this.currentError}`)
+      return errorType.CODEC_NOT_SUPPORT
+    }
+
     this.keyframeRequire = true
+
+    return 0
   }
 
-  public async open(parameters: pointer<AVCodecParameters>) {
+  public async open(parameters: pointer<AVCodecParameters>): Promise<int32> {
     this.currentError = null
     this.extradata = null
     if (parameters.extradata !== nullptr) {
@@ -166,7 +176,8 @@ export default class WebVideoDecoder {
     const support = await VideoDecoder.isConfigSupported(config)
 
     if (!support.supported) {
-      throw new Error('not support')
+      logger.error('not support')
+      return errorType.INVALID_PARAMETERS
     }
 
     if (this.decoder && this.decoder.state !== 'closed') {
@@ -182,7 +193,8 @@ export default class WebVideoDecoder {
     this.decoder.configure(config)
 
     if (this.currentError) {
-      throw this.currentError
+      logger.error(`open video decoder error, ${this.currentError}`)
+      return errorType.CODEC_NOT_SUPPORT
     }
 
     this.keyframeRequire = true
@@ -192,14 +204,24 @@ export default class WebVideoDecoder {
 
     this.inputQueue.length = 0
     this.outputQueue.length = 0
+
+    return 0
   }
 
-  public decode(avpacket: pointer<AVPacket>) {
+  public decode(avpacket: pointer<AVPacket>): int32 {
+
+    if (this.currentError) {
+      logger.error(`decode error, ${this.currentError}`)
+      return errorType.DATA_INVALID
+    }
 
     const element = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
 
     if (element !== nullptr) {
-      this.changeExtraData(mapUint8Array(element.data, element.size))
+      let ret = this.changeExtraData(mapUint8Array(element.data, element.size))
+      if (ret) {
+        return ret
+      }
     }
 
     const key = avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
@@ -259,7 +281,7 @@ export default class WebVideoDecoder {
     }
     catch (error) {
       logger.error(`decode error, ${error}`)
-      return -1
+      return errorType.DATA_INVALID
     }
 
     if (key) {
@@ -269,8 +291,18 @@ export default class WebVideoDecoder {
     return 0
   }
 
-  public async flush() {
-    await this.decoder.flush()
+  public async flush(): Promise<int32> {
+    if (this.currentError) {
+      logger.error(`flush error, ${this.currentError}`)
+      return errorType.DATA_INVALID
+    }
+    try {
+      await this.decoder.flush()
+    }
+    catch (error) {
+      logger.error(`flush error, ${error}`)
+      return errorType.DATA_INVALID
+    }
     if (this.sort) {
       while (this.outputQueue.length) {
         const frame = this.outputQueue.shift()
@@ -283,6 +315,7 @@ export default class WebVideoDecoder {
       }
     }
     this.keyframeRequire = true
+    return 0
   }
 
   public close() {

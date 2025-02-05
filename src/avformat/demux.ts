@@ -356,9 +356,6 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
                   destroyAVFrame(avframe)
                   pictureGot[stream.index] = true
                 },
-                onError: () => {
-                  pictureGot[stream.index] = true
-                }
               })
             }
             else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
@@ -378,18 +375,24 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
                   stream.codecpar.height = avframe.height
                   destroyAVFrame(avframe)
                   pictureGot[stream.index] = true
-                },
-                onError: () => {
-                  pictureGot[stream.index] = true
                 }
               })
             }
-            await decoder.open(addressof(stream.codecpar))
-            decoderMap[stream.index] = decoder
+            const ret = await decoder.open(addressof(stream.codecpar))
+            if (ret) {
+              decoder.close()
+              pictureGot[stream.index] = true
+            }
+            else {
+              decoderMap[stream.index] = decoder
+            }
           }
         }
         if (decoder) {
-          decoder.decode(avpacket)
+          const ret = decoder.decode(avpacket)
+          if (ret) {
+            pictureGot[stream.index] = true
+          }
         }
       }
     }

@@ -51,11 +51,11 @@ import * as is from 'common/util/is'
 import { avMallocz } from 'avutil/util/mem'
 import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import * as errorType from 'avutil/error'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
   onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
-  onError: (error?: Error) => void
   avpacketPool?: AVPacketPool
 }
 
@@ -146,7 +146,7 @@ export default class WasmVideoEncoder {
     return this.encoder.call<int32>('encoder_receive', this.getAVPacket())
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, threadCount: number = 1, opts: Data = {}) {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, threadCount: number = 1, opts: Data = {}): Promise<int32> {
     await this.encoder.run(null, threadCount)
 
     const timeBaseP = reinterpret_cast<pointer<Rational>>(malloc(sizeof(Rational)))
@@ -192,7 +192,8 @@ export default class WasmVideoEncoder {
     free(timeBaseP)
 
     if (ret < 0) {
-      logger.fatal(`open video encoder failed, ret: ${ret}`)
+      logger.error(`open video encoder failed, ret: ${ret}`)
+      return errorType.CODEC_NOT_SUPPORT
     }
 
     this.parameters = parameters
@@ -204,6 +205,7 @@ export default class WasmVideoEncoder {
     }
 
     this.encodeQueueSize = 0
+    return 0
   }
 
   private preEncode(frame: pointer<AVFrame> | VideoFrame, key: boolean): pointer<AVFrame> {
@@ -255,7 +257,7 @@ export default class WasmVideoEncoder {
     return 0
   }
 
-  public async encodeAsync(frame: pointer<AVFrame> | VideoFrame, key: boolean) {
+  public async encodeAsync(frame: pointer<AVFrame> | VideoFrame, key: boolean): Promise<int32> {
     frame = this.preEncode(frame, key)
 
     let ret = await this.encoder.callAsync<int32>('encoder_encode', frame)
@@ -265,7 +267,7 @@ export default class WasmVideoEncoder {
     return this.postEncode()
   }
 
-  public encode(frame: pointer<AVFrame> | VideoFrame, key: boolean) {
+  public encode(frame: pointer<AVFrame> | VideoFrame, key: boolean): int32 {
     frame = this.preEncode(frame, key)
 
     let ret = this.encoder.call<int32>('encoder_encode', frame)
@@ -276,15 +278,16 @@ export default class WasmVideoEncoder {
     return this.postEncode()
   }
 
-  public async flush() {
+  public async flush(): Promise<int32> {
     this.encoder.call('encoder_flush')
     while (1) {
       const ret = this.receiveAVPacket()
       if (ret < 1) {
-        return
+        return ret
       }
       this.outputAVPacket()
     }
+    return 0
   }
 
   public getExtraData() {

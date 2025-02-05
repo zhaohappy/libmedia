@@ -13,9 +13,6 @@ export async function decodeVideo(stream: AVStream) {
 
   const decoder = new WasmVideoDecoder({
     resource,
-    onError: (error) => {
-      
-    },
     onReceiveAVFrame(frame) {
       // 这里拿到解码出的帧
     }

@@ -59,7 +59,6 @@ type SelfTask = Omit<AudioEncodeTaskOptions, 'resource'> & {
   resource: WebAssemblyResource
   avpacketCaches: pointer<AVPacketRef>[]
   parameters: pointer<AVCodecParameters>
-  openReject?: (error: Error) => void
   inputEnd: boolean
   avframePool: AVFramePoolImpl
   avpacketPool: AVPacketPool
@@ -78,10 +77,6 @@ export default class AudioEncodePipeline extends Pipeline {
     return new WebAudioEncoder({
       onError: (error) => {
         logger.error(`audio encode error, taskId: ${task.taskId}, error: ${error}`)
-        if (task.openReject) {
-          task.openReject(error)
-          task.openReject = null
-        }
       },
       onReceiveAVPacket(avpacket) {
         task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
@@ -118,14 +113,6 @@ export default class AudioEncodePipeline extends Pipeline {
     if (task.resource) {
       task.encoder = new WasmAudioEncoder({
         resource: task.resource,
-        onError: (error) => {
-          logger.error(`audio encode error, taskId: ${options.taskId}, error: ${error}`)
-          const task = this.tasks.get(options.taskId)
-          if (task.openReject) {
-            task.openReject(error)
-            task.openReject = null
-          }
-        },
         onReceiveAVPacket(avpacket) {
           task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
           task.stats.audioPacketEncodeCount++
@@ -218,16 +205,13 @@ export default class AudioEncodePipeline extends Pipeline {
     if (task) {
       task.wasmEncoderOptions = wasmEncoderOptions
       return new Promise<number>(async (resolve, reject) => {
-        task.openReject = reject
-        try {
-          await task.encoder.open(parameters, timeBase, task.wasmEncoderOptions)
-          task.parameters = parameters
-        }
-        catch (error) {
-          logger.error(`open audio encoder failed, error: ${error}`)
+        const ret = await task.encoder.open(parameters, timeBase, task.wasmEncoderOptions)
+        if (ret) {
+          logger.error(`open audio encoder failed, error: ${ret}`)
           resolve(errorType.CODEC_NOT_SUPPORT)
           return
         }
+        task.parameters = parameters
         resolve(0)
       })
     }

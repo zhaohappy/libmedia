@@ -31,6 +31,7 @@ import AVPacket from 'avutil/struct/avpacket'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
 import avpacket2EncodedAudioChunk from 'avutil/function/avpacket2EncodedAudioChunk'
 import * as logger from 'common/util/logger'
+import * as errorType from 'avutil/error'
 
 export type WebAudioDecoderOptions = {
   onReceiveAudioData: (frame: AudioData) => void
@@ -66,7 +67,7 @@ export default class WebAudioDecoder {
     this.options.onError(error)
   }
 
-  public async open(parameters: pointer<AVCodecParameters>) {
+  public async open(parameters: pointer<AVCodecParameters>): Promise<int32> {
     this.currentError = null
     this.parameters = parameters
     this.extradata = null
@@ -89,7 +90,8 @@ export default class WebAudioDecoder {
     const support = await AudioDecoder.isConfigSupported(config)
 
     if (!support.supported) {
-      throw new Error('not support')
+      logger.error('not support')
+      return errorType.INVALID_PARAMETERS
     }
 
     if (this.decoder && this.decoder.state !== 'closed') {
@@ -105,8 +107,10 @@ export default class WebAudioDecoder {
     this.decoder.configure(config)
 
     if (this.currentError) {
-      throw this.currentError
+      logger.error(`open audio decoder error, ${this.currentError}`)
+      return errorType.CODEC_NOT_SUPPORT
     }
+    return 0
   }
 
   public changeExtraData(buffer: Uint8Array) {
@@ -119,9 +123,11 @@ export default class WebAudioDecoder {
         }
       }
       if (same) {
-        return
+        return 0
       }
     }
+
+    this.currentError = null
 
     this.extradata = buffer.slice()
 
@@ -134,16 +140,26 @@ export default class WebAudioDecoder {
     })
 
     if (this.currentError) {
-      throw this.currentError
+      logger.error(`change extra data error, ${this.currentError}`)
+      return errorType.CODEC_NOT_SUPPORT
     }
+    return 0
   }
 
-  public decode(avpacket: pointer<AVPacket>) {
+  public decode(avpacket: pointer<AVPacket>): int32 {
+
+    if (this.currentError) {
+      logger.error(`decode error, ${this.currentError}`)
+      return errorType.DATA_INVALID
+    }
 
     const element = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
 
     if (element !== nullptr) {
-      this.changeExtraData(mapUint8Array(element.data, element.size))
+      let ret = this.changeExtraData(mapUint8Array(element.data, element.size))
+      if (ret) {
+        return ret
+      }
     }
 
     const audioChunk = avpacket2EncodedAudioChunk(avpacket)
@@ -153,14 +169,25 @@ export default class WebAudioDecoder {
     }
     catch (error) {
       logger.error(`decode error, ${error}`)
-      return -1
+      return errorType.DATA_INVALID
     }
 
     return 0
   }
 
-  public async flush() {
-    await this.decoder.flush()
+  public async flush(): Promise<int32> {
+    if (this.currentError) {
+      logger.error(`flush error, ${this.currentError}`)
+      return errorType.DATA_INVALID
+    }
+    try {
+      await this.decoder.flush()
+      return 0
+    }
+    catch (error) {
+      logger.error(`flush error, ${error}`)
+      return errorType.DATA_INVALID
+    }
   }
 
   public close() {

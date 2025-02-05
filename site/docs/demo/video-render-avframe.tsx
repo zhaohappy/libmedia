@@ -53,9 +53,6 @@ async function render(canvas: HTMLCanvasElement) {
 
   const decoder = new WasmVideoDecoder({
     resource: await compileResource(getWasm('decoder', stream.codecpar.codecId), true),
-    onError: (error) => {
-      console.error('decode error', error)
-    },
     onReceiveAVFrame(frame) {
       queue.push(frame)
     },
@@ -89,7 +86,11 @@ async function render(canvas: HTMLCanvasElement) {
     }
   }
 
-  await decoder.open(addressof(stream.codecpar))
+  const ret = await decoder.open(addressof(stream.codecpar))
+  if (ret) {
+    console.error('open decoder error')
+    return
+  }
   stop = false
   while (1) {
     if (queue.length > 5) {

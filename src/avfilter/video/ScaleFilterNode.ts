@@ -84,28 +84,25 @@ export default class ScaleFilterNode extends AVFilterNode {
         this.scaler = new VideoScaler({
           resource
         })
-
-        try {
-          await this.scaler.open(
-            {
-              width,
-              height,
-              format
-            },
-            {
-              width: this.options.output.width,
-              height: this.options.output.height,
-              format: this.options.output.format !== NOPTS_VALUE
-                ? this.options.output.format
-                : (format === AVPixelFormat.AV_PIX_FMT_NV12 && !isPointer(avframe)
-                  ? AVPixelFormat.AV_PIX_FMT_YUV420P
-                  : format
-                )
-            }
-          )
-        }
-        catch (error) {
-          logger.error(`open scaler failed, error ${error}`)
+        const ret = await this.scaler.open(
+          {
+            width,
+            height,
+            format
+          },
+          {
+            width: this.options.output.width,
+            height: this.options.output.height,
+            format: this.options.output.format !== NOPTS_VALUE
+              ? this.options.output.format
+              : (format === AVPixelFormat.AV_PIX_FMT_NV12 && !isPointer(avframe)
+                ? AVPixelFormat.AV_PIX_FMT_YUV420P
+                : format
+              )
+          }
+        )
+        if (ret) {
+          logger.error(`open scaler failed, error ${ret}`)
           outputs[0] = errorType.FORMAT_NOT_SUPPORT
           return
         }

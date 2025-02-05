@@ -40,6 +40,7 @@ import encodedVideoChunk2AVPacket from 'avutil/function/encodedVideoChunk2AVPack
 import { mapColorPrimaries, mapColorSpace, mapColorTrc } from 'avutil/function/videoFrame2AVFrame'
 import browser from 'common/util/browser'
 import * as logger from 'common/util/logger'
+import * as errorType from 'avutil/error'
 
 import * as av1 from 'avutil/codecs/av1'
 import * as vp9 from 'avutil/codecs/vp9'
@@ -177,14 +178,15 @@ export default class WebVideoEncoder {
     this.options.onError(error)
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational) {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational): Promise<int32> {
     this.currentError = null
 
     const descriptor = PixelFormatDescriptorsMap[parameters.format]
 
     // webcodecs 目前还不支持 hdr
     if (!descriptor || descriptor.comp[0].depth > 8) {
-      logger.fatal(`format ${parameters.format} not support`)
+      logger.error(`format ${parameters.format} not support`)
+      return errorType.CODEC_NOT_SUPPORT
     }
 
     const config: VideoEncoderConfig = {
@@ -210,7 +212,8 @@ export default class WebVideoEncoder {
     const support = await VideoEncoder.isConfigSupported(config)
 
     if (!support.supported) {
-      logger.fatal('not support')
+      logger.error('not support')
+      return errorType.INVALID_PARAMETERS
     }
 
     if (this.encoder && this.encoder.state !== 'closed') {
@@ -226,7 +229,8 @@ export default class WebVideoEncoder {
     this.encoder.configure(config)
 
     if (this.currentError) {
-      throw this.currentError
+      logger.error(`open video encoder error, ${this.currentError}`)
+      return errorType.CODEC_NOT_SUPPORT
     }
 
     this.parameters = parameters
@@ -237,9 +241,16 @@ export default class WebVideoEncoder {
       den: parameters.framerate.num,
       num: parameters.framerate.den
     }
+
+    return 0
   }
 
-  public encode(frame: VideoFrame | pointer<AVFrame>, key: boolean) {
+  public encode(frame: VideoFrame | pointer<AVFrame>, key: boolean): int32 {
+
+    if (this.currentError) {
+      logger.error(`encode error, ${this.currentError}`)
+      return errorType.DATA_INVALID
+    }
 
     let pts = avRescaleQ(this.inputCounter, this.framerateTimebase, this.timeBase)
 
@@ -284,12 +295,23 @@ export default class WebVideoEncoder {
     catch (error) {
       logger.error(`encode error, ${error}`)
       frame.close()
-      return -1
+      return errorType.DATA_INVALID
     }
   }
 
-  public async flush() {
-    await this.encoder.flush()
+  public async flush(): Promise<int32> {
+    if (this.currentError) {
+      logger.error(`flush error, ${this.currentError}`)
+      return errorType.DATA_INVALID
+    }
+    try {
+      await this.encoder.flush()
+      return 0
+    }
+    catch (error) {
+      logger.error(`flush error, ${error}`)
+      return errorType.DATA_INVALID
+    }
   }
 
   public close() {

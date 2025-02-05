@@ -125,11 +125,9 @@ async function render() {
     },
   })
 
-  try {
-    await decoder.open(addressof(stream.codecpar))
-  }
-  catch (error) {
-    console.error(`open decode error: ${error}`)
+  let ret = await decoder.open(addressof(stream.codecpar))
+  if (ret) {
+    console.error(`open decode error: ${ret}`)
     return
   }
 

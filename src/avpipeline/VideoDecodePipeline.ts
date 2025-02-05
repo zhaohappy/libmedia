@@ -84,8 +84,6 @@ type SelfTask = Omit<VideoDecodeTaskOptions, 'resource'> & {
   frameCaches: (pointer<AVFrameRef> | VideoFrame)[]
   inputEnd: boolean
 
-  openReject?: (ret: number) => void
-
   needKeyFrame: boolean
 
   parameters: pointer<AVCodecParameters>
@@ -96,7 +94,7 @@ type SelfTask = Omit<VideoDecodeTaskOptions, 'resource'> & {
 
   firstDecoded: boolean
 
-  decoderReady: Promise<void>
+  decoderFallbackReady: Promise<number>
 
   avframePool: AVFramePoolImpl
   avpacketPool: AVPacketPool
@@ -130,19 +128,14 @@ export default class VideoDecodePipeline extends Pipeline {
             task.targetDecoder = task.softwareDecoder
             task.hardwareDecoder.close()
             task.hardwareDecoder = null
-            task.decoderReady = this.openSoftwareDecoder(task)
+            task.decoderFallbackReady = this.openSoftwareDecoder(task)
             logger.warn(`video decode error width hardware(${task.hardwareRetryCount}), taskId: ${task.taskId}, error: ${error}, try to fallback to software decoder`)
           }
         }
         else {
           task.hardwareRetryCount++
-          try {
-            logger.info(`retry open hardware decoder(${task.hardwareRetryCount}), taskId: ${task.taskId}`)
-            task.decoderReady = task.hardwareDecoder.open(task.parameters)
-          }
-          catch (error) {
-            logger.warn(`retry open hardware decoder failed, fallback to software decoder, taskId: ${task.taskId}`)
-          }
+          logger.info(`retry open hardware decoder(${task.hardwareRetryCount}), taskId: ${task.taskId}`)
+          task.decoderFallbackReady = task.hardwareDecoder.open(task.parameters)
         }
         task.needKeyFrame = true
         task.leftIPCPort.request('requestKeyframe')
@@ -166,13 +159,6 @@ export default class VideoDecodePipeline extends Pipeline {
   private createWasmcodecDecoder(task: SelfTask, resource: WebAssemblyResource) {
     return new WasmVideoDecoder({
       resource: resource,
-      onError: (error) => {
-        logger.error(`video decode error, taskId: ${task.taskId}, error: ${error}`)
-        if (task.openReject) {
-          task.openReject(errorType.CODEC_NOT_SUPPORT)
-          task.openReject = null
-        }
-      },
       onReceiveAVFrame(avframe) {
         task.firstDecoded = true
         task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(avframe))
@@ -227,7 +213,7 @@ export default class VideoDecodePipeline extends Pipeline {
       hardwareRetryCount: 0,
       lastDecodeTimestamp: 0,
       firstDecoded: false,
-      decoderReady: null,
+      decoderFallbackReady: null,
       softwareDecoderOpened: false,
       discard: AVDiscard.AVDISCARD_DEFAULT,
       playRate: 1,
@@ -269,9 +255,23 @@ export default class VideoDecodePipeline extends Pipeline {
                 break
               }
 
-              if (task.decoderReady) {
-                await task.decoderReady
-                task.decoderReady = null
+              if (task.decoderFallbackReady) {
+                let ret = await task.decoderFallbackReady
+                if (ret) {
+                  if (task.targetDecoder === task.hardwareDecoder) {
+                    task.targetDecoder = task.softwareDecoder
+                    task.hardwareDecoder.close()
+                    task.hardwareDecoder = null
+                    logger.warn(`video decode error width hardware(${task.hardwareRetryCount}), taskId: ${task.taskId}, error: ${ret}, try to fallback to software decoder`)
+                    ret = await this.openSoftwareDecoder(task)
+                  }
+                  if (ret) {
+                    logger.info(`video decoder open error, taskId: ${task.taskId}`)
+                    rightIPCPort.reply(request, errorType.CODEC_NOT_SUPPORT)
+                    break
+                  }
+                }
+                task.decoderFallbackReady = null
               }
               if (task.lastDecodeTimestamp === NOPTS_VALUE) {
                 task.lastDecodeTimestamp = getTimestamp()
@@ -518,26 +518,27 @@ export default class VideoDecodePipeline extends Pipeline {
         threadCount = Math.min(threadCount, navigator.hardwareConcurrency)
       }
 
-      try {
-        await task.softwareDecoder.open(parameters, threadCount, task.wasmDecoderOptions)
-      }
-      catch (error) {
+      let ret = await task.softwareDecoder.open(parameters, threadCount, task.wasmDecoderOptions)
+      if (ret) {
         if ((task.softwareDecoder instanceof WebVideoDecoder) && task.resource) {
 
-          logger.warn(`webcodecs software decoder open failed, ${error}, try to fallback to wasm software decoder`)
+          logger.warn(`webcodecs software decoder open failed, ${ret}, try to fallback to wasm software decoder`)
 
           task.softwareDecoder.close()
           task.softwareDecoder = this.createWasmcodecDecoder(task, task.resource)
-          await task.softwareDecoder.open(parameters, threadCount)
+          ret = await task.softwareDecoder.open(parameters, threadCount)
+          if (ret) {
+            return ret
+          }
           task.targetDecoder = task.softwareDecoder
         }
         else {
-          throw error
+          return ret
         }
       }
-
       task.softwareDecoderOpened = true
     }
+    return 0
   }
 
   public async reopenDecoder(
@@ -583,7 +584,6 @@ export default class VideoDecodePipeline extends Pipeline {
         ? this.createWebCodecDecoder(task, true)
         : null
       return new Promise<number>(async (resolve, reject) => {
-        task.openReject = resolve
         if (task.softwareDecoder) {
           task.softwareDecoder.close()
         }
@@ -596,16 +596,15 @@ export default class VideoDecodePipeline extends Pipeline {
         task.hardwareRetryCount = 0
 
         if (task.hardwareDecoder) {
-          try {
-            await task.hardwareDecoder.open(codecpar)
-
-            logger.debug(`reopen video hardware decoder, taskId: ${task.taskId}`)
-          }
-          catch (error) {
-            logger.error(`cannot reopen hardware decoder, ${error}, taskId: ${task.taskId}`)
+          const ret = await task.hardwareDecoder.open(codecpar)
+          if (ret) {
+            logger.error(`cannot reopen hardware decoder, ${ret}, taskId: ${task.taskId}`)
             task.hardwareDecoder.close()
             task.hardwareDecoder = null
             task.targetDecoder = task.softwareDecoder
+          }
+          else {
+            logger.debug(`reopen video hardware decoder, taskId: ${task.taskId}`)
           }
         }
 
@@ -614,17 +613,16 @@ export default class VideoDecodePipeline extends Pipeline {
         }
 
         if (task.targetDecoder === task.softwareDecoder) {
-          try {
-            await this.openSoftwareDecoder(task)
-
-            logger.debug(`reopen video soft decoder, taskId: ${task.taskId}`)
-          }
-          catch (error) {
-            logger.error(`reopen video software decoder failed, error: ${error}`)
+          const ret = await this.openSoftwareDecoder(task)
+          if (ret) {
+            logger.error(`reopen video software decoder failed, error: ${ret}`)
             if (!task.hardwareDecoder) {
               resolve(errorType.CODEC_NOT_SUPPORT)
               return
             }
+          }
+          else {
+            logger.debug(`reopen video soft decoder, taskId: ${task.taskId}`)
           }
         }
         resolve(0)
@@ -664,13 +662,10 @@ export default class VideoDecodePipeline extends Pipeline {
       }
 
       return new Promise<number>(async (resolve, reject) => {
-        task.openReject = resolve
         if (task.hardwareDecoder) {
-          try {
-            await task.hardwareDecoder.open(codecpar)
-          }
-          catch (error) {
-            logger.error(`cannot open hardware decoder, ${error}`)
+          const ret = await task.hardwareDecoder.open(codecpar)
+          if (ret) {
+            logger.error(`cannot open hardware decoder, ${ret}`)
             task.hardwareDecoder.close()
             task.hardwareDecoder = null
             task.targetDecoder = task.softwareDecoder
@@ -678,11 +673,9 @@ export default class VideoDecodePipeline extends Pipeline {
         }
 
         if (task.targetDecoder === task.softwareDecoder) {
-          try {
-            await this.openSoftwareDecoder(task)
-          }
-          catch (error) {
-            logger.error(`open video software decoder failed, error: ${error}`)
+          const ret = await this.openSoftwareDecoder(task)
+          if (ret) {
+            logger.error(`open video software decoder failed, error: ${ret}`)
             if (!task.hardwareDecoder) {
               resolve(errorType.CODEC_NOT_SUPPORT)
               return
@@ -786,7 +779,10 @@ export default class VideoDecodePipeline extends Pipeline {
       else if (task.targetDecoder === task.hardwareDecoder) {
         task.hardwareDecoder.close()
         task.hardwareDecoder = this.createWebCodecDecoder(task)
-        await task.hardwareDecoder.open(task.parameters)
+        const ret = await task.hardwareDecoder.open(task.parameters)
+        if (ret) {
+          logger.fatal('reopen hardware decoder failed')
+        }
         task.targetDecoder = task.hardwareDecoder
       }
       array.each(task.frameCaches, (frame) => {

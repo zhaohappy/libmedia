@@ -41,3 +41,5 @@ export const EOF = -7
 export const CODEC_NOT_SUPPORT = -8
 
 export const OPERATE_NOT_SUPPORT = -9
+
+export const INVALID_PARAMETERS = -10

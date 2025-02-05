@@ -38,11 +38,11 @@ import * as dict from 'avutil/util/avdict'
 import * as is from 'common/util/is'
 import { avMallocz } from 'avutil/util/mem'
 import { Rational } from 'avutil/struct/rational'
+import * as errorType from 'avutil/error'
 
 export type WasmVideoDecoderOptions = {
   resource: WebAssemblyResource
   onReceiveAVFrame: (frame: pointer<AVFrame>) => void
-  onError: (error?: Error) => void
   avframePool?: AVFramePool
 }
 
@@ -126,7 +126,7 @@ export default class WasmVideoDecoder {
     return this.decoder.call<int32>('decoder_receive', this.getAVFrame())
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, threadCount: number = 1, opts: Data = {}) {
+  public async open(parameters: pointer<AVCodecParameters>, threadCount: number = 1, opts: Data = {}): Promise<int32> {
     await this.decoder.run(null, threadCount)
     let ret = 0
 
@@ -161,13 +161,15 @@ export default class WasmVideoDecoder {
     free(reinterpret_cast<pointer<void>>(optsP))
 
     if (ret < 0) {
-      logger.fatal(`open video decoder failed, ret: ${ret}`)
+      logger.error(`open video decoder failed, ret: ${ret}`)
+      return errorType.CODEC_NOT_SUPPORT
     }
     this.parameters = parameters
     this.timeBase = null
+    return 0
   }
 
-  public decode(avpacket: pointer<AVPacket>) {
+  public decode(avpacket: pointer<AVPacket>): int32 {
 
     if (!this.timeBase) {
       this.timeBase = {
@@ -197,15 +199,16 @@ export default class WasmVideoDecoder {
     return 0
   }
 
-  public async flush() {
+  public async flush(): Promise<int32> {
     this.decoder.call('decoder_flush')
     while (1) {
       const ret = this.receiveAVFrame()
       if (ret < 1) {
-        return
+        return ret
       }
       this.outputAVFrame()
     }
+    return 0
   }
 
   public close() {

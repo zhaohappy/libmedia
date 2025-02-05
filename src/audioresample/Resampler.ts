@@ -29,6 +29,7 @@ import AVPCMBuffer from 'avutil/struct/avpcmbuffer'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import * as logger from 'common/util/logger'
+import * as errorType from 'avutil/error'
 
 export interface PCMParameters {
   channels: int32
@@ -57,7 +58,7 @@ export default class Resampler {
 
   }
 
-  public async open(input: PCMParameters, output: PCMParameters) {
+  public async open(input: PCMParameters, output: PCMParameters): Promise<int32> {
 
     this.inputParameters = input
     this.outputParameters = output
@@ -81,8 +82,10 @@ export default class Resampler {
 
     let ret = this.resampler.call<int32>('resample_init')
     if (ret < 0) {
-      logger.fatal(`open resampler failed, ret: ${ret}`)
+      logger.error(`open resampler failed, ret: ${ret}`)
+      return errorType.INVALID_PARAMETERS
     }
+    return 0
   }
 
   public resample(input: pointer<pointer<uint8>>, output: pointer<AVPCMBuffer>, numberOfFrames: int32) {

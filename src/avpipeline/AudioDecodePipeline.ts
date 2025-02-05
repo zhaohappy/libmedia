@@ -65,7 +65,6 @@ type SelfTask = Omit<AudioDecodeTaskOptions, 'resource'> & {
   frameCaches: pointer<AVFrameRef>[]
   inputEnd: boolean
   parameters: pointer<AVCodecParameters>
-  openReject: (ret: number) => void
 
   lastDecodeTimestamp: number
 
@@ -87,10 +86,6 @@ export default class AudioDecodePipeline extends Pipeline {
     return new WebAudioDecoder({
       onError: (error) => {
         logger.error(`audio decode error, taskId: ${task.taskId}, error: ${error}`)
-        if (task.openReject) {
-          task.openReject(errorType.CODEC_NOT_SUPPORT)
-          task.openReject = null
-        }
       },
       onReceiveAudioData(audioData) {
         const avframe = audioData2AVFrame(audioData, task.avframePool.alloc())
@@ -108,13 +103,6 @@ export default class AudioDecodePipeline extends Pipeline {
   private createWasmcodecDecoder(task: SelfTask, resource: WebAssemblyResource) {
     return new WasmAudioDecoder({
       resource: resource,
-      onError: (error) => {
-        logger.error(`audio decode error, taskId: ${task.taskId}, error: ${error}`)
-        if (task.openReject) {
-          task.openReject(errorType.CODEC_NOT_SUPPORT)
-          task.openReject = null
-        }
-      },
       onReceiveAVFrame(avframe) {
         task.frameCaches.push(reinterpret_cast<pointer<AVFrameRef>>(avframe))
         task.stats.audioFrameDecodeCount++
@@ -161,7 +149,6 @@ export default class AudioDecodePipeline extends Pipeline {
 
       avframePool,
       avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex),
-      openReject: null
     }
 
     if (task.resource) {
@@ -251,12 +238,9 @@ export default class AudioDecodePipeline extends Pipeline {
       }
       task.parameters = codecpar
       return new Promise<number>(async (resolve, reject) => {
-        task.openReject = resolve
-        try {
-          await task.decoder.open(codecpar, task.wasmDecoderOptions)
-        }
-        catch (error) {
-          logger.error(`open audio decoder failed, error: ${error}`)
+        const ret = await task.decoder.open(codecpar, task.wasmDecoderOptions)
+        if (ret) {
+          logger.error(`open audio decoder failed, error: ${ret}`)
           resolve(errorType.CODEC_NOT_SUPPORT)
           return
         }
@@ -297,22 +281,19 @@ export default class AudioDecodePipeline extends Pipeline {
         decoder = this.createWebcodecDecoder(task)
       }
       return new Promise<number>(async (resolve, reject) => {
-        task.openReject = resolve
-        try {
-          await decoder.open(codecpar)
-          if (resource) {
-            task.resource = resource as WebAssemblyResource
-          }
-          task.decoder.close()
-          task.decoder = decoder
-
-          logger.debug(`reopen audio decoder, taskId: ${task.taskId}`)
-        }
-        catch (error) {
-          logger.error(`reopen audio decoder failed, error: ${error}`)
+        const ret = await decoder.open(codecpar)
+        if (ret) {
+          logger.error(`reopen audio decoder failed, error: ${ret}`)
           resolve(errorType.CODEC_NOT_SUPPORT)
           return
         }
+        if (resource) {
+          task.resource = resource as WebAssemblyResource
+        }
+        task.decoder.close()
+        task.decoder = decoder
+
+        logger.debug(`reopen audio decoder, taskId: ${task.taskId}`)
         resolve(0)
       })
     }

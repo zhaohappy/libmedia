@@ -108,9 +108,6 @@ async function render() {
 
   const decoder = new WasmAudioDecoder({
     resource: await compileResource(getWasm('decoder', stream.codecpar.codecId)),
-    onError: (error) => {
-      console.error(`decode error: ${error}`)
-    },
     onReceiveAVFrame: (frame) => {
       if (frame.format !== AVSampleFormat.AV_SAMPLE_FMT_FLTP) {
         resampler.resample(frame.extendedData, addressof(pcmBuffer), frame.nbSamples)
@@ -123,11 +120,9 @@ async function render() {
     },
   })
 
-  try {
-    await decoder.open(addressof(stream.codecpar))
-  }
-  catch (error) {
-    console.error(`open decode error: ${error}`)
+  let ret = await decoder.open(addressof(stream.codecpar))
+  if (ret) {
+    console.error(`open decode error: ${ret}`)
     return
   }
 

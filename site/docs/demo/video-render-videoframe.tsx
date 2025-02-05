@@ -87,7 +87,11 @@ async function render(canvas: HTMLCanvasElement) {
     }
   }
 
-  await decoder.open(addressof(stream.codecpar))
+  const ret = await decoder.open(addressof(stream.codecpar))
+  if (ret) {
+    console.error('open decoder error')
+    return
+  }
   stop = false
   while (1) {
     if (queue.length > 5) {

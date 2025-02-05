@@ -38,11 +38,11 @@ import * as dict from 'avutil/util/avdict'
 import * as is from 'common/util/is'
 import { avMallocz } from 'avutil/util/mem'
 import { Rational } from 'avutil/struct/rational'
+import * as errorType from 'avutil/error'
 
 export type WasmAudioDecoderOptions = {
   resource: WebAssemblyResource
   onReceiveAVFrame: (frame: pointer<AVFrame>) => void
-  onError: (error?: Error) => void
   avframePool?: AVFramePool
 }
 
@@ -89,7 +89,7 @@ export default class WasmAudioDecoder {
     return this.decoder.call<int32>('decoder_receive', this.getAVFrame())
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, opts: Data = {}) {
+  public async open(parameters: pointer<AVCodecParameters>, opts: Data = {}): Promise<int32> {
     await this.decoder.run()
 
     const optsP = reinterpret_cast<pointer<pointer<AVDictionary>>>(malloc(sizeof(pointer)))
@@ -125,13 +125,16 @@ export default class WasmAudioDecoder {
     free(reinterpret_cast<pointer<void>>(optsP))
 
     if (ret < 0) {
-      logger.fatal(`open audio decoder failed, ret: ${ret}`)
+      logger.error(`open audio decoder failed, ret: ${ret}`)
+      return errorType.CODEC_NOT_SUPPORT
     }
 
     this.timeBase = null
+
+    return 0
   }
 
-  public decode(avpacket: pointer<AVPacket>) {
+  public decode(avpacket: pointer<AVPacket>): int32 {
 
     if (!this.timeBase) {
       this.timeBase = {
@@ -162,15 +165,16 @@ export default class WasmAudioDecoder {
     return 0
   }
 
-  public async flush() {
+  public async flush(): Promise<int32> {
     this.decoder.call('decoder_flush')
     while (1) {
       const ret = this.receiveAVFrame()
       if (ret < 1) {
-        return
+        return ret
       }
       this.outputAVFrame()
     }
+    return 0
   }
 
   public close() {

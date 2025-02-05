@@ -22,7 +22,7 @@ import React from 'react'
 let file: File
 let stop = true
 
-async function encode(set: (v: string) => void) {
+async function encode(log: (v: string) => void) {
 
   if (!stop) {
     return
@@ -76,20 +76,14 @@ async function encode(set: (v: string) => void) {
 
   const encoder = new WasmAudioEncoder({
     resource: await compileResource(getWasm('encoder', codecpar.codecId)),
-    onError: (error) => {
-      set(`encode error: ${error}\n`)
-    },
     onReceiveAVPacket(avpacket) {
-      set(`got audio packet, pts: ${avpacket.pts}\n`)
+      log(`got audio packet, pts: ${avpacket.pts}\n`)
       destroyAVPacket(avpacket)
     }
   })
 
   const decoder = new WasmAudioDecoder({
     resource: await compileResource(getWasm('decoder', stream.codecpar.codecId)),
-    onError: (error) => {
-      set(`decode error: ${error}\n`)
-    },
     onReceiveAVFrame: (frame) => {
       let newFrame = frame
       if (resampler) {
@@ -98,25 +92,21 @@ async function encode(set: (v: string) => void) {
       }
       let ret = encoder.encode(newFrame)
       if (ret < 0) {
-        set(`encode error: ${ret}\n`)
+        log(`encode error: ${ret}\n`)
       }
       destroyAVFrame(frame)
     },
   })
 
-  try {
-    await decoder.open(addressof(stream.codecpar))
-  }
-  catch (error) {
-    set(`open decode error: ${error}\n`)
+  let ret = await decoder.open(addressof(stream.codecpar))
+  if (ret) {
+    log(`open decode error: ${ret}\n`)
     return
   }
 
-  try {
-    await encoder.open(addressof(codecpar), { num: 1, den: 1000 })
-  }
-  catch (error) {
-    set(`open encode error: ${error}\n`)
+  ret = await encoder.open(addressof(codecpar), { num: 1, den: 1000 })
+  if (ret) {
+    log(`open encode error: ${ret}\n`)
     return
   }
 
@@ -158,7 +148,7 @@ async function encode(set: (v: string) => void) {
   unmake(pcmBuffer)
 
   stop = true
-  set('encode end\n')
+  log('encode end\n')
 }
 
 export default function () {

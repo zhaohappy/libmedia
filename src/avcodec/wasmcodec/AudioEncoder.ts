@@ -45,11 +45,11 @@ import * as object from 'common/util/object'
 import * as dict from 'avutil/util/avdict'
 import * as is from 'common/util/is'
 import { avMallocz } from 'avutil/util/mem'
+import * as errorType from 'avutil/error'
 
 export type WasmAudioEncoderOptions = {
   resource: WebAssemblyResource
   onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
-  onError: (error?: Error) => void
   avpacketPool?: AVPacketPool
 }
 
@@ -206,7 +206,7 @@ export default class WasmAudioEncoder {
     return this.encoder.call<int32>('encoder_receive', this.getAVPacket())
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, opts: Data = {}) {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, opts: Data = {}): Promise<int32> {
     await this.encoder.run()
 
     const timeBaseP = reinterpret_cast<pointer<Rational>>(malloc(sizeof(Rational)))
@@ -251,13 +251,16 @@ export default class WasmAudioEncoder {
     free(timeBaseP)
 
     if (ret < 0) {
-      logger.fatal(`open audio encoder failed, ret: ${ret}`)
+      logger.error(`open audio encoder failed, ret: ${ret}`)
+      return errorType.CODEC_NOT_SUPPORT
     }
 
     this.parameters = parameters
     this.timeBase = timeBase
 
     this.pts = 0n
+
+    return 0
   }
 
   private encode_(avframe: pointer<AVFrame>) {
@@ -280,7 +283,7 @@ export default class WasmAudioEncoder {
     return 0
   }
 
-  public encode(avframe: pointer<AVFrame> | AudioData) {
+  public encode(avframe: pointer<AVFrame> | AudioData): int32 {
     if (this.avframe) {
       unrefAVFrame(this.avframe)
     }
@@ -306,7 +309,10 @@ export default class WasmAudioEncoder {
         if (ret < 0) {
           return 0
         }
-        this.encode_(avframe)
+        ret = this.encode_(avframe)
+        if (ret) {
+          return ret
+        }
       }
     }
     else {
@@ -314,7 +320,7 @@ export default class WasmAudioEncoder {
     }
   }
 
-  public async flush() {
+  public async flush(): Promise<int32> {
     if (this.audioFrameResizer && this.audioFrameResizer.remainFrameSize() > 0) {
       const avframe = createAVFrame()
       this.audioFrameResizer.flush(avframe)
@@ -327,10 +333,11 @@ export default class WasmAudioEncoder {
     while (1) {
       const ret = this.receiveAVPacket()
       if (ret < 1) {
-        return
+        return ret
       }
       this.outputAVPacket()
     }
+    return 0
   }
 
   public getExtraData() {

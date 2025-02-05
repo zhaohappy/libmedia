@@ -13,7 +13,7 @@ import React from 'react'
 let file: File
 let stop = true
 
-async function decode(set: (v: string) => void) {
+async function decode(log: (v: string) => void) {
 
   if (!stop) {
     return
@@ -37,19 +37,17 @@ async function decode(set: (v: string) => void) {
 
   const decoder = new WebVideoDecoder({
     onError: (error) => {
-      set(`decode error: ${error}\n`)
+      log(`decode error: ${error}\n`)
     },
     onReceiveVideoFrame: (frame) => {
-      set(`got video frame, pts: ${frame.timestamp}, duration: ${frame.duration}\n`)
+      log(`got video frame, pts: ${frame.timestamp}, duration: ${frame.duration}\n`)
       frame.close()
     },
   })
 
-  try {
-    await decoder.open(addressof(stream.codecpar))
-  }
-  catch (error) {
-    set(`open decode error: ${error}\n`)
+  const ret = await decoder.open(addressof(stream.codecpar))
+  if (ret) {
+    log(`open decode error: ${ret}\n`)
     return
   }
 
@@ -85,7 +83,7 @@ async function decode(set: (v: string) => void) {
   iformatContext.destroy()
   destroyAVPacket(avpacket)
   stop = true
-  set('decode end\n')
+  log('decode end\n')
 }
 
 export default function () {

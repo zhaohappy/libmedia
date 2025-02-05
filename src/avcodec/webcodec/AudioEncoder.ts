@@ -36,6 +36,7 @@ import { avRescaleQ } from 'avutil/util/rational'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
 import isPointer from 'cheap/std/function/isPointer'
 import * as logger from 'common/util/logger'
+import * as errorType from 'avutil/error'
 
 export type WebAudioEncoderOptions = {
   onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
@@ -109,7 +110,7 @@ export default class WebAudioEncoder {
     this.options.onError(error)
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational) {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational): Promise<int32> {
 
     this.currentError = null
 
@@ -124,7 +125,8 @@ export default class WebAudioEncoder {
     const support = await AudioEncoder.isConfigSupported(config)
 
     if (!support.supported) {
-      throw new Error('not support')
+      logger.error('not support')
+      return errorType.INVALID_PARAMETERS
     }
 
     if (this.encoder && this.encoder.state !== 'closed') {
@@ -140,15 +142,22 @@ export default class WebAudioEncoder {
     this.encoder.configure(config)
 
     if (this.currentError) {
-      throw this.currentError
+      logger.error(`open audio encoder error, ${this.currentError}`)
+      return errorType.CODEC_NOT_SUPPORT
     }
 
     this.pts = 0n
     this.parameters = parameters
     this.timeBase = timeBase
+
+    return 0
   }
 
-  public encode(frame: AudioData | pointer<AVFrame>) {
+  public encode(frame: AudioData | pointer<AVFrame>): int32 {
+    if (this.currentError) {
+      logger.error(`encode error, ${this.currentError}`)
+      return errorType.CODEC_NOT_SUPPORT
+    }
     if (isPointer(frame)) {
       const cache = this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame()
       refAVFrame(cache, frame)
@@ -162,12 +171,23 @@ export default class WebAudioEncoder {
     }
     catch (error) {
       logger.error(`encode error, ${error}`)
-      return -1
+      return errorType.DATA_INVALID
     }
   }
 
-  public async flush() {
-    await this.encoder.flush()
+  public async flush(): Promise<int32> {
+    if (this.currentError) {
+      logger.error(`flush error, ${this.currentError}`)
+      return errorType.DATA_INVALID
+    }
+    try {
+      await this.encoder.flush()
+      return 0
+    }
+    catch (error) {
+      logger.error(`flush error, ${error}`)
+      return errorType.DATA_INVALID
+    }
   }
 
   public close() {

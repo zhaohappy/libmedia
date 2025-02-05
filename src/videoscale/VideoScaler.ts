@@ -28,6 +28,7 @@ import AVFrame from 'avutil/struct/avframe'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import * as logger from 'common/util/logger'
+import * as errorType from 'avutil/error'
 
 export const enum ScaleAlgorithm {
   FAST_BILINEAR = 1,
@@ -67,7 +68,7 @@ export default class VideoScaler {
     this.scaler = new WebAssemblyRunner(this.options.resource)
   }
 
-  public async open(input: ScaleParameters, output: ScaleParameters, algorithm: ScaleAlgorithm = ScaleAlgorithm.BILINEAR) {
+  public async open(input: ScaleParameters, output: ScaleParameters, algorithm: ScaleAlgorithm = ScaleAlgorithm.BILINEAR): Promise<int32> {
 
     this.inputParameters = input
     this.outputParameters = output
@@ -89,8 +90,10 @@ export default class VideoScaler {
 
     let ret = this.scaler.call<int32>('scale_init', algorithm)
     if (ret < 0) {
-      logger.fatal(`open scaler failed, ret: ${ret}`)
+      logger.error(`open scaler failed, ret: ${ret}`)
+      return errorType.INVALID_PARAMETERS
     }
+    return 0
   }
 
   public scale(src: pointer<AVFrame>, dst: pointer<AVFrame>) {

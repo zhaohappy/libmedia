@@ -80,12 +80,10 @@ type SelfTask = Omit<VideoEncodeTaskOptions, 'resource'> & {
   inputEnd: boolean
   encodeEnd: boolean
 
-  openReject?: (error: Error) => void
-
   parameters: pointer<AVCodecParameters>
   timeBase: Rational
 
-  encoderReady: Promise<void>
+  encoderFallbackReady: Promise<number>
 
   avframePool: AVFramePoolImpl
   avpacketPool: AVPacketPool
@@ -119,7 +117,7 @@ export default class VideoEncodePipeline extends Pipeline {
           task.targetEncoder = task.softwareEncoder
           task.hardwareEncoder.close()
           task.hardwareEncoder = null
-          task.encoderReady = this.openSoftwareEncoder(task)
+          task.encoderFallbackReady = this.openSoftwareEncoder(task)
           logger.warn(`video encode error width hardware, taskId: ${task.taskId}, error: ${error}, try to fallback to software encoder`)
         }
         else {
@@ -139,13 +137,6 @@ export default class VideoEncodePipeline extends Pipeline {
   private createWasmcodecEncoder(task: SelfTask, resource: WebAssemblyResource) {
     return new WasmVideoEncoder({
       resource: task.resource,
-      onError: (error) => {
-        logger.error(`video encode error, taskId: ${task.taskId}, error: ${error}`)
-        if (task.openReject) {
-          task.openReject(error)
-          task.openReject = null
-        }
-      },
       onReceiveAVPacket(avpacket) {
         task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
         task.stats.videoPacketEncodeCount++
@@ -185,7 +176,7 @@ export default class VideoEncodePipeline extends Pipeline {
       targetEncoder: null,
       parameters: nullptr,
       timeBase: null,
-      encoderReady: null,
+      encoderFallbackReady: null,
       softwareEncoderOpened: false,
       gopCounter: 0,
       firstEncoded: false,
@@ -261,9 +252,23 @@ export default class VideoEncodePipeline extends Pipeline {
                 break
               }
 
-              if (task.encoderReady) {
-                await task.encoderReady
-                task.encoderReady = null
+              if (task.encoderFallbackReady) {
+                let ret = await task.encoderFallbackReady
+                if (ret) {
+                  if (task.targetEncoder === task.hardwareEncoder) {
+                    task.targetEncoder = task.softwareEncoder
+                    task.hardwareEncoder.close()
+                    task.hardwareEncoder = null
+                    ret = await this.openSoftwareEncoder(task)
+                    logger.warn(`video encode error width hardware, taskId: ${task.taskId}, error: ${ret}, try to fallback to software encoder`)
+                  }
+                  if (ret) {
+                    logger.info(`video encoder open error, taskId: ${task.taskId}`)
+                    rightIPCPort.reply(request, errorType.CODEC_NOT_SUPPORT)
+                    break
+                  }
+                }
+                task.encoderFallbackReady = null
               }
 
               const avframe = await pullAVFrame()
@@ -436,21 +441,22 @@ export default class VideoEncodePipeline extends Pipeline {
       if (isWorker()) {
         threadCount = Math.max(threadCount, navigator.hardwareConcurrency)
       }
-      try {
-        await task.softwareEncoder.open(parameters, task.timeBase, threadCount, task.wasmEncoderOptions)
-      }
-      catch (error) {
+      let ret = await task.softwareEncoder.open(parameters, task.timeBase, threadCount, task.wasmEncoderOptions)
+      if (ret) {
         if ((task.softwareEncoder instanceof WebVideoEncoder) && task.resource) {
 
-          logger.warn(`webcodecs software encoder open failed, ${error}, try to fallback to wasm software encoder`)
+          logger.warn(`webcodecs software encoder open failed, error: ${ret}, try to fallback to wasm software encoder`)
 
           task.softwareEncoder.close()
           task.softwareEncoder = this.createWasmcodecEncoder(task, task.resource)
-          await task.softwareEncoder.open(parameters, task.timeBase, threadCount, task.wasmEncoderOptions)
+          ret = await task.softwareEncoder.open(parameters, task.timeBase, threadCount, task.wasmEncoderOptions)
+          if (ret) {
+            return ret
+          }
           task.targetEncoder = task.softwareEncoder
         }
         else {
-          throw error
+          return ret
         }
       }
 
@@ -459,6 +465,7 @@ export default class VideoEncodePipeline extends Pipeline {
         task.firstEncoded = false
       }
     }
+    return 0
   }
 
   public async open(taskId: string, codecpar: pointer<AVCodecParameters>, timeBase: Rational, wasmEncoderOptions: Data = {}) {
@@ -480,13 +487,10 @@ export default class VideoEncodePipeline extends Pipeline {
       }
 
       return new Promise<number>(async (resolve, reject) => {
-        task.openReject = reject
         if (task.hardwareEncoder) {
-          try {
-            await task.hardwareEncoder.open(codecpar, timeBase)
-          }
-          catch (error) {
-            logger.error(`cannot open hardware encoder, ${error}`)
+          let ret = await task.hardwareEncoder.open(codecpar, timeBase)
+          if (ret) {
+            logger.error(`cannot open hardware encoder, error: ${ret}`)
             task.hardwareEncoder.close()
             task.hardwareEncoder = null
             task.targetEncoder = task.softwareEncoder
@@ -497,11 +501,9 @@ export default class VideoEncodePipeline extends Pipeline {
         task.timeBase = timeBase
 
         if (task.targetEncoder === task.softwareEncoder) {
-          try {
-            await this.openSoftwareEncoder(task)
-          }
-          catch (error) {
-            logger.error(`open video software encoder failed, error: ${error}`)
+          let ret = await this.openSoftwareEncoder(task)
+          if (ret) {
+            logger.error(`open video software encoder failed, error: ${ret}`)
             if (!task.hardwareEncoder) {
               resolve(errorType.CODEC_NOT_SUPPORT)
               return

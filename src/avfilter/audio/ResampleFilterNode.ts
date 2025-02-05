@@ -79,23 +79,20 @@ export default class ResampleFilterNode extends AVFilterNode {
         this.resampler = new Resampler({
           resource
         })
-
-        try {
-          await this.resampler.open(
-            {
-              channels: avframe.chLayout.nbChannels,
-              sampleRate: avframe.sampleRate,
-              format: avframe.format
-            },
-            {
-              channels: this.options.output.channels,
-              sampleRate: this.options.output.sampleRate,
-              format: this.options.output.format === NOPTS_VALUE ? avframe.format : this.options.output.format
-            }
-          )
-        }
-        catch (error) {
-          logger.error(`open resampler failed, error ${error}`)
+        const ret = await this.resampler.open(
+          {
+            channels: avframe.chLayout.nbChannels,
+            sampleRate: avframe.sampleRate,
+            format: avframe.format
+          },
+          {
+            channels: this.options.output.channels,
+            sampleRate: this.options.output.sampleRate,
+            format: this.options.output.format === NOPTS_VALUE ? avframe.format : this.options.output.format
+          }
+        )
+        if (ret) {
+          logger.error(`open resampler failed, error ${ret}`)
           outputs[0] = errorType.FORMAT_NOT_SUPPORT
           return
         }
