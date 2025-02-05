@@ -60,7 +60,6 @@ const pipeline = await createThreadFromClass(
 ```javascript [node]
 
 import DemuxPipeline from '@libmedia/avpipeline/DemuxPipeline'
-import DemuxPipelineWorker from './worker'
 import { Worker } from 'worker_threads'
 
 const pipeline = await createThreadFromClass(

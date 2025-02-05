@@ -60,7 +60,6 @@ const pipeline = await createThreadFromClass(
 ```javascript [node]
 
 import DemuxPipeline from '@libmedia/avpipeline/DemuxPipeline'
-import DemuxPipelineWorker from './worker'
 import { Worker } from 'worker_threads'
 
 const pipeline = await createThreadFromClass(
@@ -71,7 +70,7 @@ const pipeline = await createThreadFromClass(
 
 :::
 
-If you use vite for packaging, you need to add the following configuration for the worker:
+If you use vite, you need to add the following configuration for the worker:
 
 
 ```javascript [vite]
@@ -108,7 +107,7 @@ export default defineConfig({
 
 ## Use Multi-Threads in webpack
 
-If you are using webpack to build a project, it is recommended to use the webpack plugin to compile. For how to configure it, see [Configuration](./quick-start.md#webpack-plugin). This makes it easier to start multithreading, and there is no need to write a separate worker entry file; and the worker code will not be divided into separate files, it will be created by dynamically generating code at runtime.
+If you are using webpack to build your project, it is recommended to use a webpack plugin for compilation.  For how to configure it, see [Configuration](./quick-start.md#webpack-plugin). This approach simplifies enabling multi-threading, as it eliminates the need to manually create a separate worker entry file. Additionally, the multi-threaded code is not split into standalone files during compilation. Instead, workers are dynamically created at runtime through code generation.
 
 ```javascript
 

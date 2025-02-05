@@ -9,7 +9,7 @@ order: 2
 ---
 # Time base
 
-Time base is a basic concept throughout libmedia, so you must master it. Time base is the unit of time. The data structure of time base is [Rational](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/avutil_struct_rational.Rational.html) It represents a fraction, where den is the denominator and num is the numerator. It represents the number of seconds a unit is. For example, we now have a timestamp 100, and the time it represents in different time bases is as follows:
+Time base is a basic concept throughout libmedia, so you must understand it. Time base is the unit of time. The data structure of time base is [Rational](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/avutil_struct_rational.Rational.html). It represents a fraction, where den is the denominator and num is the numerator. It represents the number of seconds a unit is. For example, we now have a timestamp 100, and the time it represents in different time bases is as follows:
 
 - ```{num: 1, den: 1000}``` This time base represents a unit of 1/1000 second, which is 1 millisecond, so 100 is 100*1/1000 second, which is 100 milliseconds; flv uses this time base.
 - ```{num: 1, den: 90000}``` This time base means that one unit is 1/90000 second, so 100 is 100*1/90000 second, which is about 1.111 milliseconds; ts stream uses this time base.
