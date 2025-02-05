@@ -774,7 +774,9 @@
           slider.currentTime = 0
         }
 
-        player.load(document.querySelector('#file').files[0] ? document.querySelector('#file').files[0] : urlComponent.url).then(() => {
+        player.load(document.querySelector('#file').files[0] ? document.querySelector('#file').files[0] : urlComponent.url, {
+          isLive: isLiveComponent.isLive
+        }).then(() => {
           
           if (slider) {
             slider.duration = Number(player.getDuration())

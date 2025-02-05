@@ -22,6 +22,7 @@ import { AVFormat } from 'avutil/avformat'
 export interface DumpIOInfo {
   from: string
   tag: 'Input' | 'Output'
+  isLive?: boolean
 }
 
 export function dumpTime(time: int64) {
@@ -239,7 +240,7 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
 }
 
 export function dumpAVFormatContextInterface(formatContext: AVFormatContextInterface, index: number, input: DumpIOInfo) {
-  let dump = `${input.tag} #${index}, ${dumpKey(stringEnum.Format2AVFormat, formatContext.format)}, from '${input.from}':\n`
+  let dump = `${input.tag} #${index}, ${input.isLive ? 'live' : 'vod'}, ${dumpKey(stringEnum.Format2AVFormat, formatContext.format)}, from '${input.from}':\n`
   if (Object.keys(formatContext.metadata).length) {
     dump += '  Metadata:\n'
     object.each(formatContext.metadata, (value, key) => {

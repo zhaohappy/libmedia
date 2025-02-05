@@ -322,8 +322,7 @@ const Folder: ComponentOptions = {
       }
 
       if (player.getStatus() === AVPlayerStatus.STOPPED) {
-        player.setIsLive(!!node.get('node.isLive'))
-        player.load(node.get('node.source')).then(() => {
+        player.load(node.get('node.source'), { isLive: !!node.get('node.isLive') }).then(() => {
           player.play()
             .catch((error) => {
               this.fire('error', {
@@ -343,8 +342,7 @@ const Folder: ComponentOptions = {
       }
       else {
         player.stop().then(() => {
-          player.setIsLive(!!node.get('node.isLive'))
-          player.load(node.get('node.source')).then(() => {
+          player.load(node.get('node.source'), { isLive: !!node.get('node.isLive') }).then(() => {
             player.play()
               .catch((error) => {
                 this.fire('error', {

@@ -243,6 +243,10 @@ export interface AVPlayerLoadOptions {
    * 透传给 format 的参数
    */
   formatOptions?: Data
+  /**
+   * 设置源是否是直播，覆盖 AVPlayerOptions 里面的配置
+   */
+  isLive?: boolean
 }
 
 export interface AVPlayerPlayOptions {
@@ -455,6 +459,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private lastStatus: AVPlayerStatus
   private playChannels: number
   private seekedTimestamp: int64
+  private isLive_: boolean
 
   private statsController: StatsController
   private jitterBufferController: JitterBufferController
@@ -481,6 +486,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.flipHorizontal = false
     this.flipVertical = false
     this.seekedTimestamp = NOPTS_VALUE_BIGINT
+    this.isLive_ = !!options.isLive
 
     this.GlobalData = make<AVPlayerGlobalData>()
 
@@ -718,7 +724,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       logger.info(`player ended, taskId: ${this.taskId}`)
 
-      if (this.options.loop && !this.options.isLive) {
+      if (this.options.loop && !this.isLive_) {
 
         logger.info(`loop play, taskId: ${this.taskId}`)
 
@@ -989,7 +995,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           },
           taskId: taskId,
           options: {
-            isLive: this.options.isLive
+            isLive: this.isLive_
           },
           rightPort: ioloader2DemuxerChannel.port1,
           stats: addressof(this.GlobalData.stats)
@@ -1010,7 +1016,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           },
           taskId: taskId,
           options: {
-            isLive: this.options.isLive
+            isLive: this.isLive_
           },
           rightPort: ioloader2DemuxerChannel.port1,
           stats: addressof(this.GlobalData.stats)
@@ -1099,6 +1105,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     this.status = AVPlayerStatus.LOADING
     this.fire(eventType.LOADING)
+    if (is.boolean(options.isLive)) {
+      this.isLive_ = options.isLive
+    }
+    else {
+      // 没有使用 AVPlayerOptions 里面的值
+      this.isLive_ = !!this.options.isLive
+    }
 
     this.controller = new Controller(this, this.options.enableWorker)
     this.ioloader2DemuxerChannel = createMessageChannel(this.options.enableWorker)
@@ -1133,14 +1146,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           },
           taskId: this.taskId,
           options: {
-            isLive: this.options.isLive
+            isLive: this.isLive_
           },
           rightPort: this.ioloader2DemuxerChannel.port1,
           stats: addressof(this.GlobalData.stats)
         })
     }
     else if (source instanceof File) {
-      this.options.isLive = false
+      this.isLive_ = false
       this.ext = source.name.split('.').pop()
       // 注册一个文件 io 任务
       ret = await AVPlayer.IOThread.registerTask
@@ -1284,7 +1297,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             controlPort: this.controller.getDemuxerControlPort(),
             format: Ext2Format[this.ext],
             stats: addressof(this.GlobalData.stats),
-            isLive: this.options.isLive,
+            isLive: this.isLive_,
             flags,
             ioloaderOptions: {
               mediaType: 'audio'
@@ -1299,7 +1312,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           flags,
           format: Ext2Format[this.ext],
           stats: addressof(this.GlobalData.stats),
-          isLive: this.options.isLive,
+          isLive: this.isLive_,
           ioloaderOptions: {
             mediaType: 'video'
           },
@@ -1318,7 +1331,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             controlPort: this.controller.getDemuxerControlPort(),
             format: Ext2Format[this.ext],
             stats: addressof(this.GlobalData.stats),
-            isLive: this.options.isLive,
+            isLive: this.isLive_,
             flags,
             ioloaderOptions: {
               mediaType: hasAudio ? 'audio' : 'video'
@@ -1344,7 +1357,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           format: Ext2Format[this.ext],
           formatOptions,
           stats: addressof(this.GlobalData.stats),
-          isLive: this.options.isLive,
+          isLive: this.isLive_,
           flags,
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
@@ -1362,7 +1375,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           flags,
           format: Ext2Format[this.ext],
           stats: addressof(this.GlobalData.stats),
-          isLive: this.options.isLive,
+          isLive: this.isLive_,
           ioloaderOptions: {
             mediaType: 'subtitle'
           },
@@ -1456,7 +1469,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
     }
 
-    if (this.options.isLive) {
+    if (this.isLive_) {
       const min = Math.max(
         this.source instanceof CustomIOLoader
           ? this.source.minBuffer
@@ -1506,10 +1519,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     logger.info(`\nAVPlayer version ${defined(VERSION)} Copyright (c) 2024-present the libmedia developers\n` + dump([formatContext], [{
       from: is.string(source) ? source : source.name,
-      tag: 'Input'
+      tag: 'Input',
+      isLive: this.isLive_
     }]))
 
-    if (!this.options.isLive) {
+    if (!this.isLive_) {
       let start = NOPTS_VALUE_BIGINT
       formatContext.streams.forEach((stream) => {
         const s = avRescaleQ(stream.startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q)
@@ -1547,7 +1561,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           taskId: this.taskId,
           stats: addressof(this.GlobalData.stats),
           controlPort: this.controller.getMuxerControlPort(),
-          isLive: this.options.isLive,
+          isLive: this.isLive_,
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           enableJitterBuffer: !!this.jitterBufferController
@@ -1765,7 +1779,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         )
         .invoke({
           taskId: this.taskId,
-          isLive: this.options.isLive,
+          isLive: this.isLive_,
           leftPort: this.videoDecoder2VideoRenderChannel.port2,
           controlPort: this.controller.getVideoRenderControlPort(),
           canvas,
@@ -1778,7 +1792,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           devicePixelRatio: devicePixelRatio,
           stats: addressof(this.GlobalData.stats),
           enableWebGPU: this.options.enableWebGPU,
-          startPTS: this.options.isLive
+          startPTS: this.isLive_
             ? avRescaleQ(videoStream.startTime < 1000n ? 0n : videoStream.startTime, videoStream.timeBase, AV_MILLI_TIME_BASE_Q)
             : this.getMinStartPTS(),
           avframeList: addressof(this.GlobalData.avframeList),
@@ -1814,7 +1828,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         )
         .invoke({
           taskId: this.taskId,
-          isLive: this.options.isLive,
+          isLive: this.isLive_,
           leftPort: this.audioDecoder2AudioRenderChannel.port2,
           rightPort: this.audioRender2AudioWorkletChannel.port1,
           controlPort: this.controller.getAudioRenderControlPort(),
@@ -1824,7 +1838,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           resamplerResource,
           stretchpitcherResource,
           stats: addressof(this.GlobalData.stats),
-          startPTS: this.options.isLive
+          startPTS: this.isLive_
             ? avRescaleQ(audioStream.startTime < 1000n ? 0n : audioStream.startTime, audioStream.timeBase, AV_MILLI_TIME_BASE_Q)
             : this.getMinStartPTS(),
           avframeList: addressof(this.GlobalData.avframeList),
@@ -1991,7 +2005,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     let minQueueLength = 10
     if (is.string(this.source) || this.source instanceof CustomIOLoader) {
-      let preLoadTime = this.options.isLive ? this.options.jitterBufferMin : this.options.preLoadTime
+      let preLoadTime = this.isLive_ ? this.options.jitterBufferMin : this.options.preLoadTime
       if (this.source instanceof CustomIOLoader) {
         preLoadTime = Math.max(preLoadTime, this.source.minBuffer)
       }
@@ -1999,12 +2013,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         minQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate) * preLoadTime), minQueueLength)
       })
     }
-    promises.push(AVPlayer.DemuxerThread.startDemux(this.taskId, this.options.isLive, minQueueLength))
+    promises.push(AVPlayer.DemuxerThread.startDemux(this.taskId, this.isLive_, minQueueLength))
     if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
-      promises.push(AVPlayer.DemuxerThread.startDemux(this.subTaskId, this.options.isLive, minQueueLength))
+      promises.push(AVPlayer.DemuxerThread.startDemux(this.subTaskId, this.isLive_, minQueueLength))
     }
     if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId) {
-      promises.push(AVPlayer.DemuxerThread.startDemux(this.subtitleTaskId, this.options.isLive, minQueueLength))
+      promises.push(AVPlayer.DemuxerThread.startDemux(this.subtitleTaskId, this.isLive_, minQueueLength))
     }
 
     if (this.seekedTimestamp >= 0n) {
@@ -2086,7 +2100,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     logger.info(`call pause, taskId: ${this.taskId}`)
 
-    if (!this.options.isLive) {
+    if (!this.isLive_) {
       const promises = []
       if (defined(ENABLE_MSE) && this.useMSE) {
         if (this.audio) {
@@ -2264,7 +2278,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       return
     }
 
-    if (!this.options.isLive) {
+    if (!this.isLive_) {
       this.lastStatus = this.status
       this.status = AVPlayerStatus.SEEKING
 
@@ -2358,7 +2372,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @returns 
    */
   public getDuration() {
-    if (!this.options.isLive) {
+    if (!this.isLive_) {
       let max = 0n
       this.formatContext.streams.forEach((stream) => {
         if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
@@ -2516,7 +2530,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   * @param rate 
   */
   public setPlaybackRate(rate: number) {
-    if (!this.options.isLive) {
+    if (!this.isLive_) {
       this.playRate = restrain(rate, 0.5, 2)
       if (defined(ENABLE_MSE) && this.useMSE) {
         AVPlayer.MSEThread?.setPlayRate(this.taskId, this.playRate)
@@ -2802,7 +2816,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @returns 
    */
   public isLive() {
-    return this.options.isLive
+    return this.isLive_
   }
 
   /**
@@ -2910,14 +2924,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return this.options
   }
 
-  /**
-   * 重新设置是否是直播，load 之前调用
-   * 
-   * @param is 
-   */
-  public setIsLive(is: boolean) {
-    this.options.isLive = is
-  }
   /**
    * 获取 audioContext 声音输出 Node，可拿给外部去处理
    */
