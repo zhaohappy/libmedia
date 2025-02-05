@@ -173,16 +173,19 @@ export default class IMpegtsFormat extends IFormat {
   private parsePESSlice(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>, queue: TSSliceQueue, stream: AVStream) {
     const pes = parsePESSlice(queue)
 
-    parsePES(pes)
+    let ret = parsePES(pes)
+
+    if (ret) {
+      return ret
+    }
 
     if (pes.randomAccessIndicator || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
       avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
     }
 
-    const codecId = stream.codecpar.codecId
-    if (codecId === AVCodecID.AV_CODEC_ID_H264
-      || codecId === AVCodecID.AV_CODEC_ID_H265
-      || codecId === AVCodecID.AV_CODEC_ID_VVC
+    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H265
+      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
     ) {
       avpacket.bitFormat = BitFormat.ANNEXB
     }

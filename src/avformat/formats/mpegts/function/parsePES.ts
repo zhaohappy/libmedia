@@ -54,7 +54,7 @@ export default function parsePES(pes: PES) {
 
     while (true) {
       if (6 + offset >= data.length) {
-        return
+        return errorType.DATA_INVALID
       }
       flags = data[6 + offset]
       if (flags !== 0xff) {
@@ -131,7 +131,7 @@ export default function parsePES(pes: PES) {
     if (pesPacketLength !== 0) {
       if (pesPacketLength < offset + headerSize) {
         logger.error('Malformed PES: PES_packet_length < 3 + PES_header_data_length')
-        return
+        return errorType.DATA_INVALID
       }
       payloadLength = pesPacketLength - (offset + headerSize)
     }
