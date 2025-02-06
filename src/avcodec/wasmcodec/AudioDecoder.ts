@@ -86,7 +86,7 @@ export default class WasmAudioDecoder {
   }
 
   private receiveAVFrame() {
-    return this.decoder.call<int32>('decoder_receive', this.getAVFrame())
+    return this.decoder.invoke<int32>('decoder_receive', this.getAVFrame())
   }
 
   public async open(parameters: pointer<AVCodecParameters>, opts: Data = {}): Promise<int32> {
@@ -113,10 +113,10 @@ export default class WasmAudioDecoder {
 
     let ret = 0
     if (support.jspi) {
-      ret = await this.decoder.callAsync<int32>('decoder_open', parameters, nullptr, 1, optsP)
+      ret = await this.decoder.invokeAsync<int32>('decoder_open', parameters, nullptr, 1, optsP)
     }
     else {
-      ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, 1, optsP)
+      ret = this.decoder.invoke<int32>('decoder_open', parameters, nullptr, 1, optsP)
       await this.decoder.childThreadsReady()
     }
 
@@ -143,7 +143,7 @@ export default class WasmAudioDecoder {
       }
     }
 
-    let ret = this.decoder.call<int32>('decoder_decode', avpacket)
+    let ret = this.decoder.invoke<int32>('decoder_decode', avpacket)
 
     if (ret) {
       return ret
@@ -166,7 +166,7 @@ export default class WasmAudioDecoder {
   }
 
   public async flush(): Promise<int32> {
-    this.decoder.call('decoder_flush')
+    this.decoder.invoke('decoder_flush')
     while (1) {
       const ret = this.receiveAVFrame()
       if (ret < 1) {
@@ -178,7 +178,7 @@ export default class WasmAudioDecoder {
   }
 
   public close() {
-    this.decoder.call('decoder_close')
+    this.decoder.invoke('decoder_close')
     this.decoder.destroy()
     this.decoder = null
 

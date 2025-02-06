@@ -75,20 +75,20 @@ export default class VideoScaler {
 
     await this.scaler.run()
 
-    this.scaler.call(
+    this.scaler.invoke(
       'scale_set_input_parameters',
       input.width,
       input.height,
       input.format
     )
-    this.scaler.call(
+    this.scaler.invoke(
       'scale_set_output_parameters',
       output.width,
       output.height,
       output.format
     )
 
-    let ret = this.scaler.call<int32>('scale_init', algorithm)
+    let ret = this.scaler.invoke<int32>('scale_init', algorithm)
     if (ret < 0) {
       logger.error(`open scaler failed, ret: ${ret}`)
       return errorType.INVALID_PARAMETERS
@@ -97,11 +97,11 @@ export default class VideoScaler {
   }
 
   public scale(src: pointer<AVFrame>, dst: pointer<AVFrame>) {
-    return this.scaler.call<int32>('scale_process', src, dst)
+    return this.scaler.invoke<int32>('scale_process', src, dst)
   }
 
   public close() {
-    this.scaler.call('scale_destroy')
+    this.scaler.invoke('scale_destroy')
     this.scaler.destroy()
     this.scaler = null
   }

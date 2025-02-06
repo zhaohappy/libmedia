@@ -123,7 +123,7 @@ export default class WasmVideoDecoder {
   }
 
   private receiveAVFrame() {
-    return this.decoder.call<int32>('decoder_receive', this.getAVFrame())
+    return this.decoder.invoke<int32>('decoder_receive', this.getAVFrame())
   }
 
   public async open(parameters: pointer<AVCodecParameters>, threadCount: number = 1, opts: Data = {}): Promise<int32> {
@@ -149,10 +149,10 @@ export default class WasmVideoDecoder {
     }
 
     if (support.jspi) {
-      ret = await this.decoder.callAsync<int32>('decoder_open', parameters, nullptr, threadCount, optsP)
+      ret = await this.decoder.invokeAsync<int32>('decoder_open', parameters, nullptr, threadCount, optsP)
     }
     else {
-      ret = this.decoder.call<int32>('decoder_open', parameters, nullptr, threadCount, optsP)
+      ret = this.decoder.invoke<int32>('decoder_open', parameters, nullptr, threadCount, optsP)
       await this.decoder.childThreadsReady()
     }
 
@@ -178,7 +178,7 @@ export default class WasmVideoDecoder {
       }
     }
 
-    let ret = this.decoder.call<int32>('decoder_decode', avpacket)
+    let ret = this.decoder.invoke<int32>('decoder_decode', avpacket)
 
     if (ret) {
       return ret
@@ -200,7 +200,7 @@ export default class WasmVideoDecoder {
   }
 
   public async flush(): Promise<int32> {
-    this.decoder.call('decoder_flush')
+    this.decoder.invoke('decoder_flush')
     while (1) {
       const ret = this.receiveAVFrame()
       if (ret < 1) {
@@ -212,7 +212,7 @@ export default class WasmVideoDecoder {
   }
 
   public close() {
-    this.decoder.call('decoder_close')
+    this.decoder.invoke('decoder_close')
     this.decoder.destroy()
     this.decoder = null
 
@@ -231,7 +231,7 @@ export default class WasmVideoDecoder {
   }
 
   public setSkipFrameDiscard(discard: AVDiscard) {
-    this.decoder.call('decoder_discard', discard)
+    this.decoder.invoke('decoder_discard', discard)
   }
 
   public getChildThreadCount() {

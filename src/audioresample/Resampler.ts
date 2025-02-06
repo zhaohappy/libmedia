@@ -65,14 +65,14 @@ export default class Resampler {
 
     await this.resampler.run()
 
-    this.resampler.call(
+    this.resampler.invoke(
       'resample_set_input_parameters',
       input.sampleRate,
       input.channels,
       input.format,
       input.layout || nullptr
     )
-    this.resampler.call(
+    this.resampler.invoke(
       'resample_set_output_parameters',
       output.sampleRate,
       output.channels,
@@ -80,7 +80,7 @@ export default class Resampler {
       output.layout || nullptr
     )
 
-    let ret = this.resampler.call<int32>('resample_init')
+    let ret = this.resampler.invoke<int32>('resample_init')
     if (ret < 0) {
       logger.error(`open resampler failed, ret: ${ret}`)
       return errorType.INVALID_PARAMETERS
@@ -89,15 +89,15 @@ export default class Resampler {
   }
 
   public resample(input: pointer<pointer<uint8>>, output: pointer<AVPCMBuffer>, numberOfFrames: int32) {
-    return this.resampler.call<int32>('resample_process', input, output, numberOfFrames)
+    return this.resampler.invoke<int32>('resample_process', input, output, numberOfFrames)
   }
 
   public getOutputSampleCount(numberOfFrames: int32) {
-    return this.resampler.call<int32>('resample_nb_sample', numberOfFrames)
+    return this.resampler.invoke<int32>('resample_nb_sample', numberOfFrames)
   }
 
   public close() {
-    this.resampler.call('resample_destroy')
+    this.resampler.invoke('resample_destroy')
     this.resampler.destroy()
     this.resampler = null
   }

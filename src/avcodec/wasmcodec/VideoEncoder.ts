@@ -143,7 +143,7 @@ export default class WasmVideoEncoder {
   }
 
   private receiveAVPacket() {
-    return this.encoder.call<int32>('encoder_receive', this.getAVPacket())
+    return this.encoder.invoke<int32>('encoder_receive', this.getAVPacket())
   }
 
   public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, threadCount: number = 1, opts: Data = {}): Promise<int32> {
@@ -157,9 +157,9 @@ export default class WasmVideoEncoder {
     accessof(optsP) <- nullptr
 
     if (parameters.codecId === AVCodecID.AV_CODEC_ID_MPEG4 && parameters.bitFormat === BitFormat.AVCC) {
-      this.encoder.call('encoder_set_flags', 1 << 22)
+      this.encoder.invoke('encoder_set_flags', 1 << 22)
     }
-    this.encoder.call('encoder_set_max_b_frame', parameters.videoDelay)
+    this.encoder.invoke('encoder_set_max_b_frame', parameters.videoDelay)
 
     if (object.keys(opts).length) {
       if (this.encoderOptions) {
@@ -179,10 +179,10 @@ export default class WasmVideoEncoder {
     let ret = 0
 
     if (support.jspi) {
-      ret = await this.encoder.callAsync<int32>('encoder_open', parameters, timeBaseP, threadCount, optsP)
+      ret = await this.encoder.invokeAsync<int32>('encoder_open', parameters, timeBaseP, threadCount, optsP)
     }
     else {
-      ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, threadCount, optsP)
+      ret = this.encoder.invoke<int32>('encoder_open', parameters, timeBaseP, threadCount, optsP)
       await this.encoder.childThreadsReady()
     }
 
@@ -260,7 +260,7 @@ export default class WasmVideoEncoder {
   public async encodeAsync(frame: pointer<AVFrame> | VideoFrame, key: boolean): Promise<int32> {
     frame = this.preEncode(frame, key)
 
-    let ret = await this.encoder.callAsync<int32>('encoder_encode', frame)
+    let ret = await this.encoder.invokeAsync<int32>('encoder_encode', frame)
     if (ret) {
       return ret
     }
@@ -270,7 +270,7 @@ export default class WasmVideoEncoder {
   public encode(frame: pointer<AVFrame> | VideoFrame, key: boolean): int32 {
     frame = this.preEncode(frame, key)
 
-    let ret = this.encoder.call<int32>('encoder_encode', frame)
+    let ret = this.encoder.invoke<int32>('encoder_encode', frame)
     if (ret) {
       return ret
     }
@@ -279,7 +279,7 @@ export default class WasmVideoEncoder {
   }
 
   public async flush(): Promise<int32> {
-    this.encoder.call('encoder_flush')
+    this.encoder.invoke('encoder_flush')
     while (1) {
       const ret = this.receiveAVPacket()
       if (ret < 1) {
@@ -295,8 +295,8 @@ export default class WasmVideoEncoder {
       return this.extradata
     }
 
-    const pointer = this.encoder.call<pointer<uint8>>('encoder_get_extradata')
-    const size = this.encoder.call<int32>('encoder_get_extradata_size')
+    const pointer = this.encoder.invoke<pointer<uint8>>('encoder_get_extradata')
+    const size = this.encoder.invoke<int32>('encoder_get_extradata_size')
     if (pointer && size) {
       return mapUint8Array(pointer, reinterpret_cast<size>(size)).slice()
     }
@@ -305,14 +305,14 @@ export default class WasmVideoEncoder {
 
   public getColorSpace() {
     return {
-      colorSpace: this.encoder.call<int32>('encoder_get_color_space'),
-      colorPrimaries: this.encoder.call<int32>('encoder_get_color_primaries'),
-      colorTrc: this.encoder.call<int32>('encoder_get_color_trc')
+      colorSpace: this.encoder.invoke<int32>('encoder_get_color_space'),
+      colorPrimaries: this.encoder.invoke<int32>('encoder_get_color_primaries'),
+      colorTrc: this.encoder.invoke<int32>('encoder_get_color_trc')
     }
   }
 
   public close() {
-    this.encoder.call('encoder_close')
+    this.encoder.invoke('encoder_close')
     this.encoder.destroy()
     this.encoder = null
 

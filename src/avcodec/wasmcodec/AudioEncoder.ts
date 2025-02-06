@@ -203,7 +203,7 @@ export default class WasmAudioEncoder {
   }
 
   private receiveAVPacket() {
-    return this.encoder.call<int32>('encoder_receive', this.getAVPacket())
+    return this.encoder.invoke<int32>('encoder_receive', this.getAVPacket())
   }
 
   public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, opts: Data = {}): Promise<int32> {
@@ -216,7 +216,7 @@ export default class WasmAudioEncoder {
     timeBaseP.den = timeBase.den
     accessof(optsP) <- nullptr
 
-    this.encoder.call('encoder_set_flags', 1 << 22)
+    this.encoder.invoke('encoder_set_flags', 1 << 22)
 
     if (object.keys(opts).length) {
       if (this.encoderOptions) {
@@ -236,14 +236,14 @@ export default class WasmAudioEncoder {
     let ret = 0
 
     if (support.jspi) {
-      ret = await this.encoder.callAsync<int32>('encoder_open', parameters, timeBaseP, 1, optsP)
+      ret = await this.encoder.invokeAsync<int32>('encoder_open', parameters, timeBaseP, 1, optsP)
     }
     else {
-      ret = this.encoder.call<int32>('encoder_open', parameters, timeBaseP, 1, optsP)
+      ret = this.encoder.invoke<int32>('encoder_open', parameters, timeBaseP, 1, optsP)
       await this.encoder.childThreadsReady()
     }
 
-    this.frameSize = this.encoder.call<int32>('encoder_get_framesize_size')
+    this.frameSize = this.encoder.invoke<int32>('encoder_get_framesize_size')
 
     this.encoderOptions = accessof(optsP)
 
@@ -264,7 +264,7 @@ export default class WasmAudioEncoder {
   }
 
   private encode_(avframe: pointer<AVFrame>) {
-    let ret = this.encoder.call<int32>('encoder_encode', avframe)
+    let ret = this.encoder.invoke<int32>('encoder_encode', avframe)
     if (ret) {
       return ret
     }
@@ -329,7 +329,7 @@ export default class WasmAudioEncoder {
       destroyAVFrame(avframe)
     }
 
-    this.encoder.call('encoder_flush', nullptr)
+    this.encoder.invoke('encoder_flush', nullptr)
     while (1) {
       const ret = this.receiveAVPacket()
       if (ret < 1) {
@@ -341,8 +341,8 @@ export default class WasmAudioEncoder {
   }
 
   public getExtraData() {
-    const pointer = this.encoder.call<pointer<uint8>>('encoder_get_extradata')
-    const size = this.encoder.call<int32>('encoder_get_extradata_size')
+    const pointer = this.encoder.invoke<pointer<uint8>>('encoder_get_extradata')
+    const size = this.encoder.invoke<int32>('encoder_get_extradata_size')
 
     if (pointer && size) {
       return mapUint8Array(pointer, reinterpret_cast<size>(size)).slice()
@@ -351,7 +351,7 @@ export default class WasmAudioEncoder {
   }
 
   public close() {
-    this.encoder.call('encoder_close')
+    this.encoder.invoke('encoder_close')
     this.encoder.destroy()
     this.encoder = null
 
