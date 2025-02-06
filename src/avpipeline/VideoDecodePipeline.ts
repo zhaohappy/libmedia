@@ -285,7 +285,7 @@ export default class VideoDecodePipeline extends Pipeline {
                     new Sleep(2),
                     task.targetDecoder.flush()
                   ])
-                  if (is.number(ret)) {
+                  if (ret) {
                     logger.warn(`video hardware decoder flush failed, ignore it, taskId: ${task.taskId}`)
                   }
                 }

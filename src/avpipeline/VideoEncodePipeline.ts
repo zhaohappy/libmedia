@@ -393,7 +393,7 @@ export default class VideoEncodePipeline extends Pipeline {
                       new Sleep(2),
                       task.targetEncoder.flush()
                     ])
-                    if (is.number(ret)) {
+                    if (ret) {
                       logger.warn(`video hardware encoder flush failed, ignore it, taskId: ${task.taskId}`)
                     }
                   }
