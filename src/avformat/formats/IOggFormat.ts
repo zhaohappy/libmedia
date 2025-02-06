@@ -30,7 +30,7 @@ import { OggPage, OggsCommentPage, PagePayload } from './ogg/OggPage'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import { OpusOggsIdPage, OpusOggsCommentPage } from './ogg/opus'
-import { VorbisOggsIdPage, VorbisOggsCommentPage } from './ogg/vorbis'
+import { VorbisOggsIdPage, VorbisOggsCommentPage, parseVorbisComment } from './ogg/vorbis'
 import * as errorType from 'avutil/error'
 import concatTypeArray from 'common/function/concatTypeArray'
 import IFormat from './IFormat'
@@ -47,6 +47,7 @@ import { avRescaleQ } from 'avutil/util/rational'
 import * as array from 'common/util/array'
 import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
 import * as bigint from 'common/util/bigint'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 interface IOggFormatPrivateData {
   serialNumber: number
@@ -166,16 +167,9 @@ export default class IOggFormat extends IFormat {
 
   private addComment(comments: OggsCommentPage, stream: AVStream) {
     if (comments.vendorString) {
-      stream.metadata['vendor'] = comments.vendorString
+      stream.metadata[AVStreamMetadataKey.VENDOR] = comments.vendorString
     }
-    array.each(comments.comments.list, (comment) => {
-      const item = comment.split('=')
-      if (item.length > 1) {
-        const key = item.shift()
-        const value = item.join('=')
-        stream.metadata[key] = value
-      }
-    })
+    parseVorbisComment(comments.comments.list, stream.metadata)
   }
 
   private async createStream(formatContext: AVIFormatContext, payload: Uint8Array) {

@@ -42,6 +42,7 @@ import * as id3v2 from './mp3/id3v2'
 import { mapUint8Array } from 'cheap/std/memory'
 import * as text from 'common/util/text'
 import * as object from 'common/util/object'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 const XING_NUM_BAGS = 400
 
@@ -247,10 +248,10 @@ export default class OMp3Format extends OFormat {
     // we write it, because some (broken) tools always expect it to be present
     this.xingWriter.writeUint32(0)
 
-    const metadata = stream.metadata as Mp3MetaData
+    const metadata = stream.metadata as Mp3MetaData || {}
 
-    if (metadata?.encoder) {
-      const buffer = text.encode(metadata.encoder)
+    if (metadata[AVStreamMetadataKey.ENCODER]) {
+      const buffer = text.encode(metadata[AVStreamMetadataKey.ENCODER])
       this.xingWriter.writeBuffer(buffer.subarray(0, 9))
     }
     else {
@@ -412,7 +413,7 @@ export default class OMp3Format extends OFormat {
         return stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3
       })
 
-      const metadata = stream.metadata as Mp3MetaData
+      const metadata = stream.metadata as Mp3MetaData || {}
 
       const id1Buffer = new Uint8Array(ID3V1_SIZE)
       const id1Writer = new BufferWriter(id1Buffer)
@@ -426,28 +427,28 @@ export default class OMp3Format extends OFormat {
         }
       }
 
-      if (metadata.title) {
-        writeText(metadata.title)
+      if (metadata[AVStreamMetadataKey.TITLE]) {
+        writeText(metadata[AVStreamMetadataKey.TITLE])
       }
       else {
         id1Writer.skip(30)
       }
-      if (metadata.artist) {
-        writeText(metadata.artist)
+      if (metadata[AVStreamMetadataKey.ARTIST]) {
+        writeText(metadata[AVStreamMetadataKey.ARTIST])
       }
       else {
         id1Writer.skip(30)
       }
-      if (metadata.album) {
-        writeText(metadata.album)
+      if (metadata[AVStreamMetadataKey.ALBUM]) {
+        writeText(metadata[AVStreamMetadataKey.ALBUM])
       }
       else {
         id1Writer.skip(30)
       }
 
       id1Buffer[127] = 0xff
-      if (metadata.genre) {
-        id1Buffer[127] = +metadata.genre
+      if (metadata[AVStreamMetadataKey.GENRE]) {
+        id1Buffer[127] = +metadata[AVStreamMetadataKey.GENRE]
       }
 
       formatContext.ioWriter.writeBuffer(id1Buffer)

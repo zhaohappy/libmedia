@@ -39,6 +39,7 @@ import * as array from 'common/util/array'
 import * as text from 'common/util/text'
 import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 
 export default class IWebVttFormat extends IFormat {
@@ -98,7 +99,7 @@ export default class IWebVttFormat extends IFormat {
 
     const header = await formatContext.ioReader.readLine()
     if (header.indexOf('-') > 0) {
-      stream.metadata['title'] = header.split('-').pop().trim()
+      stream.metadata[AVStreamMetadataKey.TITLE] = header.split('-').pop().trim()
     }
 
     this.index = 0
@@ -189,7 +190,7 @@ export default class IWebVttFormat extends IFormat {
     }
     catch (error) {
 
-      stream.metadata['styles'] = styles
+      stream.metadata[AVStreamMetadataKey.STYLES] = styles
 
       return 0
     }

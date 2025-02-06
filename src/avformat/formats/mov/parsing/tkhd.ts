@@ -28,6 +28,7 @@ import Stream, { AVDisposition } from 'avutil/AVStream'
 import { Atom, MOVContext, MOVStreamContext } from '../type'
 import * as logger from 'common/util/logger'
 import { TKHDFlags } from '../boxType'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
   const streamContext = stream.privData as MOVStreamContext
@@ -43,15 +44,15 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   }
 
   if (version === 1) {
-    stream.metadata['creationTime'] = await ioReader.readUint64()
-    stream.metadata['modificationTime'] = await ioReader.readUint64()
+    stream.metadata[AVStreamMetadataKey.CREATION_TIME] = await ioReader.readUint64()
+    stream.metadata[AVStreamMetadataKey.MODIFICATION_TIME] = await ioReader.readUint64()
     streamContext.trackId = await ioReader.readUint32()
     await ioReader.skip(4)
     streamContext.duration = await ioReader.readUint64()
   }
   else {
-    stream.metadata['creationTime'] = static_cast<int64>(await ioReader.readUint32())
-    stream.metadata['modificationTime'] = static_cast<int64>(await ioReader.readUint32())
+    stream.metadata[AVStreamMetadataKey.CREATION_TIME] = static_cast<int64>(await ioReader.readUint32())
+    stream.metadata[AVStreamMetadataKey.MODIFICATION_TIME] = static_cast<int64>(await ioReader.readUint32())
     streamContext.trackId = await ioReader.readUint32()
     await ioReader.skip(4)
     streamContext.duration = static_cast<int64>(await ioReader.readUint32())
@@ -79,7 +80,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   streamContext.width = (await ioReader.readUint32()) >> 16
   streamContext.height = (await ioReader.readUint32()) >> 16
 
-  stream.metadata['matrix'] = matrix
+  stream.metadata[AVStreamMetadataKey.MATRIX] = matrix
 
   const remainingLength = atom.size - Number(ioReader.getPos() - now)
   if (remainingLength > 0) {

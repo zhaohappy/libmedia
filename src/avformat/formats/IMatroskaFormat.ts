@@ -68,6 +68,7 @@ import concatTypeArray from 'common/function/concatTypeArray'
 import * as text from 'common/util/text'
 import isDef from 'common/function/isDef'
 import * as naluUtil from 'avutil/util/nalu'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 export default class IMatroskaFormat extends IFormat {
 
@@ -148,10 +149,10 @@ export default class IMatroskaFormat extends IFormat {
         }
 
         if (track.language) {
-          stream.metadata['language'] = track.language
+          stream.metadata[AVStreamMetadataKey.LANGUAGE] = track.language
         }
         if (track.name) {
-          stream.metadata['name'] = track.name
+          stream.metadata[AVStreamMetadataKey.TITLE] = track.name
         }
 
         if (track.audio) {

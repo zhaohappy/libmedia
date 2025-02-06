@@ -29,6 +29,7 @@ import IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
 import { UINT32_MAX } from 'avutil/constant'
 import getSampleDuration from '../function/getSampleDuration'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
 
@@ -36,9 +37,9 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
 
   const duration = getSampleDuration(streamContext)
 
-  const creationTime = stream.metadata['creationTime'] || 0
-  const modificationTime = stream.metadata['modificationTime'] || 0
-  const languge = stream.metadata['language'] || 21956
+  const creationTime = stream.metadata[AVStreamMetadataKey.CREATION_TIME] || 0
+  const modificationTime = stream.metadata[AVStreamMetadataKey.MODIFICATION_TIME] || 0
+  const languge = stream.metadata[AVStreamMetadataKey.LANGUAGE] || 21956
 
   let version = duration < static_cast<int64>(UINT32_MAX) ? 0 : 1
   version = creationTime < UINT32_MAX ? 0 : 1

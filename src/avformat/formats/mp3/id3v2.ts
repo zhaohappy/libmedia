@@ -192,7 +192,7 @@ export async function parse(ioReader: IOReader, len: int32, id3v2: ID3V2, metada
           metadata.composer = content
           break
         case 'TENC':
-          metadata.encodedBy = content
+          metadata.vendor = content
           break
         case 'TLAN':
           metadata.language = content
@@ -335,8 +335,8 @@ export function write(ioWriter: IOWriterSync, version: number, padding: int32, m
     writeText('TCOM', metadata.composer)
   }
 
-  if (metadata.encodedBy) {
-    writeText('TENC', metadata.encodedBy)
+  if (metadata.vendor) {
+    writeText('TENC', metadata.vendor)
   }
 
   if (metadata.language) {

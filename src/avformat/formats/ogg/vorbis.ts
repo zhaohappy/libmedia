@@ -33,6 +33,64 @@ import IOWriter from 'common/io/IOWriterSync'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { OggsCommentPage, PagePayload } from './OggPage'
 import IOReaderSync from 'common/io/IOReaderSync'
+import { Data } from 'common/types/type'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
+import * as object from 'common/util/object'
+import isDef from 'common/function/isDef'
+
+const CommentKeyMap = {
+  'album': AVStreamMetadataKey.ALBUM,
+  'artist': AVStreamMetadataKey.ARTIST,
+  'description': AVStreamMetadataKey.DESCRIPTION,
+  'encoder': AVStreamMetadataKey.ENCODER,
+  'title': AVStreamMetadataKey.TITLE,
+  'tracknumber': AVStreamMetadataKey.TRACK,
+  'date': AVStreamMetadataKey.DATE,
+  'genre': AVStreamMetadataKey.GENRE,
+  'comment': AVStreamMetadataKey.COMMENT,
+  'albumartist': AVStreamMetadataKey.ALBUM_ARTIST,
+  'composer': AVStreamMetadataKey.COMPOSER,
+  'performer': AVStreamMetadataKey.PERFORMER,
+  'discnumber': AVStreamMetadataKey.DISC,
+  'organization': AVStreamMetadataKey.VENDOR,
+  'copyright': AVStreamMetadataKey.COPYRIGHT,
+  'license': AVStreamMetadataKey.LICENSE,
+  'isrc': AVStreamMetadataKey.ISRC,
+  'lyrics': AVStreamMetadataKey.LYRICS,
+  'language': AVStreamMetadataKey.LANGUAGE,
+  'label': AVStreamMetadataKey.VENDOR,
+  'script': AVStreamMetadataKey.LYRICS,
+  'encoded_by': AVStreamMetadataKey.VENDOR
+}
+
+export function parseVorbisComment(list: string[], metadata: Data) {
+  if (!list) {
+    return
+  }
+  list.forEach((value) => {
+    const l = value.split('=')
+    if (l.length === 2) {
+      const k = l[0].trim().toLowerCase()
+      const v = l[1].trim()
+      if (CommentKeyMap[k]) {
+        metadata[CommentKeyMap[k]] = v
+      }
+      else {
+        metadata[k.toLowerCase()] = v
+      }
+    }
+  })
+}
+
+export function addVorbisComment(metadata: Data) {
+  const list: string[] = []
+  object.each(CommentKeyMap, (value, key) => {
+    if (isDef(metadata[value])) {
+      list.push(`${key.toUpperCase()}=${metadata[value]}`)
+    }
+  })
+  return list
+}
 
 export class VorbisOggsIdPage implements PagePayload {
 

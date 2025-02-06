@@ -44,6 +44,8 @@ import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import seekInBytes from '../function/seekInBytes'
 import * as array from 'common/util/array'
 import { avRescaleQ } from 'avutil/util/rational'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
+import { parseVorbisComment } from './ogg/vorbis'
 
 const PACKET_SIZE = 1024
 
@@ -188,13 +190,13 @@ export default class IFlacFormat extends IFormat {
         const vendorStringLength = await formatContext.ioReader.readUint32()
         const vendorString = await formatContext.ioReader.readString(vendorStringLength)
         const userCommentListLength = await formatContext.ioReader.readUint32()
-        const comments = []
+        const comments: string[] = []
         for (let i = 0; i < userCommentListLength; i++) {
           const length = await formatContext.ioReader.readUint32()
           comments.push(await formatContext.ioReader.readString(length))
         }
-        stream.metadata['vendor'] = vendorString
-        stream.metadata['comments'] = comments
+        stream.metadata[AVStreamMetadataKey.VENDOR] = vendorString
+        parseVorbisComment(comments, stream.metadata)
         formatContext.ioReader.setEndian(true)
       }
       else if (blockType === MetaDataBlockType.CUESHEET) {

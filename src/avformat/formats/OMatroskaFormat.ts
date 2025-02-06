@@ -51,6 +51,7 @@ import * as hevc from 'avutil/codecs/hevc'
 import * as vvc from 'avutil/codecs/vvc'
 import * as intread from 'avutil/util/intread'
 import { Uint8ArrayInterface } from 'common/io/interface'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 export interface OMatroskaFormatOptions {
   isLive?: boolean
@@ -214,14 +215,14 @@ export default class OMatroskaFormat extends OFormat {
         crypto.random(this.random)
         context.attachments.entry.push({
           uid: this.randomView.getBigUint64(0),
-          name: stream.metadata['name'] || 'unknown',
-          mime: stream.metadata['mime'] || 'unknown',
+          name: stream.metadata[AVStreamMetadataKey.TITLE] || 'unknown',
+          mime: stream.metadata[AVStreamMetadataKey.MIME] || 'unknown',
           data: {
             data: mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)),
             size: static_cast<int64>(stream.codecpar.extradataSize),
             pos: -1n
           },
-          description: stream.metadata['description'] || 'unknown'
+          description: stream.metadata[AVStreamMetadataKey.DESCRIPTION] || 'unknown'
         })
       }
       else {
@@ -237,11 +238,11 @@ export default class OMatroskaFormat extends OFormat {
             size: static_cast<int64>(stream.codecpar.extradataSize)
           }
         }
-        if (stream.metadata['language']) {
-          track.language = stream.metadata['language']
+        if (stream.metadata[AVStreamMetadataKey.LANGUAGE]) {
+          track.language = stream.metadata[AVStreamMetadataKey.LANGUAGE]
         }
-        if (stream.metadata['name']) {
-          track.name = stream.metadata['name']
+        if (stream.metadata[AVStreamMetadataKey.TITLE]) {
+          track.name = stream.metadata[AVStreamMetadataKey.TITLE]
         }
 
         switch (stream.codecpar.codecType) {

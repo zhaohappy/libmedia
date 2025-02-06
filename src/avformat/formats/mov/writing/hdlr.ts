@@ -28,6 +28,7 @@ import { MOVContext } from '../type'
 import IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
 import { AVMediaType } from 'avutil/codec'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
 
@@ -61,8 +62,8 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
       descr = 'SubtitleHandler'
     }
     else {
-      if (stream.metadata['handlerName']) {
-        descr = stream.metadata['handlerName']
+      if (stream.metadata[AVStreamMetadataKey.HANDLER_NAME]) {
+        descr = stream.metadata[AVStreamMetadataKey.HANDLER_NAME]
       }
       if (stream.metadata['hdlrType']) {
         hdlrType = stream.metadata['hdlrType']

@@ -71,7 +71,7 @@ import * as bigint from 'common/util/bigint'
 import getMediaSource from './function/getMediaSource'
 import JitterBufferController from './JitterBufferController'
 import getAudioCodec from 'avutil/function/getAudioCodec'
-import { Ext2Format, mediaType2AVMediaType } from 'avutil/stringEnum'
+import { AVStreamMetadataKey, Ext2Format, mediaType2AVMediaType } from 'avutil/stringEnum'
 import { AVDisposition, AVStreamInterface } from 'avutil/AVStream'
 import { AVFormatContextInterface } from 'avformat/AVFormatContext'
 import dump, { dumpCodecName, dumpKey } from 'avformat/dump'
@@ -1059,10 +1059,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     externalSubtitleTask.streamId = stream.id
 
     if (externalSubtitle.lang) {
-      stream.metadata['language'] = externalSubtitle.lang
+      stream.metadata[AVStreamMetadataKey.LANGUAGE] = externalSubtitle.lang
     }
     if (externalSubtitle.title) {
-      stream.metadata['title'] = externalSubtitle.title
+      stream.metadata[AVStreamMetadataKey.TITLE] = externalSubtitle.title
     }
 
     const handleStatus = this.status === AVPlayerStatus.PAUSED
@@ -1766,8 +1766,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         : this.canvas
 
       // 处理旋转
-      if (videoStream.metadata['matrix']) {
-        this.renderRotate = -(Math.atan2(videoStream.metadata['matrix'][3], videoStream.metadata['matrix'][0]) * (180 / Math.PI))
+      if (videoStream.metadata[AVStreamMetadataKey.MATRIX]) {
+        this.renderRotate = -(Math.atan2(videoStream.metadata[AVStreamMetadataKey.MATRIX][3], videoStream.metadata[AVStreamMetadataKey.MATRIX][0]) * (180 / Math.PI))
       }
 
       // 注册一个视频渲染任务

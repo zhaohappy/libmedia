@@ -32,6 +32,7 @@ import writeMatrix from './function/writeMatrix'
 import { AVMediaType } from 'avutil/codec'
 import { avRescaleQ } from 'avutil/util/rational'
 import getSampleDuration from '../function/getSampleDuration'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
 
@@ -45,8 +46,8 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
       num: 1
     }
   )
-  const creationTime = stream.metadata['creationTime'] || 0
-  const modificationTime = stream.metadata['modificationTime'] || 0
+  const creationTime = stream.metadata[AVStreamMetadataKey.CREATION_TIME] || 0
+  const modificationTime = stream.metadata[AVStreamMetadataKey.MODIFICATION_TIME] || 0
   const layer = streamContext.layer || 0
   const alternateGroup = streamContext.alternateGroup || 0
   let width = stream.codecpar.width > 0 ? stream.codecpar.width : 0

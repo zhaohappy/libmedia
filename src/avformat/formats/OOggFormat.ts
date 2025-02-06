@@ -35,7 +35,7 @@ import * as logger from 'common/util/logger'
 import { getAVPacketData } from 'avutil/util/avpacket'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { OpusOggsCommentPage, OpusOggsIdPage } from './ogg/opus'
-import { VorbisOggsCommentPage, VorbisOggsIdPage } from './ogg/vorbis'
+import { addVorbisComment, VorbisOggsCommentPage, VorbisOggsIdPage } from './ogg/vorbis'
 import { mapUint8Array } from 'cheap/std/memory'
 import IOReaderSync from 'common/io/IOReaderSync'
 import * as errorType from 'avutil/error'
@@ -178,6 +178,10 @@ export default class OOggFormat extends OFormat {
           const idPage = new OpusOggsIdPage()
           const commentPage = new OpusOggsCommentPage()
           idPage.streamIndex = stream.index
+          const list = addVorbisComment(stream.metadata)
+          list.forEach((value) => {
+            commentPage.addComment(value)
+          })
           idPage.setCodec(stream.codecpar)
           commentPage.streamIndex = stream.index
           this.headerPagesPayload = [
@@ -196,6 +200,11 @@ export default class OOggFormat extends OFormat {
           idPage.setCodec(stream.codecpar)
           idPage.streamIndex = stream.index
           commentPage.streamIndex = stream.index
+
+          const list = addVorbisComment(stream.metadata)
+          list.forEach((value) => {
+            commentPage.addComment(value)
+          })
 
           this.cacheWriter.reset()
           idPage.write(this.cacheWriter)
@@ -264,6 +273,10 @@ export default class OOggFormat extends OFormat {
 
           const commentPage = new OggsCommentPage()
           commentPage.streamIndex = stream.index
+          const list = addVorbisComment(stream.metadata)
+          list.forEach((value) => {
+            commentPage.addComment(value)
+          })
 
           this.cacheWriter.setEndian(true)
           this.cacheWriter.reset()
@@ -290,6 +303,10 @@ export default class OOggFormat extends OFormat {
 
           const commentPage = new OggsCommentPage()
           commentPage.streamIndex = stream.index
+          const list = addVorbisComment(stream.metadata)
+          list.forEach((value) => {
+            commentPage.addComment(value)
+          })
           this.cacheWriter.reset()
           commentPage.write(this.cacheWriter)
           this.writePage(stream, formatContext.ioWriter, this.cacheWriter.getBuffer().slice(), 0)

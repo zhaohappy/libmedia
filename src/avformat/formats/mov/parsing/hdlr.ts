@@ -29,6 +29,7 @@ import { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 import isDef from 'common/function/isDef'
 import { HandlerType2MediaType } from '../mov'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
   const now = ioReader.getPos()
@@ -63,7 +64,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
       if (skip) {
         await ioReader.skip(1)
       }
-      stream.metadata['handlerName'] = await ioReader.readString(len - (skip ? 1 : 0))
+      stream.metadata[AVStreamMetadataKey.HANDLER_NAME] = await ioReader.readString(len - (skip ? 1 : 0))
     }
   }
 

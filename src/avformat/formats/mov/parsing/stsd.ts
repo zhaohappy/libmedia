@@ -45,6 +45,7 @@ import colr from './colr'
 
 import ac3 from './dac3'
 import eac3 from './dec3'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
   const now = ioReader.getPos()
@@ -90,7 +91,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
       // revision level
       await ioReader.skip(2)
       // vendor
-      stream.metadata['vendorId'] = await ioReader.readString(4)
+      stream.metadata[AVStreamMetadataKey.VENDOR_ID] = await ioReader.readString(4)
       // temporal quality
       await ioReader.skip(4)
       // spatial quality
@@ -114,7 +115,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
       if (len > 31) {
         len = 31
       }
-      stream.metadata['encoder'] = await ioReader.readString(len)
+      stream.metadata[AVStreamMetadataKey.ENCODER] = await ioReader.readString(len)
       if (len < 31) {
         await ioReader.skip(31 - len)
       }
@@ -235,7 +236,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
       // Revision level
       await ioReader.skip(2)
 
-      stream.metadata['vendorId'] = await ioReader.readString(4)
+      stream.metadata[AVStreamMetadataKey.VENDOR_ID] = await ioReader.readString(4)
 
       stream.codecpar.chLayout.nbChannels = await ioReader.readUint16()
       stream.codecpar.bitsPerCodedSample = await ioReader.readUint16()

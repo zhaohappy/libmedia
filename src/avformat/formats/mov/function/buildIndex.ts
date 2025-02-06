@@ -30,6 +30,7 @@ import { AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import { avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 
 export function buildIndex(stream: Stream, movContext: MOVContext) {
@@ -68,14 +69,14 @@ export function buildIndex(stream: Stream, movContext: MOVContext) {
 
   const samplesIndex: Sample[] = []
 
-  if (!movContext.ignoreEditlist && stream.metadata.elst?.length) {
+  if (!movContext.ignoreEditlist && stream.metadata[AVStreamMetadataKey.ELST]?.length) {
     let timeOffset = 0n
     let editStartIndex = 0
     let unsupported = false
     let emptyDuration = 0n
     let startTime = 0n
-    for (let i = 0; i < stream.metadata.elst.length; i++) {
-      const e = stream.metadata.elst[i]
+    for (let i = 0; i < stream.metadata[AVStreamMetadataKey.ELST].length; i++) {
+      const e = stream.metadata[AVStreamMetadataKey.ELST][i]
       if (i === 0 && e.mediaTime === -1n) {
         emptyDuration = e.segmentDuration
         editStartIndex = 1

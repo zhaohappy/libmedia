@@ -49,7 +49,7 @@ import getVideoCodec from 'avutil/function/getVideoCodec'
 import * as mutex from 'cheap/thread/mutex'
 import AudioEncodePipeline from 'avpipeline/AudioEncodePipeline'
 import VideoEncodePipeline from 'avpipeline/VideoEncodePipeline'
-import { AudioCodecString2CodecId, Ext2Format, Ext2IOLoader,
+import { AudioCodecString2CodecId, AVStreamMetadataKey, Ext2Format, Ext2IOLoader,
   Format2AVFormat, PixfmtString2AVPixelFormat, SampleFmtString2SampleFormat,
   VideoCodecString2CodecId
 } from 'avutil/stringEnum'
@@ -621,7 +621,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       newStream.duration = avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, newStream.timeBase)
     }
 
-    newStream.metadata['encoder'] = `libmedia-${defined(VERSION)}`
+    newStream.metadata[AVStreamMetadataKey.ENCODER] = `libmedia-${defined(VERSION)}`
 
     return newStream
   }

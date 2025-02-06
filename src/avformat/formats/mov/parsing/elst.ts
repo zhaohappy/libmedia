@@ -27,6 +27,7 @@ import IOReader from 'common/io/IOReader'
 import Stream from 'avutil/AVStream'
 import { Atom, ElstEntry, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
@@ -64,7 +65,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
     })
   }
 
-  stream.metadata.elst = entries
+  stream.metadata[AVStreamMetadataKey.ELST] = entries
 
   const remainingLength = atom.size - Number(ioReader.getPos() - now)
   if (remainingLength > 0) {

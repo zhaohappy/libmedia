@@ -42,7 +42,7 @@ export interface Mp3MetaData {
   language?: string
   performer?: string
   publisher?: string
-  encodedBy?: string
+  vendor?: string
   composer?: string
   compilation?: string
   creationTime?: string

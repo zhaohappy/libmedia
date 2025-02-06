@@ -27,6 +27,7 @@ import IOReader from 'common/io/IOReader'
 import Stream from 'avutil/AVStream'
 import { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
+import { AVStreamMetadataKey } from 'avutil/stringEnum'
 
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
   const now = ioReader.getPos()
@@ -56,8 +57,8 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   stream.duration = duration
   stream.timeBase.den = timescale
   stream.timeBase.num = 1
-  stream.metadata['creationTime'] = creationTime
-  stream.metadata['modificationTime'] = modificationTime
+  stream.metadata[AVStreamMetadataKey.CREATION_TIME] = creationTime
+  stream.metadata[AVStreamMetadataKey.MODIFICATION_TIME] = modificationTime
 
 
   const language = await ioReader.readUint16()
@@ -68,8 +69,8 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
 
   const languageString = String.fromCharCode(chars[0] + 0x60, chars[1] + 0x60, chars[2] + 0x60)
 
-  stream.metadata['language'] = language
-  stream.metadata['languageString'] = languageString
+  stream.metadata[AVStreamMetadataKey.LANGUAGE] = language
+  stream.metadata[AVStreamMetadataKey.LANGUAGE_STRING] = languageString
 
   await ioReader.skip(2)
 
