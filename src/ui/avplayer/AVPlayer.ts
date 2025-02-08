@@ -77,6 +77,10 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     hasFooter: {
       type: 'boolean',
       value: true
+    },
+    folderFolded: {
+      type: 'boolean',
+      value: false
     }
   },
 
@@ -97,7 +101,7 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       error: '',
       showBar: true,
       played: false,
-      folded: false,
+      folded: this.get('folderFolded'),
       loading: false,
       language,
       streams: [],
@@ -392,6 +396,7 @@ export interface AVPlayerUIOptions extends AVPlayerOptions {
   fullscreenDom?: HTMLElement
   ui?: {
     hasFolder?: boolean
+    folderFolded?: boolean
     hasHeader?: boolean
     hasFooter?: boolean
   }
@@ -417,7 +422,8 @@ export default class AVPlayerUI extends AVPlayer {
         fullscreenDom: options.fullscreenDom,
         hasFolder: options.ui?.hasFolder,
         hasHeader: options.ui?.hasHeader,
-        hasFooter: options.ui?.hasFooter
+        hasFooter: options.ui?.hasFooter,
+        folderFolded: options.ui?.folderFolded,
       }
     }, AVPlayerUIComponentOptions))
 

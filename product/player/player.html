@@ -189,7 +189,8 @@
         ui: {
           hasFolder: !params.hasFolder || params.hasFolder && params.hasFolder !== '0' && params.hasFolder !== 'false',
           hasHeader: !params.hasHeader || params.hasHeader && params.hasHeader !== '0' && params.hasHeader !== 'false',
-          hasFooter: !params.hasFooter || params.hasFooter && params.hasFooter !== '0' && params.hasFooter !== 'false'
+          hasFooter: !params.hasFooter || params.hasFooter && params.hasFooter !== '0' && params.hasFooter !== 'false',
+          folderFolded: params.foldFolder && params.foldFolder !== '0' && params.foldFolder !== 'false'
         }
       })
       if (player.options.ui.hasFolder) {
@@ -198,9 +199,6 @@
             player.addUrl(params.url, !(!params.isLive || params.isLive === '0' || params.isLive === 'false'), true)
           }
         })
-        if (params.foldFolder && params.foldFolder !== '0' && params.foldFolder !== 'false') {
-          player.foldFolder()
-        }
       }
       if (params.url && !player.options.ui.hasFolder) {
         player.load(params.url, {
