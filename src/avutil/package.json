@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avutil",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "libmedia 工具模块",
   "repository": {
     "type": "git",

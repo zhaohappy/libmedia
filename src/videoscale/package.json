@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/videoscale",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "libmedia 图像格式处理",
   "repository": {
     "type": "git",

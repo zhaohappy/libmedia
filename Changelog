@@ -1,3 +1,18 @@
+version 0.6.0:
+
+feat:
+  - AVStream 的 metadata key 使用枚举，方便外层调用
+  - 重构 Decoder 和 Encoder 的 open 错误处理方式，将抛出错误改为返回错误码，与 decode 和 encode 方法保持一致
+  - AVPlayerLoadOptions 新增 isLive 配置可以覆盖 AVPlayerOptions 中的配置
+  - 添加对 AVFrame SideData 的处理
+  - 播放器自动检查音视频空帧并跳过
+  - 优化 mse 播放
+
+bugfix:
+  - mpegts 修复一些错误码返回不正确
+  - flv 的 extradata 时间戳使用当前 packet 的时间戳而不是 0
+  - mse 的一些边界条件判断修正
+
 version 0.5.0:
 
 feat:
