@@ -57,13 +57,24 @@ const Folder: ComponentOptions = {
       tipTop: 0,
       tipShow: false,
       root: [],
-      accept: musicExt.concat(movExt).map((i) => '.' + i).join(', ')
+      accept: musicExt.concat(movExt).map((i) => '.' + i).join(', '),
+      nextPlayNodeId: ''
     }
   },
 
   methods: {
     init(player: AVPlayer) {
 
+    },
+
+    findRootNodeBySource(source: string | File, isLive: boolean) {
+      const root = this.get('root')
+      for (let i = 0; i < root.length; i++) {
+        if (root[i].source === source && root[i].isLive === isLive) {
+          return root[i]
+        }
+      }
+      return null
     },
 
     async addDir(dir: DirectoryHandle) {
@@ -128,8 +139,10 @@ const Folder: ComponentOptions = {
 
     },
 
-    async addFile(handle: FileHandle) {
-      const file = await handle.getFile()
+    async addFile(file: File, handle?: FileHandle) {
+      if (this.findRootNodeBySource(file, false)) {
+        return
+      }
       this.append('root', {
         id: generateUUID(),
         type: 'file',
@@ -140,16 +153,37 @@ const Folder: ComponentOptions = {
       })
     },
 
-    addUrl(url: string, isLive: boolean) {
+    addUrl(url: string, isLive: boolean, playAfterAdded?: boolean) {
+      const node = this.findRootNodeBySource(url, isLive)
+      if (node) {
+        if (playAfterAdded) {
+          if (node.ref) {
+            node.ref.fire('play', node.ref)
+          }
+          else {
+            this.set('nextPlayNodeId', node.id)
+          }
+        }
+        return
+      }
+      const id = generateUUID()
       const params = urlUtil.parse(url)
       this.append('root', {
-        id: generateUUID(),
+        id: id,
         type: 'file',
         name: params.file || url,
         depth: 0,
         source: url,
         isLive
       })
+      if (playAfterAdded) {
+        this.set('nextPlayNodeId', id)
+      }
+    },
+
+    async addFileHandle(handle: FileHandle) {
+      const file = await handle.getFile()
+      await this.addFile(file, handle)
     },
 
     openDir() {
@@ -185,7 +219,7 @@ const Folder: ComponentOptions = {
       // @ts-ignore
       showOpenFilePicker(pickerOpts).then(async (fileHandles: FileHandle[]) => {
         for (let i = 0; i < fileHandles.length; i++) {
-          this.addFile(fileHandles[i])
+          this.addFileHandle(fileHandles[i])
           this.root.push(fileHandles[i])
         }
         indexDB.store(indexDB.KEY_FOLDER_ROOT, this.root)
@@ -196,15 +230,17 @@ const Folder: ComponentOptions = {
       return `${isLive ? 'libmediaLive:' : ''}${url}`
     },
 
-    openUrl() {
-      const url = this.$refs['url'].value
-
+    openUrl(url: string, isLive: boolean, playAfterAdded?: boolean) {
+      if (!url || !is.string(url)) {
+        url = this.$refs['url'].value
+      }
       if (!url) {
         return
       }
-
-      const isLive = this.$refs['live'].checked
-      this.addUrl(url, isLive)
+      if (isLive == null) {
+        isLive = this.$refs['live'].checked
+      }
+      this.addUrl(url, isLive, playAfterAdded)
       this.root.push(this.generateStoreUrl(url, isLive))
       indexDB.store(indexDB.KEY_FOLDER_ROOT, this.root)
       this.$refs['url'].value = ''
@@ -213,13 +249,7 @@ const Folder: ComponentOptions = {
 
     fileChange(event) {
       const file: File = event.originalEvent.target.files[0]
-      this.append('root', {
-        id: generateUUID(),
-        type: 'file',
-        name: file.name,
-        depth: 0,
-        source: file
-      })
+      this.addFile(file)
     },
 
     findNodeById(id: string, root: FileNode[]) {
@@ -279,11 +309,9 @@ const Folder: ComponentOptions = {
 
     preventDefault(event: CustomEvent) {
       event.preventDefault()
-    }
-  },
+    },
 
-  events: {
-    play(event, node) {
+    play(node) {
       const player = this.get('player') as AVPlayer
       if (node.get('node.id') === this.playNodeId) {
         if (player.getStatus() === AVPlayerStatus.PLAYED) {
@@ -361,6 +389,12 @@ const Folder: ComponentOptions = {
           this.fire('playNode', node.get('node'))
         })
       }
+    }
+  },
+
+  events: {
+    play(event, node) {
+      this.play(node)
     },
     delete(event, node) {
       let index = -1
@@ -392,54 +426,53 @@ const Folder: ComponentOptions = {
 
   afterMount() {
     this.namespace = '.component_folder' + Math.random()
-    if (this.get('canOpenFolder') || this.get('canUseFilePicker')) {
-      indexDB.load(indexDB.KEY_FOLDER_ROOT).then(async (root) => {
-        this.root = root || []
-        const list = []
-        for (let i = 0; i < this.root.length; i++) {
-          const handle: FileSystemFileHandle | string = this.root[i]
-          try {
-            if (is.string(handle)) {
-              let url = handle
-              const isLive = /^libmediaLive:/.test(url)
-              if (isLive) {
-                url = url.replace(/^libmediaLive:/, '')
-              }
-              this.addUrl(url, isLive)
+    indexDB.load(indexDB.KEY_FOLDER_ROOT).then(async (root) => {
+      this.root = root || []
+      const list = []
+      for (let i = 0; i < this.root.length; i++) {
+        const handle: FileSystemFileHandle | string = this.root[i]
+        try {
+          if (is.string(handle)) {
+            let url = handle
+            const isLive = /^libmediaLive:/.test(url)
+            if (isLive) {
+              url = url.replace(/^libmediaLive:/, '')
             }
-            else {
+            this.addUrl(url, isLive)
+          }
+          else {
+            // @ts-ignore
+            let permission = await handle.queryPermission({
+              mode: 'read'
+            })
+
+            if (permission !== 'granted') {
               // @ts-ignore
-              let permission = await handle.queryPermission({
+              permission = await handle.requestPermission({
                 mode: 'read'
               })
-
               if (permission !== 'granted') {
-                // @ts-ignore
-                permission = await handle.requestPermission({
-                  mode: 'read'
-                })
-                if (permission !== 'granted') {
-                  throw new Error(`not has permission to access ${handle.name}`)
-                }
-              }
-              if (handle.kind === 'file') {
-                await this.addFile(handle)
-              }
-              else if (handle.kind === 'directory') {
-                await this.addDir(handle)
+                throw new Error(`not has permission to access ${handle.name}`)
               }
             }
-            list.push(handle)
+            if (handle.kind === 'file') {
+              await this.addFileHandle(handle)
+            }
+            else if (handle.kind === 'directory') {
+              await this.addDir(handle)
+            }
           }
-          catch (error) {
-            logger.error('load file handle error, ignore it')
-          }
+          list.push(handle)
         }
-        if (list.length !== this.root.length) {
-          indexDB.store(indexDB.KEY_FOLDER_ROOT, list)
+        catch (error) {
+          logger.error('load file handle error, ignore it')
         }
-      })
-    }
+      }
+      if (list.length !== this.root.length) {
+        indexDB.store(indexDB.KEY_FOLDER_ROOT, list)
+      }
+      this.fire('folderLoaded')
+    })
 
     const player = this.get('player') as AVPlayer
     player.on(eventType.STOPPED + this.namespace, () => {
@@ -497,6 +530,16 @@ const Folder: ComponentOptions = {
     const player = this.get('player') as AVPlayer
     if (this.namespace) {
       player.off(this.namespace)
+    }
+  },
+
+  afterUpdate() {
+    if (this.get('nextPlayNodeId')) {
+      const node = this.findNodeById(this.get('nextPlayNodeId'), this.get('root'))
+      if (node) {
+        this.set('nextPlayNodeId', '')
+        node.ref.fire('play', node.ref)
+      }
     }
   },
 

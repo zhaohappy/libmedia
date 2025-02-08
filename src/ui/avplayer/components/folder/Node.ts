@@ -70,6 +70,12 @@ const Node: ComponentOptions = {
           text: is.string(this.get('node.source')) ? this.get('node.source') : this.get('node.name')
         })
       }
+      else if (is.string(this.get('node.source')) && is.string(this.get('node.source')) !== this.get('node.name')) {
+        this.fire('tip', {
+          top: this.$el.offsetTop,
+          text: this.get('node.source')
+        })
+      }
     },
 
     mouseleave() {

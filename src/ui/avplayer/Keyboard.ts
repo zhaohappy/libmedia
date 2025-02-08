@@ -279,7 +279,7 @@ export default class Keyboard {
   }
 
   private actionFoldFolder() {
-    this.player.foldFolder()
+    this.player.toggleFolder()
   }
 
   private actionUnFoldFolder() {

@@ -35,6 +35,7 @@ import debounce from 'common/function/debounce'
 import { AVMediaType } from 'avutil/codec'
 import { AVStreamInterface } from 'avutil/AVStream'
 import Keyboard from './Keyboard'
+import * as eventTypeUI from './eventType'
 
 import outside from '../util/outside'
 
@@ -70,6 +71,10 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       value: true
     },
     hasHeader: {
+      type: 'boolean',
+      value: true
+    },
+    hasFooter: {
       type: 'boolean',
       value: true
     }
@@ -126,6 +131,11 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
 
     closeSettings: function () {
       this.set('showSettings', false)
+    },
+
+    folderLoaded: function () {
+      const player = this.get('player') as AVPlayer
+      player.fire(eventTypeUI.FOLDER_LOADED)
     }
   },
 
@@ -216,6 +226,7 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       }
       this.set('streams', player.getStreams())
       this.set('isLive', player.isLive())
+      this.set('played', player.getStatus() === AVPlayerStatus.PLAYED)
 
       player.getVideoList().then((list) => {
         this.set('videoList', list.list)
@@ -264,6 +275,10 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       this.set('folded', false)
     },
 
+    toggleFolder() {
+      this.set('folded', !this.get('folded'))
+    },
+
     menuAction(action: MenuAction) {
       if (action === MenuAction.STATS) {
         this.set('showInfo', true)
@@ -273,6 +288,12 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
 
     menuOutside() {
       this.set('showMenu', false)
+    },
+
+    addUrl(url: string, isLive: boolean, playAfterAdded: boolean) {
+      if (this.$refs.folder) {
+        this.$refs.folder.openUrl(url, isLive, playAfterAdded)
+      }
     }
   },
 
@@ -295,10 +316,15 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     })
     player.on(eventType.PLAYED + this.namespace, () => {
       this.set('loading', false)
+      this.set('played', true)
+    })
+    player.on(eventType.PAUSED + this.namespace, () => {
+      this.set('played', false)
     })
     player.on(eventType.STOPPED + this.namespace, () => {
       this.set('title', '')
       this.set('streams', [])
+      this.set('played', false)
     })
     if (player.getStatus() >= AVPlayerStatus.LOADED) {
       this.init(player)
@@ -360,6 +386,7 @@ export interface AVPlayerUIOptions extends AVPlayerOptions {
   ui?: {
     hasFolder?: boolean
     hasHeader?: boolean
+    hasFooter?: boolean
   }
 }
 
@@ -382,7 +409,8 @@ export default class AVPlayerUI extends AVPlayer {
         errorStateUrl: options.errorStateUrl,
         fullscreenDom: options.fullscreenDom,
         hasFolder: options.ui?.hasFolder,
-        hasHeader: options.ui?.hasHeader
+        hasHeader: options.ui?.hasHeader,
+        hasFooter: options.ui?.hasFooter
       }
     }, AVPlayerUIComponentOptions))
 
@@ -397,6 +425,16 @@ export default class AVPlayerUI extends AVPlayer {
   public unfoldFolder() {
     // @ts-ignore
     this.ui.unfold()
+  }
+
+  public toggleFolder() {
+    // @ts-ignore
+    this.ui.toggleFolder()
+  }
+
+  public addUrl(url: string, isLive: boolean, playAfterAdded: boolean) {
+    // @ts-ignore
+    this.ui.addUrl(url, isLive, playAfterAdded)
   }
 
   public async destroy() {

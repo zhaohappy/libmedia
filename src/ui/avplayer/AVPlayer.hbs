@@ -10,6 +10,7 @@
   </div>
   {{/if}}
 
+  {{#if hasFooter}}
   <div class="avplayer-ui-footer">
     {{#if !isLive}}
     <div class="avplayer-ui-progress-container">
@@ -19,7 +20,7 @@
     <div class="avplayer-ui-control">
       <div class="avplayer-ui-footer-left">
         <div class="avplayer-ui-control-item">
-          <Play player="{{player}}" language="{{language}}" model="played" ref="play" />
+          <Play player="{{player}}" language="{{language}}" played="{{played}}" ref="play" />
         </div>
         <div class="avplayer-ui-control-item">
           <Volume player="{{player}}" language="{{language}}" />
@@ -68,6 +69,7 @@
       </div>
     </div>
   </div>
+  {{/if}}
 
   {{#if hasFolder}}
   <div class="avplayer-ui-folder-container" data-fold="{{folded ? 1 : 0}}">
@@ -76,7 +78,7 @@
         <path d="m10 17 5-5-5-5v10z"></path>
       </svg>
     </div>
-    <Folder player="{{player}}" language="{{language}}" />
+    <Folder ref="folder" player="{{player}}" language="{{language}}"  />
   </div>
   {{/if}}
 

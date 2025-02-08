@@ -9,8 +9,6 @@ const Play: ComponentOptions = {
 
   name: 'Play',
 
-  model: 'played',
-
   template,
 
   propTypes: {
@@ -63,40 +61,7 @@ const Play: ComponentOptions = {
       }
       this.set('played', !this.get('played'))
     },
-
-    init(player: AVPlayer) {
-      this.set('played', player.getStatus() === AVPlayerStatus.PLAYED)
-    }
   },
-
-  afterMount() {
-    this.namespace = '.component_control_play' + Math.random()
-
-    const player = this.get('player') as AVPlayer
-
-    player.on(eventType.STOPPED + this.namespace, () => {
-      this.set('played', false)
-    })
-    player.on(eventType.PAUSED + this.namespace, () => {
-      this.set('played', false)
-    })
-    player.on(eventType.PLAYED + this.namespace, () => {
-      this.set('played', true)
-    })
-    player.on(eventType.LOADED + this.namespace, () => {
-      this.init(player)
-    })
-    if (player.getStatus() >= AVPlayerStatus.LOADED) {
-      this.init(player)
-    }
-  },
-
-  beforeDestroy() {
-    const player = this.get('player') as AVPlayer
-    if (this.namespace) {
-      player.off(this.namespace)
-    }
-  }
 }
 
 export default Play
