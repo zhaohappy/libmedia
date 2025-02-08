@@ -34,9 +34,11 @@ const Volume: ComponentOptions = {
 
   watchers: {
     volume: function (volume) {
-      storage.set(storage.LOCAL_STORAGE_KEY_VOLUME, volume)
       const player = this.get('player') as AVPlayer
       player.setVolume(volume / 100)
+      if (!(player.isSuspended() && volume === 0)) {
+        storage.set(storage.LOCAL_STORAGE_KEY_VOLUME, volume)
+      }
     },
   },
 
@@ -48,6 +50,10 @@ const Volume: ComponentOptions = {
       }
       else {
         this.set('volume', this.get('lastVolume'))
+        const player = this.get('player') as AVPlayer
+        if (player.isSuspended()) {
+          player.resume()
+        }
       }
     }
   },
@@ -59,7 +65,16 @@ const Volume: ComponentOptions = {
     player.on(eventType.VOLUME_CHANGE + this.namespace, (volume) => {
       this.set('volume', Math.floor(volume * 100))
     })
-
+    player.on(eventType.PLAYED + this.namespace, () => {
+      if (player.isSuspended() && this.get('volume')) {
+        this.volumeClick()
+      }
+    })
+    player.on(eventType.AUDIO_CONTEXT_RUNNING + this.namespace, () => {
+      if (!this.get('volume')) {
+        this.volumeClick()
+      }
+    })
     player.setVolume(this.get('volume') / 100)
   },
 

@@ -1,5 +1,5 @@
 import { ComponentOptions } from 'yox'
-import AVPlayer, { AVPlayerProgress } from 'avplayer/AVPlayer'
+import AVPlayer, { AVPlayerProgress, AVPlayerStatus } from 'avplayer/AVPlayer'
 import * as eventType from 'avplayer/eventType'
 
 import template from './LoadingTip.hbs'
@@ -66,8 +66,13 @@ const LoadingTip: ComponentOptions = {
         clearTimeout(this.showTimer)
       }
       this.showTimer = setTimeout(() => {
-        this.set('showMessage', false)
         this.showTimer = null
+        if (player.isSuspended()) {
+          this.set('message', [this.get('language.LOADING_MESSAGE_RESUME')])
+        }
+        else {
+          this.set('showMessage', false)
+        }
       }, 2000)
     }
 
@@ -75,6 +80,11 @@ const LoadingTip: ComponentOptions = {
       this.queue.push(() => {
         this.append('message', this.get('language.LOADING_MESSAGE_LOAD_END'))
       })
+      if (player.isSuspended()) {
+        this.queue.push(() => {
+          this.append('message', this.get('language.LOADING_MESSAGE_RESUME'))
+        })
+      }
       this.queue.end()
     })
     player.on(eventType.LOADING + this.namespace, () => {
@@ -85,6 +95,12 @@ const LoadingTip: ComponentOptions = {
       this.queue.reset()
       this.set('message', [])
       this.set('showMessage', true)
+    })
+    player.on(eventType.AUDIO_CONTEXT_RUNNING + this.namespace, () => {
+      const message = this.get('message')
+      if (!this.showTimer && message.length === 1 && message[0] === this.get('language.LOADING_MESSAGE_RESUME')) {
+        this.set('showMessage', false)
+      }
     })
     player.on(eventType.PROGRESS + this.namespace, (progress: AVPlayerProgress, data: string | AVStreamInterface) => {
       let message = this.get('language.' + info[progress])
@@ -101,6 +117,10 @@ const LoadingTip: ComponentOptions = {
         this.append('message', message)
       })
     })
+
+    if (player.getStatus() >= AVPlayerStatus.LOADING) {
+      this.set('showMessage', true)
+    }
   },
 
   beforeDestroy() {

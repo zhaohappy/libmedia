@@ -255,6 +255,13 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
     },
 
     playClick(container: boolean) {
+      const player = this.get('player') as AVPlayer
+      if (player.isSuspended()) {
+        player.resume()
+        if (player.getStatus() === AVPlayerStatus.PLAYED) {
+          return
+        }
+      }
       if (os.ios || os.android || os.harmony && os.mobile) {
         return
       }

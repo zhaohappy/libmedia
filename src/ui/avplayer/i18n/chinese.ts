@@ -52,6 +52,8 @@ export const LOADING_MESSAGE_LOAD_END = '已就绪 (`･ω･´)ゞ'
 
 export const LOADING_MESSAGE_LOAD_FAILED = '加载失败 (∩︵∩)'
 
+export const LOADING_MESSAGE_RESUME = '点击画面处或者底部音量按钮取消静音'
+
 export const INFO_TITLE = '统计信息'
 
 export const MENU_STATS = '源统计信息'

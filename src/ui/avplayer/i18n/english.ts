@@ -50,6 +50,8 @@ export const LOADING_MESSAGE_LOAD_END = 'readied (`･ω･´)ゞ'
 
 export const LOADING_MESSAGE_LOAD_FAILED = 'failed (∩︵∩)'
 
+export const LOADING_MESSAGE_RESUME = 'Click on the screen or volume button in footer to unmute audio'
+
 export const INFO_TITLE = 'Stats Info'
 
 export const MENU_STATS = 'Source Stats Info'
