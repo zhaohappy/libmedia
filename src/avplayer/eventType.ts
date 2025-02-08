@@ -53,6 +53,8 @@ export const TIME = 'time'
 
 export const RESUME = 'resume'
 
+export const AUDIO_CONTEXT_RUNNING = 'audioContextRunning'
+
 export const FIRST_AUDIO_RENDERED = 'firstAudioRendered'
 
 export const FIRST_VIDEO_RENDERED = 'firstVideoRendered'

@@ -2581,6 +2581,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         if (this.video) {
           this.video.muted = false
         }
+        this.fire(eventType.AUDIO_CONTEXT_RUNNING)
       }
     }
     if (this.video) {
@@ -2597,6 +2598,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     logger.info(`call resume, taskId: ${this.taskId}`)
+  }
+  /**
+   * audioContext 是否是 suspended 状态
+   */
+  public isSuspended() {
+    return AVPlayer.audioContext?.state === 'suspended'
   }
 
   /**
