@@ -2043,14 +2043,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           this.video?.play(),
           this.audio?.play()
         ]).catch((error) => {
+          this.fire(eventType.RESUME)
+          logger.warn('the audioContext was not started. It must be resumed after a user gesture')
           if (this.video) {
             this.video.muted = true
-            this.fire(eventType.RESUME)
-            logger.warn('the audioContext was not started. It must be resumed after a user gesture')
             return this.video.play()
-          }
-          else {
-            throw error
           }
         })
       }
@@ -2074,10 +2071,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           if (this.videoDecoder2VideoRenderChannel) {
             await AVPlayer.AudioRenderThread.fakePlay(this.taskId)
             this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_VIDEO)
-          }
-          else {
-            // 只有音频无法播放时直接抛错，和 mse 行为保持一致
-            throw new Error('the audioContext was not started. It must be resumed after a user gesture')
           }
         }
       }
@@ -2578,21 +2571,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         if (this.audioSourceNode) {
           this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_AUDIO)
         }
-        if (this.video) {
-          this.video.muted = false
-        }
         this.fire(eventType.AUDIO_CONTEXT_RUNNING)
       }
     }
     if (this.video) {
       this.video.muted = false
-      if (!this.video.played) {
+      if (this.video.paused) {
         await this.video.play()
       }
     }
     else if (this.audio) {
       this.audio.muted = false
-      if (!this.audio.played) {
+      if (this.audio.paused) {
         await this.audio.play()
       }
     }
