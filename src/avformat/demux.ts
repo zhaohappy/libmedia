@@ -366,6 +366,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
                 resource,
                 onReceiveAVFrame: (avframe) => {
                   stream.codecpar.format = avframe.format
+                  stream.codecpar.colorRange = avframe.colorRange
                   stream.codecpar.colorSpace = avframe.colorSpace
                   stream.codecpar.colorPrimaries = avframe.colorPrimaries
                   stream.codecpar.colorTrc = avframe.colorTrc
