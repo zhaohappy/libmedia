@@ -47,7 +47,7 @@ import { avRescaleQ } from 'avutil/util/rational'
 import * as array from 'common/util/array'
 import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
 import * as bigint from 'common/util/bigint'
-import { AVStreamMetadataKey } from 'avutil/stringEnum'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 interface IOggFormatPrivateData {
   serialNumber: number

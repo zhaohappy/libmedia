@@ -68,7 +68,7 @@ import concatTypeArray from 'common/function/concatTypeArray'
 import * as text from 'common/util/text'
 import isDef from 'common/function/isDef'
 import * as naluUtil from 'avutil/util/nalu'
-import { AVStreamMetadataKey } from 'avutil/stringEnum'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 export default class IMatroskaFormat extends IFormat {
 

@@ -29,7 +29,7 @@ import IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
 import { UINT32_MAX } from 'avutil/constant'
 import getSampleDuration from '../function/getSampleDuration'
-import { AVStreamMetadataKey } from 'avutil/stringEnum'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
 

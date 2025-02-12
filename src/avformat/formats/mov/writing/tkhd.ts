@@ -32,7 +32,7 @@ import writeMatrix from './function/writeMatrix'
 import { AVMediaType } from 'avutil/codec'
 import { avRescaleQ } from 'avutil/util/rational'
 import getSampleDuration from '../function/getSampleDuration'
-import { AVStreamMetadataKey } from 'avutil/stringEnum'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
 

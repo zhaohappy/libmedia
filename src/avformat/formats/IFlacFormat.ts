@@ -44,7 +44,7 @@ import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import seekInBytes from '../function/seekInBytes'
 import * as array from 'common/util/array'
 import { avRescaleQ } from 'avutil/util/rational'
-import { AVStreamMetadataKey } from 'avutil/stringEnum'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 import { parseVorbisComment } from './ogg/vorbis'
 
 const PACKET_SIZE = 1024

@@ -39,7 +39,7 @@ import * as array from 'common/util/array'
 import * as text from 'common/util/text'
 import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { AVStreamMetadataKey } from 'avutil/stringEnum'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 
 export default class IWebVttFormat extends IFormat {

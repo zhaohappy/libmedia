@@ -42,7 +42,7 @@ import * as id3v2 from './mp3/id3v2'
 import { mapUint8Array } from 'cheap/std/memory'
 import * as text from 'common/util/text'
 import * as object from 'common/util/object'
-import { AVStreamMetadataKey } from 'avutil/stringEnum'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 const XING_NUM_BAGS = 400
 

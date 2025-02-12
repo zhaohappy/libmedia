@@ -29,6 +29,157 @@ import { AVPacketSideDataType } from './codec'
 import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from './constant'
 import { Rational } from './struct/rational'
 
+export const enum AVStreamMetadataKey {
+  /**
+   * 表演者（歌手、乐队等）
+   */
+  ARTIST = 'artist',
+  /**
+   * 自由文本评论
+   */
+  COMMENT = 'comment',
+  /**
+   * 版权声明
+   */
+  COPYRIGHT = 'copyright',
+  /**
+   * 发行年份（通常为 YYYY 格式）
+   */
+  DATE = 'date',
+  /**
+   * 音乐流派
+   */
+  GENRE = 'genre',
+  /**
+   * 语言
+   */
+  LANGUAGE = 'language',
+  /**
+   * 语言描述
+   */
+  LANGUAGE_STRING = 'languageString',
+  /**
+   * 歌曲或作品的标题
+   */
+  TITLE = 'title',
+  /**
+   * 专辑名称
+   */
+  ALBUM = 'album',
+  /**
+   * 曲目编号
+   */
+  TRACK = 'track',
+  /**
+   * 用于编码音频文件的软件信息
+   */
+  ENCODER = 'encoder',
+  /**
+   * 时间参数
+   */
+  TIME_CODE = 'timecode',
+  /**
+   * 发行商
+   */
+  VENDOR = 'vendor',
+  /**
+   * 发行商标识
+   */
+  VENDOR_ID = 'vendorId',
+  /**
+   * 海报
+   */
+  POSTER = 'poster',
+  /**
+   * 歌词
+   */
+  LYRICS = 'lyrics',
+  /**
+   * 专辑的主要艺术家（与 ARTIST 区分开，适用于合集专辑）
+   */
+  ALBUM_ARTIST = 'albumArtist',
+  /**
+   * 如果是多张 CD 的专辑，标识当前曲目所在的 CD
+   */
+  DISC = 'disc',
+  /**
+   * 具体的演奏者或表演者
+   */
+  PERFORMER = 'performer',
+  /**
+   * 发行者
+   */
+  PUBLISHER = 'publisher',
+  /**
+   * 作曲者
+   */
+  COMPOSER = 'composer',
+  /**
+   * 编曲者
+   */
+  COMPILATION = 'compilation',
+  /**
+   * 创建时间
+   */
+  CREATION_TIME = 'creationTime',
+  /**
+   * 最后更改时间
+   */
+  MODIFICATION_TIME = 'modificationTime',
+  /**
+   * 专辑排序
+   */
+  ALBUM_SORT = 'albumSort',
+  /**
+   * 表演者排序
+   */
+  ARTIST_SORT = 'artistSort',
+  /**
+   * 标题排序
+   */
+  TITLE_SORT = 'titleSort',
+  /**
+   * 分组
+   */
+  GROUPING = 'grouping',
+  /**
+   * 额外的描述信息
+   */
+  DESCRIPTION = 'description',
+  /**
+   * 许可信息
+   */
+  LICENSE = 'license',
+  /**
+   * 国际标准录音代码
+   */
+  ISRC = 'isrc',
+  /**
+   * 情绪标签，如 Happy、Sad
+   */
+  MOOD = 'mood',
+  /**
+   * mp4 的 elst box 内容
+   */
+  ELST = 'elst',
+  /**
+   * mp4 的旋转矩阵
+   */
+  MATRIX = 'matrix',
+  /**
+   * 某些媒体的样式（如 webvtt）
+   */
+  STYLES = 'styles',
+  /**
+   * 媒体的 mime
+   */
+  MIME = 'mime',
+  /**
+   * mp4 的 handlerName
+   */
+  HANDLER_NAME = 'handlerName'
+}
+
 export const enum AVDisposition {
   NONE = 0,
   DEFAULT = 0x0001,

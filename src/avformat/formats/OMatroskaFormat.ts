@@ -51,7 +51,7 @@ import * as hevc from 'avutil/codecs/hevc'
 import * as vvc from 'avutil/codecs/vvc'
 import * as intread from 'avutil/util/intread'
 import { Uint8ArrayInterface } from 'common/io/interface'
-import { AVStreamMetadataKey } from 'avutil/stringEnum'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 export interface OMatroskaFormatOptions {
   isLive?: boolean

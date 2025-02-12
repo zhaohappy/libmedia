@@ -28,7 +28,7 @@ import { MOVContext } from '../type'
 import IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
 import { AVMediaType } from 'avutil/codec'
-import { AVStreamMetadataKey } from 'avutil/stringEnum'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
 

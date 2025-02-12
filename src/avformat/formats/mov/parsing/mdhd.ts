@@ -27,7 +27,7 @@ import IOReader from 'common/io/IOReader'
 import Stream from 'avutil/AVStream'
 import { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
-import { AVStreamMetadataKey } from 'avutil/stringEnum'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
   const now = ioReader.getPos()

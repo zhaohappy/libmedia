@@ -49,13 +49,13 @@ import getVideoCodec from 'avutil/function/getVideoCodec'
 import * as mutex from 'cheap/thread/mutex'
 import AudioEncodePipeline from 'avpipeline/AudioEncodePipeline'
 import VideoEncodePipeline from 'avpipeline/VideoEncodePipeline'
-import { AudioCodecString2CodecId, AVStreamMetadataKey, Ext2Format, Ext2IOLoader,
+import { AudioCodecString2CodecId, Ext2Format,
   Format2AVFormat, PixfmtString2AVPixelFormat, SampleFmtString2SampleFormat,
   VideoCodecString2CodecId
 } from 'avutil/stringEnum'
 import MuxPipeline from 'avpipeline/MuxPipeline'
 import IOWriterSync from 'common/io/IOWriterSync'
-import { AVStreamInterface } from 'avutil/AVStream'
+import { AVStreamInterface, AVStreamMetadataKey } from 'avutil/AVStream'
 import Stats from 'avpipeline/struct/stats'
 import IPCPort, { NOTIFY, REQUEST, RpcMessage } from 'common/network/IPCPort'
 import * as errorType from 'avutil/error'
