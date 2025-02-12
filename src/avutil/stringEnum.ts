@@ -121,6 +121,9 @@ export const PixfmtString2AVPixelFormat = {
   'yuva420p': AVPixelFormat.AV_PIX_FMT_YUVA420P,
   'yuva422p': AVPixelFormat.AV_PIX_FMT_YUVA422P,
   'yuva444p': AVPixelFormat.AV_PIX_FMT_YUVA444P,
+  'yuvj420p': AVPixelFormat.AV_PIX_FMT_YUVJ420P,
+  'yuvj422p': AVPixelFormat.AV_PIX_FMT_YUVJ422P,
+  'yuvj444p': AVPixelFormat.AV_PIX_FMT_YUVJ444P,
 
   'yuv420p10le': AVPixelFormat.AV_PIX_FMT_YUV420P10LE,
   'yuv422p10le': AVPixelFormat.AV_PIX_FMT_YUV422P10LE,
