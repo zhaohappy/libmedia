@@ -69,6 +69,7 @@ import isPointer from 'cheap/std/function/isPointer'
 import * as is from 'common/util/is'
 import os from 'common/util/os'
 import { MPEG4AudioObjectTypes } from 'avutil/codecs/aac'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 export interface MSETaskOptions extends TaskOptions {
   isLive: boolean
@@ -912,7 +913,8 @@ export default class MSEPipeline extends Pipeline {
     parameters: pointer<AVCodecParameters> | AVCodecParametersSerialize,
     timeBase: Rational,
     startPTS: int64,
-    pullIPCPort: MessagePort
+    pullIPCPort: MessagePort,
+    matrix?: number[]
   ) {
     const task = this.tasks.get(taskId)
     if (task) {
@@ -950,6 +952,9 @@ export default class MSEPipeline extends Pipeline {
 
       if (codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3) {
         stream.codecpar.codecTag = mktag('.mp3')
+      }
+      if (matrix) {
+        stream.metadata[AVStreamMetadataKey.MATRIX] = matrix
       }
 
       const useSampleRateTimeBase = codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
@@ -1046,7 +1051,8 @@ export default class MSEPipeline extends Pipeline {
     streamIndex: int32,
     parameters: pointer<AVCodecParameters> | AVCodecParametersSerialize,
     timeBase: Rational,
-    startPTS: int64
+    startPTS: int64,
+    matrix?: number[]
   ) {
     const task = this.tasks.get(taskId)
     if (task) {
@@ -1094,6 +1100,9 @@ export default class MSEPipeline extends Pipeline {
 
         if (codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3) {
           stream.codecpar.codecTag = mktag('.mp3')
+        }
+        if (matrix) {
+          stream.metadata[AVStreamMetadataKey.MATRIX] = matrix
         }
 
         const useSampleRateTimeBase = codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO

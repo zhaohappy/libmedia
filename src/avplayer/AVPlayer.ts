@@ -1583,7 +1583,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             serializeAVCodecParameters(videoStream.codecpar),
             videoStream.timeBase,
             videoStream.startTime,
-            this.demuxer2VideoDecoderChannel.port2
+            this.demuxer2VideoDecoderChannel.port2,
+            videoStream.metadata[AVStreamMetadataKey.MATRIX]
           )
       }
       if (audioStream && options.audio) {
@@ -1766,7 +1767,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         : this.canvas
 
       // 处理旋转
-      if (videoStream.metadata[AVStreamMetadataKey.MATRIX]) {
+      if (videoStream.metadata[AVStreamMetadataKey.MATRIX] && !this.useMSE) {
         this.renderRotate = -(Math.atan2(videoStream.metadata[AVStreamMetadataKey.MATRIX][3], videoStream.metadata[AVStreamMetadataKey.MATRIX][0]) * (180 / Math.PI))
       }
 
@@ -2971,7 +2972,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           await this.doSeek(this.currentTime, stream.index, {
             onBeforeSeek: async () => {
               await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedVideoStream.index)
-              await AVPlayer.MSEThread.reAddStream(this.taskId, stream.index, serializeAVCodecParameters(stream.codecpar), stream.timeBase, stream.startTime)
+              await AVPlayer.MSEThread.reAddStream(
+                this.taskId,
+                stream.index,
+                serializeAVCodecParameters(stream.codecpar),
+                stream.timeBase,
+                stream.startTime,
+                stream.metadata[AVStreamMetadataKey.MATRIX]
+              )
             }
           })
         }

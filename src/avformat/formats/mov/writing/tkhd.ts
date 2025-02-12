@@ -117,8 +117,13 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
 
   // reserved
   ioWriter.writeInt16(0)
-
-  writeMatrix(ioWriter, 1, 0, 0, 1, 0, 0)
+  const matrix = stream.metadata[AVStreamMetadataKey.MATRIX]
+  if (matrix) {
+    writeMatrix(ioWriter, matrix[0], matrix[1], matrix[3], matrix[4], matrix[6], matrix[7])
+  }
+  else {
+    writeMatrix(ioWriter, 1, 0, 0, 1, 0, 0)
+  }
 
   ioWriter.writeUint32(width)
   ioWriter.writeUint32(height)
