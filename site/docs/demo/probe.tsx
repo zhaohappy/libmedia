@@ -10,7 +10,7 @@ import React from 'react'
 
 let file: File
 
-async function probe(set: (v: string) => void) {
+async function probe(log: (v: string) => void) {
 
   const iformatContext = createAVIFormatContext()
 
@@ -30,7 +30,7 @@ async function probe(set: (v: string) => void) {
   })
   await demux.analyzeStreams(iformatContext)
 
-  set(dump([iformatContext], [{
+  log(dump([iformatContext], [{
     from: file ? file.name : formatUrl('video/test.mp4'),
     tag: 'Input'
   }]))

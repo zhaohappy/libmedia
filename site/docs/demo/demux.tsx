@@ -11,7 +11,7 @@ import React from 'react'
 let file: File
 let stop = true
 
-async function demuxFile(set: (v: string) => void) {
+async function demuxFile(log: (v: string) => void) {
 
   if (!stop) {
     return
@@ -38,7 +38,7 @@ async function demuxFile(set: (v: string) => void) {
     if (ret !== 0) {
       break
     }
-    set(`packet pos: ${avpacket.pos}, index: ${avpacket.streamIndex}, dts: ${avpacket.dts}, pts: ${avpacket.pts}, duration: ${avpacket.duration}, size: ${avpacket.size}, keyframe: ${avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY}\n`)
+    log(`packet pos: ${avpacket.pos}, index: ${avpacket.streamIndex}, dts: ${avpacket.dts}, pts: ${avpacket.pts}, duration: ${avpacket.duration}, size: ${avpacket.size}, keyframe: ${avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY}\n`)
 
     if (stop) {
       break
@@ -48,7 +48,7 @@ async function demuxFile(set: (v: string) => void) {
   }
   iformatContext.destroy()
   destroyAVPacket(avpacket)
-  set('demux end\n')
+  log('demux end\n')
   stop = true
 }
 

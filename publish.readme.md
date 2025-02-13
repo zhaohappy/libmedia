@@ -1,6 +1,6 @@
-目前 src 目录下子目录中的 package.json 仅用于发布 npm 包，根目录中的 package.json 和 webpack.config.js 用于编译和测试。下面是现在发布npm包的步骤，如果需要发布到你的私有npm仓库，可以参考：
+目前 src 目录下子目录中的 package.json 仅用于发布 npm 包，根目录中的 package.json 和 webpack.config.js 用于编译和测试。下面是现在发布 npm 包的步骤，如果需要发布到你的私有 npm 仓库，可以参考：
 
-1. 执行```node scripts/update-version.js --feature```更新所有子目录中 package.json 的版本，提交更改，并使用 git 标记相同的版本。
+1. 执行```node scripts/update-version.js --feature```更新所有子目录中 package.json 的版本，提交更改，并使用 git tag 打上相同的版本号。
 
 2. 执行```node scripts/build-package.js --package=all```编译所有包，此步骤会在各子目录的 dist 目录中生成要发布的文件。
 

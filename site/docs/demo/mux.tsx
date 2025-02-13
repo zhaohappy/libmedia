@@ -13,7 +13,7 @@ import React from 'react'
 let file: File
 let stop = true
 
-async function muxFile(set: (v: string) => void) {
+async function muxFile(log: (v: string) => void) {
 
   if (!stop) {
     return
@@ -31,7 +31,7 @@ async function muxFile(set: (v: string) => void) {
   oformatContext.oformat = new OMovFormat()
 
   ioWriter.onFlush = (buffer, pos) => {
-    set(`got output data size: ${buffer.length}\n`)
+    log(`got output data size: ${buffer.length}\n`)
     return 0
   }
   ioWriter.onSeek = (pos) => {
@@ -73,7 +73,7 @@ async function muxFile(set: (v: string) => void) {
   oformatContext.destroy()
   destroyAVPacket(avpacket)
 
-  set('mux end\n')
+  log('mux end\n')
   stop = true
 }
 
