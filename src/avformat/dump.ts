@@ -18,6 +18,7 @@ import * as av1 from 'avutil/codecs/av1'
 import * as vp9 from 'avutil/codecs/vp9'
 import * as mp3 from 'avutil/codecs/mp3'
 import { AVFormat } from 'avutil/avformat'
+import isHdr from 'avutil/function/isHdr'
 
 export interface DumpIOInfo {
   from: string
@@ -128,7 +129,15 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
       const pixfmt = dumpKey(stringEnum.PixfmtString2AVPixelFormat, stream.codecpar.format)
       const range = dumpKey(stringEnum.colorRange2AVColorRange, stream.codecpar.colorRange, 'tv')
       const space = dumpKey(stringEnum.colorSpace2AVColorSpace, stream.codecpar.colorSpace, 'bt709')
-      list.push(`${pixfmt}(${range}, ${space})`)
+      const primary = dumpKey(stringEnum.colorPrimaries2AVColorPrimaries, stream.codecpar.colorPrimaries, 'bt709')
+      const trc = dumpKey(stringEnum.colorTrc2AVColorTransferCharacteristic, stream.codecpar.colorTrc, 'bt709')
+      const isHdr_ = isHdr(stream.codecpar)
+      if (space === primary && primary === trc) {
+        list.push(`${pixfmt}(${range}, ${space}, ${isHdr_ ? 'HDR' : 'SDR'})`)
+      }
+      else {
+        list.push(`${pixfmt}(${range}, ${space}/${primary}/${trc}, ${isHdr_ ? 'HDR' : 'SDR'})`)
+      }
     }
 
     const dar = {

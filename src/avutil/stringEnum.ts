@@ -196,7 +196,7 @@ export const colorSpace2AVColorSpace: Record<string, AVColorSpace> = {
   'smpte240m': AVColorSpace.AVCOL_SPC_SMPTE240M,
   'ycgco': AVColorSpace.AVCOL_SPC_YCGCO,
   'gbr': AVColorSpace.AVCOL_SPC_RGB,
-  'bt2020ncl': AVColorSpace.AVCOL_SPC_BT2020_NCL
+  'bt2020nc': AVColorSpace.AVCOL_SPC_BT2020_NCL
 }
 
 export const colorPrimaries2AVColorPrimaries: Record<string, AVColorPrimaries> = {
@@ -223,7 +223,9 @@ export const colorTrc2AVColorTransferCharacteristic: Record<string, AVColorTrans
   'srgb': AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_1,
   'xvycc': AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_4,
   'bt2020-10': AVColorTransferCharacteristic.AVCOL_TRC_BT2020_10,
-  'bt2020-12': AVColorTransferCharacteristic.AVCOL_TRC_BT2020_12
+  'bt2020-12': AVColorTransferCharacteristic.AVCOL_TRC_BT2020_12,
+  'smpte2084': AVColorTransferCharacteristic.AVCOL_TRC_SMPTEST2084,
+  'arib-std-b67': AVColorTransferCharacteristic.AVCOL_TRC_ARIB_STD_B67
 }
 
 export const mediaType2AVMediaType: Record<string, AVMediaType> = {
