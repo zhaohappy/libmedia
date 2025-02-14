@@ -24,7 +24,7 @@
  *
  */
 
-import { ColorTransformOptions, GLType, HLGRefMaxLumNits } from './options'
+import { ColorTransformOptions, GLType } from './options'
 
 // The luminance vector in rec2020 linear space.
 const kLr = 0.2627
@@ -32,9 +32,7 @@ const kLg = 0.6780
 const kLb = 0.0593
 
 export function computeHLGToneMapConstants(options: ColorTransformOptions) {
-  options.metadata.hlgDstMaxLuminanceRelative = options.dstMaxLuminanceRelative
-  const dstMaxLuminanceNits = options.dstSdrMaxLuminanceNits * options.dstMaxLuminanceRelative
-  options.metadata.hlgOOTFGammaMinusOne = 1.2 + 0.42 * Math.log10(dstMaxLuminanceNits / HLGRefMaxLumNits) / Math.log10(10.0) - 1.0
+  options.metadata.hlgOOTFGammaMinusOne = 0.2
 }
 
 export default function colorTransformHLGOOTF(options: ColorTransformOptions) {
@@ -47,9 +45,6 @@ export default function colorTransformHLGOOTF(options: ColorTransformOptions) {
           color.r *= pow(L, hlg_ootf_gamma_minus_one);
           color.g *= pow(L, hlg_ootf_gamma_minus_one);
           color.b *= pow(L, hlg_ootf_gamma_minus_one);
-          color.r *= hlg_dst_max_luminance_relative;
-          color.g *= hlg_dst_max_luminance_relative;
-          color.b *= hlg_dst_max_luminance_relative;
         }
       }
     `
@@ -63,9 +58,6 @@ export default function colorTransformHLGOOTF(options: ColorTransformOptions) {
           color.r *= pow(L, hlg_ootf_gamma_minus_one);
           color.g *= pow(L, hlg_ootf_gamma_minus_one);
           color.b *= pow(L, hlg_ootf_gamma_minus_one);
-          color.r *= hlg_dst_max_luminance_relative;
-          color.g *= hlg_dst_max_luminance_relative;
-          color.b *= hlg_dst_max_luminance_relative;
         }
       }
     `

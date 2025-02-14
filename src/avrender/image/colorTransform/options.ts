@@ -49,8 +49,8 @@ export interface ColorTransformOptions {
   // `dst_sdr_max_luminance_nits` (so this is 1 for SDR displays).
   dstMaxLuminanceRelative?: float
 
-  // 画面最高亮度，来自静态元数据
-  ndwl?: float
+  // The number of nits of SDR whit
+  sdrWhiteLevel?: float
   // Max content light level (CLL), i.e. maximum brightness level present in the
   // stream), in nits.
   maxContentLightLevel?: float

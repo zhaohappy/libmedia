@@ -29,8 +29,8 @@ export function computeNitsToSdrRelativeFactor(unityNits: float, useSrcSdrWhite:
   let sdrWhiteNits = options.dstSdrMaxLuminanceNits
   if (useSrcSdrWhite) {
     sdrWhiteNits = DefaultSDRWhiteLevel
-    if (options.ndwl) {
-      sdrWhiteNits = options.ndwl
+    if (options.sdrWhiteLevel) {
+      sdrWhiteNits = options.sdrWhiteLevel
     }
   }
   options.metadata.nitsToSdrRelativeFactor = unityNits / sdrWhiteNits

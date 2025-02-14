@@ -30,9 +30,9 @@ export default function hlgOETF(options: ColorTransformOptions) {
   function fn() {
     let source = `
       v = max(0.0, v);
-      ${options.type === GLType.kWebGPU ? 'let a: f32' : 'float a'} = 0.17883277f;
-      ${options.type === GLType.kWebGPU ? 'let b: f32' : 'float b'} = 0.28466892f;
-      ${options.type === GLType.kWebGPU ? 'let c: f32' : 'float c'} = 0.55991073f;
+      ${options.type === GLType.kWebGPU ? 'let a: f32' : 'float a'} = 0.17883277;
+      ${options.type === GLType.kWebGPU ? 'let b: f32' : 'float b'} = 0.28466892;
+      ${options.type === GLType.kWebGPU ? 'let c: f32' : 'float c'} = 0.55991073;
       if (v <= 1.0) {
         v = 0.5 * sqrt(v);
       }

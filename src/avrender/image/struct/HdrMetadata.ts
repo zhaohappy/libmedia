@@ -31,7 +31,6 @@ export default class HdrMetadata {
   pqTonemapA: float
   pqTonemapB: float
   hlgOOTFGammaMinusOne: float
-  hlgDstMaxLuminanceRelative: float
   nitsToSdrRelativeFactor: float
   sdrRelativeToNitsFactor: float
 }

@@ -105,7 +105,6 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
       uniform float pq_tonemap_a;
       uniform float pq_tonemap_b;
       uniform float hlg_ootf_gamma_minus_one;
-      uniform float hlg_dst_max_luminance_relative;
       uniform float nits_to_sdr_relative_factor;
       uniform float sdr_relative_to_nits_factor;
 

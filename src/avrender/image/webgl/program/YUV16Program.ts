@@ -51,7 +51,6 @@ export default class YUV16Program extends YUVProgram {
     this.pqTonemapALocation =  this.gl.getUniformLocation(this.program, 'pq_tonemap_a')
     this.pqTonemapBLocation =  this.gl.getUniformLocation(this.program, 'pq_tonemap_b')
     this.hlgOOTFGammaMinusOneLocation =  this.gl.getUniformLocation(this.program, 'hlg_ootf_gamma_minus_one')
-    this.hlgDstMaxLuminanceRelativeLocation =  this.gl.getUniformLocation(this.program, 'hlg_dst_max_luminance_relative')
     this.nitsToSdrRelativeFactorLocation =  this.gl.getUniformLocation(this.program, 'nits_to_sdr_relative_factor')
     this.sdrRelativeToNitsFactorLocation =  this.gl.getUniformLocation(this.program, 'sdr_relative_to_nits_factor')
   }
@@ -66,7 +65,6 @@ export default class YUV16Program extends YUVProgram {
     this.gl.uniform1f(this.pqTonemapALocation, data.pqTonemapA)
     this.gl.uniform1f(this.pqTonemapBLocation, data.pqTonemapB)
     this.gl.uniform1f(this.hlgOOTFGammaMinusOneLocation, data.hlgOOTFGammaMinusOne)
-    this.gl.uniform1f(this.hlgDstMaxLuminanceRelativeLocation, data.hlgDstMaxLuminanceRelative)
     this.gl.uniform1f(this.nitsToSdrRelativeFactorLocation, data.nitsToSdrRelativeFactor)
     this.gl.uniform1f(this.sdrRelativeToNitsFactorLocation, data.sdrRelativeToNitsFactor)
   }

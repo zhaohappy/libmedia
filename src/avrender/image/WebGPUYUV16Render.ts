@@ -112,7 +112,6 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
         pqTonemapA: f32,
         pqTonemapB: f32,
         hlgOOTFGammaMinusOne: f32,
-        hlgDstMaxLuminanceRelative: f32,
         nitsToSdrRelativeFactor: f32,
         sdrRelativeToNitsFactor: f32
       };
@@ -133,7 +132,6 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
         let pq_tonemap_a = hdrMetadata.pqTonemapA;
         let pq_tonemap_b = hdrMetadata.pqTonemapB;
         let hlg_ootf_gamma_minus_one = hdrMetadata.hlgOOTFGammaMinusOne;
-        let hlg_dst_max_luminance_relative = hdrMetadata.hlgDstMaxLuminanceRelative;
         let nits_to_sdr_relative_factor = hdrMetadata.nitsToSdrRelativeFactor;
         let sdr_relative_to_nits_factor = hdrMetadata.sdrRelativeToNitsFactor;
 

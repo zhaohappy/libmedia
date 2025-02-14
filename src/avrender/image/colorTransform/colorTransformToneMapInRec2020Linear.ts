@@ -25,18 +25,20 @@
 
 import { AVColorTransferCharacteristic } from 'avutil/pixfmt'
 import ColorSpace from '../colorSpace/ColorSpace'
-import { ColorTransformOptions, GLType, HLGRefMaxLumNits } from './options'
+import { ColorTransformOptions, DefaultSDRWhiteLevel, GLType, HLGRefMaxLumNits } from './options'
 
 function computeSrcMaxLumRelative(src: ColorSpace, options: ColorTransformOptions) {
   let srcMaxLumNits = HLGRefMaxLumNits
-
   if (src.getTransferId() !== AVColorTransferCharacteristic.AVCOL_TRC_ARIB_STD_B67) {
     if (options.maxContentLightLevel > 0) {
       srcMaxLumNits = options.maxContentLightLevel
     }
   }
-
-  return srcMaxLumNits / options.dstSdrMaxLuminanceNits
+  let sdrWhiteNits = DefaultSDRWhiteLevel
+  if (options.sdrWhiteLevel) {
+    sdrWhiteNits = options.sdrWhiteLevel
+  }
+  return srcMaxLumNits / sdrWhiteNits
 }
 
 export function computeTonemapAB(src: ColorSpace, options: ColorTransformOptions) {

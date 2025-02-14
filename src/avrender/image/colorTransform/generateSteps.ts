@@ -32,7 +32,7 @@
 
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from 'avutil/pixfmt'
 import ColorSpace from '../colorSpace/ColorSpace'
-import { ColorTransformOptions, DefaultSDRWhiteLevel, PQRefMaxLumNits } from './options'
+import { ColorTransformOptions, DefaultSDRWhiteLevel, HLGRefMaxLumNits, PQRefMaxLumNits } from './options'
 import colorTransformMatrix from './colorTransformMatrix'
 import hlgInvOETF from './transferFn/hlgInvOETF'
 import pq2Linear from './transferFn/pq2Linear'
@@ -58,14 +58,8 @@ export default function generateSteps(src: ColorSpace, dst: ColorSpace, options:
     steps.push(srcRangeAdjustStep)
   }
 
-  if (src.getMatrixId() === AVColorSpace.AVCOL_SPC_BT2020_CL) {
-    // BT2020 CL is a special case.
-    // not to do
-  }
-  else {
-    // 2. 反变换 ColorSpace Matrix，YCbCr 转 RGB
-    steps.push(colorTransformMatrix(src.getTransferMatrix(options.bitDepth).invert(), options))
-  }
+  // 2. 反变换 ColorSpace Matrix，YCbCr 转 RGB
+  steps.push(colorTransformMatrix(src.getTransferMatrix(options.bitDepth).invert(), options))
 
   if (srcMatrixIsIdentityOrYcgco) {
     steps.push(srcRangeAdjustStep)
@@ -109,14 +103,26 @@ export default function generateSteps(src: ColorSpace, dst: ColorSpace, options:
       switch (src.getTransferId()) {
         // HLG
         case AVColorTransferCharacteristic.AVCOL_TRC_ARIB_STD_B67:
+          // 5. XYZ 转 Rec2020。
+          steps.push(colorTransformMatrix(rec2020Linear.getPrimaryMatrix().invert(), options))
+
+          // Apply the reference HLG OOTF.
+          computeHLGToneMapConstants(options)
+          steps.push(colorTransformHLGOOTF(options))
+
+          // Convert from linear nits-relative space (where 1.0 is 1,000 nits) to
+          // SDR-relative space (where 1.0 is SDR white).
+          computeNitsToSdrRelativeFactor(HLGRefMaxLumNits, true, options)
+          steps.push(colorTransformSrcNitsToSdrRelative(options))
+
           if (options.toneMapPQAndHlgToDst) {
-            computeHLGToneMapConstants(options)
-            steps.push(colorTransformHLGOOTF(options))
+            // 6. 基于显示器最高亮度 + UI 白点亮度，进行 Tone Mapping
+            computeTonemapAB(src, options)
+            steps.push(colorTransformToneMapInRec2020Linear(options))
           }
-          else {
-            computeNitsToSdrRelativeFactor(12.0 / DefaultSDRWhiteLevel, false, options)
-            steps.push(colorTransformSrcNitsToSdrRelative(options))
-          }
+
+          // 7. Rec2020 转为 XYZ
+          steps.push(colorTransformMatrix(rec2020Linear.getPrimaryMatrix(), options))
           break
         case AVColorTransferCharacteristic.AVCOL_TRC_SMPTE2084:
           computeNitsToSdrRelativeFactor(PQRefMaxLumNits, true, options)
@@ -124,9 +130,11 @@ export default function generateSteps(src: ColorSpace, dst: ColorSpace, options:
           if (options.toneMapPQAndHlgToDst) {
             // 5. XYZ 转 Rec2020。
             steps.push(colorTransformMatrix(rec2020Linear.getPrimaryMatrix().invert(), options))
-            computeTonemapAB(src, options)
+
             // 6. 基于显示器最高亮度 + UI 白点亮度，进行 Tone Mapping
+            computeTonemapAB(src, options)
             steps.push(colorTransformToneMapInRec2020Linear(options))
+
             // 7. Rec2020 转为 XYZ
             steps.push(colorTransformMatrix(rec2020Linear.getPrimaryMatrix(), options))
           }
