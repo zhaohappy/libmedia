@@ -31,5 +31,5 @@ export default function createMessageChannel(enableWorker: boolean) {
   if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS) || support.worker && enableWorker) {
     return new MessageChannel()
   }
-  return new FakeMessageChannel() as any as MessageChannel
+  return new FakeMessageChannel() as MessageChannel
 }
