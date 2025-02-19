@@ -603,18 +603,22 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           if (videoStream.codecpar.extradata !== nullptr) {
             extradata = mapUint8Array(videoStream.codecpar.extradata, reinterpret_cast<size>(videoStream.codecpar.extradataSize))
           }
-          // 检查视频格式是否支持硬解，不支持使用 mse
-          const isWebcodecSupport = await VideoDecoder.isConfigSupported({
-            codec: getVideoCodec(videoStream.codecpar),
-            codedWidth: videoStream.codecpar.width,
-            codedHeight: videoStream.codecpar.height,
-            description: extradata,
-            hardwareAcceleration: getHardwarePreference(true)
-          })
 
-          if (!isWebcodecSupport.supported) {
-            return true
+          try {
+            // 检查视频格式是否支持硬解，不支持使用 mse
+            const isWebcodecSupport = await VideoDecoder.isConfigSupported({
+              codec: getVideoCodec(videoStream.codecpar),
+              codedWidth: videoStream.codecpar.width,
+              codedHeight: videoStream.codecpar.height,
+              description: extradata,
+              hardwareAcceleration: getHardwarePreference(true)
+            })
+
+            if (!isWebcodecSupport.supported) {
+              return true
+            }
           }
+          catch (e) {}
         }
         else if (videoStream.codecpar.width * videoStream.codecpar.height === 1920 * 1080) {
           // safari 1080p@30fps 无法在 worker 中解码

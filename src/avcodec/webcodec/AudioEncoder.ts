@@ -122,11 +122,16 @@ export default class WebAudioEncoder {
       bitrateMode: 'constant'
     }
 
-    const support = await AudioEncoder.isConfigSupported(config)
-
-    if (!support.supported) {
-      logger.error('not support')
-      return errorType.INVALID_PARAMETERS
+    try {
+      const support = await AudioEncoder.isConfigSupported(config)
+      if (!support.supported) {
+        logger.error('not support')
+        return errorType.INVALID_PARAMETERS
+      }
+    }
+    catch (error) {
+      logger.error(`${error}`)
+      return errorType.CODEC_NOT_SUPPORT
     }
 
     if (this.encoder && this.encoder.state !== 'closed') {
@@ -222,9 +227,12 @@ export default class WebAudioEncoder {
       bitrate: static_cast<double>(parameters.bitrate),
       bitrateMode: 'constant'
     }
-
-    const support = await AudioEncoder.isConfigSupported(config)
-
-    return support.supported
+    try {
+      const support = await AudioEncoder.isConfigSupported(config)
+      return support.supported
+    }
+    catch (error) {
+      return false
+    }
   }
 }

@@ -87,11 +87,16 @@ export default class WebAudioDecoder {
       delete config.description
     }
 
-    const support = await AudioDecoder.isConfigSupported(config)
-
-    if (!support.supported) {
-      logger.error('not support')
-      return errorType.INVALID_PARAMETERS
+    try {
+      const support = await AudioDecoder.isConfigSupported(config)
+      if (!support.supported) {
+        logger.error('not support')
+        return errorType.INVALID_PARAMETERS
+      }
+    }
+    catch (error) {
+      logger.error(`${error}`)
+      return errorType.CODEC_NOT_SUPPORT
     }
 
     if (this.decoder && this.decoder.state !== 'closed') {
@@ -218,8 +223,12 @@ export default class WebAudioDecoder {
       delete config.description
     }
 
-    const support = await AudioDecoder.isConfigSupported(config)
-
-    return support.supported
+    try {
+      const support = await AudioDecoder.isConfigSupported(config)
+      return support.supported
+    }
+    catch (error) {
+      return false
+    }
   }
 }

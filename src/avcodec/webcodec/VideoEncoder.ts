@@ -209,11 +209,16 @@ export default class WebVideoEncoder {
       }
     }
 
-    const support = await VideoEncoder.isConfigSupported(config)
-
-    if (!support.supported) {
-      logger.error('not support')
-      return errorType.INVALID_PARAMETERS
+    try {
+      const support = await VideoEncoder.isConfigSupported(config)
+      if (!support.supported) {
+        logger.error('not support')
+        return errorType.INVALID_PARAMETERS
+      }
+    }
+    catch (error) {
+      logger.error(`${error}`)
+      return errorType.CODEC_NOT_SUPPORT
     }
 
     if (this.encoder && this.encoder.state !== 'closed') {
@@ -372,8 +377,12 @@ export default class WebVideoEncoder {
       }
     }
 
-    const support = await VideoEncoder.isConfigSupported(config)
-
-    return support.supported
+    try {
+      const support = await VideoEncoder.isConfigSupported(config)
+      return support.supported
+    }
+    catch (error) {
+      return false
+    }
   }
 }

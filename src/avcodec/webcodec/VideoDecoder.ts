@@ -173,11 +173,16 @@ export default class WebVideoDecoder {
       delete config.description
     }
 
-    const support = await VideoDecoder.isConfigSupported(config)
-
-    if (!support.supported) {
-      logger.error('not support')
-      return errorType.INVALID_PARAMETERS
+    try {
+      const support = await VideoDecoder.isConfigSupported(config)
+      if (!support.supported) {
+        logger.error('not support')
+        return errorType.INVALID_PARAMETERS
+      }
+    }
+    catch (error) {
+      logger.error(`${error}`)
+      return errorType.CODEC_NOT_SUPPORT
     }
 
     if (this.decoder && this.decoder.state !== 'closed') {
@@ -361,8 +366,12 @@ export default class WebVideoDecoder {
       delete config.description
     }
 
-    const support = await VideoDecoder.isConfigSupported(config)
-
-    return support.supported
+    try {
+      const support = await VideoDecoder.isConfigSupported(config)
+      return support.supported
+    }
+    catch (error) {
+      return false
+    }
   }
 }
