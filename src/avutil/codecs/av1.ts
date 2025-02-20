@@ -489,5 +489,6 @@ export function generateExtradata(codecpar: pointer<AVCodecParameters>, buffer: 
   }
   // padding
   bitWriter.writeU(8, 0)
+  bitWriter.padding()
   return bitWriter.getBuffer()
 }
