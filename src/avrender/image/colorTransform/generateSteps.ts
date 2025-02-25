@@ -188,12 +188,9 @@ export default function generateSteps(src: ColorSpace, dst: ColorSpace, options:
       if (dstMatrixIsIdentityOrYcgco) {
         steps.push(dstRangeAdjustStep)
       }
-      if (dst.getMatrixId() === AVColorSpace.AVCOL_SPC_BT2020_CL) {
-        // not to do
-      }
-      else {
-        steps.push(colorTransformMatrix(dst.getTransferMatrix(options.bitDepth), options))
-      }
+
+      steps.push(colorTransformMatrix(dst.getTransferMatrix(options.bitDepth), options))
+
       if (!dstMatrixIsIdentityOrYcgco) {
         steps.push(dstRangeAdjustStep)
       }
