@@ -80,7 +80,7 @@ import isHdr from 'avutil/function/isHdr'
 import hasAlphaChannel from 'avutil/function/hasAlphaChannel'
 import SubtitleRender from './subtitle/SubtitleRender'
 import { Data, Fn } from 'common/types/type'
-import { playerEventChanged, playerEventChanging, playerEventError, playerEventNoParam, playerEventTime } from './type'
+import { playerEventChanged, playerEventChanging, playerEventError, playerEventNoParam, playerEventProgress, playerEventSubtitleDelayChange, playerEventTime, playerEventVolumeChange } from './type'
 import compileResource from 'avutil/function/compileResource'
 import os from 'common/util/os'
 import IPCPort, { REQUEST, RpcMessage } from 'common/network/IPCPort'
@@ -2026,6 +2026,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       promises.push(AVPlayer.DemuxerThread.startDemux(this.subtitleTaskId, this.isLive_, minQueueLength))
     }
 
+    // 在调用 play 之前调了 seek，同步到 seek 时间点
     if (this.seekedTimestamp >= 0n) {
       let maxQueueLength = 20
       this.formatContext.streams.forEach((stream) => {
@@ -2034,10 +2035,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
       })
       if (this.videoDecoder2VideoRenderChannel) {
-        promises.push(this.VideoRenderThread.syncSeekTime(this.taskId, this.seekedTimestamp))
+        promises.push(this.VideoRenderThread.syncSeekTime(this.taskId, this.seekedTimestamp, maxQueueLength))
       }
       if (this.audioDecoder2AudioRenderChannel) {
-        promises.push(AVPlayer.AudioRenderThread.syncSeekTime(this.taskId, this.seekedTimestamp))
+        promises.push(AVPlayer.AudioRenderThread.syncSeekTime(this.taskId, this.seekedTimestamp, maxQueueLength))
       }
       this.seekedTimestamp = NOPTS_VALUE_BIGINT
     }
@@ -2517,9 +2518,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.jitterBufferController = null
     }
 
-    this.fire(eventType.STOPPED)
-
     this.status = AVPlayerStatus.STOPPED
+
+    this.fire(eventType.STOPPED)
   }
 
   /*
@@ -3078,7 +3079,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         this.status = this.lastStatus
         this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.id, this.selectedAudioStream.id])
-
       }
       else {
         logger.error(`call selectAudio failed, id: ${id}, taskId: ${this.taskId}`)
@@ -3709,17 +3709,21 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   public on(event: typeof eventType.STOPPED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.ENDED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.SEEKING, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.SEEKED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.CHANGING, listener: typeof playerEventChanging, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.CHANGED, listener: typeof playerEventChanged, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.RESUME, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.TIME, listener: typeof playerEventTime, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.STREAM_UPDATE, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
-
   public on(event: typeof eventType.FIRST_AUDIO_RENDERED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.FIRST_VIDEO_RENDERED, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
-
   public on(event: typeof eventType.ERROR, listener: typeof playerEventError, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: typeof eventType.TIMEOUT, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.AUDIO_CONTEXT_RUNNING, listener: typeof playerEventNoParam, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.PROGRESS, listener: typeof playerEventProgress, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.VOLUME_CHANGE, listener: typeof playerEventVolumeChange, options?: Partial<EmitterOptions>): AVPlayer
+  public on(event: typeof eventType.SUBTITLE_DELAY_CHANGE, listener: typeof playerEventSubtitleDelayChange, options?: Partial<EmitterOptions>): AVPlayer
+
   public on(event: string, listener: Fn, options?: Partial<EmitterOptions>): AVPlayer
   public on(event: string, listener: Fn, options: Partial<EmitterOptions> = {}) {
     super.on(event, object.extend({
