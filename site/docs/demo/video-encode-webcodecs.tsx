@@ -94,6 +94,8 @@ async function encode(log: (v: string) => void) {
       break
     }
 
+    // 这里是为了防止卡死主线程加的 sleep
+    // 你可以将逻辑放入 worker 或定时任务中去掉此处
     await new Sleep(0)
   }
   await decoder.flush()
