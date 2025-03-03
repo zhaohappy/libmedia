@@ -24,6 +24,9 @@ function createTemplate(memo: { files: IFiles } | Project, props: any, isStackBl
       return;
     }
     if (name !== 'index.html' && name !== 'package.json') {
+      if (isStackBlitz && name === 'App.tsx') {
+        content = `import '@libmedia/cheap/cheapdef'\n` + content;
+      }
       memo.files[`src/${name}`] = content;
     }
     delete memo.files[name];
@@ -85,7 +88,10 @@ const template = {
       "@libmedia/avutil/*": ["node_modules/@libmedia/avutil/dist/esm/*"],
       "@libmedia/videoscale/*": ["node_modules/@libmedia/videoscale/dist/esm/*"],
       "@libmedia/avfilter/*": ["node_modules/@libmedia/avfilter/dist/esm/*"]
-    }
+    },
+    "types": [
+      "node"
+    ]
   },
   "include": ["src"],
   "files": [
@@ -168,6 +174,7 @@ export default defineConfig({
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@types/node": "^22.7.6",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.2.1",
