@@ -12,7 +12,6 @@ import { destroyAVFrame } from '@libmedia/avutil/util/avframe'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
 import { useEffect, useRef } from 'react'
-import React from 'react'
 
 let file: File
 let stop = true

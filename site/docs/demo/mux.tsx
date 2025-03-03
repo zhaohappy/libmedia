@@ -8,7 +8,6 @@ import { copyCodecParameters } from '@libmedia/avutil/util/codecparameters'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept } from './utils'
 import { useEffect, useRef, useState } from 'react'
-import React from 'react'
 
 let file: File
 let stop = true

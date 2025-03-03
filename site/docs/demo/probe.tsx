@@ -6,7 +6,6 @@ import compileResource from '@libmedia/avutil/function/compileResource'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
 import { useEffect, useRef, useState } from 'react'
-import React from 'react'
 
 let file: File
 

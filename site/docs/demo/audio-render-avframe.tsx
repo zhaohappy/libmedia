@@ -14,7 +14,6 @@ import * as cheapConfig from '@libmedia/cheap/config'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
 import { useEffect } from 'react'
-import React from 'react'
 
 let file: File
 let stop = true

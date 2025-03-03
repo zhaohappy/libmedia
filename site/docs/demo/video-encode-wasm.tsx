@@ -12,7 +12,6 @@ import WasmVideoEncoder from '@libmedia/avcodec/wasmcodec/VideoEncoder'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
 import { useEffect, useRef, useState } from 'react'
-import React from 'react'
 
 
 let file: File

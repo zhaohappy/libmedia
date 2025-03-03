@@ -10,7 +10,6 @@ import Sleep from '@libmedia/common/timer/Sleep'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept } from './utils'
 import { useEffect, useRef } from 'react'
-import React from 'react'
 
 let file: File
 let stop = true
