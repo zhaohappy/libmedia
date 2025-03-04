@@ -10,7 +10,6 @@ import AVPCMBuffer from '@libmedia/avutil/struct/avpcmbuffer'
 import { avFreep } from '@libmedia/avutil/util/mem'
 import { mapFloat32Array } from '@libmedia/cheap/std/memory'
 import { destroyAVFrame } from '@libmedia/avutil/util/avframe'
-import * as cheapConfig from '@libmedia/cheap/config'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
 import { useEffect } from 'react'
@@ -72,17 +71,8 @@ async function render() {
   function play(data: pointer<pointer<float>>, nbSamples: int32, sampleRate: int32) {
     const audioBuffer = audioContext.createBuffer(channels, nbSamples, sampleRate)
     for (let i = 0; i < channels; i++) {
-      if (audioBuffer.copyToChannel && !cheapConfig.USE_THREADS) {
-        audioBuffer.copyToChannel(
-          mapFloat32Array(data[i], reinterpret_cast<size>(nbSamples)),
-          i,
-          0
-        )
-      }
-      else {
-        const audioData = audioBuffer.getChannelData(i)
-        audioData.set(mapFloat32Array(data[i], reinterpret_cast<size>(nbSamples)), 0)
-      }
+      const audioData = audioBuffer.getChannelData(i)
+      audioData.set(mapFloat32Array(data[i], reinterpret_cast<size>(nbSamples)), 0)
     }
     const bufferSource = audioContext.createBufferSource()
     bufferSource.buffer = audioBuffer
@@ -108,7 +98,8 @@ async function render() {
   const decoder = new WasmAudioDecoder({
     resource: await compileResource(getWasm('decoder', stream.codecpar.codecId)),
     onReceiveAVFrame: (frame) => {
-      if (frame.format !== AVSampleFormat.AV_SAMPLE_FMT_FLTP) {
+      // 采样率和 audioContext.sampleRate 不同我们也重采样，否则会出现哒哒哒的噪音
+      if (frame.format !== AVSampleFormat.AV_SAMPLE_FMT_FLTP || frame.sampleRate !== audioContext.sampleRate) {
         resampler.resample(frame.extendedData, addressof(pcmBuffer), frame.nbSamples)
         play(reinterpret_cast<pointer<pointer<float>>>(pcmBuffer.data), pcmBuffer.nbSamples, pcmBuffer.sampleRate)
       }
