@@ -410,6 +410,13 @@ function generateEnum(fileName) {
 }
 
 function buildPackage(packageName, taskLevel = 1, fileNamesFilter) {
+
+  if (!fileNamesFilter) {
+    fileNamesFilter = (name) => {
+      return !/avutil\/enum\.ts$/.test(name)
+    }
+  }
+
   let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${packageName}/tsconfig.esm.json`))
 
   const esmReg = new RegExp(`dist\/esm\/${packageName}\/?`)
@@ -577,9 +584,7 @@ function buildAvutil() {
   const enumFileName = '__enum__';
 
   generateEnum(enumFileName)
-  buildPackage('avutil', 1, (name) => {
-    return !/avutil\/enum\.ts$/.test(name)
-  })
+  buildPackage('avutil')
 
   process.on('exit', (code) => {
     fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/esm/${enumFileName}.js`), path.resolve(__dirname, `../src/avutil/dist/esm/enum.js`))
