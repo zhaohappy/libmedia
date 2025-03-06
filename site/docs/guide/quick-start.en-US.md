@@ -124,6 +124,9 @@ export default defineConfig({
   ...
   plugins: [
     typescript({
+      // configure the tsconfig.json configuration file used
+      // setting of "include" must to include the files need to compile
+      tsconfig: './tsconfig.json',
       ...
       transformers: {
         before: [
@@ -150,6 +153,9 @@ export default {
   ...
   plugins: [
     typescript({
+      // configure the tsconfig.json configuration file used
+      // setting of "include" must to include the files need to compile
+      tsconfig: './tsconfig.json',
       ...
       transformers: {
         before: [

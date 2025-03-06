@@ -124,6 +124,9 @@ export default defineConfig({
   ...
   plugins: [
     typescript({
+      // 配置使用的 tsconfig.json 配置文件
+      // include 中需要包含要处理的文件
+      tsconfig: './tsconfig.json',
       ...
       transformers: {
         before: [
@@ -150,6 +153,9 @@ export default {
   ...
   plugins: [
     typescript({
+      // 配置使用的 tsconfig.json 配置文件
+      // include 中需要包含要处理的文件
+      tsconfig: './tsconfig.json',
       ...
       transformers: {
         before: [
