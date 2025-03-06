@@ -29,7 +29,7 @@ import Stream from 'avutil/AVStream'
 import { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 import { newSideData } from 'avutil/util/avpacket'
-import { AV_CH_LAYOUT } from 'avutil/audiosamplefmt'
+import { AVCHLayout } from 'avutil/audiosamplefmt'
 import { AC3ChannelLayout } from 'avutil/codecs/ac3'
 import * as avChannel from 'avutil/util/channel'
 
@@ -59,7 +59,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
 
   let mask = AC3ChannelLayout[acmod]
   if (lfeon) {
-    mask |= AV_CH_LAYOUT.AV_CH_LOW_FREQUENCY
+    mask |= AVCHLayout.AV_CH_LOW_FREQUENCY
   }
 
   avChannel.unInitChannelLayout(addressof(stream.codecpar.chLayout))

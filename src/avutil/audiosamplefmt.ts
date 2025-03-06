@@ -200,7 +200,7 @@ export const enum AVAudioServiceType {
   AV_AUDIO_SERVICE_TYPE_NB
 }
 
-export const enum AV_CH_LAYOUT {
+export const enum AVCHLayout {
   AV_CH_FRONT_LEFT = (1 << AVChannel.AV_CHAN_FRONT_LEFT),
   AV_CH_FRONT_RIGHT = (1 << AVChannel.AV_CHAN_FRONT_RIGHT),
   AV_CH_FRONT_CENTER = (1 << AVChannel.AV_CHAN_FRONT_CENTER),
