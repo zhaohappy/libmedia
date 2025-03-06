@@ -373,7 +373,43 @@ function buildWgsl(file, to, sourcePath, cjs) {
   // fs.writeFileSync(to + '.map', JSON.stringify(map))
 }
 
-function buildPackage(packageName, taskLevel = 1) {
+function generateEnum(fileName) {
+  let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../tsconfig.json`))
+  printTaskLog(1, 'enum', 'START', `starting generate enum`);
+  const program = ts.createProgram(parsedCommandLine.fileNames, parsedCommandLine.options);
+
+  let source = ''
+
+  const typeChecker = program.getTypeChecker()
+  program.emit(undefined, () => {}, undefined, undefined, {
+    before: [
+      function (context) {
+        return (sourceFile) => {
+          if (/avutil\/enum\.ts$/.test(sourceFile.fileName)) {
+            function visitor(node) {
+              if (ts.isNamedExports(node)) {
+                node.elements.forEach((element) => {
+                  const type = typeChecker.getTypeAtLocation(element.name)
+                  if (type.symbol?.valueDeclaration) {
+                    let text = type.symbol.valueDeclaration.getText()
+                    text = text.replace(/export\s+const\s+enum\s+/, 'export enum ')
+                    source += text + '\n'
+                  }
+                })
+              }
+              return ts.visitEachChild(node, visitor, context);
+            }
+            return ts.visitNode(sourceFile, visitor);
+          }
+          return sourceFile
+        }
+      }
+    ]
+  });
+  fs.writeFileSync(path.resolve(__dirname, `../src/avutil/${fileName}.ts`), source)
+}
+
+function buildPackage(packageName, taskLevel = 1, fileNamesFilter) {
   let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${packageName}/tsconfig.esm.json`))
 
   const esmReg = new RegExp(`dist\/esm\/${packageName}\/?`)
@@ -381,7 +417,7 @@ function buildPackage(packageName, taskLevel = 1) {
 
   printTaskLog(taskLevel, packageName, 'START', `starting built ${packageName} esm package`);
 
-  compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
+  compile(fileNamesFilter ? parsedCommandLine.fileNames.filter(fileNamesFilter) : parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     let dir = path.dirname(fileName);
     if (esmReg.test(dir)) {
       dir = dir.replace(esmReg, 'dist/esm/')
@@ -422,7 +458,7 @@ function buildPackage(packageName, taskLevel = 1) {
   printTaskLog(taskLevel, packageName, 'START', `starting built ${packageName} cjs package`);
 
   parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${packageName}/tsconfig.cjs.json`))
-  compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
+  compile(fileNamesFilter ? parsedCommandLine.fileNames.filter(fileNamesFilter) : parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     let dir = path.dirname(fileName);
     if (cjsReg.test(dir)) {
       dir = dir.replace(cjsReg, 'dist/cjs/')
@@ -538,7 +574,24 @@ function buildVideoscale() {
 
 function buildAvutil() {
   printTaskLog(0, 'avutil', 'START', `starting built avutil`);
-  buildPackage('avutil')
+  const enumFileName = '__enum__';
+
+  generateEnum(enumFileName)
+  buildPackage('avutil', 1, (name) => {
+    return !/avutil\/enum\.ts$/.test(name)
+  })
+
+  process.on('exit', (code) => {
+    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/esm/${enumFileName}.js`), path.resolve(__dirname, `../src/avutil/dist/esm/enum.js`))
+    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/cjs/${enumFileName}.js`), path.resolve(__dirname, `../src/avutil/dist/cjs/enum.js`))
+    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/esm/${enumFileName}.js.map`), path.resolve(__dirname, `../src/avutil/dist/esm/enum.js.map`))
+    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/cjs/${enumFileName}.js.map`), path.resolve(__dirname, `../src/avutil/dist/cjs/enum.js.map`))
+    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/esm/${enumFileName}.d.ts`), path.resolve(__dirname, `../src/avutil/dist/esm/enum.d.ts`))
+    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/cjs/${enumFileName}.d.ts`), path.resolve(__dirname, `../src/avutil/dist/cjs/enum.d.ts`))
+  });
+
+  fs.unlinkSync(path.resolve(__dirname, `../src/avutil/${enumFileName}.ts`))
+
   addPackageExport(path.resolve(__dirname, '../src/avutil/'))
   printTaskLog(0, 'avutil', 'SUCCESS', `built avutil completed`);
 }

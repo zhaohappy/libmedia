@@ -389,6 +389,11 @@
       "import": "./dist/esm/util/serialize.js",
       "require": "./dist/cjs/util/serialize.js",
       "types": "./dist/esm/util/serialize.d.ts"
+    },
+    "./enum": {
+      "import": "./dist/esm/enum.js",
+      "require": "./dist/cjs/enum.js",
+      "types": "./dist/esm/enum.d.ts"
     }
   }
 }
