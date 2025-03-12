@@ -290,7 +290,7 @@ export async function getAVFormat(ioReader: IOReader, source: string | File) {
   return iformat
 }
 
-const musicExt: string[] = ['mp3', 'aac', 'flac', 'ogg', 'ogg', 'wav', 'm4a', 'mka', 'opus']
+const musicExt: string[] = ['mp3', 'aac', 'flac', 'ogg', 'wav', 'm4a', 'mka', 'opus']
 const movExt: string[] = ['mp4', 'webm', 'mkv', 'flv', 'ts', 'mov', 'm4s', 'h264', '264', 'avc',
   'h265', '265', 'hevc', 'h266', '266', 'vvc', 'ivf', 'mpeg'
 ]
