@@ -45,7 +45,7 @@ export enum AV_FRAME_SIDE_DATA_FLAG {
 }
 
 export function createAVFrame(): pointer<AVFrame> {
-  const frame: pointer<AVFrame> = avMallocz(sizeof(AVFrame))
+  const frame = reinterpret_cast<pointer<AVFrame>>(avMallocz(sizeof(AVFrame)))
   getAVFrameDefault(frame)
   return frame
 }
@@ -375,7 +375,7 @@ export function refAVFrame(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
   }
 
   if (src.extendedBuf) {
-    dst.extendedBuf = reinterpret_cast<pointer<pointer<void>>>(avMallocz(reinterpret_cast<int32>(sizeof(accessof(dst.extendedBuf))) * src.nbExtendedBuf))
+    dst.extendedBuf = reinterpret_cast<pointer<pointer<AVBufferRef>>>(avMallocz(reinterpret_cast<int32>(sizeof(accessof(dst.extendedBuf))) * src.nbExtendedBuf))
     if (!dst.extendedBuf) {
       unrefAVFrame(dst)
       return NO_MEMORY

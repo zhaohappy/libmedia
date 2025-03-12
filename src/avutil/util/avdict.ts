@@ -121,7 +121,7 @@ export function avDictSet(m: pointer<AVDictionary>, key: string, value: string, 
     if (!is.string(value)) {
       value = toString(value)
     }
-    let tmp: pointer<AVDictionaryEntry> = realloc(m.elems, (m.count + 1) * reinterpret_cast<int32>(sizeof(AVDictionaryEntry)))
+    let tmp = reinterpret_cast<pointer<AVDictionaryEntry>>(realloc(m.elems, (m.count + 1) * reinterpret_cast<int32>(sizeof(AVDictionaryEntry))))
     m.elems = tmp
 
     m.elems[m.count].key = malloc(key.length + 1)
@@ -139,7 +139,7 @@ export function avDictSet(m: pointer<AVDictionary>, key: string, value: string, 
 function avDictSet2(pm: pointer<pointer<AVDictionary>>, key: string, value: string, flags: int32 = 0) {
   let m = accessof(pm)
   if (!m) {
-    m = avMallocz(sizeof(accessof(m)))
+    m = reinterpret_cast<pointer<AVDictionary>>(avMallocz(sizeof(accessof(m))))
     accessof(pm) <- m
   }
   return avDictSet(m, key, value, flags)

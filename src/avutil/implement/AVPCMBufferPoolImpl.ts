@@ -46,7 +46,7 @@ export default class AVPCMBufferPoolImpl implements AVPCMBufferPool {
       return atomics.compareExchange(addressof(buffer.refCount), -1, 1) === -1
     })
     if (!buffer) {
-      buffer = avMallocz(sizeof(AVPCMBufferRef))
+      buffer = reinterpret_cast<pointer<AVPCMBufferRef>>(avMallocz(sizeof(AVPCMBufferRef)))
 
       buffer.refCount = 1
 

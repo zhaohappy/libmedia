@@ -37,7 +37,7 @@ export default abstract class AVBSFilter {
   outCodecpar: pointer<AVCodecParameters>
 
   public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<Rational>): number {
-    this.inCodecpar = avMallocz(sizeof(AVCodecParameters))
+    this.inCodecpar = reinterpret_cast<pointer<AVCodecParameters>>(avMallocz(sizeof(AVCodecParameters)))
     copyCodecParameters(this.inCodecpar, codecpar)
 
     this.inTimeBase = {

@@ -211,7 +211,7 @@ export function serializeAVCodecParameters(codecpar: pointer<AVCodecParameters>)
 
 export function unserializeAVCodecParameters(serialize: AVCodecParametersSerialize, codecpar: pointer<AVCodecParameters> = nullptr) {
   if (!codecpar) {
-    codecpar = avMalloc(sizeof(AVCodecParameters))
+    codecpar = reinterpret_cast<pointer<AVCodecParameters>>(avMalloc(sizeof(AVCodecParameters)))
     memset(codecpar, 0, sizeof(AVCodecParameters))
   }
 

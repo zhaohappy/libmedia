@@ -47,7 +47,7 @@ function copyCodecParametersSideData(
     return
   }
 
-  const dst: pointer<AVPacketSideData> = avMallocz(nbSrc * reinterpret_cast<int32>(sizeof(AVPacketSideData)))
+  const dst = reinterpret_cast<pointer<AVPacketSideData>>(avMallocz(nbSrc * reinterpret_cast<int32>(sizeof(AVPacketSideData))))
 
   for (let i = 0; i < nbSrc; i++) {
     dst[i].type = src[i].type

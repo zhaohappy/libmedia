@@ -168,7 +168,7 @@ export default class AudioSourceBufferNode {
   }
 
   private allocBuffer() {
-    const buffer: pointer<AVPCMBuffer> = avMallocz(sizeof(AVPCMBuffer))
+    const buffer = reinterpret_cast<pointer<AVPCMBuffer>>(avMallocz(sizeof(AVPCMBuffer)))
     buffer.data = reinterpret_cast<pointer<pointer<uint8>>>(avMallocz(reinterpret_cast<int32>(sizeof(pointer)) * this.channels))
     const data = avMallocz(reinterpret_cast<int32>(sizeof(float)) * 128 * BUFFER_LENGTH * this.channels)
     for (let i = 0; i < this.channels; i++) {

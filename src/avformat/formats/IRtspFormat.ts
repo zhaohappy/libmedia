@@ -285,7 +285,7 @@ export default class IRtspFormat extends IFormat {
   private addPrft(stream: AVStream, avpacket: pointer<AVPacket>, timestamp: uint32) {
     const context = stream.privData as RtspStreamContext
     if (context.lastRtcpNtpTime !== NOPTS_VALUE_BIGINT) {
-      const prft: pointer<AVProducerReferenceTime> = avMalloc(sizeof(AVProducerReferenceTime))
+      const prft = reinterpret_cast<pointer<AVProducerReferenceTime>>(avMalloc(sizeof(AVProducerReferenceTime)))
       const rtcpTime = ntpUtil.parse(reinterpret_cast<uint64>(context.lastRtcpNtpTime)) - NTP_OFFSET_US
       const deltaTimestamp = static_cast<uint64>(timestamp) - context.lastRtcpNtpTime
       const deltaTime = avRescaleQ(deltaTimestamp, stream.timeBase, AV_TIME_BASE_Q)

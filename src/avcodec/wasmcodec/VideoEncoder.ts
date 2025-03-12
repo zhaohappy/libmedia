@@ -167,7 +167,7 @@ export default class WasmVideoEncoder {
         free(this.encoderOptions)
         this.encoderOptions = nullptr
       }
-      this.encoderOptions = avMallocz(sizeof(AVDictionary))
+      this.encoderOptions = reinterpret_cast<pointer<AVDictionary>>(avMallocz(sizeof(AVDictionary)))
       object.each(opts, (value, key) => {
         if (is.string(value) || is.string(key)) {
           dict.avDictSet(this.encoderOptions, key, value)

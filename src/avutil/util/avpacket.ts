@@ -143,7 +143,7 @@ export function deleteAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPack
 }
 
 export function createAVPacket(): pointer<AVPacket> {
-  const avpacket: pointer<AVPacket> = avMallocz(sizeof(AVPacket))
+  const avpacket = reinterpret_cast<pointer<AVPacket>>(avMallocz(sizeof(AVPacket)))
   getAVPacketDefault(avpacket)
   return avpacket
 }
@@ -189,7 +189,7 @@ export function copyAVPacketSideData(dst: pointer<AVPacket>, src: pointer<AVPack
   freeAVPacketSideData(addressof(dst.sideData), addressof(dst.sideDataElems))
   if (src.sideDataElems) {
     let size = reinterpret_cast<int32>(sizeof(AVPacketSideData))
-    dst.sideData = avMallocz(size * src.sideDataElems)
+    dst.sideData = reinterpret_cast<pointer<AVPacketSideData>>(avMallocz(size * src.sideDataElems))
     for (let i = 0; i < src.sideDataElems; i++) {
       dst.sideData[i].size = src.sideData[i].size
       dst.sideData[i].type = src.sideData[i].type

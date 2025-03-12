@@ -35,7 +35,7 @@ export default function encodedAudioChunk2AVPacket(chunk: EncodedAudioChunk, avp
   }
 
   avpacket.pts = avpacket.dts = static_cast<int64>(chunk.timestamp)
-  avpacket.duration = static_cast<int64>(chunk.duration)
+  avpacket.duration = static_cast<int64>(chunk.duration || 0)
   avpacket.timeBase.den = AV_TIME_BASE
   avpacket.timeBase.num = 1
   avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY

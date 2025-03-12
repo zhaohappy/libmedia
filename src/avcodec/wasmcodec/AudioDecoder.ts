@@ -102,7 +102,7 @@ export default class WasmAudioDecoder {
         free(this.decoderOptions)
         this.decoderOptions = nullptr
       }
-      this.decoderOptions = avMallocz(sizeof(AVDictionary))
+      this.decoderOptions = reinterpret_cast<pointer<AVDictionary>>(avMallocz(sizeof(AVDictionary)))
       object.each(opts, (value, key) => {
         if (is.string(value) || is.string(key)) {
           dict.avDictSet(this.decoderOptions, key, value)

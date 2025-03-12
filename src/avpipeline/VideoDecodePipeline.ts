@@ -549,7 +549,7 @@ export default class VideoDecodePipeline extends Pipeline {
   ) {
     const task = this.tasks.get(taskId)
     if (task) {
-      const codecpar: pointer<AVCodecParameters> = avMallocz(sizeof(AVCodecParameters))
+      const codecpar = reinterpret_cast<pointer<AVCodecParameters>>(avMallocz(sizeof(AVCodecParameters)))
       if (isPointer(parameters)) {
         copyCodecParameters(codecpar, parameters)
       }
@@ -636,7 +636,7 @@ export default class VideoDecodePipeline extends Pipeline {
     if (task) {
       task.wasmDecoderOptions = wasmDecoderOptions
 
-      const codecpar: pointer<AVCodecParameters> = avMallocz(sizeof(AVCodecParameters))
+      const codecpar = reinterpret_cast<pointer<AVCodecParameters>>(avMallocz(sizeof(AVCodecParameters)))
       if (isPointer(parameters)) {
         copyCodecParameters(codecpar, parameters)
       }

@@ -47,7 +47,7 @@ export default class AVFramePoolImpl implements AVFramePool {
       return atomics.compareExchange(addressof(avframe.refCount), -1, 1) === -1
     })
     if (!avframe) {
-      avframe = avMallocz(sizeof(AVFrameRef))
+      avframe = reinterpret_cast<pointer<AVFrameRef>>(avMallocz(sizeof(AVFrameRef)))
 
       getAVFrameDefault(avframe)
 

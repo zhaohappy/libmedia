@@ -47,7 +47,7 @@ export default class AVPacketPoolImpl implements AVPacketPool {
       return atomics.compareExchange(addressof(avpacket.refCount), -1, 1) === -1
     })
     if (!avpacket) {
-      avpacket = avMallocz(sizeof(AVPacketRef))
+      avpacket = reinterpret_cast<pointer<AVPacketRef>>(avMallocz(sizeof(AVPacketRef)))
       getAVPacketDefault(avpacket)
 
       avpacket.refCount = 1

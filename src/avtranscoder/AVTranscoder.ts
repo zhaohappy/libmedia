@@ -601,7 +601,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
 
   private copyAVStreamInterface(task: SelfTask, stream: AVStreamInterface) {
     const newStream = object.extend({}, stream)
-    newStream.codecpar = avMallocz(sizeof(AVCodecParameters))
+    newStream.codecpar = reinterpret_cast<pointer<AVCodecParameters>>(avMallocz(sizeof(AVCodecParameters)))
     copyCodecParameters(newStream.codecpar, stream.codecpar)
     newStream.timeBase = {
       den: 1,

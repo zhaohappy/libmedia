@@ -30,7 +30,7 @@ export default class ResampleFilterNode extends AVFilterNode {
   }
 
   public async ready() {
-    this.pcm = avMallocz(sizeof(AVPCMBuffer))
+    this.pcm = reinterpret_cast<pointer<AVPCMBuffer>>(avMallocz(sizeof(AVPCMBuffer)))
   }
 
   public async destroy() {
