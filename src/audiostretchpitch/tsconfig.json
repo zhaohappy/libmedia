@@ -4,6 +4,7 @@
     "outDir": "./dist",
     "sourceMap": true,
     "declarationMap": false,
+    "strict": true,
     "baseUrl": "./",
     "paths": {
       "cheap/*": ["../cheap/*"],

@@ -77,7 +77,7 @@ export default class TimedTextDecoder extends Decoder {
 
   public receiveAVFrame(sub: AVSubtitle): int32 {
     if (this.queue.length) {
-      const item = this.queue.shift()
+      const item = this.queue.shift()!
       sub.pts = item.pts
       sub.duration = item.duration
       sub.timeBase.den = item.timeBase.den

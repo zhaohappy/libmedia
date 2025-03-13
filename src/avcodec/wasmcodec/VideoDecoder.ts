@@ -87,13 +87,13 @@ export default class WasmVideoDecoder {
 
   private decoder: WebAssemblyRunner
 
-  private frame: pointer<AVFrame>
+  private frame: pointer<AVFrame> = nullptr
 
-  private parameters: pointer<AVCodecParameters>
+  private parameters: pointer<AVCodecParameters> = nullptr
 
   private decoderOptions: pointer<AVDictionary> = nullptr
 
-  private timeBase: Rational
+  private timeBase: Rational | undefined
 
   constructor(options: WasmVideoDecoderOptions) {
     this.options = options
@@ -110,8 +110,8 @@ export default class WasmVideoDecoder {
   private outputAVFrame() {
     if (this.frame) {
       if (this.options.onReceiveAVFrame) {
-        this.frame.timeBase.den = this.timeBase.den
-        this.frame.timeBase.num = this.timeBase.num
+        this.frame.timeBase.den = this.timeBase!.den
+        this.frame.timeBase.num = this.timeBase!.num
         this.options.onReceiveAVFrame(this.frame)
       }
       else {
@@ -127,7 +127,7 @@ export default class WasmVideoDecoder {
   }
 
   public async open(parameters: pointer<AVCodecParameters>, threadCount: number = 1, opts: Data = {}): Promise<int32> {
-    await this.decoder.run(null, threadCount)
+    await this.decoder.run(undefined, threadCount)
     let ret = 0
 
     const optsP = reinterpret_cast<pointer<pointer<AVDictionary>>>(malloc(sizeof(pointer)))
@@ -165,7 +165,7 @@ export default class WasmVideoDecoder {
       return errorType.CODEC_NOT_SUPPORT
     }
     this.parameters = parameters
-    this.timeBase = null
+    this.timeBase = undefined
     return 0
   }
 
@@ -214,7 +214,6 @@ export default class WasmVideoDecoder {
   public close() {
     this.decoder.invoke('decoder_close')
     this.decoder.destroy()
-    this.decoder = null
 
     if (this.frame) {
       this.options.avframePool ? this.options.avframePool.release(this.frame as pointer<AVFrameRef>) : destroyAVFrame(this.frame)

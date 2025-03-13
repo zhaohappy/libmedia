@@ -47,19 +47,19 @@ export type WebAudioEncoderOptions = {
 
 export default class WebAudioEncoder {
 
-  private encoder: AudioEncoder
+  private encoder: AudioEncoder | undefined
 
   private options: WebAudioEncoderOptions
-  private parameters: pointer<AVCodecParameters>
-  private timeBase: Rational
+  private parameters: pointer<AVCodecParameters> = nullptr
+  private timeBase: Rational | undefined
 
-  private currentError: Error
+  private currentError: Error | null = null
 
-  private pts: int64
+  private pts: int64 = 0n
 
   private avframeCache: pointer<AVFrame>[]
 
-  private extradata: Uint8Array
+  private extradata: Uint8Array | null = null
 
   constructor(options: WebAudioEncoderOptions) {
 
@@ -88,13 +88,13 @@ export default class WebAudioEncoder {
       encodedAudioChunk2AVPacket(chunk, avpacket, metadata)
     }
 
-    avpacket.pts = avRescaleQ(this.pts, AV_TIME_BASE_Q, this.timeBase)
+    avpacket.pts = avRescaleQ(this.pts, AV_TIME_BASE_Q, this.timeBase!)
     avpacket.dts = avpacket.pts
-    avpacket.timeBase.den = this.timeBase.den
-    avpacket.timeBase.num = this.timeBase.num
+    avpacket.timeBase.den = this.timeBase!.den
+    avpacket.timeBase.num = this.timeBase!.num
 
     this.pts += avpacket.duration
-    avpacket.duration = avRescaleQ(avpacket.duration, AV_TIME_BASE_Q, this.timeBase)
+    avpacket.duration = avRescaleQ(avpacket.duration, AV_TIME_BASE_Q, this.timeBase!)
 
     this.options.onReceiveAVPacket(avpacket)
 
@@ -171,7 +171,7 @@ export default class WebAudioEncoder {
       frame = avframe2AudioData(cache)
     }
     try {
-      this.encoder.encode(frame)
+      this.encoder!.encode(frame)
       return 0
     }
     catch (error) {
@@ -186,7 +186,7 @@ export default class WebAudioEncoder {
       return errorType.DATA_INVALID
     }
     try {
-      await this.encoder.flush()
+      await this.encoder!.flush()
       return 0
     }
     catch (error) {
@@ -208,7 +208,7 @@ export default class WebAudioEncoder {
           : destroyAVFrame(avframe)
       })
     }
-    this.encoder = null
+    this.encoder = undefined
   }
 
   public getExtraData() {

@@ -48,22 +48,22 @@ export type WebVideoDecoderOptions = {
 
 export default class WebVideoDecoder {
 
-  private decoder: VideoDecoder
+  private decoder: VideoDecoder | undefined
 
   private options: WebVideoDecoderOptions
-  private parameters: pointer<AVCodecParameters>
+  private parameters: pointer<AVCodecParameters> = nullptr
 
-  private extradata: Uint8Array
+  private extradata: Uint8Array | undefined
 
-  private currentError: Error
+  private currentError: Error | null = null
 
   private inputQueue: number[]
   private outputQueue: VideoFrame[]
 
   private sort: boolean
 
-  private keyframeRequire: boolean
-  private extradataRequire: boolean
+  private keyframeRequire: boolean = false
+  private extradataRequire: boolean = false
 
   constructor(options: WebVideoDecoderOptions) {
 
@@ -72,7 +72,7 @@ export default class WebVideoDecoder {
     this.outputQueue = []
 
     // safari 输出帧在有 B 帧的情况下没有按 pts 排序递增输出，这里需要进行排序输出
-    this.sort = browser.safari || os.ios
+    this.sort = !!(browser.safari || os.ios)
   }
 
   private async output(frame: VideoFrame) {
@@ -91,7 +91,7 @@ export default class WebVideoDecoder {
       while (this.outputQueue.length > 2
         && this.outputQueue[0].timestamp === this.inputQueue[0]
       ) {
-        const output = this.outputQueue.shift()
+        const output = this.outputQueue.shift()!
         if (this.options.onReceiveVideoFrame) {
           this.options.onReceiveVideoFrame(output)
         }
@@ -117,10 +117,10 @@ export default class WebVideoDecoder {
   }
 
   private changeExtraData(buffer: Uint8Array) {
-    if (buffer.length === this.extradata.length) {
+    if (buffer.length === this.extradata!.length) {
       let same = true
       for (let i = 0; i < buffer.length; i++) {
-        if (buffer[i] !== this.extradata[i]) {
+        if (buffer[i] !== this.extradata![i]) {
           same = false
           break
         }
@@ -134,9 +134,9 @@ export default class WebVideoDecoder {
 
     this.extradata = buffer.slice()
 
-    this.decoder.reset()
+    this.decoder!.reset()
 
-    this.decoder.configure({
+    this.decoder!.configure({
       codec: getVideoCodec(this.parameters, buffer),
       description: this.extradata,
       hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true)
@@ -154,7 +154,7 @@ export default class WebVideoDecoder {
 
   public async open(parameters: pointer<AVCodecParameters>): Promise<int32> {
     this.currentError = null
-    this.extradata = null
+    this.extradata = undefined
     if (parameters.extradata !== nullptr) {
       this.extradata = mapUint8Array(parameters.extradata, reinterpret_cast<size>(parameters.extradataSize)).slice()
     }
@@ -282,7 +282,7 @@ export default class WebVideoDecoder {
     }
 
     try {
-      this.decoder.decode(videoChunk)
+      this.decoder!.decode(videoChunk)
     }
     catch (error) {
       logger.error(`decode error, ${error}`)
@@ -302,7 +302,7 @@ export default class WebVideoDecoder {
       return errorType.DATA_INVALID
     }
     try {
-      await this.decoder.flush()
+      await this.decoder!.flush()
     }
     catch (error) {
       logger.error(`flush error, ${error}`)
@@ -310,7 +310,7 @@ export default class WebVideoDecoder {
     }
     if (this.sort) {
       while (this.outputQueue.length) {
-        const frame = this.outputQueue.shift()
+        const frame = this.outputQueue.shift()!
         if (this.options.onReceiveVideoFrame) {
           this.options.onReceiveVideoFrame(frame)
         }
@@ -327,7 +327,7 @@ export default class WebVideoDecoder {
     if (this.decoder && this.decoder.state !== 'closed') {
       this.decoder.close()
     }
-    this.decoder = null
+    this.decoder = undefined
     this.currentError = null
 
     if (this.outputQueue?.length) {
@@ -336,8 +336,8 @@ export default class WebVideoDecoder {
       })
     }
 
-    this.inputQueue = null
-    this.outputQueue = null
+    this.inputQueue.length = 0
+    this.outputQueue.length = 0
   }
 
   public getQueueLength() {
@@ -349,7 +349,7 @@ export default class WebVideoDecoder {
   }
 
   static async isSupported(parameters: pointer<AVCodecParameters>, enableHardwareAcceleration: boolean) {
-    let extradata: Uint8Array = null
+    let extradata: Uint8Array | undefined
     if (parameters.extradata !== nullptr) {
       extradata = mapUint8Array(parameters.extradata, reinterpret_cast<size>(parameters.extradataSize)).slice()
     }

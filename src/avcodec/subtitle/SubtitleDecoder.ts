@@ -45,9 +45,9 @@ export default class SubtitleDecoder {
 
   private options: SubtitleDecoderOptions
 
-  private frame: AVSubtitle
+  private frame: AVSubtitle | undefined
 
-  private decoder: Decoder
+  private decoder: Decoder | undefined
 
   constructor(options: SubtitleDecoderOptions) {
     this.options = options
@@ -73,12 +73,12 @@ export default class SubtitleDecoder {
       if (this.options.onReceiveSubtitle) {
         this.options.onReceiveSubtitle(this.frame)
       }
-      this.frame = null
+      this.frame = undefined
     }
   }
 
   private receiveAVFrame() {
-    return this.decoder.receiveAVFrame(this.getAVFrame())
+    return this.decoder!.receiveAVFrame(this.getAVFrame())
   }
 
   public async open(parameters: pointer<AVCodecParameters>) {
@@ -110,7 +110,7 @@ export default class SubtitleDecoder {
   }
 
   public decode(avpacket: pointer<AVPacket>) {
-    let ret = this.decoder.sendAVPacket(avpacket)
+    let ret = this.decoder!.sendAVPacket(avpacket)
 
     if (ret) {
       return ret
@@ -133,7 +133,7 @@ export default class SubtitleDecoder {
   }
 
   public async flush() {
-    this.decoder.flush()
+    this.decoder!.flush()
     while (1) {
       const ret = this.receiveAVFrame()
       if (ret < 1) {
@@ -145,7 +145,7 @@ export default class SubtitleDecoder {
 
   public close() {
     if (this.frame) {
-      this.frame = null
+      this.frame = undefined
     }
   }
 }

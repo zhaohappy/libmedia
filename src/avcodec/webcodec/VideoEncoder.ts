@@ -73,22 +73,22 @@ function fixChromeConstraintSetFlagsBug(desc: Uint8Array) {
 
 export default class WebVideoEncoder {
 
-  private encoder: VideoEncoder
+  private encoder: VideoEncoder | undefined
 
   private options: WebVideoEncoderOptions
-  private parameters: pointer<AVCodecParameters>
-  private timeBase: Rational
+  private parameters: pointer<AVCodecParameters> = nullptr
+  private timeBase: Rational | undefined
 
-  private currentError: Error
+  private currentError: Error | null = null
 
   private avframeMap: Map<int64, pointer<AVFrame>>
 
-  private framerateTimebase: Rational
+  private framerateTimebase: Rational | undefined
 
-  private inputCounter: int64
-  private outputCounter: int64
+  private inputCounter: int64 = 0n
+  private outputCounter: int64 = 0n
 
-  private extradata: Uint8Array
+  private extradata: Uint8Array | undefined
 
   constructor(options: WebVideoEncoderOptions) {
 
@@ -105,7 +105,7 @@ export default class WebVideoEncoder {
   }) {
 
     const pts = static_cast<int64>(chunk.timestamp as uint32)
-    const dts = avRescaleQ(this.outputCounter++, this.framerateTimebase, this.timeBase)
+    const dts = avRescaleQ(this.outputCounter++, this.framerateTimebase!, this.timeBase!)
 
     const avpacket = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
 
@@ -124,15 +124,15 @@ export default class WebVideoEncoder {
         this.extradata = buffer
       }
       if (metadata?.decoderConfig?.colorSpace) {
-        this.parameters.colorSpace = mapColorSpace(metadata.decoderConfig.colorSpace.matrix)
-        this.parameters.colorPrimaries = mapColorPrimaries(metadata.decoderConfig.colorSpace.primaries)
-        this.parameters.colorTrc = mapColorTrc(metadata.decoderConfig.colorSpace.transfer)
+        this.parameters.colorSpace = mapColorSpace(metadata.decoderConfig.colorSpace.matrix || '')
+        this.parameters.colorPrimaries = mapColorPrimaries(metadata.decoderConfig.colorSpace.primaries || '')
+        this.parameters.colorTrc = mapColorTrc(metadata.decoderConfig.colorSpace.transfer || '')
       }
 
       encodedVideoChunk2AVPacket(chunk, avpacket)
 
       if (!this.extradata) {
-        let extradata: Uint8Array
+        let extradata: Uint8Array | undefined
         if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_AV1) {
           extradata = av1.generateExtradata(this.parameters, getAVPacketData(avpacket))
         }
@@ -150,9 +150,9 @@ export default class WebVideoEncoder {
 
     avpacket.pts = pts
     avpacket.dts = dts
-    avpacket.timeBase.den = this.timeBase.den
-    avpacket.timeBase.num = this.timeBase.num
-    avpacket.duration = avRescaleQ(1n, this.framerateTimebase, this.timeBase)
+    avpacket.timeBase.den = this.timeBase!.den
+    avpacket.timeBase.num = this.timeBase!.num
+    avpacket.duration = avRescaleQ(1n, this.framerateTimebase!, this.timeBase!)
 
     if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_H264
       || this.parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
@@ -257,7 +257,7 @@ export default class WebVideoEncoder {
       return errorType.DATA_INVALID
     }
 
-    let pts = avRescaleQ(this.inputCounter, this.framerateTimebase, this.timeBase)
+    let pts = avRescaleQ(this.inputCounter, this.framerateTimebase!, this.timeBase!)
 
     if (isPointer(frame) && frame.pts !== NOPTS_VALUE_BIGINT
       || !isPointer(frame) && frame.timestamp >= 0
@@ -266,12 +266,12 @@ export default class WebVideoEncoder {
         ? avRescaleQ2(
           frame.pts,
           addressof(frame.timeBase),
-          this.timeBase
+          this.timeBase!
         )
         : avRescaleQ(
           static_cast<int64>(frame.timestamp as uint32),
           AV_TIME_BASE_Q,
-          this.timeBase
+          this.timeBase!
         )
     }
 
@@ -280,17 +280,17 @@ export default class WebVideoEncoder {
       refAVFrame(cache, frame)
       cache.pts = pts
       this.avframeMap.set(cache.pts, cache)
-      cache.duration = avRescaleQ(1n, this.framerateTimebase, cache.timeBase)
+      cache.duration = avRescaleQ(1n, this.framerateTimebase!, cache.timeBase)
       frame = avframe2VideoFrame(cache, pts)
     }
     else {
       frame = new VideoFrame(frame, {
         timestamp: static_cast<double>(pts),
-        duration: static_cast<double>(avRescaleQ(1n, this.framerateTimebase, this.timeBase))
+        duration: static_cast<double>(avRescaleQ(1n, this.framerateTimebase!, this.timeBase!))
       })
     }
     try {
-      this.encoder.encode(frame, {
+      this.encoder!.encode(frame, {
         keyFrame: key
       })
       frame.close()
@@ -310,7 +310,7 @@ export default class WebVideoEncoder {
       return errorType.DATA_INVALID
     }
     try {
-      await this.encoder.flush()
+      await this.encoder!.flush()
       return 0
     }
     catch (error) {
@@ -332,7 +332,7 @@ export default class WebVideoEncoder {
           : destroyAVFrame(avframe)
       })
     }
-    this.encoder = null
+    this.encoder = undefined
   }
 
   public getExtraData() {

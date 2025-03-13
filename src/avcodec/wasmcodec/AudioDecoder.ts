@@ -52,11 +52,11 @@ export default class WasmAudioDecoder {
 
   private decoder: WebAssemblyRunner
 
-  private frame: pointer<AVFrame>
+  private frame: pointer<AVFrame> = nullptr
 
   private decoderOptions: pointer<AVDictionary> = nullptr
 
-  private timeBase: Rational
+  private timeBase: Rational | undefined
 
   constructor(options: WasmAudioDecoderOptions) {
     this.options = options
@@ -73,8 +73,8 @@ export default class WasmAudioDecoder {
   private outputAVFrame() {
     if (this.frame) {
       if (this.options.onReceiveAVFrame) {
-        this.frame.timeBase.den = this.timeBase.den
-        this.frame.timeBase.num = this.timeBase.num
+        this.frame.timeBase.den = this.timeBase!.den
+        this.frame.timeBase.num = this.timeBase!.num
         this.options.onReceiveAVFrame(this.frame)
       }
       else {
@@ -129,7 +129,7 @@ export default class WasmAudioDecoder {
       return errorType.CODEC_NOT_SUPPORT
     }
 
-    this.timeBase = null
+    this.timeBase = undefined
 
     return 0
   }
@@ -180,7 +180,6 @@ export default class WasmAudioDecoder {
   public close() {
     this.decoder.invoke('decoder_close')
     this.decoder.destroy()
-    this.decoder = null
 
     if (this.frame) {
       this.options.avframePool ? this.options.avframePool.release(this.frame as pointer<AVFrameRef>) : destroyAVFrame(this.frame)

@@ -113,6 +113,5 @@ export default class StretchPitcher {
   public close() {
     this.processor.invoke('stretchpitch_destroy')
     this.processor.destroy()
-    this.processor = null
   }
 }

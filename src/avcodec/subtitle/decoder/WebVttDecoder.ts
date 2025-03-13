@@ -112,7 +112,7 @@ export default class WebVttDecoder extends Decoder {
 
   public receiveAVFrame(sub: AVSubtitle): int32 {
     if (this.queue.length) {
-      const item = this.queue.shift()
+      const item = this.queue.shift()!
       sub.pts = item.pts
       sub.duration = item.duration
       sub.timeBase.den = AV_MILLI_TIME_BASE

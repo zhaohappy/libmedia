@@ -48,8 +48,8 @@ export default class Resampler {
 
   private options: ResamplerOptions
 
-  private inputParameters: PCMParameters
-  private outputParameters: PCMParameters
+  private inputParameters: PCMParameters | undefined
+  private outputParameters: PCMParameters | undefined
 
   constructor(options: ResamplerOptions) {
     this.options = options
@@ -99,7 +99,6 @@ export default class Resampler {
   public close() {
     this.resampler.invoke('resample_destroy')
     this.resampler.destroy()
-    this.resampler = null
   }
 
   public getInputPCMParameters() {

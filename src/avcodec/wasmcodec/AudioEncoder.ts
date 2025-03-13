@@ -165,16 +165,16 @@ export default class WasmAudioEncoder {
   private options: WasmAudioEncoderOptions
 
   private encoder: WebAssemblyRunner
-  private parameters: pointer<AVCodecParameters>
-  private timeBase: Rational
+  private parameters: pointer<AVCodecParameters> = nullptr
+  private timeBase: Rational | undefined
 
-  private avpacket: pointer<AVPacket>
+  private avpacket: pointer<AVPacket> = nullptr
 
-  private avframe: pointer<AVFrame>
+  private avframe: pointer<AVFrame> = nullptr
 
-  private pts: int64
-  private frameSize: int32
-  private audioFrameResizer: AudioFrameResizer
+  private pts: int64 = 0n
+  private frameSize: int32 = 0
+  private audioFrameResizer: AudioFrameResizer | undefined
 
   private encoderOptions: pointer<AVDictionary> = nullptr
 
@@ -195,8 +195,8 @@ export default class WasmAudioEncoder {
       this.avpacket.pts = this.pts
       this.avpacket.dts = this.pts
       this.pts += this.avpacket.duration
-      this.avpacket.timeBase.den = this.timeBase.den
-      this.avpacket.timeBase.num = this.timeBase.num
+      this.avpacket.timeBase.den = this.timeBase!.den
+      this.avpacket.timeBase.num = this.timeBase!.num
       this.options.onReceiveAVPacket(this.avpacket)
       this.avpacket = nullptr
     }
@@ -324,7 +324,7 @@ export default class WasmAudioEncoder {
     if (this.audioFrameResizer && this.audioFrameResizer.remainFrameSize() > 0) {
       const avframe = createAVFrame()
       this.audioFrameResizer.flush(avframe)
-      avframe.pts = avRescaleQ2(avframe.pts, addressof(avframe.timeBase), this.timeBase)
+      avframe.pts = avRescaleQ2(avframe.pts, addressof(avframe.timeBase), this.timeBase!)
       this.encode_(avframe)
       destroyAVFrame(avframe)
     }
@@ -353,7 +353,6 @@ export default class WasmAudioEncoder {
   public close() {
     this.encoder.invoke('encoder_close')
     this.encoder.destroy()
-    this.encoder = null
 
     if (this.avpacket) {
       this.options.avpacketPool

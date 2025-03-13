@@ -42,12 +42,12 @@ export default class WebAudioDecoder {
 
   private options: WebAudioDecoderOptions
 
-  private decoder: AudioDecoder
-  private parameters: pointer<AVCodecParameters>
+  private decoder: AudioDecoder | undefined
+  private parameters: pointer<AVCodecParameters> = nullptr
 
-  private extradata: Uint8Array
+  private extradata: Uint8Array | undefined
 
-  private currentError: Error
+  private currentError: Error | null = null
 
   constructor(options: WebAudioDecoderOptions) {
     this.options = options
@@ -70,7 +70,7 @@ export default class WebAudioDecoder {
   public async open(parameters: pointer<AVCodecParameters>): Promise<int32> {
     this.currentError = null
     this.parameters = parameters
-    this.extradata = null
+    this.extradata = undefined
     if (parameters.extradata !== nullptr) {
       this.extradata = mapUint8Array(parameters.extradata, reinterpret_cast<size>(parameters.extradataSize)).slice()
     }
@@ -119,10 +119,10 @@ export default class WebAudioDecoder {
   }
 
   public changeExtraData(buffer: Uint8Array) {
-    if (buffer.length === this.extradata.length) {
+    if (buffer.length === this.extradata!.length) {
       let same = true
       for (let i = 0; i < buffer.length; i++) {
-        if (buffer[i] !== this.extradata[i]) {
+        if (buffer[i] !== this.extradata![i]) {
           same = false
           break
         }
@@ -136,8 +136,8 @@ export default class WebAudioDecoder {
 
     this.extradata = buffer.slice()
 
-    this.decoder.reset()
-    this.decoder.configure({
+    this.decoder!.reset()
+    this.decoder!.configure({
       codec: getAudioCodec(this.parameters),
       sampleRate: this.parameters.sampleRate,
       numberOfChannels: this.parameters.chLayout.nbChannels,
@@ -170,7 +170,7 @@ export default class WebAudioDecoder {
     const audioChunk = avpacket2EncodedAudioChunk(avpacket)
 
     try {
-      this.decoder.decode(audioChunk)
+      this.decoder!.decode(audioChunk)
     }
     catch (error) {
       logger.error(`decode error, ${error}`)
@@ -186,7 +186,7 @@ export default class WebAudioDecoder {
       return errorType.DATA_INVALID
     }
     try {
-      await this.decoder.flush()
+      await this.decoder!.flush()
       return 0
     }
     catch (error) {
@@ -196,10 +196,10 @@ export default class WebAudioDecoder {
   }
 
   public close() {
-    if (this.decoder.state !== 'closed') {
-      this.decoder.close()
+    if (this.decoder!.state !== 'closed') {
+      this.decoder!.close()
     }
-    this.decoder = null
+    this.decoder = undefined
   }
 
   public getQueueLength() {
@@ -207,7 +207,7 @@ export default class WebAudioDecoder {
   }
 
   static async isSupported(parameters: pointer<AVCodecParameters>) {
-    let extradata: Uint8Array = null
+    let extradata: Uint8Array | undefined = undefined
     if (parameters.extradata !== nullptr) {
       extradata = mapUint8Array(parameters.extradata, reinterpret_cast<size>(parameters.extradataSize)).slice()
     }

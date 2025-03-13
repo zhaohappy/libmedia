@@ -64,20 +64,20 @@ export default class WasmVideoEncoder {
   private options: WasmVideoEncoderOptions
 
   private encoder: WebAssemblyRunner
-  private parameters: pointer<AVCodecParameters>
-  private timeBase: Rational
-  private framerateTimebase: Rational
-  private inputCounter: int64
+  private parameters: pointer<AVCodecParameters> = nullptr
+  private timeBase: Rational | undefined
+  private framerateTimebase: Rational | undefined
+  private inputCounter: int64 = 0n
 
-  private avpacket: pointer<AVPacket>
+  private avpacket: pointer<AVPacket> = nullptr
 
-  private avframe: pointer<AVFrame>
+  private avframe: pointer<AVFrame> = nullptr
 
-  private encodeQueueSize: number
+  private encodeQueueSize: number = 0
 
-  private bitrateFilter: AVBSFilter
+  private bitrateFilter: AVBSFilter | undefined
 
-  private extradata: Uint8Array
+  private extradata: Uint8Array | null = null
 
   private encoderOptions: pointer<AVDictionary> = nullptr
 
@@ -104,8 +104,8 @@ export default class WasmVideoEncoder {
           if (!this.bitrateFilter) {
             this.bitrateFilter = new Annexb2AvccFilter()
             const timeBaseP = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
-            timeBaseP.num = this.timeBase.num
-            timeBaseP.den = this.timeBase.den
+            timeBaseP.num = this.timeBase!.num
+            timeBaseP.den = this.timeBase!.den
             this.bitrateFilter.init(this.parameters, timeBaseP)
             stack.free(sizeof(Rational))
           }
@@ -132,9 +132,9 @@ export default class WasmVideoEncoder {
         }
       }
 
-      this.avpacket.timeBase.den = this.timeBase.den
-      this.avpacket.timeBase.num = this.timeBase.num
-      this.avpacket.duration = avRescaleQ(1n, this.framerateTimebase, this.timeBase)
+      this.avpacket.timeBase.den = this.timeBase!.den
+      this.avpacket.timeBase.num = this.timeBase!.num
+      this.avpacket.duration = avRescaleQ(1n, this.framerateTimebase!, this.timeBase!)
 
       this.options.onReceiveAVPacket(this.avpacket)
       this.avpacket = nullptr
@@ -147,7 +147,7 @@ export default class WasmVideoEncoder {
   }
 
   public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, threadCount: number = 1, opts: Data = {}): Promise<int32> {
-    await this.encoder.run(null, threadCount)
+    await this.encoder.run(undefined, threadCount)
 
     const timeBaseP = reinterpret_cast<pointer<Rational>>(malloc(sizeof(Rational)))
     const optsP = reinterpret_cast<pointer<pointer<AVDictionary>>>(malloc(sizeof(pointer)))
@@ -228,14 +228,14 @@ export default class WasmVideoEncoder {
     }
 
     if (frame.pts !== NOPTS_VALUE_BIGINT) {
-      frame.pts = avRescaleQ2(frame.pts, addressof(frame.timeBase), this.timeBase)
+      frame.pts = avRescaleQ2(frame.pts, addressof(frame.timeBase), this.timeBase!)
     }
     else {
-      frame.pts = avRescaleQ(this.inputCounter, this.framerateTimebase, this.timeBase)
+      frame.pts = avRescaleQ(this.inputCounter, this.framerateTimebase!, this.timeBase!)
     }
     this.inputCounter++
-    frame.timeBase.den = this.timeBase.den
-    frame.timeBase.num = this.timeBase.num
+    frame.timeBase.den = this.timeBase!.den
+    frame.timeBase.num = this.timeBase!.num
 
     return frame
   }
@@ -314,7 +314,6 @@ export default class WasmVideoEncoder {
   public close() {
     this.encoder.invoke('encoder_close')
     this.encoder.destroy()
-    this.encoder = null
 
     if (this.avpacket) {
       this.options.avpacketPool
@@ -329,7 +328,7 @@ export default class WasmVideoEncoder {
     }
     if (this.bitrateFilter) {
       this.bitrateFilter.destroy()
-      this.bitrateFilter = null
+      this.bitrateFilter = undefined
     }
     if (this.encoderOptions) {
       dict.freeAVDict2(this.encoderOptions)
