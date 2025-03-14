@@ -197,7 +197,7 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
         .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
         .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
         .length > 0
-        && subtitleList.length > 1
+        || subtitleList.length > 1
     },
     hasPip: function () {
       const streams: AVStreamInterface[] = this.get('streams')
