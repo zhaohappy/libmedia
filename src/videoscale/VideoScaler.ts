@@ -60,8 +60,8 @@ export default class VideoScaler {
 
   private options: VideoScalerOptions
 
-  private inputParameters: ScaleParameters
-  private outputParameters: ScaleParameters
+  private inputParameters: ScaleParameters | undefined
+  private outputParameters: ScaleParameters | undefined
 
   constructor(options: VideoScalerOptions) {
     this.options = options
@@ -103,7 +103,6 @@ export default class VideoScaler {
   public close() {
     this.scaler.invoke('scale_destroy')
     this.scaler.destroy()
-    this.scaler = null
   }
 
   public getInputScaleParameters() {

@@ -21,9 +21,9 @@ export interface ResampleFilterNodeOptions extends AVFilterNodeOptions {
 export default class ResampleFilterNode extends AVFilterNode {
   declare options: ResampleFilterNodeOptions
 
-  private resampler: Resampler
+  private resampler: Resampler | undefined
 
-  private pcm: pointer<AVPCMBuffer>
+  private pcm: pointer<AVPCMBuffer> = nullptr
 
   constructor(options: ResampleFilterNodeOptions) {
     super(options, 1, 1)
@@ -43,7 +43,7 @@ export default class ResampleFilterNode extends AVFilterNode {
     }
     if (this.resampler) {
       this.resampler.close()
-      this.resampler = null
+      this.resampler = undefined
     }
   }
 
@@ -62,13 +62,13 @@ export default class ResampleFilterNode extends AVFilterNode {
       || avframe.format !== this.options.output.format && this.options.output.format !== NOPTS_VALUE
     ) {
       if (this.resampler) {
-        const currentInput = this.resampler.getInputPCMParameters()
+        const currentInput = this.resampler.getInputPCMParameters()!
         if (currentInput.channels !== avframe.chLayout.nbChannels
           || currentInput.sampleRate !== avframe.sampleRate
           || currentInput.format !== avframe.format
         ) {
           this.resampler.close()
-          this.resampler = null
+          this.resampler = undefined
         }
       }
       if (!this.resampler) {

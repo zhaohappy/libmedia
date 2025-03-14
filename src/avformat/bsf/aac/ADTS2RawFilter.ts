@@ -137,7 +137,7 @@ export default class ADTS2RawFilter extends AVBSFilter {
 
       unrefAVPacket(avpacket)
 
-      const item = this.caches.shift()
+      const item = this.caches.shift()!
 
       const data = avMalloc(item.buffer.length)
       memcpyFromUint8Array(data, item.buffer.length, item.buffer)

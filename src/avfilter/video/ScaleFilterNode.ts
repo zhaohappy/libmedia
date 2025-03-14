@@ -21,7 +21,7 @@ export interface ScaleFilterNodeOptions extends AVFilterNodeOptions {
 export default class ScaleFilterNode extends AVFilterNode {
   declare options: ScaleFilterNodeOptions
 
-  private scaler: VideoScaler
+  private scaler: VideoScaler | undefined
 
   constructor(options: ScaleFilterNodeOptions) {
     super(options, 1, 1)
@@ -34,7 +34,7 @@ export default class ScaleFilterNode extends AVFilterNode {
   public async destroy() {
     if (this.scaler) {
       this.scaler.close()
-      this.scaler = null
+      this.scaler = undefined
     }
   }
 
@@ -48,7 +48,7 @@ export default class ScaleFilterNode extends AVFilterNode {
 
     const width = isPointer(avframe) ? avframe.width : (avframe as VideoFrame).displayWidth
     const height = isPointer(avframe) ? avframe.height : (avframe as VideoFrame).displayHeight
-    const format = isPointer(avframe) ? avframe.format : mapFormat((avframe as VideoFrame).format)
+    const format = isPointer(avframe) ? avframe.format : mapFormat((avframe as VideoFrame).format!)
 
     if (width !== this.options.output.width
       || height !== this.options.output.height
@@ -67,13 +67,13 @@ export default class ScaleFilterNode extends AVFilterNode {
       const out = this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame()
 
       if (this.scaler) {
-        const currentInput = this.scaler.getInputScaleParameters()
+        const currentInput = this.scaler.getInputScaleParameters()!
         if (currentInput.width !== width
           || currentInput.height !== height
           || currentInput.format !== format
         ) {
           this.scaler.close()
-          this.scaler = null
+          this.scaler = undefined
         }
       }
       if (!this.scaler) {

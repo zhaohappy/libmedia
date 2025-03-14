@@ -118,8 +118,8 @@ export function createFilterGraph(des: FilterGraphDes, avframePool?: AVFramePool
   })
 
   des.edges.forEach((edge, index) => {
-    const parent = map.get(edge.parent)
-    const child = map.get(edge.child)
+    const parent = map.get(edge.parent)!
+    const child = map.get(edge.child)!
 
     if (!parent) {
       logger.fatal(`${index} edge parent(${edge.parent}) not found`)
@@ -136,10 +136,10 @@ export function createFilterGraph(des: FilterGraphDes, avframePool?: AVFramePool
 
   des.vertices.forEach((vertex) => {
     if (!hasParentMap.has(vertex.id)) {
-      inputs.push(map.get(vertex.id))
+      inputs.push(map.get(vertex.id)!)
     }
     if (!hasChildMap.has(vertex.id)) {
-      outputs.push(map.get(vertex.id))
+      outputs.push(map.get(vertex.id)!)
     }
   })
 
@@ -157,7 +157,7 @@ export function checkFilterGraphInvalid(graph: FilterGraph, inputs: FilterGraphP
 
   for (let i = 0; i < inputs.length; i++) {
     if (inputsMap.has(inputs[i].id)) {
-      inputsMap.set(inputs[i].id, inputsMap.get(inputs[i].id) + 1)
+      inputsMap.set(inputs[i].id, inputsMap.get(inputs[i].id)! + 1)
     }
     else {
       inputsMap.set(inputs[i].id, 1)
@@ -166,7 +166,7 @@ export function checkFilterGraphInvalid(graph: FilterGraph, inputs: FilterGraphP
 
   for (let i = 0; i < output.length; i++) {
     if (outputsMap.has(output[i].id)) {
-      outputsMap.set(output[i].id, outputsMap.get(output[i].id) + 1)
+      outputsMap.set(output[i].id, outputsMap.get(output[i].id)! + 1)
     }
     else {
       outputsMap.set(output[i].id, 1)

@@ -5,7 +5,7 @@ export default class AVOutputNode {
 
   public nodePort: AVFilterNodePort
 
-  private inputNode: AVFilterNode | AVInputNode
+  private inputNode: AVFilterNode | AVInputNode | undefined
 
   constructor(port: MessagePort) {
     this.nodePort = new AVFilterNodePort(port)

@@ -14,12 +14,12 @@ export interface FramerateFilterNodeOptions extends AVFilterNodeOptions {
 export default class FramerateFilterNode extends AVFilterNode {
   declare options: FramerateFilterNodeOptions
 
-  private lastPts: int64
+  private lastPts: int64 = -1n
 
-  private delta: int64
+  private delta: int64 = 0n
 
-  private timeBase: Rational
-  private step: int64
+  private timeBase: Rational = AV_TIME_BASE_Q
+  private step: int64 = 0n
 
   constructor(options: FramerateFilterNodeOptions) {
     super(options, 1, 1)

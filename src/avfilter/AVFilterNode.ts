@@ -41,7 +41,7 @@ export class AVFilterNodePort extends IPCPort {
 
   private channel: MessageChannel | MessagePort
 
-  private next: AVFilterNodePort
+  private next: AVFilterNodePort | undefined
 
   constructor(channel: MessageChannel | MessagePort) {
     super(channel instanceof MessageChannel ? channel.port1 : channel)
@@ -54,28 +54,28 @@ export class AVFilterNodePort extends IPCPort {
 
     this.on(REQUEST, async (request: RpcMessage) => {
       try {
-        const result = await port.request<pointer<AVFrame> | VideoFrame>(request.method, request.params)
-        this.reply(request, result, null, (isPointer(result) || is.number(result) || request.method !== 'pull') ? null : [result])
+        const result = await port.request<pointer<AVFrame> | VideoFrame>(request.method!, request.params)
+        this.reply(request, result, undefined, (isPointer(result) || is.number(result) || request.method !== 'pull') ? undefined : [result])
       }
       catch (error) {
-        this.reply(request, null, error)
+        this.reply(request, null, error as Data)
       }
     })
     this.on(NOTIFY, (message: RpcMessage) => {
-      port.notify(message.method, message.params)
+      port.notify(message.method!, message.params)
     })
 
     port.on(REQUEST, async (request: RpcMessage) => {
       try {
-        const result = await this.request<pointer<AVFrame> | VideoFrame>(request.method, request.params)
-        port.reply(request, result, null, (isPointer(result) || is.number(result) || request.method !== 'pull') ? null : [result])
+        const result = await this.request<pointer<AVFrame> | VideoFrame>(request.method!, request.params)
+        port.reply(request, result, undefined, (isPointer(result) || is.number(result) || request.method !== 'pull') ? undefined : [result])
       }
       catch (error) {
-        port.reply(request, null, error)
+        port.reply(request, null, error as Data)
       }
     })
     port.on(NOTIFY, (message: RpcMessage) => {
-      this.notify(message.method, message.params)
+      this.notify(message.method!, message.params)
     })
 
     this.next = port
@@ -86,7 +86,7 @@ export class AVFilterNodePort extends IPCPort {
     if (this.next) {
       this.next.off()
     }
-    this.next = null
+    this.next = undefined
   }
 
   public getInnerPort() {
@@ -130,12 +130,12 @@ export default abstract class AVFilterNode {
     for (let i = 0; i < this.inputCount; i++) {
       const port = new AVFilterNodePort(new MessageChannel())
       this.inputAVFilterNodePort.push(port)
-      this.inputInnerNodePort.push(new IPCPort(port.getInnerPort()))
+      this.inputInnerNodePort.push(new IPCPort(port.getInnerPort()!))
     }
     for (let i = 0; i < this.outputCount; i++) {
       const port = new AVFilterNodePort(new MessageChannel())
       this.outputAVFilterNodePort.push(port)
-      this.outputInnerNodePort.push(new IPCPort(port.getInnerPort()))
+      this.outputInnerNodePort.push(new IPCPort(port.getInnerPort()!))
     }
 
     this.consumedCount = 0
@@ -180,11 +180,11 @@ export default abstract class AVFilterNode {
             port.reply(
               request,
               this.currentOutput[index],
-              null,
+              undefined,
               (isPointer(this.currentOutput[index])
                 || is.number(this.currentOutput[index])
               )
-                ? null
+                ? undefined
                 : [this.currentOutput[index]]
             )
             this.consumedCount++
@@ -204,11 +204,11 @@ export default abstract class AVFilterNode {
             port.reply(
               request,
               this.currentOutput[index],
-              null,
+              undefined,
               (isPointer(this.currentOutput[index])
                 || is.number(this.currentOutput[index])
               )
-                ? null
+                ? undefined
                 : [this.currentOutput[index]]
             )
             this.consumedCount = 0
@@ -224,11 +224,11 @@ export default abstract class AVFilterNode {
             port.reply(
               request,
               this.currentOutput[index],
-              null,
+              undefined,
               (isPointer(this.currentOutput[index])
                 || is.number(this.currentOutput[index])
               )
-                ? null
+                ? undefined
                 : [this.currentOutput[index]]
             )
             this.consumedCount++
@@ -311,8 +311,8 @@ export default abstract class AVFilterNode {
       throw new Error('all output has connected')
     }
 
-    const output = this.getFreeOutputNodePort()
-    const nextInput = node.getFreeInputNodePort()
+    const output = this.getFreeOutputNodePort()!
+    const nextInput = node.getFreeInputNodePort()!
 
     if (!nextInput) {
       throw new Error('next node all input has connected')
@@ -328,7 +328,7 @@ export default abstract class AVFilterNode {
     if (!this.outputConnectedMap.has(node)) {
       return
     }
-    this.outputAVFilterNodePort[this.outputConnectedMap.get(node)].disconnect()
+    this.outputAVFilterNodePort[this.outputConnectedMap.get(node)!].disconnect()
     this.outputConnectedMap.delete(node)
 
     if (node instanceof AVFilterNode) {
