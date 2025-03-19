@@ -80,7 +80,9 @@ import isHdr from 'avutil/function/isHdr'
 import hasAlphaChannel from 'avutil/function/hasAlphaChannel'
 import SubtitleRender from './subtitle/SubtitleRender'
 import { Data, Fn } from 'common/types/type'
-import { playerEventChanged, playerEventChanging, playerEventError, playerEventNoParam, playerEventProgress, playerEventSubtitleDelayChange, playerEventTime, playerEventVolumeChange } from './type'
+import { playerEventChanged, playerEventChanging, playerEventError, playerEventNoParam,
+  playerEventProgress, playerEventSubtitleDelayChange, playerEventTime, playerEventVolumeChange
+} from './type'
 import compileResource from 'avutil/function/compileResource'
 import os from 'common/util/os'
 import IPCPort, { REQUEST, RpcMessage } from 'common/network/IPCPort'
