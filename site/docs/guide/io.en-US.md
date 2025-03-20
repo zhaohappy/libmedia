@@ -19,9 +19,15 @@ IOReader is asynchronous and can be used to read stream data from any source. Af
 The following is an example of reading data from a file
 
 ```typescript
+
+import { IOFlags } from '@libmedia/avutil/avformat'
+import IOReader from '@libmedia/common/io/IOReader'
+
 const readFile: File
 
 const ioReader = new IOReader()
+// set seekable flag
+ioReader.flags |= IOFlags.SEEKABLE
 
 let readPos = 0
 const readFileLength = readFile.size
@@ -52,7 +58,7 @@ The main logic is to set the ```onFlush```, ```onSeek```, and ```onSize``` callb
 
 The ```onFlush``` callback will write data to the buffer(from parameter). The parameter of buffer is a Uint8Array-like structure, and you can only use the set method; it returns the length of the written data.
 
-The ```onSeek``` callback tells the user where the next ```onFlush``` will read data from the file data.
+The ```onSeek``` callback tells the user where the next ```onFlush``` will read data from the file data. If the source can seek, be sure to set the ```IOFlags.SEEKABLE``` flag in ```ioReader.flags```
 
 The ```onSize``` callback returns the size of the file in bytes, you can return 0n if you don't know file size(this may cause demux can not seek).
 
@@ -61,6 +67,9 @@ The ```onSize``` callback returns the size of the file in bytes, you can return 
 IOWriterSync is synchronous. After creating AVOFormatContext, you need to set the ioWriter property to mount the IOWriterSync instance as the output source of AVOFormatContext. The output data can be written directly to a file or transmitted over the network.
 
 ```typescript
+
+import IOWriterSync from '@libmedia/common/io/IOWriterSync'
+
 const ioWriter = new IOWriterSync()
 
 ioWriter.onFlush = (data: Uint8Array, pos: int64) => {

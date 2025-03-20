@@ -19,9 +19,16 @@ IOReader 是异步的，可以用来读取任何来源的流数据。当创建 A
 下面是从文件中读取数据的例子
 
 ```typescript
+
+import { IOFlags } from '@libmedia/avutil/avformat'
+import IOReader from '@libmedia/common/io/IOReader'
+
 const readFile: File
 
 const ioReader = new IOReader()
+
+// 设置可以 seek 标志
+ioReader.flags |= IOFlags.SEEKABLE
 
 let readPos = 0
 const readFileLength = readFile.size
@@ -52,7 +59,7 @@ ioReader.onSize = () => {
 
 ```onFlush``` 回调里面写入数据，参数是待写入的 buffer，这个 buffer 是类 Uint8Array 结构，你只能使用 set 方法；返回已写入的数据长度。
 
-```onSeek``` 回调告诉用户下一次 ```onFlush``` 从文件数据的哪个位置读取数据写入 buffer。
+```onSeek``` 回调告诉用户下一次 ```onFlush``` 从文件数据的哪个位置读取数据写入 buffer。如果源可以 seek 务必设置 ```ioReader.flags``` 的 ```IOFlags.SEEKABLE``` 标志
 
 ```onSize``` 回调返回文件的大小，单位字节，若没有可返回 0n，返回 0n 时可能会造成 demux 无法 seek 成功。
 
@@ -61,6 +68,9 @@ ioReader.onSize = () => {
 IOWriterSync 是同步的。当创建 AVOFormatContext 之后需要设置 ioWriter 属性挂载 IOWriterSync 实例作为 AVOFormatContext 的输出源。输出的数据可以直接写入文件或者通过网络传输。
 
 ```typescript
+
+import IOWriterSync from '@libmedia/common/io/IOWriterSync'
+
 const ioWriter = new IOWriterSync()
 
 ioWriter.onFlush = (data: Uint8Array, pos: int64) => {
