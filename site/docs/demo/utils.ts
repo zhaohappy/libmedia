@@ -1,11 +1,11 @@
-import { AVCodecID } from "@libmedia/avutil/codec"
-import IOReader from "@libmedia/common/io/IOReader"
-import { base64ToUint8Array } from "@libmedia/common/util/base64"
+import { AVCodecID } from '@libmedia/avutil/codec'
+import IOReader from '@libmedia/common/io/IOReader'
+import { base64ToUint8Array } from '@libmedia/common/util/base64'
 import FetchIOloader from '@libmedia/avnetwork/ioLoader/FetchIOLoader'
 import FileIOLoader from '@libmedia/avnetwork/ioLoader/FileIOLoader'
 import HlsIOLoader from '@libmedia/avnetwork/ioLoader/HlsIOLoader'
 import DashIOLoader from '@libmedia/avnetwork/ioLoader/DashIOLoader'
-import IOLoader from "@libmedia/avnetwork/ioLoader/IOLoader"
+import IOLoader from '@libmedia/avnetwork/ioLoader/IOLoader'
 import * as is from '@libmedia/common/util/is'
 import * as url from '@libmedia/common/util/url'
 
@@ -23,10 +23,10 @@ import IWavFormat from '@libmedia/avformat/formats/IWavFormat'
 import IH264Format from '@libmedia/avformat/formats/IH264Format'
 import IHevcFormat from '@libmedia/avformat/formats/IVvcFormat'
 import IVvcFormat from '@libmedia/avformat/formats/IVvcFormat'
-import analyzeAVFormat from "@libmedia/avutil/function/analyzeAVFormat"
-import IFormat from "@libmedia/avformat/formats/IFormat"
-import { AVFormat } from "@libmedia/avutil/avformat"
-import { Ext2Format } from "@libmedia/avutil/stringEnum"
+import analyzeAVFormat from '@libmedia/avutil/function/analyzeAVFormat'
+import IFormat from '@libmedia/avformat/formats/IFormat'
+import { AVFormat, IOFlags } from '@libmedia/avutil/avformat'
+import { Ext2Format } from '@libmedia/avutil/stringEnum'
 
 const BASE_URL = 'https://zhaohappy.github.io/libmedia'
 const BASE_CDN = 'https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist'
@@ -228,6 +228,7 @@ export async function getIOReader(source: string | File) {
   ioReader.onSize = () => {
     return ioloader.size()
   }
+  ioReader.flags |= IOFlags.SEEKABLE
   
   return ioReader
 }
