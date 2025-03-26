@@ -121,6 +121,36 @@ export function writeEbmlUint(writer: IOWriterSync, id: EBMLId, value: number | 
   }
 }
 
+export function writeEbmlSint(writer: IOWriterSync, id: EBMLId, value: number | bigint) {
+  let bytes = 0
+  if (value) {
+    let bitLength = value < 0 ? (~value).toString(2).length : value.toString(2).length
+    bytes = Math.ceil((bitLength + 1) / 8)
+  }
+  writeEbmlId(writer, id)
+  writeEbmlLength(writer, bytes)
+  switch (bytes) {
+    case 0:
+      return
+    case 1:
+      writer.writeInt8(Number(value))
+      return
+    case 2:
+      writer.writeInt16(Number(value))
+      return
+    case 3:
+      writer.writeInt24(Number(value))
+      return
+    case 4:
+      writer.writeInt32(Number(value))
+      return
+  }
+  value = BigInt.asUintN(bytes * 8, BigInt(value))
+  for (let i = bytes - 1; i >= 0; i--) {
+    writer.writeUint8(Number(value >> BigInt(i * 8)))
+  }
+}
+
 export function writeEbmlFloat(writer: IOWriterSync, id: EBMLId, value: float) {
   writeEbmlId(writer, id)
   writeEbmlLength(writer, 4)

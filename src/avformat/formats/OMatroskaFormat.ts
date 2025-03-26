@@ -301,7 +301,7 @@ export default class OMatroskaFormat extends OFormat {
             break
           }
         }
-
+        track.lastPts = 0n
         stream.privData = track
 
         context.tracks.entry.push(track)
@@ -407,6 +407,12 @@ export default class OMatroskaFormat extends OFormat {
           })
         })
       }
+      if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
+        && !(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+      ) {
+        const track = stream.privData as TrackEntry
+        omatroska.writeEbmlSint(eleWriter, EBMLId.BLOCK_REFERENCE, track.lastPts - avpacket.pts)
+      }
       this.writeBlock(stream, avpacket, EBMLId.BLOCK)
     })
   }
@@ -493,6 +499,8 @@ export default class OMatroskaFormat extends OFormat {
     else {
       this.writeBlock(stream, avpacket)
     }
+
+    track.lastPts = avpacket.pts
 
     return 0
   }
