@@ -491,7 +491,7 @@ export default class IMatroskaFormat extends IFormat {
 
       const length = await readVInt64(formatContext.ioReader, this.context.header.maxSizeLength)
 
-      if (length === static_cast<int64>(errorType.DATA_INVALID)) {
+      if (length === static_cast<int64>(errorType.DATA_INVALID as int32)) {
         await this.syncTopLevelElement(formatContext, 2)
         continue
       }
@@ -830,10 +830,12 @@ export default class IMatroskaFormat extends IFormat {
         this.context.currentCluster,
         [EBMLId.SIMPLE_BLOCK, EBMLId.BLOCK_GROUP]
       )
-      this.addClusterIndex({
-        time: this.context.currentCluster.timeCode,
-        pos: now
-      })
+      if (!this.context.isLive) {
+        this.addClusterIndex({
+          time: this.context.currentCluster.timeCode,
+          pos: now
+        })
+      }
       let ret = await this.parseBlock(formatContext, avpacket)
       if (ret === errorType.EAGAIN) {
         return this.readAVPacket_(formatContext, avpacket)
