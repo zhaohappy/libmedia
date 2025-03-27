@@ -83,7 +83,7 @@
   },
   "dependencies": {
     "ass-compiler": "^0.1.13",
-    "assjs": "^0.1.1",
+    "assjs": "0.1.1",
     "yox": "^1.0.0-alpha.408"
   }
 }
