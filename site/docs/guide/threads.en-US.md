@@ -4,7 +4,7 @@ nav:
   order: 2
 group:
   title: Start
-order: 4
+order: 5
 ---
 
 # Enable Threads

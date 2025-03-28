@@ -4,7 +4,7 @@ nav:
   order: 2
 group:
   title: Start
-order: 3
+order: 4
 ---
 
 # Module Introduction

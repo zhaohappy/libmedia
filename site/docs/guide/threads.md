@@ -4,7 +4,7 @@ nav:
   order: 2
 group:
   title: 开始
-order: 4
+order: 5
 ---
 
 # 开启多线程

@@ -4,7 +4,7 @@ nav:
   order: 2
 group:
   title: 开始
-order: 6
+order: 7
 ---
 
 # 编解码器
