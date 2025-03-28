@@ -26,11 +26,11 @@ npm run build-avplayer-dev
 npm run build-avtranscoder-dev
 
 # Start local http service
-# Any http service will do. If edp is not found, you can install it globally: npm install edp -g
-edp webserver start --port=9000
+# The default port is 8000. To change the port, execute: npx http-server -p xxx --cors
+npm run server
 
-# Browser access http://localhost:9000/test/avplayer.html
-# Browser access http://localhost:9000/test/avtranscoder.html
+# Browser access http://localhost:8000/test/avplayer.html
+# Browser access http://localhost:8000/test/avtranscoder.html
 
 ```
 
