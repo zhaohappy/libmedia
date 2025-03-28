@@ -32,10 +32,11 @@ npm run build-avplayer-dev
 npm run build-avtranscoder-dev
 
 # 启动本地 http 服务
-# 任何一个 http 服务都行，若报 edp 找不到，可以全局安装: npm install edp -g
-edp webserver start --port=9000
+# 默认端口 8000，若要更换端口执行 npx http-server -p xxx --cors
+npm run server
 
-# 浏览器访问 http://localhost:9000/test/avplayer.html
+# 浏览器访问 http://localhost:8000/test/avplayer.html
+# 浏览器访问 http://localhost:8000/test/avtranscoder.html
 
 ```
 
