@@ -177,7 +177,7 @@ export interface AVPlayerOptions {
    */
   loop?: boolean
   /**
-   * 是否开启低延时模式（直播）开始之后会根据网络情况自动调整 buffer，尽量在不卡顿的情况下降低延时
+   * 是否开启低延时模式（直播）开启之后会根据网络情况自动调整 buffer，尽量在不卡顿的情况下降低延时
    */
   lowLatency?: boolean
   /**
