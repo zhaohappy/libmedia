@@ -522,6 +522,9 @@ export default class VideoRenderPipeline extends Pipeline {
 
         if (!task.isSupport(task.backFrame)) {
           if (task.render) {
+            if (!task.renderRedyed) {
+              return
+            }
             task.renderRedyed = false
             task.renderFrame = task.backFrame
             task.controlIPCPort.notify('updateCanvas')
