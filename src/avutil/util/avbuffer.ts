@@ -117,14 +117,14 @@ export function bufferReplace(dst: pointer<pointer<AVBufferRef>>, src: pointer<p
     avFreep(dst)
   }
   if (atomics.sub(addressof(buf.refcount), 1) === 1) {
-    const freeAvbuffer = !(buf.flagsInternal & BufferFlags.BUFFER_FLAG_NO_FREE)
+    const freeAVBuffer = !(buf.flagsInternal & BufferFlags.BUFFER_FLAG_NO_FREE)
     if (buf.opaque) {
       poolReleaseBuffer(buf.opaque, buf.data)
     }
     else {
       avFree(buf.data)
     }
-    if (freeAvbuffer) {
+    if (freeAVBuffer) {
       avFree(buf)
     }
   }
