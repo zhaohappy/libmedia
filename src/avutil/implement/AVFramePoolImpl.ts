@@ -51,7 +51,7 @@ export default class AVFramePoolImpl implements AVFramePool {
 
       getAVFrameDefault(avframe)
 
-      avframe.refCount = 1
+      atomics.store(addressof(avframe.refCount), 1)
 
       if (defined(ENABLE_THREADS)) {
         assert(this.mutex)

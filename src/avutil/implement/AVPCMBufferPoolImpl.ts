@@ -48,7 +48,7 @@ export default class AVPCMBufferPoolImpl implements AVPCMBufferPool {
     if (!buffer) {
       buffer = reinterpret_cast<pointer<AVPCMBufferRef>>(avMallocz(sizeof(AVPCMBufferRef)))
 
-      buffer.refCount = 1
+      atomics.store(addressof(buffer.refCount), 1)
 
       if (defined(ENABLE_THREADS)) {
         assert(this.mutex)

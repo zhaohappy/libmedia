@@ -50,7 +50,7 @@ export default class AVPacketPoolImpl implements AVPacketPool {
       avpacket = reinterpret_cast<pointer<AVPacketRef>>(avMallocz(sizeof(AVPacketRef)))
       getAVPacketDefault(avpacket)
 
-      avpacket.refCount = 1
+      atomics.store(addressof(avpacket.refCount), 1)
 
       if (defined(ENABLE_THREADS)) {
         assert(this.mutex)
