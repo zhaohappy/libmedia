@@ -106,6 +106,11 @@ export default class IMovFormat extends IFormat {
         size = await formatContext.ioReader.readUint32()
         type = await formatContext.ioReader.readUint32()
 
+        // size 大于 32 位
+        if (size === 1) {
+          size = static_cast<double>(await formatContext.ioReader.readUint64())
+        }
+
         if (size < 8 || fileSize && (pos + static_cast<int64>(size) > fileSize)) {
           logger.error(`invalid box size ${size}`)
           return errorType.DATA_INVALID

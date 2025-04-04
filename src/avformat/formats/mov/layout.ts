@@ -89,7 +89,7 @@ function getTrackBoxAudioLayout(context: MOVContext) {
                   type: BoxType.STSZ
                 },
                 {
-                  type: BoxType.STCO
+                  type: context.use64Mdat ? BoxType.CO64 : BoxType.STCO
                 }
               ]
             }
@@ -163,7 +163,7 @@ function getTrackBoxVideoLayout(context: MOVContext) {
                   type: BoxType.STSZ
                 },
                 {
-                  type: BoxType.STCO
+                  type: context.use64Mdat ? BoxType.CO64 : BoxType.STCO
                 }
               ]
             }

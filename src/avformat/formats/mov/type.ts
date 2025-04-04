@@ -126,6 +126,7 @@ export interface MOVContext {
   ac3Info?: EC3Info
   firstMoof?: int64
   ignoreEditlist?: boolean
+  use64Mdat?: boolean
 }
 
 export interface MOVStreamContext {

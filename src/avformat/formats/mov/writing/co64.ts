@@ -32,7 +32,7 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
   const chunkOffsets = (stream.privData as MOVStreamContext).chunkOffsets || []
 
   // size
-  ioWriter.writeUint32(8 + chunkOffsets.length * 8)
+  ioWriter.writeUint32(16 + chunkOffsets.length * 8)
   // tag
   ioWriter.writeString(BoxType.CO64)
 

@@ -307,30 +307,6 @@ export default class OMovFormat extends OFormat {
     }
   }
 
-  private checkMdat(formatContext: AVOFormatContext, len: number) {
-    const mdat = this.context.boxsPositionInfo[this.context.boxsPositionInfo.length - 1]
-
-    if (mdat.type !== BoxType.MDAT) {
-      logger.error('last box is not mdat')
-      return
-    }
-
-    const pos = formatContext.ioWriter.getPos()
-
-    const size = static_cast<double>(pos - mdat.pos)
-
-    if (size + len > UINT32_MAX) {
-      mdat.size = size
-      formatContext.ioWriter.writeUint32(0)
-      formatContext.ioWriter.writeUint32(mktag(BoxType.MDAT))
-      this.context.boxsPositionInfo.push({
-        pos,
-        type: BoxType.MDAT,
-        size: 0
-      })
-    }
-  }
-
   private updateCurrentFragment(formatContext: AVOFormatContext, currentDts?: int64) {
     if (this.context.currentFragment.firstWrote) {
       array.each(this.context.currentFragment.tracks, (track) => {
@@ -652,8 +628,6 @@ export default class OMovFormat extends OFormat {
     }
     else {
 
-      this.checkMdat(formatContext, avpacket.size)
-
       const pos = formatContext.ioWriter.getPos()
 
       let currentChunk = this.context.currentChunk
@@ -785,6 +759,17 @@ export default class OMovFormat extends OFormat {
 
       mdat.size = static_cast<double>(formatContext.ioWriter.getPos() - mdat.pos)
 
+      if (mdat.size > UINT32_MAX) {
+        const now = formatContext.ioWriter.getPos()
+        formatContext.ioWriter.seek(mdat.pos - 8n)
+        // overwrite 'free' placeholder atom
+        formatContext.ioWriter.writeUint32(1)
+        formatContext.ioWriter.writeUint32(mktag(BoxType.MDAT))
+        formatContext.ioWriter.writeUint64(static_cast<uint64>(mdat.size as uint32) + 8n)
+        formatContext.ioWriter.seek(now)
+        this.context.boxsPositionInfo.pop()
+        this.context.use64Mdat = true
+      }
       updatePositionSize(formatContext.ioWriter, this.context)
 
       if (this.options.fastOpen) {
