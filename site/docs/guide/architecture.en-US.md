@@ -8,7 +8,7 @@ group:
 order: 4
 ---
 
-# architecture
+# Architecture
 
 If the image is too small to see clearly, you can right-click to open it in a new tab, where you can enlarge the image. Or you can download the image and view it locally.
 

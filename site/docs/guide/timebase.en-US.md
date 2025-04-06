@@ -7,7 +7,7 @@ group:
   order: 2
 order: 2
 ---
-# Time base
+# Time Base
 
 Time base is a basic concept throughout libmedia, so you must understand it. Time base is the unit of time. The data structure of time base is [Rational](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/avutil_struct_rational.Rational.html). It represents a fraction, where den is the denominator and num is the numerator. It represents the number of seconds a unit is. For example, we now have a timestamp 100, and the time it represents in different time bases is as follows:
 
