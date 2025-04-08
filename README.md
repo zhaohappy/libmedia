@@ -208,5 +208,7 @@ Copyright (C) 2024-present, Gaoxing Zhao
 
 如果该项目对你有帮助，可以扫描二维码赞助作者:
 
-<img src="./site/public/img/alipay-qcode.png" width="200" alt="alipay" />
-<img src="./site/public/img/wechat-qcode.png" width="200" alt="wechat-pay" />
+<img src="./site/public/img/alipay-qcode.png" width=200 />
+<img src="./site/public/img/wechat-qcode.png" width=200 />
+
+加微信 ```zhaohappy_``` 备注 libmedia 加作者微信，后面人数到达一定数量之后会拉群交流。

@@ -6,7 +6,7 @@ hero:
   actions:
     - text: 快速开始
       link: './guide'
-    - text: Demo
+    - text: 体验
       link: './demo/'
 features:
   - title: '跨平台兼容'

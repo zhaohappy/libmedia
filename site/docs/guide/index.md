@@ -36,3 +36,5 @@ libmedia 是设计在多线程上的，只是可以回退到单线程上运行�
 
 <img src="../../public/img/alipay-qcode.png" width="200" alt="alipay" />
 <img src="../../public/img/wechat-qcode.png" width="200" alt="wechat-pay" />
+
+加微信 ```zhaohappy_``` 备注 libmedia 加作者微信，后面人数到达一定数量之后会拉群交流。

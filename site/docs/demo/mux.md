@@ -1,5 +1,5 @@
 ---
-nav: Demo
+nav: 体验
 order: 10
 group:
   order: 0
