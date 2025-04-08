@@ -1,3 +1,5 @@
+#!/bin/bash
+
 decode=pcm
 simd=$1
 atomic=$2
@@ -10,8 +12,9 @@ NOW_PATH=$(cd $(dirname $0); pwd)
 PROJECT_ROOT_PATH=$(cd $NOW_PATH/../; pwd)
 
 FFMPEG_PATH=$(cd $PROJECT_ROOT_PATH/../FFmpeg; pwd)
+EMSDK_PATH=$(cd $PROJECT_ROOT_PATH/../emsdk; pwd)
 
-source $PROJECT_ROOT_PATH/../emsdk/emsdk_env.sh
+source $EMSDK_PATH/emsdk_env.sh
 
 DIRNAME=$PROJECT_ROOT_PATH/lib/decode/$decode
 

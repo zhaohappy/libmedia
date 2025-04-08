@@ -1,3 +1,5 @@
+#!/bin/bash
+
 path=$1
 
 NOW_PATH=$(cd $(dirname $0); pwd)

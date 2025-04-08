@@ -1,3 +1,5 @@
+#!/bin/bash
+
 ENABLE_SIMD=$1
 ENABLE_ATOMIC=$2
 ENABLE_WASM64=$3

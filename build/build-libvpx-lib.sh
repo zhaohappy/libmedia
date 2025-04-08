@@ -1,3 +1,4 @@
+#!/bin/bash
 
 simd=$1
 atomic=$2
@@ -45,24 +46,24 @@ echo $LIBVPX_PATH
 
 cd $LIBVPX_PATH
 
-# emmake make clean
+emmake make clean
 
-# emconfigure ./configure \
-#   --prefix=$LIB_OUTPUT_PATH \
-#   --libc=$LIB_OUTPUT_PATH \
-#   --target=wasm64 \
-#   --cpu=i686-gnu \
-#   --enable-pic \
-#   --enable-vp8 \
-#   --enable-vp9 \
-#   --disable-tools \
-#   --disable-docs \
-#   --disable-examples \
-#   --disable-examples \
-#   --disable-unit-tests \
-#   --disable-libyuv \
-#   --disable-webm-io \
-#   --extra-cflags="$EXTRA_CFLAGS"
+emconfigure ./configure \
+  --prefix=$LIB_OUTPUT_PATH \
+  --libc=$LIB_OUTPUT_PATH \
+  --target=wasm64 \
+  --cpu=i686-gnu \
+  --enable-pic \
+  --enable-vp8 \
+  --enable-vp9 \
+  --disable-tools \
+  --disable-docs \
+  --disable-examples \
+  --disable-examples \
+  --disable-unit-tests \
+  --disable-libyuv \
+  --disable-webm-io \
+  --extra-cflags="$EXTRA_CFLAGS"
 
 emmake make
 

@@ -1,3 +1,4 @@
+#!/bin/bash
 
 simd=$1
 atomic=$2

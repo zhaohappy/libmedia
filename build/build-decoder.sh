@@ -1,3 +1,5 @@
+#!/bin/bash
+
 decode=$1
 ENABLE_SIMD=$2
 ENABLE_ATOMIC=$3
@@ -72,7 +74,7 @@ rm $INCLUDE_PATH/config.h
 DECODER_LIB=""
 
 # 写入 config.h 配置
-sh $NOW_PATH/config.sh $INCLUDE_PATH
+$NOW_PATH/config.sh $INCLUDE_PATH
 if [ $decode == "h264" ]; then
   echo "#define CODEC_ID AV_CODEC_ID_H264" >> $INCLUDE_PATH/config.h
 elif [ $decode == "hevc" ]; then

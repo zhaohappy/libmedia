@@ -1,3 +1,5 @@
+#!/bin/bash
+
 encode=$1
 ENABLE_SIMD=$2
 ENABLE_ATOMIC=$3
@@ -71,7 +73,7 @@ rm $INCLUDE_PATH/config.h
 ENCODER_LIB=""
 
 # 写入 config.h 配置
-sh $NOW_PATH/config.sh $INCLUDE_PATH
+$NOW_PATH/config.sh $INCLUDE_PATH
 if [ $encode == "x264" ]; then
   echo "#define MEDIA_TYPE_VIDEO 1" >> $INCLUDE_PATH/config.h
   if [ $ENABLE_WASM64 == "1" ]; then

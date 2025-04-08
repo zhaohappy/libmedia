@@ -1,3 +1,5 @@
+#!/bin/bash
+
 NOW_PATH=$(cd $(dirname $0); pwd)
 
 PROJECT_ROOT_PATH=$(cd $NOW_PATH/../; pwd)
