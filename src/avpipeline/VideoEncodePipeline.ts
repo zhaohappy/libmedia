@@ -28,7 +28,7 @@ import * as errorType from 'avutil/error'
 import IPCPort from 'common/network/IPCPort'
 import { REQUEST, RpcMessage } from 'common/network/IPCPort'
 import List from 'cheap/std/collection/List'
-import { AVFrameRef } from 'avutil/struct/avframe'
+import AVFrame, { AVFrameRef } from 'avutil/struct/avframe'
 import { Mutex } from 'cheap/thread/mutex'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import * as logger from 'common/util/logger'
@@ -51,7 +51,7 @@ import { Rational } from 'avutil/struct/rational'
 import isPointer from 'cheap/std/function/isPointer'
 import { Data } from 'common/types/type'
 import compileResource from 'avutil/function/compileResource'
-import { mapFormat } from 'avutil/function/videoFrame2AVFrame'
+import { mapFormat, videoFrame2AVFrame } from 'avutil/function/videoFrame2AVFrame'
 
 export interface VideoEncodeTaskOptions extends TaskOptions {
   resource: ArrayBuffer | WebAssemblyResource
@@ -271,12 +271,18 @@ export default class VideoEncodePipeline extends Pipeline {
                 task.encoderFallbackReady = null
               }
 
-              const avframe = await pullAVFrame()
+              let avframe = await pullAVFrame()
+              if (task.targetEncoder instanceof WasmVideoEncoder && avframe instanceof VideoFrame) {
+                const frame = task.avframePool.alloc()
+                await videoFrame2AVFrame(avframe, frame)
+                avframe.close()
+                avframe = frame
+              }
 
               if (isPointer(avframe) || avframe instanceof VideoFrame) {
                 let ret = (!task.firstEncoded && task.targetEncoder instanceof WasmVideoEncoder)
-                  ? await task.targetEncoder.encodeAsync(avframe, task.gopCounter === 0)
-                  : task.targetEncoder.encode(avframe, task.gopCounter === 0)
+                  ? await task.targetEncoder.encodeAsync(avframe as pointer<AVFrame>, task.gopCounter === 0)
+                  : task.targetEncoder.encode(avframe as pointer<AVFrame>, task.gopCounter === 0)
                 if (ret < 0) {
                   task.stats.videoEncodeErrorFrameCount++
                   if (task.targetEncoder instanceof WebVideoEncoder && task.softwareEncoder) {
@@ -321,7 +327,7 @@ export default class VideoEncodePipeline extends Pipeline {
                     task.gopCounter = 0
 
                     ret = task.targetEncoder instanceof WasmVideoEncoder
-                      ? await task.targetEncoder.encodeAsync(avframe, true)
+                      ? await task.targetEncoder.encodeAsync(avframe as pointer<AVFrame>, true)
                       : task.targetEncoder.encode(avframe, true)
 
                     if (ret < 0 && task.targetEncoder instanceof WebVideoEncoder && task.resource) {
@@ -340,7 +346,7 @@ export default class VideoEncodePipeline extends Pipeline {
                         rightIPCPort.reply(request, errorType.CODEC_NOT_SUPPORT)
                         break
                       }
-                      ret = await task.targetEncoder.encodeAsync(avframe, true)
+                      ret = await task.targetEncoder.encodeAsync(avframe as pointer<AVFrame>, true)
                     }
                   }
                   if (ret < 0) {

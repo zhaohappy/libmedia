@@ -95,7 +95,7 @@ export function mapColorTrc(colorTrc: string) {
   }
 }
 
-export function videoFrame2AVFrame(videoFrame: VideoFrame, avframe: pointer<AVFrame> = nullptr) {
+export async function videoFrame2AVFrame(videoFrame: VideoFrame, avframe: pointer<AVFrame> = nullptr) {
   if (avframe === nullptr) {
     avframe = createAVFrame()
   }
@@ -136,7 +136,7 @@ export function videoFrame2AVFrame(videoFrame: VideoFrame, avframe: pointer<AVFr
       })
     }
   }
-  videoFrame.copyTo(getHeap(), {
+  await videoFrame.copyTo(getHeap(), {
     layout
   })
 

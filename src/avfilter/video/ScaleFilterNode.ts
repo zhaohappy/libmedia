@@ -109,7 +109,7 @@ export default class ScaleFilterNode extends AVFilterNode {
       }
 
       if (!isPointer(avframe)) {
-        avframe = videoFrame2AVFrame(inputs[0] as VideoFrame, this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame())
+        avframe = await videoFrame2AVFrame(inputs[0] as VideoFrame, this.options.avframePool ? this.options.avframePool.alloc() : createAVFrame())
       }
 
       this.scaler.scale(avframe, out)

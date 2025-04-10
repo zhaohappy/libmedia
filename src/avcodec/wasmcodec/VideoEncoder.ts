@@ -208,20 +208,15 @@ export default class WasmVideoEncoder {
     return 0
   }
 
-  private preEncode(frame: pointer<AVFrame> | VideoFrame, key: boolean): pointer<AVFrame> {
+  private preEncode(frame: pointer<AVFrame>, key: boolean): pointer<AVFrame> {
     if (this.avframe) {
       unrefAVFrame(this.avframe)
     }
     else {
       this.avframe = createAVFrame()
     }
-    if (!isPointer(frame)) {
-      frame = videoFrame2AVFrame(frame, this.avframe)
-    }
-    else {
-      refAVFrame(this.avframe, frame)
-      frame = this.avframe
-    }
+    refAVFrame(this.avframe, frame)
+    frame = this.avframe
 
     if (key) {
       frame.pictType = AVPictureType.AV_PICTURE_TYPE_I
@@ -257,7 +252,7 @@ export default class WasmVideoEncoder {
     return 0
   }
 
-  public async encodeAsync(frame: pointer<AVFrame> | VideoFrame, key: boolean): Promise<int32> {
+  public async encodeAsync(frame: pointer<AVFrame>, key: boolean): Promise<int32> {
     frame = this.preEncode(frame, key)
 
     let ret = await this.encoder.invokeAsync<int32>('encoder_encode', frame)
@@ -267,7 +262,7 @@ export default class WasmVideoEncoder {
     return this.postEncode()
   }
 
-  public encode(frame: pointer<AVFrame> | VideoFrame, key: boolean): int32 {
+  public encode(frame: pointer<AVFrame>, key: boolean): int32 {
     frame = this.preEncode(frame, key)
 
     let ret = this.encoder.invoke<int32>('encoder_encode', frame)
