@@ -188,7 +188,7 @@ export default class WasmVideoEncoder {
 
     this.encoderOptions = accessof(optsP)
 
-    free(reinterpret_cast<pointer<void>>(optsP))
+    free(optsP)
     free(timeBaseP)
 
     if (ret < 0) {

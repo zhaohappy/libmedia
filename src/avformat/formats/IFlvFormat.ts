@@ -130,7 +130,7 @@ export default class IFlvFormat extends IFormat {
   }
 
   private async readCodecConfigurationRecord(formatContext: AVIFormatContext, stream: AVStream, len: int32) {
-    const data = avMalloc(reinterpret_cast<size>(len))
+    const data: pointer<uint8> = avMalloc(reinterpret_cast<size>(len))
     stream.codecpar.extradata = data
     stream.codecpar.extradataSize = len
     await formatContext.ioReader.readBuffer(len, mapSafeUint8Array(data, reinterpret_cast<size>(len)))
@@ -155,7 +155,7 @@ export default class IFlvFormat extends IFormat {
   }
 
   private async readAVPacketData(formatContext: AVIFormatContext, stream: AVStream, avpacket: pointer<AVPacket>, len: int32) {
-    const data = avMalloc(reinterpret_cast<size>(len))
+    const data: pointer<uint8> = avMalloc(reinterpret_cast<size>(len))
     addAVPacketData(avpacket, data, len)
     await formatContext.ioReader.readBuffer(len, mapSafeUint8Array(data, reinterpret_cast<size>(len)))
 
@@ -242,7 +242,7 @@ export default class IFlvFormat extends IFormat {
           const packetType = await formatContext.ioReader.readUint8()
           if (packetType === flvAAC.AACPacketType.AAC_SEQUENCE_HEADER) {
             const len = size - 2
-            const data = avMalloc(len)
+            const data: pointer<uint8> = avMalloc(len)
             stream.codecpar.extradata = data
             stream.codecpar.extradataSize = len
             await formatContext.ioReader.readBuffer(len, mapSafeUint8Array(data, len))

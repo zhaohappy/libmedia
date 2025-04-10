@@ -324,7 +324,7 @@ export default class IMp3Format extends IFormat {
 
       mp3Context.nextDTS += static_cast<int64>(stream.codecpar.frameSize)
 
-      const data = avMalloc(frameLength)
+      const data: pointer<uint8> = avMalloc(frameLength)
       addAVPacketData(avpacket, data, frameLength)
       await formatContext.ioReader.readBuffer(frameLength, mapSafeUint8Array(data, frameLength))
       return 0

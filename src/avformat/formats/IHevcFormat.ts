@@ -210,7 +210,7 @@ export default class IHevcFormat extends IFormat {
 
         const avpacket = createAVPacket()
 
-        const dataP = avMalloc(data.length)
+        const dataP: pointer<uint8> = avMalloc(data.length)
         memcpyFromUint8Array(dataP, data.length, data)
         addAVPacketData(avpacket, dataP, data.length)
 
@@ -356,7 +356,7 @@ export default class IHevcFormat extends IFormat {
 
     const data = concatTypeArray(Uint8Array, nalus)
 
-    const dataP = avMalloc(data.length)
+    const dataP: pointer<uint8> = avMalloc(data.length)
     memcpyFromUint8Array(dataP, data.length, data)
     addAVPacketData(avpacket, dataP, data.length)
 

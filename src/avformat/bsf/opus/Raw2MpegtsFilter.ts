@@ -90,7 +90,7 @@ export default class Raw2MpegtsFilter extends AVBSFilter {
       ctrlHeaderSize += 2
     }
 
-    const bufferPointer = avMalloc(ctrlHeaderSize)
+    const bufferPointer: pointer<uint8> = avMalloc(ctrlHeaderSize)
     const buffer = mapUint8Array(bufferPointer, ctrlHeaderSize)
 
     buffer[0] = 0x7f

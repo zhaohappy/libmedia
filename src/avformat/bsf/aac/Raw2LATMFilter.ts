@@ -177,7 +177,7 @@ export default class Raw2LATMFilter extends AVBSFilter {
     const len = this.bitWriter.getPointer()
 
     const size = 3 + len
-    const bufferPointer = avMalloc(size)
+    const bufferPointer: pointer<uint8> = avMalloc(size)
     const buffer = mapUint8Array(bufferPointer, size)
     buffer.set(LATM_HEADER, 0)
 

@@ -392,7 +392,7 @@ export default class IFlacFormat extends IFormat {
 
       const nextFrame = await this.getNextFrame(formatContext)
 
-      const data = avMalloc(nextFrame.length)
+      const data: pointer<uint8> = avMalloc(nextFrame.length)
       memcpyFromUint8Array(data, nextFrame.length, nextFrame)
       addAVPacketData(avpacket, data, nextFrame.length)
 

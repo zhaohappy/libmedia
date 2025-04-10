@@ -106,7 +106,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
 
           // DecoderSpecific info descriptor
           if (tag === MP4Tag.MP4_DEC_SPECIFIC_DESCR_TAG) {
-            const data = avMalloc(size)
+            const data: pointer<uint8> = avMalloc(size)
             const extradata = await ioReader.readBuffer(size, mapSafeUint8Array(data, size))
             if (movContext.foundMoov) {
               stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = extradata.slice()

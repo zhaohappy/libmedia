@@ -1941,7 +1941,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           }
         }
         if (buffer) {
-          const extradata = avMalloc(buffer.length)
+          const extradata: pointer<uint8> = avMalloc(buffer.length)
           memcpyFromUint8Array(extradata, buffer.length, buffer)
           streams[i].output.codecpar.extradata = extradata
           streams[i].output.codecpar.extradataSize = buffer.length

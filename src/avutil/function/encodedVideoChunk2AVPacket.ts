@@ -43,7 +43,7 @@ export default function encodedVideoChunk2AVPacket(chunk: EncodedVideoChunk, avp
   avpacket.timeBase.den = AV_TIME_BASE
   avpacket.timeBase.num = 1
   avpacket.duration = static_cast<int64>(chunk.duration)
-  const data = avMalloc(chunk.byteLength)
+  const data: pointer<uint8> = avMalloc(chunk.byteLength)
   chunk.copyTo(mapUint8Array(data, chunk.byteLength))
 
   addAVPacketData(avpacket, data, chunk.byteLength)

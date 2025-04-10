@@ -174,7 +174,7 @@ export default class IWavFormat extends IFormat {
 
       const length = (PACKET_SAMPLE_COUNT * stream.codecpar.chLayout.nbChannels * getBitsPerSample(stream.codecpar.codecId)) >>> 3
 
-      const data = avMalloc(length)
+      const data: pointer<uint8> = avMalloc(length)
       addAVPacketData(avpacket, data, length)
       avpacket.dts = avpacket.pts = this.currentPts
       avpacket.pos = formatContext.ioReader.getPos()

@@ -122,7 +122,7 @@ export default class WasmAudioDecoder {
 
     this.decoderOptions = accessof(optsP)
 
-    free(reinterpret_cast<pointer<void>>(optsP))
+    free(optsP)
 
     if (ret < 0) {
       logger.error(`open audio decoder failed, ret: ${ret}`)

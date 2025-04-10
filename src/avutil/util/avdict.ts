@@ -79,7 +79,7 @@ export function avDictGet(m: pointer<AVDictionary>, key: string, prev: pointer<A
   }
 
   while ((entry = avDictIterate(m, entry))) {
-    let s = readCString(entry.key)
+    let s = readCString(reinterpret_cast<pointer<char>>(entry.key))
     if (flags & AVDictFlags.MATCH_CASE) {
       s.toLocaleLowerCase()
       key.toLocaleLowerCase()
@@ -111,7 +111,7 @@ export function avDictSet(m: pointer<AVDictionary>, key: string, value: string, 
       return 0
     }
     if (flags & AVDictFlags.APPEND) {
-      value = `${readCString(tag.value)},${value}`
+      value = `${readCString(reinterpret_cast<pointer<char>>(tag.value))},${value}`
     }
     free(tag.value)
     tag.value = malloc(value.length + 1)
@@ -153,7 +153,7 @@ export function avDictCopy(dst: pointer<pointer<AVDictionary>>, src: pointer<AVD
   let t: pointer<AVDictionaryEntry> = nullptr
 
   while ((t = avDictIterate(src, t))) {
-    let ret = avDictSet2(dst, readCString(t.key), readCString(t.value), flags)
+    let ret = avDictSet2(dst, readCString(reinterpret_cast<pointer<char>>(t.key)), readCString(reinterpret_cast<pointer<char>>(t.value)), flags)
     if (ret < 0) {
       return ret
     }

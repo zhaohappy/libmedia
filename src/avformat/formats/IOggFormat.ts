@@ -258,7 +258,7 @@ export default class IOggFormat extends IFormat {
         return pre + 2 + buffer.length
       }, 0)
 
-      const data = avMalloc(extradataSize)
+      const data: pointer<uint8> = avMalloc(extradataSize)
 
       const ioWriter = new IOWriterSync(extradataSize, true, new SafeUint8Array(data, extradataSize))
       buffers.forEach((buffer) => {
@@ -296,7 +296,7 @@ export default class IOggFormat extends IFormat {
         stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
         stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_FLAC
 
-        const data = avMalloc(len)
+        const data: pointer<uint8> = avMalloc(len)
 
         ioReader.peekBuffer(len, mapUint8Array(data, len))
 
@@ -337,7 +337,7 @@ export default class IOggFormat extends IFormat {
       stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
       stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_SPEEX
 
-      const data = avMalloc(payload.length)
+      const data: pointer<uint8> = avMalloc(payload.length)
       memcpyFromUint8Array(data, payload.length, payload)
       stream.codecpar.extradata = data
       stream.codecpar.extradataSize = payload.length
@@ -461,7 +461,7 @@ export default class IOggFormat extends IFormat {
       const buffer = concatTypeArray(Uint8Array, buffers)
 
       const len = buffer.length
-      const data = avMalloc(len)
+      const data: pointer<uint8> = avMalloc(len)
       memcpyFromUint8Array(data, len, buffer)
       addAVPacketData(avpacket, data, len)
 

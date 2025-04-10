@@ -387,7 +387,7 @@ export default class IRtspFormat extends IFormat {
               p.streamIndex = stream.index
               p.timeBase = stream.timeBase
 
-              const data = avMalloc(frame.length)
+              const data: pointer<uint8> = avMalloc(frame.length)
               memcpyFromUint8Array(data, frame.length, frame)
               addAVPacketData(p, data, frame.length)
               p.dts = p.pts = pts
@@ -417,7 +417,7 @@ export default class IRtspFormat extends IFormat {
               p.streamIndex = stream.index
               p.timeBase = stream.timeBase
 
-              const data = avMalloc(frames[0].length)
+              const data: pointer<uint8> = avMalloc(frames[0].length)
               memcpyFromUint8Array(data, frames[0].length, frames[0])
               addAVPacketData(p, data, frames[0].length)
               p.dts = p.pts = pts
@@ -436,7 +436,7 @@ export default class IRtspFormat extends IFormat {
                 p.timeBase = stream.timeBase
                 p.dts = p.pts = pts + BigInt(i) * delta
                 p.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
-                const data = avMalloc(frames[i].length)
+                const data: pointer<uint8> = avMalloc(frames[i].length)
                 memcpyFromUint8Array(data, frames[i].length, frames[i])
                 addAVPacketData(p, data, frames[i].length)
                 formatContext.interval.packetBuffer.push(p)
@@ -448,7 +448,7 @@ export default class IRtspFormat extends IFormat {
               p.streamIndex = stream.index
               p.timeBase = stream.timeBase
 
-              const data = avMalloc(frame.length)
+              const data: pointer<uint8> = avMalloc(frame.length)
               memcpyFromUint8Array(data, frame.length, frame)
               addAVPacketData(p, data, frame.length)
               p.dts = p.pts = pts

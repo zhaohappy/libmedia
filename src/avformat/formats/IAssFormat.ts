@@ -192,7 +192,7 @@ export default class IAssFormat extends IFormat {
     avpacket.duration = cue.endTs - cue.startTs
 
     const buffer = text.encode(cue.context)
-    const data = avMalloc(buffer.length)
+    const data: pointer<uint8> = avMalloc(buffer.length)
     memcpyFromUint8Array(data, buffer.length, buffer)
     addAVPacketData(avpacket, data, buffer.length)
 

@@ -219,7 +219,7 @@ export default class IMovFormat extends IFormat {
       }
 
       const len = sample.size
-      const data = avMalloc(len)
+      const data: pointer<uint8> = avMalloc(len)
       addAVPacketData(avpacket, data, len)
       await formatContext.ioReader.readBuffer(len, mapSafeUint8Array(data, len))
 
@@ -237,7 +237,7 @@ export default class IMovFormat extends IFormat {
         const packetSize = avpacket.size
         if (tag === mktag(BoxType.VTTE)) {
           if (packetSize === 8) {
-            const newData = avMallocz(1)
+            const newData: pointer<uint8> = avMallocz(1)
             addAVPacketData(avpacket, newData, 1)
             avpacket.size = 1
           }
@@ -249,7 +249,7 @@ export default class IMovFormat extends IFormat {
             const size = intread.rb32(start)
             const tag = static_cast<uint32>(intread.rb32(start + 4))
             if (tag === mktag(BoxType.PAYL) && size > 8) {
-              const newData = avMalloc(size - 8)
+              const newData: pointer<uint8> = avMalloc(size - 8)
               memcpy(newData, (start + 8) as pointer<uint8>, size - 8)
               addAVPacketData(avpacket, newData, size - 8)
               break

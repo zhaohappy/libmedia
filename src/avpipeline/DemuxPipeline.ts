@@ -140,11 +140,11 @@ export default class DemuxPipeline extends Pipeline {
 
     const bufferLength = options.bufferLength || 1 * 1024 * 1024
 
-    const iBuf = avMalloc(bufferLength)
+    const iBuf: pointer<uint8> = avMalloc(bufferLength)
     if (!iBuf) {
       return errorType.NO_MEMORY
     }
-    const oBuf = avMalloc(bufferLength)
+    const oBuf: pointer<uint8> = avMalloc(bufferLength)
     if (!oBuf) {
       return errorType.NO_MEMORY
     }
@@ -167,11 +167,11 @@ export default class DemuxPipeline extends Pipeline {
       assert(buffer.byteOffset >= iBuf && buffer.byteOffset < iBuf + bufferLength)
 
       const params: {
-        pointer: pointer<uint8>
-        length: int32
+        pointer: pointer<void>
+        length: size
         ioloaderOptions?: Data
       } = {
-        pointer: static_cast<pointer<void>>(buffer.byteOffset as uint32),
+        pointer: reinterpret_cast<pointer<void>>(buffer.byteOffset as uint32),
         length: buffer.length
       }
       if (options.ioloaderOptions) {

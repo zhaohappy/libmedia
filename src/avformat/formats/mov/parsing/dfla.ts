@@ -49,7 +49,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   const size = await ioReader.readUint24()
 
   if (type === flac.FlacMetadataType.FLAC_METADATA_TYPE_STREAMINFO && size === 34) {
-    const data = avMalloc(size)
+    const data: pointer<uint8> = avMalloc(size)
     const extradata = await ioReader.readBuffer(size, mapSafeUint8Array(data, size))
 
     if (movContext.foundMoov) {

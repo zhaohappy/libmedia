@@ -194,7 +194,7 @@ export default class IAacFormat extends IFormat {
 
       if (this.frameType === FrameType.ADIF) {
         nextFrame = await formatContext.ioReader.readBuffer(Math.min(PACKET_SIZE, static_cast<int32>(this.fileSize - now)))
-        const data = avMalloc(nextFrame.length)
+        const data: pointer<uint8> = avMalloc(nextFrame.length)
         memcpyFromUint8Array(data, nextFrame.length, nextFrame)
         addAVPacketData(avpacket, data, nextFrame.length)
         avpacket.duration = static_cast<int64>(PACKET_SIZE)
@@ -227,7 +227,7 @@ export default class IAacFormat extends IFormat {
 
         nextFrame = await formatContext.ioReader.readBuffer(adtsFramePayloadLength)
 
-        const data = avMalloc(nextFrame.length)
+        const data: pointer<uint8> = avMalloc(nextFrame.length)
         memcpyFromUint8Array(data, nextFrame.length, nextFrame)
         addAVPacketData(avpacket, data, nextFrame.length)
         avpacket.pos = now
@@ -243,7 +243,7 @@ export default class IAacFormat extends IFormat {
               return IOError.END
             }
             nextFrame = await formatContext.ioReader.readBuffer(Math.min(PACKET_SIZE, static_cast<int32>(this.fileSize - now)))
-            const data = avMalloc(nextFrame.length)
+            const data: pointer<uint8> = avMalloc(nextFrame.length)
             memcpyFromUint8Array(data, nextFrame.length, nextFrame)
             addAVPacketData(avpacket, data, nextFrame.length)
             this.latmFilter.sendAVPacket(avpacket)

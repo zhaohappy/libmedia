@@ -232,7 +232,7 @@ export default class IWebVttFormat extends IFormat {
       addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_SETTINGS, data, buffer.length)
     }
     const buffer = text.encode(cue.context)
-    const data = avMalloc(buffer.length)
+    const data: pointer<uint8> = avMalloc(buffer.length)
     memcpyFromUint8Array(data, buffer.length, buffer)
     addAVPacketData(avpacket, data, buffer.length)
 

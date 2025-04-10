@@ -137,9 +137,9 @@ export default class IOPipeline extends Pipeline {
           break
         }
         case 'read': {
-          const pointer = request.params.pointer
-          const length = request.params.length
-          const ioloaderOptions = request.params.ioloaderOptions
+          const pointer: pointer<void> = request.params.pointer
+          const length: size = request.params.length
+          const ioloaderOptions: Data = request.params.ioloaderOptions
 
           assert(pointer)
           assert(length)

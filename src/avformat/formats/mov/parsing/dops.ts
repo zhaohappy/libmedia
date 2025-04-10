@@ -43,7 +43,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   // OpusSpecificBox version
   await ioReader.skip(1)
 
-  const data = avMalloc(atom.size + 8)
+  const data: pointer<uint8> = avMalloc(atom.size + 8)
   const extradata = mapSafeUint8Array(data, atom.size + 8)
 
   const reader = new BufferReader(extradata)

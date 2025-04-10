@@ -247,7 +247,7 @@ export default class WasmAudioEncoder {
 
     this.encoderOptions = accessof(optsP)
 
-    free(reinterpret_cast<pointer<void>>(optsP))
+    free(optsP)
     free(timeBaseP)
 
     if (ret < 0) {

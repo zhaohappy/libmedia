@@ -563,7 +563,7 @@ export function annexb2Avcc(data: Uint8ArrayInterface) {
     return prev + NALULengthSizeMinusOne + 1 + nalu.length
   }, 0)
 
-  const bufferPointer = avMalloc(length)
+  const bufferPointer: pointer<uint8> = avMalloc(length)
   const buffer = mapUint8Array(bufferPointer, length)
 
   naluUtil.joinNaluByLength(nalus, NALULengthSizeMinusOne, buffer)
@@ -604,7 +604,7 @@ export function nalus2Annexb(
     return prev + length
   }, 0)
 
-  const bufferPointer = avMalloc(length + 7)
+  const bufferPointer: pointer<uint8> = avMalloc(length + 7)
 
   let offset = bufferPointer
 
@@ -619,15 +619,15 @@ export function nalus2Annexb(
 
   if (vpss.length) {
     naluUtil.joinNaluByStartCode(vpss, 0, mapUint8Array(offset, lengths[0]))
-    offset += lengths[0]
+    offset = reinterpret_cast<pointer<uint8>>(offset + lengths[0])
   }
   if (spss.length) {
     naluUtil.joinNaluByStartCode(spss, 0, mapUint8Array(offset, lengths[1]))
-    offset += lengths[1]
+    offset = reinterpret_cast<pointer<uint8>>(offset + lengths[1])
   }
   if (ppss.length) {
     naluUtil.joinNaluByStartCode(ppss, 0, mapUint8Array(offset, lengths[2]))
-    offset += lengths[2]
+    offset = reinterpret_cast<pointer<uint8>>(offset + lengths[2])
   }
   if (nalus.length) {
     naluUtil.joinNaluByStartCode(nalus, 2, mapUint8Array(offset, lengths[3]))

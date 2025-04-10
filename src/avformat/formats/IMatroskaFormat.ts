@@ -731,7 +731,7 @@ export default class IMatroskaFormat extends IFormat {
       avpacket.pts = pts
       avpacket.size = size
       avpacket.duration = duration
-      const data = avMalloc(size)
+      const data: pointer<uint8> = avMalloc(size)
       if (header) {
         memcpyFromUint8Array(data, offset, header)
       }

@@ -202,7 +202,7 @@ export default class IMpegtsFormat extends IFormat {
       stream.startTime = avpacket.pts || avpacket.dts
     }
 
-    const payload = avMalloc(pes.payload.length)
+    const payload: pointer<uint8> = avMalloc(pes.payload.length)
     memcpyFromUint8Array(payload, pes.payload.length, pes.payload)
     addAVPacketData(avpacket, payload, pes.payload.length)
 

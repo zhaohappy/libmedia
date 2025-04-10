@@ -110,7 +110,7 @@ export default class Mpegts2RawFilter extends AVBSFilter {
 
       const item = this.caches.shift()
 
-      const data = avMalloc(item.buffer.length)
+      const data: pointer<uint8> = avMalloc(item.buffer.length)
       memcpyFromUint8Array(data, item.buffer.length, item.buffer)
       addAVPacketData(avpacket, data, item.buffer.length)
 

@@ -70,7 +70,7 @@ export function addSideData(psd: pointer<pointer<AVPacketSideData>>, pnbSd: poin
   for (let i = 0; i < sideDataElems; i++) {
     if (sideData[i].type === type) {
       avFree(sideData[i].data)
-      sideData[i].data = data
+      sideData[i].data = reinterpret_cast<pointer<uint8>>(data)
       sideData[i].size = length
       return
     }
@@ -85,7 +85,7 @@ export function addSideData(psd: pointer<pointer<AVPacketSideData>>, pnbSd: poin
   }
 
   const ele = addressof(newSideData[sideDataElems])
-  ele.data = data
+  ele.data = reinterpret_cast<pointer<uint8>>(data)
   ele.type = type
   ele.size = length
 

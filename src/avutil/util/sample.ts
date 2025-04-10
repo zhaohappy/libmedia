@@ -100,7 +100,7 @@ export function sampleAlloc(
     return bufSize
   }
 
-  const buf = avMalloc(bufSize)
+  const buf: pointer<uint8> = avMalloc(bufSize)
 
   const ret = sampleFillArrays(audioData, buf, format, linesize, channels)
 

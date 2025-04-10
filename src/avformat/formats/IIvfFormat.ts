@@ -148,7 +148,7 @@ export default class IIVFFormat extends IFormat {
         const size = await formatContext.ioReader.readUint32()
         const pts = await formatContext.ioReader.readUint64()
 
-        const data = avMalloc(size)
+        const data: pointer<uint8> = avMalloc(size)
         addAVPacketData(avpacket, data, size)
         await formatContext.ioReader.readBuffer(size, mapSafeUint8Array(data, size))
 

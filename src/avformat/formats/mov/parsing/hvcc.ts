@@ -42,7 +42,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
     return
   }
 
-  const data = avMalloc(atom.size)
+  const data: pointer<uint8> = avMalloc(atom.size)
   const extradata = await ioReader.readBuffer(atom.size, mapSafeUint8Array(data, atom.size))
 
   if (movContext.foundMoov) {

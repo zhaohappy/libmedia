@@ -293,7 +293,7 @@ export function pixelAlloc(
     totalSize += sizes[i]
   }
 
-  const buf = avMalloc(totalSize)
+  const buf: pointer<uint8> = avMalloc(totalSize)
 
   if (!buf) {
     defer()

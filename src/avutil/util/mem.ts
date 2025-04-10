@@ -26,22 +26,22 @@
 import { memset } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'
 
-export function avMalloc(len: size): pointer<void> {
+export function avMalloc<T = void>(len: size): pointer<T> {
   const p = malloc(len)
   if (!p) {
     logger.fatal('can not alloc buffer')
   }
-  return p
+  return p as pointer<T>
 }
 
-export function avMallocz(len: size): pointer<void> {
+export function avMallocz<T = void>(len: size): pointer<T> {
   const p = malloc(len)
   if (!p) {
     logger.fatal('can not alloc buffer')
   }
 
   memset(p, 0, len)
-  return p
+  return p as pointer<T>
 }
 
 export function avFree(p: pointer<void>) {
@@ -55,6 +55,6 @@ export function avFreep(p: pointer<pointer<void>>) {
   accessof(p) <- nullptr
 }
 
-export function avRealloc(p: pointer<void>, size: size): pointer<void> {
-  return realloc(p, size)
+export function avRealloc<T = void>(p: pointer<T>, size: size): pointer<T> {
+  return realloc(p as pointer<void>, size) as pointer<T>
 }

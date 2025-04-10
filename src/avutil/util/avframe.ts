@@ -97,7 +97,7 @@ function addAVFrameSideDataFromExt(
   size: size
 ): pointer<AVFrameSideData> {
   const tmp = reinterpret_cast<pointer<pointer<AVFrameSideData>>>(avRealloc(
-    reinterpret_cast<pointer<void>>(accessof(sideData)),
+    accessof(sideData),
     sizeof(accessof(accessof(sideData))) * static_cast<size>(accessof(nbSideData) + 1)
   ))
   accessof(sideData) <- tmp
@@ -400,7 +400,7 @@ export function refAVFrame(dst: pointer<AVFrame>, src: pointer<AVFrame>) {
 
     assert(!src.chLayout.u.mask || src.chLayout.nbChannels == getChannelLayoutNBChannels(src.chLayout.u.mask))
 
-    dst.extendedData = reinterpret_cast<pointer<pointer<void>>>(avMallocz(reinterpret_cast<int32>(sizeof(accessof(dst.extendedData))) * ch))
+    dst.extendedData = avMallocz(reinterpret_cast<int32>(sizeof(accessof(dst.extendedData))) * ch)
     if (!dst.extendedData) {
       unrefAVFrame(dst)
       return NO_MEMORY

@@ -515,7 +515,7 @@ export default class IMpegpsFormat extends IFormat {
       }
     }
 
-    const payload = avMalloc(data.length)
+    const payload: pointer<uint8> = avMalloc(data.length)
     memcpyFromUint8Array(payload, data.length, data)
     addAVPacketData(avpacket, payload, data.length)
 

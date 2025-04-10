@@ -60,7 +60,7 @@ export default class Raw2ADTSFilter extends AVBSFilter {
     }
 
     const size = 7 + avpacket.size
-    const bufferPointer = avMalloc(size)
+    const bufferPointer: pointer<uint8> = avMalloc(size)
     const buffer = mapUint8Array(bufferPointer, size)
 
     // syncword 0xfff

@@ -124,7 +124,7 @@ export function unserializeAVPacket(serialize: AVPacketSerialize, avpacket: poin
   avpacket.pts = serialize.pts
   avpacket.dts = serialize.dts
 
-  const data = avMalloc(serialize.data.length)
+  const data: pointer<uint8> = avMalloc(serialize.data.length)
   memcpyFromUint8Array(data, serialize.data.length, serialize.data)
   addAVPacketData(avpacket, data, serialize.data.length)
 
