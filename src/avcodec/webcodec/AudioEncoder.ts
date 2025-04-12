@@ -32,8 +32,8 @@ import { createAVPacket } from 'avutil/util/avpacket'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
 import encodedAudioChunk2AVPacket from 'avutil/function/encodedAudioChunk2AVPacket'
-import { avRescaleQ } from 'avutil/util/rational'
-import { AV_TIME_BASE_Q } from 'avutil/constant'
+import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
+import { AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import isPointer from 'cheap/std/function/isPointer'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
@@ -56,6 +56,7 @@ export default class WebAudioEncoder {
   private currentError: Error | null = null
 
   private pts: int64 = 0n
+  private ptsQueue: int64[] = []
 
   private avframeCache: pointer<AVFrame>[]
 
@@ -88,13 +89,17 @@ export default class WebAudioEncoder {
       encodedAudioChunk2AVPacket(chunk, avpacket, metadata)
     }
 
-    avpacket.pts = avRescaleQ(this.pts, AV_TIME_BASE_Q, this.timeBase!)
-    avpacket.dts = avpacket.pts
+    let pts = this.ptsQueue.shift()
+    if (pts === undefined || pts === NOPTS_VALUE_BIGINT) {
+      pts = this.pts
+    }
+    avpacket.pts = pts
+    avpacket.dts = pts
+    avpacket.duration = avRescaleQ2(avpacket.duration, addressof(avpacket.timeBase), this.timeBase!)
     avpacket.timeBase.den = this.timeBase!.den
     avpacket.timeBase.num = this.timeBase!.num
 
     this.pts += avpacket.duration
-    avpacket.duration = avRescaleQ(avpacket.duration, AV_TIME_BASE_Q, this.timeBase!)
 
     this.options.onReceiveAVPacket(avpacket)
 
@@ -152,6 +157,7 @@ export default class WebAudioEncoder {
     }
 
     this.pts = 0n
+    this.ptsQueue = []
     this.parameters = parameters
     this.timeBase = timeBase
 
@@ -171,6 +177,12 @@ export default class WebAudioEncoder {
       frame = avframe2AudioData(cache)
     }
     try {
+      if (frame.timestamp === NOPTS_VALUE) {
+        this.ptsQueue.push(NOPTS_VALUE_BIGINT)
+      }
+      else {
+        this.ptsQueue.push(avRescaleQ(static_cast<int64>(frame.timestamp), AV_TIME_BASE_Q, this.timeBase!))
+      }
       this.encoder!.encode(frame)
       return 0
     }

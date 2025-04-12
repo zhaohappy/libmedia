@@ -46,6 +46,7 @@ import * as dict from 'avutil/util/avdict'
 import * as is from 'common/util/is'
 import { avMallocz } from 'avutil/util/mem'
 import * as errorType from 'avutil/error'
+import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 export type WasmAudioEncoderOptions = {
   resource: WebAssemblyResource
@@ -92,6 +93,11 @@ class AudioFrameResizer {
   }
 
   public sendAVFrame(avframe: pointer<AVFrame>) {
+
+    if (avframe.pts !== NOPTS_VALUE_BIGINT && avframe.timeBase.den !== 0 && avframe.timeBase.num !== 0) {
+      this.pts = avRescaleQ2(avframe.pts, addressof(avframe.timeBase), { num: 1, den: this.parameters.sampleRate})
+    }
+
     const size = avframe.nbSamples * this.bytesPerSample * (this.planar ? 1 : this.channels)
     if (this.posEnd + size >= this.bufferLength) {
       const len = this.posEnd - this.pos
@@ -177,6 +183,7 @@ export default class WasmAudioEncoder {
   private audioFrameResizer: AudioFrameResizer | undefined
 
   private encoderOptions: pointer<AVDictionary> = nullptr
+  private ptsQueue: int64[] = []
 
   constructor(options: WasmAudioEncoderOptions) {
     this.options = options
@@ -192,8 +199,12 @@ export default class WasmAudioEncoder {
 
   private outputAVPacket() {
     if (this.avpacket) {
-      this.avpacket.pts = this.pts
-      this.avpacket.dts = this.pts
+      let pts = this.ptsQueue.shift()!
+      if (pts === undefined || pts === NOPTS_VALUE_BIGINT) {
+        pts = this.pts
+      }
+      this.avpacket.pts = pts
+      this.avpacket.dts = pts
       this.pts += this.avpacket.duration
       this.avpacket.timeBase.den = this.timeBase!.den
       this.avpacket.timeBase.num = this.timeBase!.num
@@ -259,6 +270,7 @@ export default class WasmAudioEncoder {
     this.timeBase = timeBase
 
     this.pts = 0n
+    this.ptsQueue = []
 
     return 0
   }
@@ -267,6 +279,12 @@ export default class WasmAudioEncoder {
     let ret = this.encoder.invoke<int32>('encoder_encode', avframe)
     if (ret) {
       return ret
+    }
+    if (avframe.pts === NOPTS_VALUE_BIGINT || avframe.timeBase.den === 0 || avframe.timeBase.num === 0) {
+      this.ptsQueue.push(NOPTS_VALUE_BIGINT)
+    }
+    else {
+      this.ptsQueue.push(avRescaleQ2(avframe.pts, addressof(avframe.timeBase), this.timeBase!))
     }
     while (true) {
       ret = this.receiveAVPacket()
