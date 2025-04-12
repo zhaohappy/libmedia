@@ -143,7 +143,6 @@ export interface MOVStreamContext {
   sttsSampleDeltas: number[]
   fragIndexes: { pos: bigint, time: bigint }[]
 
-  timescale: number
   duration: bigint
   trackId: number
   layer: number

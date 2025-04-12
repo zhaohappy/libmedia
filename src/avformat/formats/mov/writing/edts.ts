@@ -46,7 +46,7 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
     streamContext.startDts + static_cast<int64>(startCT),
     stream.timeBase,
     {
-      den: streamContext.timescale,
+      den: movContext.timescale,
       num: 1
     }
   )

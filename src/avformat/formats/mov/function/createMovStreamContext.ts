@@ -40,7 +40,6 @@ export default function createMovStreamContext(): MOVStreamContext {
     sttsSampleCounts: null,
     sttsSampleDeltas: null,
 
-    timescale: 0,
     duration: 0n,
     trackId: NOPTS_VALUE,
     layer: 0,
