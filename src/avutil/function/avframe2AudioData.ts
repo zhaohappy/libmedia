@@ -28,7 +28,7 @@ import AVFrame from '../struct/avframe'
 import { AVSampleFormat } from '../audiosamplefmt'
 import { getBytesPerSample, sampleFormatIsPlanar } from '../util/sample'
 import { avRescaleQ2 } from '../util/rational'
-import { AV_TIME_BASE_Q } from '../constant'
+import { AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from '../constant'
 
 function mapFormat(avframe: pointer<AVFrame>) {
   switch (avframe.format) {
@@ -120,7 +120,12 @@ export function avframe2AudioData(avframe: pointer<AVFrame>, pts?: int64) {
     sampleRate: avframe.sampleRate,
     numberOfFrames: avframe.nbSamples,
     numberOfChannels: avframe.chLayout.nbChannels,
-    timestamp: pts ? static_cast<double>(pts) : static_cast<double>(avRescaleQ2(avframe.pts, addressof(avframe.timeBase), AV_TIME_BASE_Q))
+    timestamp: pts
+      ? static_cast<double>(pts)
+      : (avframe.pts === NOPTS_VALUE_BIGINT
+        ? -1
+        : static_cast<double>(avRescaleQ2(avframe.pts, addressof(avframe.timeBase), AV_TIME_BASE_Q))
+      )
   })
   return audioData
 }
