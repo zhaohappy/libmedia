@@ -222,7 +222,7 @@ export default class WasmVideoEncoder {
       frame.pictType = AVPictureType.AV_PICTURE_TYPE_I
     }
 
-    if (frame.pts !== NOPTS_VALUE_BIGINT) {
+    if (frame.pts !== NOPTS_VALUE_BIGINT && frame.timeBase.den !== 0 && frame.timeBase.num !== 0) {
       frame.pts = avRescaleQ2(frame.pts, addressof(frame.timeBase), this.timeBase!)
     }
     else {

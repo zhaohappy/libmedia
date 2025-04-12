@@ -259,7 +259,7 @@ export default class WebVideoEncoder {
 
     let pts = avRescaleQ(this.inputCounter, this.framerateTimebase!, this.timeBase!)
 
-    if (isPointer(frame) && frame.pts !== NOPTS_VALUE_BIGINT
+    if (isPointer(frame) && frame.pts !== NOPTS_VALUE_BIGINT && frame.timeBase.den !== 0 && frame.timeBase.num !== 0
       || !isPointer(frame) && frame.timestamp >= 0
     ) {
       pts = isPointer(frame)
