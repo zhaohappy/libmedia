@@ -94,7 +94,11 @@ class AudioFrameResizer {
 
   public sendAVFrame(avframe: pointer<AVFrame>) {
 
-    if (avframe.pts !== NOPTS_VALUE_BIGINT && avframe.timeBase.den !== 0 && avframe.timeBase.num !== 0) {
+    if (avframe.pts !== NOPTS_VALUE_BIGINT
+      && avframe.timeBase.den !== 0
+      && avframe.timeBase.num !== 0
+      && (this.posEnd - this.pos) === 0
+    ) {
       this.pts = avRescaleQ2(avframe.pts, addressof(avframe.timeBase), { num: 1, den: this.parameters.sampleRate})
     }
 
