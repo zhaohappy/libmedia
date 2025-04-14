@@ -4,7 +4,7 @@ export { AVDisposition, AVStreamMetadataKey } from './AVStream'
 
 export { AVFormat, AVSeekFlags, IOFlags, IOType } from './avformat'
 
-export { AVSampleFormat, AVAudioServiceType, AVChannel, AVChannelOrder, AVCHLayout } from './audiosamplefmt'
+export { AVSampleFormat, AVAudioServiceType, AVChannel, AVChannelOrder, AVChannelLayout } from './audiosamplefmt'
 
 export { PixelFormatFlags } from './pixelFormatDescriptor'
 

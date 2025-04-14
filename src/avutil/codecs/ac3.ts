@@ -23,7 +23,7 @@
  *
  */
 
-import { AVCHLayout } from '../audiosamplefmt'
+import { AVChannelLayout } from '../audiosamplefmt'
 import BitReader from 'common/io/BitReader'
 import { Uint8ArrayInterface } from 'common/io/interface'
 
@@ -81,15 +81,15 @@ export const enum EAC3FrameType {
   EAC3_FRAME_TYPE_RESERVED
 }
 
-export const AC3ChannelLayout = [
-  AVCHLayout.AV_CH_LAYOUT_STEREO,
-  AVCHLayout.AV_CH_LAYOUT_MONO,
-  AVCHLayout.AV_CH_LAYOUT_STEREO,
-  AVCHLayout.AV_CH_LAYOUT_SURROUND,
-  AVCHLayout.AV_CH_LAYOUT_2_1,
-  AVCHLayout.AV_CH_LAYOUT_4POINT0,
-  AVCHLayout.AV_CH_LAYOUT_2_2,
-  AVCHLayout.AV_CH_LAYOUT_5POINT0
+export const AC3ChannelLayout: uint32[] = [
+  AVChannelLayout.AV_CHANNEL_LAYOUT_STEREO,
+  AVChannelLayout.AV_CHANNEL_LAYOUT_MONO,
+  AVChannelLayout.AV_CHANNEL_LAYOUT_STEREO,
+  AVChannelLayout.AV_CHANNEL_LAYOUT_SURROUND,
+  AVChannelLayout.AV_CHANNEL_LAYOUT_2_1,
+  AVChannelLayout.AV_CHANNEL_LAYOUT_4POINT0,
+  AVChannelLayout.AV_CHANNEL_LAYOUT_2_2,
+  AVChannelLayout.AV_CHANNEL_LAYOUT_5POINT0
 ]
 
 export interface AC3HeaderInfo {
@@ -297,9 +297,9 @@ export function parseHeader(buf: Uint8ArrayInterface) {
     info.bitrate = 8 * info.frameSize * info.sampleRate / (info.numBlocks * 256)
     info.channels = AC3ChannelsTab[info.channelMode] + info.lfeOn
   }
-  info.channelLayout = static_cast<uint64>(AC3ChannelLayout[info.channelMode] as uint32)
+  info.channelLayout = static_cast<uint64>(AC3ChannelLayout[info.channelMode])
   if (info.lfeOn) {
-    info.channelLayout |= static_cast<uint64>(AVCHLayout.AV_CH_LOW_FREQUENCY as uint32)
+    info.channelLayout |= static_cast<uint64>(AVChannelLayout.AV_CHANNEL_LAYOUT_LOW_FREQUENCY as uint32)
   }
 
   return info

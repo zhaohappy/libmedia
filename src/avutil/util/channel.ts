@@ -41,12 +41,12 @@ export function unInitChannelLayout(channelLayout: pointer<AVChannelLayout>) {
   memset(channelLayout, 0, sizeof(accessof(channelLayout)))
 }
 
-export function setChannelLayoutFromMask(channelLayout: pointer<AVChannelLayout>, mask: int32) {
+export function setChannelLayoutFromMask(channelLayout: pointer<AVChannelLayout>, mask: uint64) {
   if (!mask) {
     return error.INVALID_ARGUMENT
   }
   channelLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
   channelLayout.nbChannels = popCount64(static_cast<uint64>(mask))
-  channelLayout.u.mask = static_cast<uint64>(mask)
+  channelLayout.u.mask = mask
   return 0
 }

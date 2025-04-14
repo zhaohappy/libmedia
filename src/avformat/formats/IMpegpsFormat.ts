@@ -57,7 +57,7 @@ import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import { avMalloc } from 'avutil/util/mem'
 import { memcpy, mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import * as mpegps from './mpegts/mpegps'
-import { AVCHLayout, AVChannelOrder } from 'avutil/audiosamplefmt'
+import { AVChannelLayout, AVChannelOrder } from 'avutil/audiosamplefmt'
 import concatTypeArray from 'common/function/concatTypeArray'
 import * as nalu from 'avutil/util/nalu'
 import Mp32RawFilter from '../bsf/mp3/Mp32RawFilter'
@@ -342,7 +342,7 @@ export default class IMpegpsFormat extends IFormat {
       stream.codecpar.chLayout.nbChannels = 1
       stream.codecpar.sampleRate = 8000
       stream.codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
-      stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVCHLayout.AV_CH_LAYOUT_MONO)
+      stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVChannelLayout.AV_CHANNEL_LAYOUT_MONO as uint32)
     }
     if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
