@@ -311,6 +311,7 @@ export default class VideoDecodePipeline extends Pipeline {
               else if (avpacket > 0) {
                 if (task.needKeyFrame) {
                   if ((avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+                      && task.parameters.codecId !== AVCodecID.AV_CODEC_ID_H264
                     || task.parameters.codecId === AVCodecID.AV_CODEC_ID_H264
                       && h264.isIDR(
                         avpacket,
