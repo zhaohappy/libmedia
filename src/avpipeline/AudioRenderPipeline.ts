@@ -268,7 +268,10 @@ export default class AudioRenderPipeline extends Pipeline {
         ) {
           if (task.resampler) {
             const current = task.resampler.getInputPCMParameters()
-            if (current.format !== audioFrame.format || current.sampleRate !== audioFrame.sampleRate) {
+            if (current.format !== audioFrame.format
+              || current.sampleRate !== audioFrame.sampleRate
+              || current.channels !== audioFrame.chLayout.nbChannels
+            ) {
               task.resampler.close()
               task.resampler = null
             }
