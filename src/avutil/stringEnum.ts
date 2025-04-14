@@ -1,7 +1,7 @@
 import { AVFormat, IOType } from './avformat'
 import { AVCodecID, AVMediaType } from './codec'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from './pixfmt'
-import { AVSampleFormat } from './audiosamplefmt'
+import { AVChannelLayout, AVSampleFormat } from './audiosamplefmt'
 import { AVDisposition } from './AVStream'
 
 export const CodecId2MimeType = {
@@ -91,7 +91,7 @@ export const AudioCodecString2CodecId = {
   'aac': AVCodecID.AV_CODEC_ID_AAC,
   'ac3': AVCodecID.AV_CODEC_ID_AC3,
   'eac3': AVCodecID.AV_CODEC_ID_EAC3,
-  'dca': AVCodecID.AV_CODEC_ID_DTS,
+  'dts': AVCodecID.AV_CODEC_ID_DTS,
   'mp3': AVCodecID.AV_CODEC_ID_MP3,
   'opus': AVCodecID.AV_CODEC_ID_OPUS,
   'flac': AVCodecID.AV_CODEC_ID_FLAC,
@@ -254,4 +254,44 @@ export const disposition2AVDisposition: Record<string, AVDisposition> = {
   'metadata': AVDisposition.METADATA,
   'dependent': AVDisposition.DEPENDENT,
   'still image': AVDisposition.STILL_IMAGE
+}
+
+export const layoutName2AVChannelLayout: Record<string, AVChannelLayout> = {
+  'mono': AVChannelLayout.AV_CHANNEL_LAYOUT_MONO,
+  'stereo': AVChannelLayout.AV_CHANNEL_LAYOUT_STEREO,
+  '2.1': AVChannelLayout.AV_CHANNEL_LAYOUT_2POINT1,
+  '3.0': AVChannelLayout.AV_CHANNEL_LAYOUT_SURROUND,
+  '3.0(back)': AVChannelLayout.AV_CHANNEL_LAYOUT_2_1,
+  '4.0': AVChannelLayout.AV_CHANNEL_LAYOUT_4POINT0,
+  'quad': AVChannelLayout.AV_CHANNEL_LAYOUT_QUAD,
+  'quad(side)': AVChannelLayout.AV_CHANNEL_LAYOUT_2_2,
+  '3.1': AVChannelLayout.AV_CHANNEL_LAYOUT_3POINT1,
+  '5.0': AVChannelLayout.AV_CHANNEL_LAYOUT_5POINT0_BACK,
+  '5.0(side)': AVChannelLayout.AV_CHANNEL_LAYOUT_5POINT0,
+  '4.1': AVChannelLayout.AV_CHANNEL_LAYOUT_4POINT1,
+  '5.1': AVChannelLayout.AV_CHANNEL_LAYOUT_5POINT1_BACK,
+  '5.1(side)': AVChannelLayout.AV_CHANNEL_LAYOUT_5POINT1,
+  '6.0': AVChannelLayout.AV_CHANNEL_LAYOUT_6POINT0,
+  '6.0(front)': AVChannelLayout.AV_CHANNEL_LAYOUT_6POINT0_FRONT,
+  '3.1.2': AVChannelLayout.AV_CHANNEL_LAYOUT_3POINT1POINT2,
+  'hexagonal': AVChannelLayout.AV_CHANNEL_LAYOUT_HEXAGONAL,
+  '6.1': AVChannelLayout.AV_CHANNEL_LAYOUT_6POINT1,
+  '6.1(back)': AVChannelLayout.AV_CHANNEL_LAYOUT_6POINT1_BACK,
+  '6.1(front)': AVChannelLayout.AV_CHANNEL_LAYOUT_6POINT1_FRONT,
+  '7.0': AVChannelLayout.AV_CHANNEL_LAYOUT_7POINT0,
+  '7.0(front)': AVChannelLayout.AV_CHANNEL_LAYOUT_7POINT0_FRONT,
+  '7.1': AVChannelLayout.AV_CHANNEL_LAYOUT_7POINT1,
+  '7.1(wide)': AVChannelLayout.AV_CHANNEL_LAYOUT_7POINT1_WIDE_BACK,
+  '7.1(wide-side)': AVChannelLayout.AV_CHANNEL_LAYOUT_7POINT1_WIDE,
+  '5.1.2': AVChannelLayout.AV_CHANNEL_LAYOUT_5POINT1POINT2_BACK,
+  'octagonal': AVChannelLayout.AV_CHANNEL_LAYOUT_OCTAGONAL,
+  'cube': AVChannelLayout.AV_CHANNEL_LAYOUT_CUBE,
+  '5.1.4': AVChannelLayout.AV_CHANNEL_LAYOUT_5POINT1POINT4_BACK,
+  '7.1.2': AVChannelLayout.AV_CHANNEL_LAYOUT_7POINT1POINT2,
+  '7.1.4': AVChannelLayout.AV_CHANNEL_LAYOUT_7POINT1POINT4_BACK,
+  '7.2.3': AVChannelLayout.AV_CHANNEL_LAYOUT_7POINT2POINT3,
+  '9.1.4': AVChannelLayout.AV_CHANNEL_LAYOUT_9POINT1POINT4_BACK,
+  'hexadecagonal': AVChannelLayout.AV_CHANNEL_LAYOUT_HEXADECAGONAL,
+  'downmix': AVChannelLayout.AV_CHANNEL_LAYOUT_STEREO_DOWNMIX,
+  '22.2': AVChannelLayout.AV_CHANNEL_LAYOUT_22POINT2
 }

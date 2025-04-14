@@ -19,6 +19,8 @@ import * as vp9 from 'avutil/codecs/vp9'
 import * as mp3 from 'avutil/codecs/mp3'
 import { AVFormat } from 'avutil/avformat'
 import isHdr from 'avutil/function/isHdr'
+import { layoutName2AVChannelLayout } from 'avutil/stringEnum'
+import { AVChannelOrder } from 'avutil/audiosamplefmt'
 
 export interface DumpIOInfo {
   from: string
@@ -108,11 +110,12 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
 
     list.push(`${stream.codecpar.sampleRate} Hz`)
     let channel = `${stream.codecpar.chLayout.nbChannels} channels`
-    if (stream.codecpar.chLayout.nbChannels === 1) {
-      channel = 'mono'
-    }
-    else if (stream.codecpar.chLayout.nbChannels === 2) {
-      channel = 'stereo'
+
+    if (stream.codecpar.chLayout.order === AVChannelOrder.AV_CHANNEL_ORDER_NATIVE) {
+      const name = dumpKey(layoutName2AVChannelLayout, static_cast<double>(stream.codecpar.chLayout.u.mask), '')
+      if (name) {
+        channel = name
+      }
     }
     list.push(channel)
     list.push(dumpKey(stringEnum.SampleFmtString2SampleFormat, stream.codecpar.format))
