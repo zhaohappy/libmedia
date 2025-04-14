@@ -54,6 +54,7 @@ export default class IMovFormat extends IFormat {
   public type: AVFormat = AVFormat.MOV
 
   private context: MOVContext
+  private firstAfterSeek: boolean
 
   public options: MovFormatOptions
 
@@ -71,6 +72,7 @@ export default class IMovFormat extends IFormat {
     if (formatContext.ioReader) {
       formatContext.ioReader.setEndian(true)
     }
+    this.firstAfterSeek = false
   }
 
   public async readHeader(formatContext: AVIFormatContext): Promise<number> {
@@ -186,7 +188,7 @@ export default class IMovFormat extends IFormat {
 
   private async readAVPacket_(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
 
-    const { sample, stream } = getNextSample(formatContext, this.context)
+    const { sample, stream } = getNextSample(formatContext, this.context, formatContext.ioReader.flags)
 
     if (sample) {
       avpacket.streamIndex = stream.index
@@ -202,20 +204,24 @@ export default class IMovFormat extends IFormat {
         stream.startTime = avpacket.pts
       }
 
-      const skip = static_cast<int32>(avpacket.pos - formatContext.ioReader.getPos())
-      if (skip !== 0) {
+      const skip = avpacket.pos - formatContext.ioReader.getPos()
+      if (skip !== 0n) {
         // NETWORK 优先 pos，pos 是递增的，这里我们使用 skip
         // 防止触发 seek
         if (skip > 0
           && ((formatContext.ioReader.flags & IOFlags.NETWORK)
             || (formatContext.ioReader.flags & IOFlags.SLICE)
           )
+          && !this.firstAfterSeek
         ) {
-          await formatContext.ioReader.skip(skip)
+          await formatContext.ioReader.skip(static_cast<int32>(skip))
         }
         else {
           await formatContext.ioReader.seek(avpacket.pos)
         }
+      }
+      if (this.firstAfterSeek) {
+        this.firstAfterSeek = false
       }
 
       const len = sample.size
@@ -451,6 +457,7 @@ export default class IMovFormat extends IFormat {
           }
         }
       })
+      this.firstAfterSeek = true
       return 0n
     }
     return static_cast<int64>(errorType.DATA_INVALID)

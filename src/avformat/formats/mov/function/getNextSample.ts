@@ -30,7 +30,7 @@ import { AV_TIME_BASE_Q } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'
 import { IOFlags } from 'avutil/avformat'
 
-export function getNextSample(context: AVIFormatContext, movContext: MOVContext) {
+export function getNextSample(context: AVIFormatContext, movContext: MOVContext, ioFlags: int32) {
   let sample: Sample
   let stream: Stream
 
@@ -80,6 +80,7 @@ export function getNextSample(context: AVIFormatContext, movContext: MOVContext)
     if ((diff < 1000000)
       || (context.ioReader.flags & IOFlags.SLICE)
       || (context.ioReader.flags & IOFlags.NETWORK)
+      || !(ioFlags & IOFlags.SEEKABLE)
     ) {
       sample = posSample
       stream = posStream
