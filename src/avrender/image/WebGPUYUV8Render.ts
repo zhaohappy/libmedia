@@ -93,7 +93,7 @@ export default class WebGPUYUV8Render extends WebGPUYUVRender {
 
   protected checkFrame(frame: pointer<AVFrame>): void {
 
-    const descriptor =  PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
+    const descriptor = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
 
     if (!descriptor) {
       return
