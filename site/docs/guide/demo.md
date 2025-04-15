@@ -26,7 +26,7 @@ npm run build-avplayer-dev
 npm run build-avtranscoder-dev
 
 # 启动本地 http 服务
-# 默认端口 8000，若要更换端口执行 npx http-server -p xxx --cors
+# 默认端口 8000，若要更换端口执行 npx serve -p xxx --cors --config ./test/serve.json
 npm run server
 
 # 浏览器访问 http://localhost:8000/test/avplayer.html

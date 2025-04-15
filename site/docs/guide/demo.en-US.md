@@ -26,7 +26,7 @@ npm run build-avplayer-dev
 npm run build-avtranscoder-dev
 
 # Start local http service
-# The default port is 8000. To change the port, execute: npx http-server -p xxx --cors
+# The default port is 8000. To change the port, execute: npx serve -p xxx --cors --config ./test/serve.json
 npm run server
 
 # Browser access http://localhost:8000/test/avplayer.html
