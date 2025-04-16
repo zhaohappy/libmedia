@@ -390,6 +390,7 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
 }
 
 export interface AVPlayerUIOptions extends AVPlayerOptions {
+  container: HTMLDivElement
   indicatorUrl?: string
   pauseStateUrl?: string
   errorStateUrl?: string
