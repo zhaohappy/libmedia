@@ -26,8 +26,15 @@
 import { RenderMode } from './ImageRender'
 import ImageRender, { ImageRenderOptions } from './ImageRender'
 import AVFrame from 'avutil/struct/avframe'
+import * as logger from 'common/util/logger'
+
+export interface CanvasImageRenderOptions extends ImageRenderOptions {
+  colorSpace?: 'rec2100-pq' | 'rec2100-hlg'
+}
 
 export default class CanvasImageRender extends ImageRender {
+
+  declare options: CanvasImageRenderOptions
 
   private context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
 
@@ -38,7 +45,7 @@ export default class CanvasImageRender extends ImageRender {
   private flipX: number
   private flipY: number
 
-  constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: ImageRenderOptions) {
+  constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: CanvasImageRenderOptions) {
     super(canvas, options)
 
     this.paddingLeft = 0
@@ -48,7 +55,17 @@ export default class CanvasImageRender extends ImageRender {
   }
 
   public async init() {
-    this.context = this.canvas.getContext('2d') as OffscreenCanvasRenderingContext2D
+    if (this.options.colorSpace === 'rec2100-hlg' || this.options.colorSpace === 'rec2100-pq') {
+      try {
+        this.context = this.canvas.getContext('2d', { colorSpace: this.options.colorSpace, pixelFormat: 'float16' }) as OffscreenCanvasRenderingContext2D
+      }
+      catch (error) {
+        logger.warn('cannot got hdr context, video rendering colors may not be correct, please use the latest version of chrome then in chrome://flags, set: Experimental Web Platform features: Enabled')
+      }
+    }
+    if (!this.context) {
+      this.context = this.canvas.getContext('2d') as OffscreenCanvasRenderingContext2D
+    }
   }
 
   public clear(): void {

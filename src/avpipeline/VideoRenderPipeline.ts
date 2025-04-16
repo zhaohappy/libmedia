@@ -366,7 +366,15 @@ export default class VideoRenderPipeline extends Pipeline {
           // CanvasImageRender 支持 hdr 视频渲染
           task.render = new CanvasImageRender(task.canvas as OffscreenCanvas, {
             devicePixelRatio: task.devicePixelRatio,
-            renderMode: task.renderMode
+            renderMode: task.renderMode,
+            // @ts-ignore
+            colorSpace: frame.colorSpace.transfer === 'pq'
+              ? 'rec2100-pq'
+              // @ts-ignore
+              : (frame.colorSpace.transfer === 'hlg'
+                ? 'rec2100-hlg'
+                : undefined
+              )
           })
           task.isSupport = CanvasImageRender.isSupport
         }
