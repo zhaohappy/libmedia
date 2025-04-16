@@ -261,6 +261,9 @@
       <div id="loop">
         <el-checkbox v-model="loop">loop</el-checkbox>
       </div>
+      <div id="mediaStreamMode">
+        <el-checkbox v-model="mediaStreamMode">mediaStreamMode</el-checkbox>
+      </div>
 
       <br>
 
@@ -510,6 +513,7 @@
       let enableWorkerComponent;
       let useMseComponent;
       let loopComponent;
+      let mediaStreamModeComponent;
       let enableWebGPUComponent;
       let renderModeComponent;
       let renderRotateComponent;
@@ -530,6 +534,7 @@
       const canvasBg = document.querySelector('#canvas-background')
       const video = document.querySelector('#video')
       const audio = document.querySelector('#audio')
+      let mediaStreamModeVideo
 
 
       class MyIOLoader extends AVPlayer.IOLoader.CustomIOLoader {
@@ -605,8 +610,9 @@
         }
 
         if (!player) {
+          const container = mediaStreamModeComponent.mediaStreamMode ? new MediaStream() : document.querySelector(id)
           player = new AVPlayer({
-            container: document.querySelector(id),
+            container,
             isLive: isLiveComponent.isLive,
             getWasm: (type, codecId) => {
               switch (type) {
@@ -695,6 +701,15 @@
             lowLatency: true,
             // audioWorkletBufferLength: 40
           })
+          if (mediaStreamModeComponent.mediaStreamMode) {
+            mediaStreamModeVideo = document.createElement('video')
+            mediaStreamModeVideo.style.cssText = `
+              width: 100%;
+              height: 100%;
+            `
+            mediaStreamModeVideo.srcObject = container
+            document.querySelector(id).appendChild(mediaStreamModeVideo)
+          }
         }
         if (!isLiveComponent.isLive && !slider) {
           slider = new Vue({
@@ -924,6 +939,9 @@
                 video: true,
                 subtitle: true
               }).then(() => {
+                if (mediaStreamModeVideo) {
+                  mediaStreamModeVideo.play()
+                }
                 document.querySelector('#loading-mask').style.display = 'none'
                 if (!player.isDash()) {
                   const audioStreams = player.getStreams().filter((s => s.mediaType === 'Audio'))
@@ -1261,6 +1279,15 @@
             if (player) {
               player.setLoop(enable)
             }
+          }
+        }
+      })
+
+      mediaStreamModeComponent = new Vue({
+        el: '#mediaStreamMode',
+        data: function () {
+          return {
+            mediaStreamMode: false
           }
         }
       })

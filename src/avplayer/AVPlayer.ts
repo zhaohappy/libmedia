@@ -132,7 +132,7 @@ export interface AVPlayerOptions {
   /**
    * dom 挂载元素
    */
-  container: HTMLDivElement
+  container: HTMLDivElement | MediaStream
   /**
    * 自定义 wasm 请求 base url
    * 
@@ -562,11 +562,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private async checkUseMSE() {
     if (defined(ENABLE_MSE)) {
       if (!support.mse) {
+        logger.warn('disable mse because of not support mse')
         return false
       }
 
       // 不支持 wasm
       if (!support.wasmPlayerSupported) {
+        logger.warn('use mse because of not support wasm')
         return true
       }
 
@@ -591,13 +593,41 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         // 目前 canvas 还不能渲染 hdr 视频，hdr 先使用 mse 播放
         // TODO 未来 canvas 支持 hdr 渲染之后去掉
         if (isHdr(videoStream.codecpar)) {
-          logger.info('use mse because of hdr')
+          logger.warn('use mse because of hdr')
           return true
         }
+        if (this.isMediaStreamMode() && !support.trackGenerator) {
+          // firefox 上 MediaStream 模式并且渲染在 worker 中使用 mse 来采集
+          if (browser.firefox
+            && (
+              supportOffscreenCanvas()
+                && (cheapConfig.USE_THREADS
+                    && defined(ENABLE_THREADS)
+                  || support.worker
+                    && this.options.enableWorker
+                )
+            )
+          ) {
+            logger.warn('use mse because of cannot use captureStream in OffscreenCanvas on firefox')
+            return true
+          }
+          // safari 在 MediaStream 模式下只能使用 canvas 来渲染
+          if (browser.safari || os.ios) {
+            logger.warn('disable mse because of cannot use captureStream in HTMLMediaElement on safari')
+            return false
+          }
+        }
+
         // 1080p 以上使用 mse
         if (videoStream.codecpar.width * videoStream.codecpar.height > 1920 * 1080) {
           // 不支持 webcodec
           if (!support.videoDecoder) {
+            logger.warn('use mse because of cannot use webcodec VideoDecoder with resolution more then 1080p')
+            return true
+          }
+          // 1080p 以上在 MediaStream 模式下同时无法使用 trackGenerator 时使用 mse，否则渲染再采集会大量消耗 GPU 资源
+          if (this.isMediaStreamMode() && !support.trackGenerator) {
+            logger.warn('use mse because of cannot use MediaStreamTrackGenerator with resolution more then 1080p in MediaStream mode')
             return true
           }
 
@@ -617,6 +647,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             })
 
             if (!isWebcodecSupport.supported) {
+              logger.warn('use mse because of cannot use webcodec hardwareAcceleration VideoDecoder with resolution more then 1080p')
               return true
             }
           }
@@ -644,8 +675,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     const canvas = document.createElement('canvas')
     canvas.id = 'avplayer-canvas-' + generateUUID()
     canvas.className = 'avplayer-canvas'
-    canvas.width = this.options.container.offsetWidth * devicePixelRatio
-    canvas.height = this.options.container.offsetHeight * devicePixelRatio
     canvas.style.cssText = `
       width: 100%;
       height: 100%;
@@ -667,8 +696,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   private createVideo() {
-    if (this.video) {
-      this.options.container.removeChild(this.video)
+    if (this.video && !this.isMediaStreamMode()) {
+      (this.options.container as HTMLDivElement).removeChild(this.video)
     }
     const video = document.createElement('video')
     video.autoplay = true
@@ -677,18 +706,22 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       width: 100%;
       height: 100%;
     `
-    this.options.container.appendChild(video)
+    if (!this.isMediaStreamMode()) {
+      (this.options.container as HTMLDivElement).appendChild(video)
+    }
     this.video = video
   }
 
   private createAudio() {
-    if (this.audio) {
-      this.options.container.removeChild(this.audio)
+    if (this.audio && !this.isMediaStreamMode()) {
+      (this.options.container as HTMLDivElement).removeChild(this.audio)
     }
     const audio = document.createElement('audio')
     audio.autoplay = true
     audio.className = 'avplayer-audio'
-    this.options.container.appendChild(audio)
+    if (!this.isMediaStreamMode()) {
+      (this.options.container as HTMLDivElement).appendChild(audio)
+    }
     this.audio = audio
   }
 
@@ -816,17 +849,19 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           URL.revokeObjectURL((this.video || this.audio).src)
         }
 
-        if (this.video) {
-          this.options.container.removeChild(this.video)
-          this.video = null
-        }
-        if (this.audio) {
-          this.options.container.removeChild(this.audio)
-          this.audio = null
-        }
-        if (this.canvas) {
-          this.options.container.removeChild(this.canvas)
-          this.canvas = null
+        if (!this.isMediaStreamMode()) {
+          if (this.video) {
+            (this.options.container as HTMLDivElement).removeChild(this.video)
+            this.video = null
+          }
+          if (this.audio) {
+            (this.options.container as HTMLDivElement).removeChild(this.audio)
+            this.audio = null
+          }
+          if (this.canvas) {
+            (this.options.container as HTMLDivElement).removeChild(this.canvas)
+            this.canvas = null
+          }
         }
 
         await this.stop()
@@ -922,16 +957,21 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   private createSubtitleRender(subtitleStream: AVStreamInterface, taskId: string) {
+
+    if (this.isMediaStreamMode()) {
+      return
+    }
+
     if (defined(ENABLE_SUBTITLE_RENDER)) {
       this.subtitleRender = new SubtitleRender({
-        dom: this.canvas || this.video || this.options.container,
+        dom: this.canvas || this.video || this.options.container as HTMLDivElement,
         getCurrentTime: () => {
           return this.currentTime
         },
         avpacketList: addressof(this.GlobalData.avpacketList),
         avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
         codecpar: subtitleStream.codecpar,
-        container: this.options.container,
+        container: this.options.container as HTMLDivElement,
         videoWidth: this.selectedVideoStream?.codecpar.width ?? 0,
         videoHeight: this.selectedVideoStream?.codecpar.height ?? 0
       })
@@ -1760,17 +1800,56 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     if (this.videoDecoder2VideoRenderChannel) {
-      this.canvas = this.createCanvas()
-      this.options.container.appendChild(this.canvas)
-      const canvas = (supportOffscreenCanvas()
+      let canvas: OffscreenCanvas | HTMLCanvasElement | WritableStream<VideoFrame>
+      if (this.isMediaStreamMode()) {
+        if (support.trackGenerator) {
+          const track = new MediaStreamTrackGenerator({ kind: 'video' })
+          canvas = track.writable
+          const stream = this.options.container as MediaStream
+          const removeTrack = stream.getVideoTracks()[0]
+          if (removeTrack) {
+            stream.removeTrack(removeTrack)
+          }
+          stream.addTrack(track)
+        }
+        else {
+          this.canvas = this.createCanvas()
+          this.canvas.width = videoStream.codecpar.width
+          this.canvas.height = videoStream.codecpar.height
+          canvas = (supportOffscreenCanvas()
+            && (cheapConfig.USE_THREADS
+                && defined(ENABLE_THREADS)
+              || support.worker
+                && this.options.enableWorker
+            )
+          )
+            ? this.canvas.transferControlToOffscreen()
+            : this.canvas
+
+          const captureStream = this.canvas.captureStream()
+          const stream = this.options.container as MediaStream
+          const removeTrack = stream.getVideoTracks()[0]
+          if (removeTrack) {
+            stream.removeTrack(removeTrack)
+          }
+          stream.addTrack(captureStream.getVideoTracks()[0])
+        }
+      }
+      else {
+        this.canvas = this.createCanvas()
+        this.canvas.width = (this.options.container as HTMLDivElement).offsetWidth * devicePixelRatio
+        this.canvas.height = (this.options.container as HTMLDivElement).offsetHeight * devicePixelRatio
+        ;(this.options.container as HTMLDivElement).appendChild(this.canvas)
+        canvas = (supportOffscreenCanvas()
           && (cheapConfig.USE_THREADS
               && defined(ENABLE_THREADS)
             || support.worker
               && this.options.enableWorker
           )
-      )
-        ? this.canvas.transferControlToOffscreen()
-        : this.canvas
+        )
+          ? this.canvas.transferControlToOffscreen()
+          : this.canvas
+      }
 
       // 处理旋转
       if (videoStream.metadata[AVStreamMetadataKey.MATRIX] && !this.useMSE) {
@@ -1794,9 +1873,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           renderRotate: this.renderRotate,
           flipHorizontal: this.flipHorizontal,
           flipVertical: this.flipVertical,
-          viewportWidth: this.options.container.offsetWidth,
-          viewportHeight: this.options.container.offsetHeight,
-          devicePixelRatio: devicePixelRatio,
+          viewportWidth: this.isMediaStreamMode() ? videoStream.codecpar.width : (this.options.container as HTMLDivElement).offsetWidth,
+          viewportHeight: this.isMediaStreamMode() ? videoStream.codecpar.height : (this.options.container as HTMLDivElement).offsetHeight,
+          devicePixelRatio: this.isMediaStreamMode() ? 1 : devicePixelRatio,
           stats: addressof(this.GlobalData.stats),
           enableWebGPU: this.options.enableWebGPU,
           startPTS: this.isLive_
@@ -1893,8 +1972,21 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       AVPlayer.AudioRenderThread.setPlayTempo(this.taskId, this.playRate)
 
       this.gainNode = AVPlayer.audioContext.createGain()
-      this.gainNode.connect(AVPlayer.audioContext.destination)
       this.audioSourceNode.connect(this.gainNode)
+
+      if (this.isMediaStreamMode()) {
+        const destination = AVPlayer.audioContext.createMediaStreamDestination()
+        this.gainNode.connect(destination)
+        const stream = this.options.container as MediaStream
+        const removeTrack = stream.getAudioTracks()[0]
+        if (removeTrack) {
+          stream.removeTrack(removeTrack)
+        }
+        stream.addTrack(destination.stream.getAudioTracks()[0])
+      }
+      else {
+        this.gainNode.connect(AVPlayer.audioContext.destination)
+      }
 
       this.setVolume(this.volume)
 
@@ -2061,6 +2153,31 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             return this.video.play()
           }
         })
+        if (this.isMediaStreamMode()) {
+          if (!browser.firefox) {
+            (this.video || this.audio).muted = true
+          }
+          const stream = this.options.container as MediaStream
+          // @ts-ignore
+          let captureStreamFunc = (this.video || this.audio).captureStream || (this.video || this.audio).mozCaptureStream
+          const captureStream: MediaStream = captureStreamFunc.bind(this.video || this.audio)()
+          const removeAudioTrack = stream.getAudioTracks()[0]
+          const removeVideoTrack = stream.getVideoTracks()[0]
+          if (removeAudioTrack) {
+            stream.removeTrack(removeAudioTrack)
+          }
+          if (removeVideoTrack) {
+            stream.removeTrack(removeVideoTrack)
+          }
+          const addAudioTrack = captureStream.getAudioTracks()[0]
+          const addVideoTrack = captureStream.getVideoTracks()[0]
+          if (addAudioTrack) {
+            stream.addTrack(addAudioTrack)
+          }
+          if (addVideoTrack) {
+            stream.addTrack(addVideoTrack)
+          }
+        }
       }
       else {
         const promises = []
@@ -2487,17 +2604,20 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if ((this.video || this.audio)?.src) {
       URL.revokeObjectURL((this.video || this.audio).src)
     }
-    if (this.video) {
-      this.options.container.removeChild(this.video)
-      this.video = null
-    }
-    if (this.audio) {
-      this.options.container.removeChild(this.audio)
-      this.audio = null
-    }
-    if (this.canvas) {
-      this.options.container.removeChild(this.canvas)
-      this.canvas = null
+    if (!this.isMediaStreamMode()) {
+      const container = this.options.container as HTMLDivElement
+      if (this.video) {
+        container.removeChild(this.video)
+        this.video = null
+      }
+      if (this.audio) {
+        container.removeChild(this.audio)
+        this.audio = null
+      }
+      if (this.canvas) {
+        container.removeChild(this.canvas)
+        this.canvas = null
+      }
     }
 
     this.ioloader2DemuxerChannel = null
@@ -2816,6 +2936,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   public isMSE() {
     return this.useMSE
+  }
+
+  /**
+   * 是否是 MediaStream 模式
+   */
+  public isMediaStreamMode() {
+    return typeof MediaStream === 'function' && this.options.container instanceof MediaStream
   }
 
   /**
@@ -3180,7 +3307,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * 全屏
    */
   public enterFullscreen() {
-    const element: HTMLElement = this.options.container
+    if (this.isMediaStreamMode()) {
+      return
+    }
+    const element: HTMLElement = this.options.container as HTMLDivElement
     if (element.requestFullscreen) {
       element.requestFullscreen()
     }
@@ -3317,6 +3447,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   public onCanvasUpdated(): void {
     this.updateCanvas = this.createCanvas()
+    this.updateCanvas.width = (this.options.container as HTMLDivElement).offsetWidth * devicePixelRatio
+    this.updateCanvas.height = (this.options.container as HTMLDivElement).offsetHeight * devicePixelRatio
     const canvas = (supportOffscreenCanvas()
         && (cheapConfig.USE_THREADS
             && defined(ENABLE_THREADS)
@@ -3383,12 +3515,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @internal
    */
   public onFirstVideoRenderedAfterUpdateCanvas(): void {
-    if (this.updateCanvas) {
+    if (this.updateCanvas && !this.isMediaStreamMode()) {
+      const container = this.options.container as HTMLDivElement
       if (this.canvas) {
-        this.options.container.removeChild(this.canvas)
+        container.removeChild(this.canvas)
       }
       this.canvas = this.updateCanvas
-      this.options.container.appendChild(this.canvas)
+      container.appendChild(this.canvas)
       this.updateCanvas = null
     }
   }

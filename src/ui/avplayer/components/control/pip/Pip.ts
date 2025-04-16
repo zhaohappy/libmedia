@@ -56,7 +56,7 @@ const Pip: ComponentOptions = {
           player.video.requestPictureInPicture()
         }
         else {
-          this.playerContainer = player.getOptions().container.parentElement
+          this.playerContainer = (player.getOptions().container as HTMLDivElement).parentElement
           this.pipWindow = await documentPictureInPicture.requestWindow({
             disallowReturnToOpener: true,
             width: 320,

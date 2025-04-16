@@ -55,6 +55,7 @@ import WebGLYUV16Render from 'avrender/image/WebGLYUV16Render'
 import WebGPUYUV8Render from 'avrender/image/WebGPUYUV8Render'
 import WebGPURGB8Render from 'avrender/image/WebGPURGB8Render'
 import WebGPUYUV16Render from 'avrender/image/WebGPUYUV16Render'
+import WritableStreamRender from 'avrender/image/WritableStreamRender'
 import isWorker from 'common/function/isWorker'
 import nextTick from 'common/function/nextTick'
 import isPointer from 'cheap/std/function/isPointer'
@@ -95,7 +96,7 @@ enum AdjustStatus {
 let disableWebGPU = false
 
 export interface VideoRenderTaskOptions extends TaskOptions {
-  canvas: HTMLCanvasElement | OffscreenCanvas
+  canvas: HTMLCanvasElement | OffscreenCanvas | WritableStream<VideoFrame>
   renderMode: RenderMode
   renderRotate: double
   flipHorizontal: boolean
@@ -328,83 +329,90 @@ export default class VideoRenderPipeline extends Pipeline {
     if (task.render) {
       task.render.destroy()
     }
-    if (!isPointer(frame)) {
-      if (defined(ENABLE_WEBGPU)
-        && task.enableWebGPU
-        && support.webgpu
-        && !disableWebGPU
-        && (
-          // chrome116+ webgpu 可以导入 VideoFrame 作为纹理
-          (browser.chrome || browser.newEdge) && browser.checkVersion(browser.majorVersion, '116', true)
-          || browser.safari && browser.checkVersion(browser.majorVersion, '17.4', true)
-          || os.ios && browser.checkVersion(os.version, '17.4', true)
-          || browser.firefox && browser.checkVersion(browser.majorVersion, '129', true)
-        )
-        && !isHDR(frame.colorSpace.primaries)
-      ) {
-        // WebGPUExternalRender 性能最优
-        task.render = new WebGPUExternalRender(task.canvas, {
-          devicePixelRatio: task.devicePixelRatio,
-          renderMode: task.renderMode,
-          onRenderContextLost: () => {
-            task.canvasUpdated = false
-            task.renderRedyed = false
-            logger.warn('render context lost')
-            task.controlIPCPort.notify('updateCanvas')
-          }
-        })
-        task.isSupport = WebGPUExternalRender.isSupport
-      }
-      else {
-        // CanvasImageRender 支持 hdr 视频渲染
-        task.render = new CanvasImageRender(task.canvas, {
-          devicePixelRatio: task.devicePixelRatio,
-          renderMode: task.renderMode
-        })
-        task.isSupport = CanvasImageRender.isSupport
-      }
+
+    if (typeof WritableStream === 'function' && task.canvas instanceof WritableStream) {
+      task.render = new WritableStreamRender(task.canvas)
+      task.isSupport = WritableStreamRender.isSupport
     }
     else {
-      // 优先使用 webgpu，webgpu 性能优于 webgl
-      if (defined(ENABLE_WEBGPU)
-        && task.enableWebGPU
-        && support.webgpu
-        && !disableWebGPU
-      ) {
-        array.each(WebGPURenderList, (RenderFactory) => {
-          if (RenderFactory.isSupport(frame)) {
-            task.render = new RenderFactory(task.canvas, {
-              devicePixelRatio: task.devicePixelRatio,
-              renderMode: task.renderMode,
-              onRenderContextLost: () => {
-                task.canvasUpdated = false
-                task.renderRedyed = false
-                logger.warn('render context lost')
-                task.controlIPCPort.notify('updateCanvas')
-              }
-            })
-            task.isSupport = RenderFactory.isSupport
-            return false
-          }
-        })
+      if (!isPointer(frame)) {
+        if (defined(ENABLE_WEBGPU)
+          && task.enableWebGPU
+          && support.webgpu
+          && !disableWebGPU
+          && (
+            // chrome116+ webgpu 可以导入 VideoFrame 作为纹理
+            (browser.chrome || browser.newEdge) && browser.checkVersion(browser.majorVersion, '116', true)
+            || browser.safari && browser.checkVersion(browser.majorVersion, '17.4', true)
+            || os.ios && browser.checkVersion(os.version, '17.4', true)
+            || browser.firefox && browser.checkVersion(browser.majorVersion, '129', true)
+          )
+          && !isHDR(frame.colorSpace.primaries)
+        ) {
+          // WebGPUExternalRender 性能最优
+          task.render = new WebGPUExternalRender(task.canvas as OffscreenCanvas, {
+            devicePixelRatio: task.devicePixelRatio,
+            renderMode: task.renderMode,
+            onRenderContextLost: () => {
+              task.canvasUpdated = false
+              task.renderRedyed = false
+              logger.warn('render context lost')
+              task.controlIPCPort.notify('updateCanvas')
+            }
+          })
+          task.isSupport = WebGPUExternalRender.isSupport
+        }
+        else {
+          // CanvasImageRender 支持 hdr 视频渲染
+          task.render = new CanvasImageRender(task.canvas as OffscreenCanvas, {
+            devicePixelRatio: task.devicePixelRatio,
+            renderMode: task.renderMode
+          })
+          task.isSupport = CanvasImageRender.isSupport
+        }
       }
       else {
-        array.each(WebGLRenderList, (RenderFactory) => {
-          if (RenderFactory.isSupport(frame)) {
-            task.render = new RenderFactory(task.canvas, {
-              devicePixelRatio: task.devicePixelRatio,
-              renderMode: task.renderMode,
-              onRenderContextLost: () => {
-                task.canvasUpdated = false
-                task.renderRedyed = false
-                logger.warn('render context lost')
-                task.controlIPCPort.notify('updateCanvas')
-              }
-            })
-            task.isSupport = RenderFactory.isSupport
-            return false
-          }
-        })
+        // 优先使用 webgpu，webgpu 性能优于 webgl
+        if (defined(ENABLE_WEBGPU)
+          && task.enableWebGPU
+          && support.webgpu
+          && !disableWebGPU
+        ) {
+          array.each(WebGPURenderList, (RenderFactory) => {
+            if (RenderFactory.isSupport(frame)) {
+              task.render = new RenderFactory(task.canvas as OffscreenCanvas, {
+                devicePixelRatio: task.devicePixelRatio,
+                renderMode: task.renderMode,
+                onRenderContextLost: () => {
+                  task.canvasUpdated = false
+                  task.renderRedyed = false
+                  logger.warn('render context lost')
+                  task.controlIPCPort.notify('updateCanvas')
+                }
+              })
+              task.isSupport = RenderFactory.isSupport
+              return false
+            }
+          })
+        }
+        else {
+          array.each(WebGLRenderList, (RenderFactory) => {
+            if (RenderFactory.isSupport(frame)) {
+              task.render = new RenderFactory(task.canvas as OffscreenCanvas, {
+                devicePixelRatio: task.devicePixelRatio,
+                renderMode: task.renderMode,
+                onRenderContextLost: () => {
+                  task.canvasUpdated = false
+                  task.renderRedyed = false
+                  logger.warn('render context lost')
+                  task.controlIPCPort.notify('updateCanvas')
+                }
+              })
+              task.isSupport = RenderFactory.isSupport
+              return false
+            }
+          })
+        }
       }
     }
     if (!task.render) {

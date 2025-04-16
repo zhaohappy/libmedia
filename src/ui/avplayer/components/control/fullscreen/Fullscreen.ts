@@ -51,7 +51,7 @@ const Fullscreen: ComponentOptions = {
         }
       }
       else {
-        const element: HTMLElement = this.get('dom') || player.getOptions().container.parentElement
+        const element: HTMLElement = this.get('dom') || (player.getOptions().container as HTMLDivElement).parentElement
         if (element.requestFullscreen) {
           element.requestFullscreen()
         }
@@ -75,7 +75,7 @@ const Fullscreen: ComponentOptions = {
 
     this.onfullscreenchange = () => {
       if (document.fullscreenElement == null) {
-        const container = player.getOptions().container
+        const container = player.getOptions().container as HTMLDivElement
         player.resize(container.offsetWidth, container.offsetHeight)
         this.set('fullscreen', false)
       }
