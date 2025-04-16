@@ -24,7 +24,7 @@
   "plugin": ["typedoc-plugin-rename-defaults"],
   "readme": "none",
   "out": "./docs/libmedia_api",
-  "excludeExternals": true,
+  "excludeInternal": true,
   "excludePrivate": true,
   "excludeProtected": true,
   "exclude": []

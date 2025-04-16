@@ -320,7 +320,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     FileIOLoader
   }
   /**
-   * @internal
+   * @hidden
    */
   static Resource: Map<string, WebAssemblyResource | ArrayBuffer> = new Map()
 
@@ -2102,7 +2102,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     logger.info(`set log level: ${level}`)
   }
   /**
-   * @internal
+   * @hidden
    */
   public async onGetDecoderResource(mediaType: AVMediaType, codecId: AVCodecID): Promise<WebAssemblyResource | ArrayBuffer> {
     return this.getResource('decoder', codecId, mediaType)

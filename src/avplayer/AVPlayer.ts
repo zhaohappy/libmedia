@@ -331,7 +331,7 @@ export const enum AVPlayerProgress {
 
 export default class AVPlayer extends Emitter implements ControllerObserver {
   /**
-   * @internal
+   * @hidden
    */
   static Instances: AVPlayer[] = []
 
@@ -352,63 +352,63 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
   static level: number = logger.INFO
   /**
-   * @internal
+   * @hidden
    */
   static DemuxThreadReady: Promise<void>
   /**
-   * @internal
+   * @hidden
    */
   static AudioThreadReady: Promise<void>
   /**
-   * @internal
+   * @hidden
    */
   static VideoThreadReady: Promise<void>
   /**
-   * @internal
+   * @hidden
    */
   static MSEThreadReady: Promise<void>
   /**
-   * @internal
+   * @hidden
    */
   static IODemuxProxy: IODemuxPipelineProxy
   /**
-   * @internal
+   * @hidden
    */
   static AudioPipelineProxy: AudioPipelineProxy
   /**
-   * @internal
+   * @hidden
    */
   static MSEPipelineProxy: MSEPipelineProxy
 
   /**
-   * @internal
+   * @hidden
    * 下面的线程所有 AVPlayer 实例共享
    */
   static IOThread: Thread<IOPipeline>
   /**
-   * @internal
+   * @hidden
    */
   static DemuxerThread: Thread<DemuxPipeline>
   /**
-   * @internal
+   * @hidden
    */
   static AudioDecoderThread: Thread<AudioDecodePipeline>
   /**
-   * @internal
+   * @hidden
    */
   static AudioRenderThread: Thread<AudioRenderPipeline>
   /**
-   * @internal
+   * @hidden
    */
   static VideoRenderThread: Thread<VideoRenderPipeline>
   /**
-   * @internal
+   * @hidden
    */
   static MSEThread: Thread<MSEPipeline>
 
   static audioContext: AudioContext
   /**
-   * @internal
+   * @hidden
    */
   static Resource: Map<string, WebAssemblyResource | ArrayBuffer> = new Map()
 
@@ -528,7 +528,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   private isCodecIdSupported(codecId: AVCodecID) {
     if (codecId > AVCodecID.AV_CODEC_ID_FIRST_AUDIO && codecId <= AVCodecID.AV_CODEC_ID_PCM_SGA) {
@@ -538,7 +538,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   private findBestStream(streams: AVStreamInterface[], mediaType: AVMediaType) {
     if (this.options.findBestStream) {
@@ -3424,7 +3424,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   public onVideoEnded(): void {
     this.videoEnded = true
@@ -3432,7 +3432,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   public onAudioEnded(): void {
     this.audioEnded = true
@@ -3443,7 +3443,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   public onCanvasUpdated(): void {
     this.updateCanvas = this.createCanvas()
@@ -3464,14 +3464,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   public async onGetDecoderResource(mediaType: AVMediaType, codecId: AVCodecID): Promise<WebAssemblyResource | string | ArrayBuffer> {
     return this.getResource('decoder', codecId, mediaType)
   }
 
   /**
-   * @internal
+   * @hidden
    */
   public onFirstVideoRendered(): void {
     logger.info(`first video frame rendered, taskId: ${this.taskId}`)
@@ -3479,7 +3479,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   public onFirstAudioRendered(): void {
     logger.info(`first audio frame rendered, taskId: ${this.taskId}`)
@@ -3487,7 +3487,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   public onAudioStutter() {
     if (this.status === AVPlayerStatus.PLAYED) {
@@ -3495,7 +3495,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
   /**
-   * @internal
+   * @hidden
    */
   public onVideoStutter() {
     if (this.status === AVPlayerStatus.PLAYED) {
@@ -3503,7 +3503,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
   /**
-   * @internal
+   * @hidden
    */
   public onVideoDiscard() {
     if (this.status === AVPlayerStatus.PLAYED) {
@@ -3512,7 +3512,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   public onFirstVideoRenderedAfterUpdateCanvas(): void {
     if (this.updateCanvas && !this.isMediaStreamMode()) {
@@ -3527,14 +3527,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   public onTimeUpdate(pts: int64): void {
     this.fire(eventType.TIME, [this.currentTime])
   }
 
   /**
-   * @internal
+   * @hidden
    */
   public onMSESeek(time: number): void {
     if (this.audio) {
@@ -3545,7 +3545,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
   /**
-   * @internal
+   * @hidden
    */
   public onMasterTimerUpdate(time: int64) {
     AVPlayer.AudioRenderThread?.setMasterTime(this.taskId, time)
@@ -3553,7 +3553,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   public onAudioContextStateChange() {
     // @ts-ignore
@@ -3592,7 +3592,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   static async startDemuxPipeline(enableWorker: boolean = true) {
     if (AVPlayer.DemuxThreadReady) {
@@ -3623,7 +3623,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   static async startAudioPipeline(enableWorker: boolean = true) {
     if (AVPlayer.AudioThreadReady) {
@@ -3686,7 +3686,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   static async startVideoRenderPipeline(enableWorker: boolean = true) {
     if (AVPlayer.VideoThreadReady) {
@@ -3706,7 +3706,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * @internal
+   * @hidden
    */
   static async startMSEPipeline(enableWorker: boolean = true) {
     if (defined(ENABLE_MSE)) {
