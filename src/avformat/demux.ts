@@ -48,6 +48,7 @@ import { mapUint8Array } from 'cheap/std/memory'
 import roundStandardFramerate from './function/roundStandardFramerate'
 import guessDelayFromPts from './function/guessDelayFromPts'
 import guessDtsFromPts from './function/guessDtsFromPts'
+import { AVChannelLayout, AVChannelOrder } from 'avutil/audiosamplefmt'
 
 const MIN_ANALYZE_SAMPLES = 16
 
@@ -277,6 +278,16 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
   function finalizeAnalyze() {
     formatContext.streams.forEach((stream) => {
       calculate(stream, true)
+      if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+        if (stream.codecpar.chLayout.nbChannels === 1) {
+          stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVChannelLayout.AV_CHANNEL_LAYOUT_MONO as uint32)
+          stream.codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
+        }
+        else if (stream.codecpar.chLayout.nbChannels === 2) {
+          stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVChannelLayout.AV_CHANNEL_LAYOUT_STEREO as uint32)
+          stream.codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
+        }
+      }
     })
   }
 
