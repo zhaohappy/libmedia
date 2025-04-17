@@ -1893,10 +1893,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       this.audioRender2AudioWorkletChannel = new MessageChannel()
 
-      this.playChannels = Math.min(
-        audioStream.codecpar.chLayout.nbChannels,
-        AVPlayer.audioContext.destination.maxChannelCount || 1
-      )
+      if (this.isMediaStreamMode()) {
+        this.playChannels = 2
+      }
+      else {
+        this.playChannels = Math.min(
+          audioStream.codecpar.chLayout.nbChannels,
+          AVPlayer.audioContext.destination.maxChannelCount || 2
+        )
+      }
 
       let resamplerResource = await this.getResource('resampler')
       let stretchpitcherResource = await this.getResource('stretchpitcher')
