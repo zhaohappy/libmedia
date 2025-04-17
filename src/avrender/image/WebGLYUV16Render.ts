@@ -162,20 +162,12 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
   }
 
   protected checkFrame(frame: pointer<AVFrame>): void {
-
-    const descriptor = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
-
-    if (!descriptor) {
-      return
-    }
-
-    const bytesPerPixel = (descriptor.comp[0].depth + 7) >>> 3
-
-    if ((frame.linesize[0] / bytesPerPixel) !== this.textureWidth
+    if ((frame.linesize[0] >>> 1) !== this.textureWidth
       || frame.height !== this.videoHeight
       || frame.width !== this.videoWidth
       || frame.format !== this.format
     ) {
+      const descriptor = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
 
       this.srcColorSpace = new ColorSpace(
         frame.colorSpace,
@@ -248,13 +240,12 @@ export default class WebGLYUV16Render extends WebGLYUVRender {
       return
     }
 
-    this.checkFrame(frame)
-
     const descriptor =  PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
-
     if (!descriptor) {
       return
     }
+
+    this.checkFrame(frame)
 
     this.yTexture.fill(mapUint16Array(
       reinterpret_cast<pointer<uint16>>(frame.data[0]),

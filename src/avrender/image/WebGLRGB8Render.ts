@@ -77,17 +77,11 @@ export default class WebGLRGB8Render extends WebGLRGBRender {
   }
 
   protected checkFrame(frame: pointer<AVFrame>): void {
-
-    const descriptor = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
-
-    if (!descriptor) {
-      return
-    }
-
     if (frame.linesize[0] !== this.textureWidth
       || frame.height !== this.videoHeight
       || frame.width !== this.videoWidth
     ) {
+      const descriptor = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
 
       this.srcColorSpace = new ColorSpace(
         frame.colorSpace,
@@ -119,6 +113,11 @@ export default class WebGLRGB8Render extends WebGLRGBRender {
   public render(frame: pointer<AVFrame>): void {
 
     if (this.lost) {
+      return
+    }
+
+    const descriptor =  PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
+    if (!descriptor) {
       return
     }
 

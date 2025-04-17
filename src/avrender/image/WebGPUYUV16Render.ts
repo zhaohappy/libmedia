@@ -436,18 +436,13 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
   }
 
   protected checkFrame(frame: pointer<AVFrame>): void {
-
-    const descriptor = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
-
-    if (!descriptor) {
-      return
-    }
-
     if ((frame.linesize[0] >>> 1) !== this.textureWidth
       || frame.height !== this.videoHeight
       || frame.width !== this.videoWidth
       || frame.format !== this.format
     ) {
+      const descriptor = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
+
       if (this.yTexture) {
         this.yTexture.destroy()
         this.yTexture = null
@@ -623,6 +618,11 @@ export default class WebGPUYUV16Render extends WebGPUYUVRender {
   public render(frame: pointer<AVFrame>): void {
 
     if (this.lost) {
+      return
+    }
+
+    const descriptor =  PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
+    if (!descriptor) {
       return
     }
 

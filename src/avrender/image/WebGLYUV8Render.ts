@@ -91,17 +91,11 @@ export default class WebGLYUV8Render extends WebGLYUVRender {
   }
 
   protected checkFrame(frame: pointer<AVFrame>): void {
-
-    const descriptor = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
-
-    if (!descriptor) {
-      return
-    }
-
     if (frame.linesize[0] !== this.textureWidth
       || frame.height !== this.videoHeight
       || frame.width !== this.videoWidth
     ) {
+      const descriptor = PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
 
       this.srcColorSpace = new ColorSpace(
         frame.colorSpace,
@@ -140,13 +134,12 @@ export default class WebGLYUV8Render extends WebGLYUVRender {
       return
     }
 
-    this.checkFrame(frame)
-
     const descriptor =  PixelFormatDescriptorsMap[frame.format as AVPixelFormat]
-
     if (!descriptor) {
       return
     }
+
+    this.checkFrame(frame)
 
     this.yTexture.fill(mapUint8Array(frame.data[0], this.yTexture.width * this.yTexture.height))
     this.uTexture.fill(mapUint8Array(frame.data[1], this.uTexture.width * this.uTexture.height))
