@@ -403,7 +403,7 @@ export default class VideoRenderPipeline extends Pipeline {
             }
           })
         }
-        else {
+        if (!task.render) {
           array.each(WebGLRenderList, (RenderFactory) => {
             if (RenderFactory.isSupport(frame)) {
               task.render = new RenderFactory(task.canvas as OffscreenCanvas, {
@@ -424,6 +424,7 @@ export default class VideoRenderPipeline extends Pipeline {
       }
     }
     if (!task.render) {
+      logger.error(`not found format ${frame.format} render`)
       task.renderCreating = false
       return
     }
