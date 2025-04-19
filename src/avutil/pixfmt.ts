@@ -702,11 +702,6 @@ export const enum AVPixelFormat {
   AV_PIX_FMT_BAYER_GRBG16BE,
 
   /**
-   * XVideo Motion Acceleration via common packet passing
-   */
-  AV_PIX_FMT_XVMC,
-
-  /**
    * planar YUV 4:4:0,20bpp, (1 Cr & Cb sample per 1x2 Y samples), little-endian
    */
   AV_PIX_FMT_YUV440P10LE,
