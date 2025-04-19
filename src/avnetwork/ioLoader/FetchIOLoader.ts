@@ -303,7 +303,7 @@ export default class FetchIOLoader extends IOLoader {
         this.startBytes = this.endBytes + 1
         this.endBytes = Math.min(this.startBytes + this.options.preload - 1, this.eofIndex)
 
-        return this.readInterval(buffer.subarray(pos), pos)
+        return this.readInterval(buffer.subarray(pos, undefined, true), pos)
       }
     }
     else {
