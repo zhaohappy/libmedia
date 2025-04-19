@@ -61,7 +61,7 @@ function getMaxPixSteps(desc: PixelFormatDescriptor) {
 
 function setSystematicPal(pal: pointer<uint32>, pixfmt: AVPixelFormat) {
   for (let i = 0; i < 256; i++) {
-    let r, g, b
+    let r: int32, g: int32, b: int32
 
     switch (pixfmt) {
       case AVPixelFormat.AV_PIX_FMT_RGB8:
@@ -105,7 +105,7 @@ function pixelGetLinesize_(width: int32, plane: int32, maxStep: int32, maxStepCo
     return errorType.INVALID_ARGUMENT
   }
 
-  const s = ( maxStepComp === 1 || maxStepComp === 2) ? desc.log2ChromaW : 0
+  const s = (maxStepComp === 1 || maxStepComp === 2) ? desc.log2ChromaW : 0
 
   const shiftedW = ((width + (1 << s) - 1)) >>> s
 
