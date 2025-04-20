@@ -129,7 +129,7 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
     list.push(`${codecName}${profileName ? ` (${profileName})` : ''}`)
 
     if (stream.codecpar.format !== NOPTS_VALUE) {
-      const pixfmt = dumpKey(stringEnum.PixfmtString2AVPixelFormat, stream.codecpar.format)
+      const pixfmt = dumpKey(stringEnum.PixfmtString2AVPixelFormat, stream.codecpar.format, `unknown(${stream.codecpar.format})`)
       const range = dumpKey(stringEnum.colorRange2AVColorRange, stream.codecpar.colorRange, 'tv')
       const space = dumpKey(stringEnum.colorSpace2AVColorSpace, stream.codecpar.colorSpace, 'bt709')
       const primary = dumpKey(stringEnum.colorPrimaries2AVColorPrimaries, stream.codecpar.colorPrimaries, 'bt709')
