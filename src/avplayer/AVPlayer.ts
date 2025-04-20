@@ -1970,7 +1970,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       )
 
       await this.audioSourceNode.request('init', {
-        memory: cheapConfig.USE_THREADS ? Memory : null,
+        memory: defined(ENABLE_THREADS)
+          && cheapConfig.USE_THREADS
+          && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
+          && (!os.ios || browser.checkVersion(os.version, '16.1', true))
+          ? Memory
+          : null,
         bufferLength: this.options.audioWorkletBufferLength
       })
 
