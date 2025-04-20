@@ -1,5 +1,5 @@
 /*
- * libmedia YUV16LEProgram
+ * libmedia VideoProgram8
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -23,11 +23,10 @@
  *
  */
 
-import YUV16Program from './YUV16Program'
-import yuvFragmentSource from '../glsl/fragment/yuv16le.frag'
+import VideoProgram from './VideoProgram'
 
-export default class YUV16LEProgram extends YUV16Program {
-  constructor() {
-    super(yuvFragmentSource)
+export default class VideoProgram8 extends VideoProgram {
+  constructor(fragmentSource: string, vertexSource?: string) {
+    super(fragmentSource, vertexSource)
   }
 }

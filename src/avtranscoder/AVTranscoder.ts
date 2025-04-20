@@ -99,7 +99,7 @@ import getWasmUrl from 'avutil/function/getWasmUrl'
 import * as bigint from 'common/util/bigint'
 import align from 'common/math/align'
 import { Rational } from 'avutil/struct/rational'
-import { PixelFormatDescriptorsMap } from 'avutil/pixelFormatDescriptor'
+import { getAVPixelFormatDescriptor } from 'avutil/pixelFormatDescriptor'
 import isHdr from 'avutil/function/isHdr'
 import hasAlphaChannel from 'avutil/function/hasAlphaChannel'
 
@@ -1433,12 +1433,12 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
 
       if (newStream.codecpar.profile === NOPTS_VALUE) {
         if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
-          const description = PixelFormatDescriptorsMap[newStream.codecpar.format]
-          newStream.codecpar.profile = description?.comp[0]?.depth === 10 ? h264.H264Profile.kHigh10 : h264.H264Profile.kHigh
+          const descriptor = getAVPixelFormatDescriptor(newStream.codecpar.format as AVPixelFormat)
+          newStream.codecpar.profile = descriptor?.comp[0]?.depth === 10 ? h264.H264Profile.kHigh10 : h264.H264Profile.kHigh
         }
         else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
-          const description = PixelFormatDescriptorsMap[newStream.codecpar.format]
-          newStream.codecpar.profile = description?.comp[0]?.depth === 10 ? hevc.HEVCProfile.Main10 : hevc.HEVCProfile.Main
+          const descriptor = getAVPixelFormatDescriptor(newStream.codecpar.format as AVPixelFormat)
+          newStream.codecpar.profile = descriptor?.comp[0]?.depth === 10 ? hevc.HEVCProfile.Main10 : hevc.HEVCProfile.Main
         }
         else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC) {
 
@@ -1529,10 +1529,10 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         }
       }
 
-      const description = PixelFormatDescriptorsMap[stream.codecpar.format]
+      const descriptor = getAVPixelFormatDescriptor(stream.codecpar.format as AVPixelFormat)
       let canUseHardware = true
       // 硬解只能支持 8 位，webcodecs 10 位的解出来无法拿数据出来编码
-      if (description?.comp[0]?.depth > 8) {
+      if (descriptor?.comp[0]?.depth > 8) {
         canUseHardware = false
       }
 

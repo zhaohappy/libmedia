@@ -1,5 +1,5 @@
 /*
- * libmedia WebGLYUVRender
+ * libmedia WebGLDefaultRender
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -23,46 +23,58 @@
  *
  */
 
-import YUVTexture from './webgl/texture/YUVTexture'
+import VideoTexture from './webgl/texture/VideoTexture'
 import WebGLRender, { WebGLRenderOptions } from './WebGLRender'
-import YUVProgram from './webgl/program/YUVProgram'
+import VideoProgram from './webgl/program/VideoProgram'
 
-export default abstract class WebGLYUVRender extends WebGLRender {
+export default abstract class WebGLDefaultRender extends WebGLRender {
 
-  declare protected program: YUVProgram
+  declare protected program: VideoProgram
 
-  protected yTexture: YUVTexture
+  protected yTexture: VideoTexture
 
-  protected uTexture: YUVTexture
+  protected uTexture: VideoTexture
 
-  protected vTexture: YUVTexture
+  protected vTexture: VideoTexture
 
-  protected aTexture: YUVTexture
+  protected aTexture: VideoTexture
 
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGLRenderOptions) {
     super(canvas, options)
   }
 
-  protected useProgram() {
+  protected useProgram(useUint: boolean = false) {
 
     super.useProgram()
 
-    this.yTexture = new YUVTexture(this.gl)
+    this.yTexture = new VideoTexture(this.gl)
+    if (useUint) {
+      this.yTexture.setFilter(this.gl.NEAREST)
+    }
     this.yTexture.bind(0)
     this.yTexture.init()
     this.program.bindYTexture(0)
 
-    this.uTexture = new YUVTexture(this.gl)
+    this.uTexture = new VideoTexture(this.gl)
+    if (useUint) {
+      this.uTexture.setFilter(this.gl.NEAREST)
+    }
     this.uTexture.bind(1)
     this.uTexture.init()
     this.program.bindUTexture(1)
 
-    this.vTexture = new YUVTexture(this.gl)
+    this.vTexture = new VideoTexture(this.gl)
+    if (useUint) {
+      this.vTexture.setFilter(this.gl.NEAREST)
+    }
     this.vTexture.bind(2)
     this.vTexture.init()
     this.program.bindVTexture(2)
 
-    this.aTexture = new YUVTexture(this.gl)
+    this.aTexture = new VideoTexture(this.gl)
+    if (useUint) {
+      this.aTexture.setFilter(this.gl.NEAREST)
+    }
     this.aTexture.bind(3)
     this.aTexture.init()
     this.program.bindATexture(3)

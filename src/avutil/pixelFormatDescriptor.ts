@@ -25,7 +25,7 @@
 
 import { AVPixelFormat } from './pixfmt'
 
-export const enum PixelFormatFlags {
+export const enum AVPixelFormatFlags {
   /**
    * Pixel format is big-endian.
    */
@@ -67,8 +67,7 @@ export const enum PixelFormatFlags {
   FLOAT = 1 << 9
 }
 
-export type PixelFormatDescriptor = {
-  nbComponents: number
+export type AVPixelFormatDescriptor = {
   /**
    * Amount to shift the luma width right to find the chroma width.
    * For YV12 this is 1 for example.
@@ -131,1266 +130,668 @@ export type PixelFormatDescriptor = {
   }[]
 }
 
-export const PixelFormatDescriptorsMap: Partial<Record<AVPixelFormat, PixelFormatDescriptor>> = {
-  /**
-   * 1 字节
-   */
-  [AVPixelFormat.AV_PIX_FMT_YUV420P]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUVJ420P]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV422P]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUVJ422P]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV444P]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUVJ444P]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      }
-    ]
-  },
+const cache: Map<AVPixelFormat, AVPixelFormatDescriptor> = new Map()
 
-  [AVPixelFormat.AV_PIX_FMT_NV12]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 1,
-        step: 2,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 1,
-        step: 2,
-        offset: 1,
-        shift: 0,
-        depth: 8
-      }
-    ]
-  },
-
-  /**
-   * 2 字节 yuv420
-   */
-  [AVPixelFormat.AV_PIX_FMT_YUV420P9BE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV420P9LE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV420P10BE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV420P10LE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV420P12BE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV420P12LE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV420P14BE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV420P14LE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV420P16BE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV420P16LE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      }
-    ]
-  },
-
-  /**
-   * 2 字节 yuv422
-   */
-  [AVPixelFormat.AV_PIX_FMT_YUV422P9BE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV422P9LE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV422P10BE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV422P10LE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV422P12BE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV422P12LE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV422P14BE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV422P14LE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV422P16BE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV422P16LE]: {
-    nbComponents: 3,
-    log2ChromaW: 1,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      }
-    ]
-  },
-
-  /**
-   * 2 字节 yuv444
-   */
-  [AVPixelFormat.AV_PIX_FMT_YUV444P9BE]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV444P9LE]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 9
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV444P10BE]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV444P10LE]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 10
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV444P12BE]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV444P12LE]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 12
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV444P14BE]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV444P14LE]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 14
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV444P16BE]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.BIG_ENDIAN | PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      }
-    ]
-  },
-  [AVPixelFormat.AV_PIX_FMT_YUV444P16LE]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.PLANER,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 16
-      }
-    ]
-  },
-
-  [AVPixelFormat.AV_PIX_FMT_RGBA]: {
-    nbComponents: 4,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.RGB | PixelFormatFlags.ALPHA,
-    comp: [
-      {
-        plane: 0,
-        step: 4,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 0,
-        step: 4,
-        offset: 1,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 0,
-        step: 4,
-        offset: 2,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 0,
-        step: 4,
-        offset: 3,
-        shift: 0,
-        depth: 8
-      }
-    ]
-  },
-
-  [AVPixelFormat.AV_PIX_FMT_RGB0]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.RGB,
-    comp: [
-      {
-        plane: 0,
-        step: 4,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 0,
-        step: 4,
-        offset: 1,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 0,
-        step: 4,
-        offset: 2,
-        shift: 0,
-        depth: 8
-      }
-    ]
-  },
-
-  [AVPixelFormat.AV_PIX_FMT_BGRA]: {
-    nbComponents: 4,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.RGB | PixelFormatFlags.ALPHA,
-    comp: [
-      {
-        plane: 0,
-        step: 4,
-        offset: 2,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 0,
-        step: 4,
-        offset: 1,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 0,
-        step: 4,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 0,
-        step: 4,
-        offset: 3,
-        shift: 0,
-        depth: 8
-      }
-    ]
-  },
-
-  [AVPixelFormat.AV_PIX_FMT_BGR0]: {
-    nbComponents: 3,
-    log2ChromaW: 0,
-    log2ChromaH: 0,
-    flags: PixelFormatFlags.RGB,
-    comp: [
-      {
-        plane: 0,
-        step: 4,
-        offset: 2,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 0,
-        step: 4,
-        offset: 1,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 0,
-        step: 4,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      }
-    ]
-  },
-
-  [AVPixelFormat.AV_PIX_FMT_YUVA420P]: {
-    nbComponents: 4,
-    log2ChromaW: 1,
-    log2ChromaH: 1,
-    flags: PixelFormatFlags.PLANER | PixelFormatFlags.ALPHA,
-    comp: [
-      {
-        plane: 0,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 1,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 2,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      },
-      {
-        plane: 3,
-        step: 1,
-        offset: 0,
-        shift: 0,
-        depth: 8
-      }
-    ]
+export function getAVPixelFormatDescriptor(format: AVPixelFormat) {
+  if (cache.has(format)) {
+    return cache.get(format)
   }
+  const data = AVPixelFormatDescriptorsData[format]
+  if (!data) {
+    return
+  }
+  const descriptor: AVPixelFormatDescriptor = {
+    log2ChromaW: data[0],
+    log2ChromaH: data[1],
+    flags: data[2],
+    comp: data[3].map((com) => {
+      return {
+        plane: com[0],
+        step: com[1],
+        offset: com[2],
+        shift: com[3],
+        depth: com[4]
+      }
+    })
+  }
+  cache.set(format, descriptor)
+  return descriptor
 }
 
+type DescriptorsPlane = [
+  plane: number,
+  step: number,
+  offset: number,
+  shift: number,
+  depth: number
+]
+
+type DescriptorsData = [
+  log2ChromaW: number,
+  log2ChromaH: number,
+  flags: number,
+  comp: DescriptorsPlane[]
+]
+
+const PlaneYUV8: DescriptorsPlane[] = [
+  [0, 1, 0, 0, 8],
+  [1, 1, 0, 0, 8],
+  [2, 1, 0, 0, 8]
+]
+const PlaneYUVA8: DescriptorsPlane[] = [
+  ...PlaneYUV8,
+  [3, 1, 0, 0, 8]
+]
+const PlaneYUV9: DescriptorsPlane[] = [
+  [0, 2, 0, 0, 9],
+  [1, 2, 0, 0, 9],
+  [2, 2, 0, 0, 9]
+]
+const PlaneYUVA9: DescriptorsPlane[] = [
+  ...PlaneYUV9,
+  [3, 2, 0, 0, 9]
+]
+const PlaneYUV10: DescriptorsPlane[] = [
+  [0, 2, 0, 0, 10],
+  [1, 2, 0, 0, 10],
+  [2, 2, 0, 0, 10]
+]
+const PlaneYUVA10: DescriptorsPlane[] = [
+  ...PlaneYUV10,
+  [3, 2, 0, 0, 10]
+]
+const PlaneYUV12: DescriptorsPlane[] = [
+  [0, 2, 0, 0, 12],
+  [1, 2, 0, 0, 12],
+  [2, 2, 0, 0, 12]
+]
+const PlaneYUVA12: DescriptorsPlane[] = [
+  ...PlaneYUV12,
+  [3, 2, 0, 0, 12]
+]
+const PlaneYUV14: DescriptorsPlane[] = [
+  [0, 2, 0, 0, 14],
+  [1, 2, 0, 0, 14],
+  [2, 2, 0, 0, 14]
+]
+const PlaneYUV16: DescriptorsPlane[] = [
+  [0, 2, 0, 0, 16],
+  [1, 2, 0, 0, 16],
+  [2, 2, 0, 0, 16]
+]
+const PlaneYUVA16: DescriptorsPlane[] = [
+  ...PlaneYUV16,
+  [3, 2, 0, 0, 16]
+]
+const PlaneNV12: DescriptorsPlane[] = [
+  [0, 1, 0, 0, 8],
+  [1, 2, 0, 0, 8],
+  [1, 2, 1, 0, 8]
+]
+const PlaneNV21: DescriptorsPlane[] = [
+  [0, 1, 0, 0, 8],
+  [1, 2, 1, 0, 8],
+  [1, 2, 0, 0, 8]
+]
+const PlaneAYUV16: DescriptorsPlane[] = [
+  [0, 8, 2, 0, 16],
+  [0, 8, 4, 0, 16],
+  [0, 8, 6, 0, 16],
+  [0, 8, 0, 0, 16]
+]
+const PlaneP010: DescriptorsPlane[] = [
+  [0, 2, 0, 6, 10],
+  [1, 4, 0, 6, 10 ],
+  [1, 4, 2, 6, 10]
+]
+const PlaneP012: DescriptorsPlane[] = [
+  [0, 2, 0, 4, 12],
+  [1, 4, 0, 4, 12],
+  [1, 4, 2, 4, 12]
+]
+const PlaneP016: DescriptorsPlane[] = [
+  [0, 2, 0, 0, 16],
+  [1, 4, 0, 0, 16],
+  [1, 4, 2, 0, 16]
+]
+const PlaneRGBA8: DescriptorsPlane[] = [
+  [0, 4, 0, 0, 8],
+  [0, 4, 1, 0, 8],
+  [0, 4, 2, 0, 8],
+  [0, 4, 3, 0, 8]
+]
+const PlaneRGB8: DescriptorsPlane[] = [
+  [0, 3, 0, 0, 8],
+  [0, 3, 1, 0, 8],
+  [0, 3, 2, 0, 8]
+]
+const PlaneRGB08: DescriptorsPlane[] = [
+  [0, 4, 0, 0, 8],
+  [0, 4, 1, 0, 8],
+  [0, 4, 2, 0, 8]
+]
+const PlaneRGBA16: DescriptorsPlane[] = [
+  [0, 8, 0, 0, 16],
+  [0, 8, 2, 0, 16],
+  [0, 8, 4, 0, 16],
+  [0, 8, 6, 0, 16]
+]
+const PlaneARGB8: DescriptorsPlane[] = [
+  [0, 4, 1, 0, 8],
+  [0, 4, 2, 0, 8],
+  [0, 4, 3, 0, 8],
+  [0, 4, 0, 0, 8]
+]
+const PlaneBGRA8: DescriptorsPlane[] = [
+  [0, 4, 2, 0, 8],
+  [0, 4, 1, 0, 8],
+  [0, 4, 0, 0, 8],
+  [0, 4, 3, 0, 8]
+]
+const PlaneBGR8: DescriptorsPlane[] = [
+  [0, 3, 2, 0, 8],
+  [0, 3, 1, 0, 8],
+  [0, 3, 0, 0, 8],
+]
+const PlaneBGR08: DescriptorsPlane[] = [
+  [0, 4, 2, 0, 8],
+  [0, 4, 1, 0, 8],
+  [0, 4, 0, 0, 8],
+]
+const PlaneBGRA16: DescriptorsPlane[] = [
+  [0, 8, 4, 0, 16],
+  [0, 8, 2, 0, 16],
+  [0, 8, 0, 0, 16],
+  [0, 8, 6, 0, 16]
+]
+const PlaneABGR8: DescriptorsPlane[] = [
+  [0, 4, 3, 0, 8],
+  [0, 4, 2, 0, 8],
+  [0, 4, 1, 0, 8],
+  [0, 4, 0, 0, 8]
+]
+const PlaneBGRP8: DescriptorsPlane[] = [
+  [2, 1, 0, 0, 8],
+  [0, 1, 0, 0, 8],
+  [1, 1, 0, 0, 8]
+]
+const PlaneBGRAP8: DescriptorsPlane[] = [
+  [2, 1, 0, 0, 8],
+  [0, 1, 0, 0, 8],
+  [1, 1, 0, 0, 8],
+  [3, 1, 0, 0, 8]
+]
+const PlaneBGRP9: DescriptorsPlane[] = [
+  [2, 2, 0, 0, 9],
+  [0, 2, 0, 0, 9],
+  [1, 2, 0, 0, 9]
+]
+const PlaneBGRP10: DescriptorsPlane[] = [
+  [2, 2, 0, 0, 10],
+  [0, 2, 0, 0, 10],
+  [1, 2, 0, 0, 10]
+]
+const PlaneBGRP12: DescriptorsPlane[] = [
+  [2, 2, 0, 0, 12],
+  [0, 2, 0, 0, 12],
+  [1, 2, 0, 0, 12]
+]
+const PlaneBGRP14: DescriptorsPlane[] = [
+  [2, 2, 0, 0, 14],
+  [0, 2, 0, 0, 14],
+  [1, 2, 0, 0, 14]
+]
+const PlaneBGRP16: DescriptorsPlane[] = [
+  [2, 2, 0, 0, 16],
+  [0, 2, 0, 0, 16],
+  [1, 2, 0, 0, 16]
+]
+const PlaneBGRAP16: DescriptorsPlane[] = [
+  [2, 2, 0, 0, 16],
+  [0, 2, 0, 0, 16],
+  [1, 2, 0, 0, 16],
+  [3, 2, 0, 0, 16]
+]
+
+const AVPixelFormatDescriptorsData: Partial<Record<AVPixelFormat, DescriptorsData>> = {
+  [AVPixelFormat.AV_PIX_FMT_YUV410P]: [
+    2, 2, AVPixelFormatFlags.PLANER,
+    PlaneYUV8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV420P]: [
+    1, 1, AVPixelFormatFlags.PLANER,
+    PlaneYUV8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVJ420P]: [
+    1, 1, AVPixelFormatFlags.PLANER,
+    PlaneYUV8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV422P]: [
+    1, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVJ422P]: [
+    1, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV444P]: [
+    0, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVJ444P]: [
+    0, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_NV12]: [
+    1, 1, AVPixelFormatFlags.PLANER,
+    PlaneNV12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_NV21]: [
+    1, 1, AVPixelFormatFlags.PLANER,
+    PlaneNV21
+  ],
+  [AVPixelFormat.AV_PIX_FMT_NV24]: [
+    0, 0, AVPixelFormatFlags.PLANER,
+    PlaneNV12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_NV42]: [
+    0, 0, AVPixelFormatFlags.PLANER,
+    PlaneNV21
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV420P9BE]: [
+    1, 1, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV420P9LE]: [
+    1, 1, AVPixelFormatFlags.PLANER,
+    PlaneYUV9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV422P9BE]: [
+    1, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV422P9LE]: [
+    1, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV444P9BE]: [
+    0, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV444P9LE]: [
+    0, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV420P10BE]: [
+    1, 1, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV420P10LE]: [
+    1, 1, AVPixelFormatFlags.PLANER,
+    PlaneYUV10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV422P10BE]: [
+    1, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV422P10LE]: [
+    1, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV444P10BE]: [
+    0, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV444P10LE]: [
+    0, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV420P12BE]: [
+    1, 1, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV420P12LE]: [
+    1, 1, AVPixelFormatFlags.PLANER,
+    PlaneYUV12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV422P12BE]: [
+    1, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV422P12LE]: [
+    1, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV444P12BE]: [
+    0, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV444P12LE]: [
+    0, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV420P14BE]: [
+    1, 1, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV14
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV420P14LE]: [
+    1, 1, AVPixelFormatFlags.PLANER,
+    PlaneYUV14
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV422P14BE]: [
+    1, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV14
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV422P14LE]: [
+    1, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV14
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV444P14BE]: [
+    0, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV14
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV444P14LE]: [
+    0, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV14
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV420P16BE]: [
+    1, 1, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV420P16LE]: [
+    1, 1, AVPixelFormatFlags.PLANER,
+    PlaneYUV16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV422P16BE]: [
+    1, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV422P16LE]: [
+    1, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV444P16BE]: [
+    0, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneYUV16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUV444P16LE]: [
+    0, 0, AVPixelFormatFlags.PLANER,
+    PlaneYUV16
+  ],
+
+  [AVPixelFormat.AV_PIX_FMT_YUVA420P]: [
+    1, 1, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA422P]: [
+    1, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA444P]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA420P9BE]: [
+    1, 1, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA420P9LE]: [
+    1, 1, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA422P9BE]: [
+    1, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA422P9LE]: [
+    1, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA444P9BE]: [
+    0, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA444P9LE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA420P10BE]: [
+    1, 1, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA420P10LE]: [
+    1, 1, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA422P10BE]: [
+    1, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA422P10LE]: [
+    1, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA444P10BE]: [
+    0, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA444P10LE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA422P12BE]: [
+    1, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA422P12LE]: [
+    1, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA444P12BE]: [
+    0, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA444P12LE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA420P16BE]: [
+    1, 1, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA420P16LE]: [
+    1, 1, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA422P16BE]: [
+    1, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA422P16LE]: [
+    1, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA444P16BE]: [
+    0, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA444P16LE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_AYUV64BE]: [
+    0, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.ALPHA,
+    PlaneAYUV16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_AYUV64LE]: [
+    0, 0, AVPixelFormatFlags.ALPHA,
+    PlaneAYUV16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_P010BE]: [
+    1, 1, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneP010
+  ],
+  [AVPixelFormat.AV_PIX_FMT_P010LE]: [
+    1, 1, AVPixelFormatFlags.PLANER,
+    PlaneP010
+  ],
+  [AVPixelFormat.AV_PIX_FMT_P012BE]: [
+    1, 1, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneP012
+  ],
+  [AVPixelFormat.AV_PIX_FMT_P012LE]: [
+    1, 1, AVPixelFormatFlags.PLANER,
+    PlaneP012
+  ],
+  [AVPixelFormat.AV_PIX_FMT_P016BE]: [
+    1, 1, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER,
+    PlaneP016
+  ],
+  [AVPixelFormat.AV_PIX_FMT_P016LE]: [
+    1, 1, AVPixelFormatFlags.PLANER,
+    PlaneP016
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GRAY8]: [
+    0, 0, 0,
+    [
+      [0, 1, 0, 0, 8]
+    ]
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GRAY16BE]: [
+    0, 0, AVPixelFormatFlags.BIG_ENDIAN,
+    [
+      [0, 2, 0, 0, 16]
+    ]
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GRAY16LE]: [
+    0, 0, 0,
+    [
+      [0, 2, 0, 0, 16]
+    ]
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YA8]: [
+    0, 0, AVPixelFormatFlags.ALPHA,
+    [
+      [0, 2, 0, 0, 8],
+      [0, 2, 1, 0, 8]
+    ]
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YA16BE]: [
+    0, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.ALPHA,
+    [
+      [0, 4, 0, 0, 16],
+      [0, 4, 2, 0, 16]
+    ]
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YA16LE]: [
+    0, 0, AVPixelFormatFlags.ALPHA,
+    [
+      [0, 4, 0, 0, 16],
+      [0, 4, 2, 0, 16]
+    ]
+  ],
+  [AVPixelFormat.AV_PIX_FMT_RGBA]: [
+    0, 0, AVPixelFormatFlags.RGB | AVPixelFormatFlags.ALPHA,
+    PlaneRGBA8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_ARGB]: [
+    0, 0, AVPixelFormatFlags.RGB | AVPixelFormatFlags.ALPHA,
+    PlaneARGB8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_RGBA64BE]: [
+    0, 0, AVPixelFormatFlags.RGB | AVPixelFormatFlags.ALPHA | AVPixelFormatFlags.BIG_ENDIAN,
+    PlaneRGBA16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_RGBA64LE]: [
+    0, 0, AVPixelFormatFlags.RGB | AVPixelFormatFlags.ALPHA,
+    PlaneRGBA16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_BGRA]: [
+    0, 0, AVPixelFormatFlags.RGB | AVPixelFormatFlags.ALPHA,
+    PlaneBGRA8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_ABGR]: [
+    0, 0, AVPixelFormatFlags.RGB | AVPixelFormatFlags.ALPHA,
+    PlaneABGR8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_BGRA64BE]: [
+    0, 0, AVPixelFormatFlags.RGB | AVPixelFormatFlags.ALPHA | AVPixelFormatFlags.BIG_ENDIAN,
+    PlaneBGRA16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_BGRA64LE]: [
+    0, 0, AVPixelFormatFlags.RGB | AVPixelFormatFlags.ALPHA,
+    PlaneBGRA16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_RGB24]: [
+    0, 0, AVPixelFormatFlags.RGB,
+    PlaneRGB8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_BGR24]: [
+    0, 0, AVPixelFormatFlags.RGB,
+    PlaneBGR8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_RGB0]: [
+    0, 0, AVPixelFormatFlags.RGB,
+    PlaneRGB08
+  ],
+  [AVPixelFormat.AV_PIX_FMT_BGR0]: [
+    0, 0, AVPixelFormatFlags.RGB,
+    PlaneBGR08
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRP]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB,
+    PlaneBGRP8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRAP]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB | AVPixelFormatFlags.ALPHA,
+    PlaneBGRAP8
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRP9BE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB | AVPixelFormatFlags.BIG_ENDIAN,
+    PlaneBGRP9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRP9LE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB,
+    PlaneBGRP9
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRP10BE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB | AVPixelFormatFlags.BIG_ENDIAN,
+    PlaneBGRP10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRP10LE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB,
+    PlaneBGRP10
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRP12BE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB | AVPixelFormatFlags.BIG_ENDIAN,
+    PlaneBGRP12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRP12LE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB,
+    PlaneBGRP12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRP14BE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB | AVPixelFormatFlags.BIG_ENDIAN,
+    PlaneBGRP14
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRP14LE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB,
+    PlaneBGRP14
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRP16BE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB | AVPixelFormatFlags.BIG_ENDIAN,
+    PlaneBGRP16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRP16LE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB,
+    PlaneBGRP16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRAP16BE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB | AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.ALPHA,
+    PlaneBGRAP16
+  ],
+  [AVPixelFormat.AV_PIX_FMT_GBRAP16LE]: [
+    0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.RGB | AVPixelFormatFlags.ALPHA,
+    PlaneBGRAP16
+  ]
+}

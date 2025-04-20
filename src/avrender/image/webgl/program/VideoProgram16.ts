@@ -1,5 +1,5 @@
 /*
- * libmedia YUV16Program
+ * libmedia VideoProgram16
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -23,12 +23,10 @@
  *
  */
 
-import HdrMetadata from '../../../image/struct/HdrMetadata'
-import YUVProgram from './YUVProgram'
+import HdrMetadata from '../../struct/HdrMetadata'
+import VideoProgram from './VideoProgram'
 
-export default class YUV16Program extends YUVProgram {
-
-  private maxUniformLocation: WebGLUniformLocation
+export default class VideoProgram16 extends VideoProgram {
 
   private offsetLocation: WebGLUniformLocation
   private multiplierLocation: WebGLUniformLocation
@@ -39,13 +37,12 @@ export default class YUV16Program extends YUVProgram {
   private nitsToSdrRelativeFactorLocation: WebGLUniformLocation
   private sdrRelativeToNitsFactorLocation: WebGLUniformLocation
 
-  constructor(yuvFragmentSource: string) {
-    super(yuvFragmentSource)
+  constructor(fragmentSource: string, vertexSource?: string) {
+    super(fragmentSource, vertexSource)
   }
 
   link(gl: WebGLRenderingContext) {
     super.link(gl)
-    this.maxUniformLocation = this.gl.getUniformLocation(this.program, 'v_max')
     this.offsetLocation =  this.gl.getUniformLocation(this.program, 'offset')
     this.multiplierLocation =  this.gl.getUniformLocation(this.program, 'multiplier')
     this.pqTonemapALocation =  this.gl.getUniformLocation(this.program, 'pq_tonemap_a')
@@ -53,10 +50,6 @@ export default class YUV16Program extends YUVProgram {
     this.hlgOOTFGammaMinusOneLocation =  this.gl.getUniformLocation(this.program, 'hlg_ootf_gamma_minus_one')
     this.nitsToSdrRelativeFactorLocation =  this.gl.getUniformLocation(this.program, 'nits_to_sdr_relative_factor')
     this.sdrRelativeToNitsFactorLocation =  this.gl.getUniformLocation(this.program, 'sdr_relative_to_nits_factor')
-  }
-
-  setMax(max: number) {
-    this.gl.uniform1f(this.maxUniformLocation, max)
   }
 
   setMetaData(data: HdrMetadata) {

@@ -23,17 +23,17 @@
  *
  */
 
-import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
+import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
 import { AVMediaType } from '../codec'
 import AVCodecParameters from '../struct/avcodecparameters'
-import { AVColorTransferCharacteristic } from '../pixfmt'
+import { AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
 
 export default function isHdr(parameters: pointer<AVCodecParameters>) {
   if (parameters.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO) {
     return false
   }
 
-  const descriptor = PixelFormatDescriptorsMap[parameters.format]
+  const descriptor = getAVPixelFormatDescriptor(parameters.format as AVPixelFormat)
   if (!descriptor || descriptor.comp[0].depth <= 8) {
     return false
   }

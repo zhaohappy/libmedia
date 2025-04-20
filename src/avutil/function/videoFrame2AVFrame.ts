@@ -25,7 +25,7 @@
 import { createAVFrame, getVideoBuffer, unrefAVFrame } from '../util/avframe'
 import AVFrame from '../struct/avframe'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
-import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
+import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
 import { getHeap } from 'cheap/heap'
 import { AV_TIME_BASE } from '../constant'
 
@@ -126,9 +126,9 @@ export async function videoFrame2AVFrame(videoFrame: VideoFrame, avframe: pointe
 
   getVideoBuffer(avframe)
 
-  const des = PixelFormatDescriptorsMap[avframe.format as AVPixelFormat]
+  const des = getAVPixelFormatDescriptor(avframe.format as AVPixelFormat)
   const layout: PlaneLayout[] = []
-  for (let i = 0; i < des.nbComponents; i++) {
+  for (let i = 0; i < des.comp.length; i++) {
     if (des.comp[i].plane >= i) {
       layout.push({
         offset: reinterpret_cast<double>(avframe.data[i]),

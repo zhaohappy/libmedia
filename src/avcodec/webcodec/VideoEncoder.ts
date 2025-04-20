@@ -33,7 +33,7 @@ import { avQ2D, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { avframe2VideoFrame } from 'avutil/function/avframe2VideoFrame'
 import { createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
 import { BitFormat } from 'avutil/codecs/h264'
-import { PixelFormatDescriptorsMap, PixelFormatFlags } from 'avutil/pixelFormatDescriptor'
+import { getAVPixelFormatDescriptor, AVPixelFormatFlags } from 'avutil/pixelFormatDescriptor'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
 import encodedVideoChunk2AVPacket from 'avutil/function/encodedVideoChunk2AVPacket'
@@ -46,6 +46,7 @@ import * as av1 from 'avutil/codecs/av1'
 import * as vp9 from 'avutil/codecs/vp9'
 import isPointer from 'cheap/std/function/isPointer'
 import { AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { AVPixelFormat } from 'avutil/pixfmt'
 
 export type WebVideoEncoderOptions = {
   onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
@@ -181,7 +182,7 @@ export default class WebVideoEncoder {
   public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational): Promise<int32> {
     this.currentError = null
 
-    const descriptor = PixelFormatDescriptorsMap[parameters.format]
+    const descriptor = getAVPixelFormatDescriptor(parameters.format as AVPixelFormat)
 
     // webcodecs 目前还不支持 hdr
     if (!descriptor || descriptor.comp[0].depth > 8) {
@@ -197,7 +198,7 @@ export default class WebVideoEncoder {
       framerate: avQ2D(parameters.framerate),
       hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true),
       latencyMode: parameters.videoDelay ? 'quality' : 'realtime',
-      alpha: descriptor && (descriptor.flags & PixelFormatFlags.ALPHA) ? 'keep' : 'discard'
+      alpha: descriptor && (descriptor.flags & AVPixelFormatFlags.ALPHA) ? 'keep' : 'discard'
     }
 
     if (parameters.codecId === AVCodecID.AV_CODEC_ID_H264
@@ -352,7 +353,7 @@ export default class WebVideoEncoder {
   }
 
   static async isSupported(parameters: pointer<AVCodecParameters>, enableHardwareAcceleration: boolean) {
-    const descriptor = PixelFormatDescriptorsMap[parameters.format]
+    const descriptor = getAVPixelFormatDescriptor(parameters.format as AVPixelFormat)
     // webcodecs 目前还不支持 hdr
     if (!descriptor || descriptor.comp[0].depth > 8) {
       return false
@@ -365,7 +366,7 @@ export default class WebVideoEncoder {
       framerate: avQ2D(parameters.framerate),
       hardwareAcceleration: getHardwarePreference(enableHardwareAcceleration ?? true),
       latencyMode: parameters.videoDelay ? 'quality' : 'realtime',
-      alpha: descriptor && (descriptor.flags & PixelFormatFlags.ALPHA) ? 'keep' : 'discard'
+      alpha: descriptor && (descriptor.flags & AVPixelFormatFlags.ALPHA) ? 'keep' : 'discard'
     }
 
     if (parameters.codecId === AVCodecID.AV_CODEC_ID_H264

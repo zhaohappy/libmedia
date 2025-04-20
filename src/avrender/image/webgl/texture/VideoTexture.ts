@@ -1,5 +1,5 @@
 /*
- * libmedia RGBTexture
+ * libmedia VideoTexture
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -24,8 +24,9 @@
  */
 
 import Texture from './Texture'
+import * as logger from 'common/util/logger'
 
-export default class RGBTexture extends Texture {
+export default class VideoTexture extends Texture {
 
   private filter: number
 
@@ -35,14 +36,18 @@ export default class RGBTexture extends Texture {
 
   private dataType: number
 
+  private firstUploaded: boolean
+
+  private pbo: WebGLBuffer
+
   constructor(
     gl: WebGLRenderingContext | WebGL2RenderingContext,
     width?: number, height?: number
   ) {
     super(gl, width, height)
-    this.format = this.gl.RGB
+    this.format = this.gl.LUMINANCE
     this.filter = this.gl.LINEAR
-    this.internalformat = this.gl.RGB
+    this.internalformat = this.gl.LUMINANCE
     this.dataType = this.gl.UNSIGNED_BYTE
   }
 
@@ -51,6 +56,7 @@ export default class RGBTexture extends Texture {
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.filter)
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE)
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE)
+    this.firstUploaded = false
   }
 
   setFormat(format: number) {
@@ -69,11 +75,52 @@ export default class RGBTexture extends Texture {
 
   fill(data: Uint8Array | Uint16Array) {
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture)
-    this.setUnpackAlignment()
-    this.gl.texImage2D(
-      this.gl.TEXTURE_2D, 0, this.internalformat, this.width, this.height, 0,
-      this.format, this.dataType, data
-    )
+    if (this.firstUploaded) {
+      if (this.pbo) {
+        const gl = this.gl as WebGL2RenderingContext
+        gl.bindBuffer(gl.PIXEL_UNPACK_BUFFER, this.pbo)
+        gl.bufferSubData(gl.PIXEL_UNPACK_BUFFER, 0, data)
+        gl.texSubImage2D(
+          this.gl.TEXTURE_2D, 0, 0, 0, this.width, this.height,
+          this.format, this.dataType, 0
+        )
+      }
+      else {
+        this.gl.texSubImage2D(
+          this.gl.TEXTURE_2D, 0, 0, 0, this.width, this.height,
+          this.format, this.dataType, data
+        )
+      }
+    }
+    else {
+      if (this.gl instanceof WebGL2RenderingContext) {
+        try {
+          this.pbo = this.gl.createBuffer()
+          this.gl.bindBuffer(this.gl.PIXEL_UNPACK_BUFFER, this.pbo)
+          this.gl.bufferData(this.gl.PIXEL_UNPACK_BUFFER, data, this.gl.STREAM_DRAW)
+          this.gl.texImage2D(
+            this.gl.TEXTURE_2D, 0, this.internalformat, this.width, this.height, 0,
+            this.format, this.dataType, 0
+          )
+        }
+        catch (error) {
+          this.pbo = null
+          logger.warn('not support pbo')
+          this.setUnpackAlignment()
+          this.gl.texImage2D(
+            this.gl.TEXTURE_2D, 0, this.internalformat, this.width, this.height, 0,
+            this.format, this.dataType, data as Uint8Array
+          )
+        }
+      }
+      else {
+        this.setUnpackAlignment()
+        this.gl.texImage2D(
+          this.gl.TEXTURE_2D, 0, this.internalformat, this.width, this.height, 0,
+          this.format, this.dataType, data as Uint8Array
+        )
+      }
+      this.firstUploaded = true
+    }
   }
-
 }

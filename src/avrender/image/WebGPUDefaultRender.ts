@@ -1,5 +1,5 @@
 /*
- * libmedia WebGPURGBRender
+ * libmedia WebGPUDefaultRender
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -27,9 +27,15 @@ import AVFrame from 'avutil/struct/avframe'
 import vertexSource from './webgpu/wgsl/vertex.wgsl'
 import WebGPURender, { WebGPURenderOptions } from './WebGPURender'
 
-export default abstract class WebGPURGBRender extends WebGPURender {
+export default abstract class WebGPUDefaultRender extends WebGPURender {
 
-  protected rgbTexture: GPUTexture
+  protected yTexture: GPUTexture
+
+  protected uTexture: GPUTexture
+
+  protected vTexture: GPUTexture
+
+  protected aTexture: GPUTexture
 
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions) {
     super(canvas, options)
@@ -37,7 +43,7 @@ export default abstract class WebGPURGBRender extends WebGPURender {
   }
 
   protected generateBindGroup(): void {
-    if (!this.rgbTexture) {
+    if (!this.yTexture) {
       return
     }
 
@@ -65,6 +71,35 @@ export default abstract class WebGPURGBRender extends WebGPURender {
       }
     ]
 
+    if (this.uTexture) {
+      bindGroupLayoutEntry.push({
+        binding: 3,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: {
+          sampleType: 'float'
+        }
+      })
+    }
+
+    if (this.vTexture) {
+      bindGroupLayoutEntry.push({
+        binding: 4,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: {
+          sampleType: 'float'
+        }
+      })
+    }
+    if (this.aTexture) {
+      bindGroupLayoutEntry.push({
+        binding: 5,
+        visibility: GPUShaderStage.FRAGMENT,
+        texture: {
+          sampleType: 'float'
+        }
+      })
+    }
+
     this.bindGroupLayout = this.device.createBindGroupLayout({
       entries: bindGroupLayoutEntry
     })
@@ -83,9 +118,29 @@ export default abstract class WebGPURGBRender extends WebGPURender {
       },
       {
         binding: 2,
-        resource: this.rgbTexture.createView()
+        resource: this.yTexture.createView()
       }
     ]
+
+    if (this.uTexture) {
+      bindGroupEntry.push({
+        binding: 3,
+        resource: this.uTexture.createView()
+      })
+    }
+
+    if (this.vTexture) {
+      bindGroupEntry.push({
+        binding: 4,
+        resource: this.vTexture.createView()
+      })
+    }
+    if (this.aTexture) {
+      bindGroupEntry.push({
+        binding: 5,
+        resource: this.aTexture.createView()
+      })
+    }
 
     this.bindGroup = this.device.createBindGroup({
       layout: this.bindGroupLayout,
@@ -96,9 +151,20 @@ export default abstract class WebGPURGBRender extends WebGPURender {
   protected abstract checkFrame(frame: pointer<AVFrame>): void
 
   public destroy(): void {
-    if (this.rgbTexture) {
-      this.rgbTexture.destroy()
+
+    if (this.yTexture) {
+      this.yTexture.destroy()
     }
+    if (this.uTexture) {
+      this.uTexture.destroy()
+    }
+    if (this.vTexture) {
+      this.vTexture.destroy()
+    }
+    if (this.aTexture) {
+      this.aTexture.destroy()
+    }
+
     super.destroy()
   }
 }

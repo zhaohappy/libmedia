@@ -30,7 +30,8 @@ import * as av1syntax from '../util/av1syntax'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import AVCodecParameters from '../struct/avcodecparameters'
 import BitWriter from 'common/io/BitWriter'
-import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
+import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
+import { AVPixelFormat } from '../pixfmt'
 
 export const enum AV1Profile {
   Main,
@@ -476,7 +477,7 @@ export function generateExtradata(codecpar: pointer<AVCodecParameters>, buffer: 
     bitWriter.writeU(1, params.chromaSamplePosition)
   }
   else {
-    const desc = PixelFormatDescriptorsMap[codecpar.format]
+    const desc = getAVPixelFormatDescriptor(codecpar.format as AVPixelFormat)
     bitWriter.writeU(3, codecpar.profile)
     bitWriter.writeU(5, codecpar.level)
     bitWriter.writeU(1, 0)

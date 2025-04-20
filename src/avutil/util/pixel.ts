@@ -23,7 +23,7 @@
  *
  */
 
-import { PixelFormatDescriptor, PixelFormatDescriptorsMap, PixelFormatFlags } from '../pixelFormatDescriptor'
+import { AVPixelFormatDescriptor, getAVPixelFormatDescriptor, AVPixelFormatFlags } from '../pixelFormatDescriptor'
 import { AVChromaLocation, AVPixelFormat } from '../pixfmt'
 import * as errorType from '../error'
 import { INT32_MAX } from '../constant'
@@ -42,7 +42,7 @@ export function chromaLocation2Pos(pos: AVChromaLocation) {
   }
 }
 
-function getMaxPixSteps(desc: PixelFormatDescriptor) {
+function getMaxPixSteps(desc: AVPixelFormatDescriptor) {
   const maxPixSteps: int32[] = [0, 0, 0, 0]
   const maxPixStepsComps: int32[] = [0, 0, 0, 0]
 
@@ -96,7 +96,7 @@ function setSystematicPal(pal: pointer<uint32>, pixfmt: AVPixelFormat) {
   return 0
 }
 
-function pixelGetLinesize_(width: int32, plane: int32, maxStep: int32, maxStepComp: int32, desc: PixelFormatDescriptor) {
+function pixelGetLinesize_(width: int32, plane: int32, maxStep: int32, maxStepComp: int32, desc: AVPixelFormatDescriptor) {
   if (!desc) {
     return errorType.INVALID_ARGUMENT
   }
@@ -115,7 +115,7 @@ function pixelGetLinesize_(width: int32, plane: int32, maxStep: int32, maxStepCo
 
   let linesize = maxStep * shiftedW
 
-  if (desc.flags & PixelFormatFlags.BIT_STREAM) {
+  if (desc.flags & AVPixelFormatFlags.BIT_STREAM) {
     linesize = (linesize + 7) >>> 3
   }
 
@@ -123,7 +123,7 @@ function pixelGetLinesize_(width: int32, plane: int32, maxStep: int32, maxStepCo
 }
 
 export function pixelGetLinesize(pixfmt: AVPixelFormat, width: int32, plane: int32) {
-  const desc = PixelFormatDescriptorsMap[pixfmt]
+  const desc = getAVPixelFormatDescriptor(pixfmt)
 
   if (!desc) {
     return errorType.INVALID_ARGUMENT
@@ -135,7 +135,7 @@ export function pixelGetLinesize(pixfmt: AVPixelFormat, width: int32, plane: int
 }
 
 export function pixelFillLinesizes(linesizes: pointer<int32>, pixfmt: AVPixelFormat, width: int32) {
-  const desc = PixelFormatDescriptorsMap[pixfmt]
+  const desc = getAVPixelFormatDescriptor(pixfmt)
 
   if (!desc) {
     return errorType.INVALID_ARGUMENT
@@ -158,7 +158,7 @@ export function pixelFillLinesizes(linesizes: pointer<int32>, pixfmt: AVPixelFor
 export function pixelFillPlaneSizes(sizes: pointer<size>, pixfmt: AVPixelFormat, height: int32, linesizes: pointer<int32>) {
   const hasPlane = [0, 0, 0, 0]
 
-  const desc = PixelFormatDescriptorsMap[pixfmt]
+  const desc = getAVPixelFormatDescriptor(pixfmt)
 
   if (!desc) {
     return errorType.INVALID_ARGUMENT
@@ -172,7 +172,7 @@ export function pixelFillPlaneSizes(sizes: pointer<size>, pixfmt: AVPixelFormat,
 
   sizes[0] = reinterpret_cast<size>(linesizes[0] * height)
 
-  if (desc.flags & PixelFormatFlags.PALETTE) {
+  if (desc.flags & AVPixelFormatFlags.PALETTE) {
     sizes[1] = reinterpret_cast<size>(256 * 4)
     return 0
   }
@@ -257,7 +257,7 @@ export function pixelAlloc(
   align: int32 = 1
 ) {
 
-  const desc = PixelFormatDescriptorsMap[pixfmt]
+  const desc = getAVPixelFormatDescriptor(pixfmt)
 
   if (!desc) {
     return errorType.INVALID_ARGUMENT
@@ -305,7 +305,7 @@ export function pixelAlloc(
     return ret
   }
 
-  if (desc.flags & PixelFormatFlags.PALETTE) {
+  if (desc.flags & AVPixelFormatFlags.PALETTE) {
     if (align < 4) {
       avFree(buf)
       defer()
@@ -314,7 +314,7 @@ export function pixelAlloc(
     setSystematicPal(reinterpret_cast<pointer<uint32>>(pointers[1]), pixfmt)
   }
 
-  if ((desc.flags & PixelFormatFlags.PALETTE)
+  if ((desc.flags & AVPixelFormatFlags.PALETTE)
     && pointers[1]
     && pointers[1] - pointers[0] > linesizes[0] * h
   ) {
@@ -332,7 +332,7 @@ export function pixelAlloc(
 }
 
 export function pixelGetSize(pixfmt: AVPixelFormat, width: int32, height: int32, align: int32) {
-  const desc = PixelFormatDescriptorsMap[pixfmt]
+  const desc = getAVPixelFormatDescriptor(pixfmt)
 
   if (!desc) {
     return errorType.INVALID_ARGUMENT

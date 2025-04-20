@@ -35,7 +35,7 @@ import { getChannelLayoutNBChannels } from './channel'
 import { sampleFormatGetLinesize, sampleFormatIsPlanar } from './sample'
 import { AVBufferRef } from '../struct/avbuffer'
 import * as errorType from '../error'
-import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
+import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
 import * as stack from 'cheap/stack'
 import { pixelFillLinesizes, pixelFillPlaneSizes, pixelFillPointer } from './pixel'
 import alignFunc from 'common/math/align'
@@ -181,7 +181,7 @@ export function getAVFrameDefault(frame: pointer<AVFrame>) {
 }
 
 export function getVideoBuffer(frame: pointer<AVFrame>, algin: int32 = 0) {
-  const desc = PixelFormatDescriptorsMap[frame.format]
+  const desc = getAVPixelFormatDescriptor(frame.format)
 
   if (!desc) {
     return errorType.INVALID_ARGUMENT

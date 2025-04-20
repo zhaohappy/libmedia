@@ -30,70 +30,55 @@
       "require": "./dist/cjs/image/ImageRender.js",
       "types": "./dist/esm/image/ImageRender.d.ts"
     },
-    "./image/WebGLRGB8Render": {
-      "import": "./dist/esm/image/WebGLRGB8Render.js",
-      "require": "./dist/cjs/image/WebGLRGB8Render.js",
-      "types": "./dist/esm/image/WebGLRGB8Render.d.ts"
-    },
-    "./image/WebGLRGBRender": {
-      "import": "./dist/esm/image/WebGLRGBRender.js",
-      "require": "./dist/cjs/image/WebGLRGBRender.js",
-      "types": "./dist/esm/image/WebGLRGBRender.d.ts"
-    },
     "./image/WebGLRender": {
       "import": "./dist/esm/image/WebGLRender.js",
       "require": "./dist/cjs/image/WebGLRender.js",
       "types": "./dist/esm/image/WebGLRender.d.ts"
     },
-    "./image/WebGLYUV16Render": {
-      "import": "./dist/esm/image/WebGLYUV16Render.js",
-      "require": "./dist/cjs/image/WebGLYUV16Render.js",
-      "types": "./dist/esm/image/WebGLYUV16Render.d.ts"
+    "./image/WebGLDefault16Render": {
+      "import": "./dist/esm/image/WebGLDefault16Render.js",
+      "require": "./dist/cjs/image/WebGLDefault16Render.js",
+      "types": "./dist/esm/image/WebGLDefault16Render.d.ts"
     },
-    "./image/WebGLYUV8Render": {
-      "import": "./dist/esm/image/WebGLYUV8Render.js",
-      "require": "./dist/cjs/image/WebGLYUV8Render.js",
-      "types": "./dist/esm/image/WebGLYUV8Render.d.ts"
+    "./image/WebGLDefault8Render": {
+      "import": "./dist/esm/image/WebGLDefault8Render.js",
+      "require": "./dist/cjs/image/WebGLDefault8Render.js",
+      "types": "./dist/esm/image/WebGLDefault8Render.d.ts"
     },
-    "./image/WebGLYUVRender": {
-      "import": "./dist/esm/image/WebGLYUVRender.js",
-      "require": "./dist/cjs/image/WebGLYUVRender.js",
-      "types": "./dist/esm/image/WebGLYUVRender.d.ts"
+    "./image/WebGLDefaultRender": {
+      "import": "./dist/esm/image/WebGLDefaultRender.js",
+      "require": "./dist/cjs/image/WebGLDefaultRender.js",
+      "types": "./dist/esm/image/WebGLDefaultRender.d.ts"
     },
     "./image/WebGPUExternalRender": {
       "import": "./dist/esm/image/WebGPUExternalRender.js",
       "require": "./dist/cjs/image/WebGPUExternalRender.js",
       "types": "./dist/esm/image/WebGPUExternalRender.d.ts"
     },
-    "./image/WebGPURGB8Render": {
-      "import": "./dist/esm/image/WebGPURGB8Render.js",
-      "require": "./dist/cjs/image/WebGPURGB8Render.js",
-      "types": "./dist/esm/image/WebGPURGB8Render.d.ts"
-    },
-    "./image/WebGPURGBRender": {
-      "import": "./dist/esm/image/WebGPURGBRender.js",
-      "require": "./dist/cjs/image/WebGPURGBRender.js",
-      "types": "./dist/esm/image/WebGPURGBRender.d.ts"
+    "./image/WritableStreamRender": {
+      "import": "./dist/esm/image/WritableStreamRender.js",
+      "require": "./dist/cjs/image/WritableStreamRender.js",
+      "types": "./dist/esm/image/WritableStreamRender.d.ts"
     },
     "./image/WebGPURender": {
       "import": "./dist/esm/image/WebGPURender.js",
       "require": "./dist/cjs/image/WebGPURender.js",
       "types": "./dist/esm/image/WebGPURender.d.ts"
     },
-    "./image/WebGPUYUV16Render": {
-      "import": "./dist/esm/image/WebGPUYUV16Render.js",
-      "require": "./dist/cjs/image/WebGPUYUV16Render.js",
-      "types": "./dist/esm/image/WebGPUYUV16Render.d.ts"
+    "./image/WebGPUDefault16Render": {
+      "import": "./dist/esm/image/WebGPUDefault16Render.js",
+      "require": "./dist/cjs/image/WebGPUDefault16Render.js",
+      "types": "./dist/esm/image/WebGPUDefault16Render.d.ts"
     },
-    "./image/WebGPUYUV8Render": {
-      "import": "./dist/esm/image/WebGPUYUV8Render.js",
-      "require": "./dist/cjs/image/WebGPUYUV8Render.js",
-      "types": "./dist/esm/image/WebGPUYUV8Render.d.ts"
+    "./image/WebGPUDefault8Render": {
+      "import": "./dist/esm/image/WebGPUDefault8Render.js",
+      "require": "./dist/cjs/image/WebGPUDefault8Render.js",
+      "types": "./dist/esm/image/WebGPUDefault8Render.d.ts"
     },
-    "./image/WebGPUYUVRender": {
-      "import": "./dist/esm/image/WebGPUYUVRender.js",
-      "require": "./dist/cjs/image/WebGPUYUVRender.js",
-      "types": "./dist/esm/image/WebGPUYUVRender.d.ts"
+    "./image/WebGPUDefaultRender": {
+      "import": "./dist/esm/image/WebGPUDefaultRender.js",
+      "require": "./dist/cjs/image/WebGPUDefaultRender.js",
+      "types": "./dist/esm/image/WebGPUDefaultRender.d.ts"
     },
     "./pcm/AudioSourceBufferNode": {
       "import": "./dist/esm/pcm/AudioSourceBufferNode.js",

@@ -4,7 +4,7 @@ import { createAVPacket, destroyAVPacket } from '@libmedia/avutil/util/avpacket'
 import { AVMediaType } from '@libmedia/avutil/codec'
 import { RenderMode } from '@libmedia/avrender/image/ImageRender'
 import Timer from '@libmedia/common/timer/Timer'
-import WebGLYUV8Render from '@libmedia/avrender/image/WebGLYUV8Render'
+import WebGLDefault8Render from '@libmedia/avrender/image/WebGLDefault8Render'
 import AVFrame from '@libmedia/avutil/struct/avframe'
 import WasmVideoDecoder from '@libmedia/avcodec/wasmcodec/VideoDecoder'
 import compileResource from '@libmedia/avutil/function/compileResource'
@@ -39,7 +39,7 @@ async function render(canvas: HTMLCanvasElement) {
 
   const stream = iformatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
 
-  const render = new WebGLYUV8Render(canvas, {
+  const render = new WebGLDefault8Render(canvas, {
     renderMode: RenderMode.FIT,
     devicePixelRatio: window.devicePixelRatio
   })

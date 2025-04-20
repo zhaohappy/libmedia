@@ -24,7 +24,7 @@
  */
 
 import AVFrame from '../struct/avframe'
-import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
+import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
 import { avRescaleQ2 } from '../util/rational'
 import { AV_TIME_BASE_Q } from '../constant'
@@ -118,11 +118,11 @@ export function avframe2VideoFrame(avframe: pointer<AVFrame>, pts?: int64) {
 
   let height = avframe.height
 
-  const des = PixelFormatDescriptorsMap[avframe.format as AVPixelFormat]
+  const des = getAVPixelFormatDescriptor(avframe.format as AVPixelFormat)
 
   const layout: PlaneLayout[] = []
 
-  for (let i = 0; i < des.nbComponents; i++) {
+  for (let i = 0; i < des.comp.length; i++) {
     layout.push({
       offset: reinterpret_cast<double>(avframe.data[i]),
       stride: avframe.linesize[i]

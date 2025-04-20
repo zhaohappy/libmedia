@@ -29,9 +29,9 @@ import { Uint8ArrayInterface } from 'common/io/interface'
 import BitReader from 'common/io/BitReader'
 import AVCodecParameters from '../struct/avcodecparameters'
 import { NOPTS_VALUE } from '../constant'
-import { PixelFormatDescriptorsMap } from '../pixelFormatDescriptor'
+import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
 import { avQ2D } from '../util/rational'
-import { AVChromaLocation, AVColorRange } from '../pixfmt'
+import { AVChromaLocation, AVColorRange, AVPixelFormat } from '../pixfmt'
 import BufferWriter from 'common/io/BufferWriter'
 import AVPacket from '../struct/avpacket'
 
@@ -135,7 +135,7 @@ function getVpccFeature(codecpar: pointer<AVCodecParameters>) {
   if (level === NOPTS_VALUE) {
     level = getLevelByResolution(codecpar.width, codecpar.height, avQ2D(codecpar.framerate))
   }
-  const desc = PixelFormatDescriptorsMap[codecpar.format]
+  const desc = getAVPixelFormatDescriptor(codecpar.format as AVPixelFormat)
 
   let bitDepth = codecpar.bitsPerCodedSample
   let chromaSubsampling = VPX_CHROMA_SUBSAMPLING.VPX_SUBSAMPLING_420_COLLOCATED_WITH_LUMA

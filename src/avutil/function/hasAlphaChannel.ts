@@ -23,14 +23,15 @@
  *
  */
 
-import { PixelFormatDescriptorsMap, PixelFormatFlags } from '../pixelFormatDescriptor'
+import { getAVPixelFormatDescriptor, AVPixelFormatFlags } from '../pixelFormatDescriptor'
 import { AVMediaType } from '../codec'
 import AVCodecParameters from '../struct/avcodecparameters'
+import { AVPixelFormat } from '../pixfmt'
 
 export default function hasAlphaChannel(parameters: pointer<AVCodecParameters>) {
   if (parameters.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO) {
     return false
   }
-  const descriptor = PixelFormatDescriptorsMap[parameters.format]
-  return descriptor && (descriptor.flags & PixelFormatFlags.ALPHA)
+  const descriptor = getAVPixelFormatDescriptor(parameters.format as AVPixelFormat)
+  return descriptor && (descriptor.flags & AVPixelFormatFlags.ALPHA)
 }

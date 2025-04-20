@@ -27,22 +27,50 @@ import BaseProgram from './BaseProgram'
 import VertexShader from '../shader/VertexShader'
 import FragmentShader from '../shader/FragmentShader'
 
-import vertexSource from '../glsl/vertex.vert'
+import vertexSourceDefault from '../glsl/vertex.vert'
 
 export default abstract class VideoProgram extends BaseProgram {
 
   private rotateMatrixLocation: WebGLUniformLocation
 
-  constructor(yuvFragmentSource: string) {
-    super(new VertexShader(vertexSource), new FragmentShader(yuvFragmentSource))
+  private ySamplerLocation: WebGLUniformLocation
+
+  private uSamplerLocation: WebGLUniformLocation
+
+  private vSamplerLocation: WebGLUniformLocation
+
+  private aSamplerLocation: WebGLUniformLocation
+
+  constructor(fragmentSource: string, vertexSource?: string) {
+    super(new VertexShader(vertexSource || vertexSourceDefault), new FragmentShader(fragmentSource))
   }
 
   link(gl: WebGLRenderingContext) {
     super.link(gl)
     this.rotateMatrixLocation = this.gl.getUniformLocation(this.program, 'rotateMatrix')
+    this.ySamplerLocation = this.gl.getUniformLocation(this.program, 'y_Sampler')
+    this.uSamplerLocation = this.gl.getUniformLocation(this.program, 'u_Sampler')
+    this.vSamplerLocation = this.gl.getUniformLocation(this.program, 'v_Sampler')
+    this.aSamplerLocation = this.gl.getUniformLocation(this.program, 'a_Sampler')
   }
 
   setRotateMatrix(matrix: number[]) {
     this.gl.uniformMatrix4fv(this.rotateMatrixLocation, false, new Float32Array(matrix))
+  }
+
+  bindYTexture(unit: number = 0) {
+    this.gl.uniform1i(this.ySamplerLocation, unit)
+  }
+
+  bindUTexture(unit: number = 0) {
+    this.gl.uniform1i(this.uSamplerLocation, unit)
+  }
+
+  bindVTexture(unit: number = 0) {
+    this.gl.uniform1i(this.vSamplerLocation, unit)
+  }
+
+  bindATexture(unit: number = 0) {
+    this.gl.uniform1i(this.aSamplerLocation, unit)
   }
 }

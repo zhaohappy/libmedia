@@ -6,7 +6,7 @@ export { AVFormat, AVSeekFlags, IOFlags, IOType } from './avformat'
 
 export { AVSampleFormat, AVAudioServiceType, AVChannel, AVChannelOrder, AVChannelLayout } from './audiosamplefmt'
 
-export { PixelFormatFlags } from './pixelFormatDescriptor'
+export { AVPixelFormatFlags } from './pixelFormatDescriptor'
 
 export { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVFieldOrder, AVPixelFormat } from './pixfmt'
 
