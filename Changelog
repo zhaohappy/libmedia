@@ -1,3 +1,44 @@
+version 0.7.0:
+
+feat:
+  - refactor: pointer<void> 到 pointer<struct> 使用类型强转
+  - feat(avcodec): 音频编码器支持使用输入的 AVFrame 的 pts
+  - feat(dump): 新增 dump AVChannelLayout name
+  - feat(avplayer): AVPlayer 支持播放视频之后将音视频输出到 MediaStream
+  - feat(avrender): CanvasImageRender 支持 hdr 渲染
+  - refactor(avrender, avutil): 重写 image render 支持更多像素格式；重写 AVPixelFormatDescriptor 定义方式并支持更多格式
+
+bugfix:
+  - fix(avcodec): VideoDecoder safari 17.4 以上不需要手动排序输出帧
+  - fix(avformat): matroska blockGroup 非关键帧写入 BLOCK_REFERENCE
+  - fix(avpipeline): 发送 updateCanvas 事件判断 renderRedyed 状态防止多次触发
+  - fix: 使用 atomics.store 初始化 refCount 内存保证数据一致
+  - fix(avformat): 处理 mp4 的 mdat box size 超过 32 位的情况
+  - fix(avcodec): videoFrame.copyTo 是异步的， videoFrame2AVFrame 需要变成异步方法
+  - fix(avcodec): VideoEncoder 判断 frame.timeBase 是否合法再使用原 pts
+  - fix(avformat): 修复 mp4 edts box 的 delay 计算 timeBase 错误
+  - fix(avutil): 处理 AVFrame 和 AudioData 之间转换 pts 不合法的情况
+  - fix(avplayer): playChannels 超过 maxChannelCount 会无法播放出超出声道的声音，设置 playChannels 最大为 maxChannelCount 让 resampler 做 mix
+  - fix(avformat): mp4 seek 之后的第一个包应使用 ioReader.seek 来同步位置，防止等待过多的数据缓冲
+  - fix(avpipeline): 先找 webgpu render，找不到接着找 webgl render
+  - fix(avnetwork): 再次 readInterval 使用 SafeUint8Array, 防止中途扩堆导致 buffer 不可用
+
+
+version 0.6.1:
+
+feat:
+  - feat(avplayerui): 支持配置 footer，支持通过 url 参数控制 ui 和播放
+  - feat(avplayer): 添加 audioContextRunning 事件通知 audioContext 状态到 running
+  - feat(avplayerui): 自动播放时如果 audioContext 处于 suspended 状态给出提示
+  - feat(avformat): mp4 封装支持设置 matrix 配置，mse 播放支持 matrix
+  - avutil 中增加输出所有常量枚举为非常量枚举，可以在 js 中导入
+  - feat(avformat): 优化 dump 视频颜色参数信息
+
+bugfix:
+  - fix(avrender): 优化 hdr hlg Tone Mapping 计算，修正 hlg 曲线非线性转线性计算错误
+  - fix(avcodec): isConfigSupported 兼容抛错
+  - fix(avutil/av1): 调用 padding 之后再获取 buffer，防止出现少最后几 bit 数据
+
 version 0.6.0:
 
 feat:
