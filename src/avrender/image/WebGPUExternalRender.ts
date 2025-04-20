@@ -134,10 +134,6 @@ export default class WebGPUExternalRender extends WebGPURender {
     this.device.queue.submit([commandEncoder.finish()])
   }
 
-  public destroy(): void {
-    super.destroy()
-  }
-
   static isSupport(frame: pointer<AVFrame> | VideoFrame | ImageBitmap): boolean {
     // VideoFrame
     return frame instanceof VideoFrame

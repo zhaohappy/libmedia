@@ -42,7 +42,7 @@ export default abstract class WebGLRender extends ImageRender {
   protected gl: WebGLRenderingContext | WebGL2RenderingContext
 
   // 顶点缓冲区
-  protected VAO: WebGLBuffer
+  protected vbo: WebGLBuffer
 
   protected program: VideoProgram
 
@@ -96,12 +96,12 @@ export default abstract class WebGLRender extends ImageRender {
       logger.fatal('can not support webgl, got WebGLRenderingContext failed')
     }
 
-    this.VAO = this.gl.createBuffer()
-    if (!this.VAO) {
+    this.vbo = this.gl.createBuffer()
+    if (!this.vbo) {
       logger.fatal('create vao buffer failed')
     }
 
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.VAO)
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo)
 
     this.gl.enable(this.gl.BLEND)
     this.gl.clearColor(0.0, 0.0, 0.0, 0.0)
@@ -241,12 +241,16 @@ export default abstract class WebGLRender extends ImageRender {
 
   public destroy(): void {
 
+    if (this.vbo) {
+      this.gl.deleteBuffer(this.vbo)
+      this.vbo = null
+    }
+
     if (this.program) {
       this.program.stop()
     }
 
     this.gl = null
-    this.VAO = null
     this.vertex = null
 
     if (this.onWebglContextLost) {

@@ -518,6 +518,10 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
       unmake(this.hdrMetadata)
       this.hdrMetadata = null
     }
+    if (this.hdrMetadataBuffer) {
+      this.hdrMetadataBuffer.destroy()
+      this.hdrMetadataBuffer = null
+    }
     super.destroy()
   }
 

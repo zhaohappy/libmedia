@@ -93,7 +93,7 @@ export default class VideoTexture extends Texture {
       }
     }
     else {
-      if (this.gl instanceof WebGL2RenderingContext) {
+      if (typeof WebGL2RenderingContext === 'function' && this.gl instanceof WebGL2RenderingContext) {
         try {
           this.pbo = this.gl.createBuffer()
           this.gl.bindBuffer(this.gl.PIXEL_UNPACK_BUFFER, this.pbo)
@@ -122,5 +122,12 @@ export default class VideoTexture extends Texture {
       }
       this.firstUploaded = true
     }
+  }
+
+  destroy(): void {
+    if (this.pbo) {
+      this.gl.deleteBuffer(this.pbo)
+    }
+    super.destroy()
   }
 }
