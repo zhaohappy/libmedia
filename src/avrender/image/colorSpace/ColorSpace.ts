@@ -107,7 +107,13 @@ export default class ColorSpace {
       || this.transferId === AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_4
   }
 
-  public getTransferMatrix(bitDepth: number) {
+  /**
+   * yuv -> rgb 转换矩阵
+   * 
+   * @param bitDepth 
+   * @returns 
+   */
+  public getTransformMatrix(bitDepth: number) {
     const chroma05 = (1 << (bitDepth - 1)) / ((1 << bitDepth) - 1)
     let Kr = 0
     let Kb = 0
@@ -335,7 +341,11 @@ export default class ColorSpace {
 
     return pri
   }
-
+  /**
+   * rgb -> xyz 转换矩阵
+   * 
+   * @returns 
+   */
   public getPrimaryMatrix() {
     const pri = this.getColorSpacePrimaries()
     const toXYZD50 = primaries.primariesToXYZD50(pri)

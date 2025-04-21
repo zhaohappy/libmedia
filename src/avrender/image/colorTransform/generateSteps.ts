@@ -59,7 +59,7 @@ export default function generateSteps(src: ColorSpace, dst: ColorSpace, options:
   }
 
   // 2. 反变换 ColorSpace Matrix，YCbCr 转 RGB
-  steps.push(colorTransformMatrix(src.getTransferMatrix(options.bitDepth).invert(), options))
+  steps.push(colorTransformMatrix(src.getTransformMatrix(options.bitDepth).invert(), options))
 
   if (srcMatrixIsIdentityOrYcgco) {
     steps.push(srcRangeAdjustStep)
@@ -87,7 +87,7 @@ export default function generateSteps(src: ColorSpace, dst: ColorSpace, options:
       }
 
       if (src.getMatrixId() === AVColorSpace.AVCOL_SPC_BT2020_CL) {
-        steps.push(colorTransformMatrix(src.getTransferMatrix(options.bitDepth).invert(), options))
+        steps.push(colorTransformMatrix(src.getTransformMatrix(options.bitDepth).invert(), options))
       }
 
       // 4. RGB 空间转 XYZ 空间
@@ -147,7 +147,7 @@ export default function generateSteps(src: ColorSpace, dst: ColorSpace, options:
       steps.push(colorTransformMatrix(dst.getPrimaryMatrix().invert(), options))
 
       if (dst.getMatrixId() === AVColorSpace.AVCOL_SPC_BT2020_CL) {
-        steps.push(colorTransformMatrix(dst.getTransferMatrix(options.bitDepth), options))
+        steps.push(colorTransformMatrix(dst.getTransformMatrix(options.bitDepth), options))
       }
 
       switch (dst.getTransferId()) {
@@ -189,7 +189,7 @@ export default function generateSteps(src: ColorSpace, dst: ColorSpace, options:
         steps.push(dstRangeAdjustStep)
       }
 
-      steps.push(colorTransformMatrix(dst.getTransferMatrix(options.bitDepth), options))
+      steps.push(colorTransformMatrix(dst.getTransformMatrix(options.bitDepth), options))
 
       if (!dstMatrixIsIdentityOrYcgco) {
         steps.push(dstRangeAdjustStep)
