@@ -56,18 +56,18 @@ export default class WebGLDefault8Render extends WebGLDefaultRender {
       && descriptor.comp.length > 2
       && descriptor.comp[1].plane === descriptor.comp[2].plane
 
-    const samplerMap = ['y', 'u', 'v', 'a']
-    const offsetMap = isUVPlane ? ['r', 'a'] : ['r', 'g', 'b', 'a']
+    const textureMap = ['y', 'u', 'v', 'a']
+    const channelMap = isUVPlane ? ['r', 'a'] : ['r', 'g', 'b', 'a']
 
-    let y = `texture2D(${samplerMap[descriptor.comp[0].plane]}_Sampler, v_color.xy).${offsetMap[descriptor.comp[0].offset]}`
+    let y = `texture2D(${textureMap[descriptor.comp[0].plane]}_Sampler, v_color.xy).${channelMap[descriptor.comp[0].offset]}`
     let u = descriptor.comp[1]
-      ? `texture2D(${samplerMap[descriptor.comp[1].plane]}_Sampler, v_color.xy).${offsetMap[descriptor.comp[1].offset]}`
+      ? `texture2D(${textureMap[descriptor.comp[1].plane]}_Sampler, v_color.xy).${channelMap[descriptor.comp[1].offset]}`
       : ((descriptor.flags & AVPixelFormatFlags.RGB)
         ? '0.0'
         : '0.5'
       )
     let v = descriptor.comp[2]
-      ? `texture2D(${samplerMap[descriptor.comp[2].plane]}_Sampler, v_color.xy).${offsetMap[descriptor.comp[2].offset]}`
+      ? `texture2D(${textureMap[descriptor.comp[2].plane]}_Sampler, v_color.xy).${channelMap[descriptor.comp[2].offset]}`
       : ((descriptor.flags & AVPixelFormatFlags.RGB)
         ? '0.0'
         : '0.5'
@@ -75,7 +75,7 @@ export default class WebGLDefault8Render extends WebGLDefaultRender {
 
     let alpha = '1.0'
     if (descriptor.flags & AVPixelFormatFlags.ALPHA) {
-      alpha = `texture2D(${samplerMap[descriptor.comp[descriptor.comp.length - 1].plane]}_Sampler, v_color.xy).${offsetMap[descriptor.comp[descriptor.comp.length - 1].offset]}`
+      alpha = `texture2D(${textureMap[descriptor.comp[descriptor.comp.length - 1].plane]}_Sampler, v_color.xy).${channelMap[descriptor.comp[descriptor.comp.length - 1].offset]}`
       if (descriptor.comp.length === 2) {
         u = ((descriptor.flags & AVPixelFormatFlags.RGB)
           ? '0.0'

@@ -57,8 +57,8 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
 
     const steps = generateSteps(this.srcColorSpace, this.dstColorSpace, colorTransformOptions)
 
-    const samplerMap = ['y', 'u', 'v', 'a']
-    const offsetMap = ['r', 'g', 'b', 'a']
+    const textureMap = ['y', 'u', 'v', 'a']
+    const channelMap = ['r', 'g', 'b', 'a']
     const bytes: number[] = []
     const shifts: number[] = []
     const maxes: number[] = []
@@ -69,27 +69,27 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
       maxes[i] = (1 << com.depth) - 1
     })
 
-    let y = `textureLoad(${samplerMap[descriptor.comp[0].plane]}Texture,
+    let y = `textureLoad(${textureMap[descriptor.comp[0].plane]}Texture,
       vec2<i32>(coord.xy * vec2<f32>(
-        ${this[`${samplerMap[descriptor.comp[0].plane]}Texture`].width}.0,
-        ${this[`${samplerMap[descriptor.comp[0].plane]}Texture`].height}.0
-      )), 0).${offsetMap[descriptor.comp[0].offset / bytes[0]]}`
+        ${this[`${textureMap[descriptor.comp[0].plane]}Texture`].width}.0,
+        ${this[`${textureMap[descriptor.comp[0].plane]}Texture`].height}.0
+      )), 0).${channelMap[descriptor.comp[0].offset / bytes[0]]}`
     let u = descriptor.comp[1]
-      ? `textureLoad(${samplerMap[descriptor.comp[1].plane]}Texture,
+      ? `textureLoad(${textureMap[descriptor.comp[1].plane]}Texture,
           vec2<i32>(coord.xy * vec2<f32>(
-            ${this[`${samplerMap[descriptor.comp[1].plane]}Texture`].width}.0,
-            ${this[`${samplerMap[descriptor.comp[1].plane]}Texture`].height}.0
-          )), 0).${offsetMap[descriptor.comp[1].offset / bytes[1]]}`
+            ${this[`${textureMap[descriptor.comp[1].plane]}Texture`].width}.0,
+            ${this[`${textureMap[descriptor.comp[1].plane]}Texture`].height}.0
+          )), 0).${channelMap[descriptor.comp[1].offset / bytes[1]]}`
       : ((descriptor.flags & AVPixelFormatFlags.RGB)
         ? '0.0'
         : '0.5'
       )
     let v = descriptor.comp[2]
-      ? `textureLoad(${samplerMap[descriptor.comp[2].plane]}Texture,
+      ? `textureLoad(${textureMap[descriptor.comp[2].plane]}Texture,
           vec2<i32>(coord.xy * vec2<f32>(
-            ${this[`${samplerMap[descriptor.comp[2].plane]}Texture`].width}.0,
-            ${this[`${samplerMap[descriptor.comp[2].plane]}Texture`].height}.0
-          )), 0).${offsetMap[descriptor.comp[2].offset / bytes[2]]}`
+            ${this[`${textureMap[descriptor.comp[2].plane]}Texture`].width}.0,
+            ${this[`${textureMap[descriptor.comp[2].plane]}Texture`].height}.0
+          )), 0).${channelMap[descriptor.comp[2].offset / bytes[2]]}`
       : ((descriptor.flags & AVPixelFormatFlags.RGB)
         ? '0.0'
         : '0.5'
@@ -97,11 +97,11 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
 
     let a = '1.0'
     if (descriptor.flags & AVPixelFormatFlags.ALPHA) {
-      a = `textureLoad(${samplerMap[descriptor.comp[descriptor.comp.length - 1].plane]}Texture,
+      a = `textureLoad(${textureMap[descriptor.comp[descriptor.comp.length - 1].plane]}Texture,
         vec2<i32>(coord.xy * vec2<f32>(
-          ${this[`${samplerMap[descriptor.comp[descriptor.comp.length - 1].plane]}Texture`].width}.0,
-          ${this[`${samplerMap[descriptor.comp[descriptor.comp.length - 1].plane]}Texture`].height}.0
-        )), 0).${offsetMap[descriptor.comp[descriptor.comp.length - 1].offset / bytes[descriptor.comp.length - 1]]}`
+          ${this[`${textureMap[descriptor.comp[descriptor.comp.length - 1].plane]}Texture`].width}.0,
+          ${this[`${textureMap[descriptor.comp[descriptor.comp.length - 1].plane]}Texture`].height}.0
+        )), 0).${channelMap[descriptor.comp[descriptor.comp.length - 1].offset / bytes[descriptor.comp.length - 1]]}`
       if (descriptor.comp.length === 2) {
         u = ((descriptor.flags & AVPixelFormatFlags.RGB)
           ? '0.0'

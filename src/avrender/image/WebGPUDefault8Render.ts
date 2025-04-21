@@ -52,18 +52,18 @@ export default class WebGPUDefault8Render extends WebGPUDefaultRender {
       outputRGB: true
     })
 
-    const samplerMap = ['y', 'u', 'v', 'a']
-    const offsetMap = ['r', 'g', 'b', 'a']
+    const textureMap = ['y', 'u', 'v', 'a']
+    const channelMap = ['r', 'g', 'b', 'a']
 
-    let y = `textureSample(${samplerMap[descriptor.comp[0].plane]}Texture, s, in_texcoord.xy).${offsetMap[descriptor.comp[0].offset]}`
+    let y = `textureSample(${textureMap[descriptor.comp[0].plane]}Texture, s, in_texcoord.xy).${channelMap[descriptor.comp[0].offset]}`
     let u = descriptor.comp[1]
-      ? `textureSample(${samplerMap[descriptor.comp[1].plane]}Texture, s, in_texcoord.xy).${offsetMap[descriptor.comp[1].offset]}`
+      ? `textureSample(${textureMap[descriptor.comp[1].plane]}Texture, s, in_texcoord.xy).${channelMap[descriptor.comp[1].offset]}`
       : ((descriptor.flags & AVPixelFormatFlags.RGB)
         ? '0.0'
         : '0.5'
       )
     let v = descriptor.comp[2]
-      ? `textureSample(${samplerMap[descriptor.comp[2].plane]}Texture, s, in_texcoord.xy).${offsetMap[descriptor.comp[2].offset]}`
+      ? `textureSample(${textureMap[descriptor.comp[2].plane]}Texture, s, in_texcoord.xy).${channelMap[descriptor.comp[2].offset]}`
       : ((descriptor.flags & AVPixelFormatFlags.RGB)
         ? '0.0'
         : '0.5'
@@ -71,7 +71,7 @@ export default class WebGPUDefault8Render extends WebGPUDefaultRender {
 
     let alpha = '1.0'
     if (descriptor.flags & AVPixelFormatFlags.ALPHA) {
-      alpha = `textureSample(${samplerMap[descriptor.comp[descriptor.comp.length - 1].plane]}Texture, s, in_texcoord.xy).${offsetMap[descriptor.comp[descriptor.comp.length - 1].offset]}`
+      alpha = `textureSample(${textureMap[descriptor.comp[descriptor.comp.length - 1].plane]}Texture, s, in_texcoord.xy).${channelMap[descriptor.comp[descriptor.comp.length - 1].offset]}`
       if (descriptor.comp.length === 2) {
         u = ((descriptor.flags & AVPixelFormatFlags.RGB)
           ? '0.0'
