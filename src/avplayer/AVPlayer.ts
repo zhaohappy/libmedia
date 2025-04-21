@@ -97,7 +97,7 @@ import AudioPipelineProxy from './worker/AudioPipelineProxy'
 import VideoPipelineProxy from './worker/VideoPipelineProxy'
 import MSEPipelineProxy from './worker/MSEPipelineProxy'
 import analyzeUrlIOLoader from 'avutil/function/analyzeUrlIOLoader'
-import WebSocketIOLoader from 'avnetwork/ioLoader/WebSocketIOLoader'
+import WebSocketIOLoader, { WebSocketOptions } from 'avnetwork/ioLoader/WebSocketIOLoader'
 import SocketIOLoader from 'avnetwork/ioLoader/SocketIOLoader'
 import WebTransportIOLoader from 'avnetwork/ioLoader/WebTransportIOLoader'
 import getWasmUrl from 'avutil/function/getWasmUrl'
@@ -232,6 +232,10 @@ export interface AVPlayerLoadOptions {
      */
     referrerPolicy?: ReferrerPolicy
   }
+  /**
+   * websocket 配置
+   */
+  websocket?: WebSocketOptions
   /**
    * webtransport 配置
    */
@@ -1184,6 +1188,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             ...info,
             httpOptions: options.http,
             webtransportOptions: options.webtransport,
+            websocketOptions: options.websocket,
             uri: options.uri
           },
           range: {

@@ -29,8 +29,13 @@ import { IOError } from 'common/io/error'
 import SocketIOLoader from './SocketIOLoader'
 import { Data } from 'common/types/type'
 
+export interface WebSocketOptions {
+  protocols?: string | string[]
+}
+
 export interface WebSocketInfo {
   url: string
+  websocketOptions?: WebSocketOptions
 }
 
 export default class WebSocketIOLoader extends SocketIOLoader {
@@ -50,7 +55,7 @@ export default class WebSocketIOLoader extends SocketIOLoader {
     this.info = info
     this.status = IOLoaderStatus.CONNECTING
     return new Promise<int32>((resolve) => {
-      this.socket = new WebSocket(info.url)
+      this.socket = new WebSocket(info.url, info.websocketOptions?.protocols)
       this.socket.binaryType = 'arraybuffer'
       this.socket.onopen = () => {
         this.status = IOLoaderStatus.BUFFERING
