@@ -37,7 +37,7 @@ export default class WritableStreamRender extends ImageRender {
   private writer: WritableStreamDefaultWriter<VideoFrame>
 
   constructor(writableStream: WritableStream<VideoFrame>) {
-    super({ width: 0, height: 0 } as any, { devicePixelRatio: 1, renderMode: RenderMode.FIT })
+    super({ width: 0, height: 0 } as unknown as OffscreenCanvas, { devicePixelRatio: 1, renderMode: RenderMode.FIT })
     this.writableStream = writableStream
   }
 
@@ -48,15 +48,20 @@ export default class WritableStreamRender extends ImageRender {
   public clear(): void {
   }
 
-
   public render(frame: VideoFrame | pointer<AVFrame>): void {
     if (frame instanceof VideoFrame) {
       frame = new VideoFrame(frame, {
-        timestamp: getTimestamp()
+        timestamp: getTimestamp(),
+        // 垂直翻转等价于 旋转 180 度 + 水平翻转
+        rotation: (this.rotate + (this.flipVertical ? 180 : 0)) % 360,
+        flip: (this.flipHorizontal || this.flipVertical) && !(this.flipHorizontal && this.flipVertical),
       })
     }
     else {
-      frame = avframe2VideoFrame(frame, static_cast<int64>(getTimestamp() as uint32))
+      frame = avframe2VideoFrame(frame, static_cast<int64>(getTimestamp() as uint32), {
+        rotation: (this.rotate + (this.flipVertical ? 180 : 0)) % 360,
+        flip: (this.flipHorizontal || this.flipVertical) && !(this.flipHorizontal && this.flipVertical),
+      })
     }
     this.writer.write(frame)
   }
@@ -66,7 +71,17 @@ export default class WritableStreamRender extends ImageRender {
   }
 
   public setRotate(angle: number, clear: boolean = true): void {
+    angle = angle % 360
 
+    if (angle === this.rotate) {
+      return
+    }
+
+    this.rotate = angle
+
+    if (clear) {
+      this.clear()
+    }
   }
 
   static isSupport(frame: pointer<AVFrame> | VideoFrame | ImageBitmap): boolean {

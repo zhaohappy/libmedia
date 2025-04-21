@@ -29,6 +29,7 @@ import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteri
 import { avRescaleQ2 } from '../util/rational'
 import { AV_TIME_BASE_Q } from '../constant'
 import { getHeap } from 'cheap/heap'
+import * as object from 'common/util/object'
 
 export function avPixelFormat2Format(pixfmt: AVPixelFormat) {
   switch (pixfmt) {
@@ -114,7 +115,7 @@ export function getVideoColorSpaceInit(avframe: pointer<AVFrame>) {
   return init
 }
 
-export function avframe2VideoFrame(avframe: pointer<AVFrame>, pts?: int64) {
+export function avframe2VideoFrame(avframe: pointer<AVFrame>, pts?: int64, videoFrameInit: Partial<VideoFrameBufferInit> = {}) {
 
   let height = avframe.height
 
@@ -129,7 +130,7 @@ export function avframe2VideoFrame(avframe: pointer<AVFrame>, pts?: int64) {
     })
   }
 
-  const init: VideoFrameBufferInit = {
+  const init: VideoFrameBufferInit = object.extend({
     codedWidth: avframe.width,
     codedHeight: height,
     timestamp: pts ? static_cast<double>(pts) : static_cast<double>(avRescaleQ2(avframe.pts, addressof(avframe.timeBase), AV_TIME_BASE_Q)),
@@ -143,6 +144,6 @@ export function avframe2VideoFrame(avframe: pointer<AVFrame>, pts?: int64) {
       width: avframe.width - reinterpret_cast<int32>((avframe.cropLeft + avframe.cropRight) as size),
       height: avframe.height - reinterpret_cast<int32>((avframe.cropTop + avframe.cropBottom) as size)
     }
-  }
+  }, videoFrameInit)
   return new VideoFrame(getHeap(), init)
 }
