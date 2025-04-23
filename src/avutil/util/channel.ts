@@ -23,10 +23,10 @@
  *
  */
 
-import { AVChannelLayout } from '../struct/audiosample'
+import { AVChannelCustom, AVChannelLayout } from '../struct/audiosample'
 import { popCount64 } from './common'
-import { AVChannelOrder } from '../audiosamplefmt'
-import { avFreep } from './mem'
+import { AVChannel, AVChannelOrder } from '../audiosamplefmt'
+import { avFreep, avMallocz } from './mem'
 import { memset } from 'cheap/std/memory'
 import * as error from '../error'
 
@@ -49,4 +49,17 @@ export function setChannelLayoutFromMask(channelLayout: pointer<AVChannelLayout>
   channelLayout.nbChannels = popCount64(static_cast<uint64>(mask))
   channelLayout.u.mask = mask
   return 0
+}
+
+export function initCustomChannelLayout(channelLayout: pointer<AVChannelLayout>, channels: int32) {
+  if (channels <= 0) {
+    throw new Error('invalid channels')
+  }
+  const map: pointer<AVChannelCustom> = avMallocz(reinterpret_cast<size>(reinterpret_cast<size>(channels) * sizeof(accessof(channelLayout.u.map))))
+  for (let i = 0; i < channels; i++) {
+    map[i].id = AVChannel.AV_CHANNEL_UNKNOWN
+  }
+  channelLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_CUSTOM
+  channelLayout.nbChannels = channels
+  channelLayout.u.map = map
 }
