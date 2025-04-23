@@ -1677,6 +1677,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
         this.handleTimeupdate(this.video || this.audio)
       }
+      // 没有音频设置 mute
+      if (this.video && !this.selectedAudioStream) {
+        this.video.muted = true
+      }
       (this.video || this.audio).playbackRate = this.playRate
     }
   }
