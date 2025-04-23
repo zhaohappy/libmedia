@@ -23,6 +23,7 @@
  *
  */
 
+import { INT32_MAX } from '../constant'
 import { Rational } from '../struct/rational'
 import gcd from 'common/math/gcd'
 
@@ -53,6 +54,32 @@ export function avRescaleQ2(a: int64, bq: pointer<Rational>, cq: Rational) {
 }
 
 /**
+ * 将一个时间戳由一个时间基转换到另一个时间基
+ * 
+ * @param a 待转换时间戳
+ * @param bp 待转换时间戳的时间基
+ * @param cq 目标时间基
+ */
+export function avRescaleQ3(a: int64, bq: Rational, cq: pointer<Rational>) {
+  const b = a * static_cast<int64>(bq.num as unknown as uint32) * static_cast<int64>(cq.den as unknown as uint32)
+  const c = static_cast<int64>(bq.den as unknown as uint32) * static_cast<int64>(cq.num as unknown as uint32)
+  return b / c
+}
+
+/**
+ * 将一个时间戳由一个时间基转换到另一个时间基
+ * 
+ * @param a 待转换时间戳
+ * @param bp 待转换时间戳的时间基
+ * @param cq 目标时间基
+ */
+export function avRescaleQ4(a: int64, bq: pointer<Rational>, cq: pointer<Rational>) {
+  const b = a * static_cast<int64>(bq.num as unknown as uint32) * static_cast<int64>(cq.den as unknown as uint32)
+  const c = static_cast<int64>(bq.den as unknown as uint32) * static_cast<int64>(cq.num as unknown as uint32)
+  return b / c
+}
+
+/**
  * 将一个时间基转换成 double
  * 
  * @param a 
@@ -68,6 +95,27 @@ export function avQ2D(a: Rational) {
  */
 export function avQ2D2(a: pointer<Rational>) {
   return a.num / a.den
+}
+
+export function avD2Q(d: double, max: int32): Rational {
+  if (isNaN(double)) {
+    return {
+      den: 0,
+      num: 0
+    }
+  }
+  if (Math.abs(d) > INT32_MAX + 3) {
+    return {
+      den: 0,
+      num: d < 0 ? -1 : 1
+    }
+  }
+  const q = {
+    den: max,
+    num: Math.floor(d * max + 0.5)
+  }
+  avReduce(q)
+  return q
 }
 
 /**
