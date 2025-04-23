@@ -33,6 +33,8 @@ export const AV_TIME_BASE: int32 = 1000000
 
 export const AV_MILLI_TIME_BASE: int32 = 1000
 
+export const AV_NANO_TIME_BASE: int32 = 1000000000
+
 export const NTP_OFFSET = 2208988800n
 export const NTP_OFFSET_US = (NTP_OFFSET * 1000000n)
 
@@ -45,6 +47,11 @@ export const AV_TIME_BASE_Q = new Rational({den: AV_TIME_BASE, num: 1})
  * 毫秒时间基
  */
 export const AV_MILLI_TIME_BASE_Q = new Rational({den: AV_MILLI_TIME_BASE, num: 1})
+
+/**
+ * 纳秒时间基
+ */
+export const AV_NANO_TIME_BASE_Q = new Rational({den: AV_NANO_TIME_BASE, num: 1})
 
 /**
  * 秒时间基
