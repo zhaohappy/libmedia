@@ -46,22 +46,34 @@ export function initAVPacketData(avpacket: pointer<AVPacket>, length: size) {
   return mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
 }
 
-export function getAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPacketSideDataType): pointer<AVPacketSideData> {
-  for (let i = 0; i < avpacket.sideDataElems; i++) {
-    if (avpacket.sideData[i].type === type) {
-      return addressof(avpacket.sideData[i])
+export function getSideData(psd: pointer<pointer<AVPacketSideData>>, pnbSd: pointer<int32>, type: AVPacketSideDataType): pointer<AVPacketSideData> {
+  const sideDataElems = accessof(pnbSd)
+  const sideData = accessof(psd)
+  for (let i = 0; i < sideDataElems; i++) {
+    if (sideData[i].type === type) {
+      return addressof(sideData[i])
     }
   }
   return nullptr
 }
 
-export function hasAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPacketSideDataType) {
-  for (let i = 0; i < avpacket.sideDataElems; i++) {
-    if (avpacket.sideData[i].type === type) {
+export function getAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPacketSideDataType): pointer<AVPacketSideData> {
+  return getSideData(addressof(avpacket.sideData), addressof(avpacket.sideDataElems), type)
+}
+
+export function hasSideData(psd: pointer<pointer<AVPacketSideData>>, pnbSd: pointer<int32>, type: AVPacketSideDataType) {
+  const sideDataElems = accessof(pnbSd)
+  const sideData = accessof(psd)
+  for (let i = 0; i < sideDataElems; i++) {
+    if (sideData[i].type === type) {
       return true
     }
   }
   return false
+}
+
+export function hasAVPacketSideData(avpacket: pointer<AVPacket>, type: AVPacketSideDataType) {
+  return hasSideData(addressof(avpacket.sideData), addressof(avpacket.sideDataElems), type)
 }
 
 export function addSideData(psd: pointer<pointer<AVPacketSideData>>, pnbSd: pointer<int32>, type: AVPacketSideDataType, data: pointer<void>, length: size) {
