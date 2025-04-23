@@ -31,7 +31,7 @@ import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColor
 import { avbufferAlloc, avbufferRef, avbufferReplace, avbufferUnref } from './avbuffer'
 import { avDictCopy, freeAVDict } from './avdict'
 import { INVALID_ARGUMENT, NO_MEMORY } from '../error'
-import { getChannelLayoutNBChannels } from './channel'
+import { getChannelLayoutNBChannels, unInitChannelLayout } from './channel'
 import { sampleFormatGetLinesize, sampleFormatIsPlanar } from './sample'
 import { AVBufferRef } from '../struct/avbuffer'
 import * as errorType from '../error'
@@ -153,6 +153,7 @@ export function getAVFrameDefault(frame: pointer<AVFrame>) {
   if (frame.extendedData !== addressof(frame.data)) {
     avFreep(reinterpret_cast<pointer<pointer<void>>>(addressof(frame.extendedData)))
   }
+  unInitChannelLayout(addressof(frame.chLayout))
 
   memset(frame, 0, sizeof(AVFrame))
 
