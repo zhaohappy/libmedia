@@ -135,7 +135,8 @@ export default class WebGPUExternalRender extends WebGPURender {
   }
 
   static isSupport(frame: pointer<AVFrame> | VideoFrame | ImageBitmap): boolean {
+    const HDRPrimaries = ['bt2020', 'bt2100', 'st2048', 'p3-dcl', 'hlg']
     // VideoFrame
-    return frame instanceof VideoFrame
+    return frame instanceof VideoFrame && !(HDRPrimaries.some((p) => p === frame.colorSpace.primaries))
   }
 }
