@@ -34,6 +34,7 @@ import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as errorType from 'avutil/error'
 import { dumpCodecName, dumpFormatName } from './dump'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import * as bigint from 'common/util/bigint'
 
 export type MuxOptions = {
   zeroStart?: boolean
@@ -43,6 +44,7 @@ export type MuxOptions = {
 interface MuxPrivateData {
   firstPts: Map<number, int64>
   firstDts: Map<number, int64>
+  dtsPtsDelta: Map<number, int64>
 }
 
 const defaultMuxOptions: MuxOptions = {
@@ -62,7 +64,8 @@ export function open(formatContext: AVOFormatContext, options: MuxOptions = {}) 
 
   formatContext.privateData2 = {
     firstPts: new Map(),
-    firstDts: new Map()
+    firstDts: new Map(),
+    dtsPtsDelta: new Map()
   }
 
   let supportCodecs = OFormatSupportedCodecs[formatContext.oformat.type]
@@ -102,17 +105,18 @@ export function writeAVPacket(formatContext: AVOFormatContext, avpacket: pointer
   }
   if (!privateData.firstPts.has(avpacket.streamIndex)) {
     privateData.firstPts.set(avpacket.streamIndex, avpacket.pts === NOPTS_VALUE_BIGINT ? 0n : avpacket.pts)
+    privateData.dtsPtsDelta.set(avpacket.streamIndex, bigint.min(privateData.firstDts.get(avpacket.streamIndex), privateData.firstPts.get(avpacket.streamIndex)))
   }
   if ((formatContext.options as MuxOptions).zeroStart) {
-    avpacket.dts -= privateData.firstDts.get(avpacket.streamIndex)
-    avpacket.pts -= privateData.firstPts.get(avpacket.streamIndex)
+    avpacket.dts -= privateData.dtsPtsDelta.get(avpacket.streamIndex)
+    avpacket.pts -= privateData.dtsPtsDelta.get(avpacket.streamIndex)
   }
   else if ((formatContext.options as MuxOptions).nonnegative) {
-    if (privateData.firstDts.get(avpacket.streamIndex) < 0) {
-      avpacket.dts -= privateData.firstDts.get(avpacket.streamIndex)
-    }
-    if (privateData.firstPts.get(avpacket.streamIndex) < 0) {
-      avpacket.pts -= privateData.firstPts.get(avpacket.streamIndex)
+    if (privateData.firstDts.get(avpacket.streamIndex) < 0
+      || privateData.firstPts.get(avpacket.streamIndex) < 0
+    ) {
+      avpacket.dts -= privateData.dtsPtsDelta.get(avpacket.streamIndex)
+      avpacket.pts -= privateData.dtsPtsDelta.get(avpacket.streamIndex)
     }
   }
 
