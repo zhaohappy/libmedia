@@ -110,10 +110,15 @@ export function avD2Q(d: double, max: int32): Rational {
       num: d < 0 ? -1 : 1
     }
   }
-  const q = {
-    den: max,
-    num: Math.floor(d * max + 0.5)
-  }
+  const q = d > 1
+    ? {
+      den: Math.floor(max / d + 0.5),
+      num: max
+    }
+    : {
+      den: max,
+      num: Math.floor(d * max + 0.5)
+    }
   avReduce(q)
   return q
 }
