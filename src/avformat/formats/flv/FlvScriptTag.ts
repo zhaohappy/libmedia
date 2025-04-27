@@ -100,17 +100,7 @@ export default class FlvScriptTag {
       cacheWriter.flush()
 
       const buffer = concatTypeArray(Uint8Array, cache)
-
-      const now = ioWriter.getPos()
-
-      // tag header
-      flv.writeTagHeader(ioWriter, FlvTag.SCRIPT, buffer.length, 0n)
-
-      // tag body
-      ioWriter.writeBuffer(buffer)
-
-      // previousTagSize
-      ioWriter.writeUint32(Number(ioWriter.getPos() - now))
+      flv.writeTag(ioWriter, FlvTag.SCRIPT, 0n, undefined, buffer)
     }
   }
 

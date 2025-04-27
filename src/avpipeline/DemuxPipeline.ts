@@ -63,7 +63,7 @@ import * as h264 from 'avutil/codecs/h264'
 import * as hevc from 'avutil/codecs/hevc'
 import * as vvc from 'avutil/codecs/vvc'
 import { IRtspFormatOptions } from 'avformat/formats/IRtspFormat'
-import { FlvFormatOptions } from 'avformat/formats/IFlvFormat'
+import { IFlvFormatOptions } from 'avformat/formats/IFlvFormat'
 import { MovFormatOptions } from 'avformat/formats/mov/type'
 import { IH264FormatOptions } from 'avformat/formats/IH264Format'
 import { IHevcFormatOptions } from 'avformat/formats/IHevcFormat'
@@ -315,7 +315,7 @@ export default class DemuxPipeline extends Pipeline {
       switch (format) {
         case AVFormat.FLV:
           if (defined(ENABLE_DEMUXER_FLV)) {
-            iformat = new ((await import('avformat/formats/IFlvFormat')).default)(task.formatOptions as FlvFormatOptions)
+            iformat = new ((await import('avformat/formats/IFlvFormat')).default)(task.formatOptions as IFlvFormatOptions)
           }
           else {
             logger.error('flv format not support, maybe you can rebuild avmedia')
