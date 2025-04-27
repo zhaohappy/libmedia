@@ -27,11 +27,11 @@ import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVIFormatContext } from './AVFormatContext'
 import * as object from 'common/util/object'
 import * as array from 'common/util/array'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { AV_MILLI_TIME_BASE_Q, INT32_MAX, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { AVPacketSideDataType, AVCodecID, AVMediaType } from 'avutil/codec'
 import { AVFormat, AVSeekFlags, IOFlags } from 'avutil/avformat'
 import { checkStreamParameters } from './function/checkStreamParameters'
-import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
+import { avD2Q, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { copyAVPacketData, createAVPacket, destroyAVPacket,
   getAVPacketSideData,
   hasAVPacketSideData, refAVPacket, unrefAVPacket
@@ -264,8 +264,10 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
         stream.codecpar.frameSize = Math.round(value / stream.timeBase.den * stream.timeBase.num * stream.codecpar.sampleRate)
       }
       else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-        stream.codecpar.framerate.num = stream.timeBase.den * stream.timeBase.num * (dtsList.length - 1)
-        stream.codecpar.framerate.den = static_cast<int32>(count)
+        const q = avD2Q((stream.timeBase.den * (dtsList.length - 1))
+          / (reinterpret_cast<int32>(static_cast<double>(count)) * stream.timeBase.num), INT32_MAX)
+        stream.codecpar.framerate.num = q.num
+        stream.codecpar.framerate.den = q.den
         roundStandardFramerate(stream.codecpar.framerate)
       }
       const duration = static_cast<double>(dtsList[dtsList.length - 1] - stream.startTime) * stream.timeBase.num / stream.timeBase.den
