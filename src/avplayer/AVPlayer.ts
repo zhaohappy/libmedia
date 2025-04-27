@@ -131,6 +131,8 @@ interface ExternalSubtitleTask extends ExternalSubtitle {
 export interface AVPlayerOptions {
   /**
    * dom 挂载元素
+   * 
+   * 也可以传一个 MediaStream 容器，AVPlayer 会将音视频写入 MediaStreamTrack 放入 MediaStream 可用于 webrtc 等应用
    */
   container: HTMLDivElement | MediaStream
   /**
@@ -169,7 +171,9 @@ export interface AVPlayerOptions {
    */
   enableWebCodecs?: boolean
   /**
-   * 是否启用 worker
+   * 是否启用 worker，非多线程环境下使用
+   * 
+   * 启用之后在非多线程下，io 和 demux 一个 worker；音频解码渲染一个 worker；视频解码渲染一个 worker
    */
   enableWorker?: boolean
   /**
