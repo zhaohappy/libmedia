@@ -1,5 +1,5 @@
 /*
- * libmedia AudioSourceWorkletProcessor in share memory
+ * libmedia AudioSourceWorkletProcessor on shared memory
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
