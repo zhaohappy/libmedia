@@ -112,7 +112,10 @@ async function estimateDurationFromPts(formatContext: AVIFormatContext) {
   while (retry < 4) {
     const pos = fileSize - static_cast<int64>(DURATION_MAX_READ_SIZE << retry)
     const nextPos = await formatContext.iformat.seek(formatContext, null, pos, AVSeekFlags.BYTE)
-    if (nextPos > 0n) {
+    if (nextPos < 0) {
+      break
+    }
+    else if (!retry && nextPos > 0) {
       now = nextPos
     }
     const lastDurationMap: Record<number, int64> = {}
