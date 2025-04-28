@@ -708,7 +708,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
 
             try {
               const len = await (task.options.input.file as CustomIOLoader).read(length, buffer)
-              task.stats.bufferReceiveBytes += static_cast<int64>(len)
+              if (len > 0) {
+                task.stats.bufferReceiveBytes += static_cast<int64>(len)
+              }
               ipcPort.reply(request, len)
             }
             catch (error) {

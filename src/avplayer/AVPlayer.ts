@@ -1261,8 +1261,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
             try {
               const len = await source.read(buffer, ioloaderOptions)
-              this.GlobalData.stats.bufferReceiveBytes += static_cast<int64>(len)
-              this.ioIPCPort.reply(request, AVPlayer.IODemuxProxy ? buffer : len, null, AVPlayer.IODemuxProxy ? [buffer.buffer] : null)
+              if (len < 0) {
+                this.ioIPCPort.reply(request, len, null)
+              }
+              else {
+                this.GlobalData.stats.bufferReceiveBytes += static_cast<int64>(len)
+                this.ioIPCPort.reply(request, AVPlayer.IODemuxProxy ? (buffer as Uint8Array).subarray(0, len) : len, null, AVPlayer.IODemuxProxy ? [buffer.buffer] : null)
+              }
             }
             catch (error) {
               logger.error(`loader read error, ${error}, taskId: ${this.taskId}`)
