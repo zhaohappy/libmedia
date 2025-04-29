@@ -77,7 +77,7 @@ const pipeline = await createThreadFromClass(
 
 import { defineConfig } from 'vite';
 import typescript from '@rollup/plugin-typescript';
-const transformer = require('@libmedia/cheap/build/transformer');
+import transformer from '@libmedia/cheap/build/transformer';
 
 export default defineConfig({
   ...

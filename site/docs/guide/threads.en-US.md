@@ -77,7 +77,7 @@ If you use vite, you need to add the following configuration for the worker:
 
 import { defineConfig } from 'vite';
 import typescript from '@rollup/plugin-typescript';
-const transformer = require('@libmedia/cheap/build/transformer');
+import transformer from '@libmedia/cheap/build/transformer';
 
 export default defineConfig({
   ...
