@@ -26,7 +26,7 @@
 import { createAVOFormatContext, AVOFormatContext } from 'avformat/AVFormatContext'
 import Pipeline, { TaskOptions } from 'avpipeline/Pipeline'
 import * as errorType from 'avutil/error'
-import IPCPort from 'common/network/IPCPort'
+import IPCPort, { NOTIFY, RpcMessage } from 'common/network/IPCPort'
 import * as logger from 'common/util/logger'
 import OFormat from 'avformat/formats/OFormat'
 import IOWriter from 'common/io/IOWriterSync'
@@ -70,6 +70,7 @@ import * as is from 'common/util/is'
 import os from 'common/util/os'
 import { MPEG4AudioObjectTypes } from 'avutil/codecs/aac'
 import { AVStreamMetadataKey } from 'avutil/AVStream'
+import WorkerTimer from 'common/timer/WorkerTimer'
 
 export interface MSETaskOptions extends TaskOptions {
   isLive: boolean
@@ -142,6 +143,9 @@ type SelfTask = MSETaskOptions & {
   avpacketPool: AVPacketPool
   maxBuffer: float
   minBuffer: float
+
+  visibilityHidden: boolean
+  fakePlayTimer: WorkerTimer
 }
 
 function checkExtradataChanged(old: pointer<uint8>, oldSize: int32, newer: pointer<uint8>, newSize: int32) {
@@ -1148,6 +1152,9 @@ export default class MSEPipeline extends Pipeline {
       task.pauseTimestamp = getTimestamp()
       task.audio?.loop.stop()
       task.video?.loop.stop()
+      if (task.fakePlayTimer) {
+        task.fakePlayTimer.stop()
+      }
 
       logger.debug(`pause taskId: ${taskId}`)
     }
@@ -1174,6 +1181,9 @@ export default class MSEPipeline extends Pipeline {
           task.video.startTimestamp += static_cast<int64>(getTimestamp() - task.pauseTimestamp)
           task.video.loop.start()
         }
+      }
+      if (task.fakePlayTimer) {
+        task.fakePlayTimer.start()
       }
       logger.debug(`unpause taskId: ${taskId}`)
     }
@@ -1690,13 +1700,52 @@ export default class MSEPipeline extends Pipeline {
       cacheDuration: static_cast<int64>(0.5 * 1000),
       avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex),
       maxBuffer: options.isLive ? 1 : 4,
-      minBuffer: options.isLive ? 0.5 : 2
+      minBuffer: options.isLive ? 0.5 : 2,
+      visibilityHidden: false,
+      fakePlayTimer: null
     }
     this.tasks.set(options.taskId, task)
 
     mediaSource.onsourceopen = this.getSourceOpenHandler(task, startTimestamp)
 
+    controlIPCPort.on(NOTIFY, (message: RpcMessage) => {
+      if (message.method === 'visibilitychange') {
+        this.setVisibilityHidden(options.taskId, message.params.visibilityHidden)
+      }
+    })
+
     return 0
+  }
+
+  public async setVisibilityHidden(taskId: string, visibilityHidden: boolean) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      task.visibilityHidden = visibilityHidden
+      if (visibilityHidden) {
+        if (task.isLive && task.video && !task.audio) {
+          if (task.fakePlayTimer) {
+            task.fakePlayTimer.destroy()
+          }
+          task.fakePlayTimer = new WorkerTimer(() => {
+            this.setCurrentTime(task.taskId, task.currentTime + (getTimestamp() - task.currentTimeNTP) / 1000)
+          }, 0, 1000)
+          task.fakePlayTimer.start()
+        }
+      }
+      else {
+        if (task.fakePlayTimer) {
+          task.fakePlayTimer.destroy()
+          task.fakePlayTimer = null
+          const cachedTime = task.video.track.getBufferedTime()
+          if (cachedTime > (task.isLive ? 2 : 4)) {
+            this.setCurrentTime(task.taskId, Math.max(task.video.track.getBufferedEnd() - (task.isLive ? 1 : 4), task.video.track.getBufferedStart()))
+            task.controlIPCPort.notify('seek', {
+              time: task.currentTime
+            })
+          }
+        }
+      }
+    }
   }
 
   public async registerTask(options: MSETaskOptions, startTimestamp: int64 = 0n): Promise<number> {
