@@ -2555,7 +2555,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     logger.info(`call stop, taskId: ${this.taskId}`)
 
     if (this.status === AVPlayerStatus.STOPPED) {
-      logger.warn(`player has already stopped, taskId: ${this.taskId}`)
+      logger.info(`player has already stopped, taskId: ${this.taskId}`)
       return
     }
 
