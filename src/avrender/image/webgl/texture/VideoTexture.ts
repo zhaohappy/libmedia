@@ -75,6 +75,7 @@ export default class VideoTexture extends Texture {
 
   fill(data: Uint8Array | Uint16Array) {
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture)
+    this.setUnpackAlignment()
     if (this.firstUploaded) {
       if (this.pbo) {
         const gl = this.gl as WebGL2RenderingContext
@@ -106,7 +107,6 @@ export default class VideoTexture extends Texture {
         catch (error) {
           this.pbo = null
           logger.warn('not support pbo')
-          this.setUnpackAlignment()
           this.gl.texImage2D(
             this.gl.TEXTURE_2D, 0, this.internalformat, this.width, this.height, 0,
             this.format, this.dataType, data as Uint8Array
@@ -114,7 +114,6 @@ export default class VideoTexture extends Texture {
         }
       }
       else {
-        this.setUnpackAlignment()
         this.gl.texImage2D(
           this.gl.TEXTURE_2D, 0, this.internalformat, this.width, this.height, 0,
           this.format, this.dataType, data as Uint8Array
