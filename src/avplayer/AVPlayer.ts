@@ -1834,6 +1834,17 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await AVPlayer.DemuxerThread.connectStreamTask
         .transfer(this.demuxer2AudioDecoderChannel.port1)
         .invoke(this.taskId, audioStream.index, this.demuxer2AudioDecoderChannel.port1)
+
+      const audioStreams = this.formatContext.streams.filter((stream) => {
+        return stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
+      })
+      if (audioStreams.length > 1) {
+        for (let i = 0; i < audioStreams.length; i++) {
+          if (audioStreams[i] !== audioStream) {
+            await AVPlayer.DemuxerThread.addPendingStream(this.taskId, audioStreams[i].index)
+          }
+        }
+      }
     }
 
     if (this.videoDecoder2VideoRenderChannel) {
@@ -3223,11 +3234,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             && (stream.codecpar.sampleRate !== this.selectedAudioStream.codecpar.sampleRate
             || stream.codecpar.chLayout.nbChannels !== this.selectedAudioStream.codecpar.chLayout.nbChannels)
         ) {
-          let seekStreamId = stream.index
-          if (this.selectedVideoStream) {
-            seekStreamId = this.selectedVideoStream.index
-          }
-          if (this.useMSE) {
+          if (this.useMSE && defined(ENABLE_MSE)) {
+            let seekStreamId = stream.index
+            if (this.selectedVideoStream) {
+              seekStreamId = this.selectedVideoStream.index
+            }
             await this.doSeek(this.currentTime, seekStreamId, {
               onBeforeSeek: async () => {
                 await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedAudioStream.index)
@@ -3236,16 +3247,28 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             })
           }
           else {
-            await this.doSeek(this.currentTime, seekStreamId, {
-              onBeforeSeek: async () => {
-                await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedAudioStream.index)
-                await AVPlayer.AudioDecoderThread.reopenDecoder(
-                  this.taskId,
-                  serializeAVCodecParameters(stream.codecpar),
-                  await this.getResource('decoder', stream.codecpar.codecId, AVMediaType.AVMEDIA_TYPE_AUDIO)
-                )
+            await AVPlayer.AudioDecoderThread.beforeReopenDecoder(this.taskId)
+            await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedAudioStream.index, true, true)
+            await AVPlayer.AudioDecoderThread.reopenDecoder(
+              this.taskId,
+              serializeAVCodecParameters(stream.codecpar),
+              await this.getResource('decoder', stream.codecpar.codecId, AVMediaType.AVMEDIA_TYPE_AUDIO)
+            )
+            if (this.audioEnded) {
+              if (this.audioDecoder2AudioRenderChannel) {
+                await AVPlayer.AudioDecoderThread.resetTask(this.taskId)
+                await AVPlayer.AudioRenderThread.restart(this.taskId)
+                await AVPlayer.AudioRenderThread.syncSeekTime(this.taskId, this.currentTime)
+                this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_AUDIO)
               }
-            })
+              if (this.audioSourceNode) {
+                await this.audioSourceNode.request('restart')
+                if (AVPlayer.audioContext.state === 'suspended') {
+                  await AVPlayer.AudioRenderThread.fakePlay(this.taskId)
+                }
+              }
+              this.audioEnded = false
+            }
           }
         }
         else {

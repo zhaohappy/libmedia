@@ -71,6 +71,7 @@ import { IVvcFormatOptions } from 'avformat/formats/IVvcFormat'
 import support from 'common/util/support'
 
 export const STREAM_INDEX_ALL = -1
+const MAX_QUEUE_LENGTH_DEFAULT = 2000
 
 export interface DemuxTaskOptions extends TaskOptions {
   format?: AVFormat
@@ -95,6 +96,7 @@ type SelfTask = DemuxTaskOptions & {
   oBuffer: pointer<uint8>
 
   cacheAVPackets: Map<number, pointer<AVPacketRef>[]>
+  pendingAVPackets: Map<number, pointer<AVPacketRef>[]>
   cacheRequests: Map<number, RpcMessage>
   streamIndexFlush: Map<number, boolean>
 
@@ -269,6 +271,7 @@ export default class DemuxPipeline extends Pipeline {
       cacheAVPackets: new Map(),
       cacheRequests: new Map(),
       streamIndexFlush: new Map(),
+      pendingAVPackets: new Map(),
 
       realFormat: AVFormat.UNKNOWN,
 
@@ -619,7 +622,17 @@ export default class DemuxPipeline extends Pipeline {
     }
   }
 
-  public async changeConnectStream(taskId: string, newStreamIndex: number, oldStreamIndex: number, force: boolean = true) {
+  public async addPendingStream(taskId: string, streamIndex: number) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      task.pendingAVPackets.set(streamIndex, [])
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+
+  public async changeConnectStream(taskId: string, newStreamIndex: number, oldStreamIndex: number, force: boolean = true, start: boolean = false) {
     const task = this.tasks.get(taskId)
     if (task) {
 
@@ -627,7 +640,7 @@ export default class DemuxPipeline extends Pipeline {
         return
       }
 
-      const cache = task.cacheAVPackets.get(oldStreamIndex)
+      let cache = task.cacheAVPackets.get(oldStreamIndex)
       const ipcPort = task.rightIPCPorts.get(oldStreamIndex)
       const request = task.cacheRequests.get(oldStreamIndex)
 
@@ -638,13 +651,27 @@ export default class DemuxPipeline extends Pipeline {
       await task.loop.stopBeforeNextTick()
 
       if (force) {
-        array.each(cache, (avpacket) => {
-          task.avpacketPool.release(avpacket)
-        })
-        cache.length = 0
+        if (!task.pendingAVPackets.has(newStreamIndex)) {
+          array.each(cache, (avpacket) => {
+            task.avpacketPool.release(avpacket)
+          })
+          cache.length = 0
+        }
       }
       else {
         task.streamIndexFlush.set(newStreamIndex, true)
+      }
+
+      if (task.pendingAVPackets.has(newStreamIndex)) {
+        task.pendingAVPackets.set(oldStreamIndex, cache)
+        cache = task.pendingAVPackets.get(newStreamIndex)
+        task.pendingAVPackets.delete(newStreamIndex)
+      }
+      if (task.formatContext.streams[newStreamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+        task.stats.audioPacketQueueLength = cache.length
+      }
+      else if (task.formatContext.streams[newStreamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+        task.stats.videoPacketQueueLength = cache.length
       }
 
       ipcPort.streamIndex = newStreamIndex
@@ -660,7 +687,7 @@ export default class DemuxPipeline extends Pipeline {
         task.cacheRequests.delete(oldStreamIndex)
       }
 
-      if (!force) {
+      if (!force || start) {
         task.loop.start()
       }
 
@@ -778,6 +805,33 @@ export default class DemuxPipeline extends Pipeline {
             }
           }
         }
+        else if (task.pendingAVPackets.has(streamIndex)) {
+          const pending = task.pendingAVPackets.get(streamIndex)
+          pending.push(avpacket)
+          if (task.stats !== nullptr) {
+            const type = task.formatContext.streams[streamIndex].codecpar.codecType
+            while (pending.length) {
+              const head = pending[0]
+              const time = avRescaleQ2(head.pts, addressof(head.timeBase), AV_MILLI_TIME_BASE_Q)
+              const currentTime = bigint.max(task.stats.audioCurrentTime, task.stats.videoCurrentTime)
+              if (type === AVMediaType.AVMEDIA_TYPE_AUDIO
+                && time >= currentTime
+                || type === AVMediaType.AVMEDIA_TYPE_VIDEO
+                  && time >= currentTime
+                || (type !== AVMediaType.AVMEDIA_TYPE_AUDIO && type !== AVMediaType.AVMEDIA_TYPE_VIDEO)
+                  && pending.length <= minQueueLength
+              ) {
+                break
+              }
+              task.avpacketPool.release(pending.shift())
+            }
+          }
+          else {
+            if (pending.length > minQueueLength) {
+              task.avpacketPool.release(pending.shift())
+            }
+          }
+        }
         else {
           if (task.rightIPCPorts.has(STREAM_INDEX_ALL)) {
             if (task.cacheRequests.has(STREAM_INDEX_ALL)) {
@@ -823,6 +877,7 @@ export default class DemuxPipeline extends Pipeline {
       task.loop = new LoopTask(async () => {
         if (!isLive) {
           let canDo = false
+          let isMaxQueue = false
           task.cacheAVPackets.forEach((list, streamIndex) => {
             const stream = task.formatContext.streams.find((stream) => {
               return stream.index === streamIndex
@@ -834,9 +889,12 @@ export default class DemuxPipeline extends Pipeline {
             ) {
               canDo = true
             }
+            if (list.length > Math.max(minQueueLength * 2, MAX_QUEUE_LENGTH_DEFAULT)) {
+              isMaxQueue = true
+            }
           })
 
-          if (!canDo) {
+          if (!canDo || isMaxQueue) {
             task.loop.emptyTask()
             return
           }
@@ -886,7 +944,8 @@ export default class DemuxPipeline extends Pipeline {
         await task.loop.stopBeforeNextTick()
         let ret: int32 | int64 = await demux.seek(task.formatContext, streamIndex, timestamp, flags)
         if (ret >= 0n) {
-          task.cacheAVPackets.forEach((list) => {
+
+          function resetList(list: pointer<AVPacketRef>[]) {
             array.each(list, (avpacket) => {
               if (task.formatContext.ioReader.flags & IOFlags.SLICE) {
                 const newSideData = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
@@ -898,7 +957,10 @@ export default class DemuxPipeline extends Pipeline {
               task.avpacketPool.release(avpacket)
             })
             list.length = 0
-          })
+          }
+
+          task.cacheAVPackets.forEach(resetList)
+          task.pendingAVPackets.forEach(resetList)
 
           if (task.stats !== nullptr) {
             // 判断当前 task 处理的 stream 来重置
@@ -997,8 +1059,16 @@ export default class DemuxPipeline extends Pipeline {
         return hasNewSps
       }
 
-      // 先处理视频
+      const cacheAVPackets: Map<number, pointer<AVPacketRef>[]> = new Map()
       task.cacheAVPackets.forEach((list, streamIndex) => {
+        cacheAVPackets.set(streamIndex, list)
+      })
+      task.pendingAVPackets.forEach((list, streamIndex) => {
+        cacheAVPackets.set(streamIndex, list)
+      })
+
+      // 先处理视频
+      cacheAVPackets.forEach((list, streamIndex) => {
         const codecType = task.formatContext.streams[streamIndex].codecpar.codecType
         const codecId = task.formatContext.streams[streamIndex].codecpar.codecId
         if (codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
@@ -1036,7 +1106,7 @@ export default class DemuxPipeline extends Pipeline {
       })
 
       // 再处理非视频，裁剪到视频处
-      task.cacheAVPackets.forEach((list, streamIndex) => {
+      cacheAVPackets.forEach((list, streamIndex) => {
         const codecType = task.formatContext.streams[streamIndex].codecpar.codecType
         if (codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO) {
           const lastDts = list[list.length - 1].dts
@@ -1053,10 +1123,10 @@ export default class DemuxPipeline extends Pipeline {
         }
       })
       // 判断所有流是否都支持裁剪
-      if (indexes.size === task.cacheAVPackets.size) {
+      if (indexes.size === cacheAVPackets.size) {
         indexes.forEach((index, streamIndex) => {
 
-          const list = task.cacheAVPackets.get(streamIndex)
+          const list = cacheAVPackets.get(streamIndex)
           list.splice(0, index).forEach((avpacket) => {
             task.avpacketPool.release(avpacket)
           })
@@ -1099,6 +1169,11 @@ export default class DemuxPipeline extends Pipeline {
       }
 
       task.cacheAVPackets.forEach((list) => {
+        list.forEach((avpacket) => {
+          task.avpacketPool.release(avpacket)
+        })
+      })
+      task.pendingAVPackets.forEach((list) => {
         list.forEach((avpacket) => {
           task.avpacketPool.release(avpacket)
         })

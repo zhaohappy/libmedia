@@ -72,6 +72,9 @@ type SelfTask = Omit<AudioDecodeTaskOptions, 'resource'> & {
   avpacketPool: AVPacketPool
 
   wasmDecoderOptions?: Data
+
+  pending?: Promise<void>
+  pendingResolve?: () => void
 }
 
 export default class AudioDecodePipeline extends Pipeline {
@@ -176,6 +179,10 @@ export default class AudioDecodePipeline extends Pipeline {
                 break
               }
 
+              if (task.pending) {
+                await task.pending
+              }
+
               task.lastDecodeTimestamp = getTimestamp()
               const avpacket = await this.pullAVPacketInternal(task, leftIPCPort)
 
@@ -250,6 +257,18 @@ export default class AudioDecodePipeline extends Pipeline {
     logger.fatal('task not found')
   }
 
+  public async beforeReopenDecoder(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      task.pending = new Promise<void>((resolve) => {
+        task.pendingResolve = resolve
+      })
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+
   public async reopenDecoder(
     taskId: string,
     parameters: AVCodecParametersSerialize | pointer<AVCodecParameters>,
@@ -295,6 +314,10 @@ export default class AudioDecodePipeline extends Pipeline {
 
         logger.debug(`reopen audio decoder, taskId: ${task.taskId}`)
         resolve(0)
+        if (task.pendingResolve) {
+          task.pendingResolve()
+          task.pending = null
+        }
       })
     }
     logger.fatal('task not found')
