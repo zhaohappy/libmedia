@@ -305,6 +305,20 @@ export const AVPlayerSupportedCodecs = [
   AVCodecID.AV_CODEC_ID_TEXT
 ]
 
+export const AVPlayerMSESupportedCodecs = [
+  AVCodecID.AV_CODEC_ID_H264,
+  AVCodecID.AV_CODEC_ID_HEVC,
+  AVCodecID.AV_CODEC_ID_AV1,
+  AVCodecID.AV_CODEC_ID_VP8,
+  AVCodecID.AV_CODEC_ID_VP9,
+
+  AVCodecID.AV_CODEC_ID_AAC,
+  AVCodecID.AV_CODEC_ID_MP3,
+  AVCodecID.AV_CODEC_ID_OPUS,
+  AVCodecID.AV_CODEC_ID_FLAC,
+  AVCodecID.AV_CODEC_ID_VORBIS
+]
+
 const defaultAVPlayerOptions: Partial<AVPlayerOptions> = {
   enableHardware: true,
   enableWebGPU: true,
@@ -538,17 +552,22 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   /**
    * @hidden
    */
-  private isCodecIdSupported(codecId: AVCodecID) {
+  private isCodecIdSupported(codecId: AVCodecID, codecType: AVMediaType, isMSE: boolean = false) {
     if (codecId > AVCodecID.AV_CODEC_ID_FIRST_AUDIO && codecId <= AVCodecID.AV_CODEC_ID_PCM_SGA) {
       return true
     }
-    return array.has(AVPlayerSupportedCodecs, codecId)
+    return array.has(
+      isMSE && (codecType === AVMediaType.AVMEDIA_TYPE_AUDIO || codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
+        ? AVPlayerMSESupportedCodecs
+        : AVPlayerSupportedCodecs,
+      codecId
+    )
   }
 
   /**
    * @hidden
    */
-  private findBestStream(streams: AVStreamInterface[], mediaType: AVMediaType) {
+  private findBestStream(streams: AVStreamInterface[], mediaType: AVMediaType, isMSE: boolean = false) {
     if (this.options.findBestStream) {
       return this.options.findBestStream(streams, mediaType)
     }
@@ -560,14 +579,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         return ss[0]
       }
       const defaultStream = ss.find((stream) => !!(stream.disposition & AVDisposition.DEFAULT))
-      if (defaultStream && this.isCodecIdSupported(defaultStream.codecpar.codecId)) {
+      if (defaultStream && this.isCodecIdSupported(defaultStream.codecpar.codecId, defaultStream.codecpar.codecType, isMSE)) {
         return defaultStream
       }
-      return ss.find((stream) => this.isCodecIdSupported(stream.codecpar.codecId)) || ss[0]
+      return ss.find((stream) => this.isCodecIdSupported(stream.codecpar.codecId, stream.codecpar.codecType, isMSE)) || ss[0]
     }
   }
 
-  private async checkUseMSE() {
+  private async checkUseMSE(options: AVPlayerPlayOptions) {
     if (defined(ENABLE_MSE)) {
       if (!support.mse) {
         logger.warn('disable mse because of not support mse')
@@ -580,15 +599,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         return true
       }
 
-      const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
-      const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
+      const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO, true)
+      const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO, true)
 
       // 检查音视频在 MediaSource 里面是否支持，不支持的只能使用 wasm 软解了
-      if (videoStream && !getMediaSource().isTypeSupported(getVideoMimeType(videoStream.codecpar))) {
+      if (options.video && videoStream && !getMediaSource().isTypeSupported(getVideoMimeType(videoStream.codecpar))) {
         logger.warn(`can not support mse for codec: ${getVideoMimeType(videoStream.codecpar)}, taskId: ${this.taskId}`)
         return false
       }
-      if (audioStream && !getMediaSource().isTypeSupported(getAudioMimeType(audioStream.codecpar))) {
+      if (options.audio && audioStream && !getMediaSource().isTypeSupported(getAudioMimeType(audioStream.codecpar))) {
         logger.warn(`can not support mse for codec: ${getAudioMimeType(audioStream.codecpar)}, taskId: ${this.taskId}`)
         return false
       }
@@ -597,7 +616,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         return this.options.checkUseMES(this.formatContext.streams)
       }
 
-      if (videoStream) {
+      if (videoStream && options.video) {
         // 目前 canvas 还不能渲染 hdr 视频，hdr 先使用 mse 播放
         // TODO 未来 canvas 支持 hdr 渲染之后去掉
         if (isHdr(videoStream.codecpar)) {
@@ -1610,8 +1629,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (defined(ENABLE_MSE)) {
       await AVPlayer.startMSEPipeline(this.options.enableWorker)
 
-      const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
-      const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
+      const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO, true)
+      const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO, true)
 
       let hasVideo = false
 
@@ -2101,7 +2120,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.status = AVPlayerStatus.PLAYING
     this.fire(eventType.PLAYING)
 
-    this.useMSE = await this.checkUseMSE()
+    this.useMSE = await this.checkUseMSE(options)
 
     this.audioEnded = true
     this.videoEnded = true
@@ -2115,7 +2134,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     if (defined(ENABLE_SUBTITLE_RENDER)) {
       const subtitleStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_SUBTITLE)
-      if (subtitleStream && options.subtitle && this.isCodecIdSupported(subtitleStream.codecpar.codecId)) {
+      if (subtitleStream && options.subtitle && this.isCodecIdSupported(subtitleStream.codecpar.codecId, subtitleStream.codecpar.codecType)) {
         const externalTask = this.externalSubtitleTasks.find((task) => {
           return task.streamId === subtitleStream.id
         })
