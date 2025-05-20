@@ -1042,6 +1042,7 @@
           if (statsTimer) {
             clearTimeout(statsTimer)
             statsTimer = null
+            handleStats(player.getStats())
           }
           if (slider) {
             slider.currentTime = slider.duration
