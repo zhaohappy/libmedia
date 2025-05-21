@@ -71,7 +71,7 @@ import { IVvcFormatOptions } from 'avformat/formats/IVvcFormat'
 import support from 'common/util/support'
 
 export const STREAM_INDEX_ALL = -1
-const MAX_QUEUE_LENGTH_DEFAULT = 2000
+const MAX_QUEUE_LENGTH_DEFAULT = 5000
 
 export interface DemuxTaskOptions extends TaskOptions {
   format?: AVFormat
