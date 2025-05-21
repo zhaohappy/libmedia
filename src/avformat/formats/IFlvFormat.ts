@@ -976,7 +976,13 @@ export default class IFlvFormat extends IFormat {
             continue
           }
 
-          await formatContext.ioReader.skip(7 + size)
+          await formatContext.ioReader.skip(4)
+          const streamId = await formatContext.ioReader.readUint24()
+          if (streamId !== 0) {
+            await formatContext.ioReader.seek(pos + 1n)
+            continue
+          }
+          await formatContext.ioReader.skip(size)
           const tagSize = formatContext.ioReader.getPos() - pos
           const prev = static_cast<int64>(await formatContext.ioReader.readUint32())
 
