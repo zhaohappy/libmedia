@@ -106,6 +106,7 @@ export default function parser(xml: string, url: string) {
 
   AdaptationSet.forEach((asItem, asIndex) => {
     let mimeType = 'video/mp4'
+    let contentType = 'video'
     let codecs = 'avc1.64001E'
     let width = 640
     let height = 360
@@ -124,9 +125,10 @@ export default function parser(xml: string, url: string) {
       lang = asItem.lang
     }
 
-    if (asItem.mimeType) {
+    if (asItem.mimeType || asItem.contentType) {
       mimeType = asItem.mimeType
-      if (mimeType === 'video/mp4') {
+      contentType = asItem.contentType
+      if (mimeType === 'video/mp4' || contentType === 'video') {
         codecs = asItem.codecs
         width = parseFloat(asItem.width)
         height = parseFloat(asItem.height)
@@ -143,7 +145,7 @@ export default function parser(xml: string, url: string) {
         startWithSAP = asItem.startWithSAP
         bandwidth = parseFloat(asItem.bandwidth)
       }
-      else if (mimeType === 'audio/mp4') {
+      else if (mimeType === 'audio/mp4' || contentType === 'audio') {
         codecs = asItem.codecs
         startWithSAP = asItem.startWithSAP
         bandwidth = parseFloat(asItem.bandwidth)
@@ -176,7 +178,7 @@ export default function parser(xml: string, url: string) {
       if (rItem.mimeType) {
         mimeType = rItem.mimeType
       }
-      if (mimeType === 'video/mp4') {
+      if (mimeType === 'video/mp4' || contentType === 'video') {
         if (rItem.codecs) {
           codecs = rItem.codecs
         }
@@ -217,14 +219,14 @@ export default function parser(xml: string, url: string) {
         }
       }
       if (rItem.BaseURL) {
-        baseURL += rItem.BaseURL
+        baseURL += is.string(rItem.BaseURL) ? rItem.BaseURL : rItem.BaseURL.value
       }
       let encrypted = false
       if (asItem.ContentProtection || rItem.ContentProtection) {
         encrypted = true
       }
       if (rItem.SegmentBase) {
-        if (mimeType === 'video/mp4') {
+        if (mimeType === 'video/mp4' || contentType === 'video') {
           list.mediaList.video.push({
             id: rItem.id,
             file: baseURL,
@@ -243,7 +245,7 @@ export default function parser(xml: string, url: string) {
             encrypted
           })
         }
-        else if (mimeType === 'audio/mp4') {
+        else if (mimeType === 'audio/mp4' || contentType === 'audio') {
           list.mediaList.audio.push({
             id: rItem.id,
             file: baseURL,
@@ -257,7 +259,7 @@ export default function parser(xml: string, url: string) {
             lang
           })
         }
-        else if (mimeType === 'application/mp4') {
+        else if (mimeType === 'application/mp4' || contentType === 'text') {
           list.mediaList.subtitle.push({
             id: rItem.id,
             file: baseURL,
@@ -362,7 +364,7 @@ export default function parser(xml: string, url: string) {
           }
         }
 
-        if (mimeType === 'video/mp4') {
+        if (mimeType === 'video/mp4' || contentType === 'video') {
           list.mediaList.video.push({
             id: rItem.id,
             baseURL,
@@ -383,7 +385,7 @@ export default function parser(xml: string, url: string) {
             encrypted
           })
         }
-        else if (mimeType === 'audio/mp4') {
+        else if (mimeType === 'audio/mp4' || contentType === 'audio') {
           list.mediaList.audio.push({
             id: rItem.id,
             baseURL,
@@ -399,7 +401,7 @@ export default function parser(xml: string, url: string) {
             lang
           })
         }
-        else if (mimeType === 'application/mp4') {
+        else if (mimeType === 'application/mp4' || contentType === 'text') {
           list.mediaList.subtitle.push({
             id: rItem.id,
             baseURL,
