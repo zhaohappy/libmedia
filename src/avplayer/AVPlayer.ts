@@ -3163,7 +3163,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         this.status = AVPlayerStatus.CHANGING
         this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.id, this.selectedVideoStream.id])
 
-        if (this.useMSE) {
+        if (this.useMSE && defined(ENABLE_MSE)) {
+          if (browser.safari) {
+            this.status = this.lastStatus
+            logger.fatal('safari not support switch stream in mse, please use chrome')
+          }
+          if (!getMediaSource().isTypeSupported(getVideoMimeType(stream.codecpar))) {
+            this.status = this.lastStatus
+            logger.fatal(`select video stream(${stream.index}) not support mse`)
+          }
           await this.doSeek(this.currentTime, stream.index, {
             onBeforeSeek: async () => {
               await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedVideoStream.index)
@@ -3179,6 +3187,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           })
         }
         else {
+          if (!array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId)) {
+            this.status = this.lastStatus
+            logger.fatal(`select video stream(${stream.index}) not support`)
+          }
           await this.doSeek(this.currentTime, stream.index, {
             onBeforeSeek: async () => {
               await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedVideoStream.index)
@@ -3200,9 +3212,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         this.status = this.lastStatus
         this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.id, this.selectedVideoStream.id])
-      }
-      else {
-        logger.error(`call selectVideo failed, id: ${id}, taskId: ${this.taskId}`)
       }
     }
   }
@@ -3230,14 +3239,22 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.id, this.selectedAudioStream.id])
 
         if (stream.codecpar.codecId !== this.selectedAudioStream.codecpar.codecId
-          || this.useMSE
-            && (stream.codecpar.sampleRate !== this.selectedAudioStream.codecpar.sampleRate
-            || stream.codecpar.chLayout.nbChannels !== this.selectedAudioStream.codecpar.chLayout.nbChannels)
+          || stream.codecpar.sampleRate !== this.selectedAudioStream.codecpar.sampleRate
+          || stream.codecpar.chLayout.nbChannels !== this.selectedAudioStream.codecpar.chLayout.nbChannels
+          || stream.codecpar.profile !== this.selectedAudioStream.codecpar.profile
         ) {
           if (this.useMSE && defined(ENABLE_MSE)) {
+            if (browser.safari) {
+              this.status = this.lastStatus
+              logger.fatal('safari not support switch stream in mse, please use chrome')
+            }
             let seekStreamId = stream.index
             if (this.selectedVideoStream) {
               seekStreamId = this.selectedVideoStream.index
+            }
+            if (!getMediaSource().isTypeSupported(getAudioMimeType(stream.codecpar))) {
+              this.status = this.lastStatus
+              logger.fatal(`select audio stream(${stream.index}) not support mse`)
             }
             await this.doSeek(this.currentTime, seekStreamId, {
               onBeforeSeek: async () => {
@@ -3247,6 +3264,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             })
           }
           else {
+            if (!array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId)) {
+              this.status = this.lastStatus
+              logger.fatal(`select audio stream(${stream.index}) not support`)
+            }
             await AVPlayer.AudioDecoderThread.beforeReopenDecoder(this.taskId)
             await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedAudioStream.index, true, true)
             await AVPlayer.AudioDecoderThread.reopenDecoder(
@@ -3281,9 +3302,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         this.status = this.lastStatus
         this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.id, this.selectedAudioStream.id])
-      }
-      else {
-        logger.error(`call selectAudio failed, id: ${id}, taskId: ${this.taskId}`)
       }
     }
   }

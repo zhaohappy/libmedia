@@ -79,6 +79,10 @@ export default class Track {
   }
 
   public setSourceBuffer(sourceBuffer: SourceBuffer) {
+    if (this.sourceBuffer) {
+      this.sourceBuffer.onupdateend = null
+      this.sourceBuffer.onerror = null
+    }
     this.sourceBuffer = sourceBuffer
     this.sourceBuffer.onupdateend = () => {
 
@@ -104,9 +108,11 @@ export default class Track {
     }
   }
 
-  public changeMimeType(type: string) {
+  public changeMimeType(type: string, mode: AppendMode) {
     if (this.sourceBuffer) {
       this.sourceBuffer.changeType(type)
+      this.sourceBuffer.mode = mode
+      this.sourceBuffer.timestampOffset = 0
     }
   }
 

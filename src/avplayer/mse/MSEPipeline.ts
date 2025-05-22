@@ -1125,7 +1125,21 @@ export default class MSEPipeline extends Pipeline {
           stream.timeBase.den = timeBase.den
           stream.timeBase.num = timeBase.num
         }
-        resource.track.changeMimeType(this.getMimeType(addressof(stream.codecpar)))
+        resource.enableRawMpeg = codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3 && !browser.firefox
+        resource.timestampOffsetUpdated = false
+        resource.pullQueue.useSampleRateTimeBase = useSampleRateTimeBase
+        try {
+          resource.track.changeMimeType(
+            this.getMimeType(addressof(stream.codecpar)),
+            resource.enableRawMpeg ? 'sequence' : 'segments'
+          )
+        }
+        catch (error) {
+          // firefox 会报这个错，但不影响播放，这里忽略
+          if (!browser.firefox || error.message.indexOf('An attempt was made to use an object that is not') < 0) {
+            throw error
+          }
+        }
         if (!resource.enableRawMpeg) {
           mux.open(resource.oformatContext)
           mux.writeHeader(resource.oformatContext)
