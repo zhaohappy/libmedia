@@ -12,6 +12,9 @@ export const CodecId2MimeType = {
   [AVCodecID.AV_CODEC_ID_OPUS]: 'opus',
   [AVCodecID.AV_CODEC_ID_PCM_MULAW]: 'ulaw',
   [AVCodecID.AV_CODEC_ID_PCM_ALAW]: 'alaw',
+  [AVCodecID.AV_CODEC_ID_AC3]: 'ac-3',
+  [AVCodecID.AV_CODEC_ID_EAC3]: 'ec-3',
+  [AVCodecID.AV_CODEC_ID_DTS]: 'dtsc',
 
   [AVCodecID.AV_CODEC_ID_AV1]: 'av01',
   [AVCodecID.AV_CODEC_ID_H264]: 'avc1',
