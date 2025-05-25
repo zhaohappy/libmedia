@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avformat",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "libmedia avformat",
   "repository": {
     "type": "git",

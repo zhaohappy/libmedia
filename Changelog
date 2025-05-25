@@ -1,3 +1,20 @@
+version 0.8.0:
+
+feat:
+  - feat(avrender): WritableStreamRender 支持旋转和翻转
+  - feat(avplayer): 支持 WebSocketOptions 传递 WebSocket 参数
+  - feat(avformat): flv 实现 enhanced-rtmp v2 规范，支持音频编码格式: ac3、eac3、opus、flac；视频编码格式: hevc、vp8、vp9、av1；支持高精度时间戳；支持多轨道；支持 HDR 元数据和声道元数据。规范文档地址: https://veovera.org/docs/enhanced/enhanced-rtmp-v2
+  - feat(avplayer): 支持不同音频编码格式的音频轨道间进行无感知切换
+
+bugfix:
+  - fix(avrender): 修复一些 gpu 内存资源的释放问题
+  - fix(avplayer): mse 模式下没有音频设置 muted 状态防止出现需要交互的错误
+  - fix(avplayer): 修复自定义 loader 在非多线程 worker 模式下出现一段 0 的脏数据
+  - fix(avplayer): 修复 mse 模式下只播放视频时，切换到后台视频会积压
+  - fix(avformat): flv 的 syncTag 方法添加判断 streamId 是否合法来加快分析，防止频繁的来回 seek
+  - fix(avplayer): mse 模式下音频轨道切换的一些兼容处理
+
+
 version 0.7.0:
 
 feat:
