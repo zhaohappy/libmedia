@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avfilter",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "libmedia filter 模块",
   "repository": {
     "type": "git",
