@@ -31,7 +31,7 @@ import { FlvContext, FlvStreamContext } from './type'
 import { Rational } from 'avutil/struct/rational'
 import { avRescaleQ2 } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, AV_NANO_TIME_BASE_Q } from 'avutil/constant'
-import mktag from 'avformat/function/mktag'
+import mktag from '../../function/mktag'
 import * as is from 'common/util/is'
 import AVStream from 'avutil/AVStream'
 
