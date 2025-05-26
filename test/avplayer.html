@@ -1438,9 +1438,28 @@
         })
       }
 
+      function testSupportWasmSimd() {
+        const asm = 'AGFzbQEAAAABBQFgAAF7AhIBA2VudgZtZW1vcnkCAwGAgAIDAgEACgoBCABBAP0ABAAL'
+        const binaryData = atob(asm)
+        const uint8Array = new Uint8Array(binaryData.length)
+        for (let i = 0; i < binaryData.length; i++) {
+          uint8Array[i] = binaryData.charCodeAt(i)
+        }
+
+        const instance = WebAssembly.compile(uint8Array).then(() => {
+          console.log('wasm simd support')
+          enableSimdComponent.enableSimd = true
+        }, () => {
+          enableSimdComponent.enableSimd = false
+          console.log('wasm simd not support')
+        })
+      }
+
+
       document.querySelector('#ua').textContent = navigator.userAgent
 
       testSupportWasmAtomic()
+      testSupportWasmSimd()
     </script>
 </body>
 </html>
