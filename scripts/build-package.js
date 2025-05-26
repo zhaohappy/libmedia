@@ -6,6 +6,40 @@ const argv = require('yargs').argv;
 const { spawnSync, execSync } = require('child_process');
 const terser = require('terser');
 
+const rootPath = path.resolve(__dirname, '../src')
+
+const files = {
+  audioresample: path.resolve(__dirname, '../src/audioresample/package.json'),
+  audiostretchpitch: path.resolve(__dirname, '../src/audiostretchpitch/package.json'),
+  avcodec: path.resolve(__dirname, '../src/avcodec/package.json'),
+  avfilter: path.resolve(__dirname, '../src/avfilter/package.json'),
+  avformat: path.resolve(__dirname, '../src/avformat/package.json'),
+  avnetwork: path.resolve(__dirname, '../src/avnetwork/package.json'),
+  avpipeline: path.resolve(__dirname, '../src/avpipeline/package.json'),
+  avprotocol: path.resolve(__dirname, '../src/avprotocol/package.json'),
+  avrender: path.resolve(__dirname, '../src/avrender/package.json'),
+  avutil: path.resolve(__dirname, '../src/avutil/package.json'),
+  cheap: path.resolve(__dirname, '../src/cheap/package.json'),
+  common: path.resolve(__dirname, '../src/common/package.json'),
+  videoscale: path.resolve(__dirname, '../src/videoscale/package.json')
+}
+
+const packages = {
+  audioresample: JSON.parse(fs.readFileSync(files['audioresample'], 'utf8')),
+  audiostretchpitch: JSON.parse(fs.readFileSync(files['audiostretchpitch'], 'utf8')),
+  avcodec: JSON.parse(fs.readFileSync(files['avcodec'], 'utf8')),
+  avfilter: JSON.parse(fs.readFileSync(files['avfilter'], 'utf8')),
+  avformat: JSON.parse(fs.readFileSync(files['avformat'], 'utf8')),
+  avnetwork: JSON.parse(fs.readFileSync(files['avnetwork'], 'utf8')),
+  avpipeline: JSON.parse(fs.readFileSync(files['avpipeline'], 'utf8')),
+  avprotocol: JSON.parse(fs.readFileSync(files['avprotocol'], 'utf8')),
+  avrender: JSON.parse(fs.readFileSync(files['avrender'], 'utf8')),
+  avutil: JSON.parse(fs.readFileSync(files['avutil'], 'utf8')),
+  cheap: JSON.parse(fs.readFileSync(files['cheap'], 'utf8')),
+  common: JSON.parse(fs.readFileSync(files['common'], 'utf8')),
+  videoscale: JSON.parse(fs.readFileSync(files['videoscale'], 'utf8')),
+}
+
 function copyFolder(src, dest) {
   // 确保目标文件夹存在
   if (!fs.existsSync(dest)) {
@@ -30,7 +64,46 @@ function copyFolder(src, dest) {
   }
 }
 
-function replacePath(path) {
+function reportTSError(
+  file,
+  node,
+  message,
+  code = 9000,
+  startPos = 0,
+  endPos = 0
+) {
+
+  if (!startPos && node.pos > -1) {
+    startPos = node.getStart()
+  }
+  if (!endPos && node.end > -1) {
+    endPos = node.getEnd()
+  }
+
+  const format = ts.formatDiagnostic(
+    {
+      file: file,
+      start: startPos,
+      length: endPos - startPos,
+      category: ts.DiagnosticCategory.Error,
+      code,
+      messageText: message
+    },
+    {
+      getCurrentDirectory: ts.sys.getCurrentDirectory,
+      getCanonicalFileName: function (fileName) {
+        return fileName
+      },
+      getNewLine: function () {
+        return ts.sys.newLine
+      }
+    }
+  )
+  console.error(`\x1b[31m${format}\x1b[0m`)
+}
+
+function replacePath(importPath, file, node) {
+  let path = importPath
   path = path.replace(/^(\.\.\/)*cheap\//, '@libmedia/cheap/')
   path = path.replace(/^(\.\.\/)*common\//, '@libmedia/common/')
 
@@ -52,6 +125,27 @@ function replacePath(path) {
   path = path.replace(/^@libmedia\/avplayer\/AVPlayer/, '@libmedia/avplayer')
   path = path.replace(/^@libmedia\/avtranscoder\/AVTranscoder/, '@libmedia/avtranscoder')
 
+  if (file && path !== importPath) {
+    const fileName = file.fileName.replace(rootPath + '/', '')
+    const packageDir = fileName.split('/')[0]
+    const packageName = path.split('/')[1]
+    if (packageDir === packageName) {
+      reportTSError(file, node, 'import module under the same package name using relative path')
+    }
+    else if (packages[packageName]) {
+      const json = packages[packageName]
+      if (!json.exports) {
+        reportTSError(file, node, 'import module not export in package.json')
+      }
+      else {
+        const module = path.replace(`@libmedia/${packageName}`, '.')
+        if (!json.exports[module]) {
+          reportTSError(file, node, `import module(${module}) not export in ${packageName}'s package.json`)
+        }
+      }
+    }
+  }
+
   return path
 }
 
@@ -66,7 +160,7 @@ function packageMapTransformer() {
     return (sourceFile) => {
       function visitor(node) {
         if (ts.isStringLiteral(node) && node.parent && ts.isImportDeclaration(node.parent)) {
-          let path = replacePath(node.text)
+          let path = replacePath(node.text, sourceFile, node)
           if (/\.(glsl|vert|frag|asm|wgsl)$/.test(path)) {
             path += '.js'
           }
@@ -78,7 +172,7 @@ function packageMapTransformer() {
           )
           && ts.isStringLiteral(node.arguments[0])
         ) {
-          let path = replacePath(node.arguments[0].text)
+          let path = replacePath(node.arguments[0].text, sourceFile, node)
           return context.factory.createCallExpression(
             context.factory.createToken(ts.SyntaxKind.ImportKeyword),
             undefined,
@@ -91,7 +185,7 @@ function packageMapTransformer() {
           && ts.isLiteralTypeNode(node.argument)
           && ts.isStringLiteral(node.argument.literal)
         ) {
-          let path = replacePath(node.argument.literal.text)
+          let path = replacePath(node.argument.literal.text, sourceFile, node)
           return context.factory.createImportTypeNode(
             context.factory.createLiteralTypeNode(context.factory.createStringLiteral(path)),
             node.attributes,
