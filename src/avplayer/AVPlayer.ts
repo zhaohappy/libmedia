@@ -151,7 +151,8 @@ export interface AVPlayerOptions {
    */
   getWasm?: (type: 'decoder' | 'resampler' | 'stretchpitcher', codecId?: AVCodecID, mediaType?: AVMediaType) => string | ArrayBuffer | WebAssemblyResource
   /**
-   * 是否是直播
+   * 是否是直播（已弃用，请在 load 方法中传递参数）
+   * @deprecated
    */
   isLive?: boolean
   /**
