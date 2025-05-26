@@ -174,15 +174,6 @@ export interface MOVStreamContext {
   flags: number
 }
 
-export interface MovFormatOptions {
-  fragmentMode?: FragmentMode
-  movMode?: MovMode
-  fragment?: boolean
-  fastOpen?: boolean
-  defaultBaseIsMoof?: boolean
-  ignoreEditlist?: boolean
-}
-
 export interface ElstEntry {
   segmentDuration: int64
   mediaTime: int64

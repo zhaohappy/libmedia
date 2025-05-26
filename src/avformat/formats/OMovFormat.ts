@@ -27,7 +27,7 @@ import OFormat from './OFormat'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVOFormatContext } from '../AVFormatContext'
 
-import { MOVContext, MovFormatOptions, MOVStreamContext } from './mov/type'
+import { MOVContext, MOVStreamContext } from './mov/type'
 import createMovContext from './mov/function/createMovContext'
 import mktag from '../function/mktag'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
@@ -59,7 +59,16 @@ import * as ac3 from 'avutil/codecs/ac3'
 import { mapUint8Array } from 'cheap/std/memory'
 import getSampleDuration from './mov/function/getSampleDuration'
 
-const defaultOptions: MovFormatOptions = {
+export interface OMovFormatOptions {
+  fragmentMode?: FragmentMode
+  movMode?: MovMode
+  fragment?: boolean
+  fastOpen?: boolean
+  defaultBaseIsMoof?: boolean
+  ignoreEditlist?: boolean
+}
+
+const defaultOptions: OMovFormatOptions = {
   fragmentMode: FragmentMode.GOP,
   movMode: MovMode.MP4,
   fragment: false,
@@ -73,12 +82,12 @@ export default class OMovFormat extends OFormat {
 
   private context: MOVContext
 
-  public options: MovFormatOptions
+  public options: OMovFormatOptions
 
   private annexb2AvccFilter: Annexb2AvccFilter
   private avpacket: pointer<AVPacket>
 
-  constructor(options: MovFormatOptions = {}) {
+  constructor(options: OMovFormatOptions = {}) {
     super()
 
     this.options = object.extend({}, defaultOptions, options)

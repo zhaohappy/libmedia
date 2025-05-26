@@ -40,7 +40,6 @@ import { RtmpPacketType } from 'avprotocol/rtmp/rtmp'
 import FlvScriptTag from 'avformat/formats/flv/FlvScriptTag'
 import BufferReader from 'common/io/BufferReader'
 import * as amf from 'avutil/util/amf'
-import { FlvMetaData } from 'avformat/formats/flv/type'
 import isDef from 'common/function/isDef'
 import { IOType } from 'avutil/avformat'
 
@@ -101,7 +100,7 @@ export default class RtmpIOLoader extends SocketIOLoader {
         const command = await amf.parseValue(this.bufferReader, BigInt(packet.payload.length)) as string
         if (command === 'onMetaData') {
           this.hasMetadata = true
-          const metadata = await amf.parseValue(this.bufferReader, BigInt(packet.payload.length)) as FlvMetaData
+          const metadata = await amf.parseValue(this.bufferReader, BigInt(packet.payload.length))
           this.flvHeader.hasAudio = isDef(metadata.audiocodecid)
           this.flvHeader.hasVideo = isDef(metadata.videocodecid)
         }

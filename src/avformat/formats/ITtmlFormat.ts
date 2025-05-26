@@ -37,7 +37,7 @@ import { addAVPacketData } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import * as array from 'common/util/array'
 import * as text from 'common/util/text'
-import * as ittml from './ttml/ittml'
+import * as ittml from 'avutil/codecs/ttml'
 import { IOFlags } from 'avutil/avformat'
 
 export default class ITtmlFormat extends IFormat {

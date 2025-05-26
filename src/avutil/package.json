@@ -140,6 +140,11 @@
       "require": "./dist/cjs/codecs/vvc.js",
       "types": "./dist/esm/codecs/vvc.d.ts"
     },
+    "./codecs/ttml": {
+      "import": "./dist/esm/codecs/ttml.js",
+      "require": "./dist/cjs/codecs/ttml.js",
+      "types": "./dist/esm/codecs/ttml.d.ts"
+    },
     "./function/analyzeAVFormat": {
       "import": "./dist/esm/function/analyzeAVFormat.js",
       "require": "./dist/cjs/function/analyzeAVFormat.js",

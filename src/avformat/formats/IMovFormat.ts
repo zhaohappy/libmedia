@@ -29,7 +29,7 @@ import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
 
 import { IOError } from 'common/io/error'
-import { MOVContext, MOVStreamContext, MovFormatOptions } from './mov/type'
+import { MOVContext, MOVStreamContext } from './mov/type'
 import mktag from '../function/mktag'
 import { BoxType } from './mov/boxType'
 import * as imov from './mov/imov'
@@ -49,6 +49,10 @@ import { IOFlags } from 'avutil/avformat'
 import { BitFormat } from 'avutil/codecs/h264'
 import * as intread from 'avutil/util/intread'
 
+export interface IMovFormatOptions {
+  ignoreEditlist?: boolean
+}
+
 export default class IMovFormat extends IFormat {
 
   public type: AVFormat = AVFormat.MOV
@@ -56,9 +60,9 @@ export default class IMovFormat extends IFormat {
   private context: MOVContext
   private firstAfterSeek: boolean
 
-  public options: MovFormatOptions
+  public options: IMovFormatOptions
 
-  constructor(options: MovFormatOptions = {}) {
+  constructor(options: IMovFormatOptions = {}) {
     super()
 
     this.options = options

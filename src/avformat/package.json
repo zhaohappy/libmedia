@@ -242,10 +242,25 @@
       "require": "./dist/cjs/formats/OOggFormat.js",
       "types": "./dist/esm/formats/OOggFormat.d.ts"
     },
-    "./function/mktag.ts": {
+    "./formats/flv/FlvHeader": {
+      "import": "./dist/esm/formats/flv/FlvHeader.js",
+      "require": "./dist/cjs/formats/flv/FlvHeader.js",
+      "types": "./dist/esm/formats/flv/FlvHeader.d.ts"
+    },
+    "./formats/flv/FlvScriptTag": {
+      "import": "./dist/esm/formats/flv/FlvScriptTag.js",
+      "require": "./dist/cjs/formats/flv/FlvScriptTag.js",
+      "types": "./dist/esm/formats/flv/FlvScriptTag.d.ts"
+    },
+    "./function/mktag": {
       "import": "./dist/esm/function/mktag.js",
       "require": "./dist/cjs/function/mktag.js",
       "types": "./dist/esm/function/mktag.d.ts"
+    },
+    "./formats/ass/ass": {
+      "import": "./dist/esm/formats/ass/ass.js",
+      "require": "./dist/cjs/formats/ass/ass.js",
+      "types": "./dist/esm/formats/ass/ass.d.ts"
     }
   }
 }
