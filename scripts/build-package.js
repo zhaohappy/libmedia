@@ -783,7 +783,7 @@ function buildAvplayer() {
   process.env.NODE_ENV = 'production';
 
   printTaskLog(1, 'AVPlayer', 'START', `built umd AVPlayer starting`);
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'release=1', 'esm=0', `dist=${path.resolve(__dirname, '../src/avplayer/dist/umd')}`], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'release=1', `dist=${path.resolve(__dirname, '../src/avplayer/dist/umd')}`], {
     stdio: 'ignore'
   })
   printTaskLog(1, 'AVPlayer', 'SUCCESS', `built umd AVPlayer completed`);
@@ -813,7 +813,7 @@ function buildAvtranscoder() {
   printTaskLog(0, 'AVTranscoder', 'START', `starting built AVTranscoder`);
 
   printTaskLog(1, 'AVTranscoder', 'START', `built umd AVTranscoder starting`);
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avtranscoder=1', 'release=1', 'esm=0', `dist=${path.resolve(__dirname, '../src/avtranscoder/dist/umd')}`], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avtranscoder=1', 'release=1', `dist=${path.resolve(__dirname, '../src/avtranscoder/dist/umd')}`], {
     stdio: 'ignore'
   })
   printTaskLog(1, 'AVTranscoder', 'SUCCESS', `built umd AVTranscoder completed`);
@@ -843,7 +843,7 @@ function buildAvplayerUI() {
   printTaskLog(0, 'AVPlayerUI', 'START', `starting built AVPlayerUI`);
 
   printTaskLog(1, 'AVPlayerUI', 'START', `built umd AVPlayerUI starting`);
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'ui=1', 'release=1', 'esm=0', `dist=${path.resolve(__dirname, '../src/ui/avplayer/dist/umd')}`], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'ui=1', 'release=1', `dist=${path.resolve(__dirname, '../src/ui/avplayer/dist/umd')}`], {
     stdio: 'ignore'
   })
   printTaskLog(1, 'AVPlayerUI', 'SUCCESS', `built umd AVPlayerUI completed`);
