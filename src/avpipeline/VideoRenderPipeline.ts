@@ -522,9 +522,6 @@ export default class VideoRenderPipeline extends Pipeline {
             task.loop.emptyTask()
           }
           else {
-            if (task.render && task.renderRedyed) {
-              task.render.clear()
-            }
             task.loop.stop()
             task.adjust = AdjustStatus.None
             logger.info(`video render ended, taskId: ${task.taskId}`)
@@ -1133,6 +1130,7 @@ export default class VideoRenderPipeline extends Pipeline {
         })
       }
       if (task.render) {
+        task.render.clear()
         task.render.destroy()
         task.render = null
       }
