@@ -68,12 +68,17 @@ const CopyWebpackPlugin = require('copy-webpack-plugin')
 
 module.exports = (env) => {
   return {
+    resolve: {
+      alias: {
+       '@libmedia/avplayer': path.resolve(__dirname, 'node_modules/@libmedia/avplayer/dist/umd/avplayer.js')
+      }
+    },
     plugins: [
       new CopyWebpackPlugin({
         patterns: [
           {
-            from: 'node_modules/@libmedia/avplayer/dist/esm/[0-9]*.avplayer.js',
-            to: './[name].[ext]'
+            from: 'node_modules/@libmedia/avplayer/dist/umd/[0-9]*.avplayer.js',
+            to: './[name][ext]'
           }
         ],
       })
@@ -100,6 +105,23 @@ export default defineConfig({
     })
   ],
 });
+```
+
+```javascript [rsbuild]
+import { defineConfig } from "@rsbuild/core"
+
+export default defineConfig({
+  output: {
+    copy: [
+      { from: './node_modules/@libmedia/avplayer/dist/umd/[0-9]*.avplayer.js', to: 'static/js/[name][ext]' },
+    ],
+  },
+  resolve: {
+    alias: {
+      '@libmedia/avplayer': './node_modules/@libmedia/avplayer/dist/umd/avplayer.js',
+    },
+  },
+})
 ```
 :::
 

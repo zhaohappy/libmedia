@@ -48,12 +48,17 @@ const CopyWebpackPlugin = require('copy-webpack-plugin')
 
 module.exports = (env) => {
   return {
+    resolve: {
+      alias: {
+       '@libmedia/avtranscoder': path.resolve(__dirname, 'node_modules/@libmedia/avtranscoder/dist/umd/avtranscoder.js')
+      }
+    },
     plugins: [
       new CopyWebpackPlugin({
         patterns: [
           {
             from: 'node_modules/@libmedia/avtranscoder/dist/esm/[0-9]*.avtranscoder.js',
-            to: './[name].[ext]'
+            to: './[name][ext]'
           }
         ],
       })
@@ -81,6 +86,24 @@ export default defineConfig({
   ],
 });
 ```
+
+```javascript [rsbuild]
+import { defineConfig } from "@rsbuild/core"
+
+export default defineConfig({
+  output: {
+    copy: [
+      { from: './node_modules/@libmedia/avtranscoder/dist/umd/[0-9]*.avtranscoder.js', to: 'static/js/[name][ext]' },
+    ],
+  },
+  resolve: {
+    alias: {
+      '@libmedia/avtranscoder': './node_modules/@libmedia/avtranscoder/dist/umd/avtranscoder.js',
+    },
+  },
+})
+```
+
 :::
 
 ## Usage
