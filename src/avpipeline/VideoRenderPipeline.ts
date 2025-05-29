@@ -1130,7 +1130,9 @@ export default class VideoRenderPipeline extends Pipeline {
         })
       }
       if (task.render) {
-        task.render.clear()
+        if (task.renderRedyed) {
+          task.render.clear()
+        }
         task.render.destroy()
         task.render = null
       }
