@@ -92,18 +92,20 @@ module.exports = (env) => {
 // vite can use the vite-plugin-static-copy plugin
 // npm install vite-plugin-static-copy --save-dev
 import { viteStaticCopy } from 'vite-plugin-static-copy'
-export default defineConfig({
-  ...
-  plugins: [
-    viteStaticCopy({
-      targets: [
-        {
-          src: 'node_modules/@libmedia/avplayer/dist/esm/[0-9]*.avplayer.js',
-          dest: './',
-        },
-      ],
-    })
-  ],
+export default defineConfig((config) => {
+  return {
+    ...
+    plugins: [
+      viteStaticCopy({
+        targets: [
+          {
+            src: 'node_modules/@libmedia/avplayer/dist/esm/[0-9]*.avplayer.js',
+            dest: config.command === 'serve' ? './node_modules/.vite/deps/' : './assets/',
+          },
+        ],
+      })
+    ],
+  }
 });
 ```
 

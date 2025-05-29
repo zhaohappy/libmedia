@@ -57,7 +57,7 @@ yarn add @libmedia/avplayer-ui
 
 ## 配置
 
-AVPlayer 和 AVPlayerUI 包是经过打包编译的，除了主文件还拥有一些动态模块文件。你需要配置你的构建工具将这些动态模块文件拷贝到输出目录。
+AVPlayer 和 AVPlayerUI 包是经过打包编译的，除了主文件还拥有一些动态模块文件。你需要配置你的构建工具将这些动态模块文件拷贝到输出目录。注意必须和 avplayer.js 主文件打包所在的那个 js 在同一个目录。
 
 :::code-group
 
@@ -91,18 +91,20 @@ module.exports = (env) => {
 // vite 可以使用 vite-plugin-static-copy 插件
 // npm install vite-plugin-static-copy --save-dev
 import { viteStaticCopy } from 'vite-plugin-static-copy'
-export default defineConfig({
-  ...
-  plugins: [
-    viteStaticCopy({
-      targets: [
-        {
-          src: 'node_modules/@libmedia/avplayer/dist/esm/[0-9]*.avplayer.js',
-          dest: './',
-        },
-      ],
-    })
-  ],
+export default defineConfig((config) => {
+  return {
+    ...
+    plugins: [
+      viteStaticCopy({
+        targets: [
+          {
+            src: 'node_modules/@libmedia/avplayer/dist/esm/[0-9]*.avplayer.js',
+            dest: config.command === 'serve' ? './node_modules/.vite/deps/' : './assets/',
+          },
+        ],
+      })
+    ],
+  }
 });
 ```
 

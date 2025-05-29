@@ -72,18 +72,20 @@ module.exports = (env) => {
 // vite can use the vite-plugin-static-copy plugin
 // npm install vite-plugin-static-copy --save-dev
 import { viteStaticCopy } from 'vite-plugin-static-copy'
-export default defineConfig({
-  ...
-  plugins: [
-    viteStaticCopy({
-      targets: [
-        {
-          src: 'node_modules/@libmedia/avtranscoder/dist/esm/[0-9]*.avtranscoder.js',
-          dest: './',
-        },
-      ],
-    })
-  ],
+export default defineConfig((config) => {
+  {
+    ...
+    plugins: [
+      viteStaticCopy({
+        targets: [
+          {
+            src: 'node_modules/@libmedia/avtranscoder/dist/esm/[0-9]*.avtranscoder.js',
+            dest: config.command === 'serve' ? './node_modules/.vite/deps/' : './assets/',
+          },
+        ],
+      })
+    ],
+  }
 });
 ```
 
