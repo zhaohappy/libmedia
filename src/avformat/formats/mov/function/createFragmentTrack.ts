@@ -35,6 +35,8 @@ export default function createFragmentTrack(): FragmentTrack {
     baseMediaDecodeTime: 0n,
     sampleCount: 0,
     dataOffset: 0,
+    remainDataOffsets: [],
+    remainDataOffsetIndex: [],
     dataOffsetPos: 0n,
     firstSampleFlags: 0,
     sampleDurations: [],

@@ -38,24 +38,43 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   const flags = await ioReader.readUint24()
 
   const track = movContext.currentFragment.currentTrack
+  const trex = movContext.trexs.find((trex) => {
+    return trex.trackId === track.trackId
+  })
 
   if (track) {
-    track.sampleCount = await ioReader.readUint32()
+    const sampleCount = await ioReader.readUint32()
     if (flags & TRUNFlags.DATA_OFFSET) {
-      track.dataOffset = await ioReader.readInt32()
+      if (track.sampleCount) {
+        track.remainDataOffsets.push(await ioReader.readInt32())
+        track.remainDataOffsetIndex.push(track.sampleCount)
+      }
+      else {
+        track.dataOffset = await ioReader.readInt32()
+      }
     }
+    let firstSampleFlags = -1
     if (flags & TRUNFlags.FIRST_FLAG) {
-      track.firstSampleFlags = await ioReader.readUint32()
+      firstSampleFlags = await ioReader.readUint32()
     }
-    for (let i = 0; i < track.sampleCount; i++) {
+    for (let i = 0; i < sampleCount; i++) {
       if (flags & TRUNFlags.DURATION) {
         track.sampleDurations.push(await ioReader.readUint32())
+      }
+      else {
+        track.sampleDurations.push(track.defaultSampleDuration || trex?.duration)
       }
       if (flags & TRUNFlags.SIZE) {
         track.sampleSizes.push(await ioReader.readUint32())
       }
+      else {
+        track.sampleSizes.push(track.defaultSampleSize || trex?.size)
+      }
       if (flags & TRUNFlags.FLAGS) {
         track.sampleFlags.push(await ioReader.readUint32())
+      }
+      else {
+        track.sampleFlags.push(track.defaultSampleFlags || trex?.flags)
       }
       if (flags & TRUNFlags.CTS_OFFSET) {
         if (version === 0) {
@@ -65,9 +84,16 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
           track.sampleCompositionTimeOffset.push(await ioReader.readInt32())
         }
       }
+      else {
+        track.sampleCompositionTimeOffset.push(0)
+      }
+      if (firstSampleFlags > -1 && i === 0) {
+        track.sampleFlags.pop()
+        track.sampleFlags.push(firstSampleFlags)
+      }
     }
+    track.sampleCount += sampleCount
   }
-
 
   const remainingLength = atom.size - Number(ioReader.getPos() - now)
   if (remainingLength > 0) {

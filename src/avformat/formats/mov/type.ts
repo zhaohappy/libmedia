@@ -48,6 +48,8 @@ export interface FragmentTrack {
   baseMediaDecodeTime: bigint
   sampleCount: number
   dataOffset: number
+  remainDataOffsets: number[]
+  remainDataOffsetIndex: number[]
   dataOffsetPos: bigint
   firstSampleFlags: number
   sampleDurations: number[]
