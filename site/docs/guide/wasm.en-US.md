@@ -11,7 +11,16 @@ order: 7
 
 ## Introduction
 
-Codecs are compiled into separate wasm modules, the decoders are in the ```dist/decode``` directory, and the encoders are in the ```dist/encode``` directory. There are four versions of the encoding and decoding wasm module: baseline, atomic, simd, abd 64. The baseline version's instruction set corresponds to the MVP version of WebAssembly, but it needs to support Mutable Globals, with the highest compatibility and the lowest performance; atomic version add the atomic operation instruction set and Bulk memory instruction set; simd version add the simd vector acceleration instruction set, has the highest performance. The current simd version is automatically optimized by the compiler, and different codecs have different effects (currently I have not seen any codec projects has optimized for the wasm simd instruction set. If you want higher acceleration effects, you may want to optimize by yourself); 64 is a 64-bit instruction set, the previous three versions are all 32-bit. The 64-bit instruction set also includes atomic and simd instruction sets. It needs to be run in an environment that supports wasm64, and libmedia also needs to use the corresponding 64-bit compiled version.
+
+Codecs are compiled into individual WebAssembly modules, with decoders located in the dist/decode directory and encoders in the dist/encode directory. Each codec is provided in four versions: baseline, atomic, simd, and 64.
+
+The baseline version corresponds to the MVP (Minimum Viable Product) feature set of WebAssembly, with the requirement for mutable globals support. It offers the widest compatibility across environments but comes with the lowest performance.
+
+The atomic version adds support for atomic operations and the bulk memory instruction set, enabling better multithreading capabilities.
+
+The simd version introduces SIMD vector instruction support, offering the highest performance among the available builds. Currently, SIMD optimization is handled automatically by the compiler, and the performance gains vary depending on the codec. As of now, there are no known codec implementations that have been manually optimized for WebAssembly SIMD, so further performance improvements may require custom tuning.
+
+The 64 version uses the 64-bit WebAssembly instruction set (wasm64) and includes support for both atomic operations and SIMD. This version requires a runtime environment with wasm64 support, and libmedia must also be compiled in 64-bit mode. The other three versions are based on the standard 32-bit WebAssembly (wasm32) architecture.
 
 
 ## Compatibility support status of three versions and Webcodecs
@@ -82,7 +91,7 @@ Codecs are compiled into separate wasm modules, the decoders are in the ```dist/
 
 ## Usage
 
-The decoder is in the project's ```dist/decode``` directory, and the encoder is in the project's ```dist/encode``` directory. The wasm module does not publish an npm package, so it is recommended that you host the wasm file on your own cdn. You can also use some public cdns to access files hosted on github. The following takes ```cdn.jsdelivr.net``` as an example.
+The decoder modules are located in the project's dist/decode directory, and the encoder modules can be found in dist/encode. Since the WebAssembly modules are not published as an npm package, it is recommended to host the .wasm files on your own CDN for production use. Alternatively, you can use a public CDN to access the files directly from GitHub. For example, the following demonstrates how to do so using cdn.jsdelivr.net:
 
 ```javascript
 let codecName = 'h264'

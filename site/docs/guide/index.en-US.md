@@ -8,15 +8,15 @@ group:
 
 # Introduction
 
-libmedia is a tool library for processing multimedia content (such as audio, video, subtitles) on the web platform.
+libmedia is a utility library for processing multimedia content—such as audio, video, and subtitles—on the web platform.
 
-libmedia has typescript module and webAssembly module, and the design concept is all things dominated by typescript module; we implemented the module of media demux and mux in typescript, so that we can use asynchronous IO to process stream from anywhere. This allows the entire system to run on a non-SharedArrayBuffer or non-Worker environment.
+It consists of both a TypeScript module and a WebAssembly module, following a design principle where the TypeScript module orchestrates the overall logic. The media demuxing and muxing components are implemented in TypeScript, enabling asynchronous I/O for handling streams from any source. This architecture allows the system to run even in environments that do not support SharedArrayBuffer or Worker.
 
-The decoding and encoding modules are put into the webAssembly module. These modules can be compiled from the libavcodec module of FFmpeg, and each decoder and encoder is compiled into a separate wasm module to solve the problem of too large of compiled c/c++ product. When using it, you only need to load the modules you want to use. At the same time, the codec module also can use web's WebCodecs.
+The decoding and encoding components reside in the WebAssembly module. These can be compiled from FFmpeg’s libavcodec module, with each codec (encoder or decoder) compiled into a separate .wasm module to avoid the problem of oversized C/C++ binaries. At runtime, you only need to load the specific codec modules required. Additionally, the codec layer can leverage the browser’s native WebCodecs API for performance and compatibility.
 
-The api design of libmedia refers to the FFmpeg. Many data structure concepts are consistent, so you can see data structures such as ```AVStream```, ```AVCodecParameters```, ```AVFormatContext```, ```AVPacket```, ```AVFrame``` etc. As the de facto standards in the media industry, FFmpeg's design is very excellent, following the design, we can directly obtain excellent design patterns, and it also reduces the difficulty for developers to learn and understand. After all, most audio and video developers have learned about FFmpeg. Of course, the main reason is that we need to make this data can read and write in both typescript modules and webAssembly modules, the struct layout in memory must is consistent with FFmpeg.
+The API design of libmedia draws inspiration from FFmpeg. Many of its data structures—such as AVStream, AVCodecParameters, AVFormatContext, AVPacket, and AVFrame—are modeled after FFmpeg's conventions. This not only ensures familiarity for most developers in the audio/video domain but also adopts the proven and efficient architecture of an industry-standard framework. More importantly, it ensures that memory layout remains consistent between TypeScript and WebAssembly, enabling direct sharing of data structures across the two.
 
-libmedia is designed to run on multi-threads, but can fallback to running on the main thread; so it is more friendly to multi-threaded development; developers can easy do multi-threaded development based on this, After all, processing video and audio with multi-threads will bring a better experience.
+libmedia is designed with multi-threading in mind but can gracefully fall back to main-thread execution if necessary. This makes it well-suited for concurrent processing, which is especially beneficial for audio and video workloads. Developers can easily build multi-threaded workflows on top of it, improving overall performance and user experience.
 
 ## Advantages
 

@@ -6,15 +6,15 @@ English | [中文](README.md) | [Document](https://zhaohappy.github.io/libmedia/
 
 ### Introduction
  
-libmedia is a tool library for processing multimedia content (such as audio, video, subtitles) on the web platform.
+libmedia is a utility library for processing multimedia content—such as audio, video, and subtitles—on the web platform.
 
-libmedia has typescript module and webAssembly module, and the design concept is all things dominated by typescript module; we implemented the module of media demux and mux in typescript, so that we can use asynchronous IO to process stream from anywhere. This allows the entire system to run on a non-SharedArrayBuffer or non-Worker environment.
+It consists of both a TypeScript module and a WebAssembly module, following a design principle where the TypeScript module orchestrates the overall logic. The media demuxing and muxing components are implemented in TypeScript, enabling asynchronous I/O for handling streams from any source. This architecture allows the system to run even in environments that do not support SharedArrayBuffer or Worker.
 
-The decoding and encoding modules are put into the webAssembly module. These modules can be compiled from the libavcodec module of FFmpeg, and each decoder and encoder is compiled into a separate wasm module to solve the problem of too large of compiled c/c++ product. When using it, you only need to load the modules you want to use. At the same time, the codec module also can use web's WebCodecs.
+The decoding and encoding components reside in the WebAssembly module. These can be compiled from FFmpeg’s libavcodec module, with each codec (encoder or decoder) compiled into a separate .wasm module to avoid the problem of oversized C/C++ binaries. At runtime, you only need to load the specific codec modules required. Additionally, the codec layer can leverage the browser’s native WebCodecs API for performance and compatibility.
 
-The api design of libmedia refers to the FFmpeg. Many data structure concepts are consistent, so you can see data structures such as ```AVStream```, ```AVCodecParameters```, ```AVFormatContext```, ```AVPacket```, ```AVFrame``` etc. As the de facto standards in the media industry, FFmpeg's design is very excellent, following the design, we can directly obtain excellent design patterns, and it also reduces the difficulty for developers to learn and understand. After all, most audio and video developers have learned about FFmpeg. Of course, the main reason is that we need to make this data can read and write in both typescript modules and webAssembly modules, the struct layout in memory must is consistent with FFmpeg.
+The API design of libmedia draws inspiration from FFmpeg. Many of its data structures—such as AVStream, AVCodecParameters, AVFormatContext, AVPacket, and AVFrame—are modeled after FFmpeg's conventions. This not only ensures familiarity for most developers in the audio/video domain but also adopts the proven and efficient architecture of an industry-standard framework. More importantly, it ensures that memory layout remains consistent between TypeScript and WebAssembly, enabling direct sharing of data structures across the two.
 
-libmedia is designed to run on multi-threads, but can fallback to running on the main thread; so it is more friendly to multi-threaded development; developers can easy do multi-threaded development based on this, After all, processing video and audio with multi-threads will bring a better experience.
+libmedia is designed with multi-threading in mind but can gracefully fall back to main-thread execution if necessary. This makes it well-suited for concurrent processing, which is especially beneficial for audio and video workloads. Developers can easily build multi-threaded workflows on top of it, improving overall performance and user experience.
 
 
 ### Libraries
@@ -86,7 +86,15 @@ if multi-threading is not supported, it will fall back to running on the main th
 
 ### Codecs
 
-Codecs are compiled into separate wasm modules, the decoders are in the ```dist/decode``` directory, and the encoders are in the ```dist/encode``` directory. There are four versions of the encoding and decoding wasm module: baseline, atomic, simd, and 64. The baseline version's instruction set corresponds to the MVP version of WebAssembly, but it needs to support Mutable Globals, with the highest compatibility and the lowest performance; atomic version add the atomic operation instruction set and Bulk memory instruction set; simd version add the simd vector acceleration instruction set, has the highest performance. The current simd version is automatically optimized by the compiler, and different codecs have different effects (currently I have not seen any codec projects has optimized for the wasm simd instruction set. If you want higher acceleration effects, you may want to optimize by yourself); 64 is a 64-bit instruction set, the previous three versions are all 32-bit. The 64-bit instruction set also includes atomic and simd instruction sets. It needs to be run in an environment that supports wasm64, and libmedia also needs to use the corresponding 64-bit compiled version.
+Codecs are compiled into individual WebAssembly modules, with decoders located in the dist/decode directory and encoders in the dist/encode directory. Each codec is provided in four versions: baseline, atomic, simd, and 64.
+
+The baseline version corresponds to the MVP (Minimum Viable Product) feature set of WebAssembly, with the requirement for mutable globals support. It offers the widest compatibility across environments but comes with the lowest performance.
+
+The atomic version adds support for atomic operations and the bulk memory instruction set, enabling better multithreading capabilities.
+
+The simd version introduces SIMD vector instruction support, offering the highest performance among the available builds. Currently, SIMD optimization is handled automatically by the compiler, and the performance gains vary depending on the codec. As of now, there are no known codec implementations that have been manually optimized for WebAssembly SIMD, so further performance improvements may require custom tuning.
+
+The 64 version uses the 64-bit WebAssembly instruction set (wasm64) and includes support for both atomic operations and SIMD. This version requires a runtime environment with wasm64 support, and libmedia must also be compiled in 64-bit mode. The other three versions are based on the standard 32-bit WebAssembly (wasm32) architecture.
 
 
 #### Compatibility support status of four versions and Webcodecs
