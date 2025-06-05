@@ -174,7 +174,7 @@ class Drawer {
     for (let i = 0; i < outerPoints.length; i++) {
       context.strokeStyle = color[i]
       context.fillStyle = color[i]
-      context.shadowColor = color[i]
+      // context.shadowColor = color[i]
 
       context.beginPath()
       context.arc(outerPoints[i].x, outerPoints[i].y, 4, 0, Math.PI * 2, true)
@@ -197,7 +197,7 @@ class Drawer {
       gradient.addColorStop(0, color[i])
       gradient.addColorStop(1, color[next])
       context.strokeStyle = gradient
-      context.shadowColor = color[i]
+      // context.shadowColor = color[i]
       context.beginPath()
       context.moveTo(innerPoints[i].x, innerPoints[i].y)
       context.lineTo(innerPoints[next].x, innerPoints[next].y)
