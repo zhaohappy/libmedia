@@ -105,17 +105,17 @@ export default function parser(xml: string, url: string) {
   const AdaptationSet = is.array(Period.AdaptationSet) ? Period.AdaptationSet : [Period.AdaptationSet]
 
   AdaptationSet.forEach((asItem, asIndex) => {
-    let mimeType = 'video/mp4'
-    let contentType = 'video'
-    let codecs = 'avc1.64001E'
-    let width = 640
-    let height = 360
-    let maxWidth = 640
-    let maxHeight = 360
-    let frameRate = 25
+    let mimeType = ''
+    let contentType = ''
+    let codecs = ''
+    let width = 0
+    let height = 0
+    let maxWidth = 0
+    let maxHeight = 0
+    let frameRate = 0
     let sar = '1:1'
     let startWithSAP = '1'
-    let bandwidth = 588633
+    let bandwidth = 0
     let adaptationSetBaseUrl = MpdBaseURL
     let lang = 'und'
     if (asItem.BaseURL) {
