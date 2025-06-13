@@ -382,7 +382,9 @@ export default class IOPipeline extends Pipeline {
   public async unregisterTask(id: string): Promise<void> {
     const task = this.tasks.get(id)
     if (task) {
-      await task.ioLoader.stop()
+      await task.ioLoader.stop().catch((error) => {
+        logger.warn(`stop ioloader error: ${error}, we will ignore it`)
+      })
       task.ipcPort.destroy()
       this.tasks.delete(id)
     }

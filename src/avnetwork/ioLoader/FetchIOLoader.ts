@@ -367,8 +367,8 @@ export default class FetchIOLoader extends IOLoader {
   }
 
   public async stop() {
-    await this.abort()
     this.status = IOLoaderStatus.IDLE
+    await this.abort()
   }
 
   public getUrl() {

@@ -485,6 +485,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private playChannels: number
   private seekedTimestamp: int64
   private isLive_: boolean
+  private stopPending: Promise<void>
 
   private statsController: StatsController
   private jitterBufferController: JitterBufferController
@@ -2590,6 +2591,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       return
     }
 
+    if (this.stopPending) {
+      return this.stopPending
+    }
+
+    let resolve: () => void
+    this.stopPending = new Promise((r) => {
+      resolve = r
+    })
+
     if (this.audioSourceNode) {
       // 正在 seeking 先 stop 防止 audioSourceNode 阻塞
       if (this.status === AVPlayerStatus.SEEKING) {
@@ -2638,7 +2648,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await AVPlayer.IOThread.unregisterTask(this.taskId)
     }
     if (this.ioIPCPort) {
-      await (this.source as CustomIOLoader).stop()
+      await (this.source as CustomIOLoader).stop().catch((error) => {
+        logger.error(`stop custom ioloader error, ${error}`)
+      })
       this.ioIPCPort.destroy()
       this.ioIPCPort = null
     }
@@ -2704,7 +2716,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     this.status = AVPlayerStatus.STOPPED
 
+    resolve()
+    this.stopPending = null
     this.fire(eventType.STOPPED)
+
+    logger.info(`avplayer stopped, task: ${this.taskId}`)
   }
 
   /*
