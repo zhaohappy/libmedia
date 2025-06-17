@@ -248,6 +248,10 @@ export default class HlsIOLoader extends IOLoader {
       return
     }
 
+    if (segment.key.method.toLocaleLowerCase() !== 'aes-128') {
+      logger.fatal(`m3u8 not support EXT-X-KEY METHOD ${segment.key.method}`)
+    }
+
     const keyUrl = segment.key.uri
 
     if (this.keyMap.has(keyUrl)) {
