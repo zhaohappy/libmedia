@@ -58,6 +58,9 @@ export default async function analyzeAVFormat(ioReader: IOReader, defaultFormat:
   else if ((await ioReader.peekUint32()) === 0x1A45DFA3) {
     return AVFormat.MATROSKA
   }
+  else if (/WEBVTT/.test(signature)) {
+    return AVFormat.WEBVTT
+  }
   else {
     const buf = await ioReader.peekBuffer(2)
     switch (buf[0]) {
