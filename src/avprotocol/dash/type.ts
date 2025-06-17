@@ -23,12 +23,21 @@
  *
  */
 
+import { Data } from 'common/types/type'
+
 export interface Segment {
   idx: number
   start: number
   end: number
   url: string
   segmentDuration: number
+}
+
+export interface Protection {
+  scheme?: string
+  kid?: Uint8Array
+  url?: string
+  systemId?: Uint8Array
 }
 
 export interface Media {
@@ -49,7 +58,7 @@ export interface Media {
   bandwidth: number
   timescale: number
   duration: number
-  encrypted?: boolean
+  protection?: Protection
   lang?: string
 }
 
@@ -123,7 +132,7 @@ export interface Representation {
 
   SegmentTemplate?: SegmentTemplate | SegmentTemplate[]
 
-  ContentProtection?: any
+  ContentProtection?: Data[]
 }
 
 export interface AdaptationSet {
@@ -148,7 +157,7 @@ export interface AdaptationSet {
   Representation: Representation | Representation[]
   SegmentTemplate?: SegmentTemplate | SegmentTemplate[]
 
-  ContentProtection?: any
+  ContentProtection?: Data[]
 }
 
 export interface Period {

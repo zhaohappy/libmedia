@@ -4,9 +4,10 @@
  */
 
 import xml2Json from 'common/util/xml2Json'
-import { MPD, MPDMediaList, SegmentTemplate } from './type'
+import { MPD, MPDMediaList, Protection, SegmentTemplate } from './type'
 import { Data } from 'common/types/type'
 import * as is from 'common/util/is'
+import * as object from 'common/util/object'
 import toString from 'common/function/toString'
 import getTimestamp from 'common/function/getTimestamp'
 
@@ -54,6 +55,42 @@ function parseRational(value: string) {
     return parseFloat(rational[0]) / parseFloat(rational[1])
   }
   return parseFloat(value)
+}
+
+function uuid2Uint8Array(s: string) {
+  s = s.replaceAll('-', '')
+  const r: number[] = []
+  for (let i = 0; i < s.length; i += 2) {
+    r.push(+`0x${s.substring(i, i + 2)}`)
+  }
+  return new Uint8Array(r)
+}
+
+function parseProtection(protection: Data[]) {
+  let result: Protection = {}
+  protection.forEach((item) => {
+    const obj: Data = {}
+    object.each(item, (value, key) => {
+      obj[key.toLocaleLowerCase()] = value
+    })
+    if (obj['cenc:default_kid']) {
+      result.kid = uuid2Uint8Array(obj['cenc:default_kid'])
+      result.scheme = obj.value
+    }
+    if (obj['schemeiduri']) {
+      const url: string[] = obj['schemeiduri'].split(':')
+      if (url.length === 3 && url[0] === 'urn' && url[1] === 'uuid') {
+        result.systemId = uuid2Uint8Array(url[2])
+      }
+    }
+    if (obj['clearkey:laurl']) {
+      result.url = obj['clearkey:laurl'].value
+    }
+    if (obj['dashif:laurl']) {
+      result.url = obj['dashif:laurl'].value
+    }
+  })
+  return result
 }
 
 export default function parser(xml: string, url: string) {
@@ -118,6 +155,7 @@ export default function parser(xml: string, url: string) {
     let bandwidth = 0
     let adaptationSetBaseUrl = MpdBaseURL
     let lang = 'und'
+    let protection: Protection
     if (asItem.BaseURL) {
       adaptationSetBaseUrl += asItem.BaseURL
     }
@@ -161,6 +199,10 @@ export default function parser(xml: string, url: string) {
       if (asItem.frameRate) {
         frameRate = parseRational(asItem.frameRate)
       }
+    }
+
+    if (asItem.ContentProtection) {
+      protection = parseProtection(asItem.ContentProtection)
     }
 
     const Representation = is.array(asItem.Representation) ? asItem.Representation : [asItem.Representation]
@@ -221,9 +263,8 @@ export default function parser(xml: string, url: string) {
       if (rItem.BaseURL) {
         baseURL += is.string(rItem.BaseURL) ? rItem.BaseURL : rItem.BaseURL.value
       }
-      let encrypted = false
-      if (asItem.ContentProtection || rItem.ContentProtection) {
-        encrypted = true
+      if (rItem.ContentProtection) {
+        protection = parseProtection(rItem.ContentProtection)
       }
       if (rItem.SegmentBase) {
         if (mimeType === 'video/mp4' || contentType === 'video') {
@@ -242,7 +283,7 @@ export default function parser(xml: string, url: string) {
             bandwidth,
             timescale,
             duration,
-            encrypted
+            protection
           })
         }
         else if (mimeType === 'audio/mp4' || contentType === 'audio') {
@@ -255,7 +296,7 @@ export default function parser(xml: string, url: string) {
             bandwidth,
             timescale,
             duration,
-            encrypted,
+            protection,
             lang
           })
         }
@@ -269,7 +310,7 @@ export default function parser(xml: string, url: string) {
             bandwidth,
             timescale,
             duration,
-            encrypted,
+            protection,
             lang
           })
         }
@@ -320,7 +361,7 @@ export default function parser(xml: string, url: string) {
             for (let i = 0; i < S.length; i++) {
               let d = parseFloat(S[i].d)
               if (S[i].t) {
-                startTime = parseFloat(S[0].t)
+                startTime = parseFloat(S[i].t)
               }
 
               let r = 1
@@ -382,7 +423,7 @@ export default function parser(xml: string, url: string) {
             bandwidth,
             timescale,
             duration,
-            encrypted
+            protection
           })
         }
         else if (mimeType === 'audio/mp4' || contentType === 'audio') {
@@ -397,7 +438,7 @@ export default function parser(xml: string, url: string) {
             bandwidth,
             timescale,
             duration,
-            encrypted,
+            protection,
             lang
           })
         }
@@ -413,7 +454,7 @@ export default function parser(xml: string, url: string) {
             bandwidth,
             timescale,
             duration,
-            encrypted,
+            protection,
             lang
           })
         }
