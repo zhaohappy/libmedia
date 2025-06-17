@@ -53,7 +53,7 @@ function copyCodecParametersSideData(
     dst[i].type = src[i].type
     dst[i].size = src[i].size
     dst[i].data = avMalloc(src[i].size)
-    memcpy(addressof(dst[i].data), addressof(src[i].data), src[i].size)
+    memcpy(dst[i].data, src[i].data, src[i].size)
   }
 
   accessof(pnbDst) <- nbSrc
