@@ -28,6 +28,7 @@ export const CodecId2MimeType = {
 export const Ext2Format: Record<string, AVFormat> = {
   'flv': AVFormat.FLV,
   'mp4': AVFormat.MOV,
+  'm4s': AVFormat.MOV,
   'mov': AVFormat.MOV,
   'ts': AVFormat.MPEGTS,
   'mts': AVFormat.MPEGTS,
