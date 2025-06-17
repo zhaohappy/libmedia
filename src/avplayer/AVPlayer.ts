@@ -23,7 +23,7 @@
  *
  */
 
-import { AVCodecID, AVMediaType } from 'avutil/codec'
+import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import IOPipeline from 'avpipeline/IOPipeline'
 import DemuxPipeline from 'avpipeline/DemuxPipeline'
 import VideoDecodePipeline from 'avpipeline/VideoDecodePipeline'
@@ -35,7 +35,7 @@ import * as is from 'common/util/is'
 import * as object from 'common/util/object'
 import compile, { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import { unrefAVFrame } from 'avutil/util/avframe'
-import { unrefAVPacket } from 'avutil/util/avpacket'
+import { addSideData, getSideData, unrefAVPacket } from 'avutil/util/avpacket'
 import AudioRenderPipeline from 'avpipeline/AudioRenderPipeline'
 import VideoRenderPipeline from 'avpipeline/VideoRenderPipeline'
 import { AVSeekFlags, IOType, IOFlags } from 'avutil/avformat'
@@ -57,7 +57,7 @@ import browser from 'common/util/browser'
 import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import Stats from 'avpipeline/struct/stats'
-import { memset, mapUint8Array, mapSafeUint8Array } from 'cheap/std/memory'
+import { memset, mapUint8Array, mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import createMessageChannel from './function/createMessageChannel'
 import getVideoCodec from 'avutil/function/getVideoCodec'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
@@ -72,7 +72,7 @@ import getMediaSource from './function/getMediaSource'
 import JitterBufferController from './JitterBufferController'
 import getAudioCodec from 'avutil/function/getAudioCodec'
 import { Ext2Format, mediaType2AVMediaType } from 'avutil/stringEnum'
-import { AVDisposition, AVStreamInterface, AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVDisposition, AVStreamInterface, AVStreamMetadataEncryption, AVStreamMetadataKey } from 'avutil/AVStream'
 import { AVFormatContextInterface } from 'avformat/AVFormatContext'
 import dump, { dumpCodecName, dumpKey } from 'avformat/dump'
 import * as array from 'common/util/array'
@@ -101,6 +101,15 @@ import WebSocketIOLoader, { WebSocketOptions } from 'avnetwork/ioLoader/WebSocke
 import SocketIOLoader from 'avnetwork/ioLoader/SocketIOLoader'
 import WebTransportIOLoader from 'avnetwork/ioLoader/WebTransportIOLoader'
 import getWasmUrl from 'avutil/function/getWasmUrl'
+import { encryptionInitInfo2SideData, encryptionSideData2InitInfo } from 'avutil/util/encryption'
+import getKeySystemFromSystemId from './drm/getKeySystemFromSystemId'
+import digital2Tag from 'avformat/function/digital2Tag'
+import { EncryptionInitInfo } from 'avutil/struct/encryption'
+import { avMalloc } from 'avutil/util/mem'
+import BufferReader from 'common/io/BufferReader'
+import { DRMType } from './drm/drm'
+import kid2Base64 from './drm/kid2Base64'
+import * as text from 'common/util/text'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -126,6 +135,20 @@ interface ExternalSubtitleTask extends ExternalSubtitle {
   taskId: string
   streamId: int32
   ioloader2DemuxerChannel: MessageChannel
+}
+
+export type DRMSystemOptions = {
+  audioRobustness?: string
+  videoRobustness?: string
+  onRequest?: (
+    drmSystemKey: DRMType,
+    messageType: MediaKeyMessageType,
+    message: ArrayBuffer,
+    url?: string
+  ) => Promise<BufferSource>
+  header?: Data
+  method?: string
+  certificate?: BufferSource
 }
 
 export interface AVPlayerOptions {
@@ -208,6 +231,10 @@ export interface AVPlayerOptions {
    * 默认 桌面端 10 移动端 20
    */
   audioWorkletBufferLength?: int32
+  /**
+   * DRM 配置
+   */
+  drmSystemOptions?: DRMSystemOptions
 }
 
 export interface AVPlayerLoadOptions {
@@ -485,6 +512,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private playChannels: number
   private seekedTimestamp: int64
   private isLive_: boolean
+  private drmSystemKey: DRMType
+  private drmSession: MediaKeySession
   private stopPending: Promise<void>
 
   private statsController: StatsController
@@ -616,6 +645,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       if (this.options.checkUseMES) {
         return this.options.checkUseMES(this.formatContext.streams)
+      }
+
+      if (options.video && videoStream && videoStream.metadata[AVStreamMetadataKey.ENCRYPTION]
+        || options.audio && audioStream && audioStream.metadata[AVStreamMetadataKey.ENCRYPTION]
+      ) {
+        // DRM 只能使用 mse 模式
+        return true
       }
 
       if (videoStream && options.video) {
@@ -784,6 +820,70 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (this.status === AVPlayerStatus.PLAYED) {
         element.play()
       }
+    }
+    element.onencrypted = async (event) => {
+      if (this.drmSession) {
+        return
+      }
+      this.drmSession = element.mediaKeys.createSession()
+      this.drmSession.onmessage = async (event) => {
+        let url: string
+        if (this.isDash()) {
+          if (this.hasVideo()) {
+            const protection = await AVPlayer.IOThread.getCurrentProtection(this.taskId, AVMediaType.AVMEDIA_TYPE_VIDEO)
+            if (protection?.url) {
+              url = protection.url
+            }
+          }
+          if (!url && this.hasAudio()) {
+            const protection = await AVPlayer.IOThread.getCurrentProtection(this.taskId, AVMediaType.AVMEDIA_TYPE_AUDIO)
+            if (protection?.url) {
+              url = protection.url
+            }
+          }
+        }
+        let license: BufferSource
+        if (this.options.drmSystemOptions?.onRequest) {
+          license = await this.options.drmSystemOptions.onRequest(this.drmSystemKey, event.messageType, event.message, url)
+        }
+        else if (url) {
+          license = await fetch(url, {
+            method: this.options.drmSystemOptions?.method ?? 'POST',
+            headers: this.options.drmSystemOptions?.header ?? {
+              'Content-Type': 'application/json'
+            },
+            body: event.message
+          }).then((res) => res.arrayBuffer())
+        }
+        if (license) {
+          await this.drmSession.update(license)
+        }
+      }
+      let initDataType = event.initDataType
+      let initData = event.initData
+      if (this.drmSystemKey === DRMType.CLEARKEY) {
+        const kids: string[] = []
+        if (this.selectedAudioStream) {
+          const encryption = this.selectedAudioStream.metadata[AVStreamMetadataKey.ENCRYPTION] as AVStreamMetadataEncryption
+          if (encryption?.kid) {
+            kids.push(kid2Base64(encryption.kid))
+          }
+        }
+        if (this.selectedVideoStream) {
+          const encryption = this.selectedVideoStream.metadata[AVStreamMetadataKey.ENCRYPTION] as AVStreamMetadataEncryption
+          if (encryption?.kid) {
+            const k = kid2Base64(encryption.kid)
+            if (k !== kids[0]) {
+              kids.push(k)
+            }
+          }
+        }
+        initDataType = 'keyids'
+        initData = text.encode(JSON.stringify({
+          kids
+        })).buffer as ArrayBuffer
+      }
+      await this.drmSession.generateRequest(initDataType, initData)
     }
   }
 
@@ -1381,7 +1481,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             isLive: this.isLive_,
             flags,
             ioloaderOptions: {
-              mediaType: 'audio'
+              mediaType: AVMediaType.AVMEDIA_TYPE_AUDIO
             },
             formatOptions,
             avpacketList: addressof(this.GlobalData.avpacketList),
@@ -1395,7 +1495,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           stats: addressof(this.GlobalData.stats),
           isLive: this.isLive_,
           ioloaderOptions: {
-            mediaType: 'video'
+            mediaType: AVMediaType.AVMEDIA_TYPE_VIDEO
           },
           formatOptions,
           avpacketList: addressof(this.GlobalData.avpacketList),
@@ -1415,7 +1515,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             isLive: this.isLive_,
             flags,
             ioloaderOptions: {
-              mediaType: hasAudio ? 'audio' : 'video'
+              mediaType: hasAudio ? AVMediaType.AVMEDIA_TYPE_AUDIO : AVMediaType.AVMEDIA_TYPE_VIDEO
             },
             formatOptions,
             avpacketList: addressof(this.GlobalData.avpacketList),
@@ -1458,7 +1558,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           stats: addressof(this.GlobalData.stats),
           isLive: this.isLive_,
           ioloaderOptions: {
-            mediaType: 'subtitle'
+            mediaType: AVMediaType.AVMEDIA_TYPE_SUBTITLE
           },
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
@@ -1636,6 +1736,81 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       let hasVideo = false
 
+      let drmSystemKey = ''
+      let drmConfig: MediaKeySystemConfiguration[] = []
+
+      const checkDrm = async (stream: AVStreamInterface) => {
+        const sideData = getSideData(
+          addressof(stream.codecpar.codedSideData),
+          addressof(stream.codecpar.nbCodedSideData),
+          AVPacketSideDataType.AV_PKT_DATA_ENCRYPTION_INIT_INFO
+        )
+        let infos: EncryptionInitInfo[]
+        if (sideData) {
+          infos = encryptionSideData2InitInfo(mapUint8Array(sideData.data, sideData.size))
+        }
+        else if (this.isDash()) {
+          const protection = await AVPlayer.IOThread.getCurrentProtection(this.taskId, stream.codecpar.codecType)
+          if (protection) {
+            infos = [{
+              systemId: protection.systemId,
+              keyIds: [protection.kid],
+              data: new Uint8Array(0)
+            }]
+            const buffer = encryptionInitInfo2SideData(infos)
+            const sideData = avMalloc(buffer.length)
+            memcpyFromUint8Array(sideData, buffer.length, buffer)
+            addSideData(
+              addressof(stream.codecpar.codedSideData),
+              addressof(stream.codecpar.nbCodedSideData),
+              AVPacketSideDataType.AV_PKT_DATA_ENCRYPTION_INIT_INFO,
+              sideData,
+              buffer.length
+            )
+          }
+        }
+        const encryption = stream.metadata[AVStreamMetadataKey.ENCRYPTION] as AVStreamMetadataEncryption
+        if (infos && encryption) {
+          for (let i = 0; i < infos.length; i++) {
+            const key = getKeySystemFromSystemId(infos[i].systemId)
+            if (drmSystemKey && drmSystemKey !== key) {
+              continue
+            }
+            if (key) {
+              try {
+                const config: MediaKeySystemConfiguration[] = [{
+                  initDataTypes: ['keyids', 'cenc']
+                }]
+                if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+                  config[0].videoCapabilities = [{
+                    contentType: getVideoMimeType(stream.codecpar),
+                    encryptionScheme: digital2Tag(encryption.schemeType),
+                    robustness: this.options.drmSystemOptions?.videoRobustness
+                  }]
+                }
+                else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+                  config[0].audioCapabilities = [{
+                    contentType: getAudioMimeType(stream.codecpar),
+                    robustness: this.options.drmSystemOptions?.audioRobustness
+                  }]
+                }
+                await navigator.requestMediaKeySystemAccess(key, config)
+                return {
+                  key,
+                  config
+                }
+              }
+              catch (e) {
+                logger.warn(`drm system ${key} error ${e}`)
+              }
+            }
+          }
+          if (drmSystemKey) {
+            logger.fatal('audio and video has different drm system key')
+          }
+        }
+      }
+
       // 注册一个 mse 处理任务
       await AVPlayer.MSEThread.registerTask.transfer(this.controller.getMuxerControlPort())
         .invoke({
@@ -1654,6 +1829,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         this.selectedVideoStream = videoStream
         this.videoEnded = false
         this.demuxer2VideoDecoderChannel = createMessageChannel(this.options.enableWorker)
+
+        const result = await checkDrm(videoStream)
+        if (result) {
+          drmSystemKey = result.key
+          drmConfig.push(...result.config)
+        }
+
         await AVPlayer.DemuxerThread.connectStreamTask
           .transfer(this.demuxer2VideoDecoderChannel.port1)
           .invoke(this.subTaskId || this.taskId, videoStream.index, this.demuxer2VideoDecoderChannel.port1)
@@ -1663,9 +1845,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             videoStream.index,
             serializeAVCodecParameters(videoStream.codecpar),
             videoStream.timeBase,
+            videoStream.metadata,
             videoStream.startTime,
-            this.demuxer2VideoDecoderChannel.port2,
-            videoStream.metadata[AVStreamMetadataKey.MATRIX]
+            this.demuxer2VideoDecoderChannel.port2
           )
       }
       if (audioStream && options.audio) {
@@ -1673,6 +1855,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         this.selectedAudioStream = audioStream
         this.audioEnded = false
         this.demuxer2AudioDecoderChannel = createMessageChannel(this.options.enableWorker)
+
+        const result = await checkDrm(audioStream)
+        if (result) {
+          drmSystemKey = result.key
+          drmConfig.push(...result.config)
+        }
+
         await AVPlayer.DemuxerThread.connectStreamTask
           .transfer(this.demuxer2AudioDecoderChannel.port1)
           .invoke(this.taskId, audioStream.index, this.demuxer2AudioDecoderChannel.port1)
@@ -1682,6 +1871,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             audioStream.index,
             serializeAVCodecParameters(audioStream.codecpar),
             audioStream.timeBase,
+            audioStream.metadata,
             audioStream.startTime,
             this.demuxer2AudioDecoderChannel.port2
           )
@@ -1692,6 +1882,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
       else {
         this.createAudio()
+      }
+
+      if (drmSystemKey) {
+        const mediaKeySystemAccess = await navigator.requestMediaKeySystemAccess(drmSystemKey, drmConfig)
+        const mediaKeys = await mediaKeySystemAccess.createMediaKeys()
+        if (this.options.drmSystemOptions?.certificate) {
+          await mediaKeys.setServerCertificate(this.options.drmSystemOptions.certificate).catch((error) => {
+            logger.error(`setServerCertificate failed, ${error}`)
+          })
+        }
+        await (this.video || this.audio).setMediaKeys(mediaKeys)
+        this.drmSystemKey = drmSystemKey as DRMType
       }
 
       AVPlayer.MSEThread.setPlayRate(this.taskId, this.playRate)
@@ -2672,6 +2874,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (this.controller) {
       this.controller.destroy()
     }
+    if (this.drmSession) {
+      await this.drmSession.close()
+      this.drmSession = null
+    }
     if ((this.video || this.audio)?.src) {
       URL.revokeObjectURL((this.video || this.audio).src)
     }
@@ -3197,8 +3403,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
                 stream.index,
                 serializeAVCodecParameters(stream.codecpar),
                 stream.timeBase,
-                stream.startTime,
-                stream.metadata[AVStreamMetadataKey.MATRIX]
+                stream.metadata,
+                stream.startTime
               )
             }
           })
@@ -3276,7 +3482,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             await this.doSeek(this.currentTime, seekStreamId, {
               onBeforeSeek: async () => {
                 await AVPlayer.DemuxerThread.changeConnectStream(this.taskId, stream.index, this.selectedAudioStream.index)
-                await AVPlayer.MSEThread.reAddStream(this.taskId, stream.index, serializeAVCodecParameters(stream.codecpar), stream.timeBase, stream.startTime)
+                await AVPlayer.MSEThread.reAddStream(this.taskId, stream.index, serializeAVCodecParameters(stream.codecpar), stream.timeBase, stream.metadata, stream.startTime)
               }
             })
           }

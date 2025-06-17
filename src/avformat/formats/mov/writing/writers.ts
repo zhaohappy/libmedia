@@ -52,6 +52,10 @@ import tfdt from './tfdt'
 import trun from './trun'
 import minfHdlr from './minfHdlr'
 
+import saiz from './saiz'
+import saio from './saio'
+import senc from './senc'
+
 
 const writers: Partial<Record<BoxType, (ioWriter: IOWriter, stream: Stream, movContext: MOVContext) => void>> = {
   [BoxType.STTS]: stts,
@@ -77,7 +81,11 @@ const writers: Partial<Record<BoxType, (ioWriter: IOWriter, stream: Stream, movC
   [BoxType.TFDT]: tfdt,
   [BoxType.TRUN]: trun,
 
-  [BoxType.MINF_HDLR]: minfHdlr
+  [BoxType.MINF_HDLR]: minfHdlr,
+
+  [BoxType.SAIO]: saio,
+  [BoxType.SAIZ]: saiz,
+  [BoxType.SENC]: senc
 }
 
 export default writers

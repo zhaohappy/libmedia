@@ -69,8 +69,8 @@ import isPointer from 'cheap/std/function/isPointer'
 import * as is from 'common/util/is'
 import os from 'common/util/os'
 import { MPEG4AudioObjectTypes } from 'avutil/codecs/aac'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
 import WorkerTimer from 'common/timer/WorkerTimer'
+import { Data } from 'common/types/type'
 
 export interface MSETaskOptions extends TaskOptions {
   isLive: boolean
@@ -449,24 +449,32 @@ export default class MSEPipeline extends Pipeline {
     return mediaSource.addSourceBuffer(this.getMimeType(codecpar))
   }
 
-  // TODO avpacket extradata 混入码流
-  private mixExtradata(avpacket: pointer<AVPacket>, resource: MSEResource, extradata: pointer<uint8>, extradataSize: int32) {
-    const codecId = resource.oformatContext.streams[0].codecpar.codecId
-    if (codecId === AVCodecID.AV_CODEC_ID_H264
-      || codecId === AVCodecID.AV_CODEC_ID_H265
-      || codecId === AVCodecID.AV_CODEC_ID_AAC
-    ) {
-
-    }
-
+  private mixExtradata(resource: MSEResource, extradata: pointer<uint8>, extradataSize: int32) {
     const codecpar = resource.oformatContext.streams[0].codecpar
-
     if (codecpar.extradata) {
       avFree(codecpar.extradata)
     }
     codecpar.extradata = avMalloc(reinterpret_cast<size>(extradataSize))
     memcpy(codecpar.extradata, extradata, reinterpret_cast<size>(extradataSize))
     codecpar.extradataSize = extradataSize
+
+    resource.track.changeMimeType(
+      this.getMimeType(addressof(codecpar)),
+      resource.enableRawMpeg ? 'sequence' : 'segments'
+    )
+    const oformat = new OMovFormat({
+      fragmentMode: FragmentMode.FRAME,
+      fragment: true,
+      fastOpen: true,
+      movMode: MovMode.MP4,
+      defaultBaseIsMoof: true
+    })
+    resource.oformatContext.oformat = oformat
+    resource.timestampOffsetUpdated = false
+    if (!resource.enableRawMpeg) {
+      mux.open(resource.oformatContext)
+      mux.writeHeader(resource.oformatContext)
+    }
   }
 
   private async pullAVPacketInternal(task: SelfTask, leftIPCPort: IPCPort) {
@@ -745,7 +753,7 @@ export default class MSEPipeline extends Pipeline {
           extradata.data,
           static_cast<int32>(extradata.size)
         )) {
-          this.mixExtradata(avpacket, resource, extradata.data, static_cast<int32>(extradata.size))
+          this.mixExtradata(resource, extradata.data, static_cast<int32>(extradata.size))
         }
 
         this.writeAVPacket(avpacket, resource, true)
@@ -838,7 +846,7 @@ export default class MSEPipeline extends Pipeline {
           extradata.data,
           static_cast<int32>(extradata.size)
         )) {
-          this.mixExtradata(avpacket, resource, extradata.data, static_cast<int32>(extradata.size))
+          this.mixExtradata(resource, extradata.data, static_cast<int32>(extradata.size))
         }
       }
 
@@ -916,9 +924,9 @@ export default class MSEPipeline extends Pipeline {
     streamIndex: int32,
     parameters: pointer<AVCodecParameters> | AVCodecParametersSerialize,
     timeBase: Rational,
+    metadata: Data,
     startPTS: int64,
-    pullIPCPort: MessagePort,
-    matrix?: number[]
+    pullIPCPort: MessagePort
   ) {
     const task = this.tasks.get(taskId)
     if (task) {
@@ -953,12 +961,10 @@ export default class MSEPipeline extends Pipeline {
 
       const stream = oformatContext.createStream()
       copyCodecParameters(addressof(stream.codecpar), codecpar)
+      stream.metadata = metadata
 
       if (codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3) {
         stream.codecpar.codecTag = mktag('.mp3')
-      }
-      if (matrix) {
-        stream.metadata[AVStreamMetadataKey.MATRIX] = matrix
       }
 
       const useSampleRateTimeBase = codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
@@ -1055,8 +1061,8 @@ export default class MSEPipeline extends Pipeline {
     streamIndex: int32,
     parameters: pointer<AVCodecParameters> | AVCodecParametersSerialize,
     timeBase: Rational,
-    startPTS: int64,
-    matrix?: number[]
+    metadata: Data,
+    startPTS: int64
   ) {
     const task = this.tasks.get(taskId)
     if (task) {
@@ -1101,12 +1107,10 @@ export default class MSEPipeline extends Pipeline {
 
         const stream = resource.oformatContext.streams[0]
         copyCodecParameters(addressof(stream.codecpar), codecpar)
+        stream.metadata = metadata
 
         if (codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3) {
           stream.codecpar.codecTag = mktag('.mp3')
-        }
-        if (matrix) {
-          stream.metadata[AVStreamMetadataKey.MATRIX] = matrix
         }
 
         const useSampleRateTimeBase = codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO

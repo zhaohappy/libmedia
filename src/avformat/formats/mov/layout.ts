@@ -25,7 +25,7 @@
 
 import { AVMediaType } from 'avutil/codec'
 import { BoxType } from './boxType'
-import { MOVContext } from './type'
+import { FragmentTrack, MOVContext } from './type'
 
 export interface BoxLayout {
   type: BoxType,
@@ -314,14 +314,34 @@ export const TrackBoxLayoutMap: Record<number, (context: MOVContext) => BoxLayou
   [AVMediaType.AVMEDIA_TYPE_VIDEO]: getTrackBoxVideoLayout
 }
 
-export const MoofTrafBoxLayout: BoxLayout[] = [
-  {
-    type: BoxType.TFHD
-  },
-  {
-    type: BoxType.TFDT
-  },
-  {
-    type: BoxType.TRUN
-  }
-]
+export const MoofTrafBoxLayout = function (track: FragmentTrack) {
+  return [
+    {
+      type: BoxType.TFHD
+    },
+    {
+      type: BoxType.TFDT
+    },
+    {
+      type: BoxType.TRUN
+    },
+    track.cenc && (track.cenc.defaultSampleInfoSize || track.cenc.sampleSizes.length)
+      ?
+      {
+        type: BoxType.SAIZ
+      }
+      : null,
+    track.cenc && (track.cenc.defaultSampleInfoSize || track.cenc.sampleSizes.length)
+      ?
+      {
+        type: BoxType.SAIO
+      }
+      : null,
+    track.cenc
+      ?
+      {
+        type: BoxType.SENC
+      }
+      : null
+  ]
+}

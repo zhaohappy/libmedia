@@ -26,7 +26,7 @@
 import mktagle from '../../function/mktagle'
 import { AVCodecID } from 'avutil/codec'
 
-export const codecMovVideoTags: Record<int32, AVCodecID> = {
+export const codecMovVideoTags: Record<uint32, AVCodecID> = {
   [mktagle('mp4v')]: AVCodecID.AV_CODEC_ID_MPEG4,
   [mktagle('DIVX')]: AVCodecID.AV_CODEC_ID_MPEG4,
   [mktagle('XVID')]: AVCodecID.AV_CODEC_ID_MPEG4,
@@ -67,7 +67,7 @@ export const codecMovVideoTags: Record<int32, AVCodecID> = {
   [mktagle('av01')]: AVCodecID.AV_CODEC_ID_AV1,
 }
 
-export const codecMovAudioTags: Record<int32, AVCodecID> = {
+export const codecMovAudioTags: Record<uint32, AVCodecID> = {
   [mktagle('mp4a')]: AVCodecID.AV_CODEC_ID_AAC,
   [mktagle('ac-3')]: AVCodecID.AV_CODEC_ID_AC3,
   [mktagle('sac3')]: AVCodecID.AV_CODEC_ID_AC3,
@@ -101,4 +101,10 @@ export const codecMovAudioTags: Record<int32, AVCodecID> = {
   [mktagle('sowt')]: AVCodecID.AV_CODEC_ID_PCM_S8,
   [mktagle('raw ')]: AVCodecID.AV_CODEC_ID_PCM_U8,
   [mktagle('NONE')]: AVCodecID.AV_CODEC_ID_PCM_U8
+}
+
+export const codecMovSubtiteTags:  Record<uint32, AVCodecID> = {
+  [mktagle('text')]: AVCodecID.AV_CODEC_ID_MOV_TEXT,
+  [mktagle('tx3g')]: AVCodecID.AV_CODEC_ID_MOV_TEXT,
+  [mktagle('c608')]: AVCodecID.AV_CODEC_ID_EIA_608
 }

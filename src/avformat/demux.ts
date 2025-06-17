@@ -38,7 +38,7 @@ import { copyAVPacketData, createAVPacket, destroyAVPacket,
 } from 'avutil/util/avpacket'
 import { DURATION_MAX_READ_SIZE, SAMPLE_INDEX_STEP } from './config'
 import * as errorType from 'avutil/error'
-import AVStream from 'avutil/AVStream'
+import AVStream, { AVStreamMetadataKey } from 'avutil/AVStream'
 import * as logger from 'common/util/logger'
 import { IOError } from 'common/io/error'
 import WasmVideoDecoder from 'avcodec/wasmcodec/VideoDecoder'
@@ -356,6 +356,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
       if (!pictureGot[stream.index]
         && formatContext.getDecoderResource
         && !(formatContext.options as DemuxOptions).fastOpen
+        && !stream.metadata[AVStreamMetadataKey.ENCRYPTION]
       ) {
         let decoder = decoderMap[stream.index]
         if (!decoder) {

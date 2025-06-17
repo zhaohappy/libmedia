@@ -86,4 +86,20 @@ export function buildFragmentIndex(stream: Stream, track: FragmentTrack, movCont
   }
 
   context.samplesIndex = samplesIndex
+
+  const cenc = movContext.cencs ? movContext.cencs[context.trackId] : null
+  if (cenc && track.cenc) {
+    if (track.cenc.sampleEncryption) {
+      context.samplesEncryption = track.cenc.sampleEncryption.map((item) => {
+        return {
+          scheme: cenc.schemeType,
+          keyId: cenc.defaultKeyId,
+          skipByteBlock: cenc.skipByteBlock,
+          cryptByteBlock: cenc.cryptByteBlock,
+          iv: item.iv,
+          subsamples: item.subsamples
+        }
+      })
+    }
+  }
 }

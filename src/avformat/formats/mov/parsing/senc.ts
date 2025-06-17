@@ -1,5 +1,5 @@
 /*
- * libmedia mp4 hvcc box parser
+ * libmedia mp4 saio box parser
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -24,45 +24,59 @@
  */
 
 import IOReader from 'common/io/IOReader'
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import Stream from 'avutil/AVStream'
 import { Atom, MOVContext } from '../type'
-import { avFree, avMalloc } from 'avutil/util/mem'
-import { mapSafeUint8Array } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'
-import * as hevc from 'avutil/codecs/hevc'
+import { EncryptionInfo } from 'avutil/struct/encryption'
 
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
-
   const now = ioReader.getPos()
 
-  stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_HEVC
+  const trackContext = movContext.currentFragment.currentTrack
+  const cenc = movContext.cencs ? movContext.cencs[trackContext.trackId] : null
 
-  if (atom.size <= 0) {
-    return
-  }
+  await ioReader.readUint8()
+  const flags = await ioReader.readUint24()
 
-  const data: pointer<uint8> = avMalloc(atom.size)
-  const extradata = await ioReader.readBuffer(atom.size, mapSafeUint8Array(data, atom.size))
-
-  if (movContext.foundMoov) {
-    stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = extradata.slice()
-    avFree(data)
-  }
-  else {
-    if (stream.codecpar.extradata) {
-      avFree(stream.codecpar.extradata)
+  if (!trackContext.cenc) {
+    trackContext.cenc = {
+      defaultSampleInfoSize: 0,
+      sampleCount: 0,
+      offset: 0,
+      useSubsamples: false,
+      sampleEncryption: [],
+      sampleSizes: [],
+      sampleInfoOffset: []
     }
-    stream.codecpar.extradata = data
-    stream.codecpar.extradataSize = atom.size
-    hevc.parseAVCodecParameters(stream, extradata)
   }
+  const count  = await ioReader.readUint32()
+  const useSubsamples = flags & 0x02
+  const ivSize = cenc.defaultPerSampleIVSize
 
+  for (let i = 0; i < count; i++) {
+    const item: Omit<EncryptionInfo, 'scheme' | 'keyId' | 'cryptByteBlock' | 'skipByteBlock'> = {
+      iv: ivSize ? await ioReader.readBuffer(ivSize) : cenc.defaultConstantIV,
+      subsamples: []
+    }
+    if (useSubsamples) {
+      const subsampleCount = await ioReader.readUint16()
+      for (let j = 0; j < subsampleCount; j++) {
+        item.subsamples.push({
+          bytesOfClearData: await ioReader.readUint16(),
+          bytesOfProtectedData: await ioReader.readUint32()
+        })
+      }
+    }
+    trackContext.cenc.sampleEncryption.push(item)
+  }
+  if (useSubsamples) {
+    trackContext.cenc.useSubsamples = true
+  }
   const remainingLength = atom.size - Number(ioReader.getPos() - now)
   if (remainingLength > 0) {
     await ioReader.skip(remainingLength)
   }
   else if (remainingLength < 0) {
-    logger.error(`read hevc error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
+    logger.error(`read senc error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
   }
 }

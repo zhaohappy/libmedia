@@ -54,6 +54,9 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
     avFree(data)
   }
   else {
+    if (stream.codecpar.extradata) {
+      avFree(stream.codecpar.extradata)
+    }
     stream.codecpar.extradata = data
     stream.codecpar.extradataSize = atom.size - 4
     vvc.parseAVCodecParameters(stream, extradata)

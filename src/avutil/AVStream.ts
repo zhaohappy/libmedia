@@ -177,7 +177,11 @@ export const enum AVStreamMetadataKey {
   /**
    * mp4 的 handlerName
    */
-  HANDLER_NAME = 'handlerName'
+  HANDLER_NAME = 'handlerName',
+  /**
+   * DRM 系统支持信息
+   */
+  ENCRYPTION = 'encryption'
 }
 
 export const enum AVDisposition {
@@ -376,4 +380,15 @@ export interface AVStreamInterface {
   startTime: int64
   disposition: int32
   timeBase: Rational
+}
+
+export interface AVStreamMetadataEncryption {
+  schemeType: number
+  schemeVersion: number
+  cryptByteBlock?: number
+  skipByteBlock?: number
+  perSampleIVSize: number
+  kid: Uint8Array
+  constantIV?: Uint8Array
+  pattern?: boolean
 }

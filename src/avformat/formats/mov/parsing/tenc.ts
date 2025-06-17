@@ -1,5 +1,5 @@
 /*
- * libmedia mp4 hvcc box parser
+ * libmedia mp4 tenc box parser
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -24,38 +24,62 @@
  */
 
 import IOReader from 'common/io/IOReader'
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import Stream from 'avutil/AVStream'
-import { Atom, MOVContext } from '../type'
-import { avFree, avMalloc } from 'avutil/util/mem'
-import { mapSafeUint8Array } from 'cheap/std/memory'
+import { Atom, MOVContext, MOVStreamContext } from '../type'
 import * as logger from 'common/util/logger'
-import * as hevc from 'avutil/codecs/hevc'
 
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()
 
-  stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_HEVC
+  const version = await ioReader.readUint8()
+  // flags
+  await ioReader.skip(3)
 
-  if (atom.size <= 0) {
-    return
+  const streamContext = stream.privData as MOVStreamContext
+
+  let cenc = movContext.cencs ? movContext.cencs[streamContext.trackId] : null
+  if (!cenc) {
+    cenc = {
+      schemeType: 0,
+      schemeVersion: 0,
+      isProtected: 0,
+      defaultPerSampleIVSize: 0,
+      defaultKeyId: null,
+      defaultConstantIV: null,
+      cryptByteBlock: 0,
+      skipByteBlock: 0,
+      pattern: false
+    }
   }
 
-  const data: pointer<uint8> = avMalloc(atom.size)
-  const extradata = await ioReader.readBuffer(atom.size, mapSafeUint8Array(data, atom.size))
+  // reserved
+  await ioReader.skip(1)
 
-  if (movContext.foundMoov) {
-    stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = extradata.slice()
-    avFree(data)
+  const pattern = await ioReader.readUint8()
+  if (version > 0) {
+    cenc.pattern = true
+    cenc.cryptByteBlock = (pattern >>> 4) & 0x0f
+    cenc.skipByteBlock = pattern & 0x0f
+  }
+
+  cenc.isProtected = await ioReader.readUint8()
+  cenc.defaultPerSampleIVSize = await ioReader.readUint8()
+
+  cenc.defaultKeyId = await ioReader.readBuffer(16)
+
+  if (cenc.isProtected && !cenc.defaultPerSampleIVSize) {
+    const len = await ioReader.readUint8()
+    cenc.defaultConstantIV = await ioReader.readBuffer(len)
+  }
+
+  if (!movContext.cencs) {
+    movContext.cencs = {
+      [streamContext.trackId]: cenc
+    }
   }
   else {
-    if (stream.codecpar.extradata) {
-      avFree(stream.codecpar.extradata)
-    }
-    stream.codecpar.extradata = data
-    stream.codecpar.extradataSize = atom.size
-    hevc.parseAVCodecParameters(stream, extradata)
+    movContext.cencs[streamContext.trackId] = cenc
   }
 
   const remainingLength = atom.size - Number(ioReader.getPos() - now)
@@ -63,6 +87,6 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
     await ioReader.skip(remainingLength)
   }
   else if (remainingLength < 0) {
-    logger.error(`read hevc error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
+    logger.error(`read schm error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
   }
 }

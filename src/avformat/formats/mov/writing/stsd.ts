@@ -23,8 +23,8 @@
  *
  */
 
-import Stream from 'avutil/AVStream'
-import { MOVContext } from '../type'
+import AVStream, { AVStreamMetadataEncryption, AVStreamMetadataKey } from 'avutil/AVStream'
+import { MOVContext, MOVStreamContext } from '../type'
 import { BoxType } from '../boxType'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import IOWriter from 'common/io/IOWriterSync'
@@ -47,6 +47,7 @@ import dac3 from './dac3'
 import dec3 from './dec3'
 import { mapUint8Array } from 'cheap/std/memory'
 import digital2Tag from '../../../function/digital2Tag'
+import mktag from '../../../function/mktag'
 
 const AVCodecID2Tag = {
   [AVCodecID.AV_CODEC_ID_H264]: BoxType.AVC1,
@@ -88,16 +89,58 @@ function getTag(codecpar: AVCodecParameters): BoxType {
   return tag
 }
 
-function writeAudioTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
+function writeSinf(ioWriter: IOWriter, stream: AVStream, movContext: MOVContext) {
+
+  const streamContext = stream.privData as MOVStreamContext
+  const cenc = movContext.cencs[streamContext.trackId]
+
   const pos = ioWriter.getPos()
-  const tag = getTag(stream.codecpar)
-
-  const version = movContext.isom ? 1 : 0
-
   // size
   ioWriter.writeUint32(0)
-  ioWriter.writeString(tag)
+  ioWriter.writeString(BoxType.SINF)
 
+  ioWriter.writeUint32(12)
+  ioWriter.writeString(BoxType.FRMA)
+  ioWriter.writeString(getTag(stream.codecpar))
+
+  ioWriter.writeUint32(20)
+  ioWriter.writeString(BoxType.SCHM)
+  ioWriter.writeUint32(0)
+  ioWriter.writeUint32(cenc.schemeType || mktag('cenc'))
+  ioWriter.writeUint32(cenc.schemeVersion || 0x10000)
+
+  ioWriter.writeUint32(16 + cenc.defaultKeyId.length + 8 + (cenc.defaultConstantIV ? (1 + cenc.defaultConstantIV.length) : 0))
+  ioWriter.writeString(BoxType.SCHI)
+  ioWriter.writeUint32(16 + cenc.defaultKeyId.length + (cenc.defaultConstantIV ? (1 + cenc.defaultConstantIV.length) : 0))
+  ioWriter.writeString(BoxType.TENC)
+  if (cenc.cryptByteBlock || cenc.skipByteBlock || cenc.pattern) {
+    ioWriter.writeUint8(1)
+  }
+  else {
+    ioWriter.writeUint8(0)
+  }
+  ioWriter.writeUint24(0)
+
+  ioWriter.writeUint8(0)
+  ioWriter.writeUint8((((cenc.cryptByteBlock || 0) & 0x0f) << 4) | ((cenc.skipByteBlock || 0) & 0x0f))
+  ioWriter.writeUint8(1)
+
+  ioWriter.writeUint8(cenc.defaultPerSampleIVSize)
+  ioWriter.writeBuffer(cenc.defaultKeyId)
+  if (cenc.defaultConstantIV) {
+    ioWriter.writeUint8(cenc.defaultConstantIV.length)
+    ioWriter.writeBuffer(cenc.defaultConstantIV)
+  }
+
+  movContext.boxsPositionInfo.push({
+    pos,
+    type: BoxType.SINF,
+    size: Number(ioWriter.getPos() - pos)
+  })
+}
+
+function writeAudioTagHeader(ioWriter: IOWriter, stream: AVStream, movContext: MOVContext) {
+  const version = movContext.isom ? 1 : 0
   // Reserved
   ioWriter.writeUint32(0)
   // Reserved
@@ -179,6 +222,10 @@ function writeAudioTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
     // Bytes per sample
     ioWriter.writeUint32(2)
   }
+}
+
+function writeAudioTagCodecpar(ioWriter: IOWriter, stream: AVStream, movContext: MOVContext) {
+  const tag = getTag(stream.codecpar)
 
   if (movContext.isom
     && (
@@ -209,6 +256,18 @@ function writeAudioTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
   else if (tag == BoxType.MP4A) {
     esds(ioWriter, stream, movContext)
   }
+}
+
+function writeAudioTag(ioWriter: IOWriter, stream: AVStream, movContext: MOVContext) {
+  const pos = ioWriter.getPos()
+  const tag = getTag(stream.codecpar)
+
+  // size
+  ioWriter.writeUint32(0)
+  ioWriter.writeString(tag)
+
+  writeAudioTagHeader(ioWriter, stream, movContext)
+  writeAudioTagCodecpar(ioWriter, stream, movContext)
 
   if (!movContext.isom) {
     btrt(ioWriter, stream, movContext)
@@ -221,10 +280,24 @@ function writeAudioTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
   })
 }
 
-function writeVideoTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
+function writeEncaTag(ioWriter: IOWriter, stream: AVStream, movContext: MOVContext) {
   const pos = ioWriter.getPos()
-  const tag = getTag(stream.codecpar)
+  // size
+  ioWriter.writeUint32(0)
+  ioWriter.writeString(BoxType.ENCA)
 
+  writeAudioTagHeader(ioWriter, stream, movContext)
+  writeSinf(ioWriter, stream, movContext)
+  writeAudioTagCodecpar(ioWriter, stream, movContext)
+
+  movContext.boxsPositionInfo.push({
+    pos,
+    type: BoxType.ENCA,
+    size: Number(ioWriter.getPos() - pos)
+  })
+}
+
+function writeVideoTagHeader(ioWriter: IOWriter, stream: AVStream, movContext: MOVContext) {
   const uncompressedYcbcr = ((stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_RAWVIDEO
       && stream.codecpar.format == AVPixelFormat.AV_PIX_FMT_UYVY422
   )
@@ -235,11 +308,6 @@ function writeVideoTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
     ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V408
     ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V410
     ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V210)
-
-  // size
-  ioWriter.writeUint32(0)
-  ioWriter.writeString(tag)
-
   // Reserved
   ioWriter.writeUint32(0)
   // Reserved
@@ -307,6 +375,10 @@ function writeVideoTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
   }
 
   ioWriter.writeUint16(0xffff)
+}
+
+function writeVideoTagCodecpar(ioWriter: IOWriter, stream: AVStream, movContext: MOVContext) {
+  const tag = getTag(stream.codecpar)
 
   if (tag === BoxType.MP4V) {
     esds(ioWriter, stream, movContext)
@@ -326,6 +398,35 @@ function writeVideoTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
   else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1) {
     av1c(ioWriter, stream, movContext)
   }
+}
+
+function writeEncvTag(ioWriter: IOWriter, stream: AVStream, movContext: MOVContext) {
+  const pos = ioWriter.getPos()
+  // size
+  ioWriter.writeUint32(0)
+  ioWriter.writeString(BoxType.ENCV)
+
+  writeVideoTagHeader(ioWriter, stream, movContext)
+  writeSinf(ioWriter, stream, movContext)
+  writeVideoTagCodecpar(ioWriter, stream, movContext)
+
+  movContext.boxsPositionInfo.push({
+    pos,
+    type: BoxType.ENCV,
+    size: Number(ioWriter.getPos() - pos)
+  })
+}
+
+function writeVideoTag(ioWriter: IOWriter, stream: AVStream, movContext: MOVContext) {
+  const pos = ioWriter.getPos()
+  const tag = getTag(stream.codecpar)
+
+  // size
+  ioWriter.writeUint32(0)
+  ioWriter.writeString(tag)
+
+  writeVideoTagHeader(ioWriter, stream, movContext)
+  writeVideoTagCodecpar(ioWriter, stream, movContext)
 
   colr(ioWriter, stream, movContext)
   pasp(ioWriter, stream, movContext)
@@ -341,7 +442,7 @@ function writeVideoTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContex
   })
 }
 
-function writeSubtitleTag(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
+function writeSubtitleTag(ioWriter: IOWriter, stream: AVStream, movContext: MOVContext) {
   const pos = ioWriter.getPos()
   const tag = getTag(stream.codecpar)
 
@@ -375,24 +476,37 @@ function writeSubtitleTag(ioWriter: IOWriter, stream: Stream, movContext: MOVCon
 }
 
 
-export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {
+export default function write(ioWriter: IOWriter, stream: AVStream, movContext: MOVContext) {
   const pos = ioWriter.getPos()
   // size
   ioWriter.writeUint32(0)
   // tag
   ioWriter.writeString(BoxType.STSD)
 
+  const streamContext = stream.privData as MOVStreamContext
+
+  const hasEncryption = movContext.cencs && movContext.cencs[streamContext.trackId]
+    && (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
+      || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
+    )
+
   // version
   ioWriter.writeUint8(0)
   // flags
   ioWriter.writeUint24(0)
   // entry count
-  ioWriter.writeUint32(1)
+  ioWriter.writeUint32(hasEncryption ? 2 : 1)
 
   if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+    if (hasEncryption) {
+      writeEncaTag(ioWriter, stream, movContext)
+    }
     writeAudioTag(ioWriter, stream, movContext)
   }
   else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+    if (hasEncryption) {
+      writeEncvTag(ioWriter, stream, movContext)
+    }
     writeVideoTag(ioWriter, stream, movContext)
   }
   else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE) {

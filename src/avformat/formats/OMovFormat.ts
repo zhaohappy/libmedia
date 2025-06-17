@@ -30,7 +30,7 @@ import { AVOFormatContext } from '../AVFormatContext'
 import { MOVContext, MOVStreamContext } from './mov/type'
 import createMovContext from './mov/function/createMovContext'
 import mktag from '../function/mktag'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
+import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import * as omov from './mov/omov'
 import { BoxType, SampleFlags, TKHDFlags } from './mov/boxType'
 import createMovStreamContext from './mov/function/createMovStreamContext'
@@ -46,10 +46,10 @@ import * as object from 'common/util/object'
 import rewriteIO from '../function/rewriteIO'
 
 import arrayItemSame from '../function/arrayItemSame'
-import AVStream, { AVDisposition } from 'avutil/AVStream'
+import AVStream, { AVDisposition, AVStreamMetadataEncryption, AVStreamMetadataKey } from 'avutil/AVStream'
 import { AVFormat } from 'avutil/avformat'
 import { avQ2D, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
-import { createAVPacket, destroyAVPacket, getAVPacketData } from 'avutil/util/avpacket'
+import { createAVPacket, destroyAVPacket, getAVPacketData, getSideData } from 'avutil/util/avpacket'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
 import { BitFormat } from 'avutil/codecs/h264'
 import * as is from 'common/util/is'
@@ -58,6 +58,7 @@ import * as bigint from 'common/util/bigint'
 import * as ac3 from 'avutil/codecs/ac3'
 import { mapUint8Array } from 'cheap/std/memory'
 import getSampleDuration from './mov/function/getSampleDuration'
+import { encryptionSideData2Info } from 'avutil/util/encryption'
 
 export interface OMovFormatOptions {
   fragmentMode?: FragmentMode
@@ -66,6 +67,7 @@ export interface OMovFormatOptions {
   fastOpen?: boolean
   defaultBaseIsMoof?: boolean
   ignoreEditlist?: boolean
+  encryption?: AVStreamMetadataEncryption
 }
 
 const defaultOptions: OMovFormatOptions = {
@@ -240,6 +242,23 @@ export default class OMovFormat extends OFormat {
         track.trackId = this.context.nextTrackId++
         streamContext.trackId = track.trackId
 
+        const encryption = this.options.encryption || stream.metadata[AVStreamMetadataKey.ENCRYPTION] as AVStreamMetadataEncryption
+        if (encryption) {
+          const cenc = this.context.cencs || {}
+          cenc[track.trackId] = {
+            schemeType: encryption.schemeType,
+            schemeVersion: encryption.schemeVersion,
+            cryptByteBlock: encryption.cryptByteBlock,
+            skipByteBlock: encryption.skipByteBlock,
+            defaultConstantIV: encryption.constantIV,
+            isProtected: 1,
+            defaultPerSampleIVSize: encryption.perSampleIVSize,
+            defaultKeyId: encryption.kid,
+            pattern: !!encryption.pattern
+          }
+          this.context.cencs = cenc
+        }
+
         track.ioWriter = new IOWriter()
         track.ioWriter.onFlush = (data) => {
           track.buffers.push(data.slice())
@@ -331,6 +350,7 @@ export default class OMovFormat extends OFormat {
         const streamContext = stream.privData as MOVStreamContext
 
         track.baseDataOffset = formatContext.ioWriter.getPos()
+        this.context.currentFragment.pos = formatContext.ioWriter.getPos()
 
         if (!track.sampleDurations.length) {
           if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
@@ -400,6 +420,12 @@ export default class OMovFormat extends OFormat {
           track.defaultSampleDuration = track.sampleDurations[0]
           track.sampleDurations = []
         }
+        if (track.cenc) {
+          if (track.cenc.sampleSizes.length === 1 || arrayItemSame(track.cenc.sampleSizes)) {
+            track.cenc.defaultSampleInfoSize = track.cenc.sampleSizes[0]
+            track.cenc.sampleSizes = []
+          }
+        }
 
         if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
           track.defaultSampleFlags = SampleFlags.DEPENDS_NO
@@ -435,6 +461,11 @@ export default class OMovFormat extends OFormat {
         mdatSize += buffer.length
         buffers.push(buffer)
         rewriteIO(formatContext.ioWriter, track.dataOffsetPos, track.dataOffset, 'int32')
+        if (track.cenc) {
+          if (track.cenc.offsetPos) {
+            rewriteIO(formatContext.ioWriter, track.cenc.offsetPos, track.cenc.offset, 'int32')
+          }
+        }
 
         track.buffers = []
         track.sampleFlags = []
@@ -443,6 +474,7 @@ export default class OMovFormat extends OFormat {
         track.sampleCompositionTimeOffset = []
         track.sampleCount = 0
         track.firstSampleFlags = 0
+        track.cenc = null
       })
 
       formatContext.ioWriter.writeUint32(mdatSize)
@@ -624,6 +656,41 @@ export default class OMovFormat extends OFormat {
           track.sampleCompositionTimeOffset.push(static_cast<double>((pts !== NOPTS_VALUE_BIGINT ? pts : dts) - dts))
 
           track.sampleFlags.push(flag)
+        }
+
+        const sideData = getSideData(
+          addressof(avpacket.sideData),
+          addressof(avpacket.sideDataElems),
+          AVPacketSideDataType.AV_PKT_DATA_ENCRYPTION_INFO
+        )
+        const cenc = this.context.cencs && this.context.cencs[streamContext.trackId]
+        if (sideData && cenc) {
+          const info = encryptionSideData2Info(mapUint8Array(sideData.data, sideData.size))
+          if (!track.cenc) {
+            track.cenc = {
+              sampleCount: 0,
+              defaultSampleInfoSize: 0,
+              sampleSizes: [],
+              offset: 0,
+              useSubsamples: false,
+              sampleInfoOffset: [],
+              sampleEncryption: []
+            }
+          }
+          if (info.subsamples.length) {
+            if (!track.cenc.useSubsamples && track.cenc.sampleSizes.length) {
+              track.cenc.sampleSizes = track.cenc.sampleSizes.map((value) => {
+                return value + 2
+              })
+            }
+            track.cenc.useSubsamples = true
+          }
+          track.cenc.sampleCount++
+          track.cenc.sampleSizes.push(cenc.defaultPerSampleIVSize + (track.cenc.useSubsamples ? (2 + info.subsamples.length * 6) : 0))
+          track.cenc.sampleEncryption.push({
+            iv: info.iv,
+            subsamples: info.subsamples
+          })
         }
 
         track.sampleCount++

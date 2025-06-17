@@ -33,6 +33,11 @@ import Stream from 'avutil/AVStream'
 import writers from './writing/writers'
 import { BoxLayout, FragmentTrackBoxLayoutMap, MoofTrafBoxLayout, TrackBoxLayoutMap } from './layout'
 import updatePositionSize from './function/updatePositionSize'
+import { getSideData } from 'avutil/util/avpacket'
+import { AVPacketSideDataType } from 'avutil/codec'
+import { encryptionSideData2InitInfo } from 'avutil/util/encryption'
+import { mapUint8Array } from 'cheap/std/memory'
+import { EncryptionInitInfo } from 'avutil/struct/encryption'
 
 export function updateSize(ioWriter: IOWriter, pointer: number, size: number) {
   const current = ioWriter.getPointer()
@@ -104,6 +109,77 @@ function writeLayout(ioWriter: IOWriter, layouts: BoxLayout[], stream: Stream, m
   })
 }
 
+function writePssh(ioWriter: IOWriter, formatContext: AVOFormatContext, movContext: MOVContext) {
+  const pssh: EncryptionInitInfo[] = []
+
+  function has(info: EncryptionInitInfo) {
+    if (!pssh.length) {
+      return false
+    }
+    for (let i = 0; i < pssh.length; i++) {
+      const item = pssh[i]
+      if (!array.same(item.systemId, info.systemId)) {
+        return false
+      }
+      if (!item.keyIds || !info.keyIds) {
+        return false
+      }
+      if (item.keyIds.length !== info.keyIds.length) {
+        return false
+      }
+      for (let i = 0; i < item.keyIds.length; i++) {
+        if (!array.same(item.keyIds[i], info.keyIds[i])) {
+          return false
+        }
+      }
+      if (!array.same(item.data, info.data)) {
+        return false
+      }
+    }
+    return true
+  }
+  array.each(formatContext.streams, (stream) => {
+    const sideData = getSideData(
+      addressof(stream.codecpar.codedSideData),
+      addressof(stream.codecpar.nbCodedSideData),
+      AVPacketSideDataType.AV_PKT_DATA_ENCRYPTION_INIT_INFO
+    )
+    if (sideData) {
+      const infos = encryptionSideData2InitInfo(mapUint8Array(sideData.data, sideData.size))
+      infos.forEach((info) => {
+        if (!has(info)) {
+          pssh.push(info)
+        }
+      })
+    }
+  })
+
+  if (pssh.length) {
+    pssh.forEach((info) => {
+      const pos = ioWriter.getPos()
+      ioWriter.writeUint32(0)
+      ioWriter.writeUint32(mktag(BoxType.PSSH))
+
+      // version
+      ioWriter.writeUint8(1)
+      ioWriter.writeUint24(0)
+      ioWriter.writeBuffer(info.systemId)
+      ioWriter.writeUint32(info.keyIds.length)
+      info.keyIds.forEach((keyId) => {
+        ioWriter.writeBuffer(keyId)
+      })
+      ioWriter.writeUint32(info.data.length)
+      ioWriter.writeBuffer(info.data)
+
+      movContext.boxsPositionInfo.push({
+        pos,
+        type: BoxType.PSSH,
+        size: Number(ioWriter.getPos() - pos)
+      })
+    })
+  }
+}
+
 export function writeMoov(ioWriter: IOWriter, formatContext: AVOFormatContext, movContext: MOVContext) {
   const pos = ioWriter.getPos()
 
@@ -146,6 +222,8 @@ export function writeMoov(ioWriter: IOWriter, formatContext: AVOFormatContext, m
       type: BoxType.MVEX,
       size: Number(ioWriter.getPos() - pos)
     })
+
+    writePssh(ioWriter, formatContext, movContext)
   }
 
   movContext.boxsPositionInfo.push({
@@ -180,7 +258,7 @@ export function writeMoof(ioWriter: IOWriter, formatContext: AVOFormatContext, m
 
     writeLayout(
       ioWriter,
-      MoofTrafBoxLayout,
+      MoofTrafBoxLayout(track),
       stream,
       movContext
     )

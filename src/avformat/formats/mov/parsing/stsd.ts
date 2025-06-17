@@ -28,7 +28,7 @@ import Stream from 'avutil/AVStream'
 import { Atom, MOVContext, MOVStreamContext } from '../type'
 import * as logger from 'common/util/logger'
 import mktag from '../../../function/mktag'
-import { BoxType } from '../boxType'
+import { BoxType, ContainerBoxs } from '../boxType'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { tag2CodecId } from '../mov'
 
@@ -225,7 +225,33 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
           )
         }
         else {
-          await ioReader.skip(Math.min(size - 8, Number(endPos - ioReader.getPos())))
+          if (movContext.parsers && movContext.parsers[type]) {
+            await movContext.parsers[type](
+              ioReader,
+              null,
+              {
+                type,
+                size: size - 8
+              },
+              movContext
+            )
+          }
+          else if (movContext.parseOneBox && ContainerBoxs.some((boxType) => {
+            return mktag(boxType) === type
+          })) {
+            await movContext.parseOneBox(
+              ioReader,
+              stream,
+              {
+                type,
+                size: size - 8
+              },
+              movContext
+            )
+          }
+          else {
+            await ioReader.skip(Math.min(size - 8, Number(endPos - ioReader.getPos())))
+          }
         }
       }
     }
@@ -350,7 +376,33 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
           )
         }
         else {
-          await ioReader.skip(Math.min(size - 8, Number(endPos - ioReader.getPos())))
+          if (movContext.parsers && movContext.parsers[type]) {
+            await movContext.parsers[type](
+              ioReader,
+              null,
+              {
+                type,
+                size: size - 8
+              },
+              movContext
+            )
+          }
+          else if (movContext.parseOneBox && ContainerBoxs.some((boxType) => {
+            return mktag(boxType) === type
+          })) {
+            await movContext.parseOneBox(
+              ioReader,
+              stream,
+              {
+                type,
+                size: size - 8
+              },
+              movContext
+            )
+          }
+          else {
+            await ioReader.skip(Math.min(size - 8, Number(endPos - ioReader.getPos())))
+          }
         }
       }
     }

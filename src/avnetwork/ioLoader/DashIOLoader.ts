@@ -38,13 +38,12 @@ import { MPDMediaList } from 'avprotocol/dash/type'
 import getTimestamp from 'common/function/getTimestamp'
 import * as errorType from 'avutil/error'
 import { Data, Range } from 'common/types/type'
+import { AVMediaType } from 'avutil/codec'
 
 const FETCHED_HISTORY_LIST_MAX = 10
 
-type MediaType = 'audio' | 'video' | 'subtitle'
-
 interface Resource {
-  type: MediaType
+  type: AVMediaType
   fetchedMap: Map<string, boolean>
   fetchedHistoryList: string[]
   loader: FetchIOLoader
@@ -72,7 +71,7 @@ export default class DashIOLoader extends IOLoader {
   private videoResource: Resource
   private subtitleResource: Resource
 
-  private createResource(type: MediaType): Resource {
+  private createResource(type: AVMediaType): Resource {
     return {
       type,
       fetchedMap: new Map(),
@@ -220,6 +219,10 @@ export default class DashIOLoader extends IOLoader {
 
   public async open(info: FetchInfo, range: Range) {
 
+    if (this.status === IOLoaderStatus.BUFFERING) {
+      return 0
+    }
+
     if (this.status !== IOLoaderStatus.IDLE) {
       return errorType.INVALID_OPERATE
     }
@@ -233,9 +236,9 @@ export default class DashIOLoader extends IOLoader {
 
     this.range.from = Math.max(this.range.from, 0)
 
-    this.videoResource = this.createResource('video')
-    this.audioResource = this.createResource('audio')
-    this.subtitleResource = this.createResource('subtitle')
+    this.videoResource = this.createResource(AVMediaType.AVMEDIA_TYPE_VIDEO)
+    this.audioResource = this.createResource(AVMediaType.AVMEDIA_TYPE_AUDIO)
+    this.subtitleResource = this.createResource(AVMediaType.AVMEDIA_TYPE_SUBTITLE)
 
     this.status = IOLoaderStatus.CONNECTING
     this.retryCount = 0
@@ -344,15 +347,15 @@ export default class DashIOLoader extends IOLoader {
   }
 
   public async read(buffer: Uint8ArrayInterface, options: {
-    mediaType: MediaType
+    mediaType: AVMediaType
   }): Promise<number> {
-    if (options.mediaType === 'audio') {
+    if (options.mediaType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
       return this.readResource(buffer, this.audioResource)
     }
-    else if (options.mediaType === 'video') {
+    else if (options.mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
       return this.readResource(buffer, this.videoResource)
     }
-    else if (options.mediaType === 'subtitle') {
+    else if (options.mediaType === AVMediaType.AVMEDIA_TYPE_SUBTITLE) {
       return this.readResource(buffer, this.subtitleResource)
     }
     return errorType.INVALID_ARGUMENT
@@ -372,9 +375,9 @@ export default class DashIOLoader extends IOLoader {
 
     if (resource.segments) {
       let index = 0
-      const mediaList = resource.type === 'audio'
+      const mediaList = resource.type === AVMediaType.AVMEDIA_TYPE_AUDIO
         ? this.mediaPlayList.mediaList.audio
-        : (resource.type === 'video'
+        : (resource.type === AVMediaType.AVMEDIA_TYPE_VIDEO
           ? this.mediaPlayList.mediaList.video
           : this.mediaPlayList.mediaList.subtitle
         )
@@ -389,13 +392,13 @@ export default class DashIOLoader extends IOLoader {
       }
       resource.segmentIndex = index + (mediaList[resource.selectedIndex].initSegment ? 1 : 0)
       let initSegment = ''
-      if (resource.type === 'video') {
+      if (resource.type === AVMediaType.AVMEDIA_TYPE_VIDEO) {
         initSegment = this.mediaPlayList.mediaList.video[resource.selectedIndex].initSegment
       }
-      else if (resource.type === 'audio') {
+      else if (resource.type === AVMediaType.AVMEDIA_TYPE_AUDIO) {
         initSegment = this.mediaPlayList.mediaList.audio[resource.selectedIndex].initSegment
       }
-      else if (resource.type === 'subtitle') {
+      else if (resource.type === AVMediaType.AVMEDIA_TYPE_SUBTITLE) {
         initSegment = this.mediaPlayList.mediaList.subtitle[resource.selectedIndex].initSegment
       }
       if (initSegment && initSegment === currentSegment) {
@@ -405,16 +408,16 @@ export default class DashIOLoader extends IOLoader {
   }
 
   public async seek(timestamp: int64, options: {
-    mediaType: MediaType
+    mediaType: AVMediaType
   }) {
 
-    if (options.mediaType === 'audio' && this.audioResource.loader) {
+    if (options.mediaType === AVMediaType.AVMEDIA_TYPE_AUDIO && this.audioResource.loader) {
       await this.seekResource(timestamp, this.audioResource)
     }
-    if (options.mediaType === 'video' && this.videoResource.loader) {
+    if (options.mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO && this.videoResource.loader) {
       await this.seekResource(timestamp, this.videoResource)
     }
-    if (options.mediaType === 'subtitle' && this.subtitleResource.loader) {
+    if (options.mediaType === AVMediaType.AVMEDIA_TYPE_SUBTITLE && this.subtitleResource.loader) {
       await this.seekResource(timestamp, this.subtitleResource)
     }
 
@@ -571,6 +574,17 @@ export default class DashIOLoader extends IOLoader {
         this.subtitleResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
         this.subtitleResource.initSegmentPadding = media.initSegment
       }
+    }
+  }
+
+  public getCurrentProtection(mediaType: AVMediaType) {
+    if (mediaType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+      const media = this.mediaPlayList.mediaList.audio[this.audioResource.selectedIndex]
+      return media.protection
+    }
+    else if (mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+      const media = this.mediaPlayList.mediaList.video[this.videoResource.selectedIndex]
+      return media.protection
     }
   }
 

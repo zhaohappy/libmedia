@@ -290,6 +290,11 @@
       "require": "./dist/cjs/struct/rational.js",
       "types": "./dist/esm/struct/rational.d.ts"
     },
+    "./struct/encryption": {
+      "import": "./dist/esm/struct/encryption.js",
+      "require": "./dist/cjs/struct/encryption.js",
+      "types": "./dist/esm/struct/encryption.d.ts"
+    },
     "./util/amf": {
       "import": "./dist/esm/util/amf.js",
       "require": "./dist/cjs/util/amf.js",
@@ -394,6 +399,11 @@
       "import": "./dist/esm/util/serialize.js",
       "require": "./dist/cjs/util/serialize.js",
       "types": "./dist/esm/util/serialize.d.ts"
+    },
+    "./util/encryption": {
+      "import": "./dist/esm/util/encryption.js",
+      "require": "./dist/cjs/util/encryption.js",
+      "types": "./dist/esm/util/encryption.d.ts"
     },
     "./enum": {
       "import": "./dist/esm/enum.js",

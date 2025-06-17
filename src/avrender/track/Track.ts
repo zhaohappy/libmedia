@@ -30,7 +30,8 @@ enum Operator {
   ADD,
   REMOVE,
   UPDATE_TIMESTAMP_OFFSET,
-  CALLBACK
+  CALLBACK,
+  CHANGE_MIME_TYPE
 }
 
 export type TrackOptions = {
@@ -51,6 +52,8 @@ export default class Track {
     start?: number
     end?: number
     timestampOffset?: number
+    type?: string
+    mode?: AppendMode
     callback?: (...args: any[]) => void
   }[]
 
@@ -110,9 +113,15 @@ export default class Track {
 
   public changeMimeType(type: string, mode: AppendMode) {
     if (this.sourceBuffer) {
-      this.sourceBuffer.changeType(type)
-      this.sourceBuffer.mode = mode
-      this.sourceBuffer.timestampOffset = 0
+      this.operatorQueue.push({
+        operator: Operator.CHANGE_MIME_TYPE,
+        type,
+        mode
+      })
+
+      if (!this.updating) {
+        this.enqueue()
+      }
     }
   }
 
@@ -170,6 +179,11 @@ export default class Track {
         else {
           this.updating = false
         }
+      }
+      else if (operator.operator === Operator.CHANGE_MIME_TYPE) {
+        this.sourceBuffer.changeType(operator.type)
+        this.sourceBuffer.mode = operator.mode
+        this.sourceBuffer.timestampOffset = 0
       }
     }
   }
@@ -339,11 +353,16 @@ export default class Track {
   public getBufferedDuration(currentTime: number) {
     if (this.sourceBuffer && this.sourceBuffer.buffered.length) {
       let duration = 0
-      for (let i = 0; i < this.sourceBuffer.buffered.length; i++) {
-        const start = Math.max(currentTime, this.sourceBuffer.buffered.start(i))
-        const end = Math.max(currentTime, this.sourceBuffer.buffered.end(i))
-        duration += end - start
+      try {
+        // firefox 上执行循环的过程中 this.sourceBuffer.buffered.length 会变化导致报错
+        // 这里我们使用 try catch 捕获一下
+        for (let i = 0; i < this.sourceBuffer.buffered.length; i++) {
+          const start = Math.max(currentTime, this.sourceBuffer.buffered.start(i))
+          const end = Math.max(currentTime, this.sourceBuffer.buffered.end(i))
+          duration += end - start
+        }
       }
+      catch (error) {}
       return duration
     }
     return 0

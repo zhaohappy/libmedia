@@ -29,10 +29,12 @@ import { MOVContext, MOVStreamContext, Sample } from '../type'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'
 import { IOFlags } from 'avutil/avformat'
+import { EncryptionInfo } from 'avutil/struct/encryption'
 
 export function getNextSample(context: AVIFormatContext, movContext: MOVContext, ioFlags: int32) {
   let sample: Sample
   let stream: Stream
+  let encryption: EncryptionInfo
 
   let bestDts = 0n
 
@@ -100,13 +102,14 @@ export function getNextSample(context: AVIFormatContext, movContext: MOVContext,
   }
 
   if (stream) {
-    (stream.privData as MOVStreamContext).currentSample++
-    if ((stream.privData as MOVStreamContext).currentSample
-      >= (stream.privData as MOVStreamContext).samplesIndex.length
+    const streamContext = (stream.privData as MOVStreamContext)
+    encryption = streamContext.samplesEncryption[streamContext.currentSample]
+    streamContext.currentSample++
+    if (streamContext.currentSample
+      >= streamContext.samplesIndex.length
     ) {
-      (stream.privData as MOVStreamContext).sampleEnd = true
+      streamContext.sampleEnd = true
     }
-
   }
 
   if (movContext.fragment) {
@@ -121,6 +124,7 @@ export function getNextSample(context: AVIFormatContext, movContext: MOVContext,
 
   return {
     sample,
-    stream
+    stream,
+    encryption
   }
 }

@@ -49,6 +49,14 @@ import tfdt from './tfdt'
 import trun from './trun'
 import elst from './elst'
 
+import pssh from './pssh'
+import frma from './frma'
+import schm from './schm'
+import tenc from './tenc'
+import saio from './saio'
+import saiz from './saiz'
+import senc from './senc'
+
 import mktag from '../../../function/mktag'
 
 const parsers: Partial<Record<
@@ -74,7 +82,15 @@ number,
   [mktag(BoxType.MFHD)]: mfhd,
   [mktag(BoxType.TFHD)]: tfhd,
   [mktag(BoxType.TFDT)]: tfdt,
-  [mktag(BoxType.TRUN)]: trun
+  [mktag(BoxType.TRUN)]: trun,
+
+  [mktag(BoxType.PSSH)]: pssh,
+  [mktag(BoxType.FRMA)]: frma,
+  [mktag(BoxType.SCHM)]: schm,
+  [mktag(BoxType.TENC)]: tenc,
+  [mktag(BoxType.SAIO)]: saio,
+  [mktag(BoxType.SAIZ)]: saiz,
+  [mktag(BoxType.SENC)]: senc
 }
 
 export default parsers

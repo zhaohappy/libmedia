@@ -56,6 +56,7 @@ export default function createMovStreamContext(): MOVStreamContext {
     currentSample: 0,
     sampleEnd: false,
     samplesIndex: [],
+    samplesEncryption: [],
     fragIndexes: [],
 
     lastPts: NOPTS_VALUE_BIGINT,

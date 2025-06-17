@@ -38,6 +38,7 @@ import HlsIOLoader from 'avnetwork/ioLoader/HlsIOLoader'
 import WebSocketIOLoader from 'avnetwork/ioLoader/WebSocketIOLoader'
 import WebTransportIOLoader from 'avnetwork/ioLoader/WebTransportIOLoader'
 import { IOType } from 'avutil/avformat'
+import { AVMediaType } from 'avutil/codec'
 
 export interface IOTaskOptions extends TaskOptions {
   type: IOType
@@ -350,6 +351,17 @@ export default class IOPipeline extends Pipeline {
       if (defined(ENABLE_PROTOCOL_DASH)) {
         if (task.type === IOType.DASH) {
           (task.ioLoader as DashIOLoader).selectSubtitle(index)
+        }
+      }
+    }
+  }
+
+  public async getCurrentProtection(taskId: string, mediaType: AVMediaType) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      if (defined(ENABLE_PROTOCOL_DASH)) {
+        if (task.type === IOType.DASH) {
+          return (task.ioLoader as DashIOLoader).getCurrentProtection(mediaType)
         }
       }
     }

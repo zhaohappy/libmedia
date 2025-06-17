@@ -25,8 +25,9 @@
 
 import IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from './boxType'
-import { FragmentMode, MovMode } from './mov'
-import { AC3HeaderInfo } from 'avutil/codecs/ac3'
+import { EncryptionInitInfo, EncryptionInfo } from 'avutil/struct/encryption'
+import IOReader from 'common/io/IOReader'
+import AVStream from 'avutil/AVStream'
 
 export interface BoxsPositionSizeInfo {
   pos: bigint
@@ -60,6 +61,17 @@ export interface FragmentTrack {
   ioWriter: IOWriter
   buffers: Uint8Array[]
   streamIndex?: number
+
+  cenc?: {
+    sampleCount: number
+    defaultSampleInfoSize: number
+    sampleSizes: number[]
+    offset: number
+    sampleInfoOffset: (number | bigint)[]
+    useSubsamples: boolean
+    sampleEncryption: Omit<EncryptionInfo, 'scheme' | 'keyId' | 'cryptByteBlock' | 'skipByteBlock'>[]
+    offsetPos?: bigint
+  }
 }
 
 export interface Sample {
@@ -88,6 +100,18 @@ export interface EC3Info {
   }[]
 }
 
+export interface Cenc {
+  schemeType: number
+  schemeVersion: number
+  isProtected: number
+  defaultPerSampleIVSize: number
+  defaultKeyId: Uint8Array
+  defaultConstantIV: Uint8Array
+  cryptByteBlock: number
+  skipByteBlock: number
+  pattern: boolean
+}
+
 export interface MOVContext {
   isom: boolean
   timescale: number
@@ -110,6 +134,7 @@ export interface MOVContext {
     duration: number
     flags: number
   }[]
+  cencs?: Record<number, Cenc>
   currentFragment: {
     sequence: number
     currentTrack: FragmentTrack
@@ -129,6 +154,18 @@ export interface MOVContext {
   firstMoof?: int64
   ignoreEditlist?: boolean
   use64Mdat?: boolean
+  encryptionInitInfos?: EncryptionInitInfo[]
+
+  parsers?: Partial<Record<
+  number,
+  (ioReader: IOReader, stream: AVStream, atom: Atom, movContext: MOVContext) => Promise<void>>
+  >
+  parseOneBox?: (
+    ioReader: IOReader,
+    stream: AVStream,
+    atom: Atom,
+    movContext: MOVContext
+  ) => Promise<void>
 }
 
 export interface MOVStreamContext {
@@ -161,6 +198,7 @@ export interface MOVStreamContext {
   currentSample: number
   sampleEnd: boolean
   samplesIndex: Sample[]
+  samplesEncryption: EncryptionInfo[]
 
   lastPts: bigint
   lastDts: bigint

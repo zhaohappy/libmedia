@@ -1,5 +1,5 @@
 /*
- * libmedia mp4 hvcc box parser
+ * libmedia mp4 frma box parser
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -24,45 +24,45 @@
  */
 
 import IOReader from 'common/io/IOReader'
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
+import { AVMediaType } from 'avutil/codec'
 import Stream from 'avutil/AVStream'
 import { Atom, MOVContext } from '../type'
-import { avFree, avMalloc } from 'avutil/util/mem'
-import { mapSafeUint8Array } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'
-import * as hevc from 'avutil/codecs/hevc'
+import * as tags from '../../isom/tags'
 
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()
 
-  stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_HEVC
+  const codecTag = await ioReader.peekUint32()
+  ioReader.setEndian(false)
+  const format = await ioReader.readUint32()
+  ioReader.setEndian(true)
 
-  if (atom.size <= 0) {
-    return
+  let codecId = tags.codecMovAudioTags[format]
+
+  if (codecId > 0 && stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO) {
+    stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
   }
-
-  const data: pointer<uint8> = avMalloc(atom.size)
-  const extradata = await ioReader.readBuffer(atom.size, mapSafeUint8Array(data, atom.size))
-
-  if (movContext.foundMoov) {
-    stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = extradata.slice()
-    avFree(data)
-  }
-  else {
-    if (stream.codecpar.extradata) {
-      avFree(stream.codecpar.extradata)
+  else if (stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_AUDIO) {
+    codecId = tags.codecMovVideoTags[format]
+    if (codecId > 0) {
+      stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_VIDEO
     }
-    stream.codecpar.extradata = data
-    stream.codecpar.extradataSize = atom.size
-    hevc.parseAVCodecParameters(stream, extradata)
+    else {
+      codecId = tags.codecMovSubtiteTags[format]
+      stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_SUBTITLE
+    }
   }
+
+  stream.codecpar.codecTag = codecTag
+  stream.codecpar.codecId = codecId
 
   const remainingLength = atom.size - Number(ioReader.getPos() - now)
   if (remainingLength > 0) {
     await ioReader.skip(remainingLength)
   }
   else if (remainingLength < 0) {
-    logger.error(`read hevc error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
+    logger.error(`read frma error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
   }
 }

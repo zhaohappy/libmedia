@@ -48,6 +48,7 @@ import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { IOFlags } from 'avutil/avformat'
 import { BitFormat } from 'avutil/codecs/h264'
 import * as intread from 'avutil/util/intread'
+import { encryptionInfo2SideData } from 'avutil/util/encryption'
 
 export interface IMovFormatOptions {
   ignoreEditlist?: boolean
@@ -192,7 +193,7 @@ export default class IMovFormat extends IFormat {
 
   private async readAVPacket_(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
 
-    const { sample, stream } = getNextSample(formatContext, this.context, formatContext.ioReader.flags)
+    const { sample, stream, encryption } = getNextSample(formatContext, this.context, formatContext.ioReader.flags)
 
     if (sample) {
       avpacket.streamIndex = stream.index
@@ -279,6 +280,12 @@ export default class IMovFormat extends IFormat {
         addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, extradata, len)
         memcpyFromUint8Array(extradata, len, stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA])
         delete stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
+      }
+      if (encryption) {
+        const buffer = encryptionInfo2SideData(encryption)
+        const data: pointer<uint8> = avMalloc(buffer.length)
+        memcpyFromUint8Array(data, buffer.length, buffer)
+        addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_ENCRYPTION_INFO, data, buffer.length)
       }
     }
     else {

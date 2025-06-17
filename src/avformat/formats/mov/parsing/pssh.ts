@@ -1,5 +1,5 @@
 /*
- * libmedia mp4 hvcc box parser
+ * libmedia mp4 pssh box parser
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -24,45 +24,45 @@
  */
 
 import IOReader from 'common/io/IOReader'
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
 import Stream from 'avutil/AVStream'
-import { Atom, MOVContext } from '../type'
-import { avFree, avMalloc } from 'avutil/util/mem'
-import { mapSafeUint8Array } from 'cheap/std/memory'
+import { Atom, MOVContext, MOVStreamContext } from '../type'
 import * as logger from 'common/util/logger'
-import * as hevc from 'avutil/codecs/hevc'
+import { EncryptionInitInfo } from 'avutil/struct/encryption'
 
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
-
   const now = ioReader.getPos()
 
-  stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_HEVC
+  const version = await ioReader.readUint8()
+  // flags
+  await ioReader.skip(3)
 
-  if (atom.size <= 0) {
-    return
+  const encryptionInitInfos = movContext.encryptionInitInfos || []
+
+  const info: EncryptionInitInfo = {
+    systemId: await ioReader.readBuffer(16),
+    keyIds: [],
+    data: null
   }
 
-  const data: pointer<uint8> = avMalloc(atom.size)
-  const extradata = await ioReader.readBuffer(atom.size, mapSafeUint8Array(data, atom.size))
-
-  if (movContext.foundMoov) {
-    stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = extradata.slice()
-    avFree(data)
-  }
-  else {
-    if (stream.codecpar.extradata) {
-      avFree(stream.codecpar.extradata)
+  if (version > 0) {
+    const keyIdCount = await ioReader.readUint32()
+    for (let i = 0; i < keyIdCount; i++) {
+      info.keyIds.push(await ioReader.readBuffer(16))
     }
-    stream.codecpar.extradata = data
-    stream.codecpar.extradataSize = atom.size
-    hevc.parseAVCodecParameters(stream, extradata)
   }
+
+  const dataSize = await ioReader.readUint32()
+  info.data = await ioReader.readBuffer(dataSize)
+
+  encryptionInitInfos.push(info)
+
+  movContext.encryptionInitInfos = encryptionInitInfos
 
   const remainingLength = atom.size - Number(ioReader.getPos() - now)
   if (remainingLength > 0) {
     await ioReader.skip(remainingLength)
   }
   else if (remainingLength < 0) {
-    logger.error(`read hevc error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
+    logger.error(`read pssh error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
   }
 }

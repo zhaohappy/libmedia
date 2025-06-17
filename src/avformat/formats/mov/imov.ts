@@ -23,7 +23,7 @@
  *
  */
 
-import Stream from 'avutil/AVStream'
+import AVStream, { AVStreamMetadataKey } from 'avutil/AVStream'
 import { Atom, FragmentTrack, MOVContext, MOVStreamContext } from './type'
 import IOReader from 'common/io/IOReader'
 import mktag from '../../function/mktag'
@@ -39,6 +39,8 @@ import { AVPacketSideDataType } from 'avutil/codec'
 import { avFree, avMalloc } from 'avutil/util/mem'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { NOPTS_VALUE } from 'avutil/constant'
+import { encryptionInitInfo2SideData } from 'avutil/util/encryption'
+import { addSideData } from 'avutil/util/avpacket'
 
 
 export async function readFtyp(ioReader: IOReader, context: MOVContext, atom: Atom) {
@@ -59,7 +61,7 @@ export async function readFtyp(ioReader: IOReader, context: MOVContext, atom: At
 
 async function parseOneBox(
   ioReader: IOReader,
-  stream: Stream,
+  stream: AVStream,
   atom: Atom,
   movContext: MOVContext
 ) {
@@ -194,6 +196,8 @@ export async function readMoov(
   movContext: MOVContext,
   atom: Atom
 ) {
+  movContext.parseOneBox = parseOneBox
+  movContext.parsers = parsers
   const endPos = ioReader.getPos() + static_cast<int64>(atom.size)
   while (ioReader.getPos() < endPos) {
     const size = await ioReader.readUint32()
@@ -289,6 +293,37 @@ export async function readMoov(
       await ioReader.skip(size - 8)
     }
   }
+  formatContext.streams.forEach((stream) => {
+    if (movContext.encryptionInitInfos) {
+      const sideData = encryptionInitInfo2SideData(movContext.encryptionInitInfos)
+      const data: pointer<uint8> = avMalloc(sideData.length)
+      memcpyFromUint8Array(data, sideData.length, sideData)
+      addSideData(
+        addressof(stream.codecpar.codedSideData),
+        addressof(stream.codecpar.nbCodedSideData),
+        AVPacketSideDataType.AV_PKT_DATA_ENCRYPTION_INIT_INFO,
+        data,
+        sideData.length
+      )
+    }
+    if (movContext.cencs) {
+      const streamContext = stream.privData as MOVStreamContext
+      const cenc = movContext.cencs[streamContext.trackId]
+      if (cenc) {
+        stream.metadata[AVStreamMetadataKey.ENCRYPTION] = {
+          schemeType: cenc.schemeType,
+          schemeVersion: cenc.schemeVersion,
+          cryptByteBlock: cenc.cryptByteBlock,
+          skipByteBlock: cenc.skipByteBlock,
+          perSampleIVSize: cenc.defaultPerSampleIVSize,
+          kid: cenc.defaultKeyId,
+          constantIV: cenc.defaultConstantIV,
+          pattern: cenc.pattern
+        }
+      }
+    }
+  })
+
 }
 
 export async function readMoof(
