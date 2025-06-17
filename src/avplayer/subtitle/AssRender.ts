@@ -24,7 +24,6 @@
  *
  */
 
-import { setKeyframes } from 'assjs/src/renderer/animation'
 import { $fixFontSize } from 'assjs/src/renderer/font-size'
 import { clear, createResize } from 'assjs/src/internal'
 import { createSVGEl, batchAnimate } from 'assjs/src/utils'
@@ -36,7 +35,7 @@ import { AssEvent, AssEventType } from 'avformat/formats/ass/ass'
 import { renderer } from 'assjs/src/renderer/renderer'
 import * as object from 'common/util/object'
 
-const GLOBAL_CSS = '.ASS-box{font-family:Arial;overflow:hidden;pointer-events:none;position:absolute}.ASS-dialogue{font-size:0;position:absolute;z-index:0}.ASS-dialogue span{display:inline-block}.ASS-dialogue [data-text]{display:inline-block;color:var(--ass-fill-color);font-size:calc(var(--ass-scale)*var(--ass-real-fs)*1px);line-height:calc(var(--ass-scale)*var(--ass-tag-fs)*1px);letter-spacing:calc(var(--ass-scale)*var(--ass-tag-fsp)*1px)}.ASS-dialogue [data-wrap-style="0"],.ASS-dialogue [data-wrap-style="3"]{text-wrap:balance}.ASS-dialogue [data-wrap-style="1"]{word-break:break-word;white-space:normal}.ASS-dialogue [data-wrap-style="2"]{word-break:normal;white-space:nowrap}.ASS-dialogue [data-border-style="1"]{position:relative}.ASS-dialogue [data-border-style="1"]::after,.ASS-dialogue [data-border-style="1"]::before{content:attr(data-text);position:absolute;top:0;left:0;z-index:-1;filter:blur(calc(var(--ass-tag-blur)*1px))}.ASS-dialogue [data-border-style="1"]::before{color:var(--ass-shadow-color);transform:translate(calc(var(--ass-scale-stroke)*var(--ass-tag-xshad)*1px),calc(var(--ass-scale-stroke)*var(--ass-tag-yshad)*1px));-webkit-text-stroke:var(--ass-border-width) var(--ass-shadow-color);text-shadow:var(--ass-shadow-delta);opacity:var(--ass-shadow-opacity)}.ASS-dialogue [data-border-style="1"]::after{color:transparent;-webkit-text-stroke:var(--ass-border-width) var(--ass-border-color);text-shadow:var(--ass-border-delta);opacity:var(--ass-border-opacity)}.ASS-dialogue [data-border-style="3"]{padding:calc(var(--ass-scale-stroke)*var(--ass-tag-xbord)*1px) calc(var(--ass-scale-stroke)*var(--ass-tag-ybord)*1px);position:relative;filter:blur(calc(var(--ass-tag-blur)*1px))}.ASS-dialogue [data-border-style="3"]::after,.ASS-dialogue [data-border-style="3"]::before{content:"";width:100%;height:100%;position:absolute;z-index:-1}.ASS-dialogue [data-border-style="3"]::before{background-color:var(--ass-shadow-color);left:calc(var(--ass-scale-stroke)*var(--ass-tag-xshad)*1px);top:calc(var(--ass-scale-stroke)*var(--ass-tag-yshad)*1px)}.ASS-dialogue [data-border-style="3"]::after{background-color:var(--ass-border-color);left:0;top:0}@container style(--ass-tag-xbord: 0) and style(--ass-tag-ybord: 0){.ASS-dialogue [data-border-style="3"]::after{background-color:transparent}}@container style(--ass-tag-xshad: 0) and style(--ass-tag-yshad: 0){.ASS-dialogue [data-border-style="3"]::before{background-color:transparent}}.ASS-dialogue [data-rotate]{transform:perspective(312.5px) rotateY(calc(var(--ass-tag-fry)*1deg)) rotateX(calc(var(--ass-tag-frx)*1deg)) rotateZ(calc(var(--ass-tag-frz)*-1deg))}.ASS-dialogue [data-text][data-rotate]{transform-style:preserve-3d;word-break:normal;white-space:nowrap}.ASS-dialogue [data-scale],.ASS-dialogue [data-skew]{display:inline-block;transform:scale(var(--ass-tag-fscx),var(--ass-tag-fscy)) skew(calc(var(--ass-tag-fax)*1rad),calc(var(--ass-tag-fay)*1rad));transform-origin:var(--ass-align-h) var(--ass-align-v)}.ASS-fix-font-size{font-size:2048px;font-family:Arial;line-height:normal;width:0;height:0;position:absolute;visibility:hidden;overflow:hidden}.ASS-clip-area,.ASS-fix-font-size span{position:absolute}.ASS-clip-area{width:100%;height:100%;top:0;left:0}.ASS-scroll-area{position:absolute;width:100%;overflow:hidden}'
+const GLOBAL_CSS = '.ASS-box{font-family:Arial;overflow:hidden;pointer-events:none;position:absolute}.ASS-dialogue{font-size:0;width:max-content;position:absolute;z-index:0;transform:translate(calc(var(--ass-align-h)*-1),calc(var(--ass-align-v)*-1));span{display:inline-block}[data-text]{display:inline-block;color:var(--ass-fill-color);font-size:calc(var(--ass-scale)*var(--ass-real-fs)*1px);line-height:calc(var(--ass-scale)*var(--ass-tag-fs)*1px);letter-spacing:calc(var(--ass-scale)*var(--ass-tag-fsp)*1px);filter:blur(calc(var(--ass-scale-stroke)*var(--ass-tag-blur)*(1-round(up,sin(var(--ass-tag-xbord))*sin(var(--ass-tag-xbord))))*(1-round(up,sin(var(--ass-tag-ybord))*sin(var(--ass-tag-ybord))))*1px))}[data-is="br"]+[data-is="br"]{height:calc(var(--ass-scale)*var(--ass-tag-fs)*1px/2)}}.ASS-dialogue[data-wrap-style="0"],.ASS-dialogue[data-wrap-style="3"]{text-wrap:balance;white-space:pre-wrap}.ASS-dialogue[data-wrap-style="1"]{word-break:break-word;white-space:pre-wrap}.ASS-dialogue[data-wrap-style="2"]{word-break:normal;white-space:pre}.ASS-dialogue[data-border-style="1"]{position:relative;&::before,&::after{content:attr(data-text);position:absolute;top:0;left:0;z-index:-1;filter:blur(calc(var(--ass-scale-stroke)*var(--ass-tag-blur)*1px))}&::before{color:var(--ass-shadow-color);-webkit-text-stroke:calc(var(--ass-scale-stroke)*var(--ass-border-width)*1px) var(--ass-shadow-color);transform:translate(calc(var(--ass-scale-stroke)*var(--ass-tag-xshad)*1px),calc(var(--ass-scale-stroke)*var(--ass-tag-yshad)*1px))}&::after{color:var(--ass-border-color);-webkit-text-stroke:calc(var(--ass-scale-stroke)*var(--ass-border-width)*1px) var(--ass-border-color)}&[data-stroke="svg"]{color:#000;&::before,&::after{opacity:0}}}@container style(--ass-tag-xbord:0) and style(--ass-tag-ybord:0){.ASS-dialogue[data-border-style="1"]::after{display:none}}@container style(--ass-tag-xshad:0) and style(--ass-tag-yshad:0){.ASS-dialogue[data-border-style="1"]::before{display:none}}.ASS-dialogue[data-border-style="3"]{padding:calc(var(--ass-scale-stroke)*var(--ass-tag-xbord)*1px)calc(var(--ass-scale-stroke)*var(--ass-tag-ybord)*1px);position:relative;filter:blur(calc(var(--ass-scale-stroke)*var(--ass-tag-blur)*1px));&::before,&::after{content:"";width:100%;height:100%;position:absolute;z-index:-1}&::before{background-color:var(--ass-shadow-color);left:calc(var(--ass-scale-stroke)*var(--ass-tag-xshad)*1px);top:calc(var(--ass-scale-stroke)*var(--ass-tag-yshad)*1px)}&::after{background-color:var(--ass-border-color);left:0;top:0}}@container style(--ass-tag-xbord:0) and style(--ass-tag-ybord:0){.ASS-dialogue [data-border-style="3"]::after{background-color:transparent}}@container style(--ass-tag-xshad:0) and style(--ass-tag-yshad:0){.ASS-dialogue [data-border-style="3"]::before{background-color:transparent}}.ASS-dialogue[data-rotate]{transform:perspective(312.5px) rotateY(calc(var(--ass-tag-fry) * 1deg)) rotateX(calc(var(--ass-tag-frx) * 1deg)) rotateZ(calc(var(--ass-tag-frz) * -1deg));&[data-text]{transform-style:preserve-3d;word-break:normal;white-space:nowrap}}.ASS-dialogue[data-scale],.ASS-dialogue[data-skew]{display:inline-block;transform:scale(var(--ass-tag-fscx), var(--ass-tag-fscy)) skew(calc(var(--ass-tag-fax)*1rad),calc(var(--ass-tag-fay) * 1rad));transform-origin:var(--ass-align-h) var(--ass-align-v)}.ASS-fix-font-size{font-family:Arial;line-height:normal;width:0;height:0;position:absolute;visibility:hidden;overflow:hidden;span{position:absolute}}.ASS-clip-area{width:100%;height:100%;position:absolute;top:0;left:0}.ASS-effect-area{position:absolute;display:flex;width:100%;height:fit-content;overflow:hidden;mask-composite:intersect;&[data-effect="banner"]{flex-direction:column;height:100%}.ASS-dialogue{position:static;transform:none}}'
 
 function addGlobalStyle(container: any) {
   const rootNode = container.getRootNode() || document
@@ -209,6 +208,12 @@ export default class AssRender {
 
   private framing(dialogue: any) {
     const dia = renderer(dialogue, this.store)
+    if (dia.animations) {
+      dia.animations.forEach((animation: any) => {
+        // @ts-ignore
+        animation.currentTime = (Number(this.store.video.currentTime) - dia.start * 1000)
+      })
+    }
     batchAnimate(dia, 'play')
     dia.__dialogue = dialogue
     this.store.actives.push(dia)
@@ -284,6 +289,7 @@ export default class AssRender {
       object.extend(
         dialogue,
         {
+          effect: ['banner', 'scroll up', 'scroll down'].includes(dialogue.effect?.name) ? dialogue.effect : null,
           d: `ASS-${generateUUID()}`,
           align: {
             h: (dialogue.alignment + 2) % 3,
@@ -291,7 +297,6 @@ export default class AssRender {
           }
         }
       )
-      setKeyframes(dialogue, this.store)
       this.framing(dialogue)
     }
   }

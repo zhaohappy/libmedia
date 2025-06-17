@@ -83,8 +83,8 @@
     "yargs": "^13.3.0"
   },
   "dependencies": {
-    "ass-compiler": "^0.1.13",
-    "assjs": "0.1.1",
+    "ass-compiler": "^0.1.15",
+    "assjs": "0.1.4",
     "yox": "^1.0.0-alpha.408"
   }
 }

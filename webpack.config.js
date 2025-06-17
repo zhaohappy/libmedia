@@ -265,6 +265,12 @@ module.exports = (env) => {
           ]
         },
         {
+          test: /\.css$/,
+          use: [
+            'raw-loader'
+          ]
+        },
+        {
           test: /\.styl(us)?$/,
           use: [
             {
