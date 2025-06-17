@@ -39,6 +39,7 @@ import * as h264 from 'avutil/codecs/h264'
 import * as hevc from 'avutil/codecs/hevc'
 import * as vvc from 'avutil/codecs/vvc'
 import * as errorType from 'avutil/error'
+import * as array from 'common/util/array'
 
 export type WebVideoDecoderOptions = {
   onReceiveVideoFrame: (frame: VideoFrame) => void
@@ -119,17 +120,8 @@ export default class WebVideoDecoder {
   }
 
   private changeExtraData(buffer: Uint8Array) {
-    if (buffer.length === this.extradata!.length) {
-      let same = true
-      for (let i = 0; i < buffer.length; i++) {
-        if (buffer[i] !== this.extradata![i]) {
-          same = false
-          break
-        }
-      }
-      if (same) {
-        return 0
-      }
+    if (array.same(buffer, this.extradata!)) {
+      return 0
     }
 
     this.currentError = null

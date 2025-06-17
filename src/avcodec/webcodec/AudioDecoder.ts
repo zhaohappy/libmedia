@@ -32,6 +32,7 @@ import { getAVPacketSideData } from 'avutil/util/avpacket'
 import avpacket2EncodedAudioChunk from 'avutil/function/avpacket2EncodedAudioChunk'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
+import * as array from 'common/util/array'
 
 export type WebAudioDecoderOptions = {
   onReceiveAudioData: (frame: AudioData) => void
@@ -119,17 +120,8 @@ export default class WebAudioDecoder {
   }
 
   public changeExtraData(buffer: Uint8Array) {
-    if (buffer.length === this.extradata!.length) {
-      let same = true
-      for (let i = 0; i < buffer.length; i++) {
-        if (buffer[i] !== this.extradata![i]) {
-          same = false
-          break
-        }
-      }
-      if (same) {
-        return 0
-      }
+    if (array.same(buffer, this.extradata!)) {
+      return 0
     }
 
     this.currentError = null
