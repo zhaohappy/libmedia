@@ -643,15 +643,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         return false
       }
 
-      if (this.options.checkUseMES) {
-        return this.options.checkUseMES(this.formatContext.streams)
-      }
-
       if (options.video && videoStream && videoStream.metadata[AVStreamMetadataKey.ENCRYPTION]
         || options.audio && audioStream && audioStream.metadata[AVStreamMetadataKey.ENCRYPTION]
       ) {
         // DRM 只能使用 mse 模式
         return true
+      }
+
+      if (this.options.checkUseMES) {
+        return this.options.checkUseMES(this.formatContext.streams)
       }
 
       if (videoStream && options.video) {
