@@ -38,15 +38,14 @@ import * as logger from 'common/util/logger'
 import * as urlUtil from 'common/util/url'
 import AESDecryptPipe from '../bsp/aes/AESDecryptPipe'
 import * as is from 'common/util/is'
-import { Data, Range } from 'common/types/type'
+import { Data } from 'common/types/type'
+import * as errorType from 'avutil/error'
 
 const FETCHED_HISTORY_LIST_MAX = 10
 
 export default class HlsIOLoader extends IOLoader {
 
   private info: FetchInfo
-
-  private range: Range
 
   private masterPlaylist: MasterPlaylist
 
@@ -73,6 +72,7 @@ export default class HlsIOLoader extends IOLoader {
   private aesDecryptPipe: AESDecryptPipe
 
   private initLoaded: boolean
+  private isInitLoader: boolean
 
   private getFetchParams(method: string = 'GET') {
     const params: Data = {
@@ -170,6 +170,15 @@ export default class HlsIOLoader extends IOLoader {
       const text = await res.text()
       this.mediaPlayList = hlsParser(text) as MediaPlaylist
 
+      if (this.mediaPlayList.endlist) {
+        this.options.isLive = false
+      }
+
+      this.initLoaded = true
+      if (this.mediaPlayList.segments.length && this.mediaPlayList.segments[0].map) {
+        this.initLoaded = false
+      }
+
       if (this.options.isLive && (!this.mediaPlayList.segments || this.mediaPlayList.segments.length < 2)) {
         let wait = 5
         if (this.mediaPlayList.segments?.length) {
@@ -182,10 +191,6 @@ export default class HlsIOLoader extends IOLoader {
 
       this.minBuffer = this.mediaPlayList.duration || 0
 
-      if (this.mediaPlayList.endlist) {
-        this.options.isLive = false
-      }
-
       this.status = IOLoaderStatus.BUFFERING
       this.retryCount = 0
 
@@ -196,7 +201,7 @@ export default class HlsIOLoader extends IOLoader {
         this.retryCount++
         logger.error(`failed fetch m3u8 file, retry(${this.retryCount}/3)`)
         await new Sleep(this.options.retryInterval)
-        return this.fetchMasterPlayList()
+        return this.fetchMediaPlayList()
       }
       else {
         this.status = IOLoaderStatus.ERROR
@@ -205,16 +210,17 @@ export default class HlsIOLoader extends IOLoader {
     }
   }
 
-  public async open(info: FetchInfo, range: Range) {
+  public async open(info: FetchInfo) {
 
-    this.info = info
-    this.range = range
-
-    if (!this.range.to) {
-      this.range.to = -1
+    if (this.status === IOLoaderStatus.BUFFERING) {
+      return 0
     }
 
-    this.range.from = Math.max(this.range.from, 0)
+    if (this.status !== IOLoaderStatus.IDLE) {
+      return errorType.INVALID_OPERATE
+    }
+
+    this.info = info
 
     this.mediaPlayListIndex = 0
     this.segmentIndex = 0
@@ -288,7 +294,7 @@ export default class HlsIOLoader extends IOLoader {
         return ret
       }
       else {
-        if (this.initLoaded) {
+        if (!this.isInitLoader) {
           if (this.options.isLive) {
             this.fetchedMap.set(this.currentUri, true)
             if (this.fetchedHistoryList.length === FETCHED_HISTORY_LIST_MAX) {
@@ -333,20 +339,22 @@ export default class HlsIOLoader extends IOLoader {
         return this.read(buffer)
       }
 
+      this.isInitLoader = !!(segments[0].map?.uri && !this.initLoaded)
+
       this.currentUri = segments[0].uri
 
-      if (this.initLoaded) {
+      if (!this.isInitLoader) {
         await this.checkNeedDecrypt(segments[0], this.segmentIndex)
       }
 
       this.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
 
-      const url = buildAbsoluteURL(this.mediaListUrl, this.initLoaded ? this.currentUri : segments[0].map.uri)
+      const url = buildAbsoluteURL(this.mediaListUrl, this.isInitLoader ? segments[0].map.uri : this.currentUri)
       const range = {
         from: 0,
         to: -1
       }
-      const byteRange = this.initLoaded ? segments[0].byterange : segments[0].map.byterange
+      const byteRange = this.isInitLoader ? segments[0].map.byterange : segments[0].byterange
       if (byteRange) {
         range.from = byteRange.offset
         range.to = byteRange.offset + byteRange.length
@@ -368,16 +376,18 @@ export default class HlsIOLoader extends IOLoader {
         segment = this.mediaPlayList.segments[++this.segmentIndex]
       }
 
-      if (this.initLoaded) {
+      this.isInitLoader = !!(segment.map?.uri && !this.initLoaded)
+
+      if (!this.isInitLoader) {
         await this.checkNeedDecrypt(segment, this.segmentIndex)
       }
 
-      const url = buildAbsoluteURL(this.mediaListUrl, this.initLoaded ? segment.uri : segment.map.uri)
+      const url = buildAbsoluteURL(this.mediaListUrl, this.isInitLoader ? segment.map.uri : segment.uri)
       const range = {
         from: 0,
         to: -1
       }
-      const byteRange = this.initLoaded ? segment.byterange : segment.map.byterange
+      const byteRange = this.isInitLoader ? segment.map.byterange : segment.byterange
       if (byteRange) {
         range.from = byteRange.offset
         range.to = byteRange.offset + byteRange.length
