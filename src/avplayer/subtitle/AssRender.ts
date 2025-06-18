@@ -184,7 +184,9 @@ export default class AssRender {
 
     this.updateHeader(options.header)
 
-    options.container.append($fixFontSize)
+    if ($fixFontSize) {
+      options.container.append($fixFontSize)
+    }
 
     const { svg, defs, scriptRes, box } = this.store
     svg.setAttributeNS(null, 'viewBox', `0 0 ${scriptRes.width} ${scriptRes.height}`)
@@ -334,7 +336,9 @@ export default class AssRender {
     const { video, box, svg, observer } = this.store
     clear(this.store)
 
-    $fixFontSize.remove()
+    if ($fixFontSize) {
+      $fixFontSize.remove()
+    }
     svg.remove()
     box.remove()
     observer.unobserve(video)
