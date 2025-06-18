@@ -1069,6 +1069,15 @@
           //   console.log('player destroy')
           // })
         })
+        
+        player.on('played', () => {
+          if (statsTimer) {
+            clearTimeout(statsTimer)
+          }
+          statsTimer = setInterval(() => {
+            handleStats(player.getStats())
+          }, 1000)
+        })
 
         player.on('time', (pts) => {
           if (slider && !isSeeking) {

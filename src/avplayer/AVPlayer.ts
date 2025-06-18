@@ -106,7 +106,6 @@ import getKeySystemFromSystemId from './drm/getKeySystemFromSystemId'
 import digital2Tag from 'avformat/function/digital2Tag'
 import { EncryptionInitInfo } from 'avutil/struct/encryption'
 import { avMalloc } from 'avutil/util/mem'
-import BufferReader from 'common/io/BufferReader'
 import { DRMType } from './drm/drm'
 import kid2Base64 from './drm/kid2Base64'
 import * as text from 'common/util/text'
@@ -367,6 +366,7 @@ export const enum AVPlayerStatus {
   LOADED,
   PLAYING,
   PLAYED,
+  ENDED,
   PAUSED,
   SEEKING,
   CHANGING
@@ -887,6 +887,103 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  private async replayTo(timestamp: int64) {
+
+    let seekedTimestamp = -1n
+
+    if (defined(ENABLE_PROTOCOL_HLS) && this.isHls()) {
+      seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.TIMESTAMP)
+    }
+    else if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
+      seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.TIMESTAMP)
+      if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
+        await AVPlayer.DemuxerThread.seek(this.subTaskId, timestamp, AVSeekFlags.TIMESTAMP)
+      }
+      if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId) {
+        await AVPlayer.DemuxerThread.seek(this.subtitleTaskId, timestamp, AVSeekFlags.TIMESTAMP)
+      }
+    }
+    else {
+      seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.FRAME)
+    }
+
+    for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
+      await AVPlayer.DemuxerThread.seek(this.externalSubtitleTasks[0].taskId, timestamp, AVSeekFlags.FRAME)
+    }
+
+    this.fire(eventType.TIME, [timestamp])
+
+    if (defined(ENABLE_MSE) && this.useMSE) {
+      if ((this.video || this.audio)?.src) {
+        URL.revokeObjectURL((this.video || this.audio).src)
+      }
+      await AVPlayer.MSEThread.restart(this.taskId)
+      const mediaSource = await AVPlayer.MSEThread.getMediaSource(this.taskId)
+      if (mediaSource) {
+        if (support.workerMSE && mediaSource instanceof MediaSourceHandle) {
+          (this.video || this.audio).srcObject = mediaSource
+        }
+        else {
+          (this.video || this.audio).src = URL.createObjectURL(mediaSource)
+        }
+        if (this.video) {
+          this.video.currentTime = static_cast<double>(timestamp) / 1000
+          this.video.playbackRate = this.playRate
+        }
+        else if (this.audio) {
+          this.audio.currentTime = static_cast<double>(timestamp) / 1000
+          this.audio.playbackRate = this.playRate
+        }
+        await Promise.all([
+          this.video?.play(),
+          this.audio?.play()
+        ])
+      }
+    }
+    else {
+      let maxQueueLength = 20
+      this.formatContext.streams.forEach((stream) => {
+        if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+          maxQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate)), maxQueueLength)
+        }
+      })
+      if (this.audioDecoder2AudioRenderChannel) {
+        await AVPlayer.AudioDecoderThread.resetTask(this.taskId)
+        await AVPlayer.AudioRenderThread.restart(this.taskId)
+        await AVPlayer.AudioRenderThread.syncSeekTime(
+          this.taskId,
+          seekedTimestamp >= 0 ? (seekedTimestamp > timestamp ? seekedTimestamp : timestamp) : NOPTS_VALUE_BIGINT,
+          maxQueueLength
+        )
+        this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_AUDIO)
+      }
+
+      if (this.audioSourceNode) {
+        await this.audioSourceNode.request('restart')
+        if (AVPlayer.audioContext.state === 'suspended') {
+          await AVPlayer.AudioRenderThread.fakePlay(this.taskId)
+        }
+        this.audioEnded = false
+      }
+
+      if (this.videoDecoder2VideoRenderChannel) {
+        await this.VideoDecoderThread.resetTask(this.taskId)
+        await this.VideoRenderThread.restart(this.taskId)
+        await this.VideoRenderThread.syncSeekTime(
+          this.taskId,
+          seekedTimestamp >= 0 ? (seekedTimestamp > timestamp ? seekedTimestamp : timestamp) : NOPTS_VALUE_BIGINT,
+          maxQueueLength
+        )
+        this.videoEnded = false
+      }
+    }
+
+    if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender) {
+      this.subtitleRender.reset()
+      this.subtitleRender.start()
+    }
+  }
+
   private async handleEnded() {
     if (this.audioEnded && this.videoEnded) {
 
@@ -896,105 +993,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
         logger.info(`loop play, taskId: ${this.taskId}`)
 
-        if (defined(ENABLE_PROTOCOL_HLS) && this.isHls()) {
-          await AVPlayer.DemuxerThread.seek(this.taskId, 0n, AVSeekFlags.TIMESTAMP)
-        }
-        else if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
-          await AVPlayer.DemuxerThread.seek(this.taskId, 0n, AVSeekFlags.TIMESTAMP)
-          if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
-            await AVPlayer.DemuxerThread.seek(this.subTaskId, 0n, AVSeekFlags.TIMESTAMP)
-          }
-          if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId) {
-            await AVPlayer.DemuxerThread.seek(this.subtitleTaskId, 0n, AVSeekFlags.TIMESTAMP)
-          }
-        }
-        else {
-          await AVPlayer.DemuxerThread.seek(this.taskId, 0n, AVSeekFlags.FRAME)
-        }
-
-        for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
-          await AVPlayer.DemuxerThread.seek(this.externalSubtitleTasks[0].taskId, 0n, AVSeekFlags.FRAME)
-        }
-
-        this.fire(eventType.TIME, [0n])
-
-        if (defined(ENABLE_MSE) && this.useMSE) {
-          if ((this.video || this.audio)?.src) {
-            URL.revokeObjectURL((this.video || this.audio).src)
-          }
-          await AVPlayer.MSEThread.restart(this.taskId)
-          const mediaSource = await AVPlayer.MSEThread.getMediaSource(this.taskId)
-          if (mediaSource) {
-            if (support.workerMSE && mediaSource instanceof MediaSourceHandle) {
-              (this.video || this.audio).srcObject = mediaSource
-            }
-            else {
-              (this.video || this.audio).src = URL.createObjectURL(mediaSource)
-            }
-            if (this.video) {
-              this.video.currentTime = 0
-              this.video.playbackRate = this.playRate
-            }
-            else if (this.audio) {
-              this.audio.currentTime = 0
-              this.audio.playbackRate = this.playRate
-            }
-            await Promise.all([
-              this.video?.play(),
-              this.audio?.play()
-            ])
-          }
-        }
-        else {
-          if (this.audioDecoder2AudioRenderChannel) {
-            await AVPlayer.AudioDecoderThread.resetTask(this.taskId)
-            await AVPlayer.AudioRenderThread.restart(this.taskId)
-            this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_AUDIO)
-          }
-
-          if (this.audioSourceNode) {
-            await this.audioSourceNode.request('restart')
-            if (AVPlayer.audioContext.state === 'suspended') {
-              await AVPlayer.AudioRenderThread.fakePlay(this.taskId)
-            }
-            this.audioEnded = false
-          }
-
-          if (this.videoDecoder2VideoRenderChannel) {
-            await this.VideoDecoderThread.resetTask(this.taskId)
-            await this.VideoRenderThread.restart(this.taskId)
-            this.videoEnded = false
-          }
-        }
-
-        if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender) {
-          this.subtitleRender.reset()
-          this.subtitleRender.start()
-        }
+        await this.replayTo(0n)
       }
       else {
-
-        if ((this.video || this.audio)?.src) {
-          URL.revokeObjectURL((this.video || this.audio).src)
-        }
-
-        if (!this.isMediaStreamMode()) {
-          if (this.video) {
-            (this.options.container as HTMLDivElement).removeChild(this.video)
-            this.video = null
-          }
-          if (this.audio) {
-            (this.options.container as HTMLDivElement).removeChild(this.audio)
-            this.audio = null
-          }
-          if (this.canvas) {
-            (this.options.container as HTMLDivElement).removeChild(this.canvas)
-            this.canvas = null
-          }
-        }
-
-        await this.stop()
-
+        this.status = AVPlayerStatus.ENDED
         this.fire(eventType.ENDED)
       }
     }
@@ -1275,6 +1277,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @param options 配置项
    */
   public async load(source: string | File | CustomIOLoader, options: AVPlayerLoadOptions = {}) {
+
+    if (this.status === AVPlayerStatus.ENDED) {
+      await this.stop(true)
+    }
 
     logger.info(`call load, taskId: ${this.taskId}`)
 
@@ -2675,11 +2681,17 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       else if (this.selectedAudioStream) {
         streamIndex = this.selectedAudioStream.index
       }
-
-      await this.doSeek(timestamp, streamIndex)
-
-      this.status = this.lastStatus
-      this.fire(eventType.SEEKED)
+      if (this.lastStatus === AVPlayerStatus.ENDED) {
+        await this.replayTo(timestamp)
+        this.status = AVPlayerStatus.PLAYED
+        this.fire(eventType.SEEKED)
+        this.fire(eventType.PLAYED)
+      }
+      else {
+        await this.doSeek(timestamp, streamIndex)
+        this.status = this.lastStatus
+        this.fire(eventType.SEEKED)
+      }
     }
     else {
       logger.warn(`seek can only used in vod, taskId: ${this.taskId}`)
@@ -2784,7 +2796,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * 
    * @returns 
    */
-  public async stop() {
+  public async stop(noEvent: boolean = false) {
 
     logger.info(`call stop, taskId: ${this.taskId}`)
 
@@ -2924,7 +2936,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     resolve()
     this.stopPending = null
-    this.fire(eventType.STOPPED)
+
+    if (!noEvent) {
+      this.fire(eventType.STOPPED)
+    }
 
     logger.info(`avplayer stopped, task: ${this.taskId}`)
   }
