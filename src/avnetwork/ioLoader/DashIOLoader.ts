@@ -37,7 +37,7 @@ import FetchIOLoader, { FetchInfo } from './FetchIOLoader'
 import { MPDMediaList } from 'avprotocol/dash/type'
 import getTimestamp from 'common/function/getTimestamp'
 import * as errorType from 'avutil/error'
-import { Data, Range } from 'common/types/type'
+import { Data } from 'common/types/type'
 import { AVMediaType } from 'avutil/codec'
 
 const FETCHED_HISTORY_LIST_MAX = 10
@@ -58,8 +58,6 @@ interface Resource {
 export default class DashIOLoader extends IOLoader {
 
   private info: FetchInfo
-
-  private range: Range
 
   private mediaPlayList: MPDMediaList
 
@@ -217,7 +215,7 @@ export default class DashIOLoader extends IOLoader {
     }
   }
 
-  public async open(info: FetchInfo, range: Range) {
+  public async open(info: FetchInfo) {
 
     if (this.status === IOLoaderStatus.BUFFERING) {
       return 0
@@ -228,13 +226,6 @@ export default class DashIOLoader extends IOLoader {
     }
 
     this.info = info
-    this.range = range
-
-    if (!this.range.to) {
-      this.range.to = -1
-    }
-
-    this.range.from = Math.max(this.range.from, 0)
 
     this.videoResource = this.createResource(AVMediaType.AVMEDIA_TYPE_VIDEO)
     this.audioResource = this.createResource(AVMediaType.AVMEDIA_TYPE_AUDIO)
