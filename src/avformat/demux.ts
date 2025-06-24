@@ -427,11 +427,14 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
         stream.timeBase
       )
       && (formatContext.streams.length >= needStreams
+        && checkStreamParameters(formatContext)
         || (avpacket.pts - stream.startTime) > avRescaleQ(
           15000n,
           AV_MILLI_TIME_BASE_Q,
           stream.timeBase
         )
+        // 以 30 帧来判断分析的包是否足够
+        && (!streamPtsMap[stream.index] || streamPtsMap[stream.index].length > 30 * 15)
       )
       && checkPictureGot()
     ) {
