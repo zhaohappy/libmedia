@@ -81,6 +81,18 @@ export default class Dts2RawFilter extends AVBSFilter {
       const info = dts.parseHeader(buffer.subarray(i))
 
       if (is.number(info)) {
+        let j = i + 1
+        for (; j < buffer.length - 3; j++) {
+          const syncWord = (buffer[j] << 24) | (buffer[j + 1] << 16) | (buffer[j + 2] << 8) | buffer[j + 3]
+          if (syncWord === 0x7ffe8001 || syncWord === 0xfe7f0180) {
+            i = j
+            break
+          }
+        }
+        if (j < buffer.length - 3) {
+          continue
+        }
+
         logger.error('parse dts header failed')
         return errorType.DATA_INVALID
       }

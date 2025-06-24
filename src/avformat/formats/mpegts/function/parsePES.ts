@@ -28,6 +28,7 @@ import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as logger from 'common/util/logger'
 import { TSStreamId, TSStreamType } from '../mpegts'
 import * as errorType from 'avutil/error'
+import { AVPacketFlags } from 'avutil/enum'
 
 export default function parsePES(pes: PES) {
 
@@ -134,6 +135,10 @@ export default function parsePES(pes: PES) {
         return errorType.DATA_INVALID
       }
       payloadLength = pesPacketLength - (offset + headerSize)
+      if (payloadStartIndex + (data.byteLength - payloadStartIndex) != pesPacketLength + 6) {
+        logger.warn('PES packet size mismatch')
+        pes.flags |= AVPacketFlags.AV_PKT_FLAG_CORRUPT
+      }
     }
     else {
       // PES_packet_length === 0

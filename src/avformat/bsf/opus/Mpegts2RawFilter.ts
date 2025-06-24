@@ -35,14 +35,22 @@ import * as errorType from 'avutil/error'
 import { addAVPacketData, getAVPacketData, unrefAVPacket } from 'avutil/util/avpacket'
 import { avMalloc } from 'avutil/util/mem'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
+import concatTypeArray from 'common/function/concatTypeArray'
+
+interface CacheItem {
+  duration: number
+  dts: bigint
+  buffer: Uint8Array
+}
+
+interface PendingItem extends CacheItem {
+  miss: number
+}
 
 export default class Mpegts2RawFilter extends AVBSFilter {
 
-  private caches: {
-    duration: number
-    dts: bigint
-    buffer: Uint8Array
-  }[]
+  private caches: CacheItem[]
+  private pendingItem: PendingItem
 
   public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<Rational>): number {
     super.init(codecpar, timeBase)
@@ -57,13 +65,31 @@ export default class Mpegts2RawFilter extends AVBSFilter {
 
     let lastDts = avpacket.dts !== NOPTS_VALUE_BIGINT ? avpacket.dts : avpacket.pts
 
-    const buffer = getAVPacketData(avpacket)
+    let buffer = getAVPacketData(avpacket)
+
+    if (this.pendingItem) {
+      this.pendingItem.buffer = concatTypeArray(Uint8Array, [this.pendingItem.buffer, buffer.subarray(0, this.pendingItem.miss)])
+      buffer = buffer.subarray(this.pendingItem.miss)
+      this.caches.push(this.pendingItem)
+      this.pendingItem = null
+    }
 
     while (i < buffer.length) {
 
       const syncWord = (buffer[i] << 3) | (buffer[i + 1] >> 5)
 
       if (syncWord !== 0x3ff) {
+        let j = i + 1
+        for (; j < buffer.length - 1; j++) {
+          const syncWord = (buffer[j] << 3) | (buffer[j + 1] >> 5)
+          if (syncWord === 0x3ff) {
+            i = j
+            break
+          }
+        }
+        if (j < buffer.length - 1) {
+          continue
+        }
         logger.error(`MpegtsOpusParser found syncWord not 0x3ff, got: 0x${syncWord.toString(16)}`)
         return errorType.DATA_INVALID
       }
@@ -93,11 +119,20 @@ export default class Mpegts2RawFilter extends AVBSFilter {
         this.inTimeBase
       )
 
-      this.caches.push({
+      const item: CacheItem = {
         dts: lastDts,
         buffer: samples.slice(),
-        duration: Number(duration),
-      })
+        duration: Number(duration)
+      }
+      if (item.buffer.length < size) {
+        this.pendingItem = {
+          ...item,
+          miss: size - item.buffer.length
+        }
+      }
+      else {
+        this.caches.push(item)
+      }
       lastDts += duration
       i = index + size
     }

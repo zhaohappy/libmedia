@@ -97,4 +97,5 @@ export class PES {
   payload: Uint8Array = null
   data: Uint8Array = null
   randomAccessIndicator: number = 0
+  flags: 0
 }

@@ -29,7 +29,7 @@ import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
 import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { MPEG4Channels, MPEG4SamplingFrequencies, avCodecParameters2Extradata } from 'avutil/codecs/aac'
+import { avCodecParameters2Extradata } from 'avutil/codecs/aac'
 import { avRescaleQ } from 'avutil/util/rational'
 import { avFree, avMalloc } from 'avutil/util/mem'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
@@ -38,6 +38,18 @@ import { addAVPacketData, addAVPacketSideData, unrefAVPacket } from 'avutil/util
 import { AVPacketSideDataType } from 'avutil/codec'
 import * as aac from 'avutil/codecs/aac'
 import * as is from 'common/util/is'
+import concatTypeArray from 'common/function/concatTypeArray'
+
+interface CacheItem {
+  duration: number
+  dts: bigint
+  buffer: Uint8Array
+  extradata: Uint8Array
+}
+
+interface PendingItem extends CacheItem {
+  miss: number
+}
 
 export default class ADTS2RawFilter extends AVBSFilter {
 
@@ -47,12 +59,8 @@ export default class ADTS2RawFilter extends AVBSFilter {
     channels: number
   }
 
-  private caches: {
-    duration: number
-    dts: bigint
-    buffer: Uint8Array
-    extradata: Uint8Array
-  }[]
+  private caches: CacheItem[]
+  private pendingItem: PendingItem
 
   public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<Rational>): number {
     super.init(codecpar, timeBase)
@@ -71,18 +79,36 @@ export default class ADTS2RawFilter extends AVBSFilter {
     let i = 0
 
     let lastDts = avpacket.dts !== NOPTS_VALUE_BIGINT ? avpacket.dts : avpacket.pts
-    const buffer = mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)).slice()
+    let buffer = mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)).slice()
+
+    if (this.pendingItem) {
+      this.pendingItem.buffer = concatTypeArray(Uint8Array, [this.pendingItem.buffer, buffer.subarray(0, this.pendingItem.miss)])
+      buffer = buffer.subarray(this.pendingItem.miss)
+      this.caches.push(this.pendingItem)
+      this.pendingItem = null
+    }
 
     while (i < buffer.length) {
 
       const info = aac.parseADTSHeader(buffer.subarray(i))
 
       if (is.number(info)) {
+        let j = i + 1
+        for (; j < buffer.length - 1; j++) {
+          const syncWord = (buffer[j] << 4) | (buffer[j + 1] >> 4)
+          if (syncWord === 0xfff) {
+            i = j
+            break
+          }
+        }
+        if (j < buffer.length - 1) {
+          continue
+        }
         logger.error('AACADTSParser parse failed')
         return errorType.DATA_INVALID
       }
 
-      const item = {
+      const item: CacheItem = {
         dts: lastDts,
         buffer: null,
         extradata: null,
@@ -124,7 +150,15 @@ export default class ADTS2RawFilter extends AVBSFilter {
         item.extradata = extradata
       }
 
-      this.caches.push(item)
+      if (item.buffer.length < info.framePayloadLength) {
+        this.pendingItem = {
+          ...item,
+          miss: info.framePayloadLength - item.buffer.length
+        }
+      }
+      else {
+        this.caches.push(item)
+      }
 
       i += info.aacFrameLength
       lastDts += duration

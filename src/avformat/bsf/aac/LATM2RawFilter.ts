@@ -91,6 +91,18 @@ export default class LATM2RawFilter extends AVBSFilter {
       const info = aac.parseLATMHeader(null, this.bitReader)
 
       if (is.number(info)) {
+        let synced = false
+        while (this.bitReader.remainingLength() >= 20) {
+          const syncWord = this.bitReader.peekU(11)
+          if (syncWord === 0x2B7) {
+            synced = true
+            break
+          }
+          this.bitReader.readU1()
+        }
+        if (synced) {
+          continue
+        }
         logger.error('AACLATMParser parse failed')
         this.bitReader.reset()
         return errorType.DATA_INVALID

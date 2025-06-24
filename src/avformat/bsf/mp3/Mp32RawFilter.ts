@@ -79,6 +79,17 @@ export default class Mp32RawFilter extends AVBSFilter {
       const syncWord = (buffer[i] << 4) | ((buffer[i + 1] >> 4) & 0x0e)
 
       if (syncWord !== 0xFFE) {
+        let j = i + 1
+        for (; j < buffer.length - 1; j++) {
+          const syncWord = (buffer[j] << 4) | ((buffer[j + 1] >> 4) & 0x0e)
+          if (syncWord === 0xFFE) {
+            i = j
+            break
+          }
+        }
+        if (j < buffer.length - 1) {
+          continue
+        }
         logger.error(`found syncWord not 0xFFE, got: 0x${syncWord.toString(16)}`)
         return errorType.DATA_INVALID
       }

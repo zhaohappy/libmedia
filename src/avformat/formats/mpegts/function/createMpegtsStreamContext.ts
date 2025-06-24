@@ -32,6 +32,7 @@ export default function createMpegtsStreamContext(): MpegtsStreamContext {
     filter: null,
     tsPacket: null,
     pes: null,
+    pendingPES: null,
     continuityCounter: 0,
     pesSlices: {
       total: 0,
