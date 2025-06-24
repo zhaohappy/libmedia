@@ -136,18 +136,46 @@ interface ExternalSubtitleTask extends ExternalSubtitle {
   ioloader2DemuxerChannel: MessageChannel
 }
 
-export type DRMSystemOptions = {
+export interface DRMSystemOptions {
+  /**
+   * 音频 drm 级别
+   */
   audioRobustness?: string
+  /**
+   * 视频 drm 级别
+   */
   videoRobustness?: string
+  /**
+   * license 请求 url
+   */
+  requestUrl?: string
+  /**
+   * license 请求需要附加的 header
+   */
+  header?: Data
+  /**
+   * license 请求方法
+   */
+  method?: string
+  /**
+   * 设置 license server 公钥
+   */
+  certificate?: BufferSource
+  /**
+   * 自定义 license 请求
+   * 
+   * @param drmSystemKey drm 系统
+   * @param messageType 请求类型
+   * @param message 请求 body
+   * @param url 附加的 license url（比如 dash 清单里面带有的 url）ClearKey 有这种场景
+   * @returns 
+   */
   onRequest?: (
     drmSystemKey: DRMType,
     messageType: MediaKeyMessageType,
     message: ArrayBuffer,
     url?: string
   ) => Promise<BufferSource>
-  header?: Data
-  method?: string
-  certificate?: BufferSource
 }
 
 export interface AVPlayerOptions {
@@ -845,6 +873,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         let license: BufferSource
         if (this.options.drmSystemOptions?.onRequest) {
           license = await this.options.drmSystemOptions.onRequest(this.drmSystemKey, event.messageType, event.message, url)
+        }
+        else if (this.options.drmSystemOptions.requestUrl) {
+          license = await fetch(url, {
+            method: this.options.drmSystemOptions?.method ?? 'POST',
+            headers: this.options.drmSystemOptions?.header,
+            body: event.message
+          }).then((res) => res.arrayBuffer())
         }
         else if (url) {
           license = await fetch(url, {
