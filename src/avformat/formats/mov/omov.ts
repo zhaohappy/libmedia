@@ -223,7 +223,9 @@ export function writeMoov(ioWriter: IOWriter, formatContext: AVOFormatContext, m
       size: Number(ioWriter.getPos() - pos)
     })
 
-    writePssh(ioWriter, formatContext, movContext)
+    if (!movContext.ignoreEncryption) {
+      writePssh(ioWriter, formatContext, movContext)
+    }
   }
 
   movContext.boxsPositionInfo.push({

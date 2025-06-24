@@ -68,6 +68,8 @@ export interface OMovFormatOptions {
   defaultBaseIsMoof?: boolean
   ignoreEditlist?: boolean
   encryption?: AVStreamMetadataEncryption
+  reverseSpsInAvcc?: boolean
+  ignoreEncryption?: boolean
 }
 
 const defaultOptions: OMovFormatOptions = {
@@ -75,7 +77,9 @@ const defaultOptions: OMovFormatOptions = {
   movMode: MovMode.MP4,
   fragment: false,
   fastOpen: false,
-  defaultBaseIsMoof: false
+  defaultBaseIsMoof: false,
+  reverseSpsInAvcc: false,
+  ignoreEncryption: false
 }
 
 export default class OMovFormat extends OFormat {
@@ -107,7 +111,7 @@ export default class OMovFormat extends OFormat {
         || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
       )
     ) {
-      this.annexb2AvccFilter = new Annexb2AvccFilter()
+      this.annexb2AvccFilter = new Annexb2AvccFilter(this.options.reverseSpsInAvcc)
       this.annexb2AvccFilter.init(addressof(videoStream.codecpar), addressof(videoStream.timeBase))
     }
     this.avpacket = createAVPacket()
@@ -184,6 +188,7 @@ export default class OMovFormat extends OFormat {
     this.context.minorVersion = 512
     this.context.compatibleBrand = [mktag('isom')]
     this.context.timescale = 1000
+    this.context.ignoreEncryption = this.options.ignoreEncryption
 
     if (this.options.fragment) {
       this.context.compatibleBrand.push(mktag('iso6'))

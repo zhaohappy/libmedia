@@ -361,7 +361,7 @@ export function generateAnnexbExtradata(data: Uint8ArrayInterface) {
  * 
  * 需要保证 data 是 safe 的
  */
-export function annexb2Avcc(data: Uint8ArrayInterface) {
+export function annexb2Avcc(data: Uint8ArrayInterface, reverseSps: boolean = false) {
 
   let nalus = naluUtil.splitNaluByStartCode(data)
   let extradata: Uint8Array
@@ -392,10 +392,12 @@ export function annexb2Avcc(data: Uint8ArrayInterface) {
       extradata = spsPps2Extradata(spss, ppss, spsExts)
       nalus = nalus.filter((nalu) => {
         const type = nalu[0] & 0x1f
-        return type !== H264NaluType.kSliceAUD
-          && type !== H264NaluType.kSlicePPS
-          && type !== H264NaluType.kSliceSPS
-          && type !== H264NaluType.kSPSExt
+        return reverseSps
+          ? type !== H264NaluType.kSliceAUD
+          : (type !== H264NaluType.kSliceAUD
+            && type !== H264NaluType.kSlicePPS
+            && type !== H264NaluType.kSliceSPS
+            && type !== H264NaluType.kSPSExt)
       })
     }
     else {

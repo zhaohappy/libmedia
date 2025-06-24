@@ -25,7 +25,7 @@
 
 import IOReader from 'common/io/IOReader'
 import Stream from 'avutil/AVStream'
-import { Atom, MOVContext, MOVStreamContext } from '../type'
+import { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 import { EncryptionInitInfo } from 'avutil/struct/encryption'
 

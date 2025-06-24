@@ -489,6 +489,7 @@ export default function write(ioWriter: IOWriter, stream: AVStream, movContext: 
     && (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
       || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
     )
+    && !movContext.ignoreEncryption
 
   // version
   ioWriter.writeUint8(0)

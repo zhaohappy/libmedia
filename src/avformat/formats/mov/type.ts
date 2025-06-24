@@ -155,6 +155,7 @@ export interface MOVContext {
   ignoreEditlist?: boolean
   use64Mdat?: boolean
   encryptionInitInfos?: EncryptionInitInfo[]
+  ignoreEncryption?: boolean
 
   parsers?: Partial<Record<
   number,

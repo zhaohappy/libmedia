@@ -49,7 +49,7 @@ import getTimestamp from 'common/function/getTimestamp'
 import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
 import SeekableWriteBuffer from 'common/io/SeekableWriteBuffer'
-import { addAVPacketData, getAVPacketSideData, refAVPacket } from 'avutil/util/avpacket'
+import { addAVPacketData, getAVPacketSideData, hasAVPacketSideData, refAVPacket } from 'avutil/util/avpacket'
 import { mapUint8Array, memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avFree, avMalloc, avMallocz } from 'avutil/util/mem'
 import browser from 'common/util/browser'
@@ -71,6 +71,7 @@ import os from 'common/util/os'
 import { MPEG4AudioObjectTypes } from 'avutil/codecs/aac'
 import WorkerTimer from 'common/timer/WorkerTimer'
 import { Data } from 'common/types/type'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 export interface MSETaskOptions extends TaskOptions {
   isLive: boolean
@@ -120,6 +121,8 @@ interface MSEResource {
   enableRawMpeg: boolean
 
   timestampOffsetUpdated: boolean
+
+  ignoreEncryption: boolean
 }
 
 type SelfTask = MSETaskOptions & {
@@ -467,13 +470,44 @@ export default class MSEPipeline extends Pipeline {
       fragment: true,
       fastOpen: true,
       movMode: MovMode.MP4,
-      defaultBaseIsMoof: true
+      defaultBaseIsMoof: true,
+      reverseSpsInAvcc: true
     })
     resource.oformatContext.oformat = oformat
     resource.timestampOffsetUpdated = false
     if (!resource.enableRawMpeg) {
       mux.open(resource.oformatContext)
       mux.writeHeader(resource.oformatContext)
+    }
+  }
+
+  private checkEnableEncryption(resource: MSEResource, avpacket: pointer<AVPacket>) {
+    if (resource.oformatContext.streams[0].metadata[AVStreamMetadataKey.ENCRYPTION]) {
+      const hasCenc = hasAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_ENCRYPTION_INFO)
+      if (!hasCenc && !resource.ignoreEncryption
+        || hasCenc && resource.ignoreEncryption
+      ) {
+        resource.track.changeMimeType(
+          this.getMimeType(addressof(resource.oformatContext.streams[0].codecpar)),
+          resource.enableRawMpeg ? 'sequence' : 'segments'
+        )
+        const oformat = new OMovFormat({
+          fragmentMode: FragmentMode.FRAME,
+          fragment: true,
+          fastOpen: true,
+          movMode: MovMode.MP4,
+          defaultBaseIsMoof: true,
+          reverseSpsInAvcc: true,
+          ignoreEncryption: !hasCenc
+        })
+        resource.ignoreEncryption = !hasCenc
+        resource.oformatContext.oformat = oformat
+        resource.timestampOffsetUpdated = false
+        if (!resource.enableRawMpeg) {
+          mux.open(resource.oformatContext)
+          mux.writeHeader(resource.oformatContext)
+        }
+      }
     }
   }
 
@@ -621,6 +655,7 @@ export default class MSEPipeline extends Pipeline {
       resource.bufferQueue.write(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)).slice())
     }
     else {
+      this.checkEnableEncryption(resource, avpacket)
       mux.writeAVPacket(resource.oformatContext, avpacket)
       if (flush) {
         resource.oformatContext.ioWriter.flush()
@@ -873,7 +908,8 @@ export default class MSEPipeline extends Pipeline {
       fragment: true,
       fastOpen: true,
       movMode: MovMode.MP4,
-      defaultBaseIsMoof: true
+      defaultBaseIsMoof: true,
+      reverseSpsInAvcc: true
     })
     resource.oformatContext.oformat = oformat
 
@@ -945,7 +981,8 @@ export default class MSEPipeline extends Pipeline {
         fragment: true,
         fastOpen: true,
         movMode: MovMode.MP4,
-        defaultBaseIsMoof: true
+        defaultBaseIsMoof: true,
+        reverseSpsInAvcc: true
       })
 
       const bufferQueue = new SeekableWriteBuffer()
@@ -1020,7 +1057,8 @@ export default class MSEPipeline extends Pipeline {
           useSampleRateTimeBase
         },
         enableRawMpeg: codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3 && !browser.firefox,
-        timestampOffsetUpdated: false
+        timestampOffsetUpdated: false,
+        ignoreEncryption: false
       }
 
       track.onQuotaExceededError = () => {
@@ -1094,7 +1132,8 @@ export default class MSEPipeline extends Pipeline {
           fragment: true,
           fastOpen: true,
           movMode: MovMode.MP4,
-          defaultBaseIsMoof: true
+          defaultBaseIsMoof: true,
+          reverseSpsInAvcc: true
         })
         resource.oformatContext.oformat = oformat
 
