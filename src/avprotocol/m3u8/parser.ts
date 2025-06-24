@@ -546,6 +546,9 @@ function parseSegment(
           formatVersion: attributes['KEYFORMATVERSIONS']
         })
       }
+      else {
+        segment.key = null
+      }
     }
     else if (name === 'EXT-X-MAP') {
       if (segment.parts.length > 0) {
@@ -820,6 +823,9 @@ function parseMediaPlaylist(lines: Line[], params: Record<string, any>) {
         if (segment.key) {
           currentKey = segment.key
         }
+        else if (segment.key === null) {
+          currentKey = undefined
+        }
         else {
           segment.key = currentKey
         }
@@ -841,6 +847,9 @@ function parseMediaPlaylist(lines: Line[], params: Record<string, any>) {
       }
       const segment = parseSegment(lines, line, segmentStart, index - 1, mediaSequence++, discontinuitySequence, params)
       if (segment) {
+        if (segment.key === null) {
+          currentKey = undefined
+        }
         [discontinuitySequence, currentKey, currentMap] = addSegment(playlist, segment, discontinuitySequence, currentKey!, currentMap!)
         if (!containsParts && segment.parts.length > 0) {
           containsParts = true
@@ -852,6 +861,9 @@ function parseMediaPlaylist(lines: Line[], params: Record<string, any>) {
   if (segmentStart !== -1) {
     const segment = parseSegment(lines, '', segmentStart, lines.length - 1, mediaSequence++, discontinuitySequence, params)
     if (segment) {
+      if (segment.key === null) {
+        currentKey = undefined
+      }
       const {parts} = segment
       if (parts.length > 0 && !playlist.endlist && !parts[parts.length - 1]?.hint) {
         logger.fatal('If the Playlist contains EXT-X-PART tags and does not contain an EXT-X-ENDLIST tag, the Playlist must contain an EXT-X-PRELOAD-HINT tag with a TYPE=PART attribute')

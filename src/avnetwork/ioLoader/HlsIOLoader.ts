@@ -257,6 +257,7 @@ class MediaLoader {
   private async checkNeedDecrypt(key: Segment['key'], uri: string, sequence: number) {
 
     if (!key) {
+      this.aesDecryptPipe = null
       return
     }
 
@@ -268,6 +269,7 @@ class MediaLoader {
       )
     ) {
       if (uri.split('.').pop() === 'mp4') {
+        this.aesDecryptPipe = null
         return
       }
       logger.fatal(`m3u8 ts not support EXT-X-KEY METHOD ${key.method}`)
