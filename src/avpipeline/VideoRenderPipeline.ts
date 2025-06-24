@@ -690,31 +690,25 @@ export default class VideoRenderPipeline extends Pipeline {
         logger.fatal('task has already run')
       }
 
-      if (task.backFrame) {
-        if (!isPointer(task.backFrame)) {
-          task.backFrame.close()
-        }
-        else {
-          task.avframePool.release(task.backFrame)
-        }
+      if (!task.backFrame) {
+        task.backFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
       }
-      if (task.frontFrame) {
-        if (!isPointer(task.frontFrame)) {
-          task.frontFrame.close()
-        }
-        else {
-          task.avframePool.release(task.frontFrame)
-        }
+      if (!task.frontFrame) {
+        task.frontFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
       }
-
-      task.backFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
-      task.frontFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
 
       task.frontBuffered = true
       task.ended = false
       task.adjust = AdjustStatus.None
       task.lastNotifyPTS = NOPTS_VALUE_BIGINT
       task.firstRendered = false
+      task.pausing = false
+      task.seeking = false
+
+      if (!task.frontFrame || is.number(task.frontFrame) && task.frontFrame < 0) {
+        task.frontBuffered = false
+        task.ended = true
+      }
 
       task.currentPTS = isPointer(task.backFrame)
         ? avRescaleQ2(
@@ -728,7 +722,7 @@ export default class VideoRenderPipeline extends Pipeline {
           AV_MILLI_TIME_BASE_Q
         )
 
-      task.masterTimer.setMasterTime(task.startPTS)
+      task.masterTimer.setMasterTime(bigint.max(task.startPTS, task.currentPTS))
 
       task.loop.start()
     }
@@ -975,6 +969,10 @@ export default class VideoRenderPipeline extends Pipeline {
           task.currentPTS = pts
           task.masterTimer.setMasterTime(timestamp)
           task.lastMasterPts = timestamp
+          logger.debug(`got first video frame after syncSeekTime, pts: ${!isPointer(task.backFrame)
+            ? static_cast<int64>(task.backFrame.timestamp as uint32)
+            : task.backFrame.pts
+          }(${task.currentPTS}ms), taskId: ${task.taskId}`)
           break
         }
 
@@ -1065,11 +1063,6 @@ export default class VideoRenderPipeline extends Pipeline {
         )
       task.stats.videoCurrentTime = task.currentPTS
 
-      logger.debug(`got first video frame, pts: ${!isPointer(task.backFrame)
-        ? static_cast<int64>(task.backFrame.timestamp as uint32)
-        : task.backFrame.pts
-      }(${task.currentPTS}ms), taskId: ${task.taskId}`)
-
       task.seeking = false
       if (!task.pausing) {
         task.loop.start()
@@ -1157,6 +1150,7 @@ export default class VideoRenderPipeline extends Pipeline {
       task.leftIPCPort.destroy()
       task.controlIPCPort.destroy()
       this.tasks.delete(id)
+      logger.debug(`unregisterTask task, taskId: ${id}`)
     }
   }
 }

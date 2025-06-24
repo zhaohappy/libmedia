@@ -949,12 +949,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       })
       if (this.audioDecoder2AudioRenderChannel) {
         await AVPlayer.AudioDecoderThread.resetTask(this.taskId)
-        await AVPlayer.AudioRenderThread.restart(this.taskId)
         await AVPlayer.AudioRenderThread.syncSeekTime(
           this.taskId,
           seekedTimestamp >= 0 ? (seekedTimestamp > timestamp ? seekedTimestamp : timestamp) : NOPTS_VALUE_BIGINT,
           maxQueueLength
         )
+        await AVPlayer.AudioRenderThread.restart(this.taskId)
         this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_AUDIO)
       }
 
@@ -968,12 +968,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       if (this.videoDecoder2VideoRenderChannel) {
         await this.VideoDecoderThread.resetTask(this.taskId)
-        await this.VideoRenderThread.restart(this.taskId)
+        await this.VideoRenderThread.beforeSeek(this.taskId)
         await this.VideoRenderThread.syncSeekTime(
           this.taskId,
           seekedTimestamp >= 0 ? (seekedTimestamp > timestamp ? seekedTimestamp : timestamp) : NOPTS_VALUE_BIGINT,
           maxQueueLength
         )
+        await this.VideoRenderThread.restart(this.taskId)
         this.videoEnded = false
       }
     }
