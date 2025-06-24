@@ -7,7 +7,7 @@ group:
 order: 8
 ---
 
-# Player
+# AVPlayer
 
 ## Introduction
 
