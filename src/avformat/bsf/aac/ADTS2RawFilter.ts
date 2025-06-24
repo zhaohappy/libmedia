@@ -193,6 +193,8 @@ export default class ADTS2RawFilter extends AVBSFilter {
   }
 
   public reset(): number {
+    this.pendingItem = null
+    this.caches.length = 0
     return 0
   }
 }

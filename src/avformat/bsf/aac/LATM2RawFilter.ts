@@ -196,6 +196,7 @@ export default class LATM2RawFilter extends AVBSFilter {
 
   public reset(): number {
     this.bitReader.reset()
+    this.caches.length = 0
     return 0
   }
 }

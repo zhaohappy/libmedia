@@ -166,6 +166,7 @@ export default class Mp32RawFilter extends AVBSFilter {
   public reset(): number {
     this.cache = null
     this.lastDts = 0n
+    this.caches.length = 0
     return 0
   }
 }

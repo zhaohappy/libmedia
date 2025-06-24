@@ -645,6 +645,9 @@ export default class IMpegtsFormat extends IFormat {
               }
               const streamContext = stream.privData as MpegtsStreamContext
               streamContext.pendingPES = null
+              if (streamContext.filter) {
+                streamContext.filter.reset()
+              }
             })
             break
           }
@@ -683,6 +686,9 @@ export default class IMpegtsFormat extends IFormat {
       formatContext.streams.forEach((stream) => {
         const streamContext = stream.privData as MpegtsStreamContext
         streamContext.pendingPES = null
+        if (streamContext.filter) {
+          streamContext.filter.reset()
+        }
       })
     }
 
