@@ -960,7 +960,7 @@
                   mediaStreamModeVideo.play()
                 }
                 document.querySelector('#loading-mask').style.display = 'none'
-                if (!player.isDash()) {
+                if (!player.isDash() && !player.isHls()) {
                   const audioStreams = player.getStreams().filter((s => s.mediaType === 'Audio'))
                   const videoStreams = player.getStreams().filter((s => s.mediaType === 'Video'))
 
