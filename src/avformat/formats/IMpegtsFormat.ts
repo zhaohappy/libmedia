@@ -643,6 +643,8 @@ export default class IMpegtsFormat extends IFormat {
               if (pesSliceQueue) {
                 clearTSSliceQueue(pesSliceQueue)
               }
+              const streamContext = stream.privData as MpegtsStreamContext
+              streamContext.pendingPES = null
             })
             break
           }
@@ -665,8 +667,24 @@ export default class IMpegtsFormat extends IFormat {
       if (queue.slices.length && queue.pos < now) {
         now = queue.pos
       }
-      clearTSSliceQueue(queue)
     })
+    formatContext.streams.forEach((stream) => {
+      const streamContext = stream.privData as MpegtsStreamContext
+      if (streamContext.pendingPES?.pos < now) {
+        now = streamContext.pendingPES.pos
+      }
+    })
+
+    const end = () => {
+      this.context.tsSliceQueueMap.forEach((queue) => {
+        clearTSSliceQueue(queue)
+      })
+
+      formatContext.streams.forEach((stream) => {
+        const streamContext = stream.privData as MpegtsStreamContext
+        streamContext.pendingPES = null
+      })
+    }
 
     this.context.pmt.pid2StreamType.forEach((streamType, pid) => {
       this.context.tsSliceQueueMap.delete(pid)
@@ -677,6 +695,7 @@ export default class IMpegtsFormat extends IFormat {
       const seekTime = avRescaleQ(timestamp, stream.timeBase, AV_MILLI_TIME_BASE_Q)
       await formatContext.ioReader.seek(seekTime, true)
       this.context.ioEnd = false
+      end()
       return 0n
     }
 
@@ -701,7 +720,7 @@ export default class IMpegtsFormat extends IFormat {
       }
 
       this.context.ioEnd = false
-
+      end()
       return now
     }
     else {
@@ -717,6 +736,7 @@ export default class IMpegtsFormat extends IFormat {
           logger.debug(`seek in sampleIndexes, found index: ${index}, pts: ${stream.sampleIndexes[index - 1].pts}, pos: ${stream.sampleIndexes[index - 1].pos}`)
           await formatContext.ioReader.seek(stream.sampleIndexes[index - 1].pos)
           this.context.ioEnd = false
+          end()
           return now
         }
       }
@@ -733,6 +753,7 @@ export default class IMpegtsFormat extends IFormat {
       )
       if (ret >= 0) {
         this.context.ioEnd = false
+        end()
       }
       return ret
     }
