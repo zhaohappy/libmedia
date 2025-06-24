@@ -891,15 +891,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     let seekedTimestamp = -1n
 
-    if (defined(ENABLE_PROTOCOL_HLS) && this.isHls()) {
+    if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()
+      || defined(ENABLE_PROTOCOL_HLS) && this.isHls()
+    ) {
       seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.TIMESTAMP)
-    }
-    else if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
-      seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.TIMESTAMP)
-      if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
+      if (this.subTaskId) {
         await AVPlayer.DemuxerThread.seek(this.subTaskId, timestamp, AVSeekFlags.TIMESTAMP)
       }
-      if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId) {
+      if (this.subtitleTaskId) {
         await AVPlayer.DemuxerThread.seek(this.subtitleTaskId, timestamp, AVSeekFlags.TIMESTAMP)
       }
     }
@@ -1470,7 +1469,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     const formatOptions: Data = object.extend({}, options.formatOptions || {})
 
-    if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
+    if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()
+      || defined(ENABLE_PROTOCOL_HLS) && this.isHls()
+    ) {
       await AVPlayer.IOThread.open(this.taskId)
       const hasAudio = await AVPlayer.IOThread.hasAudio(this.taskId)
       const hasVideo = await AVPlayer.IOThread.hasVideo(this.taskId)
@@ -1509,7 +1510,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
         })
       }
-      else {
+      else if (hasAudio || hasVideo) {
         // dash 只有一个媒体类型
         await AVPlayer.DemuxerThread.registerTask
           .transfer(this.ioloader2DemuxerChannel.port2, this.controller.getDemuxerControlPort())
@@ -1591,7 +1592,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       logger.fatal('not found any stream')
     }
 
-    if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
+    if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subTaskId) {
       ret = await AVPlayer.DemuxerThread.openStream(this.subTaskId)
       if (ret < 0) {
         logger.fatal(`open stream failed, ret: ${ret}, taskId: ${this.subTaskId}`)
@@ -2381,15 +2382,20 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         preLoadTime = Math.max(preLoadTime, this.source.minBuffer)
       }
       this.formatContext.streams.forEach((stream) => {
-        minQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate) * preLoadTime), minQueueLength)
+        if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+          minQueueLength = Math.max(Math.ceil(avQ2D(stream.codecpar.framerate) * preLoadTime), minQueueLength)
+        }
+        else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO && stream.codecpar.frameSize) {
+          minQueueLength = Math.max(Math.ceil((stream.codecpar.sampleRate / stream.codecpar.frameSize) * preLoadTime), minQueueLength)
+        }
       })
     }
     promises.push(AVPlayer.DemuxerThread.startDemux(this.taskId, this.isLive_, minQueueLength))
-    if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
+    if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subTaskId) {
       promises.push(AVPlayer.DemuxerThread.startDemux(this.subTaskId, this.isLive_, minQueueLength))
     }
     if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId) {
-      promises.push(AVPlayer.DemuxerThread.startDemux(this.subtitleTaskId, this.isLive_, minQueueLength))
+      promises.push(AVPlayer.DemuxerThread.startDemux(this.subtitleTaskId, this.isLive_, 10))
     }
 
     // 在调用 play 之前调了 seek，同步到 seek 时间点
@@ -2552,10 +2558,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     let seekedTimestamp = -1n
 
-    if (defined(ENABLE_PROTOCOL_HLS) && this.isHls()) {
-      seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.TIMESTAMP)
-    }
-    else if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
+    if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()
+      || defined(ENABLE_PROTOCOL_HLS) && this.isHls()
+    ) {
       seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.TIMESTAMP)
       if (this.subTaskId) {
         await AVPlayer.DemuxerThread.seek(this.subTaskId, timestamp, AVSeekFlags.TIMESTAMP)
@@ -2645,6 +2650,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
     if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender) {
       this.subtitleRender.reset()
+      this.subtitleRender.start()
     }
   }
 
@@ -2827,7 +2833,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     if (this.status === AVPlayerStatus.SEEKING && AVPlayer.DemuxerThread) {
       await AVPlayer.DemuxerThread.stop(this.taskId)
-      if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
+      if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subTaskId) {
         await AVPlayer.DemuxerThread.stop(this.subTaskId)
       }
       if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId) {
@@ -2851,13 +2857,17 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await AVPlayer.MSEThread.unregisterTask(this.taskId)
     }
     if (AVPlayer.DemuxerThread) {
-      await AVPlayer.DemuxerThread.unregisterTask(this.taskId)
-      if (defined(ENABLE_PROTOCOL_DASH) && this.subTaskId) {
+      // dash 和 hls 直播可能在等待切片文件，所以先 abort
+      if (this.isLive() && AVPlayer.IOThread && (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS))) {
+        AVPlayer.IOThread.abortSleep(this.taskId)
+      }
+      if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subTaskId) {
         await AVPlayer.DemuxerThread.unregisterTask(this.subTaskId)
       }
       if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId) {
         await AVPlayer.DemuxerThread.unregisterTask(this.subtitleTaskId)
       }
+      await AVPlayer.DemuxerThread.unregisterTask(this.taskId)
     }
     if (AVPlayer.IOThread) {
       await AVPlayer.IOThread.unregisterTask(this.taskId)
@@ -3252,7 +3262,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * 获取视频列表（ dash 使用）
+   * 获取视频列表（ dash 和 hls 使用）
    * 
    * @returns 
    */
@@ -3261,7 +3271,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * 获取音频列表（ dash 使用）
+   * 获取音频列表（ dash 和 hls 使用）
    * 
    * @returns 
    */
@@ -3270,7 +3280,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * 获取字幕列表（ dash 使用）
+   * 获取字幕列表（ dash 和 hls 使用）
    * 
    * @returns 
    */

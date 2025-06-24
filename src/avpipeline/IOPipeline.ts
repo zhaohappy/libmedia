@@ -239,9 +239,12 @@ export default class IOPipeline extends Pipeline {
   public async hasAudio(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
-      if (defined(ENABLE_PROTOCOL_DASH)) {
+      if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
         if (task.type === IOType.DASH) {
           return (task.ioLoader as DashIOLoader).hasAudio()
+        }
+        else if (task.type === IOType.HLS) {
+          return (task.ioLoader as HlsIOLoader).hasAudio()
         }
       }
     }
@@ -251,9 +254,12 @@ export default class IOPipeline extends Pipeline {
   public async hasVideo(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
-      if (defined(ENABLE_PROTOCOL_DASH)) {
+      if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
         if (task.type === IOType.DASH) {
           return (task.ioLoader as DashIOLoader).hasVideo()
+        }
+        else if (task.type === IOType.HLS) {
+          return (task.ioLoader as HlsIOLoader).hasVideo()
         }
       }
     }
@@ -263,9 +269,12 @@ export default class IOPipeline extends Pipeline {
   public async hasSubtitle(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
-      if (defined(ENABLE_PROTOCOL_DASH)) {
+      if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
         if (task.type === IOType.DASH) {
           return (task.ioLoader as DashIOLoader).hasSubtitle()
+        }
+        else if (task.type === IOType.HLS) {
+          return (task.ioLoader as HlsIOLoader).hasSubtitle()
         }
       }
     }
@@ -293,9 +302,12 @@ export default class IOPipeline extends Pipeline {
   public async getAudioList(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
-      if (defined(ENABLE_PROTOCOL_DASH)) {
+      if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
         if (task.type === IOType.DASH) {
           return (task.ioLoader as DashIOLoader).getAudioList()
+        }
+        else if (task.type === IOType.HLS) {
+          return (task.ioLoader as HlsIOLoader).getAudioList()
         }
       }
     }
@@ -308,9 +320,12 @@ export default class IOPipeline extends Pipeline {
   public async getSubtitleList(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
-      if (defined(ENABLE_PROTOCOL_DASH)) {
+      if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
         if (task.type === IOType.DASH) {
           return (task.ioLoader as DashIOLoader).getSubtitleList()
+        }
+        else if (task.type === IOType.HLS) {
+          return (task.ioLoader as HlsIOLoader).getSubtitleList()
         }
       }
     }
@@ -325,7 +340,7 @@ export default class IOPipeline extends Pipeline {
     if (task) {
       if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
         if (task.type === IOType.DASH) {
-          (task.ioLoader as DashIOLoader).selectVideo(index)
+          return (task.ioLoader as DashIOLoader).selectVideo(index)
         }
         else if (task.type === IOType.HLS) {
           return (task.ioLoader as HlsIOLoader).selectVideo(index)
@@ -337,9 +352,12 @@ export default class IOPipeline extends Pipeline {
   public async selectAudio(taskId: string, index: number) {
     const task = this.tasks.get(taskId)
     if (task) {
-      if (defined(ENABLE_PROTOCOL_DASH)) {
+      if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
         if (task.type === IOType.DASH) {
-          (task.ioLoader as DashIOLoader).selectAudio(index)
+          return (task.ioLoader as DashIOLoader).selectAudio(index)
+        }
+        else if (task.type === IOType.HLS) {
+          return (task.ioLoader as HlsIOLoader).selectAudio(index)
         }
       }
     }
@@ -348,9 +366,26 @@ export default class IOPipeline extends Pipeline {
   public async selectSubtitle(taskId: string, index: number) {
     const task = this.tasks.get(taskId)
     if (task) {
-      if (defined(ENABLE_PROTOCOL_DASH)) {
+      if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
         if (task.type === IOType.DASH) {
-          (task.ioLoader as DashIOLoader).selectSubtitle(index)
+          return (task.ioLoader as DashIOLoader).selectSubtitle(index)
+        }
+        else if (task.type === IOType.HLS) {
+          return (task.ioLoader as HlsIOLoader).selectSubtitle(index)
+        }
+      }
+    }
+  }
+
+  public async abortSleep(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
+        if (task.type === IOType.DASH) {
+          return (task.ioLoader as DashIOLoader).abortSleep()
+        }
+        else if (task.type === IOType.HLS) {
+          return (task.ioLoader as HlsIOLoader).abortSleep()
         }
       }
     }
@@ -399,6 +434,7 @@ export default class IOPipeline extends Pipeline {
       })
       task.ipcPort.destroy()
       this.tasks.delete(id)
+      logger.debug(`unregisterTask task, taskId: ${id}`)
     }
   }
 }

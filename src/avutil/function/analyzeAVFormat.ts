@@ -26,40 +26,45 @@
 import { AVFormat } from '../avformat'
 import IOReader from 'common/io/IOReader'
 
-export default async function analyzeAVFormat(ioReader: IOReader, defaultFormat: AVFormat = AVFormat.UNKNOWN) {
-  let signature = await ioReader.peekString(8)
-  if (/^FLV/.test(signature)) {
+export default async function analyzeAVFormat(ioReader: IOReader, defaultFormat: AVFormat = AVFormat.UNKNOWN): Promise<AVFormat> {
+  let magic = await ioReader.peekString(8)
+  if (/^FLV/.test(magic)) {
     return AVFormat.FLV
   }
-  else if (/^DKIF/.test(signature)) {
+  else if (/^DKIF/.test(magic)) {
     return AVFormat.IVF
   }
-  else if (/^ftyp/.test(signature.slice(4, 8))) {
+  else if (/^ftyp/.test(magic.slice(4, 8))) {
     return AVFormat.MP4
   }
-  else if (/^OggS/.test(signature)) {
+  else if (/^OggS/.test(magic)) {
     return AVFormat.OGG
   }
-  else if (/^ID3/.test(signature)) {
+  else if (/^ID3/.test(magic)) {
     return AVFormat.MP3
   }
-  else if (/^fLaC/.test(signature)) {
+  else if (/^fLaC/.test(magic)) {
     return AVFormat.FLAC
   }
-  else if (/^RIFF/.test(signature)) {
+  else if (/^RIFF/.test(magic)) {
     const dataType = (await ioReader.peekString(12)).slice(8)
     if (/^WAVE/.test(dataType)) {
       return AVFormat.WAV
     }
   }
-  else if (/^ADIF/.test(signature)) {
+  else if (/^ADIF/.test(magic)) {
     return AVFormat.AAC
   }
   else if ((await ioReader.peekUint32()) === 0x1A45DFA3) {
     return AVFormat.MATROSKA
   }
-  else if (/WEBVTT/.test(signature)) {
+  else if (/^WEBVTT/.test(magic)) {
     return AVFormat.WEBVTT
+  }
+  // 私有的 magic
+  else if (/^LIMA/.test(magic)) {
+    await ioReader.skip(4)
+    return await ioReader.readUint16() as AVFormat
   }
   else {
     const buf = await ioReader.peekBuffer(2)

@@ -1050,7 +1050,12 @@ export default class AudioRenderPipeline extends Pipeline {
         task.rightIPCPort.destroy()
         task.rightIPCPort = null
       }
+      if (task.controlIPCPort) {
+        task.controlIPCPort.destroy()
+        task.controlIPCPort = null
+      }
       this.tasks.delete(taskId)
+      logger.debug(`unregisterTask task, taskId: ${taskId}`)
     }
   }
 

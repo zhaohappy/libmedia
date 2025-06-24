@@ -53,6 +53,8 @@ interface Resource {
   segments: string[]
   initSegmentPadding: string
   initedSegment: string
+  aborted: boolean
+  sleep: Sleep
 }
 
 export default class DashIOLoader extends IOLoader {
@@ -80,7 +82,9 @@ export default class DashIOLoader extends IOLoader {
       selectedIndex: 0,
       segments: [],
       initSegmentPadding: '',
-      initedSegment: ''
+      initedSegment: '',
+      aborted: false,
+      sleep: null
     }
   }
 
@@ -278,7 +282,12 @@ export default class DashIOLoader extends IOLoader {
         const wait = ((this.mediaPlayList.duration || this.mediaPlayList.minimumUpdatePeriod)
           - (getTimestamp() - this.mediaPlayList.timestamp) / 1000)
         if (wait > 0) {
-          await new Sleep(Math.max(wait, 2))
+          resource.sleep = new Sleep(Math.max(wait, 2))
+          await resource.sleep
+          resource.sleep = null
+          if (resource.aborted) {
+            return IOError.END
+          }
         }
         if (this.fetchMediaPlayListPromise) {
           await this.fetchMediaPlayListPromise
@@ -422,7 +431,32 @@ export default class DashIOLoader extends IOLoader {
     return 0n
   }
 
+  public abortSleep() {
+    if (this.videoResource.loader) {
+      if (this.videoResource.sleep) {
+        this.videoResource.aborted = true
+        this.videoResource.sleep.stop()
+        this.videoResource.sleep = null
+      }
+    }
+    if (this.audioResource.loader) {
+      if (this.audioResource.sleep) {
+        this.audioResource.aborted = true
+        this.audioResource.sleep.stop()
+        this.audioResource.sleep = null
+      }
+    }
+    if (this.subtitleResource.loader) {
+      if (this.subtitleResource.sleep) {
+        this.subtitleResource.aborted = true
+        this.subtitleResource.sleep.stop()
+        this.subtitleResource.sleep = null
+      }
+    }
+  }
+
   public async abort() {
+    this.abortSleep()
     if (this.videoResource.loader) {
       await this.videoResource.loader.abort()
       this.videoResource.loader = null

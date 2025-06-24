@@ -1186,7 +1186,12 @@ export default class DemuxPipeline extends Pipeline {
 
       await task.formatContext.destroy()
 
-      task.leftIPCPort.destroy()
+      if (!task.mainTaskId) {
+        task.leftIPCPort.destroy()
+        if (task.controlIPCPort) {
+          task.controlIPCPort.destroy()
+        }
+      }
       task.rightIPCPorts.forEach((ipcPort) => {
         ipcPort.destroy()
       })
@@ -1201,6 +1206,7 @@ export default class DemuxPipeline extends Pipeline {
         task.oBuffer = nullptr
       }
       this.tasks.delete(taskId)
+      logger.debug(`unregisterTask task, taskId: ${taskId}`)
     }
   }
 }

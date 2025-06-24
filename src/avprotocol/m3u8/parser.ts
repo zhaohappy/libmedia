@@ -557,7 +557,8 @@ function parseSegment(
       params.hasMap = true
       segment.map = new MediaInitializationSection({
         uri: attributes['URI'],
-        byterange: attributes['BYTERANGE']
+        byterange: attributes['BYTERANGE'],
+        key: segment.key
       })
     }
     else if (name === 'EXT-X-PROGRAM-DATE-TIME') {
@@ -855,8 +856,7 @@ function parseMediaPlaylist(lines: Line[], params: Record<string, any>) {
       if (parts.length > 0 && !playlist.endlist && !parts[parts.length - 1]?.hint) {
         logger.fatal('If the Playlist contains EXT-X-PART tags and does not contain an EXT-X-ENDLIST tag, the Playlist must contain an EXT-X-PRELOAD-HINT tag with a TYPE=PART attribute')
       }
-      // @ts-expect-error TODO check if this is not a bug the third argument should be a discontinuitySequence
-      addSegment(playlist, segment, currentKey, currentMap)
+      addSegment(playlist, segment, discontinuitySequence, currentKey, currentMap)
       if (!containsParts && segment.parts.length > 0) {
         containsParts = true
       }
@@ -974,9 +974,9 @@ function checkLowLatencyCompatibility({lowLatencyCompatibility, targetDuration, 
       logger.fatal('PART-HOLD-BACK must be at least PART-TARGET')
     }
     for (const [segmentIndex, {parts}] of segments.entries()) {
-      if (parts.length > 0 && segmentIndex < segments.length - 3) {
-        logger.fatal('Remove EXT-X-PART tags from the Playlist after they are greater than three target durations from the end of the Playlist.')
-      }
+      // if (parts.length > 0 && segmentIndex < segments.length - 3) {
+      //   logger.fatal('Remove EXT-X-PART tags from the Playlist after they are greater than three target durations from the end of the Playlist.')
+      // }
       for (const [partIndex, {duration}] of parts.entries()) {
         if (duration === undefined) {
           continue

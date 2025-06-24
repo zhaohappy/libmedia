@@ -24,7 +24,7 @@
  */
 
 import Sleep from 'common/timer/Sleep'
-import IOLoader, { IOLoaderStatus, IOLoaderVideoStreamInfo } from './IOLoader'
+import IOLoader, { IOLoaderAudioStreamInfo, IOLoaderOptions, IOLoaderStatus, IOLoaderSubtitleStreamInfo, IOLoaderVideoStreamInfo } from './IOLoader'
 import * as object from 'common/util/object'
 import { IOError } from 'common/io/error'
 import { Uint8ArrayInterface } from 'common/io/interface'
@@ -40,18 +40,82 @@ import AESDecryptPipe from '../bsp/aes/AESDecryptPipe'
 import * as is from 'common/util/is'
 import { Data } from 'common/types/type'
 import * as errorType from 'avutil/error'
+import { AVMediaType } from 'avutil/codec'
+import AESWebDecryptor from 'common/crypto/aes/AESWebDecryptor'
+import { AesMode } from 'common/crypto/aes/aes'
+import { Ext2Format } from 'avutil/stringEnum'
+import { AVFormat } from 'avutil/avformat'
 
 const FETCHED_HISTORY_LIST_MAX = 10
 
-export default class HlsIOLoader extends IOLoader {
+function getFetchParams(info: FetchInfo, method: string = 'GET') {
+  const params: Data = {
+    method: 'GET',
+    headers: {},
+    mode: 'cors',
+    cache: 'default',
+    referrerPolicy: 'no-referrer-when-downgrade'
+  }
+  if (info.httpOptions?.headers) {
+    object.each(info.httpOptions.headers, (value, key) => {
+      params.headers[key] = value
+    })
+  }
 
+  if (info.httpOptions?.credentials) {
+    params.credentials = info.httpOptions.credentials
+  }
+
+  if (info.httpOptions?.referrerPolicy) {
+    params.referrerPolicy = info.httpOptions.referrerPolicy
+  }
+  return params
+}
+
+async function fetchMediaPlayList(url: string, info: FetchInfo, options: IOLoaderOptions) {
+  return new Promise<MediaPlaylist>((resolve, reject) => {
+    let retryCount = 0
+    async function done() {
+      try {
+        const res = await fetch(url, getFetchParams(info))
+        const text = await res.text()
+        const mediaPlayList = hlsParser(text) as MediaPlaylist
+
+        if (options.isLive && (!mediaPlayList.segments || mediaPlayList.segments.length < 2)) {
+          let wait = 5
+          if (mediaPlayList.segments?.length) {
+            wait = mediaPlayList.segments[0].duration * (2 - mediaPlayList.segments.length)
+          }
+          logger.warn(`wait for min buffer time, now segments: ${mediaPlayList.segments.length}`)
+          await new Sleep(wait)
+          retryCount = 0
+          done()
+        }
+        resolve(mediaPlayList)
+      }
+      catch (error) {
+        if (retryCount < options.retryCount) {
+          retryCount++
+          logger.error(`failed fetch m3u8 file, retry(${retryCount}/3)`)
+          await new Sleep(options.retryInterval)
+          return done()
+        }
+        else {
+          logger.error('HLSLoader: exception, fetch slice error')
+          reject()
+        }
+      }
+    }
+    done()
+  })
+}
+
+class MediaLoader {
+
+  private options: IOLoaderOptions
   private info: FetchInfo
 
-  private masterPlaylist: MasterPlaylist
-
   private mediaPlayList: MediaPlaylist
-
-  private mediaPlayListIndex: number
 
   private fetchedMap: Map<string, boolean>
 
@@ -63,7 +127,6 @@ export default class HlsIOLoader extends IOLoader {
   private currentUri: string
 
   private loader: FetchIOLoader
-  private minBuffer: number
 
   private keyMap: Map<string, ArrayBuffer>
 
@@ -74,202 +137,154 @@ export default class HlsIOLoader extends IOLoader {
   private initLoaded: boolean
   private isInitLoader: boolean
 
-  private getFetchParams(method: string = 'GET') {
-    const params: Data = {
-      method: 'GET',
-      headers: {},
-      mode: 'cors',
-      cache: 'default',
-      referrerPolicy: 'no-referrer-when-downgrade'
-    }
-    if (this.info.httpOptions?.headers) {
-      object.each(this.info.httpOptions.headers, (value, key) => {
-        params.headers[key] = value
-      })
-    }
+  private minBuffer: number
+  private pendingBuffer: Uint8Array
+  private magicAdded: boolean
 
-    if (this.info.httpOptions?.credentials) {
-      params.credentials = this.info.httpOptions.credentials
-    }
+  private sleep: Sleep
+  private aborted: boolean
 
-    if (this.info.httpOptions?.referrerPolicy) {
-      params.referrerPolicy = this.info.httpOptions.referrerPolicy
-    }
-    return params
-  }
-
-  private async fetchMasterPlayList() {
-    try {
-      const res = await fetch(this.info.url, this.getFetchParams())
-      const text = await res.text()
-
-      const playList: Playlist = hlsParser(text)
-
-      if (playList.isMasterPlaylist) {
-        this.masterPlaylist = playList as MasterPlaylist
-      }
-      else {
-        this.mediaPlayList = playList as MediaPlaylist
-
-        if (this.options.isLive && (!this.mediaPlayList.segments || this.mediaPlayList.segments.length < 2)) {
-          let wait = 5
-          if (this.mediaPlayList.segments?.length) {
-            wait = this.mediaPlayList.segments[0].duration * (2 - this.mediaPlayList.segments.length)
-          }
-          logger.warn(`wait for min buffer time, now segments: ${this.mediaPlayList.segments.length}`)
-          await new Sleep(wait)
-          return this.fetchMasterPlayList()
-        }
-
-        this.minBuffer = this.mediaPlayList.duration || 0
-
-        if (this.mediaPlayList.endlist) {
-          this.options.isLive = false
-        }
-        this.mediaListUrl = this.info.url
-      }
-      return playList
-    }
-    catch (error) {
-      if (this.retryCount < this.options.retryCount) {
-        this.retryCount++
-        logger.error(`failed fetch m3u8 file, retry(${this.retryCount}/3)`)
-        await new Sleep(5)
-        return this.fetchMasterPlayList()
-      }
-      else {
-        this.status = IOLoaderStatus.ERROR
-        logger.fatal('HLSLoader: exception, fetch slice error')
-      }
-    }
-  }
-
-  private async fetchMediaPlayList() {
-    let url: string
-
-    if (this.masterPlaylist) {
-      const currentVariant = this.masterPlaylist.variants[this.mediaPlayListIndex]
-
-      if (!currentVariant) {
-        logger.fatal('no media playlist')
-      }
-      url = currentVariant.uri
-    }
-    else {
-      url = this.mediaListUrl
-    }
-
-    if (!/^https?/.test(url)) {
-      url = urlUtil.buildAbsoluteURL(this.info.url, url)
-    }
-
-    this.mediaListUrl = url
-
-    try {
-      const res = await fetch(url, this.getFetchParams())
-      const text = await res.text()
-      this.mediaPlayList = hlsParser(text) as MediaPlaylist
-
-      if (this.mediaPlayList.endlist) {
-        this.options.isLive = false
-      }
-
-      this.initLoaded = true
-      if (this.mediaPlayList.segments.length && this.mediaPlayList.segments[0].map) {
-        this.initLoaded = false
-      }
-
-      if (this.options.isLive && (!this.mediaPlayList.segments || this.mediaPlayList.segments.length < 2)) {
-        let wait = 5
-        if (this.mediaPlayList.segments?.length) {
-          wait = this.mediaPlayList.segments[0].duration * (2 - this.mediaPlayList.segments.length)
-        }
-        logger.warn(`wait for min buffer time, now segments: ${this.mediaPlayList.segments.length}`)
-        await new Sleep(wait)
-        return this.fetchMediaPlayList()
-      }
-
-      this.minBuffer = this.mediaPlayList.duration || 0
-
-      this.status = IOLoaderStatus.BUFFERING
-      this.retryCount = 0
-
-      return this.mediaPlayList
-    }
-    catch (error) {
-      if (this.retryCount < this.options.retryCount) {
-        this.retryCount++
-        logger.error(`failed fetch m3u8 file, retry(${this.retryCount}/3)`)
-        await new Sleep(this.options.retryInterval)
-        return this.fetchMediaPlayList()
-      }
-      else {
-        this.status = IOLoaderStatus.ERROR
-        logger.fatal('HLSLoader: exception, fetch slice error')
-      }
-    }
-  }
-
-  public async open(info: FetchInfo) {
-
-    if (this.status === IOLoaderStatus.BUFFERING) {
-      return 0
-    }
-
-    if (this.status !== IOLoaderStatus.IDLE) {
-      return errorType.INVALID_OPERATE
-    }
-
+  constructor(options: IOLoaderOptions, info: FetchInfo, mediaListUrl?: string, mediaPlayList?: MediaPlaylist) {
+    this.options = options
     this.info = info
 
-    this.mediaPlayListIndex = 0
     this.segmentIndex = 0
-
     this.fetchedMap = new Map()
     this.fetchedHistoryList = []
-
-    this.status = IOLoaderStatus.CONNECTING
-    this.retryCount = 0
-
     this.keyMap = new Map()
+    this.aborted = false
 
-    await this.fetchMasterPlayList()
+    if (mediaListUrl && mediaPlayList) {
+      this.setMediaPlayList(mediaListUrl, mediaPlayList)
+    }
+  }
 
-    if (!this.mediaPlayList && this.masterPlaylist) {
-      await this.fetchMediaPlayList()
+  public setMediaPlayList(mediaListUrl: string, mediaPlayList: MediaPlaylist) {
+
+    if (this.options.isLive) {
+      this.fetchedMap.clear()
+      this.fetchedHistoryList.length = 0
+      this.segmentIndex = 0
+      const currentSegment = mediaPlayList.segments.find((segment) => {
+        return segment.uri === this.currentUri
+      })
+      if (currentSegment) {
+        mediaPlayList.segments.forEach((segment, index) => {
+          if (segment.mediaSequenceNumber === currentSegment.mediaSequenceNumber + 1) {
+            this.segmentIndex = index
+          }
+          else if (segment.mediaSequenceNumber <= currentSegment.mediaSequenceNumber) {
+            this.fetchedMap.set(segment.uri, true)
+            this.fetchedHistoryList.push(segment.uri)
+          }
+        })
+        while (this.fetchedHistoryList.length >= FETCHED_HISTORY_LIST_MAX) {
+          this.fetchedMap.delete(this.fetchedHistoryList.shift())
+        }
+      }
     }
 
+    this.mediaListUrl = mediaListUrl
+    this.mediaPlayList = mediaPlayList
+    this.minBuffer = this.mediaPlayList.duration || 0
+    if (this.mediaPlayList.endlist) {
+      this.options.isLive = false
+    }
     this.initLoaded = true
-
     if (this.mediaPlayList.segments.length && this.mediaPlayList.segments[0].map) {
       this.initLoaded = false
     }
 
-    return 0
+    if (this.mediaPlayList.lowLatencyCompatibility) {
+      const buffer = this.mediaPlayList.lowLatencyCompatibility.partHoldBack
+        || this.mediaPlayList.lowLatencyCompatibility.holdBack
+        || this.minBuffer
+
+      let cache = 0
+      let hasKeyframe = false
+      let segIndex = 0
+      for (let i = this.mediaPlayList.segments.length - 1; i >= 0; i--) {
+        const segment = this.mediaPlayList.segments[i]
+        if (segment.parts?.length) {
+          if (!segment.uri) {
+            continue
+          }
+          for (let j = segment.parts.length - 1; j >= 0; j--) {
+            const part = segment.parts[j]
+            if (!part.hint) {
+              cache += part.duration
+              if (part.independent) {
+                hasKeyframe = true
+              }
+              if (cache >= buffer && hasKeyframe) {
+                segIndex = i
+                break
+              }
+            }
+          }
+          if (cache >= buffer && hasKeyframe) {
+            break
+          }
+        }
+        else {
+          cache += segment.duration
+          hasKeyframe = true
+          if (cache >= buffer && hasKeyframe) {
+            segIndex = i
+            break
+          }
+        }
+      }
+      this.fetchedMap.clear()
+      this.fetchedHistoryList.length = 0
+      for (let i = 0; i < segIndex; i++) {
+        const segment = this.mediaPlayList.segments[i]
+        this.fetchedMap.set(segment.uri, true)
+        this.fetchedHistoryList.push(segment.uri)
+      }
+      while (this.fetchedHistoryList.length >= FETCHED_HISTORY_LIST_MAX) {
+        this.fetchedMap.delete(this.fetchedHistoryList.shift())
+      }
+      this.segmentIndex = segIndex
+      this.minBuffer = cache
+    }
   }
 
-  private async checkNeedDecrypt(segment: Segment, sequence: number) {
+  public getMediaListUrl() {
+    return this.mediaListUrl
+  }
 
-    if (!segment.key) {
+  private async checkNeedDecrypt(key: Segment['key'], uri: string, sequence: number) {
+
+    if (!key) {
       return
     }
 
-    if (segment.key.method.toLocaleLowerCase() !== 'aes-128') {
-      logger.fatal(`m3u8 not support EXT-X-KEY METHOD ${segment.key.method}`)
+    if (key.method.toLocaleLowerCase() !== 'aes-128'
+      && key.method.toLocaleLowerCase() !== 'aes-128-ctr'
+      && (key.method.toLocaleLowerCase() !== 'aes-256'
+        && key.method.toLocaleLowerCase() !== 'aes-256-ctr'
+        || !AESWebDecryptor.isSupport()
+      )
+    ) {
+      if (uri.split('.').pop() === 'mp4') {
+        return
+      }
+      logger.fatal(`m3u8 ts not support EXT-X-KEY METHOD ${key.method}`)
     }
 
-    const keyUrl = segment.key.uri
+    const keyUrl = key.uri
 
     if (this.keyMap.has(keyUrl)) {
       this.currentKey = this.keyMap.get(keyUrl)
     }
     else {
-      this.currentKey = await (await fetch(buildAbsoluteURL(this.mediaListUrl, keyUrl), this.getFetchParams())).arrayBuffer()
+      this.currentKey = await (await fetch(buildAbsoluteURL(this.mediaListUrl, keyUrl), getFetchParams(this.info))).arrayBuffer()
       this.keyMap.set(keyUrl, this.currentKey)
     }
 
-    if (segment.key.iv) {
-      this.currentIV = segment.key.iv.buffer
+    if (key.iv) {
+      this.currentIV = key.iv.buffer
     }
     else {
       const iv = new Uint8Array(16)
@@ -277,14 +292,48 @@ export default class HlsIOLoader extends IOLoader {
       dataView.setUint32(12, sequence, false)
       this.currentIV = iv.buffer
     }
-    this.aesDecryptPipe = new AESDecryptPipe()
+    this.aesDecryptPipe = new AESDecryptPipe(key.method.toLocaleLowerCase().indexOf('ctr') > 0 ? AesMode.CTR : AesMode.CBC)
     this.aesDecryptPipe.onFlush = async (buffer) => {
       return this.loader.read(buffer)
     }
     await this.aesDecryptPipe.expandKey(this.currentKey, this.currentIV)
   }
 
+  private handleSlice(len: number, buffer: Uint8ArrayInterface) {
+    const ext = this.loader.getUrl().split('.').pop()
+    if (ext !== 'mp3') {
+      // ID3
+      if (!this.magicAdded && buffer[0] === 0x49 && buffer[1] === 0x44 && buffer[2] === 0x33) {
+        const format = Ext2Format[ext] ?? AVFormat.UNKNOWN
+        if (format === AVFormat.UNKNOWN) {
+          return len
+        }
+        if (len + 6 > buffer.length) {
+          this.pendingBuffer = buffer.slice(len - 6)
+        }
+        buffer.set(buffer.slice(0, len - 6), 6)
+        // 拥有 ID3 标签的 aac 等格式添加一个私有的头 LIMA 
+        buffer[0] = 0x4c
+        buffer[1] = 0x49
+        buffer[2] = 0x4d
+        buffer[3] = 0x41
+        buffer[4] = (format >>> 8) & 0xff
+        buffer[5] = format & 0xff
+        this.magicAdded = true
+        return this.pendingBuffer ? len : len + 6
+      }
+    }
+    return len
+  }
+
   public async read(buffer: Uint8ArrayInterface): Promise<number> {
+
+    if (this.pendingBuffer) {
+      let len = this.pendingBuffer.length
+      buffer.set(this.pendingBuffer)
+      this.pendingBuffer = null
+      return len
+    }
 
     let ret = 0
 
@@ -306,8 +355,6 @@ export default class HlsIOLoader extends IOLoader {
           else {
             this.segmentIndex++
             if (this.segmentIndex >= this.mediaPlayList.segments.length) {
-              logger.info('hls segments ended')
-              this.status = IOLoaderStatus.COMPLETE
               return IOError.END
             }
           }
@@ -321,21 +368,24 @@ export default class HlsIOLoader extends IOLoader {
 
     if (this.options.isLive) {
       const segments = this.mediaPlayList.segments.filter((segment) => {
-        return !this.fetchedMap.get(segment.uri)
+        return segment.uri && !this.fetchedMap.get(segment.uri)
       })
 
       if (!segments.length) {
         if (this.mediaPlayList.endlist) {
-          this.status = IOLoaderStatus.COMPLETE
           return IOError.END
         }
 
         const wait = (this.minBuffer - (getTimestamp() - this.mediaPlayList.timestamp) / 1000) / 2
         if (wait > 0) {
-          await new Sleep(wait)
+          this.sleep = new Sleep(wait)
+          await this.sleep
+          this.sleep = null
+          if (this.aborted) {
+            return IOError.END
+          }
         }
-
-        await this.fetchMediaPlayList()
+        this.mediaPlayList = await fetchMediaPlayList(this.mediaListUrl, this.info, this.options)
         return this.read(buffer)
       }
 
@@ -344,7 +394,10 @@ export default class HlsIOLoader extends IOLoader {
       this.currentUri = segments[0].uri
 
       if (!this.isInitLoader) {
-        await this.checkNeedDecrypt(segments[0], this.segmentIndex)
+        await this.checkNeedDecrypt(segments[0].key, this.currentUri, this.segmentIndex + (this.mediaPlayList.mediaSequenceBase || 0))
+      }
+      else if (segments[0].map?.key) {
+        await this.checkNeedDecrypt(segments[0].map.key, segments[0].map.uri, this.segmentIndex + (this.mediaPlayList.mediaSequenceBase || 0))
       }
 
       this.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
@@ -366,20 +419,27 @@ export default class HlsIOLoader extends IOLoader {
         }),
         range
       )
-      return this.aesDecryptPipe ? this.aesDecryptPipe.read(buffer) : this.loader.read(buffer)
+      const ret = await (this.aesDecryptPipe ? this.aesDecryptPipe.read(buffer) : this.loader.read(buffer))
+      if (ret > 10) {
+        return this.handleSlice(ret, buffer)
+      }
+      return ret
     }
     else {
       this.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
 
       let segment = this.mediaPlayList.segments[this.segmentIndex]
-      while (!segment.uri) {
+      while (segment && !segment.uri) {
         segment = this.mediaPlayList.segments[++this.segmentIndex]
       }
 
       this.isInitLoader = !!(segment.map?.uri && !this.initLoaded)
 
       if (!this.isInitLoader) {
-        await this.checkNeedDecrypt(segment, this.segmentIndex)
+        await this.checkNeedDecrypt(segment.key, segment.uri, this.segmentIndex + (this.mediaPlayList.mediaSequenceBase || 0))
+      }
+      else if (segment.map?.key) {
+        await this.checkNeedDecrypt(segment.map.key, segment.map.uri, this.segmentIndex + (this.mediaPlayList.mediaSequenceBase || 0))
       }
 
       const url = buildAbsoluteURL(this.mediaListUrl, this.isInitLoader ? segment.map.uri : segment.uri)
@@ -399,12 +459,15 @@ export default class HlsIOLoader extends IOLoader {
         }),
         range
       )
-      return this.aesDecryptPipe ? this.aesDecryptPipe.read(buffer) : this.loader.read(buffer)
+      const ret = await (this.aesDecryptPipe ? this.aesDecryptPipe.read(buffer) : this.loader.read(buffer))
+      if (ret > 10) {
+        return this.handleSlice(ret, buffer)
+      }
+      return ret
     }
   }
 
   public async seek(timestamp: int64) {
-
     if (this.loader) {
       await this.loader.abort()
       this.loader = null
@@ -424,10 +487,207 @@ export default class HlsIOLoader extends IOLoader {
       }
     }
     this.segmentIndex = index
+    return 0
+  }
+
+  public abortSleep() {
+    this.aborted = true
+    if (this.sleep) {
+      this.sleep.stop()
+      this.sleep = null
+    }
+  }
+
+  public async abort() {
+    if (this.loader) {
+      await this.loader.abort()
+      this.loader = null
+    }
+    this.abortSleep()
+  }
+
+  public getMinBuffer() {
+    return this.minBuffer
+  }
+
+  public getDuration() {
+    return this.mediaPlayList.duration
+  }
+}
+
+export default class HlsIOLoader extends IOLoader {
+
+  private info: FetchInfo
+
+  private masterPlaylist: MasterPlaylist
+
+  private mediaPlayListIndex: number
+
+  private mainLoader: MediaLoader
+  private loaders: Map<AVMediaType, MediaLoader>
+
+  private audioSelectedIndex: number
+  private subtitleSelectedIndex: number
+
+  private async fetchMasterPlayList() {
+    try {
+      const res = await fetch(this.info.url, getFetchParams(this.info))
+      const text = await res.text()
+
+      const playList: Playlist = hlsParser(text)
+
+      if (playList.isMasterPlaylist) {
+        this.masterPlaylist = playList as MasterPlaylist
+      }
+      else {
+        const mediaPlayList = playList as MediaPlaylist
+
+        if (this.options.isLive && (!mediaPlayList.segments || mediaPlayList.segments.length < 2)) {
+          let wait = 5
+          if (mediaPlayList.segments?.length) {
+            wait = mediaPlayList.segments[0].duration * (2 - mediaPlayList.segments.length)
+          }
+          logger.warn(`wait for min buffer time, now segments: ${mediaPlayList.segments.length}`)
+          await new Sleep(wait)
+          return this.fetchMasterPlayList()
+        }
+        this.mainLoader = new MediaLoader(
+          this.options,
+          this.info,
+          this.info.url,
+          mediaPlayList
+        )
+        this.loaders.set(AVMediaType.AVMEDIA_TYPE_VIDEO, this.mainLoader)
+      }
+      return playList
+    }
+    catch (error) {
+      if (this.retryCount < this.options.retryCount) {
+        this.retryCount++
+        logger.error(`failed fetch m3u8 file, retry(${this.retryCount}/3)`)
+        await new Sleep(5)
+        return this.fetchMasterPlayList()
+      }
+      else {
+        this.status = IOLoaderStatus.ERROR
+        logger.fatal('HLSLoader: exception, fetch slice error')
+      }
+    }
+  }
+
+  private buildUrl(url: string) {
+    if (!/^https?/.test(url)) {
+      url = urlUtil.buildAbsoluteURL(this.info.url, url)
+    }
+    return url
+  }
+
+  private async createLoader() {
+    if (this.masterPlaylist) {
+      const currentVariant = this.masterPlaylist.variants[this.mediaPlayListIndex]
+      if (!currentVariant) {
+        logger.fatal('no media playlist')
+      }
+      if (currentVariant.audio.length) {
+        const mediaUrl = this.buildUrl(currentVariant.audio[this.audioSelectedIndex].uri)
+        this.loaders.set(AVMediaType.AVMEDIA_TYPE_AUDIO, new MediaLoader(
+          this.options,
+          this.info,
+          mediaUrl,
+          await fetchMediaPlayList(
+            mediaUrl,
+            this.info,
+            this.options
+          )
+        ))
+      }
+      if (currentVariant.subtitles.length) {
+        const mediaUrl = this.buildUrl(currentVariant.subtitles[this.subtitleSelectedIndex].uri)
+        this.loaders.set(AVMediaType.AVMEDIA_TYPE_SUBTITLE, new MediaLoader(
+          this.options,
+          this.info,
+          mediaUrl,
+          await fetchMediaPlayList(
+            mediaUrl,
+            this.info,
+            this.options
+          )
+        ))
+      }
+
+      const mediaUrl = this.buildUrl(currentVariant.uri)
+
+      this.mainLoader = new MediaLoader(
+        this.options,
+        this.info,
+        mediaUrl,
+        await fetchMediaPlayList(
+          mediaUrl,
+          this.info,
+          this.options
+        )
+      )
+      this.loaders.set(AVMediaType.AVMEDIA_TYPE_VIDEO, this.mainLoader)
+    }
+  }
+
+  public async open(info: FetchInfo) {
+
+    if (this.status === IOLoaderStatus.BUFFERING) {
+      return 0
+    }
+
+    if (this.status !== IOLoaderStatus.IDLE) {
+      return errorType.INVALID_OPERATE
+    }
+
+    this.info = info
+
+    this.mediaPlayListIndex = 0
+    this.audioSelectedIndex = 0
+    this.subtitleSelectedIndex = 0
+    this.loaders = new Map()
+
+    this.status = IOLoaderStatus.CONNECTING
+    this.retryCount = 0
+
+    await this.fetchMasterPlayList()
+
+    if (!this.loaders.size && this.masterPlaylist) {
+      await this.createLoader()
+    }
+
+    this.status = IOLoaderStatus.BUFFERING
+
+    return 0
+  }
+
+  public async read(buffer: Uint8ArrayInterface, options: {
+    mediaType: AVMediaType
+  }): Promise<number> {
+    if (!options) {
+      return errorType.INVALID_ARGUMENT
+    }
+    const ret = await this.loaders.get(options.mediaType).read(buffer)
+    if (ret < 0 && ret !== IOError.AGAIN) {
+      this.status = ret === IOError.END ? IOLoaderStatus.COMPLETE : IOLoaderStatus.ERROR
+    }
+    return ret
+  }
+
+  public async seek(timestamp: int64, options: {
+    mediaType: AVMediaType
+  }) {
+
+    if (!options) {
+      return errorType.INVALID_ARGUMENT
+    }
+
+    await this.loaders.get(options.mediaType).seek(timestamp)
+
     if (this.status === IOLoaderStatus.COMPLETE) {
       this.status = IOLoaderStatus.BUFFERING
     }
-
     return 0
   }
 
@@ -435,10 +695,15 @@ export default class HlsIOLoader extends IOLoader {
     return 0n
   }
 
+  public abortSleep() {
+    for (let loader of this.loaders) {
+      loader[1].abortSleep()
+    }
+  }
+
   public async abort() {
-    if (this.loader) {
-      await this.loader.abort()
-      this.loader = null
+    for (let loader of this.loaders) {
+      await loader[1].abort()
     }
   }
 
@@ -448,7 +713,28 @@ export default class HlsIOLoader extends IOLoader {
   }
 
   public getDuration() {
-    return this.mediaPlayList.duration
+    return this.mainLoader?.getDuration() ?? 0
+  }
+
+  public hasVideo() {
+    if (this.masterPlaylist) {
+      return this.masterPlaylist.variants.length > 0
+    }
+    return !!this.mainLoader
+  }
+
+  public hasAudio() {
+    if (this.masterPlaylist) {
+      const currentVariant = this.masterPlaylist.variants[this.mediaPlayListIndex]
+      return currentVariant.audio.length > 0
+    }
+  }
+
+  public hasSubtitle() {
+    if (this.masterPlaylist) {
+      const currentVariant = this.masterPlaylist.variants[this.mediaPlayListIndex]
+      return currentVariant.subtitles.length > 0
+    }
   }
 
   public getVideoList(): IOLoaderVideoStreamInfo {
@@ -461,16 +747,128 @@ export default class HlsIOLoader extends IOLoader {
           codecs: variant.codecs
         }
       }) ?? [],
+      selectedIndex: this.mediaPlayListIndex || 0
+    }
+  }
+
+  public getAudioList(): IOLoaderAudioStreamInfo {
+    if (this.masterPlaylist && this.hasAudio()) {
+      const currentVariant = this.masterPlaylist.variants[this.mediaPlayListIndex]
+      return {
+        list: currentVariant.audio.map((item) => {
+          return {
+            lang: item.language,
+            codecs: item.name
+          }
+        }),
+        selectedIndex: this.audioSelectedIndex
+      }
+    }
+    return {
+      list: [],
+      selectedIndex: 0
+    }
+  }
+
+  public getSubtitleList(): IOLoaderSubtitleStreamInfo {
+    if (this.masterPlaylist && this.hasSubtitle()) {
+      const currentVariant = this.masterPlaylist.variants[this.mediaPlayListIndex]
+      return {
+        list: currentVariant.subtitles.map((item) => {
+          return {
+            lang: item.language,
+            codecs: item.name
+          }
+        }),
+        selectedIndex: this.subtitleSelectedIndex
+      }
+    }
+    return {
+      list: [],
       selectedIndex: 0
     }
   }
 
   public selectVideo(index: number) {
-    this.mediaPlayListIndex = index
-    this.fetchMediaPlayList()
+    if (this.masterPlaylist) {
+      const currentVariant = this.masterPlaylist.variants[index]
+      if (currentVariant) {
+        const mediaUrl = this.buildUrl(currentVariant.uri)
+        fetchMediaPlayList(
+          mediaUrl,
+          this.info,
+          this.options
+        ).then((list) => {
+          this.loaders.get(AVMediaType.AVMEDIA_TYPE_VIDEO).setMediaPlayList(mediaUrl, list)
+          this.mediaPlayListIndex = index
+        })
+
+        if (currentVariant.audio.length === 1
+          && this.loaders.has(AVMediaType.AVMEDIA_TYPE_AUDIO)
+          && this.buildUrl(currentVariant.audio[0].uri) !== this.loaders.get(AVMediaType.AVMEDIA_TYPE_AUDIO).getMediaListUrl()
+        ) {
+          const mediaUrl = this.buildUrl(currentVariant.audio[0].uri)
+          fetchMediaPlayList(
+            mediaUrl,
+            this.info,
+            this.options
+          ).then((list) => {
+            this.loaders.get(AVMediaType.AVMEDIA_TYPE_AUDIO).setMediaPlayList(mediaUrl, list)
+          })
+        }
+
+        if (currentVariant.subtitles.length === 1
+          && this.loaders.has(AVMediaType.AVMEDIA_TYPE_SUBTITLE)
+          && this.buildUrl(currentVariant.subtitles[0].uri) !== this.loaders.get(AVMediaType.AVMEDIA_TYPE_SUBTITLE).getMediaListUrl()
+        ) {
+          const mediaUrl = this.buildUrl(currentVariant.subtitles[0].uri)
+          fetchMediaPlayList(
+            mediaUrl,
+            this.info,
+            this.options
+          ).then((list) => {
+            this.loaders.get(AVMediaType.AVMEDIA_TYPE_SUBTITLE).setMediaPlayList(mediaUrl, list)
+          })
+        }
+      }
+    }
+  }
+
+  public selectAudio(index: number) {
+    if (this.masterPlaylist) {
+      const currentVariant = this.masterPlaylist.variants[this.mediaPlayListIndex]
+      if (currentVariant?.audio[index]) {
+        const mediaUrl = this.buildUrl(currentVariant.audio[index].uri)
+        fetchMediaPlayList(
+          mediaUrl,
+          this.info,
+          this.options
+        ).then((list) => {
+          this.loaders.get(AVMediaType.AVMEDIA_TYPE_AUDIO).setMediaPlayList(mediaUrl, list)
+          this.audioSelectedIndex = index
+        })
+      }
+    }
+  }
+
+  public selectSubtitle(index: number) {
+    if (this.masterPlaylist) {
+      const currentVariant = this.masterPlaylist.variants[this.mediaPlayListIndex]
+      if (currentVariant?.subtitles[index]) {
+        const mediaUrl = this.buildUrl(currentVariant.subtitles[index].uri)
+        fetchMediaPlayList(
+          mediaUrl,
+          this.info,
+          this.options
+        ).then((list) => {
+          this.loaders.get(AVMediaType.AVMEDIA_TYPE_SUBTITLE).setMediaPlayList(mediaUrl, list)
+          this.subtitleSelectedIndex = index
+        })
+      }
+    }
   }
 
   public getMinBuffer() {
-    return this.minBuffer
+    return this.mainLoader?.getMinBuffer() ?? 0
   }
 }

@@ -360,6 +360,7 @@ export default class AudioDecodePipeline extends Pipeline {
         freeCodecParameters(task.parameters)
       }
       this.tasks.delete(taskId)
+      logger.debug(`unregisterTask task, taskId: ${taskId}`)
     }
   }
 }

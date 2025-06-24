@@ -30,6 +30,7 @@ import AESWebDecryptor from 'common/crypto/aes/AESWebDecryptor'
 import Sleep from 'common/timer/Sleep'
 import { IOError } from 'common/io/error'
 import * as logger from 'common/util/logger'
+import { AesMode } from 'common/crypto/aes/aes'
 
 const BLOCK_SIZE = 16
 const REMAINING_LENGTH = BLOCK_SIZE * 2
@@ -53,18 +54,23 @@ export default class AESDecryptPipe extends AVBSPipe {
 
   private iv: ArrayBuffer
   private key: ArrayBuffer
+  private mode: AesMode
 
-  constructor(size: number = 1 * 1024 * 1024) {
+  private pos: number
+
+  constructor(mode: AesMode = AesMode.CBC, size: number = 1 * 1024 * 1024) {
     super()
+    this.mode = mode
     this.size = size
     this.pointer = 0
     this.endPointer = 0
+    this.pos = 0
     this.ended = false
     this.buffer = new Uint8Array(size)
 
-    this.aesSoftDecryptor = new AESSoftDecryptor()
+    this.aesSoftDecryptor = new AESSoftDecryptor(mode)
     if (AESWebDecryptor.isSupport() && AESWebDecryptorSupport) {
-      this.aesWebDecryptor = new AESWebDecryptor()
+      this.aesWebDecryptor = new AESWebDecryptor(mode)
     }
     this.aesTargetDecryptor = this.aesWebDecryptor || this.aesSoftDecryptor
   }
@@ -79,7 +85,9 @@ export default class AESDecryptPipe extends AVBSPipe {
     if (this.aesWebDecryptor) {
       await this.aesWebDecryptor.expandKey(key)
     }
-    this.aesSoftDecryptor.expandKey(key)
+    if (key.byteLength <= 8) {
+      this.aesSoftDecryptor.expandKey(key)
+    }
   }
 
   private async flush_(buffer: Uint8Array) {
@@ -133,7 +141,7 @@ export default class AESDecryptPipe extends AVBSPipe {
     return array
   }
 
-  private async decrypt(length: number): Promise<Uint8Array> {
+  private async decryptCBC(length: number): Promise<Uint8Array> {
     let nextBlock: Uint8Array
     let padding: number = 0
     if (this.aesTargetDecryptor === this.aesWebDecryptor && !this.ended) {
@@ -162,10 +170,11 @@ export default class AESDecryptPipe extends AVBSPipe {
       }
 
       this.pointer += length
+      this.pos += length
       return new Uint8Array(buffer)
     }
     catch (error) {
-      if (this.aesTargetDecryptor = this.aesWebDecryptor) {
+      if (this.aesTargetDecryptor === this.aesWebDecryptor && this.key.byteLength <= 8) {
         logger.warn('web aes decrypt failed, try to use soft decryptor')
 
         if (nextBlock) {
@@ -173,7 +182,39 @@ export default class AESDecryptPipe extends AVBSPipe {
         }
         this.aesTargetDecryptor = this.aesSoftDecryptor
         AESWebDecryptorSupport = false
-        return this.decrypt(length)
+        return this.decryptCBC(length)
+      }
+      else {
+        logger.fatal('aes decrypt failed')
+      }
+    }
+  }
+
+  private getCTRIv() {
+    const result = new Uint8Array(this.iv).slice()
+    let carry = Math.floor(this.pos / BLOCK_SIZE)
+    for (let i = 15; i >= 0 && carry > 0; i--) {
+      const sum = result[i] + (carry & 0xff)
+      result[i] = sum & 0xff
+      carry = (carry >>> 8) + (sum >> 8)
+    }
+    return result.buffer
+  }
+
+  private async decryptCTR(length: number): Promise<Uint8Array> {
+    try {
+      const encryptData = this.buffer.subarray(this.pointer, this.pointer + length)
+      const buffer = await this.aesTargetDecryptor.decrypt(encryptData, this.getCTRIv())
+      this.pointer += length
+      this.pos += length
+      return new Uint8Array(buffer)
+    }
+    catch (error) {
+      if (this.aesTargetDecryptor === this.aesWebDecryptor && this.key.byteLength <= 8) {
+        logger.warn('web aes decrypt failed, try to use soft decryptor')
+        this.aesTargetDecryptor = this.aesSoftDecryptor
+        AESWebDecryptorSupport = false
+        return this.decryptCTR(length)
       }
       else {
         logger.fatal('aes decrypt failed')
@@ -191,19 +232,26 @@ export default class AESDecryptPipe extends AVBSPipe {
       return IOError.END
     }
 
-    const length = Math.min(
-      Math.floor((this.remainingLength() - (this.ended ? 0 : REMAINING_LENGTH)) / BLOCK_SIZE) * BLOCK_SIZE,
-      buffer.length
-    )
-
-    let decryptBuffer = await this.decrypt(length)
-
-    if (this.ended && this.aesTargetDecryptor === this.aesSoftDecryptor) {
-      decryptBuffer = this.removePadding(decryptBuffer)
+    if (this.mode === AesMode.CBC) {
+      const length = Math.min(
+        Math.floor((this.remainingLength() - (this.ended ? 0 : REMAINING_LENGTH)) / BLOCK_SIZE) * BLOCK_SIZE,
+        buffer.length
+      )
+      let decryptBuffer = await this.decryptCBC(length)
+      if (this.ended && this.aesTargetDecryptor === this.aesSoftDecryptor) {
+        decryptBuffer = this.removePadding(decryptBuffer)
+      }
+      buffer.set(decryptBuffer)
+      return decryptBuffer.length
     }
-
-    buffer.set(decryptBuffer)
-
-    return decryptBuffer.length
+    else {
+      const length = this.ended ? this.remainingLength() : Math.min(
+        Math.floor(this.remainingLength() / BLOCK_SIZE) * BLOCK_SIZE,
+        buffer.length
+      )
+      let decryptBuffer = await this.decryptCTR(length)
+      buffer.set(decryptBuffer)
+      return decryptBuffer.length
+    }
   }
 }

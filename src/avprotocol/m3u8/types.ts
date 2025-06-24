@@ -173,18 +173,21 @@ class MediaInitializationSection {
   uri: string
   mimeType?: string
   byterange?: Byterange
+  key?: Key
 
   constructor({
     hint = false,
     // required
     uri,
     mimeType,
-    byterange
+    byterange,
+    key
   }: Partial<MediaInitializationSection> & {uri: string}) {
     this.hint = hint
     this.uri = uri
     this.mimeType = mimeType
     this.byterange = byterange
+    this.key = key
   }
 }
 
