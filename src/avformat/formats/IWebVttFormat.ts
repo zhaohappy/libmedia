@@ -30,7 +30,7 @@ import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
+import { AVFormat, AVSeekFlags, IOFlags } from 'avutil/avformat'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData, addAVPacketSideData } from 'avutil/util/avpacket'
@@ -38,9 +38,9 @@ import { IOError } from 'common/io/error'
 import * as array from 'common/util/array'
 import * as text from 'common/util/text'
 import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
-import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 import { AVStreamMetadataKey } from 'avutil/AVStream'
-
+import { avRescaleQ } from 'avutil/util/rational'
 
 export default class IWebVttFormat extends IFormat {
 
@@ -55,6 +55,7 @@ export default class IWebVttFormat extends IFormat {
     pos: int64
   }[]
   private index: int32
+  private baseTs: int64
 
   constructor() {
     super()
@@ -62,6 +63,7 @@ export default class IWebVttFormat extends IFormat {
 
   public init(formatContext: AVIFormatContext): void {
     this.queue = []
+    this.baseTs = 0n
   }
 
   private async readChunk(formatContext: AVIFormatContext) {
@@ -69,12 +71,89 @@ export default class IWebVttFormat extends IFormat {
     const pos = formatContext.ioReader.getPos()
     while (true) {
       const line = await formatContext.ioReader.readLine()
-      if (line === '') {
+      if (line === '' || line === 'WEBVTT') {
         break
       }
       chunk += line + '\n'
     }
     return { chunk: chunk.trim(), pos }
+  }
+
+  private async readCue(formatContext: AVIFormatContext, styles: { style: string, pos: int64 }[]) {
+    while (true) {
+      const { chunk, pos } = await this.readChunk(formatContext)
+
+      if (chunk === '' || /^NOTE/.test(chunk) || chunk === 'WEBVTT') {
+        continue
+      }
+
+      if (/^STYLE/.test(chunk)) {
+        styles.push({
+          style: chunk.replace(/STYLE[\s|\n]?/, ''),
+          pos
+        })
+        continue
+      }
+      if (/^X-TIMESTAMP-MAP/.test(chunk)) {
+        const value = chunk.split('=')[1]
+        const items = value.split(',')
+        let local = 0n
+        let ts = 0n
+        items.forEach((t) => {
+          const l = t.split(':')
+          if (l[0] === 'LOCAL') {
+            l.shift()
+            local = hhColonDDColonSSDotMill2Int64(l.join(':').trim())
+          }
+          else if (l[0] === 'MPEGTS') {
+            ts = BigInt(+l[1]) * 1000n / 90000n
+          }
+        })
+        this.baseTs = ts - local
+        continue
+      }
+
+      const lines = chunk.split('\n')
+
+      let identifier: string
+      let options: string
+
+      // identifier
+      if (lines[0].indexOf('-->') === -1) {
+        identifier = lines.shift().trim()
+      }
+
+      let times = lines.shift().split('-->')
+      const startTs = hhColonDDColonSSDotMill2Int64(times.shift()) + this.baseTs
+
+      times = times.shift().trim().split(' ')
+
+      const endTs = hhColonDDColonSSDotMill2Int64(times.shift()) + this.baseTs
+
+      if (endTs <= startTs) {
+        continue
+      }
+
+      times = times.filter((t) => t !== '')
+
+      if (times.length) {
+        options = times.join(' ')
+      }
+
+      const context = lines.join('\n').trim()
+
+      if (!context) {
+        continue
+      }
+      return {
+        identifier,
+        options,
+        context,
+        startTs,
+        endTs,
+        pos
+      }
+    }
   }
 
   public async readHeader(formatContext: AVIFormatContext): Promise<number> {
@@ -110,67 +189,13 @@ export default class IWebVttFormat extends IFormat {
 
     try {
       while (true) {
-        const { chunk, pos } = await this.readChunk(formatContext)
-
-        if (chunk === '' || /^NOTE/.test(chunk)) {
-          continue
-        }
-
-        if (/^STYLE/.test(chunk)) {
-          styles.push({
-            style: chunk.replace(/STYLE[\s|\n]?/, ''),
-            pos
-          })
-        }
-
-        const lines = chunk.split('\n')
-
-        let identifier: string
-        let options: string
-
-        // identifier
-        if (lines[0].indexOf('-->') === -1) {
-          identifier = lines.shift().trim()
-        }
-
-        let times = lines.shift().split('-->')
-        const startTs = hhColonDDColonSSDotMill2Int64(times.shift())
-
-        times = times.shift().trim().split(' ')
-
-        const endTs = hhColonDDColonSSDotMill2Int64(times.shift())
-
-        if (endTs <= startTs) {
-          continue
-        }
-
-        times = times.filter((t) => t !== '')
-
-        if (times.length) {
-          options = times.join(' ')
-        }
-
-        const context = lines.join('\n').trim()
-
-        if (!context) {
-          continue
-        }
-
+        const cue = await this.readCue(formatContext, styles)
         stream.nbFrames++
-        stream.duration = endTs
+        stream.duration = cue.endTs
 
-        const cue = {
-          identifier,
-          options,
-          context,
-          startTs,
-          endTs,
-          pos
-        }
-
-        if (startTs >= lastStartTs) {
+        if (cue.startTs >= lastStartTs) {
           this.queue.push(cue)
-          lastStartTs = startTs
+          lastStartTs = cue.startTs
         }
         else {
           array.sortInsert(
@@ -186,29 +211,57 @@ export default class IWebVttFormat extends IFormat {
             }
           )
         }
+        if (formatContext.ioReader.flags & IOFlags.SLICE) {
+          break
+        }
       }
     }
-    catch (error) {
-
-      stream.metadata[AVStreamMetadataKey.STYLES] = styles
-
-      return 0
-    }
-
+    catch (error) {}
+    stream.metadata[AVStreamMetadataKey.STYLES] = styles
+    return 0
   }
 
   public async readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
 
-    if (!this.queue.length) {
-      return errorType.DATA_INVALID
-    }
-    if (this.index >= this.queue.length) {
-      return IOError.END
-    }
-
     const stream = formatContext.streams.find((stream) => {
       return stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE
     })
+
+    if (formatContext.ioReader.flags & IOFlags.SLICE) {
+      if (this.index >= this.queue.length) {
+        try {
+          const cue = await this.readCue(formatContext, stream.metadata[AVStreamMetadataKey.STYLES])
+          if (this.queue.length) {
+            const last = this.queue[this.queue.length - 1]
+            // hls 的 字幕可能会重复
+            if (last.startTs === cue.startTs
+              && last.endTs === cue.endTs
+              && last.context === cue.context
+            ) {
+              return this.readAVPacket(formatContext, avpacket)
+            }
+          }
+          this.queue.push(cue)
+          stream.nbFrames++
+          stream.duration = cue.endTs
+        }
+        catch (error) {
+          if (formatContext.ioReader.error !== IOError.END) {
+            logger.error(`read cue error, ${error}`)
+            return errorType.DATA_INVALID
+          }
+          return formatContext.ioReader.error
+        }
+      }
+    }
+    else {
+      if (!this.queue.length) {
+        return errorType.DATA_INVALID
+      }
+      if (this.index >= this.queue.length) {
+        return IOError.END
+      }
+    }
 
     const cue = this.queue[this.index++]
 
@@ -242,6 +295,13 @@ export default class IWebVttFormat extends IFormat {
   public async seek(formatContext: AVIFormatContext, stream: AVStream, timestamp: int64, flags: int32): Promise<int64> {
     if (flags & AVSeekFlags.BYTE) {
       return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
+    }
+    if (flags & AVSeekFlags.TIMESTAMP && (formatContext.ioReader.flags & IOFlags.SLICE)) {
+      const seekTime = avRescaleQ(timestamp, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+      await formatContext.ioReader.seek(seekTime, true)
+      this.queue.length = 0
+      this.index = 0
+      return 0n
     }
     if (timestamp <= 0n) {
       this.index = 0

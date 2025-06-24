@@ -132,6 +132,26 @@ export async function parse(ioReader: IOReader, len: int32, id3v2: ID3V2, metada
       const buffer = await ioReader.readBuffer(size - 4)
       metadata.comment = `${language} ${decodeString(encoding, buffer)}`
     }
+    else if (type === 'PRIV') {
+      const pos = ioReader.getPos()
+      const items = []
+      while (true) {
+        const c = await ioReader.readUint8()
+        if (c === 0) {
+          break
+        }
+        items.push(c)
+      }
+      const identifier = text.decode(new Uint8Array(items))
+      let value: any
+      if (identifier === 'com.apple.streaming.transportStreamTimestamp') {
+        value = await ioReader.readUint64()
+      }
+      else {
+        value = await ioReader.readBuffer(size - Number(ioReader.getPos() - pos))
+      }
+      metadata[identifier] = value
+    }
     else {
       let content: string
       if (type[0] === 'T') {

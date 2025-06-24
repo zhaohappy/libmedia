@@ -30,7 +30,7 @@ import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
+import { AVFormat, AVSeekFlags, IOFlags } from 'avutil/avformat'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData } from 'avutil/util/avpacket'
@@ -41,6 +41,7 @@ import * as array from 'common/util/array'
 import { avCodecParameters2Extradata, parseLATMHeader, parseADTSHeader } from 'avutil/codecs/aac'
 import * as is from 'common/util/is'
 import LATM2RawFilter from '../bsf/aac/LATM2RawFilter'
+import * as id3v2 from './mp3/id3v2'
 
 const enum FrameType {
   ADIF,
@@ -100,7 +101,38 @@ export default class IAacFormat extends IFormat {
     return duration
   }
 
+  private async parseTransportStreamTimestamp(formatContext: AVIFormatContext) {
+    const hasID3 = (await formatContext.ioReader.peekString(3)) === 'ID3'
+    if (hasID3) {
+      await formatContext.ioReader.skip(3)
+
+      const id3v2Context = {
+        version: await formatContext.ioReader.readUint8(),
+        revision: await formatContext.ioReader.readUint8(),
+        flags: await formatContext.ioReader.readUint8()
+      }
+      const metadata = {}
+
+      const len = (((await formatContext.ioReader.readUint8()) & 0x7F) << 21)
+        | (((await formatContext.ioReader.readUint8()) & 0x7F) << 14)
+        | (((await formatContext.ioReader.readUint8()) & 0x7F) << 7)
+        | ((await formatContext.ioReader.readUint8()) & 0x7F)
+
+      await id3v2.parse(formatContext.ioReader, len, id3v2Context, metadata)
+
+      if (is.bigint(metadata['com.apple.streaming.transportStreamTimestamp'])) {
+        return metadata['com.apple.streaming.transportStreamTimestamp']
+      }
+    }
+  }
+
   public async readHeader(formatContext: AVIFormatContext): Promise<number> {
+
+    let transportStreamTimestamp: int64
+    if (formatContext.ioReader.flags & IOFlags.SLICE) {
+      transportStreamTimestamp = await this.parseTransportStreamTimestamp(formatContext)
+    }
+
     const signature = await formatContext.ioReader.peekBuffer(4)
 
     this.fileSize = await formatContext.ioReader.fileSize()
@@ -139,11 +171,25 @@ export default class IAacFormat extends IFormat {
       stream.timeBase.den = stream.codecpar.sampleRate
       stream.timeBase.num = 1
 
-      stream.duration = avRescaleQ(
-        static_cast<int64>((await this.estimateTotalBlock(formatContext)) * 1024 / this.encodeSampleRate * AV_TIME_BASE),
-        AV_TIME_BASE_Q,
-        stream.timeBase
-      )
+      if (!(formatContext.ioReader.flags & IOFlags.SLICE)) {
+        stream.duration = avRescaleQ(
+          static_cast<int64>((await this.estimateTotalBlock(formatContext)) * 1024 / this.encodeSampleRate * AV_TIME_BASE),
+          AV_TIME_BASE_Q,
+          stream.timeBase
+        )
+      }
+      else {
+        if (is.bigint(transportStreamTimestamp)) {
+          this.currentPts = avRescaleQ(
+            transportStreamTimestamp,
+            {
+              num: 1,
+              den: 90000
+            },
+            stream.timeBase
+          )
+        }
+      }
     }
     // LATM
     else if (signature[0] === 0x56 && (signature[1] & 0xe0) === 0xe0) {
@@ -189,6 +235,21 @@ export default class IAacFormat extends IFormat {
     })
 
     try {
+
+      if (formatContext.ioReader.flags & IOFlags.SLICE) {
+        let transportStreamTimestamp = await this.parseTransportStreamTimestamp(formatContext)
+        if (is.bigint(transportStreamTimestamp)) {
+          this.currentPts = avRescaleQ(
+            transportStreamTimestamp,
+            {
+              num: 1,
+              den: 90000
+            },
+            stream.timeBase
+          )
+        }
+      }
+
       const now = formatContext.ioReader.getPos()
       let nextFrame: Uint8Array
 
@@ -333,6 +394,14 @@ export default class IAacFormat extends IFormat {
   }
 
   public async seek(formatContext: AVIFormatContext, stream: AVStream, timestamp: int64, flags: int32): Promise<int64> {
+
+    if (flags & AVSeekFlags.TIMESTAMP && (formatContext.ioReader.flags & IOFlags.SLICE)) {
+      const seekTime = avRescaleQ(timestamp, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+      await formatContext.ioReader.seek(seekTime, true)
+      this.currentPts = timestamp
+      return 0n
+    }
+
     if (this.frameType === FrameType.ADTS) {
       const now = formatContext.ioReader.getPos()
       if (flags & AVSeekFlags.BYTE) {
