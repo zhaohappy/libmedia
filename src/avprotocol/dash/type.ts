@@ -31,6 +31,7 @@ export interface Segment {
   end: number
   url: string
   segmentDuration: number
+  pending: boolean
 }
 
 export interface Protection {
@@ -75,6 +76,8 @@ export interface MPDMediaList {
   minBufferTime: number
   maxSegmentDuration: number
   minimumUpdatePeriod: number
+  availabilityStartTime?: number
+  timeShiftBufferDepth?: number
   timestamp: number
 }
 
@@ -94,7 +97,8 @@ export interface SegmentTemplate {
   startNumber?: string
   timescale?: string
   duration?: string
-
+  presentationTimeOffset?: string
+  availabilityTimeComplete?: string
   SegmentTimeline: SegmentTimeline
 }
 
@@ -152,7 +156,8 @@ export interface AdaptationSet {
   par?: string
   segmentAlignment: string
   startWithSAP: string
-  BaseURL?: string
+  BaseURL?: string | { value: string }
+  duration?: string
 
   Representation: Representation | Representation[]
   SegmentTemplate?: SegmentTemplate | SegmentTemplate[]
@@ -172,9 +177,17 @@ export interface MPD {
   ProgramInformation: string
   maxSegmentDuration: string
   mediaPresentationDuration: string
+  availabilityStartTime?: string
+  timeShiftBufferDepth?: string
   minBufferTime: string
   minimumUpdatePeriod?: string
+  publishTime?: string
   ServiceDescription?: {id: string}[]
   Period: Period | Period[]
-  BaseURL?: string | { value: string }
+  BaseURL?: string | { value: string } | {
+    value: string
+    serviceLocation?: string
+    'dvb:priority'?: string
+    'dvb:weight'?: string
+  }[]
 }

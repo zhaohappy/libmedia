@@ -23,23 +23,18 @@ function parseMPD(xmlString: string) {
 }
 
 function durationConvert(value: string) {
-  let Hours = 0
-  let Minutes = 0
-  let Seconds = 0
-  value = value.slice(value.indexOf('PT') + 2)
-  if (value.indexOf('H') > -1 && value.indexOf('M') > -1 && value.indexOf('S') > -1) {
-    Hours = parseFloat(value.slice(0, value.indexOf('H')))
-    Minutes = parseFloat(value.slice(value.indexOf('H') + 1, value.indexOf('M')))
-    Seconds = parseFloat(value.slice(value.indexOf('M') + 1, value.indexOf('S')))
+  const regex = /^PT?(?:(\d+)D)?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/
+  const match = value.match(regex)
+  if (!match) {
+    throw new Error('Invalid DASH PT duration: ' + value)
   }
-  else if (value.indexOf('H') < 0 && value.indexOf('M') > 0 && value.indexOf('S') > -1) {
-    Minutes = parseFloat(value.slice(0, value.indexOf('M')))
-    Seconds = parseFloat(value.slice(value.indexOf('M') + 1, value.indexOf('S')))
-  }
-  else if (value.indexOf('H') < 0 && value.indexOf('M') < 0 && value.indexOf('S') > -1) {
-    Seconds = parseFloat(value.slice(0, value.indexOf('S')))
-  }
-  return Hours * 3600 + Minutes * 60 + Seconds
+  const [, day, hours, minutes, seconds] = match
+  return (
+    (parseInt(day || '0') * 3600 * 24) +
+    (parseInt(hours || '0') * 3600) +
+    (parseInt(minutes || '0') * 60) +
+    parseFloat(seconds || '0')
+  )
 }
 
 function preFixInteger(num: number, n: number) {
@@ -93,6 +88,13 @@ function parseProtection(protection: Data[]) {
   return result
 }
 
+function joinPath(base: string, path: string) {
+  if (/^https?:\/\//.test(path)) {
+    return path
+  }
+  return base + path
+}
+
 export default function parser(xml: string, url: string) {
   const list: MPDMediaList = {
     source: xml,
@@ -107,6 +109,7 @@ export default function parser(xml: string, url: string) {
     minBufferTime: 0,
     maxSegmentDuration: 0,
     minimumUpdatePeriod: 0,
+    timeShiftBufferDepth: 0,
     timestamp: getTimestamp()
   }
 
@@ -127,15 +130,21 @@ export default function parser(xml: string, url: string) {
   if (result.minimumUpdatePeriod) {
     list.minimumUpdatePeriod = durationConvert(result.minimumUpdatePeriod)
   }
+  if (result.availabilityStartTime) {
+    list.availabilityStartTime = new Date(result.availabilityStartTime).getTime()
+  }
+  if (result.timeShiftBufferDepth) {
+    list.timeShiftBufferDepth = durationConvert(result.timeShiftBufferDepth)
+  }
   if (result.mediaPresentationDuration) {
     list.duration = durationConvert(result.mediaPresentationDuration)
   }
   let MpdBaseURL = ''
   if (result.BaseURL) {
-    MpdBaseURL = is.string(result.BaseURL) ? result.BaseURL : result.BaseURL.value
+    MpdBaseURL = is.array(result.BaseURL) ? result.BaseURL[0].value : (is.string(result.BaseURL) ? result.BaseURL : result.BaseURL.value)
   }
   const Period = is.array(result.Period) ? result.Period[0] : result.Period
-  if (!list.duration && Period && Period.duration) {
+  if (Period?.duration) {
     list.duration = durationConvert(Period.duration)
   }
 
@@ -157,7 +166,7 @@ export default function parser(xml: string, url: string) {
     let lang = 'und'
     let protection: Protection
     if (asItem.BaseURL) {
-      adaptationSetBaseUrl += asItem.BaseURL
+      adaptationSetBaseUrl = joinPath(adaptationSetBaseUrl, is.string(asItem.BaseURL) ? asItem.BaseURL : asItem.BaseURL.value)
     }
     if (asItem.lang) {
       lang = asItem.lang
@@ -215,8 +224,8 @@ export default function parser(xml: string, url: string) {
       let initSegment = ''
       const mediaSegments = []
       let timescale = 0
-      let duration = 0
-      let baseURL = url.slice(0, url.lastIndexOf('/') + 1) + adaptationSetBaseUrl
+      let duration = list.duration
+      let baseURL = joinPath(url.slice(0, url.lastIndexOf('/') + 1), adaptationSetBaseUrl)
       if (rItem.mimeType) {
         mimeType = rItem.mimeType
       }
@@ -261,7 +270,7 @@ export default function parser(xml: string, url: string) {
         }
       }
       if (rItem.BaseURL) {
-        baseURL += is.string(rItem.BaseURL) ? rItem.BaseURL : rItem.BaseURL.value
+        baseURL = joinPath(baseURL, is.string(rItem.BaseURL) ? rItem.BaseURL : rItem.BaseURL.value)
       }
       if (rItem.ContentProtection) {
         protection = parseProtection(rItem.ContentProtection)
@@ -325,18 +334,33 @@ export default function parser(xml: string, url: string) {
         }
 
         if (ST) {
-          const start = parseInt(ST.startNumber)
+          let start = ST.startNumber ? parseInt(ST.startNumber) : 1
           initSegment = ST.initialization
           timescale = parseFloat(ST.timescale || '1')
 
           if (ST.duration && !ST.SegmentTimeline) {
             duration = parseFloat(ST.duration)
             let segmentDuration = duration / timescale
-            const end = start + Math.ceil((list.duration || segmentDuration) / segmentDuration) - 1
+            let end = start + Math.ceil((list.duration || segmentDuration) / segmentDuration) - 1
+            let generateIndex = 0
+            if (list.type === 'live' && (is.number(list.availabilityStartTime) || ST.presentationTimeOffset)) {
+              const now = list.timestamp || getTimestamp()
+              const startTs = list.availabilityStartTime
+              const elapsed = ((now - startTs) / 1000) - (ST.presentationTimeOffset ? parseInt(ST.presentationTimeOffset) : 0)
+              const segmentOffset = Math.floor(elapsed / segmentDuration)
+              end = start + segmentOffset
+              if (list.timeShiftBufferDepth) {
+                start = end - Math.ceil(list.timeShiftBufferDepth / segmentDuration) + 1
+              }
+              generateIndex = end
+              if (ST.availabilityTimeComplete === 'false') {
+                end += Math.ceil(list.minimumUpdatePeriod / segmentDuration)
+              }
+            }
             for (let i = start; i <= end; i++) {
               const startTime = segmentDuration * (i - start)
               let endTime = segmentDuration * (i - start + 1)
-              if (i === end) {
+              if (i === end && list.duration) {
                 segmentDuration = list.duration - segmentDuration * (end - start)
                 endTime = list.duration
               }
@@ -350,7 +374,8 @@ export default function parser(xml: string, url: string) {
                   }
                   return toString(i)
                 }),
-                segmentDuration
+                segmentDuration,
+                pending: i <= generateIndex
               })
             }
           }
@@ -366,7 +391,13 @@ export default function parser(xml: string, url: string) {
 
               let r = 1
               if (S[i].r) {
-                r = parseInt(S[i].r) + 1
+                r = parseInt(S[i].r)
+                if (r === -1 && duration) {
+                  r = Math.ceil(duration * timescale / d)
+                }
+                else {
+                  r += 1
+                }
               }
               for (let j = 0; j < r; j++) {
                 mediaSegments.push({

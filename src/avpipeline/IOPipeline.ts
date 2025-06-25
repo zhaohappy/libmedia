@@ -387,6 +387,9 @@ export default class IOPipeline extends Pipeline {
         else if (task.type === IOType.HLS) {
           return (task.ioLoader as HlsIOLoader).abortSleep()
         }
+        else if (task.type === IOType.Fetch) {
+          return (task.ioLoader as FetchIOLoader).abortSleep()
+        }
       }
     }
   }

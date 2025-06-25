@@ -232,6 +232,10 @@ export interface AVPlayerOptions {
    */
   loop?: boolean
   /**
+   * 是否开启 jitter buffer
+   */
+  enableJitterBuffer?: boolean
+  /**
    * 是否开启低延时模式（直播）开启之后会根据网络情况自动调整 buffer，尽量在不卡顿的情况下降低延时
    */
   lowLatency?: boolean
@@ -380,6 +384,7 @@ const defaultAVPlayerOptions: Partial<AVPlayerOptions> = {
   enableWorker: true,
   enableWebCodecs: true,
   loop: false,
+  enableJitterBuffer: true,
   jitterBufferMax: 4,
   jitterBufferMin: 1,
   lowLatency: false,
@@ -875,7 +880,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           license = await this.options.drmSystemOptions.onRequest(this.drmSystemKey, event.messageType, event.message, url)
         }
         else if (this.options.drmSystemOptions.requestUrl) {
-          license = await fetch(url, {
+          license = await fetch(this.options.drmSystemOptions.requestUrl, {
             method: this.options.drmSystemOptions?.method ?? 'POST',
             headers: this.options.drmSystemOptions?.header,
             body: event.message
@@ -1693,7 +1698,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
     }
 
-    if (this.isLive_) {
+    if (this.isLive_ && this.options.enableJitterBuffer) {
       const min = Math.max(
         this.source instanceof CustomIOLoader
           ? this.source.minBuffer

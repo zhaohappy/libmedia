@@ -67,6 +67,10 @@ export default class FetchIOLoader extends IOLoader {
 
   private supportRange: boolean
 
+  private abortSleep_: Sleep
+
+  private aborted: boolean
+
   constructor(options: FetchIOLoaderOptions = {}) {
     super(options)
   }
@@ -238,8 +242,12 @@ export default class FetchIOLoader extends IOLoader {
         this.retryCount++
         this.status = IOLoaderStatus.CONNECTING
 
-        await new Sleep(this.options.retryInterval)
-
+        this.abortSleep_ = new Sleep(this.options.retryInterval)
+        await this.abortSleep_
+        this.abortSleep_ = null
+        if (this.aborted) {
+          return
+        }
         return this.openReader()
       }
       else {
@@ -275,6 +283,9 @@ export default class FetchIOLoader extends IOLoader {
 
     if (!this.reader) {
       await this.openReader()
+      if (this.aborted) {
+        return IOError.END
+      }
     }
 
     const { value, done } = await this.reader.read()
@@ -354,7 +365,16 @@ export default class FetchIOLoader extends IOLoader {
     return static_cast<int64>(this.contentLength || 0)
   }
 
+  public abortSleep() {
+    this.aborted = true
+    if (this.abortSleep_) {
+      this.abortSleep_.stop()
+      this.abortSleep_ = null
+    }
+  }
+
   public async abort() {
+    this.abortSleep()
     if (!this.reader) {
       return
     }

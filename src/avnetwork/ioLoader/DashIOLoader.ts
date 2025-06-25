@@ -34,13 +34,13 @@ import * as logger from 'common/util/logger'
 
 import dashParser from 'avprotocol/dash/parser'
 import FetchIOLoader, { FetchInfo } from './FetchIOLoader'
-import { MPDMediaList } from 'avprotocol/dash/type'
+import { MPDMediaList, Segment } from 'avprotocol/dash/type'
 import getTimestamp from 'common/function/getTimestamp'
 import * as errorType from 'avutil/error'
 import { Data } from 'common/types/type'
 import { AVMediaType } from 'avutil/codec'
 
-const FETCHED_HISTORY_LIST_MAX = 10
+const FETCHED_HISTORY_LIST_MAX = 100
 
 interface Resource {
   type: AVMediaType
@@ -125,28 +125,29 @@ export default class DashIOLoader extends IOLoader {
       this.mediaPlayList = dashParser(text, this.info.url)
       this.minBuffer = this.mediaPlayList.minBufferTime
 
-      if (this.options.isLive) {
-        const needSegment = this.mediaPlayList.minBufferTime / this.mediaPlayList.maxSegmentDuration
-        const segmentCount = Math.max(
-          this.mediaPlayList.mediaList.audio && this.mediaPlayList.mediaList.audio[0]?.mediaSegments.length || 0,
-          this.mediaPlayList.mediaList.video && this.mediaPlayList.mediaList.video[0]?.mediaSegments.length || 0
-        )
-        if (segmentCount < needSegment) {
-          await new Sleep((needSegment - segmentCount) * this.mediaPlayList.maxSegmentDuration)
-
-          logger.warn(`wait for min buffer time, buffer: ${segmentCount * this.mediaPlayList.maxSegmentDuration}, need: ${
-            needSegment *  this.mediaPlayList.maxSegmentDuration
-          }`)
-
-          return this.fetchMediaPlayList(resolve)
-        }
-      }
-
       if (this.mediaPlayList.type === 'vod') {
         this.options.isLive = false
       }
       else {
         this.options.isLive = true
+      }
+
+      function addIgnoreSegment(resource: Resource, segments: Segment[], minBuffer: number) {
+        let index = 0
+        let cache = 0
+        for (let i = segments.length - 1; i >= 0; i--) {
+          if (segments[i].pending !== false) {
+            cache += segments[i].segmentDuration
+            if (cache >= minBuffer) {
+              index = i
+              break
+            }
+          }
+        }
+        for (let i = 0; i < index; i++) {
+          resource.fetchedMap.set(segments[i].url, true)
+          resource.fetchedHistoryList.push(segments[i].url)
+        }
       }
 
       if (this.mediaPlayList.mediaList.audio.length) {
@@ -159,6 +160,9 @@ export default class DashIOLoader extends IOLoader {
             this.audioResource.segments = media.mediaSegments.map((s) => s.url)
           }
           else {
+            if (this.options.isLive) {
+              addIgnoreSegment(this.audioResource, media.mediaSegments, this.minBuffer + this.mediaPlayList.minimumUpdatePeriod)
+            }
             this.audioResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
             this.audioResource.initedSegment = media.initSegment
           }
@@ -174,6 +178,9 @@ export default class DashIOLoader extends IOLoader {
             this.videoResource.segments = media.mediaSegments.map((s) => s.url)
           }
           else {
+            if (this.options.isLive) {
+              addIgnoreSegment(this.videoResource, media.mediaSegments, this.minBuffer + this.mediaPlayList.minimumUpdatePeriod)
+            }
             this.videoResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
             this.videoResource.initedSegment = media.initSegment
           }
@@ -189,6 +196,9 @@ export default class DashIOLoader extends IOLoader {
             this.subtitleResource.segments = media.mediaSegments.map((s) => s.url)
           }
           else {
+            if (this.options.isLive) {
+              addIgnoreSegment(this.subtitleResource, media.mediaSegments, this.minBuffer + this.mediaPlayList.minimumUpdatePeriod)
+            }
             this.subtitleResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
             this.subtitleResource.initedSegment = media.initSegment
           }
@@ -206,7 +216,7 @@ export default class DashIOLoader extends IOLoader {
       if (this.retryCount < this.options.retryCount) {
         this.retryCount++
 
-        logger.error(`failed fetch mpd file, retry(${this.retryCount}/3)`)
+        logger.error(`failed fetch mpd file ${error}, retry(${this.retryCount}/3)`)
 
         await new Sleep(this.status === IOLoaderStatus.BUFFERING ? this.options.retryInterval : 5)
         return this.fetchMediaPlayList(resolve)
@@ -282,7 +292,7 @@ export default class DashIOLoader extends IOLoader {
         const wait = ((this.mediaPlayList.duration || this.mediaPlayList.minimumUpdatePeriod)
           - (getTimestamp() - this.mediaPlayList.timestamp) / 1000)
         if (wait > 0) {
-          resource.sleep = new Sleep(Math.max(wait, 2))
+          resource.sleep = new Sleep(wait)
           await resource.sleep
           resource.sleep = null
           if (resource.aborted) {
@@ -433,25 +443,28 @@ export default class DashIOLoader extends IOLoader {
 
   public abortSleep() {
     if (this.videoResource.loader) {
-      if (this.videoResource.sleep) {
-        this.videoResource.aborted = true
-        this.videoResource.sleep.stop()
-        this.videoResource.sleep = null
-      }
+      this.videoResource.loader.abortSleep()
+    }
+    if (this.videoResource.sleep) {
+      this.videoResource.aborted = true
+      this.videoResource.sleep.stop()
+      this.videoResource.sleep = null
     }
     if (this.audioResource.loader) {
-      if (this.audioResource.sleep) {
-        this.audioResource.aborted = true
-        this.audioResource.sleep.stop()
-        this.audioResource.sleep = null
-      }
+      this.audioResource.loader.abortSleep()
+    }
+    if (this.audioResource.sleep) {
+      this.audioResource.aborted = true
+      this.audioResource.sleep.stop()
+      this.audioResource.sleep = null
     }
     if (this.subtitleResource.loader) {
-      if (this.subtitleResource.sleep) {
-        this.subtitleResource.aborted = true
-        this.subtitleResource.sleep.stop()
-        this.subtitleResource.sleep = null
-      }
+      this.subtitleResource.loader.abortSleep()
+    }
+    if (this.subtitleResource.sleep) {
+      this.subtitleResource.aborted = true
+      this.subtitleResource.sleep.stop()
+      this.subtitleResource.sleep = null
     }
   }
 

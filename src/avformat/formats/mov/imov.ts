@@ -377,7 +377,7 @@ export async function readMoof(
       if (stream) {
         const streamContext = stream.privData as MOVStreamContext
         track.streamIndex = stream.index
-        buildFragmentIndex(stream, track, movContext, formatContext.ioReader.flags)
+        buildFragmentIndex(stream, track, movContext, formatContext.ioReader.getPos(), formatContext.ioReader.flags)
         streamContext.currentSample = 0
         streamContext.sampleEnd = false
       }

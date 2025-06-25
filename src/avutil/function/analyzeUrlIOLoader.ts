@@ -29,6 +29,9 @@ import { Data, HttpOptions } from 'common/types/type'
 import * as object from 'common/util/object'
 import * as text from 'common/util/text'
 import * as urlUtils from 'common/util/url'
+import * as array from 'common/util/array'
+
+const RestExt = ['php', 'asp', 'aspx', 'jsp', 'do', 'pl']
 
 async function analyzeUrlFileExt(url: string, httpOptions: HttpOptions = {}) {
   const params: RequestInit = {
@@ -129,7 +132,7 @@ export default async function analyzeUrlIOLoader(source: string, defaultExt: str
     ext = defaultExt || urlUtils.parse(source).file.split('.').pop()
     // 没有文件后缀，我们需要分析是不是 m3u8 和 mpd 文件
     // 这两种格式需要提前知道来创建指定的 ioloader
-    if (!ext && /^https?/.test(protocol)) {
+    if ((!ext || array.has(RestExt, ext)) && /^https?/.test(protocol)) {
       ext = await analyzeUrlFileExt(source, httpOptions)
     }
 

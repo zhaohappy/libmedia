@@ -4,16 +4,20 @@ import * as is from 'common/util/is'
 import * as array from 'common/util/array'
 import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
 
+interface Span {
+  context: string | (string | { tagName: string, context?: string } )[]
+  region?: string
+  begin: string
+  end?: string
+}
+
 interface P {
   begin: string
   end?: string
   dur?: string
   context: string | (string | { tagName: string, context?: string } )[]
   region?: string
-  span?: {
-    context: string | (string | { tagName: string, context?: string } )[]
-    region?: string
-  }
+  span?: Span | Span[]
 }
 
 export function parse(text: string) {
@@ -53,8 +57,31 @@ export function parse(text: string) {
     return context
   }
 
+  function addSpan(span: Span, context: string, region: string, pts: int64, end: string, p: P) {
+    if (span?.context) {
+      if (pts === -1n && span.begin) {
+        pts = hhColonDDColonSSDotMill2Int64(span.begin)
+      }
+      if (span.region) {
+        region = span.region
+      }
+      if (is.string(span.context)) {
+        context += span.context
+      }
+      else {
+        context += formatContext(span.context)
+      }
+    }
+    queue.push({
+      context,
+      pts,
+      region: region,
+      duration: p.dur ? hhColonDDColonSSDotMill2Int64(p.dur) : (hhColonDDColonSSDotMill2Int64(end || p.end || span.end) - pts)
+    })
+  }
+
   function add(p: P, start: string, end: string) {
-    const pts = hhColonDDColonSSDotMill2Int64(start || p.begin)
+    let pts = hhColonDDColonSSDotMill2Int64(start || p.begin)
 
     let context = p.context || ''
     let region = p.region || 'Default'
@@ -62,23 +89,22 @@ export function parse(text: string) {
     if (is.array(context)) {
       context = formatContext(context)
     }
-    if (p.span?.context) {
-      if (p.span.region) {
-        region = p.span.region
-      }
-      if (is.string(p.span.context)) {
-        context += p.span.context
-      }
-      else {
-        context += formatContext(p.span.context)
-      }
+    if (is.array(p.span)) {
+      array.each(p.span, (span) => {
+        addSpan(span, context, region, pts, end, p)
+      })
     }
-    queue.push({
-      context,
-      pts,
-      region: region,
-      duration: p.dur ? hhColonDDColonSSDotMill2Int64(p.dur) : (hhColonDDColonSSDotMill2Int64(end || p.end) - pts),
-    })
+    else if (p.span) {
+      addSpan(p.span, context, region, pts, end, p)
+    }
+    else {
+      queue.push({
+        context,
+        pts,
+        region: region,
+        duration: p.dur ? hhColonDDColonSSDotMill2Int64(p.dur) : (hhColonDDColonSSDotMill2Int64(end || p.end) - pts)
+      })
+    }
   }
 
   function praseP(p: P | P[], start: string, end: string) {

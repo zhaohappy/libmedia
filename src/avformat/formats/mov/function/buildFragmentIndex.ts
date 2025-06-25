@@ -30,11 +30,12 @@ import { AVPacketFlags } from 'avutil/struct/avpacket'
 import { IOFlags } from 'avutil/avformat'
 
 
-export function buildFragmentIndex(stream: Stream, track: FragmentTrack, movContext: MOVContext, ioFlag: int32 = 0) {
+export function buildFragmentIndex(stream: Stream, track: FragmentTrack, movContext: MOVContext, pos: int64, ioFlag: int32 = 0) {
   const context = stream.privData as MOVStreamContext
 
   let currentOffset = track.baseDataOffset + static_cast<int64>(track.dataOffset)
-  if (track.baseIsMoof) {
+  // 不是 baseIsMoof 但 currentOffset 小于当前的 pos，说明 baseIsMoof 可能错误，这里纠正一下
+  if (track.baseIsMoof || currentOffset < pos) {
     currentOffset += movContext.currentFragment.pos
   }
   let currentDts = track.baseMediaDecodeTime
