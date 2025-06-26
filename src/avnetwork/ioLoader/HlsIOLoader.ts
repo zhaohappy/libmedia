@@ -746,7 +746,8 @@ export default class HlsIOLoader extends IOLoader {
           width: variant.resolution?.width ?? 0,
           height: variant.resolution?.height ?? 0,
           frameRate: variant.frameRate ?? 0,
-          codecs: variant.codecs
+          codec: variant.codecs,
+          bandwidth: variant.bandwidth
         }
       }) ?? [],
       selectedIndex: this.mediaPlayListIndex || 0
@@ -760,7 +761,7 @@ export default class HlsIOLoader extends IOLoader {
         list: currentVariant.audio.map((item) => {
           return {
             lang: item.language,
-            codecs: item.name
+            codec: item.name
           }
         }),
         selectedIndex: this.audioSelectedIndex
@@ -779,7 +780,7 @@ export default class HlsIOLoader extends IOLoader {
         list: currentVariant.subtitles.map((item) => {
           return {
             lang: item.language,
-            codecs: item.name
+            codec: item.name
           }
         }),
         selectedIndex: this.subtitleSelectedIndex

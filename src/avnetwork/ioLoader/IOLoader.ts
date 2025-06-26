@@ -40,7 +40,8 @@ export interface IOLoaderVideoStreamInfo {
     width: number
     height: number
     frameRate: number
-    codecs: string
+    codec: string
+    bandwidth?: number
   }[]
   selectedIndex: number
 }
@@ -48,7 +49,8 @@ export interface IOLoaderVideoStreamInfo {
 export interface IOLoaderAudioStreamInfo {
   list: {
     lang: string
-    codecs: string
+    codec: string
+    bandwidth?: number
   }[]
   selectedIndex: number
 }
@@ -56,7 +58,7 @@ export interface IOLoaderAudioStreamInfo {
 export interface IOLoaderSubtitleStreamInfo {
   list: {
     lang: string
-    codecs: string
+    codec: string
   }[]
   selectedIndex: number
 }

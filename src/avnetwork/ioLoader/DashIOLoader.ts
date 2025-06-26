@@ -597,7 +597,8 @@ export default class DashIOLoader extends IOLoader {
             width: media.width,
             height: media.height,
             frameRate: media.frameRate,
-            codecs: media.codecs
+            codec: media.codecs,
+            bandwidth: media.bandwidth
           }
         }),
         selectedIndex: this.videoResource.selectedIndex
@@ -615,7 +616,8 @@ export default class DashIOLoader extends IOLoader {
         list: this.mediaPlayList.mediaList.audio.map((media) => {
           return {
             lang: media.lang,
-            codecs: media.codecs
+            codec: media.codecs,
+            bandwidth: media.bandwidth
           }
         }),
         selectedIndex: this.audioResource.selectedIndex
@@ -633,7 +635,7 @@ export default class DashIOLoader extends IOLoader {
         list: this.mediaPlayList.mediaList.subtitle.map((media) => {
           return {
             lang: media.lang,
-            codecs: media.codecs
+            codec: media.codecs
           }
         }),
         selectedIndex: this.subtitleResource.selectedIndex

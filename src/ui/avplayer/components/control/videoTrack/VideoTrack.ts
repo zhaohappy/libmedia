@@ -41,17 +41,17 @@ const VideoTrack: ComponentOptions = {
       const videoInfo: IOLoaderVideoStreamInfo = this.get('videoInfo')
       if (videoInfo) {
         if (videoInfo.list.length) {
-          const codecs = videoInfo.list[videoInfo.selectedIndex].codecs
+          const codec = videoInfo.list[videoInfo.selectedIndex].codec
           const list = videoInfo.list
             .map((item, index) => {
               return {
                 value: index,
-                name: `${item.width}*${item.height}${item.frameRate ? `@${item.frameRate}` : ''}`,
-                codecs: item.codecs
+                name: `${item.width}*${item.height}${item.frameRate ? `@${item.frameRate}` : ''}${item.bandwidth ? `-${item.bandwidth}` : ''}`,
+                codec: item.codec
               }
             })
             .filter((item) => {
-              return item.codecs.split('.')[0] === codecs.split('.')[0]
+              return item.codec.split('.')[0] === codec.split('.')[0]
             })
           return list
         }

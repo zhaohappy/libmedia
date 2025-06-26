@@ -50,7 +50,7 @@ const SubtitleTrack: ComponentOptions = {
               return {
                 value: index,
                 name: item.lang,
-                codecs: item.codecs
+                codec: item.codec
               }
             })
           return list
