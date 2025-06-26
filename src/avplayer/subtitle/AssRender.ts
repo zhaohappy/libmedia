@@ -304,7 +304,7 @@ export default class AssRender {
   }
 
   public clear(pts: int64) {
-    const now = static_cast<int32>(pts) / 1000
+    const now = static_cast<double>(pts) / 1000
     for (let i = this.store.actives.length - 1; i >= 0; i -= 1) {
       const dia = this.store.actives[i]
       const { end } = dia
