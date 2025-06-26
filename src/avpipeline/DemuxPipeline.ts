@@ -907,11 +907,11 @@ export default class DemuxPipeline extends Pipeline {
         }
       }, 0, 0, true, false)
 
-      if (isLive) {
+      if (isLive && task.cacheAVPackets.size) {
         while (true) {
           let done = false
           task.cacheAVPackets.forEach((list, streamIndex) => {
-            if (list.length > minQueueLength) {
+            if (list.length >= minQueueLength) {
               done = true
             }
           })
