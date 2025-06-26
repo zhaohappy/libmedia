@@ -45,16 +45,20 @@ const FETCHED_HISTORY_LIST_MAX = 100
 interface Resource {
   type: AVMediaType
   fetchedMap: Map<string, boolean>
+  fetchedHistoryListMax: number
   fetchedHistoryList: string[]
   loader: FetchIOLoader
   segmentIndex: number
   currentUri: string
   selectedIndex: number
-  segments: string[]
+  segments: { url: string, pending?: boolean, duration?: number}[]
   initSegmentPadding: string
   initedSegment: string
   aborted: boolean
   sleep: Sleep
+
+  lastPendingSegmentFetchTs: number
+  lastPendingSegmentDuration: number
 }
 
 export default class DashIOLoader extends IOLoader {
@@ -75,6 +79,7 @@ export default class DashIOLoader extends IOLoader {
     return {
       type,
       fetchedMap: new Map(),
+      fetchedHistoryListMax: FETCHED_HISTORY_LIST_MAX,
       fetchedHistoryList: [],
       loader: null,
       segmentIndex: 0,
@@ -84,7 +89,22 @@ export default class DashIOLoader extends IOLoader {
       initSegmentPadding: '',
       initedSegment: '',
       aborted: false,
-      sleep: null
+      sleep: null,
+
+      lastPendingSegmentFetchTs: 0,
+      lastPendingSegmentDuration: 0
+    }
+  }
+
+  private addHistory(resource: Resource, segments: Segment[], index: number) {
+    resource.fetchedMap.clear()
+    resource.fetchedHistoryList.length = 0
+    for (let i = 0; i < index; i++) {
+      resource.fetchedMap.set(segments[i].url, true)
+      resource.fetchedHistoryList.push(segments[i].url)
+    }
+    while (resource.fetchedHistoryList.length >= resource.fetchedHistoryListMax) {
+      resource.fetchedMap.delete(resource.fetchedHistoryList.shift())
     }
   }
 
@@ -132,11 +152,11 @@ export default class DashIOLoader extends IOLoader {
         this.options.isLive = true
       }
 
-      function addIgnoreSegment(resource: Resource, segments: Segment[], minBuffer: number) {
+      const addIgnoreSegment = (resource: Resource, segments: Segment[], minBuffer: number) => {
         let index = 0
         let cache = 0
-        for (let i = segments.length - 1; i >= 0; i--) {
-          if (segments[i].pending !== false) {
+        for (let i = segments.length - 2; i >= 0; i--) {
+          if (segments[i].pending !== true) {
             cache += segments[i].segmentDuration
             if (cache >= minBuffer) {
               index = i
@@ -144,26 +164,42 @@ export default class DashIOLoader extends IOLoader {
             }
           }
         }
-        for (let i = 0; i < index; i++) {
-          resource.fetchedMap.set(segments[i].url, true)
-          resource.fetchedHistoryList.push(segments[i].url)
-        }
+        resource.lastPendingSegmentFetchTs = this.mediaPlayList.maxSegmentDuration
+        resource.lastPendingSegmentDuration = this.mediaPlayList.maxSegmentDuration
+        resource.fetchedHistoryListMax = Math.max(resource.fetchedHistoryListMax, segments.length + 1)
+        this.addHistory(resource, segments, index)
       }
 
       if (this.mediaPlayList.mediaList.audio.length) {
         const media = this.mediaPlayList.mediaList.audio[this.audioResource.selectedIndex]
         if (media.file) {
-          this.audioResource.segments = [media.file]
+          this.audioResource.segments = [{
+            url: media.file
+          }]
         }
         else {
           if (this.options.isLive && this.audioResource.initedSegment === media.initSegment) {
-            this.audioResource.segments = media.mediaSegments.map((s) => s.url)
+            this.audioResource.segments = media.mediaSegments.map((s) => {
+              return {
+                url: s.url,
+                pending: s.pending,
+                duration: s.segmentDuration
+              }
+            })
+            this.audioResource.lastPendingSegmentFetchTs = this.mediaPlayList.timestamp
+            this.audioResource.lastPendingSegmentDuration = this.mediaPlayList.maxSegmentDuration
           }
           else {
             if (this.options.isLive) {
-              addIgnoreSegment(this.audioResource, media.mediaSegments, this.minBuffer + this.mediaPlayList.minimumUpdatePeriod)
+              addIgnoreSegment(this.audioResource, media.mediaSegments, this.minBuffer)
             }
-            this.audioResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
+            this.audioResource.segments = [{url: media.initSegment}].concat(media.mediaSegments.map((s) => {
+              return {
+                url: s.url,
+                pending: s.pending,
+                duration: s.segmentDuration
+              }
+            }))
             this.audioResource.initedSegment = media.initSegment
           }
         }
@@ -171,17 +207,33 @@ export default class DashIOLoader extends IOLoader {
       if (this.mediaPlayList.mediaList.video.length) {
         const media = this.mediaPlayList.mediaList.video[this.videoResource.selectedIndex]
         if (media.file) {
-          this.videoResource.segments = [media.file]
+          this.videoResource.segments = [{
+            url: media.file
+          }]
         }
         else {
           if (this.options.isLive && this.videoResource.initedSegment === media.initSegment) {
-            this.videoResource.segments = media.mediaSegments.map((s) => s.url)
+            this.videoResource.segments = media.mediaSegments.map((s) => {
+              return {
+                url: s.url,
+                pending: s.pending,
+                duration: s.segmentDuration
+              }
+            })
+            this.videoResource.lastPendingSegmentFetchTs = this.mediaPlayList.maxSegmentDuration
+            this.videoResource.lastPendingSegmentDuration = this.mediaPlayList.maxSegmentDuration
           }
           else {
             if (this.options.isLive) {
-              addIgnoreSegment(this.videoResource, media.mediaSegments, this.minBuffer + this.mediaPlayList.minimumUpdatePeriod)
+              addIgnoreSegment(this.videoResource, media.mediaSegments, this.minBuffer)
             }
-            this.videoResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
+            this.videoResource.segments = [{url: media.initSegment}].concat(media.mediaSegments.map((s) => {
+              return {
+                url: s.url,
+                pending: s.pending,
+                duration: s.segmentDuration
+              }
+            }))
             this.videoResource.initedSegment = media.initSegment
           }
         }
@@ -189,17 +241,33 @@ export default class DashIOLoader extends IOLoader {
       if (this.mediaPlayList.mediaList.subtitle.length) {
         const media = this.mediaPlayList.mediaList.subtitle[this.subtitleResource.selectedIndex]
         if (media.file) {
-          this.subtitleResource.segments = [media.file]
+          this.subtitleResource.segments = [{
+            url: media.file
+          }]
         }
         else {
           if (this.options.isLive && this.subtitleResource.initedSegment === media.initSegment) {
-            this.subtitleResource.segments = media.mediaSegments.map((s) => s.url)
+            this.subtitleResource.segments = media.mediaSegments.map((s) => {
+              return {
+                url: s.url,
+                pending: s.pending,
+                duration: s.segmentDuration
+              }
+            })
+            this.subtitleResource.lastPendingSegmentFetchTs = this.mediaPlayList.maxSegmentDuration
+            this.subtitleResource.lastPendingSegmentDuration = this.mediaPlayList.maxSegmentDuration
           }
           else {
             if (this.options.isLive) {
-              addIgnoreSegment(this.subtitleResource, media.mediaSegments, this.minBuffer + this.mediaPlayList.minimumUpdatePeriod)
+              addIgnoreSegment(this.subtitleResource, media.mediaSegments, this.minBuffer)
             }
-            this.subtitleResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
+            this.subtitleResource.segments = [{url: media.initSegment}].concat(media.mediaSegments.map((s) => {
+              return {
+                url: s.url,
+                pending: s.pending,
+                duration: s.segmentDuration
+              }
+            }))
             this.subtitleResource.initedSegment = media.initSegment
           }
         }
@@ -264,7 +332,7 @@ export default class DashIOLoader extends IOLoader {
       else {
         if (this.options.isLive) {
           resource.fetchedMap.set(resource.currentUri, true)
-          if (resource.fetchedHistoryList.length === FETCHED_HISTORY_LIST_MAX) {
+          if (resource.fetchedHistoryList.length === resource.fetchedHistoryListMax) {
             resource.fetchedMap.delete(resource.fetchedHistoryList.shift())
           }
           resource.fetchedHistoryList.push(resource.currentUri)
@@ -280,8 +348,8 @@ export default class DashIOLoader extends IOLoader {
     }
 
     if (this.options.isLive) {
-      const segments = resource.segments.filter((url) => {
-        return !resource.fetchedMap.get(url)
+      const segments = resource.segments.filter((s) => {
+        return !resource.fetchedMap.get(s.url)
       })
 
       if (!segments.length) {
@@ -311,7 +379,23 @@ export default class DashIOLoader extends IOLoader {
         return this.readResource(buffer, resource)
       }
 
-      resource.currentUri = segments[0]
+      resource.currentUri = segments[0].url
+      if (this.options.isLive && segments[0].pending) {
+        if (resource.lastPendingSegmentFetchTs) {
+          const wait = resource.lastPendingSegmentDuration
+            - ((getTimestamp() - resource.lastPendingSegmentFetchTs) / 1000)
+          if (wait > 0) {
+            resource.sleep = new Sleep(wait)
+            await resource.sleep
+            resource.sleep = null
+            if (resource.aborted) {
+              return IOError.END
+            }
+          }
+        }
+        resource.lastPendingSegmentFetchTs = getTimestamp()
+        resource.lastPendingSegmentDuration = segments[0].duration || this.mediaPlayList.maxSegmentDuration
+      }
 
       resource.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
 
@@ -344,7 +428,7 @@ export default class DashIOLoader extends IOLoader {
       else {
         await resource.loader.open(
           object.extend({}, this.info, {
-            url: resource.segments[resource.segmentIndex]
+            url: resource.segments[resource.segmentIndex].url
           }),
           {
             from: 0,
@@ -570,10 +654,28 @@ export default class DashIOLoader extends IOLoader {
       this.videoResource.selectedIndex = index
       const media = this.mediaPlayList.mediaList.video[this.videoResource.selectedIndex]
       if (media.file) {
-        this.videoResource.segments = [media.file]
+        this.videoResource.segments = [{
+          url: media.file
+        }]
       }
       else {
-        this.videoResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
+        if (this.options.isLive) {
+          let segmentIndex = this.videoResource.segmentIndex
+          this.videoResource.segments.find((s, i) => {
+            if (s.url === this.videoResource.currentUri) {
+              segmentIndex = i
+              return true
+            }
+          })
+          this.addHistory(this.videoResource, media.mediaSegments, segmentIndex + 1)
+        }
+        this.videoResource.segments = [{url: media.initSegment}].concat(media.mediaSegments.map((s) => {
+          return {
+            url: s.url,
+            pending: s.pending,
+            duration: s.segmentDuration
+          }
+        }))
         this.videoResource.initSegmentPadding = media.initSegment
       }
     }
@@ -588,10 +690,28 @@ export default class DashIOLoader extends IOLoader {
       this.audioResource.selectedIndex = index
       const media = this.mediaPlayList.mediaList.audio[this.audioResource.selectedIndex]
       if (media.file) {
-        this.audioResource.segments = [media.file]
+        this.audioResource.segments = [{
+          url: media.file
+        }]
       }
       else {
-        this.audioResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
+        if (this.options.isLive) {
+          let segmentIndex = this.audioResource.segmentIndex
+          this.audioResource.segments.find((s, i) => {
+            if (s.url === this.audioResource.currentUri) {
+              segmentIndex = i
+              return true
+            }
+          })
+          this.addHistory(this.audioResource, media.mediaSegments, segmentIndex + 1)
+        }
+        this.audioResource.segments = [{url: media.initSegment}].concat(media.mediaSegments.map((s) => {
+          return {
+            url: s.url,
+            pending: s.pending,
+            duration: s.segmentDuration
+          }
+        }))
         this.audioResource.initSegmentPadding = media.initSegment
       }
     }
@@ -606,10 +726,28 @@ export default class DashIOLoader extends IOLoader {
       this.subtitleResource.selectedIndex = index
       const media = this.mediaPlayList.mediaList.subtitle[this.subtitleResource.selectedIndex]
       if (media.file) {
-        this.subtitleResource.segments = [media.file]
+        this.subtitleResource.segments = [{
+          url: media.file
+        }]
       }
       else {
-        this.subtitleResource.segments = [media.initSegment].concat(media.mediaSegments.map((s) => s.url))
+        if (this.options.isLive) {
+          let segmentIndex = this.subtitleResource.segmentIndex
+          this.subtitleResource.segments.find((s, i) => {
+            if (s.url === this.subtitleResource.currentUri) {
+              segmentIndex = i
+              return true
+            }
+          })
+          this.addHistory(this.subtitleResource, media.mediaSegments, segmentIndex + 1)
+        }
+        this.subtitleResource.segments = [{url: media.initSegment}].concat(media.mediaSegments.map((s) => {
+          return {
+            url: s.url,
+            pending: s.pending,
+            duration: s.segmentDuration
+          }
+        }))
         this.subtitleResource.initSegmentPadding = media.initSegment
       }
     }

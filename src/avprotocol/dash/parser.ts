@@ -4,7 +4,7 @@
  */
 
 import xml2Json from 'common/util/xml2Json'
-import { MPD, MPDMediaList, Protection, SegmentTemplate } from './type'
+import { MPD, MPDMediaList, Period, Protection, SegmentTemplate } from './type'
 import { Data } from 'common/types/type'
 import * as is from 'common/util/is'
 import * as object from 'common/util/object'
@@ -23,13 +23,14 @@ function parseMPD(xmlString: string) {
 }
 
 function durationConvert(value: string) {
-  const regex = /^PT?(?:(\d+)D)?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/
+  const regex = /^PT?(?:(\d+)Y)?(?:(\d+)D)?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/
   const match = value.match(regex)
   if (!match) {
     throw new Error('Invalid DASH PT duration: ' + value)
   }
-  const [, day, hours, minutes, seconds] = match
+  const [, year, day, hours, minutes, seconds] = match
   return (
+    (parseInt(year || '0') * 3600 * 24 * 365) +
     (parseInt(day || '0') * 3600 * 24) +
     (parseInt(hours || '0') * 3600) +
     (parseInt(minutes || '0') * 60) +
@@ -38,7 +39,8 @@ function durationConvert(value: string) {
 }
 
 function preFixInteger(num: number, n: number) {
-  return (Array(n).join('0') + num).slice(-n)
+  const str = toString(num)
+  return str.length >= n ? str : '0'.repeat(n - str.length) + str
 }
 
 function parseRational(value: string) {
@@ -95,9 +97,8 @@ function joinPath(base: string, path: string) {
   return base + path
 }
 
-export default function parser(xml: string, url: string) {
+function parsePeriod(result: MPD, period: Period, url: string) {
   const list: MPDMediaList = {
-    source: xml,
     mediaList: {
       audio: [],
       video: [],
@@ -115,7 +116,6 @@ export default function parser(xml: string, url: string) {
 
   const repID = []
 
-  const result = parseMPD(xml).MPD
   if (result.type === 'static') {
     list.type = 'vod'
     list.isEnd = true
@@ -128,7 +128,7 @@ export default function parser(xml: string, url: string) {
     list.maxSegmentDuration = durationConvert(result.maxSegmentDuration)
   }
   if (result.minimumUpdatePeriod) {
-    list.minimumUpdatePeriod = durationConvert(result.minimumUpdatePeriod)
+    list.minimumUpdatePeriod = Math.min(durationConvert(result.minimumUpdatePeriod), Math.max(list.maxSegmentDuration, 2) * 30)
   }
   if (result.availabilityStartTime) {
     list.availabilityStartTime = new Date(result.availabilityStartTime).getTime()
@@ -143,12 +143,14 @@ export default function parser(xml: string, url: string) {
   if (result.BaseURL) {
     MpdBaseURL = is.array(result.BaseURL) ? result.BaseURL[0].value : (is.string(result.BaseURL) ? result.BaseURL : result.BaseURL.value)
   }
-  const Period = is.array(result.Period) ? result.Period[0] : result.Period
-  if (Period?.duration) {
-    list.duration = durationConvert(Period.duration)
+  if (period?.duration) {
+    list.duration = durationConvert(period.duration)
+  }
+  if (period.BaseURL) {
+    MpdBaseURL = joinPath(MpdBaseURL, is.string(period.BaseURL) ? period.BaseURL : period.BaseURL.value)
   }
 
-  const AdaptationSet = is.array(Period.AdaptationSet) ? Period.AdaptationSet : [Period.AdaptationSet]
+  const AdaptationSet = is.array(period.AdaptationSet) ? period.AdaptationSet : [period.AdaptationSet]
 
   AdaptationSet.forEach((asItem, asIndex) => {
     let mimeType = ''
@@ -342,7 +344,7 @@ export default function parser(xml: string, url: string) {
             duration = parseFloat(ST.duration)
             let segmentDuration = duration / timescale
             let end = start + Math.ceil((list.duration || segmentDuration) / segmentDuration) - 1
-            let generateIndex = 0
+            let generateIndex = end
             if (list.type === 'live' && (is.number(list.availabilityStartTime) || ST.presentationTimeOffset)) {
               const now = list.timestamp || getTimestamp()
               const startTs = list.availabilityStartTime
@@ -353,7 +355,7 @@ export default function parser(xml: string, url: string) {
                 start = end - Math.ceil(list.timeShiftBufferDepth / segmentDuration) + 1
               }
               generateIndex = end
-              if (ST.availabilityTimeComplete === 'false') {
+              if (ST.availabilityTimeComplete === 'false' || list.minimumUpdatePeriod > list.minBufferTime * 2) {
                 end += Math.ceil(list.minimumUpdatePeriod / segmentDuration)
               }
             }
@@ -375,7 +377,7 @@ export default function parser(xml: string, url: string) {
                   return toString(i)
                 }),
                 segmentDuration,
-                pending: i <= generateIndex
+                pending: i > generateIndex
               })
             }
           }
@@ -500,4 +502,77 @@ export default function parser(xml: string, url: string) {
   })
 
   return list
+}
+
+export default function parser(xml: string, url: string) {
+  const result = parseMPD(xml).MPD
+  if (result.type === 'dynamic') {
+    const period = is.array(result.Period) ? result.Period[result.Period.length - 1] : result.Period
+    return parsePeriod(result, period, url)
+  }
+  else {
+    const periods = is.array(result.Period) ? result.Period : [result.Period]
+    const list = periods.map((period) => {
+      return parsePeriod(result, period, url)
+    })
+    const mediaList: MPDMediaList = list[0]
+    for (let i = 1; i < list.length; i++) {
+      mediaList.duration += list[i].duration
+      list[i].mediaList.video.forEach((video) => {
+        const prev = mediaList.mediaList.video.find((p) => {
+          return video.initSegment && video.initSegment === p.initSegment || video.id === p.id
+        })
+        if (prev) {
+          if (prev.mediaSegments?.length && video.mediaSegments?.length) {
+            video.mediaSegments.forEach((s) => {
+              s.start += prev.mediaSegments[prev.mediaSegments.length - 1].end
+              s.end += prev.mediaSegments[prev.mediaSegments.length - 1].end
+            })
+          }
+          prev.mediaSegments = (prev.mediaSegments || []).concat(video.mediaSegments || [])
+        }
+        else {
+          mediaList.mediaList.video.push(video)
+        }
+      })
+      list[i].mediaList.audio.forEach((audio) => {
+        const prev = mediaList.mediaList.audio.find((p) => {
+          return audio.initSegment && audio.initSegment === p.initSegment || audio.id === p.id
+        })
+        if (prev) {
+          if (prev.mediaSegments?.length && audio.mediaSegments?.length) {
+            audio.mediaSegments.forEach((s) => {
+              s.start += prev.mediaSegments[prev.mediaSegments.length - 1].end
+              s.end += prev.mediaSegments[prev.mediaSegments.length - 1].end
+            })
+          }
+          prev.mediaSegments = (prev.mediaSegments || []).concat(audio.mediaSegments || [])
+        }
+        else {
+          mediaList.mediaList.audio.push(audio)
+        }
+      })
+      list[i].mediaList.subtitle.forEach((subtitle) => {
+        const prev = mediaList.mediaList.subtitle.find((p) => {
+          return subtitle.initSegment && subtitle.initSegment === p.initSegment || subtitle.id === p.id
+        })
+        if (prev) {
+          if (prev.mediaSegments?.length && subtitle.mediaSegments?.length) {
+            subtitle.mediaSegments.forEach((s) => {
+              s.start += prev.mediaSegments[prev.mediaSegments.length - 1].end
+              s.end += prev.mediaSegments[prev.mediaSegments.length - 1].end
+            })
+          }
+          prev.mediaSegments = (prev.mediaSegments || []).concat(subtitle.mediaSegments || [])
+        }
+        else {
+          mediaList.mediaList.subtitle.push(subtitle)
+        }
+      })
+    }
+    if (result.mediaPresentationDuration) {
+      mediaList.duration = durationConvert(result.mediaPresentationDuration)
+    }
+    return mediaList
+  }
 }

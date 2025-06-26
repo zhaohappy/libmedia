@@ -64,7 +64,6 @@ export interface Media {
 }
 
 export interface MPDMediaList {
-  source: string
   mediaList: {
     audio: Media[]
     video: Media[]
@@ -170,6 +169,7 @@ export interface Period {
   start: string
   AdaptationSet: AdaptationSet | AdaptationSet[]
   duration?: string
+  BaseURL?: string | { value: string }
 }
 
 export interface MPD {
