@@ -2897,10 +2897,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await AVPlayer.MSEThread.unregisterTask(this.taskId)
     }
     if (AVPlayer.DemuxerThread) {
-      // dash 和 hls 直播可能在等待切片文件，所以先 abort
-      if (this.isLive() && AVPlayer.IOThread && (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS))) {
-        AVPlayer.IOThread.abortSleep(this.taskId)
-      }
       if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subTaskId) {
         await AVPlayer.DemuxerThread.unregisterTask(this.subTaskId)
       }

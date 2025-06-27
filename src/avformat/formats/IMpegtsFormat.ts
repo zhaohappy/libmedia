@@ -560,8 +560,10 @@ export default class IMpegtsFormat extends IFormat {
           this.context.ioEnd = true
           return this.readAVPacket_(formatContext, avpacket)
         }
-        else if (formatContext.ioReader.error === IOError.END) {
-          return IOError.END
+        else if (formatContext.ioReader.error === IOError.END
+          || formatContext.ioReader.error === IOError.ABORT
+        ) {
+          return formatContext.ioReader.error
         }
         else {
           logger.error(`read packet error, ${error}`)
@@ -576,7 +578,9 @@ export default class IMpegtsFormat extends IFormat {
       return this.readAVPacket_(formatContext, avpacket)
     }
     catch (error) {
-      if (formatContext.ioReader.error !== IOError.END) {
+      if (formatContext.ioReader.error !== IOError.END
+        && formatContext.ioReader.error !== IOError.ABORT
+      ) {
         logger.error(error.message)
       }
       return formatContext.ioReader.error

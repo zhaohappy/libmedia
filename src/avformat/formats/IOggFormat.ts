@@ -468,7 +468,9 @@ export default class IOggFormat extends IFormat {
       return 0
     }
     catch (error) {
-      if (formatContext.ioReader.error !== IOError.END) {
+      if (formatContext.ioReader.error !== IOError.END
+        && formatContext.ioReader.error !== IOError.ABORT
+      ) {
         logger.error(`read packet error, ${error}`)
         return errorType.DATA_INVALID
       }

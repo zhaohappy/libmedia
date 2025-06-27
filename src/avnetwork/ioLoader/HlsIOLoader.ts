@@ -72,12 +72,15 @@ function getFetchParams(info: FetchInfo, method: string = 'GET') {
   return params
 }
 
-async function fetchMediaPlayList(url: string, info: FetchInfo, options: IOLoaderOptions) {
+async function fetchMediaPlayList(url: string, info: FetchInfo, options: IOLoaderOptions, signal?: AbortSignal) {
   return new Promise<MediaPlaylist>((resolve, reject) => {
     let retryCount = 0
     async function done() {
       try {
-        const res = await fetch(url, getFetchParams(info))
+        const res = await fetch(url, {
+          ...getFetchParams(info),
+          signal
+        })
         const text = await res.text()
         const mediaPlayList = hlsParser(text) as MediaPlaylist
 
@@ -94,6 +97,10 @@ async function fetchMediaPlayList(url: string, info: FetchInfo, options: IOLoade
         resolve(mediaPlayList)
       }
       catch (error) {
+        if (error?.name === 'AbortError') {
+          resolve(null)
+          return
+        }
         if (retryCount < options.retryCount) {
           retryCount++
           logger.error(`failed fetch m3u8 file, retry(${retryCount}/3)`)
@@ -143,6 +150,8 @@ class MediaLoader {
 
   private sleep: Sleep
   private aborted: boolean
+
+  private signal: AbortController
 
   constructor(options: IOLoaderOptions, info: FetchInfo, mediaListUrl?: string, mediaPlayList?: MediaPlaylist) {
     this.options = options
@@ -387,7 +396,14 @@ class MediaLoader {
             return IOError.END
           }
         }
-        this.mediaPlayList = await fetchMediaPlayList(this.mediaListUrl, this.info, this.options)
+        if (typeof AbortController === 'function') {
+          this.signal = new AbortController()
+        }
+        this.mediaPlayList = await fetchMediaPlayList(this.mediaListUrl, this.info, this.options, this.signal?.signal)
+        this.signal = null
+        if (this.aborted) {
+          return IOError.END
+        }
         return this.read(buffer)
       }
 
@@ -489,11 +505,15 @@ class MediaLoader {
       }
     }
     this.segmentIndex = index
+    this.aborted = false
     return 0
   }
 
   public abortSleep() {
     this.aborted = true
+    if (this.loader) {
+      this.loader.abortSleep()
+    }
     if (this.sleep) {
       this.sleep.stop()
       this.sleep = null
@@ -501,11 +521,15 @@ class MediaLoader {
   }
 
   public async abort() {
+    this.abortSleep()
+    if (this.signal) {
+      this.signal.abort()
+      this.signal = null
+    }
     if (this.loader) {
       await this.loader.abort()
       this.loader = null
     }
-    this.abortSleep()
   }
 
   public getMinBuffer() {
@@ -695,12 +719,6 @@ export default class HlsIOLoader extends IOLoader {
 
   public async size() {
     return 0n
-  }
-
-  public abortSleep() {
-    for (let loader of this.loaders) {
-      loader[1].abortSleep()
-    }
   }
 
   public async abort() {

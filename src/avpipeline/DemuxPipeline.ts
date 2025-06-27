@@ -850,7 +850,7 @@ export default class DemuxPipeline extends Pipeline {
     }
     else {
       task.avpacketPool.release(avpacket)
-      if (ret !== IOError.END) {
+      if (ret !== IOError.END && ret !== IOError.ABORT) {
         logger.error(`demux error, ret: ${ret}, taskId: ${task.taskId}`)
       }
       for (let streamIndex of task.cacheRequests.keys()) {
@@ -1163,6 +1163,9 @@ export default class DemuxPipeline extends Pipeline {
   public async unregisterTask(taskId: string): Promise<void> {
     const task = this.tasks.get(taskId)
     if (task) {
+      if (task.ioReader && (task.ioReader.flags & IOFlags.NETWORK)) {
+        task.ioReader.abort()
+      }
       if (task.loop) {
         await task.loop.stopBeforeNextTick()
         task.loop.destroy()

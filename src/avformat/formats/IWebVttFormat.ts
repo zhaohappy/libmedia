@@ -246,7 +246,9 @@ export default class IWebVttFormat extends IFormat {
           stream.duration = cue.endTs
         }
         catch (error) {
-          if (formatContext.ioReader.error !== IOError.END) {
+          if (formatContext.ioReader.error !== IOError.END
+            && formatContext.ioReader.error !== IOError.ABORT
+          ) {
             logger.error(`read cue error, ${error}`)
             return errorType.DATA_INVALID
           }

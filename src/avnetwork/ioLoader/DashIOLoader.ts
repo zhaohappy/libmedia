@@ -54,7 +54,6 @@ interface Resource {
   segments: { url: string, pending?: boolean, duration?: number}[]
   initSegmentPadding: string
   initedSegment: string
-  aborted: boolean
   sleep: Sleep
 
   lastPendingSegmentFetchTs: number
@@ -75,6 +74,9 @@ export default class DashIOLoader extends IOLoader {
   private videoResource: Resource
   private subtitleResource: Resource
 
+  private aborted: boolean
+  private signal: AbortController
+
   private createResource(type: AVMediaType): Resource {
     return {
       type,
@@ -88,7 +90,6 @@ export default class DashIOLoader extends IOLoader {
       segments: [],
       initSegmentPadding: '',
       initedSegment: '',
-      aborted: false,
       sleep: null,
 
       lastPendingSegmentFetchTs: 0,
@@ -140,7 +141,14 @@ export default class DashIOLoader extends IOLoader {
     }
 
     try {
-      const res = await fetch(this.info.url, params)
+      if (typeof AbortController === 'function') {
+        this.signal = new AbortController()
+      }
+      const res = await fetch(this.info.url, {
+        ...params,
+        signal: this.signal?.signal
+      })
+      this.signal = null
       const text = await res.text()
       this.mediaPlayList = dashParser(text, this.info.url)
       this.minBuffer = this.mediaPlayList.minBufferTime
@@ -281,6 +289,11 @@ export default class DashIOLoader extends IOLoader {
       return this.mediaPlayList
     }
     catch (error) {
+      if (this.aborted) {
+        this.status = IOLoaderStatus.ERROR
+        resolve()
+        return
+      }
       if (this.retryCount < this.options.retryCount) {
         this.retryCount++
 
@@ -315,6 +328,7 @@ export default class DashIOLoader extends IOLoader {
 
     this.status = IOLoaderStatus.CONNECTING
     this.retryCount = 0
+    this.aborted = false
 
     await this.fetchMediaPlayList()
 
@@ -363,18 +377,21 @@ export default class DashIOLoader extends IOLoader {
           resource.sleep = new Sleep(wait)
           await resource.sleep
           resource.sleep = null
-          if (resource.aborted) {
+          if (this.aborted) {
             return IOError.END
           }
         }
         if (this.fetchMediaPlayListPromise) {
           await this.fetchMediaPlayListPromise
-          if (this.status === IOLoaderStatus.ERROR) {
+          if (this.status === IOLoaderStatus.ERROR || this.aborted) {
             return IOError.END
           }
         }
         else {
           await this.fetchMediaPlayList()
+          if (this.aborted) {
+            return IOError.END
+          }
         }
         return this.readResource(buffer, resource)
       }
@@ -388,7 +405,7 @@ export default class DashIOLoader extends IOLoader {
             resource.sleep = new Sleep(wait)
             await resource.sleep
             resource.sleep = null
-            if (resource.aborted) {
+            if (this.aborted) {
               return IOError.END
             }
           }
@@ -518,6 +535,7 @@ export default class DashIOLoader extends IOLoader {
     if (this.status === IOLoaderStatus.COMPLETE) {
       this.status = IOLoaderStatus.BUFFERING
     }
+    this.aborted = false
     return 0
   }
 
@@ -525,12 +543,12 @@ export default class DashIOLoader extends IOLoader {
     return 0n
   }
 
-  public abortSleep() {
+  private abortSleep() {
+    this.aborted = true
     if (this.videoResource.loader) {
       this.videoResource.loader.abortSleep()
     }
     if (this.videoResource.sleep) {
-      this.videoResource.aborted = true
       this.videoResource.sleep.stop()
       this.videoResource.sleep = null
     }
@@ -538,7 +556,6 @@ export default class DashIOLoader extends IOLoader {
       this.audioResource.loader.abortSleep()
     }
     if (this.audioResource.sleep) {
-      this.audioResource.aborted = true
       this.audioResource.sleep.stop()
       this.audioResource.sleep = null
     }
@@ -546,7 +563,6 @@ export default class DashIOLoader extends IOLoader {
       this.subtitleResource.loader.abortSleep()
     }
     if (this.subtitleResource.sleep) {
-      this.subtitleResource.aborted = true
       this.subtitleResource.sleep.stop()
       this.subtitleResource.sleep = null
     }
@@ -554,6 +570,9 @@ export default class DashIOLoader extends IOLoader {
 
   public async abort() {
     this.abortSleep()
+    if (this.signal) {
+      this.signal.abort()
+    }
     if (this.videoResource.loader) {
       await this.videoResource.loader.abort()
       this.videoResource.loader = null

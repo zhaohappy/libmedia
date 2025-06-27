@@ -472,7 +472,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
     }
   })
 
-  if (ret === IOError.END) {
+  if (ret === IOError.END || ret === IOError.ABORT) {
     return 0
   }
   else if (ret !== 0) {

@@ -896,7 +896,9 @@ export default class IMatroskaFormat extends IFormat {
       return await this.readAVPacket_(formatContext, avpacket)
     }
     catch (error) {
-      if (formatContext.ioReader.error !== IOError.END) {
+      if (formatContext.ioReader.error !== IOError.END
+        && formatContext.ioReader.error !== IOError.ABORT
+      ) {
         logger.error(`read packet error, ${error}`)
         return errorType.DATA_INVALID
       }

@@ -153,6 +153,9 @@ export default class IOPipeline extends Pipeline {
             ipcPort.reply(request, len)
           }
           catch (error) {
+            if (!this.tasks.has(options.taskId)) {
+              return
+            }
             logger.error(`loader read error, ${error}, taskId: ${options.taskId}`)
             ipcPort.reply(request, errorType.DATA_INVALID)
           }
@@ -372,23 +375,6 @@ export default class IOPipeline extends Pipeline {
         }
         else if (task.type === IOType.HLS) {
           return (task.ioLoader as HlsIOLoader).selectSubtitle(index)
-        }
-      }
-    }
-  }
-
-  public async abortSleep(taskId: string) {
-    const task = this.tasks.get(taskId)
-    if (task) {
-      if (defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) {
-        if (task.type === IOType.DASH) {
-          return (task.ioLoader as DashIOLoader).abortSleep()
-        }
-        else if (task.type === IOType.HLS) {
-          return (task.ioLoader as HlsIOLoader).abortSleep()
-        }
-        else if (task.type === IOType.Fetch) {
-          return (task.ioLoader as FetchIOLoader).abortSleep()
         }
       }
     }
