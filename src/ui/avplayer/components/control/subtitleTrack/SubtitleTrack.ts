@@ -47,9 +47,16 @@ const SubtitleTrack: ComponentOptions = {
         if (subtitleInfo.list.length) {
           const list = subtitleInfo.list
             .map((item, index) => {
+              let name = ''
+              if (item.lang) {
+                name = item.lang
+              }
+              if (item.codec) {
+                name += name ? ` ${item.codec}` : item.codec
+              }
               return {
                 value: index,
-                name: item.lang,
+                name,
                 codec: item.codec
               }
             })

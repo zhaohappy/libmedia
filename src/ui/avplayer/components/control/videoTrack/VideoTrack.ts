@@ -44,9 +44,24 @@ const VideoTrack: ComponentOptions = {
           const codec = videoInfo.list[videoInfo.selectedIndex].codec
           const list = videoInfo.list
             .map((item, index) => {
+              let name = ''
+              if (item.bandwidth) {
+                name = item.bandwidth > 1000 ? `${Math.round(item.bandwidth / 1000)} kbps` : `${item.bandwidth} bps`
+              }
+              let res = `${item.width}x${item.height}`
+              if (item.frameRate) {
+                res += `@${item.frameRate}`
+              }
+              if (name) {
+                res = ` (${res})`
+              }
+              name += res
+              if (item.codec) {
+                name += ` (${item.codec})`
+              }
               return {
                 value: index,
-                name: `${item.width}*${item.height}${item.frameRate ? `@${item.frameRate}` : ''}${item.bandwidth ? `-${item.bandwidth}` : ''}`,
+                name,
                 codec: item.codec
               }
             })

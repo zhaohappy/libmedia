@@ -43,9 +43,19 @@ const AudioTrack: ComponentOptions = {
         if (audioInfo.list.length) {
           const list = audioInfo.list
             .map((item, index) => {
+              let name = ''
+              if (item.bandwidth) {
+                name = item.bandwidth > 1000 ? `${Math.round(item.bandwidth / 1000)} kbps` : `${item.bandwidth} bps`
+              }
+              if (item.codec) {
+                name += name ? ` (${item.codec})` : item.codec
+              }
+              if (item.lang) {
+                name += name ? ` ${item.lang}` : item.lang
+              }
               return {
                 value: index,
-                name: item.lang,
+                name,
                 codec: item.codec
               }
             })
