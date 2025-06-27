@@ -157,6 +157,7 @@ export default class FetchIOLoader extends IOLoader {
     this.receivedLength = 0
     this.buffers = []
     this.supportRange = true
+    this.aborted = false
 
     if (this.range && !this.options.isLive) {
       this.startBytes = this.range.from ?? 0
@@ -345,6 +346,7 @@ export default class FetchIOLoader extends IOLoader {
     }
 
     await this.abort()
+    this.aborted = false
     this.receivedLength = Number(pos) - this.range.from
     this.startBytes = Number(pos)
     if (!this.options.disableSegment) {
