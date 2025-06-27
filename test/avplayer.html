@@ -718,7 +718,7 @@
             document.querySelector(id).appendChild(mediaStreamModeVideo)
           }
         }
-        if (!isLiveComponent.isLive && !slider) {
+        if (!slider) {
           slider = new Vue({
             el: '#slider',
             data: function() {
@@ -739,11 +739,24 @@
                   isSeeking = false
                 })
               }
+            },
+            mounted() {
+              if (isLiveComponent.isLive) {
+                this.$el.style.display = 'none'
+              }
+              else {
+                this.$el.style.display = 'block'
+              }
             }
           })
         }
-        else if (isLiveComponent.isLive) {
-          sliderDom.style.display = 'none'
+        else {
+          if (isLiveComponent.isLive) {
+            slider.$el.style.display = 'none'
+          }
+          else {
+            slider.$el.style.display = 'block'
+          }
         }
 
         if (!isLiveComponent.isLive && !playRateComponent) {
