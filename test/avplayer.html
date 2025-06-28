@@ -718,6 +718,26 @@
             document.querySelector(id).appendChild(mediaStreamModeVideo)
           }
         }
+        else {
+          player.options.enableHardware = enableHardwareComponent.enableHardwareAcceleration
+          player.options.enableWebCodecs = enableWebCodecsComponent.enableWebCodecs
+          player.options.enableWebGPU = enableWebGPUComponent.enableWebGPU
+          player.options.container = mediaStreamModeComponent.mediaStreamMode ? new MediaStream() : document.querySelector(id)
+          
+          if (mediaStreamModeVideo) {
+            document.querySelector(id).removeChild(mediaStreamModeVideo)
+            mediaStreamModeVideo = null
+          }
+          if (mediaStreamModeComponent.mediaStreamMode) {
+            mediaStreamModeVideo = document.createElement('video')
+            mediaStreamModeVideo.style.cssText = `
+              width: 100%;
+              height: 100%;
+            `
+            mediaStreamModeVideo.srcObject = player.options.container
+            document.querySelector(id).appendChild(mediaStreamModeVideo)
+          }
+        }
         if (!slider) {
           slider = new Vue({
             el: '#slider',
