@@ -158,7 +158,7 @@ export function getAVPixelFormatDescriptor(format: AVPixelFormat) {
   return descriptor
 }
 
-type DescriptorsPlane = [
+type DescriptorPlane = [
   plane: number,
   step: number,
   offset: number,
@@ -166,194 +166,194 @@ type DescriptorsPlane = [
   depth: number
 ]
 
-type DescriptorsData = [
+type DescriptorData = [
   log2ChromaW: number,
   log2ChromaH: number,
   flags: number,
-  comp: DescriptorsPlane[]
+  comp: DescriptorPlane[]
 ]
 
-const PlaneYUV8: DescriptorsPlane[] = [
+const PlaneYUV8: DescriptorPlane[] = [
   [0, 1, 0, 0, 8],
   [1, 1, 0, 0, 8],
   [2, 1, 0, 0, 8]
 ]
-const PlaneYUVA8: DescriptorsPlane[] = [
+const PlaneYUVA8: DescriptorPlane[] = [
   ...PlaneYUV8,
   [3, 1, 0, 0, 8]
 ]
-const PlaneYUV9: DescriptorsPlane[] = [
+const PlaneYUV9: DescriptorPlane[] = [
   [0, 2, 0, 0, 9],
   [1, 2, 0, 0, 9],
   [2, 2, 0, 0, 9]
 ]
-const PlaneYUVA9: DescriptorsPlane[] = [
+const PlaneYUVA9: DescriptorPlane[] = [
   ...PlaneYUV9,
   [3, 2, 0, 0, 9]
 ]
-const PlaneYUV10: DescriptorsPlane[] = [
+const PlaneYUV10: DescriptorPlane[] = [
   [0, 2, 0, 0, 10],
   [1, 2, 0, 0, 10],
   [2, 2, 0, 0, 10]
 ]
-const PlaneYUVA10: DescriptorsPlane[] = [
+const PlaneYUVA10: DescriptorPlane[] = [
   ...PlaneYUV10,
   [3, 2, 0, 0, 10]
 ]
-const PlaneYUV12: DescriptorsPlane[] = [
+const PlaneYUV12: DescriptorPlane[] = [
   [0, 2, 0, 0, 12],
   [1, 2, 0, 0, 12],
   [2, 2, 0, 0, 12]
 ]
-const PlaneYUVA12: DescriptorsPlane[] = [
+const PlaneYUVA12: DescriptorPlane[] = [
   ...PlaneYUV12,
   [3, 2, 0, 0, 12]
 ]
-const PlaneYUV14: DescriptorsPlane[] = [
+const PlaneYUV14: DescriptorPlane[] = [
   [0, 2, 0, 0, 14],
   [1, 2, 0, 0, 14],
   [2, 2, 0, 0, 14]
 ]
-const PlaneYUV16: DescriptorsPlane[] = [
+const PlaneYUV16: DescriptorPlane[] = [
   [0, 2, 0, 0, 16],
   [1, 2, 0, 0, 16],
   [2, 2, 0, 0, 16]
 ]
-const PlaneYUVA16: DescriptorsPlane[] = [
+const PlaneYUVA16: DescriptorPlane[] = [
   ...PlaneYUV16,
   [3, 2, 0, 0, 16]
 ]
-const PlaneNV12: DescriptorsPlane[] = [
+const PlaneNV12: DescriptorPlane[] = [
   [0, 1, 0, 0, 8],
   [1, 2, 0, 0, 8],
   [1, 2, 1, 0, 8]
 ]
-const PlaneNV21: DescriptorsPlane[] = [
+const PlaneNV21: DescriptorPlane[] = [
   [0, 1, 0, 0, 8],
   [1, 2, 1, 0, 8],
   [1, 2, 0, 0, 8]
 ]
-const PlaneAYUV16: DescriptorsPlane[] = [
+const PlaneAYUV16: DescriptorPlane[] = [
   [0, 8, 2, 0, 16],
   [0, 8, 4, 0, 16],
   [0, 8, 6, 0, 16],
   [0, 8, 0, 0, 16]
 ]
-const PlaneP010: DescriptorsPlane[] = [
+const PlaneP010: DescriptorPlane[] = [
   [0, 2, 0, 6, 10],
   [1, 4, 0, 6, 10 ],
   [1, 4, 2, 6, 10]
 ]
-const PlaneP012: DescriptorsPlane[] = [
+const PlaneP012: DescriptorPlane[] = [
   [0, 2, 0, 4, 12],
   [1, 4, 0, 4, 12],
   [1, 4, 2, 4, 12]
 ]
-const PlaneP016: DescriptorsPlane[] = [
+const PlaneP016: DescriptorPlane[] = [
   [0, 2, 0, 0, 16],
   [1, 4, 0, 0, 16],
   [1, 4, 2, 0, 16]
 ]
-const PlaneRGBA8: DescriptorsPlane[] = [
+const PlaneRGBA8: DescriptorPlane[] = [
   [0, 4, 0, 0, 8],
   [0, 4, 1, 0, 8],
   [0, 4, 2, 0, 8],
   [0, 4, 3, 0, 8]
 ]
-const PlaneRGB8: DescriptorsPlane[] = [
+const PlaneRGB8: DescriptorPlane[] = [
   [0, 3, 0, 0, 8],
   [0, 3, 1, 0, 8],
   [0, 3, 2, 0, 8]
 ]
-const PlaneRGB08: DescriptorsPlane[] = [
+const PlaneRGB08: DescriptorPlane[] = [
   [0, 4, 0, 0, 8],
   [0, 4, 1, 0, 8],
   [0, 4, 2, 0, 8]
 ]
-const PlaneRGBA16: DescriptorsPlane[] = [
+const PlaneRGBA16: DescriptorPlane[] = [
   [0, 8, 0, 0, 16],
   [0, 8, 2, 0, 16],
   [0, 8, 4, 0, 16],
   [0, 8, 6, 0, 16]
 ]
-const PlaneARGB8: DescriptorsPlane[] = [
+const PlaneARGB8: DescriptorPlane[] = [
   [0, 4, 1, 0, 8],
   [0, 4, 2, 0, 8],
   [0, 4, 3, 0, 8],
   [0, 4, 0, 0, 8]
 ]
-const PlaneBGRA8: DescriptorsPlane[] = [
+const PlaneBGRA8: DescriptorPlane[] = [
   [0, 4, 2, 0, 8],
   [0, 4, 1, 0, 8],
   [0, 4, 0, 0, 8],
   [0, 4, 3, 0, 8]
 ]
-const PlaneBGR8: DescriptorsPlane[] = [
+const PlaneBGR8: DescriptorPlane[] = [
   [0, 3, 2, 0, 8],
   [0, 3, 1, 0, 8],
   [0, 3, 0, 0, 8],
 ]
-const PlaneBGR08: DescriptorsPlane[] = [
+const PlaneBGR08: DescriptorPlane[] = [
   [0, 4, 2, 0, 8],
   [0, 4, 1, 0, 8],
   [0, 4, 0, 0, 8],
 ]
-const PlaneBGRA16: DescriptorsPlane[] = [
+const PlaneBGRA16: DescriptorPlane[] = [
   [0, 8, 4, 0, 16],
   [0, 8, 2, 0, 16],
   [0, 8, 0, 0, 16],
   [0, 8, 6, 0, 16]
 ]
-const PlaneABGR8: DescriptorsPlane[] = [
+const PlaneABGR8: DescriptorPlane[] = [
   [0, 4, 3, 0, 8],
   [0, 4, 2, 0, 8],
   [0, 4, 1, 0, 8],
   [0, 4, 0, 0, 8]
 ]
-const PlaneBGRP8: DescriptorsPlane[] = [
+const PlaneBGRP8: DescriptorPlane[] = [
   [2, 1, 0, 0, 8],
   [0, 1, 0, 0, 8],
   [1, 1, 0, 0, 8]
 ]
-const PlaneBGRAP8: DescriptorsPlane[] = [
+const PlaneBGRAP8: DescriptorPlane[] = [
   [2, 1, 0, 0, 8],
   [0, 1, 0, 0, 8],
   [1, 1, 0, 0, 8],
   [3, 1, 0, 0, 8]
 ]
-const PlaneBGRP9: DescriptorsPlane[] = [
+const PlaneBGRP9: DescriptorPlane[] = [
   [2, 2, 0, 0, 9],
   [0, 2, 0, 0, 9],
   [1, 2, 0, 0, 9]
 ]
-const PlaneBGRP10: DescriptorsPlane[] = [
+const PlaneBGRP10: DescriptorPlane[] = [
   [2, 2, 0, 0, 10],
   [0, 2, 0, 0, 10],
   [1, 2, 0, 0, 10]
 ]
-const PlaneBGRP12: DescriptorsPlane[] = [
+const PlaneBGRP12: DescriptorPlane[] = [
   [2, 2, 0, 0, 12],
   [0, 2, 0, 0, 12],
   [1, 2, 0, 0, 12]
 ]
-const PlaneBGRP14: DescriptorsPlane[] = [
+const PlaneBGRP14: DescriptorPlane[] = [
   [2, 2, 0, 0, 14],
   [0, 2, 0, 0, 14],
   [1, 2, 0, 0, 14]
 ]
-const PlaneBGRP16: DescriptorsPlane[] = [
+const PlaneBGRP16: DescriptorPlane[] = [
   [2, 2, 0, 0, 16],
   [0, 2, 0, 0, 16],
   [1, 2, 0, 0, 16]
 ]
-const PlaneBGRAP16: DescriptorsPlane[] = [
+const PlaneBGRAP16: DescriptorPlane[] = [
   [2, 2, 0, 0, 16],
   [0, 2, 0, 0, 16],
   [1, 2, 0, 0, 16],
   [3, 2, 0, 0, 16]
 ]
 
-const AVPixelFormatDescriptorsData: Partial<Record<AVPixelFormat, DescriptorsData>> = {
+const AVPixelFormatDescriptorsData: Partial<Record<AVPixelFormat, DescriptorData>> = {
   [AVPixelFormat.AV_PIX_FMT_YUV410P]: [
     2, 2, AVPixelFormatFlags.PLANER,
     PlaneYUV8
