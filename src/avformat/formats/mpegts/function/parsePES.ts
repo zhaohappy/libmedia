@@ -28,7 +28,7 @@ import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as logger from 'common/util/logger'
 import { TSStreamId, TSStreamType } from '../mpegts'
 import * as errorType from 'avutil/error'
-import { AVPacketFlags } from 'avutil/enum'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
 
 export default function parsePES(pes: PES) {
 
