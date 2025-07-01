@@ -110,7 +110,7 @@ export const tag2CodecId = {
   [mktag('tx3g')]: AVCodecID.AV_CODEC_ID_MOV_TEXT
 }
 
-export const enum FragmentMode {
+export const enum MovFragmentMode {
   GOP,
   FRAME
 }

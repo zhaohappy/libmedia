@@ -41,7 +41,7 @@ import * as logger from 'common/util/logger'
 import concatTypeArray from 'common/function/concatTypeArray'
 import updatePositionSize from './mov/function/updatePositionSize'
 import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT, UINT32_MAX } from 'avutil/constant'
-import { FragmentMode, MovMode } from './mov/mov'
+import { MovFragmentMode, MovMode } from './mov/mov'
 import * as object from 'common/util/object'
 import rewriteIO from '../function/rewriteIO'
 
@@ -60,8 +60,13 @@ import { mapUint8Array } from 'cheap/std/memory'
 import getSampleDuration from './mov/function/getSampleDuration'
 import { encryptionSideData2Info } from 'avutil/util/encryption'
 
+export {
+  MovFragmentMode,
+  MovMode
+}
+
 export interface OMovFormatOptions {
-  fragmentMode?: FragmentMode
+  fragmentMode?: MovFragmentMode
   movMode?: MovMode
   fragment?: boolean
   fastOpen?: boolean
@@ -73,7 +78,7 @@ export interface OMovFormatOptions {
 }
 
 const defaultOptions: OMovFormatOptions = {
-  fragmentMode: FragmentMode.GOP,
+  fragmentMode: MovFragmentMode.GOP,
   movMode: MovMode.MP4,
   fragment: false,
   fastOpen: false,
@@ -615,10 +620,10 @@ export default class OMovFormat extends OFormat {
       })
 
       if (track) {
-        if (this.options.fragmentMode === FragmentMode.GOP
+        if (this.options.fragmentMode === MovFragmentMode.GOP
           && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
           && avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
-          || this.options.fragmentMode === FragmentMode.FRAME
+          || this.options.fragmentMode === MovFragmentMode.FRAME
         ) {
           if (this.context.currentFragment.tracks.length === 1) {
             this.updateCurrentFragment(formatContext, dts)

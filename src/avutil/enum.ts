@@ -41,3 +41,5 @@ export { AVDiscard } from '../avcodec/wasmcodec/VideoDecoder'
 export { AVPlayerStatus, AVPlayerProgress } from '../avplayer/AVPlayer'
 
 export { IOLoaderStatus } from '../avnetwork/ioLoader/IOLoader'
+
+export { MovFragmentMode, MovMode } from '../avformat/formats/OMovFormat'

@@ -31,8 +31,7 @@ import * as logger from 'common/util/logger'
 import OFormat from 'avformat/formats/OFormat'
 import IOWriter from 'common/io/IOWriterSync'
 import * as mux from 'avformat/mux'
-import OMovFormat from 'avformat/formats/OMovFormat'
-import { FragmentMode, MovMode } from 'avformat/formats/mov/mov'
+import OMovFormat, { MovFragmentMode, MovMode } from 'avformat/formats/OMovFormat'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { Rational } from 'avutil/struct/rational'
 import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
@@ -466,7 +465,7 @@ export default class MSEPipeline extends Pipeline {
       resource.enableRawMpeg ? 'sequence' : 'segments'
     )
     const oformat = new OMovFormat({
-      fragmentMode: FragmentMode.FRAME,
+      fragmentMode: MovFragmentMode.FRAME,
       fragment: true,
       fastOpen: true,
       movMode: MovMode.MP4,
@@ -492,7 +491,7 @@ export default class MSEPipeline extends Pipeline {
           resource.enableRawMpeg ? 'sequence' : 'segments'
         )
         const oformat = new OMovFormat({
-          fragmentMode: FragmentMode.FRAME,
+          fragmentMode: MovFragmentMode.FRAME,
           fragment: true,
           fastOpen: true,
           movMode: MovMode.MP4,
@@ -904,7 +903,7 @@ export default class MSEPipeline extends Pipeline {
     resource.bufferQueue.flush()
     resource.oformatContext.oformat.destroy(resource.oformatContext)
     const oformat = new OMovFormat({
-      fragmentMode: FragmentMode.FRAME,
+      fragmentMode: MovFragmentMode.FRAME,
       fragment: true,
       fastOpen: true,
       movMode: MovMode.MP4,
@@ -977,7 +976,7 @@ export default class MSEPipeline extends Pipeline {
       const ioWriter = new IOWriter(1024 * 1024)
       const oformatContext = createAVOFormatContext()
       const oformat = new OMovFormat({
-        fragmentMode: FragmentMode.FRAME,
+        fragmentMode: MovFragmentMode.FRAME,
         fragment: true,
         fastOpen: true,
         movMode: MovMode.MP4,
@@ -1128,7 +1127,7 @@ export default class MSEPipeline extends Pipeline {
         resource.track.reset()
 
         const oformat = new OMovFormat({
-          fragmentMode: FragmentMode.FRAME,
+          fragmentMode: MovFragmentMode.FRAME,
           fragment: true,
           fastOpen: true,
           movMode: MovMode.MP4,
