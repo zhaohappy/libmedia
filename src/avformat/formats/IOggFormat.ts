@@ -187,6 +187,19 @@ export default class IOggFormat extends IFormat {
       const idPage = new OpusOggsIdPage()
       idPage.read(ioReader)
 
+      const stream = formatContext.createStream()
+      stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
+      stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_OPUS
+
+      stream.codecpar.sampleRate = idPage.sampleRate
+      stream.codecpar.chLayout.nbChannels = idPage.channels
+      stream.timeBase.den = stream.codecpar.sampleRate
+      stream.timeBase.num = 1
+      stream.codecpar.extradata = avMalloc(payload.length)
+      stream.codecpar.extradataSize = payload.length
+      stream.codecpar.initialPadding = idPage.preSkip
+      memcpyFromUint8Array(stream.codecpar.extradata, payload.length, payload)
+
       const commentPage = new OpusOggsCommentPage()
 
       payload = await this.getNextSegment(formatContext)
@@ -200,14 +213,6 @@ export default class IOggFormat extends IFormat {
         commentPage
       ]
 
-      const stream = formatContext.createStream()
-      stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
-      stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_OPUS
-
-      stream.codecpar.sampleRate = idPage.sampleRate
-      stream.codecpar.chLayout.nbChannels = idPage.channels
-      stream.timeBase.den = stream.codecpar.sampleRate
-      stream.timeBase.num = 1
       stream.privData = {
         serialNumber: this.page.serialNumber
       }

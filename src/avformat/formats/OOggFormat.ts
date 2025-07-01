@@ -183,6 +183,13 @@ export default class OOggFormat extends OFormat {
             commentPage.addComment(value)
           })
           idPage.setCodec(stream.codecpar)
+
+          if (stream.codecpar.extradata) {
+            let ioReader = new IOReaderSync(stream.codecpar.extradataSize, false)
+            ioReader.appendBuffer(mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
+            idPage.read(ioReader)
+          }
+
           commentPage.streamIndex = stream.index
           this.headerPagesPayload = [
             idPage,
