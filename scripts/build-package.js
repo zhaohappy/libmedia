@@ -132,7 +132,10 @@ function replacePath(importPath, file, node) {
     if (packageDir === packageName) {
       reportTSError(file, node, 'import module under the same package name using relative path')
     }
-    else if (packages[packageName]) {
+    else if (packages[packageName]
+      && packageDir !== 'avplayer'
+      && packageDir !== 'avtranscoder'
+    ) {
       const json = packages[packageName]
       if (!json.exports) {
         reportTSError(file, node, 'import module not export in package.json')

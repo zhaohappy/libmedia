@@ -251,16 +251,6 @@
       "import": "./dist/esm/formats/flv/FlvScriptTag.js",
       "require": "./dist/cjs/formats/flv/FlvScriptTag.js",
       "types": "./dist/esm/formats/flv/FlvScriptTag.d.ts"
-    },
-    "./function/mktag": {
-      "import": "./dist/esm/function/mktag.js",
-      "require": "./dist/cjs/function/mktag.js",
-      "types": "./dist/esm/function/mktag.d.ts"
-    },
-    "./formats/ass/ass": {
-      "import": "./dist/esm/formats/ass/ass.js",
-      "require": "./dist/cjs/formats/ass/ass.js",
-      "types": "./dist/esm/formats/ass/ass.d.ts"
     }
   }
 }
