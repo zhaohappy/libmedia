@@ -50,7 +50,7 @@ export default class FileIOLoader extends IOLoader {
   private reader: FileReader | FileReaderSync
   private readerResolve: (buffer: ArrayBuffer) => void
 
-  public async open(info: FileInfo, range: Range) {
+  public async open(info: FileInfo, range: Range = { from: 0, to: -1 }) {
 
     this.info = info
     this.range = range

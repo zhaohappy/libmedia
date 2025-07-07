@@ -104,7 +104,7 @@ export default abstract class IOLoader {
    * 
    * @returns 成功返回 0, 失败返回错误码（负值）
    */
-  public abstract open(info: Data, range: Range): Promise<int32>
+  public abstract open(info: Data, range?: Range): Promise<int32>
 
   /**
    * 读取数据到缓冲区

@@ -198,10 +198,6 @@ export async function getIOReader(source: string | File) {
     await ioloader.open(
       {
         url: source
-      },
-      {
-        from: 0,
-        to: -1
       }
     )
   }
@@ -210,10 +206,6 @@ export async function getIOReader(source: string | File) {
     await ioloader.open(
       {
         file: source
-      },
-      {
-        from: 0,
-        to: -1
       }
     )
   }

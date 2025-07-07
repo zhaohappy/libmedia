@@ -137,7 +137,7 @@ export default class FetchIOLoader extends IOLoader {
     return 0
   }
 
-  public async open(info: FetchInfo, range: Range) {
+  public async open(info: FetchInfo, range: Range = { from: 0, to: -1 }) {
 
     this.info = info
     this.range = range
