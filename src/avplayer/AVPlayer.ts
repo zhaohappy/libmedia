@@ -3033,7 +3033,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * resume 音频
    */
   public async resume() {
-    if (AVPlayer.audioContext?.state === 'suspended') {
+    if (AVPlayer.audioContext?.state === 'suspended'
+      // @ts-ignore
+      || AVPlayer.audioContext?.state === 'interrupted'
+    ) {
       await Promise.race([
         AVPlayer.audioContext.resume(),
         new Sleep(0.1)
@@ -3930,9 +3933,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   public onAudioContextStateChange() {
     // @ts-ignore
-    if (AVPlayer.audioContext.state === 'interrupted') {
+    if (AVPlayer.audioContext.state === 'interrupted'
+      || AVPlayer.audioContext.state === 'suspended'
+    ) {
       if (this.status === AVPlayerStatus.PLAYED || this.status === AVPlayerStatus.PAUSED) {
+        logger.warn(`the audioContext state changed to ${AVPlayer.audioContext.state}. It may be resumed after a user gesture`)
         AVPlayer.AudioRenderThread.fakePlay(this.taskId)
+        this.fire(eventType.RESUME)
       }
     }
   }
