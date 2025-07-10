@@ -90,6 +90,7 @@ export function copyCodecParameters(dst: pointer<AVCodecParameters>, src: pointe
   dst.initialPadding = src.initialPadding
   dst.trailingPadding = src.trailingPadding
   dst.seekPreroll = src.seekPreroll
+  dst.bitFormat = src.bitFormat
 
   dst.framerate = src.framerate
 
@@ -131,6 +132,7 @@ export function resetCodecParameters(par: pointer<AVCodecParameters>) {
   par.framerate.num = 1
   par.profile = NOPTS_VALUE
   par.level = NOPTS_VALUE
+  par.bitFormat = 0
 }
 
 export function freeCodecParameters(par: pointer<AVCodecParameters>) {
