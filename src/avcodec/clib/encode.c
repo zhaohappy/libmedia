@@ -95,6 +95,9 @@ int open_codec_context(AVCodecContext** enc_ctx, enum AVCodecID codec_id, AVCode
       av_channel_layout_default(&(*enc_ctx)->ch_layout, (*enc_ctx)->ch_layout.nb_channels);
     }
   }
+  if (codecpar->codec_id == AV_CODEC_ID_AAC && codecpar->profile != AV_NOPTS_VALUE) {
+    (*enc_ctx)->profile--;
+  }
   #endif
 
   /* Init the encoders */
