@@ -209,7 +209,7 @@ export default class WasmAudioEncoder {
       }
       this.avpacket.pts = pts
       this.avpacket.dts = pts
-      this.pts += this.avpacket.duration
+      this.pts = pts + this.avpacket.duration
       this.avpacket.timeBase.den = this.timeBase!.den
       this.avpacket.timeBase.num = this.timeBase!.num
       this.options.onReceiveAVPacket(this.avpacket)
