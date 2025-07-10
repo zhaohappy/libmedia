@@ -201,12 +201,21 @@ export default class WebVideoEncoder {
       alpha: descriptor && (descriptor.flags & AVPixelFormatFlags.ALPHA) ? 'keep' : 'discard'
     }
 
-    if (parameters.codecId === AVCodecID.AV_CODEC_ID_H264
-      || parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
-      || parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
-    ) {
+    if (parameters.codecId === AVCodecID.AV_CODEC_ID_H264) {
       config.avc = {
         format: parameters.bitFormat === BitFormat.AVCC ? 'avc' : 'annexb'
+      }
+    }
+    else if (parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+      // @ts-ignore
+      config.hevc = {
+        format: parameters.bitFormat === BitFormat.AVCC ? 'hevc' : 'annexb'
+      }
+    }
+    else if (parameters.codecId === AVCodecID.AV_CODEC_ID_VVC) {
+      // @ts-ignore
+      config.vvc = {
+        format: parameters.bitFormat === BitFormat.AVCC ? 'vvc' : 'annexb'
       }
     }
 
