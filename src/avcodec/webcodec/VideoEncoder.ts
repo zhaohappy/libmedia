@@ -378,15 +378,6 @@ export default class WebVideoEncoder {
       alpha: descriptor && (descriptor.flags & AVPixelFormatFlags.ALPHA) ? 'keep' : 'discard'
     }
 
-    if (parameters.codecId === AVCodecID.AV_CODEC_ID_H264
-      || parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
-      || parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
-    ) {
-      config.avc = {
-        format: parameters.bitFormat === BitFormat.AVCC ? 'avc' : 'annexb'
-      }
-    }
-
     try {
       const support = await VideoEncoder.isConfigSupported(config)
       return support.supported
