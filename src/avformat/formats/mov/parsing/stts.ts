@@ -49,6 +49,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
       delta = await ioReader.readInt32()
       if (delta < 0) {
         logger.warn('File uses negative stts sample delta, using value 1 instead, sync may be lost!')
+        delta = 1
       }
       sampleDeltas.push(delta)
     }
