@@ -173,7 +173,13 @@ async function estimateDurationFromPts(formatContext: AVIFormatContext) {
   array.each(formatContext.interval.packetBuffer, (avpacket) => {
     destroyAVPacket(avpacket)
   })
-  formatContext.interval.packetBuffer = cache
+  formatContext.interval.packetBuffer = cache.filter((avpacket) => {
+    if (avpacket.pos >= now) {
+      destroyAVPacket(avpacket)
+      return false
+    }
+    return true
+  })
   await formatContext.iformat.seek(formatContext, null, now, AVSeekFlags.BYTE)
 }
 
@@ -481,6 +487,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
 
   if ((formatContext.iformat.type === AVFormat.MPEGTS)
     && (formatContext.ioReader.flags & IOFlags.SEEKABLE)
+    && !(formatContext.ioReader.flags & IOFlags.SLICE)
   ) {
     await estimateDurationFromPts(formatContext)
   }
