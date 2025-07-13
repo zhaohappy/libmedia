@@ -109,6 +109,7 @@ import { avMalloc } from 'avutil/util/mem'
 import { DRMType } from './drm/drm'
 import kid2Base64 from './drm/kid2Base64'
 import * as text from 'common/util/text'
+import { BitFormat } from 'avutil/codecs/h264'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -736,14 +737,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
           try {
             // 检查视频格式是否支持硬解，不支持使用 mse
-            const isWebcodecSupport = await VideoDecoder.isConfigSupported({
+            const config = {
               codec: getVideoCodec(videoStream.codecpar),
               codedWidth: videoStream.codecpar.width,
               codedHeight: videoStream.codecpar.height,
-              description: extradata,
+              description: (videoStream.codecpar.bitFormat !== BitFormat.ANNEXB) ? extradata : undefined,
               hardwareAcceleration: getHardwarePreference(true)
-            })
-
+            }
+            if (!config.description) {
+              // description 不是 arraybuffer 会抛错
+              delete config.description
+            }
+            const isWebcodecSupport = await VideoDecoder.isConfigSupported(config)
             if (!isWebcodecSupport.supported) {
               logger.warn('use mse because of cannot use webcodec hardwareAcceleration VideoDecoder with resolution more then 1080p')
               return true
