@@ -47,6 +47,7 @@ export default class Mp32RawFilter extends AVBSFilter {
     dts: bigint
     buffer: Uint8Array
     extradata: Uint8Array
+    pos: int64
   }[]
 
   private cache: Uint8Array
@@ -103,6 +104,7 @@ export default class Mp32RawFilter extends AVBSFilter {
         buffer: null,
         extradata: null,
         duration: NOPTS_VALUE,
+        pos: avpacket.pos
       }
 
       const sampleRate = mp3.getSampleRateByVersionIndex(ver, samplingFreqIndex)
@@ -154,6 +156,7 @@ export default class Mp32RawFilter extends AVBSFilter {
       addAVPacketData(avpacket, data, item.buffer.length)
 
       avpacket.dts = avpacket.pts = item.dts
+      avpacket.pos = item.pos
       avpacket.duration = static_cast<int64>(item.duration)
       avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
       return 0

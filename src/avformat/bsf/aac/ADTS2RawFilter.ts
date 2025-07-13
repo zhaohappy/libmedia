@@ -45,6 +45,7 @@ interface CacheItem {
   dts: bigint
   buffer: Uint8Array
   extradata: Uint8Array
+  pos: int64
 }
 
 interface PendingItem extends CacheItem {
@@ -113,6 +114,7 @@ export default class ADTS2RawFilter extends AVBSFilter {
         buffer: null,
         extradata: null,
         duration: NOPTS_VALUE,
+        pos: avpacket.pos
       }
 
       item.buffer = buffer.subarray(i + info.headerLength, i + info.headerLength + info.framePayloadLength)
@@ -178,6 +180,7 @@ export default class ADTS2RawFilter extends AVBSFilter {
       addAVPacketData(avpacket, data, item.buffer.length)
 
       avpacket.dts = avpacket.pts = item.dts
+      avpacket.pos = item.pos
       avpacket.duration = static_cast<int64>(item.duration)
       avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
       if (item.extradata) {

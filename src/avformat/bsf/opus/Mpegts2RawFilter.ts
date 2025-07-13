@@ -41,6 +41,7 @@ interface CacheItem {
   duration: number
   dts: bigint
   buffer: Uint8Array
+  pos: int64
 }
 
 interface PendingItem extends CacheItem {
@@ -122,7 +123,8 @@ export default class Mpegts2RawFilter extends AVBSFilter {
       const item: CacheItem = {
         dts: lastDts,
         buffer: samples.slice(),
-        duration: Number(duration)
+        duration: Number(duration),
+        pos: avpacket.pos
       }
       if (item.buffer.length < size) {
         this.pendingItem = {
@@ -150,6 +152,7 @@ export default class Mpegts2RawFilter extends AVBSFilter {
       addAVPacketData(avpacket, data, item.buffer.length)
 
       avpacket.dts = avpacket.pts = item.dts
+      avpacket.pos = item.pos
       avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
       avpacket.duration = static_cast<int64>(item.duration)
       return 0

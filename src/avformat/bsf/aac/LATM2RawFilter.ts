@@ -55,6 +55,7 @@ export default class LATM2RawFilter extends AVBSFilter {
     dts: bigint
     buffer: Uint8Array
     extradata: Uint8Array
+    pos: int64
   }[]
 
   private refSampleDuration: bigint
@@ -130,7 +131,8 @@ export default class LATM2RawFilter extends AVBSFilter {
       const item = {
         dts: lastDts,
         buffer: rawData,
-        extradata: null
+        extradata: null,
+        pos: avpacket.pos
       }
 
       const hasNewExtraData = this.inCodecpar.profile !== this.streamMuxConfig.profile
@@ -180,6 +182,7 @@ export default class LATM2RawFilter extends AVBSFilter {
       addAVPacketData(avpacket, data, item.buffer.length)
 
       avpacket.dts = avpacket.pts = item.dts
+      avpacket.pos = item.pos
       avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
       avpacket.duration = this.refSampleDuration
       if (item.extradata) {

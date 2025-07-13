@@ -44,6 +44,7 @@ export default class Ac32RawFilter extends AVBSFilter {
     duration: number
     dts: bigint
     buffer: Uint8Array
+    pos: int64
   }[]
 
   private cache: Uint8Array
@@ -101,6 +102,7 @@ export default class Ac32RawFilter extends AVBSFilter {
         dts: lastDts,
         buffer: null,
         duration: NOPTS_VALUE,
+        pos: avpacket.pos
       }
 
       let frameLength = info.frameSize
@@ -148,6 +150,7 @@ export default class Ac32RawFilter extends AVBSFilter {
       addAVPacketData(avpacket, data, item.buffer.length)
 
       avpacket.dts = avpacket.pts = item.dts
+      avpacket.pos = item.pos
       avpacket.duration = static_cast<int64>(item.duration)
       avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
       return 0
