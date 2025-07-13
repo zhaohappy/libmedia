@@ -3918,11 +3918,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @hidden
    */
   public onMSESeek(time: number): void {
-    if (this.audio) {
-      this.audio.currentTime = time
+    const ele = this.audio || this.video
+    if (ele.buffered.length) {
+      ele.currentTime = time
     }
-    else if (this.video) {
-      this.video.currentTime = time
+    else {
+      setTimeout(() => {
+        ele.currentTime = time
+      }, 500)
     }
   }
   /**
