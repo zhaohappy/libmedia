@@ -59,16 +59,10 @@ export type WebVideoEncoderOptions = {
 // chrome bug: https://issues.chromium.org/issues/357902526
 function fixChromeConstraintSetFlagsBug(desc: Uint8Array) {
   const constraintSetFlag = desc[2]
-  // 如果最高位是 0，最低位是 1，说明是 chrome 将这个值的二进制顺序搞反了
-  if (constraintSetFlag >> 7 === 0 && (constraintSetFlag & 1) === 1) {
-    let binaryString = constraintSetFlag
-      .toString(2)
-      .padStart(8, '0')
-      .split('')
-      .reverse()
-      .join('')
-
-    desc[2] = parseInt(binaryString, 2)
+  // 如果 constraint_set_flags 字节二进制 第 0 位或第 1 位值为 1
+  // 说明取值错误，忽略该字段避免解码异常
+  if (constraintSetFlag !== undefined && constraintSetFlag.toString(2).slice(-2).includes('1')) {
+    desc[2] = 0
   }
 }
 
@@ -119,7 +113,10 @@ export default class WebVideoEncoder {
         else {
           buffer = new Uint8Array(metadata.decoderConfig.description.buffer)
         }
-        if (browser.chrome && !browser.checkVersion(browser.version, '130', true)) {
+        if (browser.chrome
+          && !browser.checkVersion(browser.version, '130', true)
+          && this.parameters.codecId === AVCodecID.AV_CODEC_ID_H264
+        ) {
           fixChromeConstraintSetFlagsBug(buffer)
         }
         this.extradata = buffer
