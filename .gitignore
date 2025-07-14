@@ -1,5 +1,6 @@
 node_modules
 .DS_store
+.VSCodeCounter
 report.json
 test/lib/
 ffmpeg-cache
