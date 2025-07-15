@@ -118,10 +118,10 @@ export default class VideoEncodePipeline extends Pipeline {
           task.hardwareEncoder.close()
           task.hardwareEncoder = null
           task.encoderFallbackReady = this.openSoftwareEncoder(task)
-          logger.warn(`video encode error width hardware, taskId: ${task.taskId}, error: ${error}, try to fallback to software encoder`)
+          logger.warn(`video encode error by hardware encoder, taskId: ${task.taskId}, error: ${error}, try to fallback to software encoder`)
         }
         else {
-          logger.error(`video encode error width hardware, taskId: ${task.taskId}, error: ${error}`)
+          logger.error(`video encode error by hardware encoder, taskId: ${task.taskId}, error: ${error}`)
         }
       },
       onReceiveAVPacket(avpacket) {
@@ -260,7 +260,7 @@ export default class VideoEncodePipeline extends Pipeline {
                     task.hardwareEncoder.close()
                     task.hardwareEncoder = null
                     ret = await this.openSoftwareEncoder(task)
-                    logger.warn(`video encode error width hardware, taskId: ${task.taskId}, error: ${ret}, try to fallback to software encoder`)
+                    logger.warn(`video encode error by hardware encoder, taskId: ${task.taskId}, error: ${ret}, try to fallback to software encoder`)
                   }
                   if (ret) {
                     logger.info(`video encoder open error, taskId: ${task.taskId}`)

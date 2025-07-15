@@ -1751,7 +1751,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       })
     }
 
-    logger.info(`\nAVPlayer version ${defined(VERSION)} Copyright (c) 2024-present the libmedia developers\n` + dump([formatContext], [{
+    logger.info(`taskId: ${this.taskId}\nAVPlayer version ${defined(VERSION)} Copyright (c) 2024-present the libmedia developers\n` + dump([formatContext], [{
       from: is.string(source) ? source : source.name,
       tag: 'Input',
       isLive: this.isLive_

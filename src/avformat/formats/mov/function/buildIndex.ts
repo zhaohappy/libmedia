@@ -29,7 +29,7 @@ import { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import { avRescaleQ } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 

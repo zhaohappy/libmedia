@@ -129,7 +129,7 @@ export default class VideoDecodePipeline extends Pipeline {
             task.hardwareDecoder.close()
             task.hardwareDecoder = null
             task.decoderFallbackReady = this.openSoftwareDecoder(task)
-            logger.warn(`video decode error width hardware(${task.hardwareRetryCount}), taskId: ${task.taskId}, error: ${error}, try to fallback to software decoder`)
+            logger.warn(`video decode error by hardware decoder(${task.hardwareRetryCount}), taskId: ${task.taskId}, error: ${error}, try to fallback to software decoder`)
           }
         }
         else {
@@ -262,7 +262,7 @@ export default class VideoDecodePipeline extends Pipeline {
                     task.targetDecoder = task.softwareDecoder
                     task.hardwareDecoder.close()
                     task.hardwareDecoder = null
-                    logger.warn(`video decode error width hardware(${task.hardwareRetryCount}), taskId: ${task.taskId}, error: ${ret}, try to fallback to software decoder`)
+                    logger.warn(`video decode error by hardware decoder(${task.hardwareRetryCount}), taskId: ${task.taskId}, error: ${ret}, try to fallback to software decoder`)
                     ret = await this.openSoftwareDecoder(task)
                   }
                   if (ret) {
@@ -404,7 +404,7 @@ export default class VideoDecodePipeline extends Pipeline {
                       // webcodecs 软解失败，回退到 wasm 软解
                       if ((task.targetDecoder instanceof WebVideoDecoder) && task.resource) {
 
-                        logger.warn(`video decode error width webcodecs soft decoder, taskId: ${task.taskId}, error: ${ret}, try to fallback to wasm software decoder`)
+                        logger.warn(`video decode error by webcodecs soft decoder, taskId: ${task.taskId}, error: ${ret}, try to fallback to wasm software decoder`)
 
                         task.softwareDecoder.close()
                         task.softwareDecoder = this.createWasmcodecDecoder(task, task.resource)
@@ -518,6 +518,8 @@ export default class VideoDecodePipeline extends Pipeline {
         }
         threadCount = Math.min(threadCount, navigator.hardwareConcurrency)
       }
+
+      logger.debug(`open software(${task.softwareDecoder instanceof WebVideoDecoder ? 'webcodecs' : 'wasm'}) decoder`)
 
       let ret = await task.softwareDecoder.open(parameters, threadCount, task.wasmDecoderOptions)
       if (ret) {
@@ -664,9 +666,10 @@ export default class VideoDecodePipeline extends Pipeline {
 
       return new Promise<number>(async (resolve, reject) => {
         if (task.hardwareDecoder) {
+          logger.debug('open hardware decoder')
           const ret = await task.hardwareDecoder.open(codecpar)
           if (ret) {
-            logger.error(`cannot open hardware decoder, ${ret}`)
+            logger.error(`cannot open hardware decoder, ${ret}, try to open software decoder`)
             task.hardwareDecoder.close()
             task.hardwareDecoder = null
             task.targetDecoder = task.softwareDecoder
