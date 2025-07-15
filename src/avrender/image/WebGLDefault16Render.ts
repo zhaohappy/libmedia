@@ -39,6 +39,8 @@ import isPointer from 'cheap/std/function/isPointer'
 
 export default class WebGLDefault16Render extends WebGLDefaultRender {
 
+  private linesize: int32
+
   declare protected gl: WebGL2RenderingContext
 
   declare protected program: VideoProgram16
@@ -169,7 +171,7 @@ export default class WebGLDefault16Render extends WebGLDefaultRender {
   }
 
   protected checkFrame(frame: pointer<AVFrame>): void {
-    if ((frame.linesize[0] >>> 1) !== this.textureWidth
+    if (frame.linesize[0] !== this.linesize
       || frame.height !== this.videoHeight
       || frame.width !== this.videoWidth
       || frame.format !== this.format
@@ -250,6 +252,8 @@ export default class WebGLDefault16Render extends WebGLDefaultRender {
         this.yTexture.setSize((frame.linesize[0] / planeCount) >>> 1, frame.height)
         this.textureWidth = (frame.linesize[0] / planeCount) >>> 1
       }
+
+      this.linesize = frame.linesize[0]
 
       this.videoWidth = frame.width
       this.videoHeight = frame.height

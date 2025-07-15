@@ -36,6 +36,8 @@ import { getHeap } from 'cheap/heap'
 
 export default class WebGPUDefault8Render extends WebGPUDefaultRender {
 
+  private linesize: int32
+
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions) {
     super(canvas, options)
   }
@@ -101,7 +103,7 @@ export default class WebGPUDefault8Render extends WebGPUDefaultRender {
   }
 
   protected checkFrame(frame: pointer<AVFrame>): void {
-    if (frame.linesize[0] !== this.textureWidth
+    if (frame.linesize[0] !== this.linesize
       || frame.height !== this.videoHeight
       || frame.width !== this.videoWidth
     ) {
@@ -166,6 +168,8 @@ export default class WebGPUDefault8Render extends WebGPUDefaultRender {
         })
         this.textureWidth = frame.linesize[0] / planeCount
       }
+
+      this.linesize = frame.linesize[0]
 
       this.srcColorSpace = new ColorSpace(
         frame.colorSpace,

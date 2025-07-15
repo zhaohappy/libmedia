@@ -41,6 +41,8 @@ import { getHeap } from 'cheap/heap'
 
 export default class WebGPUDefault16Render extends WebGPUDefaultRender {
 
+  private linesize: int32
+
   private hdrMetadata: HdrMetadata
   private hdrMetadataBuffer: GPUBuffer
 
@@ -288,7 +290,7 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
   }
 
   protected checkFrame(frame: pointer<AVFrame>): void {
-    if ((frame.linesize[0] >>> 1) !== this.textureWidth
+    if (frame.linesize[0] !== this.linesize
       || frame.height !== this.videoHeight
       || frame.width !== this.videoWidth
       || frame.format !== this.format
@@ -354,6 +356,7 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
         })
         this.textureWidth = (frame.linesize[0] / planeCount) >>> 1
       }
+      this.linesize = frame.linesize[0]
 
       this.srcColorSpace = new ColorSpace(
         frame.colorSpace,

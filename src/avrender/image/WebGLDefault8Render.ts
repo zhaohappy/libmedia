@@ -36,6 +36,9 @@ import ColorSpace from './colorSpace/ColorSpace'
 import isPointer from 'cheap/std/function/isPointer'
 
 export default class WebGLDefault8Render extends WebGLDefaultRender {
+
+  private linesize: int32
+
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGLRenderOptions) {
     super(canvas, options)
   }
@@ -104,7 +107,7 @@ export default class WebGLDefault8Render extends WebGLDefaultRender {
   }
 
   protected checkFrame(frame: pointer<AVFrame>): void {
-    if (frame.linesize[0] !== this.textureWidth
+    if (frame.linesize[0] !== this.linesize
       || frame.height !== this.videoHeight
       || frame.width !== this.videoWidth
     ) {
@@ -149,6 +152,8 @@ export default class WebGLDefault8Render extends WebGLDefaultRender {
         this.yTexture.setSize(frame.linesize[0] / planeCount, frame.height)
         this.textureWidth = frame.linesize[0] / planeCount
       }
+
+      this.linesize = frame.linesize[0]
 
       this.videoWidth = frame.width
       this.videoHeight = frame.height
