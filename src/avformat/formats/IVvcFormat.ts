@@ -42,7 +42,7 @@ import { AV_TIME_BASE } from 'avutil/constant'
 import BitReader from 'common/io/BitReader'
 import * as expgolomb from 'avutil/util/expgolomb'
 import NaluReader from './nalu/NaluReader'
-import { BitFormat } from 'avutil/codecs/h264'
+import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 
 export interface IVvcFormatOptions {
   framerate?: Rational
@@ -173,7 +173,7 @@ export default class IHevcFormat extends IFormat {
     stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_VVC
     stream.timeBase.den = AV_TIME_BASE
     stream.timeBase.num = 1
-    stream.codecpar.bitFormat = BitFormat.ANNEXB
+    stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB
     this.currentDts = 0n
     this.currentPts = 0n
     this.naluPos = 0n
@@ -223,7 +223,7 @@ export default class IHevcFormat extends IFormat {
         avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
         avpacket.timeBase.num = stream.timeBase.num
         avpacket.timeBase.den = stream.timeBase.den
-        avpacket.bitFormat = BitFormat.ANNEXB
+        avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
 
         formatContext.interval.packetBuffer.push(avpacket)
 
@@ -380,7 +380,7 @@ export default class IHevcFormat extends IFormat {
     avpacket.streamIndex = stream.index
     avpacket.timeBase.num = stream.timeBase.num
     avpacket.timeBase.den = stream.timeBase.den
-    avpacket.bitFormat = BitFormat.ANNEXB
+    avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
 
     if (isKey) {
       avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY

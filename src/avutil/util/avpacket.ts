@@ -192,7 +192,6 @@ export function getAVPacketDefault(avpacket: pointer<AVPacket>) {
   avpacket.pts = NOPTS_VALUE_BIGINT
   avpacket.timeBase.den = AV_TIME_BASE
   avpacket.timeBase.num = 1
-  avpacket.bitFormat = 0
 
   avpacket.buf = nullptr
 }
@@ -222,7 +221,6 @@ export function copyAVPacketProps(dst: pointer<AVPacket>, src: pointer<AVPacket>
   dst.opaque = src.opaque
   dst.timeBase.den = src.timeBase.den
   dst.timeBase.num = src.timeBase.num
-  dst.bitFormat = src.bitFormat
 
   dst.opaqueRef = nullptr
 

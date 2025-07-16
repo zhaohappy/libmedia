@@ -61,12 +61,11 @@ import IPCPort, { NOTIFY, REQUEST, RpcMessage } from 'common/network/IPCPort'
 import * as errorType from 'avutil/error'
 import getAudioCodec from 'avutil/function/getAudioCodec'
 import { avFree, avMalloc, avMallocz } from 'avutil/util/mem'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import AVCodecParameters, { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
 import SafeFileIO from 'common/io/SafeFileIO'
 import Emitter from 'common/event/Emitter'
 import * as eventType from './eventType'
-import { BitFormat } from 'avutil/codecs/h264'
 import { unrefAVFrame } from 'avutil/util/avframe'
 import { unrefAVPacket } from 'avutil/util/avpacket'
 
@@ -1490,10 +1489,10 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
       ) {
         if (task.format === AVFormat.MPEGTS) {
-          newStream.codecpar.bitFormat = BitFormat.ANNEXB
+          newStream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB
         }
         else {
-          newStream.codecpar.bitFormat = BitFormat.AVCC
+          newStream.codecpar.flags &= ~AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB
         }
       }
 

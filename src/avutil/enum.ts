@@ -8,13 +8,15 @@ export { AVSampleFormat, AVAudioServiceType, AVChannel, AVChannelOrder, AVChanne
 
 export { AVPixelFormatFlags } from './pixelFormatDescriptor'
 
+export { AVCodecParameterFlags } from './struct/avcodecparameters'
+
 export { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVFieldOrder, AVPixelFormat } from './pixfmt'
 
 export { AV1Profile } from './codecs/av1'
 
 export { VP9Profile } from './codecs/vp9'
 
-export { H264NaluType, H264Profile, H264SliceType, BitFormat as NaluBitFormat } from './codecs/h264'
+export { H264NaluType, H264Profile, H264SliceType } from './codecs/h264'
 
 export { HEVCNaluType, HEVCProfile, HEVCSliceType } from './codecs/hevc'
 

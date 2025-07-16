@@ -39,7 +39,6 @@ import * as logger from 'common/util/logger'
 import { createAVPacket, destroyAVPacket, getAVPacketSideData, getSideData } from 'avutil/util/avpacket'
 import { avQ2D, avRescaleQ2 } from 'avutil/util/rational'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
-import { BitFormat } from 'avutil/codecs/h264'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import AVStream, { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import mktag from '../function/mktag'
@@ -593,7 +592,7 @@ export default class OFlvFormat extends OFormat {
       if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
         || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
         || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
-      ) && avpacket.bitFormat !== BitFormat.AVCC
+      ) && (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)
       ) {
         this.annexb2AvccFilter.sendAVPacket(avpacket)
         this.annexb2AvccFilter.receiveAVPacket(this.avpacket)

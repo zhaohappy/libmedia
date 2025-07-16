@@ -68,6 +68,7 @@ import * as is from 'common/util/is'
 import Ac32RawFilter from '../bsf/ac3/Ac32RawFilter'
 import Dts2RawFilter from '../bsf/dts/Dts2RawFilter'
 import ADTS2RawFilter from '../bsf/aac/ADTS2RawFilter'
+import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 
 export default class IMpegpsFormat extends IFormat {
 
@@ -348,7 +349,7 @@ export default class IMpegpsFormat extends IFormat {
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
     ) {
-      stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+      stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB
     }
 
     if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3) {
@@ -497,7 +498,7 @@ export default class IMpegpsFormat extends IFormat {
       || codecId === AVCodecID.AV_CODEC_ID_H265
       || codecId === AVCodecID.AV_CODEC_ID_VVC
     ) {
-      avpacket.bitFormat = h264.BitFormat.ANNEXB
+      avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
     }
 
     avpacket.streamIndex = stream.index

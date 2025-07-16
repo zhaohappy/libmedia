@@ -69,7 +69,7 @@ export default class Annexb2AvccFilter extends AVBSFilter {
 
     const buffer = mapSafeUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
 
-    if (avpacket.bitFormat === h264.BitFormat.AVCC) {
+    if (!(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)) {
       refAVPacket(this.cache, avpacket)
     }
     else {
@@ -96,7 +96,7 @@ export default class Annexb2AvccFilter extends AVBSFilter {
         logger.fatal(`not support for codecId: ${this.inCodecpar.codecId}`)
       }
 
-      this.cache.bitFormat = h264.BitFormat.AVCC
+      this.cache.flags &= ~AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
 
       addAVPacketData(this.cache, convert.bufferPointer, convert.length)
 

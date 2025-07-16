@@ -28,10 +28,9 @@ import browser from 'common/util/browser'
 import getVideoCodec from 'avutil/function/getVideoCodec'
 import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import { mapUint8Array } from 'cheap/std/memory'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import AVCodecParameters, { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 import { addAVPacketData, getAVPacketData, getAVPacketSideData } from 'avutil/util/avpacket'
 import { getHardwarePreference } from 'avutil/function/getHardwarePreference'
-import { BitFormat } from 'avutil/codecs/h264'
 import avpacket2EncodedVideoChunk from 'avutil/function/avpacket2EncodedVideoChunk'
 import * as logger from 'common/util/logger'
 import os from 'common/util/os'
@@ -158,7 +157,7 @@ export default class WebVideoDecoder {
       codec: getVideoCodec(parameters),
       codedWidth: parameters.width,
       codedHeight: parameters.height,
-      description: (parameters.bitFormat !== BitFormat.ANNEXB) ? this.extradata : undefined,
+      description: (parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) ? undefined : this.extradata,
       hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true)
     }
 
@@ -197,7 +196,7 @@ export default class WebVideoDecoder {
     }
 
     this.keyframeRequire = true
-    if (this.parameters.bitFormat === BitFormat.ANNEXB) {
+    if (parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) {
       this.extradataRequire = true
     }
 
@@ -229,7 +228,10 @@ export default class WebVideoDecoder {
       if (!key) {
         return 0
       }
-      if (this.parameters.bitFormat === BitFormat.ANNEXB && this.extradata && this.extradataRequire) {
+      if ((this.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB)
+        && this.extradata
+        && this.extradataRequire
+      ) {
         if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_H264) {
           if (!h264.generateAnnexbExtradata(getAVPacketData(avpacket))) {
             const data = h264.annexbAddExtradata(getAVPacketData(avpacket), this.extradata)
@@ -351,7 +353,7 @@ export default class WebVideoDecoder {
       codec: getVideoCodec(parameters),
       codedWidth: parameters.width,
       codedHeight: parameters.height,
-      description: (parameters.bitFormat !== BitFormat.ANNEXB) ? extradata : undefined,
+      description: (parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) ? undefined : extradata,
       hardwareAcceleration: getHardwarePreference(enableHardwareAcceleration ?? true)
     }
 

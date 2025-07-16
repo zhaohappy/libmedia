@@ -265,7 +265,7 @@ export default class OMpegtsFormat extends OFormat {
         && avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
       ) {
         let hasNewSps = hasAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
-        if (!hasNewSps && avpacket.bitFormat === h264.BitFormat.ANNEXB) {
+        if (!hasNewSps && (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)) {
           if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
             hasNewSps = !!h264.generateAnnexbExtradata(getAVPacketData(avpacket))
           }
@@ -278,7 +278,7 @@ export default class OMpegtsFormat extends OFormat {
         }
         this.firstVideoCheck = true
         if (!hasNewSps && stream.codecpar.extradata) {
-          if (avpacket.bitFormat === h264.BitFormat.ANNEXB) {
+          if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB) {
             let extradata = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)).slice()
 
             if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264

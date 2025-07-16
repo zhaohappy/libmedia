@@ -32,7 +32,7 @@ export function readSEI(avpacket: pointer<AVPacket>, stream: AVStream) {
         || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
     )
   ) {
-    const nalus = avpacket.bitFormat === h264.BitFormat.ANNEXB
+    const nalus = (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)
       ? naluUtil.splitNaluByStartCode(getAVPacketData(avpacket))
       : naluUtil.splitNaluByLength(getAVPacketData(avpacket), stream.metadata.naluLengthSizeMinusOne || 3)
 
@@ -65,7 +65,7 @@ export function readSEI(avpacket: pointer<AVPacket>, stream: AVStream) {
 
 // h264 for example
 export function writeSEI(avpacket: pointer<AVPacket>, stream: AVStream, payloadType: number, payload: Uint8Array) {
-  const nalus = avpacket.bitFormat === h264.BitFormat.ANNEXB
+  const nalus = (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)
     ? naluUtil.splitNaluByStartCode(getAVPacketData(avpacket))
     : naluUtil.splitNaluByLength(getAVPacketData(avpacket), stream.metadata.naluLengthSizeMinusOne || 3)
 
@@ -94,7 +94,7 @@ export function writeSEI(avpacket: pointer<AVPacket>, stream: AVStream, payloadT
     nalus.unshift(sei)
   }
 
-  let length = avpacket.bitFormat === h264.BitFormat.ANNEXB
+  let length = (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)
     ? nalus.reduce((prev, nalu, index) => {
       return prev + (index ? 3 : 4) + nalu.length
     }, 0)
@@ -104,7 +104,7 @@ export function writeSEI(avpacket: pointer<AVPacket>, stream: AVStream, payloadT
   
   const data: pointer<uint8> = avMalloc(length)
 
-  avpacket.bitFormat === h264.BitFormat.ANNEXB
+  ;(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)
     ? naluUtil.joinNaluByStartCode(nalus, 2, mapUint8Array(data, length))
     : naluUtil.joinNaluByLength(nalus, stream.metadata.naluLengthSizeMinusOne || 3, mapUint8Array(data, length))
 

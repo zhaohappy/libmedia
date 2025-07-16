@@ -36,6 +36,7 @@ import { Data } from 'common/types/type'
 import AVStream from 'avutil/AVStream'
 import BitReader from 'common/io/BitReader'
 import * as logger from 'common/util/logger'
+import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 
 function eachConfig(config: string, callback: (key: string, value: string) => void) {
   const list = config.split(';')
@@ -50,7 +51,7 @@ function eachConfig(config: string, callback: (key: string, value: string) => vo
 }
 
 export function parseH264Fmtp(stream: AVStream, config: string) {
-  stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+  stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB
   const context: Partial<H264PayloadContext> = {}
   eachConfig(config, (key, value) => {
     switch (key) {
@@ -80,7 +81,7 @@ export function parseHevcFmtp(stream: AVStream, config: string) {
   const context: Partial<HEVCPayloadContext> = {}
 
   const nalus: Uint8Array[] = []
-  stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
+  stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB
 
   eachConfig(config, (key, value) => {
     switch (key) {

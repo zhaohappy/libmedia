@@ -64,7 +64,12 @@ export const enum AVPacketFlags {
   /**
    * The stream is end
    */
-  AV_PKT_FLAG_END = 32
+  AV_PKT_FLAG_END = 32,
+
+  /**
+   * 对于 h264/h265/h266 标记是否是 annexb 码流格式，未置此标志则为 avcc 格式
+   */
+  AV_PKT_FLAG_H26X_ANNEXB = 64
 }
 
 @struct
@@ -160,11 +165,6 @@ export default class AVPacket {
    */
   timeBase: Rational = new Rational({ den: AV_TIME_BASE, num: 1 })
 
-  /**
-   * 码流格式
-   * 对于 h264/h265/h266 标记是 annexb 还是 avcc 格式
-   */
-  bitFormat: int32 = 0
 }
 
 @struct

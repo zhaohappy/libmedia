@@ -35,6 +35,23 @@ import { AVChannelLayout } from './audiosample'
 import { freeCodecParameters } from '../util/codecparameters'
 import { symbolStructAddress } from 'cheap/symbol'
 
+export const enum AVCodecParameterFlags {
+  /**
+   * 对于 h264/h265/h266 标记是否是 annexb 码流格式，未置此标志则为 avcc 格式
+   */
+  AV_CODECPAR_FLAG_H26X_ANNEXB = 1,
+
+  /**
+   * 解封装层没有 pts
+   */
+  AV_CODECPAR_FLAG_NO_PTS = 2,
+
+  /**
+   * 解封装层没有 dts
+   */
+  AV_CODECPAR_FLAG_NO_DTS = 4
+}
+
 /**
  * FFmpeg AVCodecParameters 定义
  */
@@ -208,10 +225,9 @@ export default class AVCodecParameters {
   seekPreroll: int32 = 0
 
   /**
-   * 码流格式
-   * 对于 h264/h265/h266 标记是 annexb 还是 avcc 格式
+   * 一些标志
    */
-  bitFormat: int32 = 0
+  flags: int32 = 0
 
   destroy() {
     freeCodecParameters(addressof(this as AVCodecParameters))

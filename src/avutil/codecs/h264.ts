@@ -24,7 +24,7 @@
  */
 
 import * as array from 'common/util/array'
-import AVPacket from '../struct/avpacket'
+import AVPacket, { AVPacketFlags } from '../struct/avpacket'
 import BufferWriter from 'common/io/BufferWriter'
 import BufferReader from 'common/io/BufferReader'
 import { AVPacketSideDataType } from '../codec'
@@ -43,11 +43,6 @@ import { AVPixelFormat } from '../pixfmt'
 export const H264_MAX_DPB_FRAMES = 16
 
 export const NALULengthSizeMinusOne = 3
-
-export const enum BitFormat {
-  AVCC = 1,
-  ANNEXB
-}
 
 export const enum PictureType {
   I = 1,
@@ -638,7 +633,7 @@ export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayI
 }
 
 export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
-  if (avpacket.bitFormat === BitFormat.ANNEXB) {
+  if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB) {
     let nalus = naluUtil.splitNaluByStartCode(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)))
     return nalus.some((nalu) => {
       const type = nalu[0] & 0x1f

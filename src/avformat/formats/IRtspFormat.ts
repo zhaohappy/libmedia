@@ -60,6 +60,7 @@ import AVBSFilter from '../bsf/AVBSFilter'
 import Mp32RawFilter from '../bsf/mp3/Mp32RawFilter'
 import { CodecIdFmtpHandler } from 'avprotocol/rtp/fmtp'
 import Ac32RawFilter from '../bsf/ac3/Ac32RawFilter'
+import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 
 export interface IRtspFormatOptions {
   uri: string
@@ -525,7 +526,12 @@ export default class IRtspFormat extends IFormat {
                 const frame = naluUtil.joinNaluByStartCode(nalus, 2)
 
                 const p = handleVideoFrame(frame, isKey, pts)
-                p.bitFormat = stream.codecpar.bitFormat
+                if (stream.codecpar.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) {
+                  p.flags |= AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
+                }
+                else {
+                  p.flags &= ~AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
+                }
                 // 让 demuxer 去生成 dts
                 p.dts = NOPTS_VALUE_BIGINT
               }

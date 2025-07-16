@@ -51,7 +51,6 @@ import { AVFormat } from 'avutil/avformat'
 import { avQ2D, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { createAVPacket, destroyAVPacket, getAVPacketData, getSideData } from 'avutil/util/avpacket'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
-import { BitFormat } from 'avutil/codecs/h264'
 import * as is from 'common/util/is'
 import * as bigint from 'common/util/bigint'
 
@@ -600,7 +599,7 @@ export default class OMovFormat extends OFormat {
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
     )
-      && avpacket.bitFormat === BitFormat.ANNEXB
+      && (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)
     ) {
       this.annexb2AvccFilter.sendAVPacket(avpacket)
       this.annexb2AvccFilter.receiveAVPacket(this.avpacket)

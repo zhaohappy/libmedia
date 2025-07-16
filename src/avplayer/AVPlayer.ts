@@ -109,7 +109,7 @@ import { avMalloc } from 'avutil/util/mem'
 import { DRMType } from './drm/drm'
 import kid2Base64 from './drm/kid2Base64'
 import * as text from 'common/util/text'
-import { BitFormat } from 'avutil/codecs/h264'
+import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -741,7 +741,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
               codec: getVideoCodec(videoStream.codecpar),
               codedWidth: videoStream.codecpar.width,
               codedHeight: videoStream.codecpar.height,
-              description: (videoStream.codecpar.bitFormat !== BitFormat.ANNEXB) ? extradata : undefined,
+              description: (videoStream.codecpar.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) ? undefined : extradata,
               hardwareAcceleration: getHardwarePreference(true)
             }
             if (!config.description) {

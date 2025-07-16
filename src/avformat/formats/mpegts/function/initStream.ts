@@ -35,7 +35,7 @@ import Stream from 'avutil/AVStream'
 import * as opus from 'avutil/codecs/opus'
 import { avMalloc } from 'avutil/util/mem'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
-import { BitFormat } from 'avutil/codecs/h264'
+import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 
 export default function initStream(pid: PID, stream: Stream, mpegtsContext: MpegtsContext) {
 
@@ -140,7 +140,7 @@ export default function initStream(pid: PID, stream: Stream, mpegtsContext: Mpeg
     || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
     || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
   ) {
-    stream.codecpar.bitFormat = BitFormat.ANNEXB
+    stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB
   }
 
   if (filter) {

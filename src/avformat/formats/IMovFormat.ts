@@ -46,7 +46,6 @@ import { avRescaleQ } from 'avutil/util/rational'
 import AVStream from 'avutil/AVStream'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { IOFlags } from 'avutil/avformat'
-import { BitFormat } from 'avutil/codecs/h264'
 import * as intread from 'avutil/util/intread'
 import { encryptionInfo2SideData } from 'avutil/util/encryption'
 
@@ -233,13 +232,6 @@ export default class IMovFormat extends IFormat {
       const data: pointer<uint8> = avMalloc(len)
       addAVPacketData(avpacket, data, len)
       await formatContext.ioReader.readBuffer(len, mapSafeUint8Array(data, len))
-
-      if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
-        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
-      ) {
-        avpacket.bitFormat = BitFormat.AVCC
-      }
 
       if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_WEBVTT
         && avpacket.size >= 8

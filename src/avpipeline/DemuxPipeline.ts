@@ -1045,7 +1045,7 @@ export default class DemuxPipeline extends Pipeline {
           return false
         }
         let hasNewSps = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA) !== nullptr
-        if (!hasNewSps && avpacket.bitFormat === h264.BitFormat.ANNEXB) {
+        if (!hasNewSps && (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)) {
           if (codecId === AVCodecID.AV_CODEC_ID_H264) {
             hasNewSps = !!h264.generateAnnexbExtradata(getAVPacketData(avpacket))
           }

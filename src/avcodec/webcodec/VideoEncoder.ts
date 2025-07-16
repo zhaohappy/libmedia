@@ -23,16 +23,15 @@
  *
  */
 
-import AVPacket, { AVPacketPool } from 'avutil/struct/avpacket'
+import AVPacket, { AVPacketFlags, AVPacketPool } from 'avutil/struct/avpacket'
 import { AVCodecID } from 'avutil/codec'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import AVCodecParameters, { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
 import getVideoCodec from 'avutil/function/getVideoCodec'
 import { getHardwarePreference } from 'avutil/function/getHardwarePreference'
 import { avQ2D, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { avframe2VideoFrame } from 'avutil/function/avframe2VideoFrame'
 import { createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
-import { BitFormat } from 'avutil/codecs/h264'
 import { getAVPixelFormatDescriptor, AVPixelFormatFlags } from 'avutil/pixelFormatDescriptor'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
 import { Rational } from 'avutil/struct/rational'
@@ -156,7 +155,12 @@ export default class WebVideoEncoder {
       || this.parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
       || this.parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
     ) {
-      avpacket.bitFormat = this.parameters.bitFormat
+      if (this.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) {
+        avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
+      }
+      else {
+        avpacket.flags &= ~AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
+      }
     }
 
     this.options.onReceiveAVPacket(avpacket)
@@ -200,19 +204,19 @@ export default class WebVideoEncoder {
 
     if (parameters.codecId === AVCodecID.AV_CODEC_ID_H264) {
       config.avc = {
-        format: parameters.bitFormat === BitFormat.AVCC ? 'avc' : 'annexb'
+        format: (parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) ? 'annexb' : 'avc'
       }
     }
     else if (parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
       // @ts-ignore
       config.hevc = {
-        format: parameters.bitFormat === BitFormat.AVCC ? 'hevc' : 'annexb'
+        format: (parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) ? 'annexb' : 'hevc'
       }
     }
     else if (parameters.codecId === AVCodecID.AV_CODEC_ID_VVC) {
       // @ts-ignore
       config.vvc = {
-        format: parameters.bitFormat === BitFormat.AVCC ? 'vvc' : 'annexb'
+        format: (parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) ? 'annexb' : 'vvc'
       }
     }
 

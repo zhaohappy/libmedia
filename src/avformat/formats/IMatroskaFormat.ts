@@ -69,6 +69,7 @@ import * as text from 'common/util/text'
 import isDef from 'common/function/isDef'
 import * as naluUtil from 'avutil/util/nalu'
 import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 
 export default class IMatroskaFormat extends IFormat {
 
@@ -134,6 +135,7 @@ export default class IMatroskaFormat extends IFormat {
         const stream = formatContext.createStream()
         stream.privData = track
         stream.codecpar.codecId = tag2CodecId[track.codecId] || AVCodecID.AV_CODEC_ID_NONE
+        stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_DTS
         switch (track.type) {
           case MATROSKATrackType.AUDIO:
             stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
@@ -276,10 +278,7 @@ export default class IMatroskaFormat extends IFormat {
                 const extradata = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize))
                 h264.parseAVCodecParameters(stream, extradata)
                 if (naluUtil.isAnnexb(extradata)) {
-                  stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
-                }
-                else {
-                  stream.codecpar.bitFormat = h264.BitFormat.AVCC
+                  stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB
                 }
                 break
               }
@@ -287,10 +286,7 @@ export default class IMatroskaFormat extends IFormat {
                 const extradata = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize))
                 hevc.parseAVCodecParameters(stream, extradata)
                 if (naluUtil.isAnnexb(extradata)) {
-                  stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
-                }
-                else {
-                  stream.codecpar.bitFormat = h264.BitFormat.AVCC
+                  stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB
                 }
                 break
               }
@@ -298,10 +294,7 @@ export default class IMatroskaFormat extends IFormat {
                 const extradata = mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize))
                 vvc.parseAVCodecParameters(stream, extradata)
                 if (naluUtil.isAnnexb(extradata)) {
-                  stream.codecpar.bitFormat = h264.BitFormat.ANNEXB
-                }
-                else {
-                  stream.codecpar.bitFormat = h264.BitFormat.AVCC
+                  stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB
                 }
                 break
               }
@@ -751,7 +744,12 @@ export default class IMatroskaFormat extends IFormat {
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
           || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
         ) {
-          avpacket.bitFormat = stream.codecpar.bitFormat
+          if (stream.codecpar.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) {
+            avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
+          }
+          else {
+            avpacket.flags &= ~AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
+          }
         }
       }
 

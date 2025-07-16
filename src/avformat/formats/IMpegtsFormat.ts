@@ -60,7 +60,6 @@ import * as dts from 'avutil/codecs/dts'
 import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import { avMalloc } from 'avutil/util/mem'
 import { memcpy, mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { BitFormat } from 'avutil/codecs/h264'
 import * as is from 'common/util/is'
 import * as nalusUtil from 'avutil/util/nalu'
 import concatTypeArray from 'common/function/concatTypeArray'
@@ -183,7 +182,7 @@ export default class IMpegtsFormat extends IFormat {
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H265
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
     ) {
-      avpacket.bitFormat = BitFormat.ANNEXB
+      avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
     }
 
     avpacket.streamIndex = stream.index

@@ -46,7 +46,6 @@ export interface AVPacketSerialize {
   duration: int64
   pos: int64
   timeBase: Rational
-  bitFormat: int32
 }
 
 export interface AVCodecParametersSerialize {
@@ -86,7 +85,7 @@ export interface AVCodecParametersSerialize {
   initialPadding: int32
   trailingPadding: int32
   seekPreroll: int32
-  bitFormat: int32
+  flags: int32
 }
 
 export function serializeAVPacket(avpacket: pointer<AVPacket>) {
@@ -102,8 +101,7 @@ export function serializeAVPacket(avpacket: pointer<AVPacket>) {
     timeBase: {
       den: avpacket.timeBase.den,
       num: avpacket.timeBase.num
-    },
-    bitFormat: avpacket.bitFormat
+    }
   }
 
   for (let i = 0; i < avpacket.sideDataElems; i++) {
@@ -134,7 +132,6 @@ export function unserializeAVPacket(serialize: AVPacketSerialize, avpacket: poin
   avpacket.pos = serialize.pos
   avpacket.timeBase.den = serialize.timeBase.den
   avpacket.timeBase.num = serialize.timeBase.num
-  avpacket.bitFormat = serialize.bitFormat
 
   if (serialize.sideData.length) {
     for (let i = 0; i < serialize.sideData.length; i++) {
@@ -191,7 +188,7 @@ export function serializeAVCodecParameters(codecpar: pointer<AVCodecParameters>)
     initialPadding: codecpar.initialPadding,
     trailingPadding: codecpar.trailingPadding,
     seekPreroll: codecpar.seekPreroll,
-    bitFormat: codecpar.bitFormat
+    flags: codecpar.flags
   }
 
   if (codecpar.extradataSize) {
@@ -265,7 +262,7 @@ export function unserializeAVCodecParameters(serialize: AVCodecParametersSeriali
   codecpar.initialPadding = serialize.initialPadding
   codecpar.trailingPadding = serialize.trailingPadding
   codecpar.seekPreroll = serialize.seekPreroll
-  codecpar.bitFormat = serialize.bitFormat
+  codecpar.flags = serialize.flags
 
   return codecpar
 }

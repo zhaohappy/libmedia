@@ -349,7 +349,7 @@ export default class OMatroskaFormat extends OFormat {
     if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
         || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
         || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
-    ) && avpacket.bitFormat !== h264.BitFormat.AVCC
+    ) && (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)
     ) {
       this.annexb2AvccFilter.sendAVPacket(avpacket)
       this.annexb2AvccFilter.receiveAVPacket(this.avpacket)
