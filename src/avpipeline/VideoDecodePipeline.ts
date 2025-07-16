@@ -669,7 +669,7 @@ export default class VideoDecodePipeline extends Pipeline {
           logger.debug('open hardware decoder')
           const ret = await task.hardwareDecoder.open(codecpar)
           if (ret) {
-            logger.error(`cannot open hardware decoder, ${ret}, try to open software decoder`)
+            logger.warn(`cannot open hardware decoder, ${ret}, try to open software decoder`)
             task.hardwareDecoder.close()
             task.hardwareDecoder = null
             task.targetDecoder = task.softwareDecoder
