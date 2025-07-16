@@ -555,6 +555,9 @@ export default class HlsIOLoader extends IOLoader {
   private audioSelectedIndex: number
   private subtitleSelectedIndex: number
 
+  private sleep: Sleep
+  private aborted: boolean
+
   private async fetchMasterPlayList() {
     try {
       const res = await fetch(this.info.url, getFetchParams(this.info))
@@ -591,7 +594,12 @@ export default class HlsIOLoader extends IOLoader {
       if (this.retryCount < this.options.retryCount) {
         this.retryCount++
         logger.error(`failed fetch m3u8 file, retry(${this.retryCount}/3)`)
-        await new Sleep(5)
+        this.sleep = new Sleep(3)
+        await this.sleep
+        this.sleep = null
+        if (this.aborted) {
+          logger.fatal('HLSLoader: exception, fetch abort')
+        }
         return this.fetchMasterPlayList()
       }
       else {
@@ -676,6 +684,7 @@ export default class HlsIOLoader extends IOLoader {
 
     this.status = IOLoaderStatus.CONNECTING
     this.retryCount = 0
+    this.aborted = false
 
     await this.fetchMasterPlayList()
 
@@ -724,6 +733,11 @@ export default class HlsIOLoader extends IOLoader {
   public async abort() {
     for (let loader of this.loaders) {
       await loader[1].abort()
+    }
+    this.aborted = true
+    if (this.sleep) {
+      this.sleep.stop()
+      this.sleep = null
     }
   }
 
