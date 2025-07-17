@@ -757,11 +757,31 @@ export function parseSPS(sps: Uint8ArrayInterface): H264SPS {
     // qpprime_y_zero_transform_bypass_flag
     bitReader.readU1()
 
+    function skipScalingList(sizeOfScalingList: number) {
+      let lastScale = 8
+      let nextScale = 8
+      let deltaScale: number
+      for (let j = 0; j < sizeOfScalingList; j++) {
+        if (nextScale !== 0) {
+          deltaScale = expgolomb.readSE(bitReader)
+          nextScale = (lastScale + deltaScale + 256) % 256
+        }
+        lastScale = (nextScale === 0) ? lastScale : nextScale
+      }
+    }
     let seqScalingMatrixPresentFlag = bitReader.readU1()
     if (seqScalingMatrixPresentFlag) {
       const seqScalingListPresentFlag = new Array(8)
       for (let i = 0; i < ((chromaFormatIdc != 3) ? 8 : 12); i++) {
         seqScalingListPresentFlag[i] = bitReader.readU1()
+        if (seqScalingListPresentFlag[i]) {
+          if (i < 6) {
+            skipScalingList(16)
+          }
+          else {
+            skipScalingList(64)
+          }
+        }
       }
     }
   }
