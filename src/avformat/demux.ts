@@ -130,6 +130,9 @@ async function estimateDurationFromPts(formatContext: AVIFormatContext) {
       }
       else {
         let duration = avpacket.pts
+        if (duration === NOPTS_VALUE_BIGINT) {
+          duration = avpacket.dts
+        }
         const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
         if (stream.startTime !== NOPTS_VALUE_BIGINT) {
           duration -= stream.startTime
@@ -324,17 +327,22 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
 
     const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
 
+    let pts = avpacket.pts
+    if (pts === NOPTS_VALUE_BIGINT) {
+      pts = avpacket.dts
+    }
+
     if (avpacket.size) {
       packetCached = true
       caches.push(avpacket)
 
       if (!streamFirstGotMap[stream.index]) {
         stream.firstDTS = avpacket.dts
-        stream.startTime = avpacket.pts
+        stream.startTime = pts
         streamFirstGotMap[stream.index] = true
       }
-      else if (avpacket.pts < stream.startTime) {
-        stream.startTime = avpacket.pts
+      else if (pts < stream.startTime) {
+        stream.startTime = pts
       }
 
       if (avpacket.dts !== NOPTS_VALUE_BIGINT) {
@@ -346,10 +354,10 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
         }
       }
       if (streamPtsMap[stream.index]) {
-        streamPtsMap[stream.index].push(avpacket.pts)
+        streamPtsMap[stream.index].push(pts)
       }
       else {
-        streamPtsMap[stream.index] = [avpacket.pts]
+        streamPtsMap[stream.index] = [pts]
       }
 
       if (streamBitMap[stream.index]) {
@@ -427,14 +435,14 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
     }
 
     if (stream.startTime !== NOPTS_VALUE_BIGINT
-      && (avpacket.pts - stream.startTime) > avRescaleQ(
+      && (pts - stream.startTime) > avRescaleQ(
         static_cast<int64>((formatContext.options as DemuxOptions).maxAnalyzeDuration),
         AV_MILLI_TIME_BASE_Q,
         stream.timeBase
       )
       && (formatContext.streams.length >= needStreams
         && checkStreamParameters(formatContext)
-        || (avpacket.pts - stream.startTime) > avRescaleQ(
+        || (pts - stream.startTime) > avRescaleQ(
           15000n,
           AV_MILLI_TIME_BASE_Q,
           stream.timeBase
@@ -495,8 +503,12 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
 }
 
 function addSample(stream: AVStream, avpacket: pointer<AVPacket>) {
+  let pts = avpacket.pts
+  if (pts === NOPTS_VALUE_BIGINT) {
+    pts = avpacket.dts
+  }
   const index = array.binarySearch(stream.sampleIndexes, (sample) => {
-    if (sample.pts < avpacket.pts) {
+    if (sample.pts < pts) {
       return 1
     }
     else {
@@ -505,7 +517,7 @@ function addSample(stream: AVStream, avpacket: pointer<AVPacket>) {
   })
   const sample = {
     dts: avpacket.dts,
-    pts: avpacket.pts,
+    pts: pts,
     pos: avpacket.pos,
     size: avpacket.size,
     duration: avpacket.duration,

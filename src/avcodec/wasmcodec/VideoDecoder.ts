@@ -27,7 +27,7 @@ import AVPacket from 'avutil/struct/avpacket'
 import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import AVCodecParameters, { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 import { createAVFrame, destroyAVFrame } from 'avutil/util/avframe'
 import * as logger from 'common/util/logger'
 import support from 'common/util/support'
@@ -95,6 +95,8 @@ export default class WasmVideoDecoder {
 
   private timeBase: Rational | undefined
 
+  private dtsQueue: int64[] = []
+
   constructor(options: WasmVideoDecoderOptions) {
     this.options = options
     this.decoder = new WebAssemblyRunner(this.options.resource)
@@ -109,6 +111,11 @@ export default class WasmVideoDecoder {
 
   private outputAVFrame() {
     if (this.frame) {
+      if ((this.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS)
+        && this.dtsQueue.length
+      ) {
+        this.frame.pts = this.dtsQueue.shift()!
+      }
       if (this.options.onReceiveAVFrame) {
         this.frame.timeBase.den = this.timeBase!.den
         this.frame.timeBase.num = this.timeBase!.num
@@ -166,6 +173,7 @@ export default class WasmVideoDecoder {
     }
     this.parameters = parameters
     this.timeBase = undefined
+    this.dtsQueue.length = 0
     return 0
   }
 
@@ -182,6 +190,10 @@ export default class WasmVideoDecoder {
 
     if (ret) {
       return ret
+    }
+
+    if (this.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS) {
+      this.dtsQueue.push(avpacket.dts)
     }
 
     while (true) {

@@ -39,6 +39,8 @@ import * as hevc from 'avutil/codecs/hevc'
 import * as vvc from 'avutil/codecs/vvc'
 import * as errorType from 'avutil/error'
 import * as array from 'common/util/array'
+import { AV_TIME_BASE_Q } from 'avutil/constant'
+import { avRescaleQ2 } from 'avutil/util/rational'
 
 export type WebVideoDecoderOptions = {
   onReceiveVideoFrame: (frame: VideoFrame) => void
@@ -59,6 +61,7 @@ export default class WebVideoDecoder {
 
   private inputQueue: number[]
   private outputQueue: VideoFrame[]
+  private dtsQueue: double[]
 
   private sort: boolean
 
@@ -70,6 +73,7 @@ export default class WebVideoDecoder {
     this.options = options
     this.inputQueue = []
     this.outputQueue = []
+    this.dtsQueue = []
 
     // safari 输出帧在有 B 帧的情况下没有按 pts 排序递增输出，这里需要进行排序输出
     // 经测试 safari 17.4 以上正常排序输出，这里不需要排序了
@@ -78,6 +82,15 @@ export default class WebVideoDecoder {
   }
 
   private async output(frame: VideoFrame) {
+    if (this.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS
+      && this.dtsQueue.length
+    ) {
+      const old = frame
+      frame = new VideoFrame(old, {
+        timestamp: this.dtsQueue.shift()
+      })
+      old.close()
+    }
     if (this.sort) {
       let i = 0
       for (; i < this.outputQueue.length; i++) {
@@ -199,9 +212,13 @@ export default class WebVideoDecoder {
     if (parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) {
       this.extradataRequire = true
     }
+    if (this.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS) {
+      this.sort = false
+    }
 
     this.inputQueue.length = 0
     this.outputQueue.length = 0
+    this.dtsQueue.length = 0
 
     return 0
   }
@@ -279,6 +296,9 @@ export default class WebVideoDecoder {
 
     try {
       this.decoder!.decode(videoChunk)
+      if (this.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS) {
+        this.dtsQueue.push(static_cast<double>(avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), AV_TIME_BASE_Q)))
+      }
     }
     catch (error) {
       logger.error(`decode error, ${error}`)
