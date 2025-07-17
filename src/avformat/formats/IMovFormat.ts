@@ -353,6 +353,13 @@ export default class IMovFormat extends IFormat {
 
     assert(stream)
 
+    const now = formatContext.ioReader.getPos()
+
+    if (flags & AVSeekFlags.BYTE) {
+      await formatContext.ioReader.seek(timestamp)
+      return now
+    }
+
     const pts = timestamp
 
     const streamContext = stream.privData as MOVStreamContext
@@ -370,7 +377,7 @@ export default class IMovFormat extends IFormat {
       const seekTime = avRescaleQ(timestamp, stream.timeBase, AV_MILLI_TIME_BASE_Q)
       await formatContext.ioReader.seek(seekTime, true)
       resetFragment()
-      return 0n
+      return now
     }
 
     if (this.context.fragment) {
@@ -387,13 +394,13 @@ export default class IMovFormat extends IFormat {
         if (index > -1) {
           await formatContext.ioReader.seek(streamContext.fragIndexes[index].pos, true)
           resetFragment()
-          return 0n
+          return now
         }
       }
       if (pts === 0n && this.context.firstMoof) {
         await formatContext.ioReader.seek(this.context.firstMoof)
         resetFragment()
-        return 0n
+        return now
       }
       return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
     }
@@ -463,7 +470,7 @@ export default class IMovFormat extends IFormat {
         }
       })
       this.firstAfterSeek = true
-      return 0n
+      return now
     }
     return static_cast<int64>(errorType.DATA_INVALID)
   }
