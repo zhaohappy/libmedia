@@ -285,7 +285,7 @@ export async function getAVFormat(ioReader: IOReader, source: string | File) {
 
 const musicExt: string[] = ['mp3', 'aac', 'flac', 'ogg', 'wav', 'm4a', 'mka', 'opus']
 const movExt: string[] = ['mp4', 'webm', 'mkv', 'flv', 'ts', 'mov', 'm4s', 'h264', '264', 'avc',
-  'h265', '265', 'hevc', 'h266', '266', 'vvc', 'ivf', 'mpeg'
+  'h265', '265', 'hevc', 'h266', '266', 'vvc', 'ivf', 'mpeg', 'avi'
 ]
 const subtitleExt: string[] = ['ass', 'ssa', 'vvt', 'srt', 'xml', 'ttml']
 

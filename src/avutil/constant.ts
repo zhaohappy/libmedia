@@ -61,6 +61,7 @@ export const AV_TIME_BASE1_Q = new Rational({den: 1, num: 1})
 export const INT8_MAX: int8 = 127
 export const INT16_MAX: int16 = 32767
 export const INT32_MAX: int32 = 2147483647
+export const INT64_MAX: int64 = 9223372036854775807n
 
 export const INT8_MIN: int8  = -128
 export const INT16_MIN: int16 = -32768
@@ -69,3 +70,4 @@ export const INT32_MIN: int32 = -INT32_MAX - 1
 export const UINT8_MAX: uint8 = 255
 export const UINT16_MAX: uint16 = 65535
 export const UINT32_MAX: uint32 = 4294967295
+export const UINT64_MAX: uint64 = 18446744073709551615n

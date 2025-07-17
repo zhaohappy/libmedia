@@ -14,6 +14,9 @@ export default function getWasmUrl(baseUrl: string, type: 'decoder' | 'encoder' 
       if (codecId > AVCodecID.AV_CODEC_ID_FIRST_AUDIO && codecId <= AVCodecID.AV_CODEC_ID_PCM_SGA) {
         return `${baseUrl}/decode/pcm${tag}.wasm`
       }
+      else if (codecId >= AVCodecID.AV_CODEC_ID_ADPCM_IMA_QT && codecId <= AVCodecID.AV_CODEC_ID_ADPCM_XMD) {
+        return `${baseUrl}/decode/adpcm${tag}.wasm`
+      }
 
       switch (codecId) {
         // mpeg1/2
@@ -70,6 +73,41 @@ export default function getWasmUrl(baseUrl: string, type: 'decoder' | 'encoder' 
         // vp9
         case AVCodecID.AV_CODEC_ID_VP9:
           return `${baseUrl}/decode/vp9${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_DVAUDIO:
+          return `${baseUrl}/decode/dvaudio${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_DVVIDEO:
+          return `${baseUrl}/decode/dvvideo${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_H261:
+          return `${baseUrl}/decode/h261${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_H263:
+        case AVCodecID.AV_CODEC_ID_H263I:
+        case AVCodecID.AV_CODEC_ID_H263P:
+          return `${baseUrl}/decode/h263${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_MSMPEG4V1:
+        case AVCodecID.AV_CODEC_ID_MSMPEG4V2:
+        case AVCodecID.AV_CODEC_ID_MSMPEG4V3:
+          return `${baseUrl}/decode/msmpeg4${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_RV10:
+        case AVCodecID.AV_CODEC_ID_RV20:
+        case AVCodecID.AV_CODEC_ID_RV30:
+        case AVCodecID.AV_CODEC_ID_RV40:
+          return `${baseUrl}/decode/msmpeg4${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_COOK:
+        case AVCodecID.AV_CODEC_ID_SIPR:
+        case AVCodecID.AV_CODEC_ID_RALF:
+          return `${baseUrl}/decode/ra${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_WMAV1:
+        case AVCodecID.AV_CODEC_ID_WMAV2:
+        case AVCodecID.AV_CODEC_ID_WMAVOICE:
+        case AVCodecID.AV_CODEC_ID_WMALOSSLESS:
+        case AVCodecID.AV_CODEC_ID_WMAPRO:
+          return `${baseUrl}/decode/wma${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_WMV1:
+        case AVCodecID.AV_CODEC_ID_WMV2:
+        case AVCodecID.AV_CODEC_ID_WMV3:
+          return `${baseUrl}/decode/wmv${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_MJPEG:
+          return `${baseUrl}/decode/mjpeg${tag}.wasm`
         default:
           return null
       }

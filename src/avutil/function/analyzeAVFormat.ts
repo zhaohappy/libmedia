@@ -51,6 +51,9 @@ export default async function analyzeAVFormat(ioReader: IOReader, defaultFormat:
     if (/^WAVE/.test(dataType)) {
       return AVFormat.WAV
     }
+    else if (/^AVI/.test(dataType)) {
+      return AVFormat.AVI
+    }
   }
   else if (/^ADIF/.test(magic)) {
     return AVFormat.AAC

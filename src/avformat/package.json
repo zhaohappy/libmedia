@@ -167,6 +167,11 @@
       "require": "./dist/cjs/formats/IMpegtsFormat.js",
       "types": "./dist/esm/formats/IMpegtsFormat.d.ts"
     },
+    "./formats/IAviFormat": {
+      "import": "./dist/esm/formats/IAviFormat.js",
+      "require": "./dist/cjs/formats/IAviFormat.js",
+      "types": "./dist/esm/formats/IAviFormat.d.ts"
+    },
     "./formats/IOggFormat": {
       "import": "./dist/esm/formats/IOggFormat.js",
       "require": "./dist/cjs/formats/IOggFormat.js",

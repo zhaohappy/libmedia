@@ -1,3 +1,4 @@
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 import mktagle from '../../function/mktagle'
 import { AVCodecID } from 'avutil/codec'
 
@@ -20,6 +21,10 @@ export const WavTag2CodecId = {
   0x0045: AVCodecID.AV_CODEC_ID_ADPCM_G726,
   0x0014: AVCodecID.AV_CODEC_ID_ADPCM_G726,
   0x0040: AVCodecID.AV_CODEC_ID_ADPCM_G726,
+  0x0050: AVCodecID.AV_CODEC_ID_MP2,
+  0x0055: AVCodecID.AV_CODEC_ID_MP3,
+  0x0057: AVCodecID.AV_CODEC_ID_AMR_NB,
+  0x0058: AVCodecID.AV_CODEC_ID_AMR_WB,
   0x0061: AVCodecID.AV_CODEC_ID_ADPCM_IMA_DK4,
   0x0062: AVCodecID.AV_CODEC_ID_ADPCM_IMA_DK3,
   0x0064: AVCodecID.AV_CODEC_ID_ADPCM_G726,
@@ -28,14 +33,66 @@ export const WavTag2CodecId = {
   0x0083: AVCodecID.AV_CODEC_ID_G729,
   0x00ff: AVCodecID.AV_CODEC_ID_AAC,
   0x0111: AVCodecID.AV_CODEC_ID_G723_1,
+  0x0130: AVCodecID.AV_CODEC_ID_SIPR,
+  0x0135: AVCodecID.AV_CODEC_ID_ACELP_KELVIN,
+  0x0160: AVCodecID.AV_CODEC_ID_WMAV1,
+  0x0161: AVCodecID.AV_CODEC_ID_WMAV2,
+  0x0162: AVCodecID.AV_CODEC_ID_WMAPRO,
+  0x0163: AVCodecID.AV_CODEC_ID_WMALOSSLESS,
+  0x0165: AVCodecID.AV_CODEC_ID_XMA1,
+  0x0166: AVCodecID.AV_CODEC_ID_XMA2,
+  0x0180: AVCodecID.AV_CODEC_ID_FTR,
+  0x0200: AVCodecID.AV_CODEC_ID_ADPCM_CT,
+  0x0215: AVCodecID.AV_CODEC_ID_DVAUDIO,
+  0x0216: AVCodecID.AV_CODEC_ID_DVAUDIO,
+  0x0270: AVCodecID.AV_CODEC_ID_ATRAC3,
+  0x028E: AVCodecID.AV_CODEC_ID_MSNSIREN,
+  0x028F: AVCodecID.AV_CODEC_ID_ADPCM_G722,
+  0x0350: AVCodecID.AV_CODEC_ID_MISC4,
+  0x0401: AVCodecID.AV_CODEC_ID_IMC,
+  0x0402: AVCodecID.AV_CODEC_ID_IAC,
+  0x0500: AVCodecID.AV_CODEC_ID_ON2AVC,
+  0x0501: AVCodecID.AV_CODEC_ID_ON2AVC,
+  0x1500: AVCodecID.AV_CODEC_ID_GSM_MS,
+  0x1501: AVCodecID.AV_CODEC_ID_TRUESPEECH,
 
   // ADTS AAC
   0x1600: AVCodecID.AV_CODEC_ID_AAC,
   0x1602: AVCodecID.AV_CODEC_ID_AAC_LATM,
-  0x2000: AVCodecID.AV_CODEC_ID_AC3
+  0x2000: AVCodecID.AV_CODEC_ID_AC3,
+  0x2001: AVCodecID.AV_CODEC_ID_DTS,
+  0x2048: AVCodecID.AV_CODEC_ID_SONIC,
+  0x2222: AVCodecID.AV_CODEC_ID_G729,
+  0x6c75: AVCodecID.AV_CODEC_ID_PCM_MULAW,
+  0x706d: AVCodecID.AV_CODEC_ID_AAC,
+  0x4143: AVCodecID.AV_CODEC_ID_AAC,
+  0x4180: AVCodecID.AV_CODEC_ID_FTR,
+  0x594a: AVCodecID.AV_CODEC_ID_XAN_DPCM,
+  0x729A: AVCodecID.AV_CODEC_ID_G729,
+  0x8180: AVCodecID.AV_CODEC_ID_FTR,
+  0xA100: AVCodecID.AV_CODEC_ID_G723_1,
+  0xA106: AVCodecID.AV_CODEC_ID_AAC,
+  0xA109: AVCodecID.AV_CODEC_ID_SPEEX,
+  0xF1AC: AVCodecID.AV_CODEC_ID_FLAC,
+  0xFFFE: AVCodecID.AV_CODEC_ID_DFPWM,
+  0x5346: AVCodecID.AV_CODEC_ID_ADPCM_SWF,
+  0x566f: AVCodecID.AV_CODEC_ID_VORBIS
 }
 
 export const codecBmpTags: Record<int32, AVCodecID> = {
+  [mktagle('H261')]: AVCodecID.AV_CODEC_ID_H261,
+  [mktagle('H263')]: AVCodecID.AV_CODEC_ID_H263,
+  [mktagle('X263')]: AVCodecID.AV_CODEC_ID_H263,
+  [mktagle('T263')]: AVCodecID.AV_CODEC_ID_H263,
+  [mktagle('L263')]: AVCodecID.AV_CODEC_ID_H263,
+  [mktagle('VX1K')]: AVCodecID.AV_CODEC_ID_H263,
+  [mktagle('ZyGo')]: AVCodecID.AV_CODEC_ID_H263,
+  [mktagle('M263')]: AVCodecID.AV_CODEC_ID_H263,
+  [mktagle('lsvm')]: AVCodecID.AV_CODEC_ID_H263,
+  [mktagle('I263')]: AVCodecID.AV_CODEC_ID_H263I,
+  [mktagle('U263')]: AVCodecID.AV_CODEC_ID_H263,
+  [mktagle('VSM4')]: AVCodecID.AV_CODEC_ID_H263,
+
   [mktagle('H264')]: AVCodecID.AV_CODEC_ID_H264,
   [mktagle('h264')]: AVCodecID.AV_CODEC_ID_H264,
   [mktagle('X264')]: AVCodecID.AV_CODEC_ID_H264,
@@ -118,6 +175,86 @@ export const codecBmpTags: Record<int32, AVCodecID> = {
   [mktagle('COL1')]: AVCodecID.AV_CODEC_ID_MSMPEG4V3,
   [mktagle('COL0')]: AVCodecID.AV_CODEC_ID_MSMPEG4V3,
 
+  [mktagle('WMV1')]: AVCodecID.AV_CODEC_ID_WMV1,
+  [mktagle('WMV2')]: AVCodecID.AV_CODEC_ID_WMV2,
+  [mktagle('GXVE')]: AVCodecID.AV_CODEC_ID_WMV2,
+
+  [mktagle('dvsd')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('dvhd')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('dvh1')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('dvsl')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('dv25')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('dv50')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('cdvc')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('CDVH')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('CDV5')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('dvc ')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('dvcs')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('dvh1')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('dvis')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('pdvc')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('SL25')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('SLDV')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+  [mktagle('AVd1')]: AVCodecID.AV_CODEC_ID_DVVIDEO,
+
+  [mktagle('mpg1')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('mpg2')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('MPEG')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('PIM1')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('PIM2')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('VCR2')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [0x10000001 as uint32]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [0x10000002 as uint32]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [0x10000004 as uint32]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('DVR ')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('MMES')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('LMP2')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('slif')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('EM2V')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('M701')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('M702')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('M703')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('M704')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('M705')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('mpgv')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('BW10')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('XMPG')]: AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
+  [mktagle('MJPG')]: AVCodecID.AV_CODEC_ID_MJPEG,
+
+  [mktagle('RV40')]: AVCodecID.AV_CODEC_ID_RV40,
+  [mktagle('AV01')]: AVCodecID.AV_CODEC_ID_AV1,
   [mktagle('VP80')]: AVCodecID.AV_CODEC_ID_VP8,
-  [mktagle('VP90')]: AVCodecID.AV_CODEC_ID_VP9
+  [mktagle('VP90')]: AVCodecID.AV_CODEC_ID_VP9,
+  [mktagle('HEVC')]: AVCodecID.AV_CODEC_ID_HEVC,
+  [mktagle('H265')]: AVCodecID.AV_CODEC_ID_HEVC
+}
+
+export const MEDIASUBTYPE_BASE_GUID = '00001000800000AA00389B71'
+export const AMBISONIC_BASE_GUID = '2107D3118644C8C1CA000000'
+export const BROKEN_BASE_GUID = '0000000000001000800000AA'
+
+export const codecBmpGuid: Record<string, AVCodecID> = {
+  '2C806DE046DBCF11B4D100805F6CBBEA': AVCodecID.AV_CODEC_ID_AC3,
+  'BFAA23E958CB7144A119FFFA01E4CE62': AVCodecID.AV_CODEC_ID_ATRAC3P,
+  'D242E147BA368D4D88FC61654F8C836C': AVCodecID.AV_CODEC_ID_ATRAC9,
+  'AF87FBA7022DFB42A4D405CD93843BDD': AVCodecID.AV_CODEC_ID_EAC3,
+  '2B806DE046DBCF11B4D100805F6CBBEA': AVCodecID.AV_CODEC_ID_MP2,
+  '82EC1F6ACADB1945BDE756D3B3EF981D': AVCodecID.AV_CODEC_ID_ADPCM_AGM,
+  '3AC1FA38811D4361A40DCE53CA607CD1': AVCodecID.AV_CODEC_ID_DFPWM
+}
+
+export const RiffInfo: Record<string, string> = {
+  'IART': AVStreamMetadataKey.ARTIST,
+  'ICMT': AVStreamMetadataKey.COMMENT,
+  'ICOP': AVStreamMetadataKey.COPYRIGHT,
+  'ICRD': AVStreamMetadataKey.DATE,
+  'IGNR': AVStreamMetadataKey.GENRE,
+  'ILNG': AVStreamMetadataKey.LANGUAGE,
+  'INAM': AVStreamMetadataKey.LANGUAGE,
+  'IPRD': AVStreamMetadataKey.ALBUM,
+  'IPRT': AVStreamMetadataKey.TRACK,
+  'ITRK': AVStreamMetadataKey.TRACK,
+  'ISFT': AVStreamMetadataKey.ENCODER,
+  'ISMP': AVStreamMetadataKey.TIME_CODE,
+  'ITCH': AVStreamMetadataKey.VENDOR
 }

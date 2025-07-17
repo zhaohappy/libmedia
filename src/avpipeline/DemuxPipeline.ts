@@ -62,13 +62,15 @@ import * as is from 'common/util/is'
 import * as h264 from 'avutil/codecs/h264'
 import * as hevc from 'avutil/codecs/hevc'
 import * as vvc from 'avutil/codecs/vvc'
-import { IRtspFormatOptions } from 'avformat/formats/IRtspFormat'
-import { IFlvFormatOptions } from 'avformat/formats/IFlvFormat'
-import { IMovFormatOptions } from 'avformat/formats/IMovFormat'
-import { IH264FormatOptions } from 'avformat/formats/IH264Format'
-import { IHevcFormatOptions } from 'avformat/formats/IHevcFormat'
-import { IVvcFormatOptions } from 'avformat/formats/IVvcFormat'
 import support from 'common/util/support'
+
+import { type IRtspFormatOptions } from 'avformat/formats/IRtspFormat'
+import { type IFlvFormatOptions } from 'avformat/formats/IFlvFormat'
+import { type IMovFormatOptions } from 'avformat/formats/IMovFormat'
+import { type IH264FormatOptions } from 'avformat/formats/IH264Format'
+import { type IHevcFormatOptions } from 'avformat/formats/IHevcFormat'
+import { type IVvcFormatOptions } from 'avformat/formats/IVvcFormat'
+import { type IAviFormatOptions } from 'avformat/formats/IAviFormat'
 
 export const STREAM_INDEX_ALL = -1
 const MAX_QUEUE_LENGTH_DEFAULT = 5000
@@ -485,6 +487,15 @@ export default class DemuxPipeline extends Pipeline {
           }
           else {
             logger.error('vvc format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.AVI:
+          if (defined(ENABLE_DEMUXER_AVI)) {
+            iformat = new (((await import('avformat/formats/IAviFormat')).default))(task.formatOptions as IAviFormatOptions)
+          }
+          else {
+            logger.error('avi format not support, maybe you can rebuild avmedia')
             return errorType.FORMAT_NOT_SUPPORT
           }
           break

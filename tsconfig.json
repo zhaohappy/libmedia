@@ -123,6 +123,8 @@
       "ENABLE_DEMUXER_HEVC": true,
       // 开启支持 vvc 解封装格式
       "ENABLE_DEMUXER_VVC": true,
+      // 开启支持 avi 解封装格式
+      "ENABLE_DEMUXER_AVI": true,
 
       // 开启支持 flv 封装格式
       "ENABLE_MUXER_FLV": true,

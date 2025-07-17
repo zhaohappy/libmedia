@@ -345,6 +345,21 @@ export const AVPlayerSupportedCodecs = [
   AVCodecID.AV_CODEC_ID_THEORA,
   AVCodecID.AV_CODEC_ID_MPEG2VIDEO,
   AVCodecID.AV_CODEC_ID_MPEG1VIDEO,
+  AVCodecID.AV_CODEC_ID_H261,
+  AVCodecID.AV_CODEC_ID_H263,
+  AVCodecID.AV_CODEC_ID_H263I,
+  AVCodecID.AV_CODEC_ID_H263P,
+  AVCodecID.AV_CODEC_ID_MSMPEG4V1,
+  AVCodecID.AV_CODEC_ID_MSMPEG4V2,
+  AVCodecID.AV_CODEC_ID_MSMPEG4V3,
+  AVCodecID.AV_CODEC_ID_RV10,
+  AVCodecID.AV_CODEC_ID_RV20,
+  AVCodecID.AV_CODEC_ID_RV30,
+  AVCodecID.AV_CODEC_ID_RV40,
+  AVCodecID.AV_CODEC_ID_WMV1,
+  AVCodecID.AV_CODEC_ID_WMV2,
+  AVCodecID.AV_CODEC_ID_WMV3,
+  AVCodecID.AV_CODEC_ID_MJPEG,
 
   AVCodecID.AV_CODEC_ID_AAC,
   AVCodecID.AV_CODEC_ID_MP3,
@@ -355,6 +370,14 @@ export const AVPlayerSupportedCodecs = [
   AVCodecID.AV_CODEC_ID_AC3,
   AVCodecID.AV_CODEC_ID_EAC3,
   AVCodecID.AV_CODEC_ID_DTS,
+  AVCodecID.AV_CODEC_ID_WMAV1,
+  AVCodecID.AV_CODEC_ID_WMAV2,
+  AVCodecID.AV_CODEC_ID_WMAVOICE,
+  AVCodecID.AV_CODEC_ID_WMALOSSLESS,
+  AVCodecID.AV_CODEC_ID_WMAPRO,
+  AVCodecID.AV_CODEC_ID_COOK,
+  AVCodecID.AV_CODEC_ID_SIPR,
+  AVCodecID.AV_CODEC_ID_RALF,
 
   AVCodecID.AV_CODEC_ID_WEBVTT,
   AVCodecID.AV_CODEC_ID_SUBRIP,
@@ -618,7 +641,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @hidden
    */
   private isCodecIdSupported(codecId: AVCodecID, codecType: AVMediaType, isMSE: boolean = false) {
-    if (codecId > AVCodecID.AV_CODEC_ID_FIRST_AUDIO && codecId <= AVCodecID.AV_CODEC_ID_PCM_SGA) {
+    if ((codecId > AVCodecID.AV_CODEC_ID_FIRST_AUDIO && codecId <= AVCodecID.AV_CODEC_ID_PCM_SGA)
+      || (codecId >= AVCodecID.AV_CODEC_ID_ADPCM_IMA_QT && codecId <= AVCodecID.AV_CODEC_ID_ADPCM_XMD)
+    ) {
       return true
     }
     return array.has(

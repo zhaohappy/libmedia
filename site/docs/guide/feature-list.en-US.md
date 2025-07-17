@@ -40,6 +40,7 @@ libmedia can complete the following functions:
 | mpegps   | ✅       | ❌        |
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
+| avi      | ✅       | ❌        |
 | h264 raw | ✅       | ❌        |
 | hevc raw | ✅       | ❌        |
 | vvc  raw | ✅       | ❌        |

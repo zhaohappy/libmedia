@@ -60,6 +60,7 @@ if multi-threading is not supported, it will fall back to running on the main th
 | mpegps   | ✅       | ❌        |
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
+| avi      | ✅       | ❌        |
 | h264     | ✅       | ❌        |
 | hevc     | ✅       | ❌        |
 | vvc      | ✅       | ❌        |
