@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/audiostretchpitch",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "libmedia 音频变调变速",
   "repository": {
     "type": "git",

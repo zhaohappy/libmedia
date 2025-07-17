@@ -1,3 +1,35 @@
+version 0.9.0:
+
+feat:
+  - refactor(avplayer): 支持无缝循环播放，优化循环播放时闪现黑屏
+  - chore: 更新 assjs 到 0.1.4 版本
+  - feat: mp4 drm 文件支持解析和播放
+  - feat(avplayer): 播放器添加 ended 状态
+  - feat(avformat): ts 的各个 bsf 兼容一帧跨多个 pes 包的情况
+  - feat(avformat): mp4 封装支持码流混入新的 sps，支持忽略 encryption，用以支持 mse 切换分辨率和部分 moof 使用 drm
+  - feat(avformat): aac、mp3、webvtt 支持来自 m3u8 的流式 io
+  - feat(avprotocol): 播放 m3u8 流的兼容性增强
+  - feat(avformat): 播放 dash 流的兼容性增强
+  - feat: ioReader 支持 abort 操作，format 层处理 abort 错误
+  - feat(avcodec): 新增加一些解码器，用以支持 avi、rm、rmvb、asf、wma、wmv 等封装格式文件的播放
+  - feat(avnetwork): ioLoader open 方法 range 参数更改为可选，设置读取全部数据的默认值
+  - feat(avformat): ts 解封装音频包处理 pos 信息
+
+
+bugfix:
+  - chore: 修复编译脚本输出 umd 格式有问题
+  - fix(avformat): fmp4 兼容一个 moof 中多个 trun 的情况
+  - fix(avplayer): 断网重播时一些异常处理
+  - fix(avformat): 判断最大分析时长时加上包数量判断，防止 pts 错误导致发分析时长过短的问题
+  - fix(avformat): ogg opus 将 idPage 写入 extradata
+  - fix(avplayer): resume 处理 audioContext 的 interrupted 状态
+  - fix(avcodec): hevc webcodecs 编码器处理 hevc 配置
+  - fix(avcodecs): FFmpeg 中的 aac profile 为 libmedia 的值减一，需要修正
+  - fix(avformat): 修复调用 estimateDurationFromPts 之后出现一些重复包的问题
+  - fix(avplayer): 检查 mse 时处理 avcc 格式和 annexb 格式
+  - fix(avplayer): onMSESeek 中检查 buffered 状态，没有准备好延时 seek（某些大文件在非多线程 worker 模式下走到 onMSESeek 处 buffered 没有）
+  - fix(avrender): 优化 render 中 checkFrame 下对 linesize 的判断
+
 version 0.8.0:
 
 feat:
