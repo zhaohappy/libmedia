@@ -135,13 +135,13 @@ export default class IMatroskaFormat extends IFormat {
         const stream = formatContext.createStream()
         stream.privData = track
         stream.codecpar.codecId = tag2CodecId[track.codecId] || AVCodecID.AV_CODEC_ID_NONE
-        stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_DTS
         switch (track.type) {
           case MATROSKATrackType.AUDIO:
             stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
             break
           case MATROSKATrackType.VIDEO:
             stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_VIDEO
+            stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_DTS
             break
           case MATROSKATrackType.SUBTITLE:
             stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_SUBTITLE
