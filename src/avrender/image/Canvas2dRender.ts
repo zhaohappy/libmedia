@@ -123,6 +123,10 @@ export default class CanvasImageRender extends ImageRender {
     let canvasWidth = this.canvasWidth
     let canvasHeight = this.canvasHeight
 
+    if (this.options.sar && this.options.sar !== 1) {
+      videoWidth = Math.floor(this.videoWidth * this.options.sar)
+    }
+
     let basePaddingLeft = 0
     let basePaddingTop = 0
 

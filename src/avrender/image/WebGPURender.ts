@@ -243,13 +243,14 @@ export default abstract class WebGPURender extends ImageRender {
     let videoHeight = this.videoHeight
     let canvasWidth = this.canvasWidth
     let canvasHeight = this.canvasHeight
+    let textureWidth = this.textureWidth
 
+    if (this.options.sar && this.options.sar !== 1) {
+      videoWidth = Math.floor(this.videoWidth * this.options.sar)
+      textureWidth = Math.floor(this.textureWidth * this.options.sar)
+    }
 
     if (this.rotate === 90 || this.rotate === 270) {
-      /*
-       * videoWidth = this.videoHeight
-       * videoHeight = this.videoWidth
-       */
       canvasWidth = this.canvasHeight
       canvasHeight = this.canvasWidth
     }
@@ -280,8 +281,8 @@ export default abstract class WebGPURender extends ImageRender {
     }
 
     let texturePadding = 0
-    if (this.textureWidth !== this.videoWidth) {
-      texturePadding = (this.textureWidth - this.videoWidth) / this.textureWidth
+    if (textureWidth !== videoWidth) {
+      texturePadding = (textureWidth - videoWidth) / textureWidth
     }
 
     if (isPaddingTop) {

@@ -106,6 +106,7 @@ export interface VideoRenderTaskOptions extends TaskOptions {
   avframeListMutex: pointer<Mutex>
   enableJitterBuffer: boolean
   isLive: boolean
+  sar: number
 }
 
 type SelfTask = VideoRenderTaskOptions & {
@@ -347,6 +348,7 @@ export default class VideoRenderPipeline extends Pipeline {
         ) {
           // WebGPUExternalRender 性能最优
           task.render = new WebGPUExternalRender(task.canvas as OffscreenCanvas, {
+            sar: task.sar,
             devicePixelRatio: task.devicePixelRatio,
             renderMode: task.renderMode,
             onRenderContextLost: () => {
@@ -361,6 +363,7 @@ export default class VideoRenderPipeline extends Pipeline {
         else {
           // CanvasImageRender 支持 hdr 视频渲染
           task.render = new CanvasImageRender(task.canvas as OffscreenCanvas, {
+            sar: task.sar,
             devicePixelRatio: task.devicePixelRatio,
             renderMode: task.renderMode,
             // @ts-ignore
@@ -385,6 +388,7 @@ export default class VideoRenderPipeline extends Pipeline {
           array.each(WebGPURenderList, (RenderFactory) => {
             if (RenderFactory.isSupport(frame)) {
               task.render = new RenderFactory(task.canvas as OffscreenCanvas, {
+                sar: task.sar,
                 devicePixelRatio: task.devicePixelRatio,
                 renderMode: task.renderMode,
                 onRenderContextLost: () => {
@@ -403,6 +407,7 @@ export default class VideoRenderPipeline extends Pipeline {
           array.each(WebGLRenderList, (RenderFactory) => {
             if (RenderFactory.isSupport(frame)) {
               task.render = new RenderFactory(task.canvas as OffscreenCanvas, {
+                sar: task.sar,
                 devicePixelRatio: task.devicePixelRatio,
                 renderMode: task.renderMode,
                 onRenderContextLost: () => {

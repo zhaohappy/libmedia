@@ -30,7 +30,7 @@ import { BoxType, TKHDFlags } from '../boxType'
 import { UINT16_MAX, UINT32_MAX } from 'avutil/constant'
 import writeMatrix from './function/writeMatrix'
 import { AVMediaType } from 'avutil/codec'
-import { avRescaleQ } from 'avutil/util/rational'
+import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import getSampleDuration from '../function/getSampleDuration'
 import { AVStreamMetadataKey } from 'avutil/AVStream'
 
@@ -52,6 +52,10 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
   const alternateGroup = streamContext.alternateGroup || 0
   let width = stream.codecpar.width > 0 ? stream.codecpar.width : 0
   let height = stream.codecpar.height > 0 ? stream.codecpar.height : 0
+  const sar = avQ2D(stream.codecpar.sampleAspectRatio)
+  if (sar !== 0 && sar !== Infinity) {
+    width = Math.floor(width * sar)
+  }
 
   if (width < UINT16_MAX) {
     width = width << 16

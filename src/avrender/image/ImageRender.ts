@@ -33,6 +33,7 @@ export type ImageRenderOptions = {
   renderMode: RenderMode
   onRenderContextLost?: () => void
   dstColorSpace?: ColorSpace
+  sar?: number
 }
 
 export const enum RenderMode {

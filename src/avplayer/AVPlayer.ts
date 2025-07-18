@@ -2213,7 +2213,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             : this.getMinStartPTS(),
           avframeList: addressof(this.GlobalData.avframeList),
           avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-          enableJitterBuffer: !!this.jitterBufferController && !this.audioDecoder2AudioRenderChannel
+          enableJitterBuffer: !!this.jitterBufferController && !this.audioDecoder2AudioRenderChannel,
+          sar: avQ2D(videoStream.codecpar.sampleAspectRatio)
         })
 
       this.videoEnded = false
