@@ -126,6 +126,15 @@ The 64 version uses the 64-bit WebAssembly instruction set (wasm64) and includes
 | mpeg2       | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | mpeg4       | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | theora      | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| h261        | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| h263        | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| wmv         | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| mjpeg       | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| rv10        | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| rv20        | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| rv30        | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| rv40        | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| msmpeg4     | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | aac         | ✅         | ✅          | ✅          | ✅            | ✅                 |
 | mp3         | ✅         | ✅          | ✅          | ✅            | ✅                 |
 | opus        | ✅         | ✅          | ✅          | ✅            | ✅                 |
@@ -135,6 +144,10 @@ The 64 version uses the 64-bit WebAssembly instruction set (wasm64) and includes
 | ac3         | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | eac3        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | dts         | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| wma         | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| cook        | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| sipr        | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| ralf        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | G.711 A-law | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | G.711 μ-law | ✅         | ✅          | ✅          | ✅            | ❌                 |
 

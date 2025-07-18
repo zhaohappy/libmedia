@@ -166,7 +166,42 @@
                 // vp9
                 case 167:
                   return `../../dist/decode/vp9${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`
-                default:
+                case 86022 /* AVCodecID.AV_CODEC_ID_DVAUDIO */:
+                  return `../../dist/decode/dvaudio${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`
+                case 24 /* AVCodecID.AV_CODEC_ID_DVVIDEO */:
+                  return `../../dist/decode/dvvideo${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`
+                case 3 /* AVCodecID.AV_CODEC_ID_H261 */:
+                  return `../../dist/decode/h261${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`
+                case 4 /* AVCodecID.AV_CODEC_ID_H263 */:
+                case 20 /* AVCodecID.AV_CODEC_ID_H263I */:
+                case 19 /* AVCodecID.AV_CODEC_ID_H263P */:
+                  return `../../dist/decode/h263${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`
+                case 14 /* AVCodecID.AV_CODEC_ID_MSMPEG4V1 */:
+                case 15 /* AVCodecID.AV_CODEC_ID_MSMPEG4V2 */:
+                case 16 /* AVCodecID.AV_CODEC_ID_MSMPEG4V3 */:
+                  return `../../dist/decode/msmpeg4${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`
+                case 5 /* AVCodecID.AV_CODEC_ID_RV10 */:
+                case 6 /* AVCodecID.AV_CODEC_ID_RV20 */:
+                case 68 /* AVCodecID.AV_CODEC_ID_RV30 */:
+                case 69 /* AVCodecID.AV_CODEC_ID_RV40 */:
+                  return `../../dist/decode/msmpeg4${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`
+                case 86036 /* AVCodecID.AV_CODEC_ID_COOK */:
+                case 86057 /* AVCodecID.AV_CODEC_ID_SIPR */:
+                case 86073 /* AVCodecID.AV_CODEC_ID_RALF */:
+                  return `../../dist/decode/ra${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`
+                case 86023 /* AVCodecID.AV_CODEC_ID_WMAV1 */:
+                case 86024 /* AVCodecID.AV_CODEC_ID_WMAV2 */:
+                case 86052 /* AVCodecID.AV_CODEC_ID_WMAVOICE */:
+                case 86054 /* AVCodecID.AV_CODEC_ID_WMALOSSLESS */:
+                case 86053 /* AVCodecID.AV_CODEC_ID_WMAPRO */:
+                  return `../../dist/decode/wma${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`
+                case 17 /* AVCodecID.AV_CODEC_ID_WMV1 */:
+                case 18 /* AVCodecID.AV_CODEC_ID_WMV2 */:
+                case 71 /* AVCodecID.AV_CODEC_ID_WMV3 */:
+                  return `../../dist/decode/wmv${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`
+                case 7 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                  return `../../dist/decode/mjpeg${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`
+                  default:
                   return null
               }
               break
