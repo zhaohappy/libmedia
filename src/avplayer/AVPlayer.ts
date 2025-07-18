@@ -38,7 +38,7 @@ import { unrefAVFrame } from 'avutil/util/avframe'
 import { addSideData, getSideData, unrefAVPacket } from 'avutil/util/avpacket'
 import AudioRenderPipeline from 'avpipeline/AudioRenderPipeline'
 import VideoRenderPipeline from 'avpipeline/VideoRenderPipeline'
-import { AVSeekFlags, IOType, IOFlags } from 'avutil/avformat'
+import { AVSeekFlags, IOType, IOFlags, AVFormat } from 'avutil/avformat'
 import * as urlUtils from 'common/util/url'
 import * as cheapConfig from 'cheap/config'
 import { AVSampleFormat } from 'avutil/audiosamplefmt'
@@ -707,6 +707,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       ) {
         // DRM 只能使用 mse 模式
         return true
+      }
+
+      if (this.formatContext.format === AVFormat.AVI) {
+        // avi 封装层没有 pts，不能使用 mse
+        return false
       }
 
       if (this.options.checkUseMES) {
