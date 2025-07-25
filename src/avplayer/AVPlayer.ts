@@ -1136,8 +1136,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       let resource: WebAssemblyResource | ArrayBuffer
       // safari 16 以下不支持将 WebAssembly.Module 传递到 worker 中
       // 所以这里选择将 buffer 传递到 worker 中编译
-      if ((browser.safari && !browser.checkVersion(browser.version, '16.3', false)
-          || os.ios && !browser.checkVersion(os.version, '16.3', false)
+      if ((browser.safari && !browser.checkVersion(browser.version, '16.4', true)
+          || os.ios && !browser.checkVersion(os.version, '16.4', true)
       )
         && (is.string(wasmUrl) || is.arrayBuffer(wasmUrl))
       ) {
