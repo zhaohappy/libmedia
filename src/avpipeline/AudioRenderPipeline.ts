@@ -65,6 +65,7 @@ export interface AudioRenderTaskOptions extends TaskOptions {
   avframeListMutex: pointer<Mutex>
   enableJitterBuffer: boolean
   isLive: boolean
+  audioMasterForce: boolean
 }
 
 type SelfTask = AudioRenderTaskOptions & {
@@ -515,7 +516,7 @@ export default class AudioRenderPipeline extends Pipeline {
 
           const diff = task.currentPTS - task.masterTimer.getMasterTime()
 
-          if (diff > MASTER_SYNC_THRESHOLD) {
+          if (diff > MASTER_SYNC_THRESHOLD && !task.audioMasterForce) {
             memset(pcmBuffer.data[0], 0, pcmBuffer.maxnbSamples * reinterpret_cast<int32>(sizeof(float)) * pcmBuffer.channels)
             rightIPCPort.reply(request, 0)
             this.fakeSyncPts(task)
@@ -572,7 +573,7 @@ export default class AudioRenderPipeline extends Pipeline {
 
           const diff = task.currentPTS - task.masterTimer.getMasterTime()
 
-          if (diff > MASTER_SYNC_THRESHOLD) {
+          if (diff > MASTER_SYNC_THRESHOLD && !task.audioMasterForce) {
             const pcm = new Uint8Array(task.outPCMBuffer.nbSamples * reinterpret_cast<int32>(sizeof(float)) * task.playChannels)
             rightIPCPort.reply(request, pcm.buffer, null, [pcm.buffer])
             this.fakeSyncPts(task)

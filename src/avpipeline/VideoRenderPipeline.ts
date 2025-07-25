@@ -584,7 +584,7 @@ export default class VideoRenderPipeline extends Pipeline {
             task.lastAdjustTimestamp = 0n
           }
           else {
-            if (static_cast<int64>(getTimestamp()) - task.lastAdjustTimestamp >= 200n) {
+            if (static_cast<int64>(getTimestamp()) - task.lastAdjustTimestamp >= 100n) {
               const add = bigint.min(task.adjustDiff, 100n)
 
               task.masterTimer.setMasterTime(task.masterTimer.getMasterTime() + add)

@@ -332,6 +332,10 @@ export interface AVPlayerPlayOptions {
    * 是否播放字幕
    */
   subtitle?: boolean
+  /**
+   * 强制使用音频作为主时间同步
+   */
+  audioMasterForce?: boolean
 }
 
 export const AVPlayerSupportedCodecs = [
@@ -2273,7 +2277,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             : this.getMinStartPTS(),
           avframeList: addressof(this.GlobalData.avframeList),
           avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-          enableJitterBuffer: !!this.jitterBufferController
+          enableJitterBuffer: !!this.jitterBufferController,
+          audioMasterForce: options.audioMasterForce
         })
 
       // 创建一个音频源节点
