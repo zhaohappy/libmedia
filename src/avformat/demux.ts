@@ -402,7 +402,9 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
                   stream.codecpar.colorPrimaries = avframe.colorPrimaries
                   stream.codecpar.colorTrc = avframe.colorTrc
                   stream.codecpar.chromaLocation = avframe.chromaLocation
-                  stream.codecpar.sampleAspectRatio = avframe.sampleAspectRatio
+                  if (avframe.sampleAspectRatio.num && avframe.sampleAspectRatio.den) {
+                    stream.codecpar.sampleAspectRatio = avframe.sampleAspectRatio
+                  }
                   stream.codecpar.width = avframe.width
                   stream.codecpar.height = avframe.height
                   destroyAVFrame(avframe)
