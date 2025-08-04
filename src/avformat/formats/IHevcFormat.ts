@@ -45,6 +45,9 @@ import NaluReader from './nalu/NaluReader'
 import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 
 export interface IHevcFormatOptions {
+  /**
+   * 显示帧率
+   */
   framerate?: Rational
 }
 

@@ -54,7 +54,13 @@ import { Uint8ArrayInterface } from 'common/io/interface'
 import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 export interface OMatroskaFormatOptions {
+  /**
+   * 是否是直播
+   */
   isLive?: boolean
+  /**
+   * mkv 还是 webm 
+   */
   docType?: string
 }
 

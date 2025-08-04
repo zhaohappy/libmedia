@@ -50,6 +50,9 @@ import * as intread from 'avutil/util/intread'
 import { encryptionInfo2SideData } from 'avutil/util/encryption'
 
 export interface IMovFormatOptions {
+  /**
+   * 忽略 editlist 的约束
+   */
   ignoreEditlist?: boolean
 }
 

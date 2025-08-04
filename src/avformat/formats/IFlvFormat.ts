@@ -78,6 +78,9 @@ import { AVChannel } from 'avutil/audiosamplefmt'
 import * as is from 'common/util/is'
 
 export interface IFlvFormatOptions {
+  /**
+   * 使用纳秒时间戳
+   */
   useNanoTimestamp?: boolean
 }
 

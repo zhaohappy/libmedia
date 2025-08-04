@@ -46,6 +46,9 @@ import * as naluUtil from 'avutil/util/nalu'
 import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 
 export interface IH264FormatOptions {
+  /**
+   * 显示帧率
+   */
   framerate?: Rational
 }
 
