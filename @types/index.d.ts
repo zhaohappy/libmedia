@@ -85,6 +85,8 @@ declare const ENABLE_MUXER_MPEGTS: boolean
 
 declare const ENABLE_MUXER_OGG: boolean
 
+declare const ENABLE_MUXER_WAV: boolean
+
 declare const ENABLE_MSE: boolean
 
 declare const ENABLE_WORKER_PROXY: boolean

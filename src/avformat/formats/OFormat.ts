@@ -173,7 +173,15 @@ export const OFormatSupportedCodecs: Record<Exclude<AVFormat, AVFormat.UNKNOWN>,
     AVCodecID.AV_CODEC_ID_FLAC,
     AVCodecID.AV_CODEC_ID_SPEEX
   ],
-  [AVFormat.WAV]: [],
+  [AVFormat.WAV]: [
+    AVCodecID.AV_CODEC_ID_PCM_F32LE,
+    AVCodecID.AV_CODEC_ID_PCM_F64LE,
+    AVCodecID.AV_CODEC_ID_PCM_U8,
+    AVCodecID.AV_CODEC_ID_PCM_S16LE,
+    AVCodecID.AV_CODEC_ID_PCM_S24LE,
+    AVCodecID.AV_CODEC_ID_PCM_S32LE,
+    AVCodecID.AV_CODEC_ID_PCM_S64LE
+  ],
   [AVFormat.WEBVTT]: [AVCodecID.AV_CODEC_ID_WEBVTT],
   [AVFormat.ASS]: [AVCodecID.AV_CODEC_ID_ASS, AVCodecID.AV_CODEC_ID_SSA],
   [AVFormat.SUBRIP]: [AVCodecID.AV_CODEC_ID_SUBRIP],

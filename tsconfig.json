@@ -140,6 +140,8 @@
       "ENABLE_MUXER_MPEGTS": true,
       // 开启支持 ogg 封装格式
       "ENABLE_MUXER_OGG": true,
+      // 开启支持 wav 封装格式
+      "ENABLE_MUXER_WAV": true,
 
       // 开启支持 mse 模式
       "ENABLE_MSE": true,

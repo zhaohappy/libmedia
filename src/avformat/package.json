@@ -247,6 +247,11 @@
       "require": "./dist/cjs/formats/OOggFormat.js",
       "types": "./dist/esm/formats/OOggFormat.d.ts"
     },
+     "./formats/OWavFormat": {
+      "import": "./dist/esm/formats/OWavFormat.js",
+      "require": "./dist/cjs/formats/OWavFormat.js",
+      "types": "./dist/esm/formats/OWavFormat.d.ts"
+    },
     "./formats/flv/FlvHeader": {
       "import": "./dist/esm/formats/flv/FlvHeader.js",
       "require": "./dist/cjs/formats/flv/FlvHeader.js",

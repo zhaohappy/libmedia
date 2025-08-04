@@ -76,6 +76,7 @@ import * as hevc from 'avutil/codecs/hevc'
 import * as vvc from 'avutil/codecs/vvc'
 import * as av1 from 'avutil/codecs/av1'
 import * as vp9 from 'avutil/codecs/vp9'
+import * as pcm from 'avutil/util/pcm'
 import Sleep from 'common/timer/Sleep'
 import AVFilterPipeline from './filter/AVFilterPipeline'
 import { AVFilterGraphDesVertex, FilterGraphPortDes, GraphNodeType, createGraphDesVertex } from 'avfilter/graph'
@@ -1111,6 +1112,71 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         if (audioConfig.profile) {
           newStream.codecpar.profile = audioConfig.profile
         }
+      }
+
+      if (task.format === AVFormat.WAV) {
+        if (!(newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_F32LE
+          || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_F64LE
+          || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_U8
+          || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_S16LE
+          || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_S24LE
+          || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_S32LE
+          || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PCM_S64LE)
+        ) {
+          let format = newStream.codecpar.format as AVSampleFormat
+          switch (format) {
+            case AVSampleFormat.AV_SAMPLE_FMT_FLT:
+            case AVSampleFormat.AV_SAMPLE_FMT_FLTP:
+              newStream.codecpar.codecId = AVCodecID.AV_CODEC_ID_PCM_F32LE
+              break
+            case AVSampleFormat.AV_SAMPLE_FMT_DBL:
+            case AVSampleFormat.AV_SAMPLE_FMT_DBLP:
+              newStream.codecpar.codecId = AVCodecID.AV_CODEC_ID_PCM_F64LE
+              break
+            case AVSampleFormat.AV_SAMPLE_FMT_U8:
+            case AVSampleFormat.AV_SAMPLE_FMT_U8P:
+              newStream.codecpar.codecId = AVCodecID.AV_CODEC_ID_PCM_U8
+              break
+            case AVSampleFormat.AV_SAMPLE_FMT_S16:
+            case AVSampleFormat.AV_SAMPLE_FMT_S16P:
+              newStream.codecpar.codecId = AVCodecID.AV_CODEC_ID_PCM_S16LE
+              break
+            case AVSampleFormat.AV_SAMPLE_FMT_S32:
+            case AVSampleFormat.AV_SAMPLE_FMT_S32P:
+              newStream.codecpar.codecId = AVCodecID.AV_CODEC_ID_PCM_S32LE
+              break
+            case AVSampleFormat.AV_SAMPLE_FMT_S64:
+            case AVSampleFormat.AV_SAMPLE_FMT_S64P:
+              newStream.codecpar.codecId = AVCodecID.AV_CODEC_ID_PCM_S64LE
+              break
+            default:
+              newStream.codecpar.codecId = AVCodecID.AV_CODEC_ID_PCM_F32LE
+              break
+          }
+        }
+
+        switch (newStream.codecpar.codecId) {
+          case AVCodecID.AV_CODEC_ID_PCM_F32LE:
+            newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_FLT
+            break
+          case AVCodecID.AV_CODEC_ID_PCM_F64LE:
+            newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_DBL
+            break
+          case AVCodecID.AV_CODEC_ID_PCM_U8:
+            newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_U8
+            break
+          case AVCodecID.AV_CODEC_ID_PCM_S16LE:
+            newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_S16
+            break
+          case AVCodecID.AV_CODEC_ID_PCM_S24LE:
+          case AVCodecID.AV_CODEC_ID_PCM_S32LE:
+            newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_S32
+            break
+          case AVCodecID.AV_CODEC_ID_PCM_S64LE:
+            newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_S64
+            break
+        }
+        newStream.codecpar.bitsPerCodedSample = pcm.getBitsPerSample(stream.codecpar.codecId)
       }
 
       if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {

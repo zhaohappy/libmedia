@@ -120,7 +120,14 @@ export const AudioCodecString2CodecId = {
   'wmav2': AVCodecID.AV_CODEC_ID_WMAV2,
   'cook': AVCodecID.AV_CODEC_ID_COOK,
   'sipr': AVCodecID.AV_CODEC_ID_SIPR,
-  'ralf': AVCodecID.AV_CODEC_ID_RALF
+  'ralf': AVCodecID.AV_CODEC_ID_RALF,
+  'pcm_u8': AVCodecID.AV_CODEC_ID_PCM_U8,
+  'pcm_s16le': AVCodecID.AV_CODEC_ID_PCM_S16LE,
+  'pcm_s24le': AVCodecID.AV_CODEC_ID_PCM_S24LE,
+  'pcm_s32le': AVCodecID.AV_CODEC_ID_PCM_S32LE,
+  'pcm_s64le': AVCodecID.AV_CODEC_ID_PCM_S64LE,
+  'pcm_f32le': AVCodecID.AV_CODEC_ID_PCM_F32LE,
+  'pcm_f64le': AVCodecID.AV_CODEC_ID_PCM_F64LE
 }
 
 export const SubtitleCodecString2CodecId = {
