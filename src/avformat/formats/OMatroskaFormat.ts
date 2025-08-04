@@ -52,6 +52,7 @@ import * as vvc from 'avutil/codecs/vvc'
 import * as intread from 'avutil/util/intread'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import { AVStreamMetadataKey } from 'avutil/AVStream'
+import * as errorType from 'avutil/error'
 
 export interface OMatroskaFormatOptions {
   /**
@@ -216,6 +217,8 @@ export default class OMatroskaFormat extends OFormat {
       return tag
     }
 
+    let notSupport = false
+
     formatContext.streams.forEach((stream) => {
       if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_ATTACHMENT) {
         crypto.random(this.random)
@@ -236,6 +239,11 @@ export default class OMatroskaFormat extends OFormat {
         crypto.random(this.random)
         track.uid = this.randomView.getBigUint64(0)
         track.codecId = codecId2Tag(stream.codecpar)
+        if (!track.codecId) {
+          notSupport = true
+          logger.error(`codecId ${stream.codecpar.codecId} not support in ${this.options.docType}`)
+          return
+        }
         track.number = stream.index + 1
         if (stream.codecpar.extradata) {
           track.codecPrivate = {
@@ -313,6 +321,10 @@ export default class OMatroskaFormat extends OFormat {
         context.tracks.entry.push(track)
       }
     })
+
+    if (notSupport) {
+      return errorType.CODEC_NOT_SUPPORT
+    }
 
     return 0
   }
