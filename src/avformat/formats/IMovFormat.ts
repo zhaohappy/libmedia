@@ -292,7 +292,13 @@ export default class IMovFormat extends IFormat {
 
   public async readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
     try {
-      if (this.context.fragment && !this.context.currentFragment) {
+      const hasSample = !!formatContext.streams.find((stream) => {
+        const context = stream.privData as MOVStreamContext
+        return context.samplesIndex?.length && context.sampleEnd === false
+      })
+      // 一些 fmp4 的 moov 里面存着一段样本
+      // 这里先判断有没有 sample
+      if (!hasSample && this.context.fragment && !this.context.currentFragment) {
         while (!this.context.currentFragment) {
           const pos = formatContext.ioReader.getPos()
           const size = await formatContext.ioReader.readUint32()

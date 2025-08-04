@@ -24,7 +24,7 @@
  */
 
 import AVStream, { AVStreamMetadataKey } from 'avutil/AVStream'
-import { Atom, FragmentTrack, MOVContext, MOVStreamContext } from './type'
+import { Atom, FragmentTrack, MOVContext, MOVStreamContext, Sample } from './type'
 import IOReader from 'common/io/IOReader'
 import mktag from '../../function/mktag'
 import { BoxType, ContainerBoxs } from './boxType'
@@ -395,6 +395,20 @@ export async function readMfra(
   atom: Atom
 ) {
   const endPos = ioReader.getPos() + static_cast<int64>(atom.size)
+  const samplesIndexMap: Record<number, {
+    samples: Sample[]
+    currentSample: number
+    sampleEnd: boolean
+  }> = {}
+  formatContext.streams.forEach((stream) => {
+    const context = stream.privData as MOVStreamContext
+    samplesIndexMap[stream.index] = {
+      samples: context.samplesIndex,
+      currentSample: context.currentSample,
+      sampleEnd: context.sampleEnd
+    }
+    context.samplesIndex = []
+  })
   while (ioReader.getPos() < endPos) {
     const pos = ioReader.getPos()
     const size = await ioReader.readUint32()
@@ -470,4 +484,10 @@ export async function readMfra(
     await ioReader.seek(pos + static_cast<int64>(size), false, false)
   }
   movContext.currentFragment = null
+  formatContext.streams.forEach((stream) => {
+    const context = stream.privData as MOVStreamContext
+    context.samplesIndex = samplesIndexMap[stream.index]?.samples ?? []
+    context.currentSample = samplesIndexMap[stream.index]?.currentSample ?? 0
+    context.sampleEnd = samplesIndexMap[stream.index]?.sampleEnd ?? false
+  })
 }
