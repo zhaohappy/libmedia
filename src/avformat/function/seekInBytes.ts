@@ -28,11 +28,12 @@ import AVStream from 'avutil/AVStream'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { getBytesByDuration } from './getBytesByDuration'
-import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
+import { createAVPacket, destroyAVPacket, unrefAVPacket } from 'avutil/util/avpacket'
 import * as errorType from 'avutil/error'
-import AVPacket from 'avutil/struct/avpacket'
+import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
 import * as logger from 'common/util/logger'
 import { IOFlags } from 'avutil/avformat'
+import { IOError } from 'common/io/error'
 
 export default async function seekInBytes(
   context: AVIFormatContext,
@@ -79,29 +80,52 @@ export default async function seekInBytes(
   let seekMax = fileSize
   let seekMin = 0n
 
-  while (true) {
+  failed: while (true) {
     if (seekMax - seekMin < length) {
-      pos = seekMin
-      break
+      bytes = seekMin
     }
     await context.ioReader.seek(bytes)
     await syncAVPacket(context)
     if (context.ioReader.flags & IOFlags.ABORT) {
       break
     }
-    const now = context.ioReader.getPos()
 
     let ret = await readAVPacket(context, avpacket)
+    let now = avpacket.pos
 
     if (ret >= 0) {
       const currentPts = avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q)
-      const diff = currentPts - pointPts
+      let diff = currentPts - pointPts
 
       logger.debug(`try to seek to pos: ${bytes}, got packet pts: ${avpacket.pts}(${currentPts}ms), diff: ${diff}ms`)
 
       // seek 时间戳的前面 10 秒内
-      if (diff <= 0n && -diff < 10000n) {
-        pos = now
+      if (diff <= 0n && -diff < 10000n || seekMax - seekMin < length) {
+        // 查找最近的关键帧
+        const keyPos: int64[] = [now]
+        while (diff <= 0) {
+          if (avpacket.streamIndex === stream.index && (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)) {
+            keyPos.push(now)
+          }
+          unrefAVPacket(avpacket)
+          ret = await readAVPacket(context, avpacket)
+          if (ret < 0) {
+            if (ret === IOError.END) {
+              break
+            }
+            else if (ret === IOError.AGAIN) {
+              continue
+            }
+            // 失败了重新 seek 回原来的位置
+            else {
+              pos = NOPTS_VALUE_BIGINT
+              break failed
+            }
+          }
+          now = avpacket.pos
+          diff = avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q) - pointPts
+        }
+        pos = keyPos.pop()
         break
       }
       // seek 后面
