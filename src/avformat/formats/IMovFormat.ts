@@ -401,6 +401,9 @@ export default class IMovFormat extends IFormat {
           return 1
         })
         if (index > -1) {
+          if (index > 0 && streamContext.fragIndexes[index].time > pts) {
+            index--
+          }
           await formatContext.ioReader.seek(streamContext.fragIndexes[index].pos, true)
           resetFragment()
           return now
