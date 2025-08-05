@@ -23,6 +23,7 @@
  *
  */
 
+import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
 import BufferReader from 'common/io/BufferReader'
 import BufferWriter from 'common/io/BufferWriter'
 import { Uint8ArrayInterface } from 'common/io/interface'
@@ -67,6 +68,9 @@ export function getNextNaluStart(data: Uint8ArrayInterface, offset: number) {
 export function splitNaluByStartCode<T extends Uint8ArrayInterface>(buffer: T): T[] {
   const list = []
   let offset = 0
+  if (buffer instanceof SafeUint8Array) {
+    buffer = buffer.subarray(0, buffer.length, false) as T
+  }
   let current = getNextNaluStart(buffer, offset)
   let next = {
     offset: -1,
