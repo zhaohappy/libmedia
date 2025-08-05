@@ -40,7 +40,7 @@ import * as array from 'common/util/array'
 import * as logger from 'common/util/logger'
 import concatTypeArray from 'common/function/concatTypeArray'
 import updatePositionSize from './mov/function/updatePositionSize'
-import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT, UINT32_MAX } from 'avutil/constant'
+import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT, UINT32_MAX } from 'avutil/constant'
 import { MovFragmentMode, MovMode } from './mov/mov'
 import * as object from 'common/util/object'
 import rewriteIO from '../function/rewriteIO'
@@ -101,6 +101,18 @@ export interface OMovFormatOptions {
    * 忽略 drm 数据写入
    */
   ignoreEncryption?: boolean
+  /**
+   * fragment 最短时长（只有音频时使用，默认 5 秒）
+   */
+  minFragmentLength?: number
+  /**
+   * fragment index 最短时长（只有音频时使用，默认 5 秒）
+   */
+  minFragmentIndexLength?: number
+  /**
+   * fragment 结束时是否追加 tfra 用于 seek
+   */
+  hasTfra?: boolean
 }
 
 const defaultOptions: OMovFormatOptions = {
@@ -110,7 +122,10 @@ const defaultOptions: OMovFormatOptions = {
   fastOpen: false,
   defaultBaseIsMoof: false,
   reverseSpsInAvcc: false,
-  ignoreEncryption: false
+  ignoreEncryption: false,
+  minFragmentLength: 5000,
+  minFragmentIndexLength: 5000,
+  hasTfra: true
 }
 
 export default class OMovFormat extends OFormat {
@@ -339,6 +354,9 @@ export default class OMovFormat extends OFormat {
         size: 0
       })
     }
+    if (!formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)) {
+      this.context.audioOnly = true
+    }
     return 0
   }
 
@@ -476,6 +494,18 @@ export default class OMovFormat extends OFormat {
 
         if (track.sampleDurations.length) {
           track.defaultSampleDuration = track.sampleDurations[0]
+        }
+
+        if (this.options.hasTfra) {
+          if (!streamContext.fragIndexes.length
+            || avRescaleQ(track.baseDataOffset - track.lastFragIndexDts, stream.timeBase, AV_MILLI_TIME_BASE_Q) >= this.options.minFragmentIndexLength
+          ) {
+            streamContext.fragIndexes.push({
+              pos: track.baseDataOffset,
+              time: track.baseMediaDecodeTime
+            })
+            track.lastFragIndexDts = streamContext.lastDts
+          }
         }
       })
 
@@ -618,8 +648,8 @@ export default class OMovFormat extends OFormat {
 
     const streamContext = stream.privData as MOVStreamContext
 
-    const dts = avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
-    const pts = avRescaleQ2(avpacket.pts !== NOPTS_VALUE_BIGINT ? avpacket.pts : avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
+    let dts = avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
+    let pts = avRescaleQ2(avpacket.pts !== NOPTS_VALUE_BIGINT ? avpacket.pts : avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
     const duration = avpacket.duration !== NOPTS_VALUE_BIGINT ? avRescaleQ2(avpacket.duration, addressof(avpacket.timeBase), stream.timeBase) : -1n
 
     if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
@@ -646,9 +676,26 @@ export default class OMovFormat extends OFormat {
       })
 
       if (track) {
+        if (track.tfdtDelay === NOPTS_VALUE_BIGINT) {
+          if (dts < 0) {
+            track.tfdtDelay = -dts
+          }
+          else {
+            track.tfdtDelay = 0n
+          }
+          if (pts < 0) {
+            track.trunPtsDelay = track.tfdtDelay
+          }
+        }
+        dts += track.tfdtDelay
+        pts += track.trunPtsDelay
+
         if (this.options.fragmentMode === MovFragmentMode.GOP
-          && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
-          && avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
+          && (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
+            && avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
+            || this.context.audioOnly
+              && avRescaleQ(dts - track.baseMediaDecodeTime, stream.timeBase, AV_MILLI_TIME_BASE_Q) >= this.options.minFragmentLength
+          )
           || this.options.fragmentMode === MovFragmentMode.FRAME
         ) {
           if (this.context.currentFragment.tracks.length === 1) {
@@ -944,8 +991,13 @@ export default class OMovFormat extends OFormat {
       })
       this.updateCurrentFragment(formatContext)
 
-      formatContext.ioWriter.writeUint32(8)
-      formatContext.ioWriter.writeString(BoxType.MFRA)
+      if (this.options.hasTfra) {
+        omov.writeMfra(formatContext.ioWriter, formatContext, this.context)
+      }
+      else {
+        formatContext.ioWriter.writeUint32(8)
+        formatContext.ioWriter.writeString(BoxType.MFRA)
+      }
 
       formatContext.ioWriter.flush()
     }

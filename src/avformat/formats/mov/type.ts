@@ -72,6 +72,10 @@ export interface FragmentTrack {
     sampleEncryption: Omit<EncryptionInfo, 'scheme' | 'keyId' | 'cryptByteBlock' | 'skipByteBlock'>[]
     offsetPos?: bigint
   }
+
+  lastFragIndexDts: int64
+  tfdtDelay: int64
+  trunPtsDelay: int64
 }
 
 export interface Sample {
@@ -167,6 +171,8 @@ export interface MOVContext {
     atom: Atom,
     movContext: MOVContext
   ) => Promise<void>
+
+  audioOnly?: boolean
 }
 
 export interface MOVStreamContext {

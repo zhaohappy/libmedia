@@ -470,7 +470,8 @@ export default class MSEPipeline extends Pipeline {
       fastOpen: true,
       movMode: MovMode.MP4,
       defaultBaseIsMoof: true,
-      reverseSpsInAvcc: true
+      reverseSpsInAvcc: true,
+      hasTfra: false
     })
     resource.oformatContext.oformat = oformat
     resource.timestampOffsetUpdated = false
@@ -497,7 +498,8 @@ export default class MSEPipeline extends Pipeline {
           movMode: MovMode.MP4,
           defaultBaseIsMoof: true,
           reverseSpsInAvcc: true,
-          ignoreEncryption: !hasCenc
+          ignoreEncryption: !hasCenc,
+          hasTfra: false
         })
         resource.ignoreEncryption = !hasCenc
         resource.oformatContext.oformat = oformat
@@ -908,7 +910,8 @@ export default class MSEPipeline extends Pipeline {
       fastOpen: true,
       movMode: MovMode.MP4,
       defaultBaseIsMoof: true,
-      reverseSpsInAvcc: true
+      reverseSpsInAvcc: true,
+      hasTfra: false
     })
     resource.oformatContext.oformat = oformat
 
@@ -981,7 +984,8 @@ export default class MSEPipeline extends Pipeline {
         fastOpen: true,
         movMode: MovMode.MP4,
         defaultBaseIsMoof: true,
-        reverseSpsInAvcc: true
+        reverseSpsInAvcc: true,
+        hasTfra: false
       })
 
       const bufferQueue = new SeekableWriteBuffer()
@@ -1132,7 +1136,8 @@ export default class MSEPipeline extends Pipeline {
           fastOpen: true,
           movMode: MovMode.MP4,
           defaultBaseIsMoof: true,
-          reverseSpsInAvcc: true
+          reverseSpsInAvcc: true,
+          hasTfra: false
         })
         resource.oformatContext.oformat = oformat
 

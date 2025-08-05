@@ -282,3 +282,44 @@ export function writeMoof(ioWriter: IOWriter, formatContext: AVOFormatContext, m
 
   movContext.currentFragment.size = size
 }
+
+export function writeMfra(ioWriter: IOWriter, formatContext: AVOFormatContext, movContext: MOVContext) {
+  let size = 8 + 16
+  array.each(movContext.currentFragment.tracks, (track) => {
+    const stream = formatContext.streams.find((stream) => {
+      return stream.index === track.streamIndex
+    })
+    const streamContext = stream.privData as MOVStreamContext
+    if (streamContext.fragIndexes.length) {
+      size += 6 * 4 + streamContext.fragIndexes.length * 19
+    }
+  })
+  ioWriter.writeUint32(size)
+  ioWriter.writeString(BoxType.MFRA)
+  array.each(movContext.currentFragment.tracks, (track) => {
+    const stream = formatContext.streams.find((stream) => {
+      return stream.index === track.streamIndex
+    })
+    const streamContext = stream.privData as MOVStreamContext
+    if (streamContext.fragIndexes.length) {
+      ioWriter.writeUint32(6 * 4 + streamContext.fragIndexes.length * 19)
+      ioWriter.writeString(BoxType.TFRA)
+      ioWriter.writeUint8(1)
+      ioWriter.writeUint24(0)
+      ioWriter.writeUint32(track.trackId)
+      ioWriter.writeUint32(0)
+      ioWriter.writeUint32(streamContext.fragIndexes.length)
+      streamContext.fragIndexes.forEach((item) => {
+        ioWriter.writeUint64(item.time)
+        ioWriter.writeUint64(item.pos)
+        ioWriter.writeUint8(1)
+        ioWriter.writeUint8(1)
+        ioWriter.writeUint8(1)
+      })
+    }
+  })
+  ioWriter.writeUint32(16)
+  ioWriter.writeString(BoxType.MFRO)
+  ioWriter.writeUint32(0)
+  ioWriter.writeUint32(size)
+}

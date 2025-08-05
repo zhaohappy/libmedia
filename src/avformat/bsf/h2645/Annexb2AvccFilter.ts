@@ -67,8 +67,6 @@ export default class Annexb2AvccFilter extends AVBSFilter {
 
   public sendAVPacket(avpacket: pointer<AVPacket>): number {
 
-    const buffer = mapSafeUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
-
     if (!(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)) {
       refAVPacket(this.cache, avpacket)
     }
@@ -82,6 +80,8 @@ export default class Annexb2AvccFilter extends AVBSFilter {
         extradata: Uint8Array,
         key: boolean
       }
+
+      const buffer = mapSafeUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
 
       if (this.inCodecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
         convert = h264.annexb2Avcc(buffer, this.reverseSps)
