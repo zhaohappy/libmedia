@@ -69,7 +69,7 @@ if multi-threading is not supported, it will fall back to running on the main th
 | ivf      | ✅       | ✅        |
 | aac      | ✅       | ❌        |
 | flac     | ✅       | ❌        |
-| wav      | ✅       | ❌        |
+| wav      | ✅       | ✅        |
 | webvtt   | ✅       | ❌        |
 | srt      | ✅       | ❌        |
 | ass      | ✅       | ❌        |

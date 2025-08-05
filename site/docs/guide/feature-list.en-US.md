@@ -49,7 +49,7 @@ libmedia can complete the following functions:
 | ivf      | ✅       | ✅        |
 | aac      | ✅       | ❌        |
 | flac     | ✅       | ❌        |
-| wav      | ✅       | ❌        |
+| wav      | ✅       | ✅        |
 | webvtt   | ✅       | ❌        |
 | srt      | ✅       | ❌        |
 | ass      | ✅       | ❌        |
