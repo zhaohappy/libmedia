@@ -498,11 +498,12 @@ export default class OMovFormat extends OFormat {
 
         if (this.options.hasTfra) {
           if (!streamContext.fragIndexes.length
+            || this.options.fragmentMode === MovFragmentMode.GOP
             || avRescaleQ(track.baseDataOffset - track.lastFragIndexDts, stream.timeBase, AV_MILLI_TIME_BASE_Q) >= this.options.minFragmentIndexLength
           ) {
             streamContext.fragIndexes.push({
               pos: track.baseDataOffset,
-              time: track.baseMediaDecodeTime
+              time: track.baseMediaDecodeTime + static_cast<int64>(track.sampleCompositionTimeOffset[0] ?? 0)
             })
             track.lastFragIndexDts = streamContext.lastDts
           }
