@@ -256,15 +256,24 @@ export default class IMatroskaFormat extends IFormat {
           ) {
             const header = text.decode(codecPrivateData)
             let lines = header.split(/\r?\n/)
+            let format: string
             for (let i = 0; i < lines.length; i++) {
               if (lines[i].trim() === '[Events]') {
+                if (lines[i + 1] && /^Format:/.test(lines[i + 1])) {
+                  format = lines[i + 1]
+                }
                 lines = lines.slice(0, i)
                 break
               }
             }
+            if (format) {
+              format = format.replace(/^Format:/, '')
+              format = format.split(',').map((v) => v.trim()).filter((v) => v !== 'Start' && v !== 'End').join(', ')
+              format = `Format: ReadOrder, ${format}`
+            }
             // add the default Events Format
             lines.push('[Events]')
-            lines.push('Format: ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text')
+            lines.push(format || 'Format: ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text')
             codecPrivateData = text.encode(lines.join('\n'))
           }
 
@@ -375,6 +384,17 @@ export default class IMatroskaFormat extends IFormat {
 
         if (track.default == null || track.default) {
           stream.disposition |= AVDisposition.DEFAULT
+        }
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_WEBVTT) {
+          if (track.codecId === 'D_WEBVTT/CAPTIONS') {
+            stream.disposition |= AVDisposition.CAPTIONS
+          }
+          else if (track.codecId === 'D_WEBVTT/DESCRIPTIONS') {
+            stream.disposition != AVDisposition.DESCRIPTIONS
+          }
+          else if (track.codecId === 'D_WEBVTT/METADATA') {
+            stream.disposition != AVDisposition.METADATA
+          }
         }
 
         if (track.encodings) {
