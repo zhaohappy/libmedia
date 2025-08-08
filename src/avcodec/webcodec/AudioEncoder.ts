@@ -43,6 +43,8 @@ export type WebAudioEncoderOptions = {
   onError: (error?: Error) => void
   avpacketPool?: AVPacketPool
   avframePool?: AVFramePool
+  bitrateMode?: BitrateMode
+  opus?: OpusEncoderConfig
 }
 
 export default class WebAudioEncoder {
@@ -124,7 +126,10 @@ export default class WebAudioEncoder {
       sampleRate: parameters.sampleRate,
       numberOfChannels: parameters.chLayout.nbChannels,
       bitrate: static_cast<double>(parameters.bitrate),
-      bitrateMode: 'constant'
+      bitrateMode: this.options.bitrateMode ?? 'constant'
+    }
+    if (this.options.opus) {
+      config.opus = this.options.opus
     }
 
     try {

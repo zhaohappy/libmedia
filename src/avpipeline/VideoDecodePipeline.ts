@@ -69,6 +69,7 @@ export interface VideoDecodeTaskOptions extends TaskOptions {
   avframeList: pointer<List<pointer<AVFrameRef>>>
   avframeListMutex: pointer<Mutex>
   preferWebCodecs?: boolean
+  preferLatency?: boolean
 }
 
 type SelfTask = Omit<VideoDecodeTaskOptions, 'resource'> & {
@@ -152,7 +153,8 @@ export default class VideoDecodePipeline extends Pipeline {
           task.lastDecodeTimestamp = NOPTS_VALUE
         }
       },
-      enableHardwareAcceleration
+      enableHardwareAcceleration,
+      optimizeForLatency: task.preferLatency
     })
   }
 

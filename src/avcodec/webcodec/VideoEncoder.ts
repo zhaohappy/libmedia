@@ -50,9 +50,13 @@ import { AVPixelFormat } from 'avutil/pixfmt'
 export type WebVideoEncoderOptions = {
   onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
   onError: (error?: Error) => void
-  enableHardwareAcceleration?: boolean
   avpacketPool?: AVPacketPool
   avframePool?: AVFramePool
+  enableHardwareAcceleration?: boolean
+  bitrateMode?: BitrateMode
+  scalabilityMode?: string
+  contentHint?: string
+  latencyMode?: LatencyMode
 }
 
 // chrome bug: https://issues.chromium.org/issues/357902526
@@ -200,6 +204,18 @@ export default class WebVideoEncoder {
       hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true),
       latencyMode: parameters.videoDelay ? 'quality' : 'realtime',
       alpha: descriptor && (descriptor.flags & AVPixelFormatFlags.ALPHA) ? 'keep' : 'discard'
+    }
+    if (this.options.latencyMode) {
+      config.latencyMode = this.options.latencyMode
+    }
+    if (this.options.bitrateMode) {
+      config.bitrateMode = this.options.bitrateMode
+    }
+    if (this.options.contentHint) {
+      config.contentHint = this.options.contentHint
+    }
+    if (this.options.scalabilityMode) {
+      config.scalabilityMode = this.options.scalabilityMode
     }
 
     if (parameters.codecId === AVCodecID.AV_CODEC_ID_H264) {

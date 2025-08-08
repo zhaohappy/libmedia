@@ -44,8 +44,9 @@ import { avRescaleQ2 } from 'avutil/util/rational'
 
 export type WebVideoDecoderOptions = {
   onReceiveVideoFrame: (frame: VideoFrame) => void
-  enableHardwareAcceleration?: boolean
   onError: (error?: Error) => void
+  enableHardwareAcceleration?: boolean
+  optimizeForLatency?: boolean
 }
 
 export default class WebVideoDecoder {
@@ -142,11 +143,16 @@ export default class WebVideoDecoder {
 
     this.decoder!.reset()
 
-    this.decoder!.configure({
+    const config: VideoDecoderConfig = {
       codec: getVideoCodec(this.parameters, buffer),
       description: this.extradata,
       hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true)
-    })
+    }
+    if (this.options.optimizeForLatency) {
+      config.optimizeForLatency = this.options.optimizeForLatency
+    }
+
+    this.decoder!.configure(config)
 
     if (this.currentError) {
       logger.error(`change extra data error, ${this.currentError}`)
@@ -166,12 +172,15 @@ export default class WebVideoDecoder {
     }
     this.parameters = parameters
 
-    const config = {
+    const config: VideoDecoderConfig = {
       codec: getVideoCodec(parameters),
       codedWidth: parameters.width,
       codedHeight: parameters.height,
       description: (parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) ? undefined : this.extradata,
       hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true)
+    }
+    if (this.options.optimizeForLatency) {
+      config.optimizeForLatency = this.options.optimizeForLatency
     }
 
     if (!config.description) {
