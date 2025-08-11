@@ -56,6 +56,8 @@ export interface MuxTaskOptions extends TaskOptions {
   formatOptions: Data
   avpacketList: pointer<List<pointer<AVPacketRef>>>
   avpacketListMutex: pointer<Mutex>
+  nonnegative?: boolean
+  zeroStart?: boolean
 }
 
 type SelfTask = MuxTaskOptions & {
@@ -297,6 +299,8 @@ export default class MuxPipeline extends Pipeline {
       let ret = mux.open(task.formatContext, {
         nonnegative: task.format !== AVFormat.MOV
           && task.format !== AVFormat.MATROSKA
+          || (task.nonnegative ?? false),
+        zeroStart: task.zeroStart ?? false
       })
 
       if (ret < 0) {

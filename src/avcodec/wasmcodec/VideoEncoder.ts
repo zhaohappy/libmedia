@@ -54,6 +54,7 @@ export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
   onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
   avpacketPool?: AVPacketPool
+  copyTs?: boolean
 }
 
 export default class WasmVideoEncoder {
@@ -219,7 +220,11 @@ export default class WasmVideoEncoder {
       frame.pictType = AVPictureType.AV_PICTURE_TYPE_I
     }
 
-    if (frame.pts !== NOPTS_VALUE_BIGINT && frame.timeBase.den !== 0 && frame.timeBase.num !== 0) {
+    if (this.options.copyTs
+      && frame.pts !== NOPTS_VALUE_BIGINT
+      && frame.timeBase.den !== 0
+      && frame.timeBase.num !== 0
+    ) {
       frame.pts = avRescaleQ2(frame.pts, addressof(frame.timeBase), this.timeBase!)
     }
     else {

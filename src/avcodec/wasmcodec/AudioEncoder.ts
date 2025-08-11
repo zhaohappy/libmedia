@@ -52,6 +52,7 @@ export type WasmAudioEncoderOptions = {
   resource: WebAssemblyResource
   onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
   avpacketPool?: AVPacketPool
+  copyTs?: boolean
 }
 
 class AudioFrameResizer {
@@ -72,10 +73,12 @@ class AudioFrameResizer {
   private frameSize: int32
 
   private pts: int64
+  private copyTs: boolean = false
 
-  constructor(parameters: pointer<AVCodecParameters>, frameSize: int32) {
+  constructor(parameters: pointer<AVCodecParameters>, frameSize: int32, copyTs: boolean = false) {
     this.parameters = parameters
     this.frameSize = frameSize
+    this.copyTs = copyTs
 
     this.planar = sampleFormatIsPlanar(parameters.format as AVSampleFormat)
     this.planes = this.planar ? parameters.chLayout.nbChannels : 1
@@ -94,7 +97,8 @@ class AudioFrameResizer {
 
   public sendAVFrame(avframe: pointer<AVFrame>) {
 
-    if (avframe.pts !== NOPTS_VALUE_BIGINT
+    if (this.copyTs
+      && avframe.pts !== NOPTS_VALUE_BIGINT
       && avframe.timeBase.den !== 0
       && avframe.timeBase.num !== 0
       && (this.posEnd - this.pos) === 0
@@ -323,7 +327,7 @@ export default class WasmAudioEncoder {
 
     if (this.frameSize > 0 && avframe.nbSamples !== this.frameSize || this.audioFrameResizer) {
       if (!this.audioFrameResizer) {
-        this.audioFrameResizer = new AudioFrameResizer(this.parameters, this.frameSize)
+        this.audioFrameResizer = new AudioFrameResizer(this.parameters, this.frameSize, this.options.copyTs)
       }
       this.audioFrameResizer.sendAVFrame(avframe)
       while (true) {

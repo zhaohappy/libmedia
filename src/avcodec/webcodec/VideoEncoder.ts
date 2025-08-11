@@ -57,6 +57,7 @@ export type WebVideoEncoderOptions = {
   scalabilityMode?: string
   contentHint?: string
   latencyMode?: LatencyMode
+  copyTs?: boolean
 }
 
 // chrome bug: https://issues.chromium.org/issues/357902526
@@ -88,6 +89,8 @@ export default class WebVideoEncoder {
 
   private extradata: Uint8Array | undefined
 
+  private ptsQueue: int64[] = []
+
   constructor(options: WebVideoEncoderOptions) {
 
     this.options = options
@@ -103,7 +106,10 @@ export default class WebVideoEncoder {
   }) {
 
     const pts = static_cast<int64>(chunk.timestamp as uint32)
-    const dts = avRescaleQ(this.outputCounter++, this.framerateTimebase!, this.timeBase!)
+    let dts = avRescaleQ(this.outputCounter++, this.framerateTimebase!, this.timeBase!)
+    if (this.options.copyTs && this.ptsQueue.length) {
+      dts = this.ptsQueue.shift()!
+    }
 
     const avpacket = this.options.avpacketPool ? this.options.avpacketPool.alloc() : createAVPacket()
 
@@ -269,6 +275,7 @@ export default class WebVideoEncoder {
     this.timeBase = timeBase
     this.inputCounter = 0n
     this.outputCounter = 0n
+    this.ptsQueue.length = 0
     this.framerateTimebase = {
       den: parameters.framerate.num,
       num: parameters.framerate.den
@@ -286,8 +293,10 @@ export default class WebVideoEncoder {
 
     let pts = avRescaleQ(this.inputCounter, this.framerateTimebase!, this.timeBase!)
 
-    if (isPointer(frame) && frame.pts !== NOPTS_VALUE_BIGINT && frame.timeBase.den !== 0 && frame.timeBase.num !== 0
-      || !isPointer(frame) && frame.timestamp >= 0
+    if (this.options.copyTs
+      && (isPointer(frame) && frame.pts !== NOPTS_VALUE_BIGINT && frame.timeBase.den !== 0 && frame.timeBase.num !== 0
+        || !isPointer(frame) && frame.timestamp >= 0
+      )
     ) {
       pts = isPointer(frame)
         ? avRescaleQ2(
@@ -300,6 +309,7 @@ export default class WebVideoEncoder {
           AV_TIME_BASE_Q,
           this.timeBase!
         )
+      this.ptsQueue.push(pts)
     }
 
     if (isPointer(frame)) {

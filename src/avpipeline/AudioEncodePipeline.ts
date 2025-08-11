@@ -52,6 +52,7 @@ export interface AudioEncodeTaskOptions extends TaskOptions {
   avpacketListMutex: pointer<Mutex>
   avframeList: pointer<List<pointer<AVFrameRef>>>
   avframeListMutex: pointer<Mutex>
+  copyTs?: boolean
 }
 
 type SelfTask = Omit<AudioEncodeTaskOptions, 'resource'> & {
@@ -83,7 +84,8 @@ export default class AudioEncodePipeline extends Pipeline {
         task.stats.audioPacketEncodeCount++
       },
       avpacketPool: task.avpacketPool,
-      avframePool: task.avframePool
+      avframePool: task.avframePool,
+      copyTs: task.copyTs ?? false
     })
   }
 
@@ -117,7 +119,8 @@ export default class AudioEncodePipeline extends Pipeline {
           task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
           task.stats.audioPacketEncodeCount++
         },
-        avpacketPool: avpacketPool
+        avpacketPool: avpacketPool,
+        copyTs: task.copyTs ?? false
       })
     }
     else {

@@ -64,6 +64,7 @@ export interface VideoEncodeTaskOptions extends TaskOptions {
 
   gop: int32
   preferWebCodecs?: boolean
+  copyTs?: boolean
 }
 
 type SelfTask = Omit<VideoEncodeTaskOptions, 'resource'> & {
@@ -130,7 +131,8 @@ export default class VideoEncodePipeline extends Pipeline {
       },
       enableHardwareAcceleration,
       avpacketPool: task.avpacketPool,
-      avframePool: task.avframePool
+      avframePool: task.avframePool,
+      copyTs: task.copyTs ?? false
     })
   }
 
@@ -141,7 +143,8 @@ export default class VideoEncodePipeline extends Pipeline {
         task.avpacketCaches.push(reinterpret_cast<pointer<AVPacketRef>>(avpacket))
         task.stats.videoPacketEncodeCount++
       },
-      avpacketPool: task.avpacketPool
+      avpacketPool: task.avpacketPool,
+      copyTs: task.copyTs ?? false
     })
   }
 

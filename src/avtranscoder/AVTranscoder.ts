@@ -156,9 +156,30 @@ export interface TaskOptions {
      */
     enableHardware?: boolean
   }
+  /**
+   * 输出的帧在原始文件中的开始时间（毫秒）
+   */
   start?: number
+  /**
+   * 输出的帧在原始文件中的开始时间之后的持续时间（毫秒）
+   */
   duration?: number
+  /**
+   * 指定输出帧的数量
+   */
   nbFrame?: number
+  /**
+   * 使用输入的 pts dts 作为输出
+   */
+  copyTs?: boolean
+  /**
+   * pts dts 强制从 0 开始
+   */
+  startAtZero?: boolean
+  /**
+   * pts dts 强制为非负数
+   */
+  nonnegative?: boolean
   output: {
     file: FileSystemFileHandle | IOWriterSync
     format?: keyof (typeof Format2AVFormat)
@@ -813,7 +834,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
         stats: addressof(task.stats),
         rightPort: muxer2OutputChannel.port1,
-        formatOptions: task.options.output.formatOptions
+        formatOptions: task.options.output.formatOptions,
+        zeroStart: task.options.startAtZero ?? false,
+        nonnegative: task.options.nonnegative ?? false
       })
 
     if (ret < 0) {
@@ -1387,6 +1410,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           avframeList: addressof(this.GlobalData.avframeList),
           avframeListMutex: addressof(this.GlobalData.avframeListMutex),
+          copyTs: task.options.copyTs ?? false
         })
 
       ret = await this.AudioEncoderThread.open(taskId, newStream.codecpar, { num: newStream.timeBase.num, den: newStream.timeBase.den })
@@ -1786,7 +1810,8 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           avframeList: addressof(this.GlobalData.avframeList),
           avframeListMutex: addressof(this.GlobalData.avframeListMutex),
           gop: static_cast<int32>(avQ2D(newStream.codecpar.framerate) * (videoConfig.keyFrameInterval ?? 5000) / 1000),
-          preferWebCodecs: !isHdr(newStream.codecpar) && !hasAlphaChannel(newStream.codecpar) && !!videoConfig.enableWebCodecs
+          preferWebCodecs: !isHdr(newStream.codecpar) && !hasAlphaChannel(newStream.codecpar) && !!videoConfig.enableWebCodecs,
+          copyTs: task.options.copyTs ?? false
         })
 
       ret = await this.VideoEncoderThread.open(taskId, newStream.codecpar, { num: newStream.timeBase.num, den: newStream.timeBase.den }, wasmEncoderOptions)

@@ -45,6 +45,7 @@ export type WebAudioEncoderOptions = {
   avframePool?: AVFramePool
   bitrateMode?: BitrateMode
   opus?: OpusEncoderConfig
+  copyTs?: boolean
 }
 
 export default class WebAudioEncoder {
@@ -92,7 +93,7 @@ export default class WebAudioEncoder {
     }
 
     let pts = this.ptsQueue.shift()
-    if (pts === undefined || pts === NOPTS_VALUE_BIGINT) {
+    if (pts === undefined || pts === NOPTS_VALUE_BIGINT || !this.options.copyTs) {
       pts = this.pts
     }
     avpacket.pts = pts
