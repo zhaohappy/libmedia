@@ -48,6 +48,7 @@ import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { IOFlags } from 'avutil/avformat'
 import * as intread from 'avutil/util/intread'
 import { encryptionInfo2SideData } from 'avutil/util/encryption'
+import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 
 export interface IMovFormatOptions {
   /**
@@ -179,6 +180,24 @@ export default class IMovFormat extends IFormat {
         await formatContext.ioReader.seek(firstMdatPos)
       }
 
+      if (!this.context.fragment) {
+        formatContext.streams.forEach((stream) => {
+          if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+          ) {
+            const streamContext = stream.privData as MOVStreamContext
+            if (stream.codecpar.videoDelay > 0
+              && (!streamContext.cttsSampleCounts
+                || !streamContext.cttsSampleCounts.length
+              )
+            ) {
+              stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS
+            }
+          }
+        })
+      }
+
       return ret
     }
     catch (error) {
@@ -200,7 +219,9 @@ export default class IMovFormat extends IFormat {
     if (sample) {
       avpacket.streamIndex = stream.index
       avpacket.dts = sample.dts
-      avpacket.pts = sample.pts
+      if (!(stream.codecpar.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS)) {
+        avpacket.pts = sample.pts
+      }
       avpacket.duration = static_cast<int64>(sample.duration)
       avpacket.flags |= sample.flags
       avpacket.pos = sample.pos

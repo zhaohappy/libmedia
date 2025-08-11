@@ -23,16 +23,18 @@
  *
  */
 
-import { AVMediaType } from 'avutil/codec'
+import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { BoxType } from './boxType'
-import { FragmentTrack, MOVContext } from './type'
+import { FragmentTrack, MOVContext, MOVStreamContext } from './type'
+import AVStream from 'avutil/AVStream'
+import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 
 export interface BoxLayout {
   type: BoxType,
   children?: BoxLayout[]
 }
 
-function getTrackBoxAudioLayout(context: MOVContext) {
+function getTrackBoxAudioLayout(context: MOVContext, stream: AVStream) {
   return [
     {
       type: BoxType.TKHD
@@ -100,7 +102,25 @@ function getTrackBoxAudioLayout(context: MOVContext) {
   ] as BoxLayout[]
 }
 
-function getTrackBoxVideoLayout(context: MOVContext) {
+function getTrackBoxVideoLayout(context: MOVContext, stream: AVStream) {
+
+  let hasCtts = true
+  if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+    || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+    || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+  ) {
+    const streamContext = stream.privData as MOVStreamContext
+    if (stream.codecpar.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS
+      && (!streamContext.cttsSampleCounts
+        || !streamContext.cttsSampleCounts.length
+        || streamContext.cttsSampleCounts.length === 1
+          && streamContext.cttsSampleOffsets[0] === 0
+      )
+    ) {
+      hasCtts = false
+    }
+  }
+
   return [
     {
       type: BoxType.TKHD
@@ -153,9 +173,11 @@ function getTrackBoxVideoLayout(context: MOVContext) {
                 {
                   type: BoxType.STSS
                 },
-                {
-                  type: BoxType.CTTS
-                },
+                hasCtts
+                  ? {
+                    type: BoxType.CTTS
+                  }
+                  : null,
                 {
                   type: BoxType.STSC
                 },
@@ -309,7 +331,7 @@ export const FragmentTrackBoxLayoutMap: Record<number, (context: MOVContext) => 
   [AVMediaType.AVMEDIA_TYPE_VIDEO]: getFragmentTrackVideoBoxLayout
 }
 
-export const TrackBoxLayoutMap: Record<number, (context: MOVContext) => BoxLayout[]> = {
+export const TrackBoxLayoutMap: Record<number, (context: MOVContext, stream: AVStream) => BoxLayout[]> = {
   [AVMediaType.AVMEDIA_TYPE_AUDIO]: getTrackBoxAudioLayout,
   [AVMediaType.AVMEDIA_TYPE_VIDEO]: getTrackBoxVideoLayout
 }

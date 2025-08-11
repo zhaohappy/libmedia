@@ -196,7 +196,7 @@ export function writeMoov(ioWriter: IOWriter, formatContext: AVOFormatContext, m
       ioWriter,
       movContext.fragment
         ? FragmentTrackBoxLayoutMap[stream.codecpar.codecType](movContext)
-        : TrackBoxLayoutMap[stream.codecpar.codecType](movContext),
+        : TrackBoxLayoutMap[stream.codecpar.codecType](movContext, stream),
       stream,
       movContext
     )

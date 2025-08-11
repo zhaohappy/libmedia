@@ -1445,6 +1445,8 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       const filter2EncoderChannel = createMessageChannel()
 
       const newStream = this.copyAVStreamInterface(task, stream)
+      newStream.codecpar.flags &= ~AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS
+      newStream.codecpar.flags &= ~AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_DTS
 
       const taskId = generateUUID()
 
@@ -1544,7 +1546,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         }
       }
 
-      if (!videoConfig || videoConfig.delay == null) {
+      if ((!videoConfig || videoConfig.delay == null)
+        && newStream.codecpar.videoDelay === 0
+      ) {
         // 这个用来设置 max_b_frame_count，只针对 wasm 编码器，webcodecs 目前无法编码出 B 帧
         newStream.codecpar.videoDelay = 4
       }
