@@ -48,6 +48,15 @@
     <el-input v-model="duration" type="number" placeholder="auto"></el-input>
     ms
   </div>
+  <div id="copyTs">
+    copyTs: <el-checkbox v-model="copyTs"></el-checkbox>
+  </div>
+  <div id="startAtZero">
+    startAtZero: <el-checkbox v-model="startAtZero"></el-checkbox>
+  </div>
+  <div id="nonnegative">
+    nonnegative: <el-checkbox v-model="nonnegative"></el-checkbox>
+  </div>
 
   <br>
 
@@ -157,6 +166,9 @@
     let videoFramerateComp;
     let audioDisableComp;
     let videoDisableComp;
+    let copyTsComp;
+    let startAtZeroComp;
+    let nonnegativeComp;
 
     let startComp;
     let durationComp;
@@ -294,6 +306,34 @@
         }
       }
     })
+
+    copyTsComp = new Vue({
+      el: '#copyTs',
+      data: function () {
+        return {
+          copyTs: false
+        }
+      }
+    })
+
+    startAtZeroComp = new Vue({
+      el: '#startAtZero',
+      data: function () {
+        return {
+          startAtZero: false
+        }
+      }
+    })
+
+    nonnegativeComp = new Vue({
+      el: '#nonnegative',
+      data: function () {
+        return {
+          nonnegative: false
+        }
+      }
+    })
+
 
     let openReadPromise;
     let openWritePromise;
@@ -466,6 +506,9 @@
           },
           start: startComp.start,
           duration: durationComp.duration,
+          copyTs: copyTsComp.copyTs,
+          startAtZero: startAtZeroComp.startAtZero,
+          nonnegative: nonnegativeComp.nonnegative,
           output: {
             file: writeFileHandler,
             format: outputFormatComp.radio,
