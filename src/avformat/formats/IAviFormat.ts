@@ -305,10 +305,8 @@ export default class IAviFormat extends IFormat {
                 streamContext.dwScale = 1
               }
             }
-            stream.timeBase = {
-              num: streamContext.dwScale,
-              den: streamContext.dwRate
-            }
+            stream.timeBase.num = streamContext.dwScale
+            stream.timeBase.den = streamContext.dwRate
             avReduce(stream.timeBase)
 
             streamContext.dwStart = await formatContext.ioReader.readUint32()
