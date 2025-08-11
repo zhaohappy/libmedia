@@ -23,7 +23,7 @@
  *
  */
 
-import AVStream, { AVStreamMetadataEncryption, AVStreamMetadataKey } from 'avutil/AVStream'
+import AVStream from 'avutil/AVStream'
 import { MOVContext, MOVStreamContext } from '../type'
 import { BoxType } from '../boxType'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
