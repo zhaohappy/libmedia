@@ -149,17 +149,17 @@ export default class OMovFormat extends OFormat {
 
   public init(formatContext: AVOFormatContext): number {
     formatContext.ioWriter.setEndian(true)
-    const videoStream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
-
-    if (videoStream
-      && (videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
-        || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
-      )
-    ) {
-      this.annexb2AvccFilter = new Annexb2AvccFilter(this.options.reverseSpsInAvcc)
-      this.annexb2AvccFilter.init(addressof(videoStream.codecpar), addressof(videoStream.timeBase))
-    }
+    formatContext.streams.forEach((stream) => {
+      if (!this.annexb2AvccFilter
+        && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+        )
+      ) {
+        this.annexb2AvccFilter = new Annexb2AvccFilter(this.options.reverseSpsInAvcc)
+        this.annexb2AvccFilter.init(addressof(stream.codecpar), addressof(stream.timeBase))
+      }
+    })
     this.avpacket = createAVPacket()
 
     return 0
