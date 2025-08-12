@@ -26,15 +26,17 @@
 import { AVOFormatContext } from '../AVFormatContext'
 import AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
-import { AVMediaType } from 'avutil/codec'
+import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { AVFormat } from 'avutil/avformat'
 import * as logger from 'common/util/logger'
 import { avRescaleQ2 } from 'avutil/util/rational'
 import { getAVPacketData } from 'avutil/util/avpacket'
+import * as errorType from 'avutil/error'
 
 export const enum IVFCodec {
   VP8 = 'VP80',
-  VP9 = 'VP90'
+  VP9 = 'VP90',
+  AV1 = 'AV01'
 }
 
 export class IVFHeader {
@@ -81,17 +83,34 @@ export default class OIVFFormat extends OFormat {
 
   public init(formatContext: AVOFormatContext): number {
     formatContext.ioWriter.setEndian(false)
-    const stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
-    if (stream) {
-      this.header.width = stream.codecpar.width
-      this.header.height = stream.codecpar.height
-      this.header.numerator = stream.timeBase.num
-      this.header.denominator = stream.timeBase.den
-    }
     return 0
   }
 
   public writeHeader(formatContext: AVOFormatContext): number {
+
+    const stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
+
+    if (!stream
+      || (stream.codecpar.codecId !== AVCodecID.AV_CODEC_ID_VP8
+        && stream.codecpar.codecId !== AVCodecID.AV_CODEC_ID_VP9
+        && stream.codecpar.codecId !== AVCodecID.AV_CODEC_ID_AV1
+      )
+    ) {
+      return errorType.CODEC_NOT_SUPPORT
+    }
+
+    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9) {
+      this.header.codec = IVFCodec.VP9
+    }
+    else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1) {
+      this.header.codec = IVFCodec.AV1
+    }
+
+    this.header.width = stream.codecpar.width
+    this.header.height = stream.codecpar.height
+    this.header.numerator = stream.timeBase.num
+    this.header.denominator = stream.timeBase.den
+
     // byte 0-3 signature: 'DKIF'
     formatContext.ioWriter.writeString('DKIF')
     // byte 4-5 version (should be 0)

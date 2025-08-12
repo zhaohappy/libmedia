@@ -39,7 +39,8 @@ import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 export const enum IVFCodec {
   VP8 = 'VP80',
-  VP9 = 'VP90'
+  VP9 = 'VP90',
+  AV1 = 'AV01'
 }
 
 const IVFCodec2CodecId = {
