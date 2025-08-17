@@ -34,5 +34,9 @@ export default async function registerProcessor(audioContext: AudioContext, modu
 
   const workerUrl: string = URL.createObjectURL(blob)
 
+  const map = audioContext['audioWorkletModule'] || {}
+  map[moduleId] = workerUrl
+  audioContext['audioWorkletModule'] = map
+
   await audioContext.audioWorklet.addModule(workerUrl)
 }
