@@ -4047,6 +4047,40 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     })
   }
 
+  static async startAudioContext() {
+    if (!AVPlayer.audioContext) {
+      AVPlayer.audioContext = new (AudioContext || webkitAudioContext)()
+    }
+
+    AVPlayer.audioContext.addEventListener('statechange', () => {
+      array.each(AVPlayer.Instances, (player) => {
+        player.onAudioContextStateChange()
+      })
+    })
+
+    if (support.audioWorklet) {
+      if (defined(ENV_WEBPACK)) {
+        await registerProcessor(
+          AVPlayer.audioContext,
+          defined(ENABLE_THREADS)
+          && cheapConfig.USE_THREADS
+          && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
+          && (!os.ios || browser.checkVersion(os.version, '16.1', true))
+            ? require.resolve('avrender/pcm/AudioSourceWorkletProcessor2')
+            : require.resolve('avrender/pcm/AudioSourceWorkletProcessor')
+        )
+      }
+      else {
+        await AVPlayer.audioContext.audioWorklet.addModule(defined(ENABLE_THREADS)
+          && cheapConfig.USE_THREADS
+          && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
+          && (!os.ios || browser.checkVersion(os.version, '16.1', true))
+          ? new URL('avrender/dist/AudioSourceWorkletProcessor2.js', import.meta.url)
+          : new URL('avrender/dist/AudioSourceWorkletProcessor.js', import.meta.url))
+      }
+    }
+  }
+
   /**
    * @hidden
    */
@@ -4056,37 +4090,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     return AVPlayer.AudioThreadReady = new Promise(async (resolve) => {
-      if (!AVPlayer.audioContext) {
-        AVPlayer.audioContext = new (AudioContext || webkitAudioContext)()
-      }
 
-      AVPlayer.audioContext.addEventListener('statechange', () => {
-        array.each(AVPlayer.Instances, (player) => {
-          player.onAudioContextStateChange()
-        })
-      })
-
-      if (support.audioWorklet) {
-        if (defined(ENV_WEBPACK)) {
-          await registerProcessor(
-            AVPlayer.audioContext,
-            defined(ENABLE_THREADS)
-            && cheapConfig.USE_THREADS
-            && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
-            && (!os.ios || browser.checkVersion(os.version, '16.1', true))
-              ? require.resolve('avrender/pcm/AudioSourceWorkletProcessor2')
-              : require.resolve('avrender/pcm/AudioSourceWorkletProcessor')
-          )
-        }
-        else {
-          await AVPlayer.audioContext.audioWorklet.addModule(defined(ENABLE_THREADS)
-            && cheapConfig.USE_THREADS
-            && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
-            && (!os.ios || browser.checkVersion(os.version, '16.1', true))
-            ? new URL('avrender/dist/AudioSourceWorkletProcessor2.js', import.meta.url)
-            : new URL('avrender/dist/AudioSourceWorkletProcessor.js', import.meta.url))
-        }
-      }
+      await AVPlayer.startAudioContext()
 
       if (cheapConfig.USE_THREADS || !support.worker || !enableWorker || !defined(ENABLE_WORKER_PROXY)) {
         AVPlayer.AudioDecoderThread = await createThreadFromClass(AudioDecodePipeline, {
