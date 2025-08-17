@@ -36,6 +36,8 @@ import { unrefAVPacket } from 'avutil/util/avpacket'
 import * as mutex from 'cheap/thread/mutex'
 import IPCPort from 'common/network/IPCPort'
 import Timer from 'common/timer/Timer'
+import Stats from 'avpipeline/struct/stats'
+import { AVMediaType } from 'avutil/codec'
 
 export default class IODemuxPipeline {
 
@@ -83,22 +85,33 @@ export default class IODemuxPipeline {
       const result = []
       this.globalDataMap.forEach((globalData, key) => {
         const stats = globalData.stats
+
+        const data: Partial<Stats> = {
+          bufferReceiveBytes: stats.bufferReceiveBytes
+        }
+        const task = this.demuxPipeline.tasks.get(key)
+        if (!task) {
+          return
+        }
+        if (task.formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_AUDIO)) {
+          data.audioPacketQueueLength = stats.audioPacketQueueLength
+          data.audioPacketCount =  stats.audioPacketCount
+          data.audioPacketBytes =  stats.audioPacketBytes
+          data.audioEncodeFramerate =  stats.audioEncodeFramerate
+        }
+        if (task.formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)) {
+          data.videoPacketQueueLength =  stats.videoPacketQueueLength
+          data.videoPacketCount =  stats.videoPacketCount
+          data.videoPacketBytes =  stats.videoPacketBytes
+          data.keyFrameCount =  stats.keyFrameCount
+          data.gop =  stats.gop
+          data.keyFrameInterval =  stats.keyFrameInterval
+          data.videoEncodeFramerate = stats.videoEncodeFramerate
+        }
+
         result.push({
           taskId: key,
-          stats: {
-            bufferReceiveBytes: stats.bufferReceiveBytes,
-            audioPacketQueueLength: stats.audioPacketQueueLength,
-            videoPacketQueueLength: stats.videoPacketQueueLength,
-            audioPacketCount: stats.audioPacketCount,
-            audioPacketBytes: stats.audioPacketBytes,
-            audioEncodeFramerate: stats.audioEncodeFramerate,
-            videoPacketCount: stats.videoPacketCount,
-            videoPacketBytes: stats.videoPacketBytes,
-            keyFrameCount: stats.keyFrameCount,
-            gop: stats.gop,
-            keyFrameInterval: stats.keyFrameInterval,
-            videoEncodeFramerate: stats.videoEncodeFramerate
-          }
+          stats: data
         })
       })
       this.controlPort.notify('stats', {
