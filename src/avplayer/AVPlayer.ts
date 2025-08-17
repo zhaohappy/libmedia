@@ -1038,7 +1038,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       if (this.audioSourceNode) {
         await this.audioSourceNode.request('restart')
-        if (AVPlayer.audioContext.state === 'suspended') {
+        if (AVPlayer.audioContext.state === 'suspended'
+          // @ts-ignore
+          || AVPlayer.audioContext.state === 'interrupted'
+        ) {
           await AVPlayer.AudioRenderThread.fakePlay(this.taskId)
         }
         this.audioEnded = false
@@ -2073,7 +2076,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.selectedAudioStream = audioStream
       await AVPlayer.startAudioPipeline(this.options.enableWorker)
 
-      if (AVPlayer.audioContext.state === 'suspended') {
+      if (AVPlayer.audioContext.state === 'suspended'
+        // @ts-ignore
+        || AVPlayer.audioContext.state === 'interrupted'
+      ) {
         await Promise.race([
           AVPlayer.audioContext.resume(),
           new Sleep(0.1)
@@ -2548,8 +2554,16 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           }, [this.audioRender2AudioWorkletChannel.port2]))
         }
         await Promise.all(promises)
-        if (this.audioSourceNode && AVPlayer.audioContext.state === 'suspended') {
-          if (AVPlayer.audioContext.state === 'suspended') {
+        if (this.audioSourceNode
+          && (AVPlayer.audioContext.state === 'suspended'
+            // @ts-ignore
+            || AVPlayer.audioContext.state === 'interrupted'
+          )
+        ) {
+          if (AVPlayer.audioContext.state === 'suspended'
+            // @ts-ignore
+            || AVPlayer.audioContext.state === 'interrupted'
+          ) {
             this.fire(eventType.RESUME)
             logger.warn('the audioContext was not started. It must be resumed after a user gesture')
           }
@@ -3083,7 +3097,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         AVPlayer.audioContext.resume(),
         new Sleep(0.1)
       ])
-      if (AVPlayer.audioContext.state === 'suspended') {
+      if (AVPlayer.audioContext.state === 'suspended'
+        // @ts-ignore
+        || AVPlayer.audioContext.state === 'interrupted'
+      ) {
         logger.warn('the audioContext was not allowed to start. It must be resumed after a user gesture')
       }
       else {
@@ -3113,6 +3130,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   public isSuspended() {
     return AVPlayer.audioContext?.state === 'suspended'
+      // @ts-ignore
+      || AVPlayer.audioContext?.state === 'interrupted'
   }
 
   /**
@@ -3614,7 +3633,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
               }
               if (this.audioSourceNode) {
                 await this.audioSourceNode.request('restart')
-                if (AVPlayer.audioContext.state === 'suspended') {
+                if (AVPlayer.audioContext.state === 'suspended'
+                  // @ts-ignore
+                  || AVPlayer.audioContext.state === 'interrupted'
+                ) {
                   await AVPlayer.AudioRenderThread.fakePlay(this.taskId)
                 }
               }
