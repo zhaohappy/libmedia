@@ -474,7 +474,9 @@ export default class VideoRenderPipeline extends Pipeline {
         logger.fatal('task has already call play')
       }
 
-      task.backFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
+      if (!(isPointer(task.backFrame) || is.object(task.backFrame))) {
+        task.backFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
+      }
 
       if (is.number(task.backFrame) && task.backFrame < 0) {
         task.backFrame = nullptr
@@ -483,7 +485,9 @@ export default class VideoRenderPipeline extends Pipeline {
         return
       }
 
-      task.frontFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
+      if (!(isPointer(task.frontFrame) || is.object(task.frontFrame))) {
+        task.frontFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
+      }
 
       task.frontBuffered = true
       task.ended = false
