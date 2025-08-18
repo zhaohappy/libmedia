@@ -4265,6 +4265,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     AVPlayer.IOThread = null
     AVPlayer.audioContext = null
     AVPlayer.MSEThread = null
+    AVPlayer.MSEPipelineProxy = null
+
+    AVPlayer.DemuxThreadReady = null
+    AVPlayer.VideoThreadReady = null
+    AVPlayer.AudioThreadReady = null
+    AVPlayer.MSEThreadReady = null
 
     logger.info('AVPlayer pipelines stopped')
 
