@@ -494,11 +494,15 @@ export default class DashIOLoader extends IOLoader {
         )
       const segmentList = mediaList[resource.selectedIndex].mediaSegments
       if (segmentList?.length) {
+        index = -1
         for (let i = 0; i < segmentList.length; i++) {
           if (seekTime >= segmentList[i].start * 1000 && seekTime < segmentList[i].end * 1000) {
             index = i
             break
           }
+        }
+        if (index === -1) {
+          index = segmentList.length - 1
         }
       }
       resource.segmentIndex = index + (mediaList[resource.selectedIndex].initSegment ? 1 : 0)

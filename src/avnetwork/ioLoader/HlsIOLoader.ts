@@ -493,7 +493,7 @@ class MediaLoader {
 
     let duration = 0
     let seekTime = Number(timestamp)
-    let index = 0
+    let index = -1
 
     for (let i = 0; i < this.mediaPlayList.segments.length; i++) {
       if (is.number(this.mediaPlayList.segments[i].duration)) {
@@ -503,6 +503,9 @@ class MediaLoader {
           break
         }
       }
+    }
+    if (index === -1) {
+      index = this.mediaPlayList.segments.length - 1
     }
     this.segmentIndex = index
     this.aborted = false
