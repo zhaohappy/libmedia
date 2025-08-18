@@ -110,6 +110,7 @@ import { DRMType } from './drm/drm'
 import kid2Base64 from './drm/kid2Base64'
 import * as text from 'common/util/text'
 import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
+import { IOLoaderOptions } from 'avnetwork/ioLoader/IOLoader'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -229,6 +230,10 @@ export interface AVPlayerOptions {
    */
   enableWorker?: boolean
   /**
+   * 是否启用 AudioWorklet
+   */
+  enableAudioWorklet?: boolean
+  /**
    * 是否循环播放
    */
   loop?: boolean
@@ -317,6 +322,10 @@ export interface AVPlayerLoadOptions {
    * 设置源是否是直播，覆盖 AVPlayerOptions 里面的配置
    */
   isLive?: boolean
+  /**
+   * ioLoader 配置参数
+   */
+  ioLoaderOptions?: Omit<IOLoaderOptions, 'isLive'>
 }
 
 export interface AVPlayerPlayOptions {
@@ -411,6 +420,7 @@ const defaultAVPlayerOptions: Partial<AVPlayerOptions> = {
   enableWebGPU: true,
   enableWorker: true,
   enableWebCodecs: true,
+  enableAudioWorklet: true,
   loop: false,
   enableJitterBuffer: true,
   jitterBufferMax: 4,
@@ -1409,9 +1419,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             to: -1
           },
           taskId: this.taskId,
-          options: {
+          options: object.extend({}, options.ioLoaderOptions || {}, {
             isLive: this.isLive_
-          },
+          }),
           rightPort: this.ioloader2DemuxerChannel.port1,
           stats: addressof(this.GlobalData.stats)
         })
@@ -1432,9 +1442,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             to: -1
           },
           taskId: this.taskId,
-          options: {
+          options: object.extend({}, options.ioLoaderOptions || {}, {
             isLive: false
-          },
+          }),
           rightPort: this.ioloader2DemuxerChannel.port1,
           stats: addressof(this.GlobalData.stats)
         })
@@ -2290,7 +2300,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       // 创建一个音频源节点
       let AudioSource: typeof AudioSourceWorkletNode | typeof AudioSourceBufferNode
-      if (support.audioWorklet) {
+      if (support.audioWorklet && this.options.enableAudioWorklet) {
         AudioSource = AudioSourceWorkletNode
       }
       else {
