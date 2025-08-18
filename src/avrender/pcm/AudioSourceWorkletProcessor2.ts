@@ -81,18 +81,6 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
           this.channels = channels
           this.pullIPC = new IPCPort(port)
 
-          const frontBuffer = this.allocBuffer()
-          const backBuffer = this.allocBuffer()
-
-          await this.pullIPC.request('pull', {
-            buffer: backBuffer
-          })
-          await this.pullIPC.request('pull', {
-            buffer: frontBuffer
-          })
-
-          this.frontBuffer = frontBuffer
-          this.backBuffer = backBuffer
           this.backBufferOffset = 0
           this.ended = false
           this.pause = false
@@ -100,6 +88,30 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
           this.firstRendered = false
           this.stopped = false
           this.lastStutterTimestamp = currentTime
+
+          const frontBuffer = this.allocBuffer()
+          const backBuffer = this.allocBuffer()
+
+          let ret = await this.pullIPC.request<number>('pull', {
+            buffer: backBuffer
+          })
+          if (ret < 0) {
+            this.ended = true
+            this.frontBuffered = false
+            this.backBufferOffset === BUFFER_LENGTH
+          }
+          else {
+            ret = await this.pullIPC.request<number>('pull', {
+              buffer: frontBuffer
+            })
+            if (ret < 0) {
+              this.ended = true
+              this.frontBuffered = false
+            }
+          }
+
+          this.frontBuffer = frontBuffer
+          this.backBuffer = backBuffer
 
           this.ipcPort.reply(request)
 
@@ -113,18 +125,6 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
             return
           }
 
-          const frontBuffer = this.backBuffer ? this.backBuffer : this.allocBuffer()
-          const backBuffer = this.frontBuffer ? this.frontBuffer : this.allocBuffer()
-
-          await this.pullIPC.request('pull', {
-            buffer: backBuffer
-          })
-          await this.pullIPC.request('pull', {
-            buffer: frontBuffer
-          })
-
-          this.frontBuffer = frontBuffer
-          this.backBuffer = backBuffer
           this.backBufferOffset = 0
           this.ended = false
           this.pause = false
@@ -132,6 +132,30 @@ export default class AudioSourceWorkletProcessor2 extends AudioWorkletProcessorB
           this.firstRendered = false
           this.stopped = false
           this.lastStutterTimestamp = currentTime
+
+          const frontBuffer = this.backBuffer ? this.backBuffer : this.allocBuffer()
+          const backBuffer = this.frontBuffer ? this.frontBuffer : this.allocBuffer()
+
+          let ret = await this.pullIPC.request<number>('pull', {
+            buffer: backBuffer
+          })
+          if (ret < 0) {
+            this.ended = true
+            this.frontBuffered = false
+            this.backBufferOffset = BUFFER_LENGTH
+          }
+          else {
+            ret = await this.pullIPC.request<number>('pull', {
+              buffer: frontBuffer
+            })
+            if (ret < 0) {
+              this.ended = true
+              this.frontBuffered = false
+            }
+          }
+
+          this.frontBuffer = frontBuffer
+          this.backBuffer = backBuffer
 
           this.ipcPort.reply(request)
 

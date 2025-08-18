@@ -94,13 +94,26 @@ export default class AudioSourceBufferNode {
         this.ended = false
         this.pause = false
         this.firstRendered = false
+        this.buffered = true
         this.lastStutterTimestamp = getTimestamp()
 
-        await this.pullInterval()
-        this.buffering()
-        await this.pullInterval()
-
-        this.buffered = true
+        let ret = await this.pullInterval()
+        if (ret < 0) {
+          this.ended = true
+          this.buffered = false
+          this.freeBuffer(this.buffer)
+          logger.info('audio source ended')
+          this.observer.onEnded()
+          return
+        }
+        else {
+          this.buffering()
+          ret = await this.pullInterval()
+          if (ret < 0) {
+            this.ended = true
+            this.buffered = false
+          }
+        }
 
         this.process()
 
@@ -120,16 +133,26 @@ export default class AudioSourceBufferNode {
         this.pause = false
         this.firstRendered = false
 
-        await this.pullIPC.request('pull', {
-          buffer: this.buffer
-        })
-        this.buffering()
-        await this.pullIPC.request('pull', {
-          buffer: this.buffer
-        })
-
         this.buffered = true
         this.lastStutterTimestamp = getTimestamp()
+
+        let ret = await this.pullInterval()
+        if (ret < 0) {
+          this.ended = true
+          this.buffered = false
+          this.freeBuffer(this.buffer)
+          logger.info('audio source ended')
+          this.observer.onEnded()
+          return
+        }
+        else {
+          this.buffering()
+          ret = await this.pullInterval()
+          if (ret < 0) {
+            this.ended = true
+            this.buffered = false
+          }
+        }
 
         this.process()
 

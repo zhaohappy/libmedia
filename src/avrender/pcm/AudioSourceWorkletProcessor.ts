@@ -71,15 +71,6 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
           this.channels = channels
           this.pullIPC = new IPCPort(port)
 
-          const backBuffer = []
-          const frontBuffer = []
-
-          await this.pull(backBuffer)
-          await this.pull(frontBuffer)
-
-          this.frontBuffer = frontBuffer
-          this.backBuffer = backBuffer
-
           this.backBufferOffset = 0
           this.ended = false
           this.frontBuffered = true
@@ -87,6 +78,26 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
           this.firstRendered = false
           this.stopped = false
           this.lastStutterTimestamp = currentTime
+
+          const backBuffer = []
+          const frontBuffer = []
+
+          await this.pull(backBuffer)
+          if (!backBuffer.length) {
+            this.ended = true
+            this.frontBuffered = false
+            this.backBufferOffset = BUFFER_LENGTH
+          }
+          else {
+            await this.pull(frontBuffer)
+            if (!frontBuffer.length) {
+              this.ended = true
+              this.frontBuffered = false
+            }
+          }
+
+          this.frontBuffer = frontBuffer
+          this.backBuffer = backBuffer
 
           this.ipcPort.reply(request)
 
@@ -100,15 +111,6 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
             return
           }
 
-          const backBuffer = []
-          const frontBuffer = []
-
-          await this.pull(backBuffer)
-          await this.pull(frontBuffer)
-
-          this.frontBuffer = frontBuffer
-          this.backBuffer = backBuffer
-
           this.backBufferOffset = 0
           this.ended = false
           this.frontBuffered = true
@@ -116,6 +118,26 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
           this.firstRendered = false
           this.stopped = false
           this.lastStutterTimestamp = currentTime
+
+          const backBuffer = []
+          const frontBuffer = []
+
+          await this.pull(backBuffer)
+          if (!backBuffer.length) {
+            this.ended = true
+            this.frontBuffered = false
+            this.backBufferOffset === BUFFER_LENGTH
+          }
+          else {
+            await this.pull(frontBuffer)
+            if (!frontBuffer.length) {
+              this.ended = true
+              this.frontBuffered = false
+            }
+          }
+
+          this.frontBuffer = frontBuffer
+          this.backBuffer = backBuffer
 
           this.ipcPort.reply(request)
 
