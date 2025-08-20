@@ -23,7 +23,7 @@
  *
  */
 
-import { AVPixelFormat } from 'avutil/pixfmt'
+import { AVColorRange, AVColorSpace, AVPixelFormat } from 'avutil/pixfmt'
 import AVFrame from 'avutil/struct/avframe'
 import { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
@@ -48,6 +48,8 @@ export interface ScaleParameters {
   width: int32
   height: int32
   format: AVPixelFormat
+  colorRange?: AVColorRange
+  colorSpace?: AVColorSpace
 }
 
 export type VideoScalerOptions = {
@@ -68,7 +70,7 @@ export default class VideoScaler {
     this.scaler = new WebAssemblyRunner(this.options.resource)
   }
 
-  public async open(input: ScaleParameters, output: ScaleParameters, algorithm: ScaleAlgorithm = ScaleAlgorithm.BILINEAR): Promise<int32> {
+  public async open(input: ScaleParameters, output: ScaleParameters, algorithm: ScaleAlgorithm = ScaleAlgorithm.BILINEAR, threadCount: int32 = 1): Promise<int32> {
 
     this.inputParameters = input
     this.outputParameters = output
@@ -88,7 +90,27 @@ export default class VideoScaler {
       output.format
     )
 
-    let ret = this.scaler.invoke<int32>('scale_init', algorithm)
+    this.scaler.invoke(
+      'scale_set_input_color',
+      input.colorSpace ?? AVColorSpace.AVCOL_SPC_UNSPECIFIED,
+      input.colorRange ?? AVColorRange.AVCOL_RANGE_UNSPECIFIED,
+    )
+
+    this.scaler.invoke(
+      'scale_set_output_color',
+      output.colorSpace ?? AVColorSpace.AVCOL_SPC_UNSPECIFIED,
+      output.colorRange ?? AVColorRange.AVCOL_RANGE_UNSPECIFIED,
+    )
+
+    let ret = 0
+
+    if (threadCount > 1) {
+      ret = await this.scaler.invokeAsync<int32>('scale_init', algorithm, threadCount)
+    }
+    else {
+      ret = this.scaler.invoke<int32>('scale_init', algorithm, threadCount)
+    }
+
     if (ret < 0) {
       logger.error(`open scaler failed, ret: ${ret}`)
       return errorType.INVALID_PARAMETERS
