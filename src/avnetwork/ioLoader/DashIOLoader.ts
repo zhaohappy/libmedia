@@ -340,7 +340,7 @@ export default class DashIOLoader extends IOLoader {
 
     if (resource.loader) {
       ret = await resource.loader.read(buffer)
-      if (ret !== IOError.END) {
+      if (ret !== IOError.END || this.aborted) {
         return ret
       }
       else {

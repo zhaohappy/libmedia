@@ -350,7 +350,7 @@ class MediaLoader {
 
     if (this.loader) {
       ret = this.aesDecryptPipe ? (await this.aesDecryptPipe.read(buffer)) : (await this.loader.read(buffer))
-      if (ret !== IOError.END) {
+      if (ret !== IOError.END || this.aborted) {
         return ret
       }
       else {
