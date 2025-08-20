@@ -141,10 +141,29 @@ export default class WebVideoDecoder {
 
     this.extradata = buffer.slice()
 
+    // safari 创建 webcodecs 解码器需要准确的分辨率
+    // 这里更新一下 width 和 height
+    if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_H264) {
+      h264.parseAVCodecParameters({
+        codecpar: accessof(this.parameters),
+        sideData: {},
+        metadata: {}
+      }, this.extradata)
+    }
+    else if (this.parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+      hevc.parseAVCodecParameters({
+        codecpar: accessof(this.parameters),
+        sideData: {},
+        metadata: {}
+      }, this.extradata)
+    }
+
     this.decoder!.reset()
 
     const config: VideoDecoderConfig = {
       codec: getVideoCodec(this.parameters, buffer),
+      codedWidth: this.parameters.width,
+      codedHeight: this.parameters.height,
       description: this.extradata,
       hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true)
     }
