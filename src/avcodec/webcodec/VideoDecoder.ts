@@ -242,6 +242,12 @@ export default class WebVideoDecoder {
       this.sort = false
     }
 
+    if (this.outputQueue.length) {
+      this.outputQueue.forEach((frame) => {
+        frame.close()
+      })
+    }
+
     this.inputQueue.length = 0
     this.outputQueue.length = 0
     this.dtsQueue.length = 0
@@ -372,7 +378,7 @@ export default class WebVideoDecoder {
     this.decoder = undefined
     this.currentError = null
 
-    if (this.outputQueue?.length) {
+    if (this.outputQueue.length) {
       this.outputQueue.forEach((frame) => {
         frame.close()
       })
