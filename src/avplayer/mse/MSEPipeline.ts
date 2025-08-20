@@ -1740,6 +1740,17 @@ export default class MSEPipeline extends Pipeline {
     }
   }
 
+  public async isManagedMediaSource(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      return typeof ManagedMediaSource === 'function'
+        && task.mediaSource instanceof ManagedMediaSource
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+
   private createTask(options: MSETaskOptions, startTimestamp: int64): number {
 
     const controlIPCPort = new IPCPort(options.controlPort)

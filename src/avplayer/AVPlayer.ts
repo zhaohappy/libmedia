@@ -848,6 +848,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
     const video = document.createElement('video')
     video.autoplay = true
+    video.playsInline = true
     video.className = 'avplayer-video'
     video.style.cssText = `
       width: 100%;
@@ -2001,6 +2002,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       const mediaSource = await AVPlayer.MSEThread.getMediaSource(this.taskId)
 
       if (mediaSource) {
+        if (browser.safari && (await AVPlayer.MSEThread.isManagedMediaSource(this.taskId))) {
+          (this.video || this.audio).disableRemotePlayback = true
+        }
         if (support.workerMSE && mediaSource instanceof MediaSourceHandle) {
           (this.video || this.audio).srcObject = mediaSource
         }
