@@ -77,9 +77,7 @@ export default class WebVideoDecoder {
     this.dtsQueue = []
 
     // safari 输出帧在有 B 帧的情况下没有按 pts 排序递增输出，这里需要进行排序输出
-    // 经测试 safari 17.4 以上正常排序输出，这里不需要排序了
-    this.sort = !!(browser.safari && !browser.checkVersion(browser.version, '17.4', true)
-      || os.ios && !browser.checkVersion(os.version, '17.4', true))
+    this.sort = !!(browser.safari || os.ios)
   }
 
   private async output(frame: VideoFrame) {
