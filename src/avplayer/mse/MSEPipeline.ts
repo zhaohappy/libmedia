@@ -460,6 +460,13 @@ export default class MSEPipeline extends Pipeline {
     memcpy(codecpar.extradata, extradata, reinterpret_cast<size>(extradataSize))
     codecpar.extradataSize = extradataSize
 
+    if (codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
+      h264.parseAVCodecParameters(resource.oformatContext.streams[0], mapUint8Array(extradata, reinterpret_cast<size>(extradataSize)))
+    }
+    else if (codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC) {
+      hevc.parseAVCodecParameters(resource.oformatContext.streams[0], mapUint8Array(extradata, reinterpret_cast<size>(extradataSize)))
+    }
+
     resource.track.changeMimeType(
       this.getMimeType(addressof(codecpar)),
       resource.enableRawMpeg ? 'sequence' : 'segments'
@@ -656,6 +663,17 @@ export default class MSEPipeline extends Pipeline {
       resource.bufferQueue.write(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)).slice())
     }
     else {
+      if (resource.type === 'video' && (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)) {
+        const extradata = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+        if (extradata && checkExtradataChanged(
+          resource.oformatContext.streams[0].codecpar.extradata,
+          resource.oformatContext.streams[0].codecpar.extradataSize,
+          extradata.data,
+          static_cast<int32>(extradata.size)
+        )) {
+          this.mixExtradata(resource, extradata.data, static_cast<int32>(extradata.size))
+        }
+      }
       this.checkEnableEncryption(resource, avpacket)
       mux.writeAVPacket(resource.oformatContext, avpacket)
       if (flush) {
@@ -782,16 +800,6 @@ export default class MSEPipeline extends Pipeline {
 
         avpacket.streamIndex = resource.oformatContext.streams[0].index
 
-        const extradata = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
-        if (extradata && checkExtradataChanged(
-          resource.oformatContext.streams[0].codecpar.extradata,
-          resource.oformatContext.streams[0].codecpar.extradataSize,
-          extradata.data,
-          static_cast<int32>(extradata.size)
-        )) {
-          this.mixExtradata(resource, extradata.data, static_cast<int32>(extradata.size))
-        }
-
         this.writeAVPacket(avpacket, resource, true)
 
         resource.track.addBuffer(resource.bufferQueue.flush())
@@ -872,18 +880,6 @@ export default class MSEPipeline extends Pipeline {
       }
       if (avpacket.pts < startPTS) {
         startPTS = avpacket.pts
-      }
-
-      if (task.video && task.video.streamIndex === avpacket.streamIndex) {
-        const extradata = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
-        if (extradata && checkExtradataChanged(
-          resource.oformatContext.streams[0].codecpar.extradata,
-          resource.oformatContext.streams[0].codecpar.extradataSize,
-          extradata.data,
-          static_cast<int32>(extradata.size)
-        )) {
-          this.mixExtradata(resource, extradata.data, static_cast<int32>(extradata.size))
-        }
       }
 
       avpacket.streamIndex = resource.oformatContext.streams[0].index
