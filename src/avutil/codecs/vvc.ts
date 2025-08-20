@@ -29,7 +29,6 @@ import BufferWriter from 'common/io/BufferWriter'
 import BufferReader from 'common/io/BufferReader'
 import { AVPacketSideDataType } from '../codec'
 import BitReader from 'common/io/BitReader'
-import AVStream from '../AVStream'
 import { mapUint8Array } from 'cheap/std/memory'
 import * as naluUtil from '../util/nalu'
 import { avMalloc } from '../util/mem'
@@ -40,6 +39,7 @@ import { Data } from 'common/types/type'
 import * as intread from '../util/intread'
 import * as intwrite from '../util/intwrite'
 import { AVPixelFormat } from '../pixfmt'
+import AVCodecParameters from '../struct/avcodecparameters'
 
 const NALULengthSizeMinusOne = 3
 
@@ -706,7 +706,7 @@ export function avcc2Annexb(data: Uint8ArrayInterface, extradata?: Uint8ArrayInt
   }
 }
 
-export function parseAVCodecParametersBySps(stream: AVStream, sps: Uint8ArrayInterface) {
+export function parseAVCodecParametersBySps(stream: { codecpar: AVCodecParameters }, sps: Uint8ArrayInterface) {
   const { profile, level, width, height, videoDelay, chromaFormatIdc, bitDepthMinus8 } = parseSPS(sps)
   stream.codecpar.profile = profile
   stream.codecpar.level = level
@@ -740,7 +740,14 @@ export function parseAVCodecParametersBySps(stream: AVStream, sps: Uint8ArrayInt
   }
 }
 
-export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayInterface) {
+export function parseAVCodecParameters(
+  stream: {
+    codecpar: AVCodecParameters,
+    sideData: Partial<Record<AVPacketSideDataType, Uint8Array>>,
+    metadata: Data
+  },
+  extradata?: Uint8ArrayInterface
+) {
   if (!extradata && stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
     extradata = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
   }

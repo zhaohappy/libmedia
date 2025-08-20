@@ -23,7 +23,6 @@
  *
  */
 
-import AVStream from '../AVStream'
 import { AVPacketSideDataType } from '../codec'
 import { Uint8ArrayInterface } from 'common/io/interface'
 import BitReader from 'common/io/BitReader'
@@ -75,7 +74,13 @@ export function getLevelByResolution(width: number, height: number, fps: number)
   }
 }
 
-export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayInterface) {
+export function parseAVCodecParameters(
+  stream: {
+    codecpar: AVCodecParameters,
+    sideData: Partial<Record<AVPacketSideDataType, Uint8Array>>,
+  },
+  extradata?: Uint8ArrayInterface
+) {
   if (!extradata && stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
     extradata = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
   }

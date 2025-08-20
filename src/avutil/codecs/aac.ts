@@ -24,7 +24,6 @@
  */
 
 import { AVSampleFormat } from '../audiosamplefmt'
-import Stream from '../AVStream'
 import { AVPacketSideDataType } from '../codec'
 import { NOPTS_VALUE } from '../constant'
 import AVCodecParameters from '../struct/avcodecparameters'
@@ -157,7 +156,13 @@ export function getAVCodecParameters(extradata: Uint8ArrayInterface) {
   }
 }
 
-export function parseAVCodecParameters(stream: Stream, extradata?: Uint8ArrayInterface) {
+export function parseAVCodecParameters(
+  stream: {
+    codecpar: AVCodecParameters,
+    sideData: Partial<Record<AVPacketSideDataType, Uint8Array>>,
+  },
+  extradata?: Uint8ArrayInterface
+) {
   if (!extradata && stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
     extradata = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
   }

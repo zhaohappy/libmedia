@@ -24,7 +24,6 @@
  */
 
 import { AVPacketSideDataType } from '../codec'
-import AVStream from '../AVStream'
 import AVCodecParameters from '../struct/avcodecparameters'
 import BufferReader from 'common/io/BufferReader'
 import BufferWriter from 'common/io/BufferWriter'
@@ -100,7 +99,13 @@ export function getBufferSamples(buffer: Uint8Array) {
  *  - C bytes, C 为总输出声道数 coupledStreamCount + streamCount
  * 
  */
-export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayInterface) {
+export function parseAVCodecParameters(
+  stream: {
+    codecpar: AVCodecParameters,
+    sideData: Partial<Record<AVPacketSideDataType, Uint8Array>>,
+  },
+  extradata?: Uint8ArrayInterface
+) {
   if (!extradata && stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
     extradata = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
   }

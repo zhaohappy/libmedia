@@ -24,8 +24,9 @@
  */
 
 import { Uint8ArrayInterface } from 'common/io/interface'
-import AVStream from '../AVStream'
 import { NOPTS_VALUE } from '../constant'
+import AVCodecParameters from '../struct/avcodecparameters'
+import { AVPacketSideDataType } from '../codec'
 
 const MpegAudioV10SampleRateTable = [44100, 48000, 32000, 0]
 
@@ -142,7 +143,13 @@ export const MP3Profile2Name: Record<MP3Profile, string> = {
 }
 
 
-export function parseAVCodecParameters(stream: AVStream, buffer: Uint8ArrayInterface) {
+export function parseAVCodecParameters(
+  stream: {
+    codecpar: AVCodecParameters,
+    sideData: Partial<Record<AVPacketSideDataType, Uint8Array>>,
+  },
+  buffer?: Uint8ArrayInterface
+) {
   if (buffer && buffer.length >= 4) {
     const ver = (buffer[1] >>> 3) & 0x03
     const layer = (buffer[1] & 0x06) >> 1

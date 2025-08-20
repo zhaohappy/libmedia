@@ -29,7 +29,6 @@ import BufferWriter from 'common/io/BufferWriter'
 import BufferReader from 'common/io/BufferReader'
 import { AVPacketSideDataType } from '../codec'
 import BitReader from 'common/io/BitReader'
-import AVStream from '../AVStream'
 import * as logger from 'common/util/logger'
 import { mapUint8Array } from 'cheap/std/memory'
 import * as naluUtil from '../util/nalu'
@@ -39,6 +38,8 @@ import { Uint8ArrayInterface } from 'common/io/interface'
 import * as intread from '../util/intread'
 import * as intwrite from '../util/intwrite'
 import { AVPixelFormat } from '../pixfmt'
+import AVCodecParameters from '../struct/avcodecparameters'
+import { Data } from 'common/types/type'
 
 export const H264_MAX_DPB_FRAMES = 16
 
@@ -565,7 +566,14 @@ export function avcc2Annexb(data: Uint8ArrayInterface, extradata?: Uint8ArrayInt
   }
 }
 
-export function parseAVCodecParameters(stream: AVStream, extradata?: Uint8ArrayInterface) {
+export function parseAVCodecParameters(
+  stream: {
+    codecpar: AVCodecParameters,
+    sideData: Partial<Record<AVPacketSideDataType, Uint8Array>>,
+    metadata: Data
+  },
+  extradata?: Uint8ArrayInterface
+) {
   if (!extradata && stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
     extradata = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
   }

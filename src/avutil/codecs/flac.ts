@@ -24,9 +24,9 @@
  */
 
 import BufferReader from 'common/io/BufferReader'
-import Stream from '../AVStream'
 import { AVPacketSideDataType } from '../codec'
 import { Uint8ArrayInterface } from 'common/io/interface'
+import AVCodecParameters from '../struct/avcodecparameters'
 
 export const enum MetaDataBlockType {
   STREAMINFO,
@@ -82,7 +82,13 @@ export const enum FlacMetadataType {
   FLAC_METADATA_TYPE_INVALID = 127
 }
 
-export function parseAVCodecParameters(stream: Stream, extradata?: Uint8ArrayInterface) {
+export function parseAVCodecParameters(
+  stream: {
+    codecpar: AVCodecParameters,
+    sideData: Partial<Record<AVPacketSideDataType, Uint8Array>>,
+  },
+  extradata?: Uint8ArrayInterface
+) {
   if (!extradata && stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]) {
     extradata = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA]
   }
