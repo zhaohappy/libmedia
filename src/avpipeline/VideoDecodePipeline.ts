@@ -132,11 +132,24 @@ export default class VideoDecodePipeline extends Pipeline {
             task.decoderFallbackReady = this.openSoftwareDecoder(task)
             logger.warn(`video decode error by hardware decoder(${task.hardwareRetryCount}), taskId: ${task.taskId}, error: ${error}, try to fallback to software decoder`)
           }
+          else if (task.targetDecoder === task.softwareDecoder) {
+            task.softwareDecoder.close()
+            task.softwareDecoder = this.createWasmcodecDecoder(task, task.resource)
+            task.softwareDecoderOpened = false
+            task.decoderFallbackReady = this.openSoftwareDecoder(task)
+            logger.warn(`video decode error by software(webcodecs) decoder(${task.hardwareRetryCount}), taskId: ${task.taskId}, error: ${error}, try to fallback to software(wasm) decoder`)
+          }
         }
         else {
           task.hardwareRetryCount++
-          logger.info(`retry open hardware decoder(${task.hardwareRetryCount}), taskId: ${task.taskId}`)
-          task.decoderFallbackReady = task.hardwareDecoder.open(task.parameters)
+          if (task.targetDecoder === task.hardwareDecoder) {
+            logger.info(`retry open hardware decoder(${task.hardwareRetryCount}), taskId: ${task.taskId}`)
+            task.decoderFallbackReady = task.hardwareDecoder.open(task.parameters)
+          }
+          else if (task.targetDecoder === task.softwareDecoder) {
+            logger.info(`retry open software(webcodecs) decoder(${task.hardwareRetryCount}), taskId: ${task.taskId}`)
+            task.decoderFallbackReady = task.softwareDecoder.open(task.parameters)
+          }
         }
         task.needKeyFrame = true
         task.leftIPCPort.request('requestKeyframe')
