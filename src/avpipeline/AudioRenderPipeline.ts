@@ -909,7 +909,6 @@ export default class AudioRenderPipeline extends Pipeline {
     else if (task.isLive && (pts - task.currentPTS > 4000n)) {
       task.masterTimer.setMasterTime(pts)
     }
-    task.currentPTS = pts
 
     const diffPts = task.currentPTS - task.masterTimer.getMasterTime()
     if (diffPts > MASTER_SYNC_THRESHOLD) {
@@ -935,6 +934,18 @@ export default class AudioRenderPipeline extends Pipeline {
     task.fakePlaySamples += static_cast<int64>(audioFrame.nbSamples)
 
     task.avframePool.release(audioFrame)
+    task.currentPTS = pts
+    task.stats.audioFrameRenderCount++
+    task.stats.audioNextTime = pts
+
+    if (task.lastRenderTimestamp) {
+      task.stats.audioFrameRenderIntervalMax = Math.max(
+        getTimestamp() - task.lastRenderTimestamp,
+        task.stats.audioFrameRenderIntervalMax
+      )
+    }
+    task.lastRenderTimestamp = getTimestamp()
+
     if (task.currentPTS - task.lastNotifyPTS >= 1000n) {
       task.lastNotifyPTS = task.currentPTS
       task.stats.audioCurrentTime = task.currentPTS
