@@ -4025,6 +4025,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
+  /**
+   * @hidden
+   */
+  public onError(error: Error) {
+    this.fire(eventType.ERROR, [error])
+  }
+
   private async createVideoDecoderThread(enableWorker: boolean = true) {
 
     if (this.VideoDecoderThread) {

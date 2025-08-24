@@ -862,6 +862,9 @@ export default class DemuxPipeline extends Pipeline {
     else {
       task.avpacketPool.release(avpacket)
       if (ret !== IOError.END && ret !== IOError.ABORT) {
+        task.controlIPCPort.notify('demuxError', {
+          code: ret
+        })
         logger.error(`demux error, ret: ${ret}, taskId: ${task.taskId}`)
       }
       for (let streamIndex of task.cacheRequests.keys()) {

@@ -39,6 +39,7 @@ export interface ControllerObserver {
   onGetDecoderResource: (mediaType: AVMediaType, codecId: AVCodecID) => Promise<WebAssemblyResource | string | ArrayBuffer>
   isPictureInPicture: () => boolean
   isMediaStreamMode: () => boolean
+  onError: (error: Error) => void
 }
 
 export default class Controller {
@@ -126,6 +127,13 @@ export default class Controller {
             request,
             await this.observer.onGetDecoderResource(request.params.mediaType, request.params.codecId)
           )
+          break
+      }
+    })
+    this.demuxerControlIPCPort.on(NOTIFY, async (request: RpcMessage) => {
+      switch (request.method) {
+        case 'demuxError':
+          this.observer.onError(new Error(`demux error, code: ${request.params.code}`))
           break
       }
     })

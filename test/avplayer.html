@@ -1146,6 +1146,10 @@
           }
         })
 
+        player.on('error', (error) => {
+          console.log(error)
+        })
+
         if (statsTimer) {
           clearTimeout(statsTimer)
         }
