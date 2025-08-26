@@ -935,7 +935,7 @@ export default class AudioRenderPipeline extends Pipeline {
 
     task.avframePool.release(audioFrame)
     task.currentPTS = pts
-    task.stats.audioFrameRenderCount++
+    task.stats.audioFrameDropCount++
     task.stats.audioNextTime = pts
 
     if (task.lastRenderTimestamp) {
