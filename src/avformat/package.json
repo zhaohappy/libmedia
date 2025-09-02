@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avformat",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "libmedia avformat",
   "repository": {
     "type": "git",
@@ -247,7 +247,7 @@
       "require": "./dist/cjs/formats/OOggFormat.js",
       "types": "./dist/esm/formats/OOggFormat.d.ts"
     },
-     "./formats/OWavFormat": {
+    "./formats/OWavFormat": {
       "import": "./dist/esm/formats/OWavFormat.js",
       "require": "./dist/cjs/formats/OWavFormat.js",
       "types": "./dist/esm/formats/OWavFormat.d.ts"

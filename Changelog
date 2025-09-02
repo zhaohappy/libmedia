@@ -1,3 +1,38 @@
+version 0.10.0:
+
+feat:
+  - refactor(avformat): 将 bitFormat 转变成 flags，方便之后追加新的标志位
+  - feat(avcodec): 添加 mjpeg 解码器
+  - feat(avformat): 支持 pts 没有的情况下可以解码
+  - feat(avformat): 支持 avi 封装格式
+  - feat(avformat): 新增 wav oformat
+  - feat(avplayer): 支持强制使用音频为主时间
+  - feat(avformat): fmp4 封装支持写入 mfra box 支持 seek
+  - feat(avcodec): webcodec 编解码器 options 添加规范定义参数
+  - feat(avcodec): 编码器支持 copyTs 参数控制使用输入 dts、 pts 输出
+  - feat(avplayer): avplayer 新增 enableAudioWorklet 和 ioLoaderOptions 配置
+  - refactor(avutil): 收束各 codec 中 parseAVCodecParameters 参数 stream 的范围
+  - feat(videoscale): VideoScaler 支持设置颜色空间参数
+  - feat(avcodec): webcodec 解码器支持传 codec string 初始化
+
+bugfix:
+  - fix(avutil): 修复解析 H264 SPS 时未处理 scaling list 数据
+  - fix(avformat): 处理 AVSeekFlags.BYTE seek 操作
+  - fix(avrender): 处理 sar 不是 1:1 是情况，需要纠正显示宽高比
+  - fix(format): 兼容一些 fmp4 的 moov 里面存着一段样本的 mp4
+  - perf(avutil): 优化 splitNaluByStartCode 函数在 SafeUint8Array 数据类型下的性能
+  - fix(avformat): 修复 fmp4 seek 无法准确到指定时间
+  - perf(avformat): 优化 seekInBytes 的 seek 准确度
+  - fix(avformat): mkv ass Format 行优化
+  - fix(avformat): mkv 读取类型 EbmlType.STRING 时去掉 C 风格终止符
+  - fix(avformat): mp4 处理 h26x 没有 ctts 时设置 AV_CODECPAR_FLAG_NO_PTS 标志
+  - fix: 修复 worker 模式下播放 dash 时 stats 不正确的问题
+  - fix(avrender): 修复当没有音频帧时 audio source 无法退出
+  - fix(avcodec): 更新 extradata 时使用准确的编码分辨率
+  - fix(avplayer): ManagedMediaSource 模式需要设置 disableRemotePlayback 属性，否则无法播放
+  - fix(avnetwork): FetchIOLoader 修复设置 range.to 无法工作的问题
+  - fix(avnetwork): seek 判断 pos 是否超过 eofIndex， 超过不合法
+
 version 0.9.0:
 
 feat:

@@ -23,6 +23,7 @@ import IWavFormat from '@libmedia/avformat/formats/IWavFormat'
 import IH264Format from '@libmedia/avformat/formats/IH264Format'
 import IHevcFormat from '@libmedia/avformat/formats/IVvcFormat'
 import IVvcFormat from '@libmedia/avformat/formats/IVvcFormat'
+import IAviFormat from '@libmedia/avformat/formats/IAviFormat'
 import analyzeAVFormat from '@libmedia/avutil/function/analyzeAVFormat'
 import IFormat from '@libmedia/avformat/formats/IFormat'
 import { AVFormat, IOFlags } from '@libmedia/avutil/avformat'
@@ -110,6 +111,41 @@ export function getWasm(type: 'decoder' | 'encoder' | 'resampler' | 'scaler' | '
         // vp9
         case AVCodecID.AV_CODEC_ID_VP9:
           return `${BASE_CDN}/decode/vp9${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_DVAUDIO:
+          return `${BASE_CDN}/decode/dvaudio${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_DVVIDEO:
+          return `${BASE_CDN}/decode/dvvideo${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_H261:
+          return `${BASE_CDN}/decode/h261${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_H263:
+        case AVCodecID.AV_CODEC_ID_H263I:
+        case AVCodecID.AV_CODEC_ID_H263P:
+          return `${BASE_CDN}/decode/h263${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_MSMPEG4V1:
+        case AVCodecID.AV_CODEC_ID_MSMPEG4V2:
+        case AVCodecID.AV_CODEC_ID_MSMPEG4V3:
+          return `${BASE_CDN}/decode/msmpeg4${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_RV10:
+        case AVCodecID.AV_CODEC_ID_RV20:
+        case AVCodecID.AV_CODEC_ID_RV30:
+        case AVCodecID.AV_CODEC_ID_RV40:
+          return `${BASE_CDN}/decode/msmpeg4${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_COOK:
+        case AVCodecID.AV_CODEC_ID_SIPR:
+        case AVCodecID.AV_CODEC_ID_RALF:
+          return `${BASE_CDN}/decode/ra${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_WMAV1:
+        case AVCodecID.AV_CODEC_ID_WMAV2:
+        case AVCodecID.AV_CODEC_ID_WMAVOICE:
+        case AVCodecID.AV_CODEC_ID_WMALOSSLESS:
+        case AVCodecID.AV_CODEC_ID_WMAPRO:
+          return `${BASE_CDN}/decode/wma${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_WMV1:
+        case AVCodecID.AV_CODEC_ID_WMV2:
+        case AVCodecID.AV_CODEC_ID_WMV3:
+          return `${BASE_CDN}/decode/wmv${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_MJPEG:
+          return `${BASE_CDN}/decode/mjpeg${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
         default:
           return null
       }
@@ -276,6 +312,9 @@ export async function getAVFormat(ioReader: IOReader, source: string | File) {
       break
     case AVFormat.VVC:
       iformat = new IVvcFormat()
+      break
+    case AVFormat.AVI:
+      iformat = new IAviFormat()
       break
     default:
   }
