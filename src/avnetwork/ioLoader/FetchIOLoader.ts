@@ -345,6 +345,9 @@ export default class FetchIOLoader extends IOLoader {
     if (!this.supportRange) {
       return errorType.OPERATE_NOT_SUPPORT
     }
+    if (this.eofIndex > 0 && Number(pos) > this.eofIndex) {
+      return errorType.INVALID_PARAMETERS
+    }
 
     await this.abort()
     this.aborted = false
