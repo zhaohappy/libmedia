@@ -47,6 +47,7 @@ export type WebVideoDecoderOptions = {
   onError: (error?: Error) => void
   enableHardwareAcceleration?: boolean
   optimizeForLatency?: boolean
+  codec?: string
 }
 
 export default class WebVideoDecoder {
@@ -159,11 +160,17 @@ export default class WebVideoDecoder {
     this.decoder!.reset()
 
     const config: VideoDecoderConfig = {
-      codec: getVideoCodec(this.parameters, buffer),
+      codec: this.options.codec ?? getVideoCodec(this.parameters, buffer),
       codedWidth: this.parameters.width,
       codedHeight: this.parameters.height,
       description: this.extradata,
       hardwareAcceleration: getHardwarePreference(this.options.enableHardwareAcceleration ?? true)
+    }
+    if (!config.codedWidth) {
+      delete config.codedWidth
+    }
+    if (!config.codedHeight) {
+      delete config.codedHeight
     }
     if (this.options.optimizeForLatency) {
       config.optimizeForLatency = this.options.optimizeForLatency
@@ -190,7 +197,7 @@ export default class WebVideoDecoder {
     this.parameters = parameters
 
     const config: VideoDecoderConfig = {
-      codec: getVideoCodec(parameters),
+      codec: this.options.codec ?? getVideoCodec(parameters),
       codedWidth: parameters.width,
       codedHeight: parameters.height,
       description: (parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) ? undefined : this.extradata,
@@ -203,6 +210,12 @@ export default class WebVideoDecoder {
     if (!config.description) {
       // description 不是 arraybuffer 会抛错
       delete config.description
+    }
+    if (!config.codedWidth) {
+      delete config.codedWidth
+    }
+    if (!config.codedHeight) {
+      delete config.codedHeight
     }
 
     try {
