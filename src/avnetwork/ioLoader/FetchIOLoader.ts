@@ -148,16 +148,17 @@ export default class FetchIOLoader extends IOLoader {
 
     this.range.from = Math.max(this.range.from, 0)
 
-    if (this.eofIndex < 0) {
-      this.eofIndex = range.to
-    }
-
     this.startBytes = 0
     this.endBytes = -1
+    this.eofIndex = -1
     this.receivedLength = 0
     this.buffers = []
     this.supportRange = true
     this.aborted = false
+
+    if (this.range.to > 0) {
+      this.eofIndex = range.to
+    }
 
     if (this.range && !this.options.isLive) {
       this.startBytes = this.range.from ?? 0
@@ -292,7 +293,7 @@ export default class FetchIOLoader extends IOLoader {
     const { value, done } = await this.reader.read()
 
     if (done) {
-      if (this.contentLength !== null && (this.receivedLength + this.range.from) < this.endBytes + 1) {
+      if (this.contentLength !== undefined && (this.receivedLength + this.range.from) < this.endBytes + 1) {
         this.status = IOLoaderStatus.ERROR
         logger.fatal('Fetch stream meet Early-EOF')
       }
