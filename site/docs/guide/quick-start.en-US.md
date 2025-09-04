@@ -194,7 +194,21 @@ yarn add tslib
 
 :::
 
-> vite uses esbuild to compile ts by default, but esbuild does not support transformers, so you need to use tsc to compile modules that use libmedia API. You can control which files are compiled by the typescript plugin using the transformer by setting the src configuration in the typescript plugin's tsconfig. It is recommended to put related files in a directory.
+Vite uses esbuild by default to compile TypeScript, but since esbuild does not support transformers, you need to use tsc to compile the modules that make use of the libmedia API.
+
+You can control which files are processed with the cheap transformer by configuring the include option in ts-loader’s tsconfig. It’s recommended to put the relevant files in a dedicated directory. This way, files not included will still be handled by the existing toolchain, while ts-loader (with the transformer) will only process the intended ones.
+Make sure that ts-loader has the highest priority, so the cheap transformer runs first.
+
+If your build setup has Module Federation enabled, configure it to ignore modules under the @libmedia package. If you absolutely need modules under @libmedia to participate in Module Federation, you must explicitly include them, since some of these modules may not be discoverable during static analysis.
+```
+include: [
+  '@libmedia/cheap/heap',
+  '@libmedia/cheap/symbol',
+  '@libmedia/cheap/ctypeEnumRead',
+  '@libmedia/cheap/ctypeEnumWrite',
+  '@libmedia/cheap/thread/atomics'
+]
+```
 
 ## Webpack Plugin
 

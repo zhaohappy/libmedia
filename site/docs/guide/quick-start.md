@@ -195,7 +195,21 @@ yarn add tslib
 :::
 
 
-> vite 默认使用 esbuild 来编译 ts，但 esbuild 是不支持 transformer 的，所以需要使用 tsc 来编译使用到 libmedia API 的模块。你可以通过设置 typescript 插件的 tsconfig 中 src 配置来控制哪些文件经过 typescript 插件使用 transformer 来编译，建议将相关文件放到一个目录下。
+vite 默认使用 esbuild 来编译 ts，但 esbuild 是不支持 transformer 的，所以需要使用 tsc 来编译使用到 libmedia API 的模块。
+
+你可以通过设置 ts-loader 的 tsconfig 中 include 配置来控制哪些文件经过 typescript 插件使用 cheap transformer 来编译，建议将相关文件放到一个目录下。这样其他没有包括的 ts 文件使用之前的工具链去处理；但需要让 ts-loader 的优先级最高，这样才能让 cheap transformer 最先处理。
+
+如果你的构建工具开启了模块联邦，设置忽略 ```@libmedia``` 包下面的模块。如果一定要让 @libmedia 下的包启动模块联邦，需要显示设置包含下面的模块（这些模块可能在静态分析时无法被分析出来）
+```
+include: [
+  '@libmedia/cheap/heap',
+  '@libmedia/cheap/symbol',
+  '@libmedia/cheap/ctypeEnumRead',
+  '@libmedia/cheap/ctypeEnumWrite',
+  '@libmedia/cheap/thread/atomics'
+]
+```
+
 
 ## webpack 插件
 
