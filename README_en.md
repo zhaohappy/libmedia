@@ -49,6 +49,10 @@ if multi-threading is not supported, it will fall back to running on the main th
 - AVTranscoder is the transcoding tool implementation of libmedia
 [online demo](https://zhaohappy.github.io/libmedia/test/avtranscoder.html)
 
+### Integration Configuration
+
+Check out the [build configuration examples](https://github.com/zhaohappy/libmedia-example) to find references for your specific build tool and quickly learn how to integrate libmedia into your project.
+
 ### Formats
 
 | Format   | Input   | Output    |

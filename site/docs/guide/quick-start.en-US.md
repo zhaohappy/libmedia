@@ -9,6 +9,8 @@ order: 2
 
 # Quick Start
 
+Check out the [build configuration examples](https://github.com/zhaohappy/libmedia-example) to find references for your specific build tool and quickly learn how to integrate libmedia into your project.
+
 ## Preparation
 
 libmedia is developed based on the cheap library. Before using it, you need to have some knowledge of [cheap](https://github.com/zhaohappy/cheap); you need to be able to understand the development ideas of cheap and master the use of pointers. If you have learned C language, it will be very easy to get started.
@@ -37,7 +39,7 @@ yarn add @libmedia/avcodec
 
 :::
 
-Check [package](./package.md) to get the packages under ```@libmedia```. You can install them according to your needs. The version numbers of the five packages ```@libmedia/common```, ```@libmedia/cheap``` ```@libmedia/avplayer``` ```@libmedia/avplayer-ui``` ```@libmedia/avtranscoder``` are released separately; the version numbers of the remaining packages will remain consistent when released. If the project depends on multiple packages under ```@libmedia/*``` except the five packages listed above, be sure to keep their version numbers consistent. Generally, the two packages ```@libmedia/common``` and ```@libmedia/cheap``` do not need to be installed by themselves, they are automatically installed as dependencies of other packages.
+Check [package](./package.md) to get the packages under ```@libmedia```. You can install them according to your needs. The version numbers of the five packages ```@libmedia/common```, ```@libmedia/cheap``` ```@libmedia/avplayer``` ```@libmedia/avplayer-ui``` ```@libmedia/avtranscoder``` are released separately; the version numbers of the remaining packages will remain consistent when released. If the project depends on multiple packages under ```@libmedia/*``` except the five packages listed above, be sure to keep their version numbers consistent. Generally, the two packages ```@libmedia/common``` and ```@libmedia/cheap``` do not need to be installed by themselves, they are automatically installed as dependencies of other packages, After automatically installed, declare the installed version number in ```package.json```.
 
 Each package has both es6 modules and commonjs modules; es6 modules are used for browser environments, and commonjs modules are used for Node environments. When you use import to import es6 modules, use require to import commonjs modules. If your running environment is Node environment and the source code is developed using es6 modules, you need to compile it into commonjs module code to run in Node.
 

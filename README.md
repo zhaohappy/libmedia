@@ -50,6 +50,10 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 - AVTranscoder 是 libmedia 的转码工具实现 
 [在线 demo](https://zhaohappy.github.io/libmedia/test/avtranscoder.html)
 
+### 集成配置
+
+查看 [编译配置示例](https://github.com/zhaohappy/libmedia-example) 找到对应你的构建工具的参考示例，快速知道如何集成 libmedia 到你的项目中。
+
 ### 当前支持的封装格式
 
 | Format   | Input   | Output    |
