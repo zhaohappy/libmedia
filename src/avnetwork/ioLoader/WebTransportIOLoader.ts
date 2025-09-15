@@ -66,6 +66,10 @@ export default class WebTransportIOLoader extends SocketIOLoader {
         const { value, done } = await this.reader.read()
         if (done) {
           isDone = done
+          this.status = IOLoaderStatus.COMPLETE
+          if (this.consume) {
+            this.consume()
+          }
           break
         }
         this.readQueue.push(value)
@@ -89,6 +93,10 @@ export default class WebTransportIOLoader extends SocketIOLoader {
         const { value, done } = await this.datagramReader.read()
         if (done) {
           isDone = true
+          this.status = IOLoaderStatus.COMPLETE
+          if (this.consumePacket) {
+            this.consumePacket()
+          }
           break
         }
         this.readPacketQueue.push(value)
