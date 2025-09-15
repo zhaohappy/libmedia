@@ -47,7 +47,13 @@ function update(name) {
     for (let i = 0; i < keys.length; i++) {
       if (/^@libmedia\/.*/.test(keys[i])) {
         const dependency = keys[i].replace('@libmedia/', '')
-        json.dependencies[keys[i]] = packages[dependency].version
+        let version = packages[dependency].version
+        if (dependency === 'common'
+          || dependency === 'cheap'
+        ) {
+          version = '~' + version
+        }
+        json.dependencies[keys[i]] = version
       }
     }
   }

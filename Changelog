@@ -1,3 +1,14 @@
+version 0.11.0:
+
+feat:
+  - feat(avnetwork): hls 和 dash 支持在 load 配置中设置优先 codec，lang、resolution
+  - feat(avplayer): avplayer 支持在 ended 状态下调 play，此时直接从头开始播放
+  - feat(avplayer): avplayer load 配置支持设置 maxProbeDuration 参数
+
+bugfix:
+  - fix(avformat): mp3 计算 duration 需要判断 fileSize 是否合法
+  - fix(avformat): mkv tag 为 V_QUICKTIME 时需要处理 codecPrivate 有 size 的场景
+
 version 0.10.0:
 
 feat:

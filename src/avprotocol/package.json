@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avprotocol",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "libmedia 协议模块",
   "repository": {
     "type": "git",
