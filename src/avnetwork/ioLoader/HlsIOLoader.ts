@@ -570,6 +570,72 @@ export default class HlsIOLoader extends IOLoader {
 
       if (playList.isMasterPlaylist) {
         this.masterPlaylist = playList as MasterPlaylist
+        if (this.options.preferResolution || this.options.preferVideoCodec) {
+          let width = 1
+          let height = 1
+          if (this.options.preferResolution) {
+            const res = this.options.preferResolution.split('*')
+            width = +res[0] || 1
+            height = +res[1] || 1
+          }
+          let codecGot = false
+          let resolutionDiff = Infinity
+          let hasPreferCodec = this.masterPlaylist.variants.some((v) => {
+            return v.codecs && v.codecs.indexOf(this.options.preferVideoCodec) >= 0
+          })
+          this.masterPlaylist.variants.forEach((v, i) => {
+            if (this.options.preferVideoCodec
+              && hasPreferCodec
+              && v.codecs
+              && v.codecs.indexOf(this.options.preferVideoCodec) === -1
+            ) {
+              return
+            }
+            if (!codecGot) {
+              this.mediaPlayListIndex = i
+              codecGot = true
+            }
+            if (v.resolution && this.options.preferResolution) {
+              const vWidth = width === 1 ? 1 : v.resolution.width
+              const vHeight = height === 1 ? 1 : v.resolution.height
+              if (Math.abs(vWidth * vHeight - width * height) < resolutionDiff) {
+                resolutionDiff = Math.abs(vWidth * vHeight - width * height)
+                this.mediaPlayListIndex = i
+              }
+            }
+          })
+        }
+        const variant = this.masterPlaylist.variants[this.mediaPlayListIndex]
+        if (variant) {
+          if (variant.audio.length && this.options.preferAudioLang) {
+            let langPrefer = false
+            variant.audio.forEach((v, i) => {
+              if (v.language
+                && v.language.indexOf(this.options.preferAudioLang) >= 0
+                && !langPrefer
+              ) {
+                this.audioSelectedIndex = i
+                if (v.language === this.options.preferAudioLang) {
+                  langPrefer = true
+                }
+              }
+            })
+          }
+          if (variant.subtitles.length && this.options.preferSubtitleLang) {
+            let langPrefer = false
+            variant.subtitles.forEach((v, i) => {
+              if (v.language
+                && v.language.indexOf(this.options.preferSubtitleLang) >= 0
+                && !langPrefer
+              ) {
+                this.subtitleSelectedIndex = i
+                if (v.language === this.options.preferSubtitleLang) {
+                  langPrefer = true
+                }
+              }
+            })
+          }
+        }
       }
       else {
         const mediaPlayList = playList as MediaPlaylist

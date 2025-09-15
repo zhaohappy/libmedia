@@ -179,6 +179,37 @@ export default class DashIOLoader extends IOLoader {
       }
 
       if (this.mediaPlayList.mediaList.audio.length) {
+        if (this.options.preferAudioCodec || this.options.preferAudioLang) {
+          let codecGot = false
+          let langPrefer = false
+          let hasPreferCodec = this.mediaPlayList.mediaList.audio.some((v) => {
+            return v.codecs && v.codecs.indexOf(this.options.preferAudioCodec) >= 0
+          })
+          this.mediaPlayList.mediaList.audio.forEach((v, i) => {
+            if (this.options.preferAudioCodec
+              && hasPreferCodec
+              && v.codecs
+              && v.codecs.indexOf(this.options.preferAudioCodec) === -1
+            ) {
+              return
+            }
+            if (!codecGot) {
+              this.audioResource.selectedIndex = i
+              codecGot = true
+            }
+            if (v.lang
+              && this.options.preferAudioLang
+              && v.lang.indexOf(this.options.preferAudioLang) >= 0
+              && !langPrefer
+            ) {
+              this.audioResource.selectedIndex = i
+              if (v.lang === this.options.preferAudioLang) {
+                langPrefer = true
+              }
+            }
+          })
+        }
+
         const media = this.mediaPlayList.mediaList.audio[this.audioResource.selectedIndex]
         if (media.file) {
           this.audioResource.segments = [{
@@ -213,6 +244,42 @@ export default class DashIOLoader extends IOLoader {
         }
       }
       if (this.mediaPlayList.mediaList.video.length) {
+        if (this.options.preferResolution || this.options.preferVideoCodec) {
+          let width = 1
+          let height = 1
+          if (this.options.preferResolution) {
+            const res = this.options.preferResolution.split('*')
+            width = +res[0] || 1
+            height = +res[1] || 1
+          }
+          let codecGot = false
+          let resolutionDiff = Infinity
+          let hasPreferCodec = this.mediaPlayList.mediaList.video.some((v) => {
+            return v.codecs && v.codecs.indexOf(this.options.preferVideoCodec) >= 0
+          })
+          this.mediaPlayList.mediaList.video.forEach((v, i) => {
+            if (this.options.preferVideoCodec
+              && hasPreferCodec
+              && v.codecs
+              && v.codecs.indexOf(this.options.preferVideoCodec) === -1
+            ) {
+              return
+            }
+            if (!codecGot) {
+              this.videoResource.selectedIndex = i
+              codecGot = true
+            }
+
+            if (v.width && v.height && this.options.preferResolution) {
+              const vWidth = width === 1 ? 1 : v.width
+              const vHeight = height === 1 ? 1 : v.height
+              if (Math.abs(vWidth * vHeight - width * height) < resolutionDiff) {
+                resolutionDiff = Math.abs(vWidth * vHeight - width * height)
+                this.videoResource.selectedIndex = i
+              }
+            }
+          })
+        }
         const media = this.mediaPlayList.mediaList.video[this.videoResource.selectedIndex]
         if (media.file) {
           this.videoResource.segments = [{
@@ -247,6 +314,36 @@ export default class DashIOLoader extends IOLoader {
         }
       }
       if (this.mediaPlayList.mediaList.subtitle.length) {
+        if (this.options.preferSubtitleCodec || this.options.preferSubtitleLang) {
+          let codecGot = false
+          let langPrefer = false
+          let hasPreferCodec = this.mediaPlayList.mediaList.subtitle.some((v) => {
+            return v.codecs && v.codecs.indexOf(this.options.preferSubtitleCodec) >= 0
+          })
+          this.mediaPlayList.mediaList.subtitle.forEach((v, i) => {
+            if (this.options.preferSubtitleCodec
+              && hasPreferCodec
+              && v.codecs
+              && v.codecs.indexOf(this.options.preferSubtitleCodec) === -1
+            ) {
+              return
+            }
+            if (!codecGot) {
+              this.subtitleResource.selectedIndex = i
+              codecGot = true
+            }
+            if (v.lang
+              && this.options.preferSubtitleLang
+              && v.lang.indexOf(this.options.preferSubtitleLang) >= 0
+              && !langPrefer
+            ) {
+              this.subtitleResource.selectedIndex = i
+              if (v.lang === this.options.preferSubtitleLang) {
+                langPrefer = true
+              }
+            }
+          })
+        }
         const media = this.mediaPlayList.mediaList.subtitle[this.subtitleResource.selectedIndex]
         if (media.file) {
           this.subtitleResource.segments = [{

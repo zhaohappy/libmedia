@@ -64,10 +64,46 @@ export interface IOLoaderSubtitleStreamInfo {
 }
 
 export type IOLoaderOptions = {
+  /**
+   * 是否是直播
+   */
   isLive?: boolean
+  /**
+   * 预加载 chunk 大小
+   */
   preload?: number
+  /**
+   * 最大重试次数
+   */
   retryCount?: number
+  /**
+   * 重试间隔
+   */
   retryInterval?: number
+  /**
+   * 音频优先 codec（dash 或 hls 选择优先 codec）
+   */
+  preferAudioCodec?: string
+  /**
+   * 视频优先 codec（dash 或 hls 选择优先 codec）
+   */
+  preferVideoCodec?: string
+  /**
+   * 字幕优先 codec（dash 或 hls 选择优先 codec）
+   */
+  preferSubtitleCodec?: string
+  /**
+   * 优先分辨率（dash 或 hls 选择优先分辨率）
+   */
+  preferResolution?: string
+  /**
+   * 音频优先 lang（dash 或 hls 选择优先 lang）
+   */
+  preferAudioLang?: string
+  /**
+   * 字幕优先 lang（dash 或 hls 选择优先 lang）
+   */
+  preferSubtitleLang?: string
 }
 
 const optionsDefault = {
