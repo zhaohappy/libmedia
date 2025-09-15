@@ -234,7 +234,7 @@ export default class IMatroskaFormat extends IFormat {
           stream.codecpar.codecTag = (track.codecPrivate.data[3] << 24) |  (track.codecPrivate.data[2] << 16)
           | (track.codecPrivate.data[1] << 8) | track.codecPrivate.data[0]
 
-          const codecId = tags[stream.codecpar.codecTag]
+          let codecId = tags[stream.codecpar.codecTag]
           if (codecId) {
             const data = new Uint8Array(4)
             const size = static_cast<int32>(track.codecPrivate.size)
@@ -244,6 +244,11 @@ export default class IMatroskaFormat extends IFormat {
             data[3] = size & 0xff
             track.codecPrivate.size += 4n
             track.codecPrivate.data = concatTypeArray(Uint8Array, [data, track.codecPrivate.data])
+          }
+          else {
+            stream.codecpar.codecTag = (track.codecPrivate.data[7] << 24) |  (track.codecPrivate.data[6] << 16)
+              | (track.codecPrivate.data[5] << 8) | track.codecPrivate.data[4]
+            codecId = tags[stream.codecpar.codecTag]
           }
           stream.codecpar.codecId = codecId || AVCodecID.AV_CODEC_ID_NONE
         }
