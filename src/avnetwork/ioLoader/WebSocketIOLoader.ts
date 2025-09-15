@@ -68,6 +68,13 @@ export default class WebSocketIOLoader extends SocketIOLoader {
           this.consume()
         }
       }
+      this.socket.onclose = () => {
+        this.status = IOLoaderStatus.COMPLETE
+        resolve(IOError.END)
+        if (this.consume) {
+          this.consume()
+        }
+      }
       this.socket.onmessage = (message) => {
         let data = message.data
         this.readQueue.push(new Uint8Array(data))
