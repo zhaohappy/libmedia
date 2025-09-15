@@ -326,6 +326,7 @@ export default class VideoDecodePipeline extends Pipeline {
               else if (avpacket > 0) {
                 if (task.needKeyFrame) {
                   if ((avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+                      // h264 强制判断 nalu type 某些码流封装层的关键帧标志是错误的 
                       && task.parameters.codecId !== AVCodecID.AV_CODEC_ID_H264
                     || task.parameters.codecId === AVCodecID.AV_CODEC_ID_H264
                       && h264.isIDR(
