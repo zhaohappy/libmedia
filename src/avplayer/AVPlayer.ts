@@ -326,6 +326,10 @@ export interface AVPlayerLoadOptions {
    * ioLoader 配置参数
    */
   ioLoaderOptions?: Omit<IOLoaderOptions, 'isLive'>
+  /**
+   * 最大分析时长（秒）用于分析流参数的最大时长，默认 3 秒
+   */
+  maxProbeDuration?: number
 }
 
 export interface AVPlayerPlayOptions {
@@ -1669,7 +1673,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     this.fire(eventType.PROGRESS, [AVPlayerProgress.OPEN_FILE])
 
-    ret = await AVPlayer.DemuxerThread.openStream(this.taskId)
+    let maxProbeDuration = 3000
+    if (options.maxProbeDuration) {
+      maxProbeDuration = Math.floor(options.maxProbeDuration * 1000)
+    }
+
+    ret = await AVPlayer.DemuxerThread.openStream(this.taskId, maxProbeDuration)
     if (ret < 0) {
       logger.fatal(`open stream failed, ret: ${ret}, taskId: ${this.taskId}`)
     }
@@ -1686,7 +1695,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subTaskId) {
-      ret = await AVPlayer.DemuxerThread.openStream(this.subTaskId)
+      ret = await AVPlayer.DemuxerThread.openStream(this.subTaskId, maxProbeDuration)
       if (ret < 0) {
         logger.fatal(`open stream failed, ret: ${ret}, taskId: ${this.subTaskId}`)
       }
@@ -1702,7 +1711,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId) {
-      ret = await AVPlayer.DemuxerThread.openStream(this.subtitleTaskId)
+      ret = await AVPlayer.DemuxerThread.openStream(this.subtitleTaskId, maxProbeDuration)
       if (ret < 0) {
         logger.fatal(`open subtitle stream failed, ret: ${ret}, taskId: ${this.subtitleTaskId}`)
       }
