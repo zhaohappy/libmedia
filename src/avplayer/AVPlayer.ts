@@ -2415,9 +2415,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.fire(eventType.PLAYED)
       return
     }
-    else if (this.status !== AVPlayerStatus.LOADED) {
-      logger.fatal('player status is not loaded, please call load method first')
-    }
 
     if (!options.audio && !options.video) {
       logger.warn(`video and audio must play one, ignore options, we will try to play video and audio, taskId: ${this.taskId}`)
