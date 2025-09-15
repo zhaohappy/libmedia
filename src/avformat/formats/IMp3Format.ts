@@ -284,8 +284,10 @@ export default class IMp3Format extends IFormat {
       else {
         this.context.isVBR = false
         stream.codecpar.bitrate = bitrate * 1000n
-        mp3Context.nbFrame = (fileSize - this.context.firstFramePos - static_cast<int64>(ID3V1_SIZE)) / static_cast<int64>(frameLength)
-        stream.duration = (mp3Context.nbFrame * static_cast<int64>(stream.codecpar.frameSize))
+        if (fileSize) {
+          mp3Context.nbFrame = (fileSize - this.context.firstFramePos - static_cast<int64>(ID3V1_SIZE)) / static_cast<int64>(frameLength)
+          stream.duration = (mp3Context.nbFrame * static_cast<int64>(stream.codecpar.frameSize))
+        }
         mp3Context.frameLength = frameLength
         this.context.fileSize = fileSize
       }
@@ -457,7 +459,7 @@ export default class IMp3Format extends IFormat {
       if (!(flags & AVSeekFlags.ANY)) {
         await this.syncToFrame(formatContext)
 
-        if (stream.duration && size) {
+        if (stream.duration && stream.duration !== NOPTS_VALUE_BIGINT && size) {
           mp3Context.nextDTS = timestamp / size * stream.duration
         }
       }
