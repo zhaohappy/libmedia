@@ -2405,7 +2405,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     logger.info(`call play, options: ${JSON.stringify(options)}, status: ${this.status} taskId: ${this.taskId}`)
 
     if (this.status === AVPlayerStatus.PLAYED) {
+      logger.warn('ignored call play because of player status is played')
       return
+    }
+    else if (this.status === AVPlayerStatus.ENDED) {
+      logger.info('replay to 0n because of player status is ended')
+      await this.replayTo(0n)
+      this.status = AVPlayerStatus.PLAYED
+      this.fire(eventType.PLAYED)
+      return
+    }
+    else if (this.status !== AVPlayerStatus.LOADED) {
+      logger.fatal('player status is not loaded, please call load method first')
     }
 
     if (!options.audio && !options.video) {
