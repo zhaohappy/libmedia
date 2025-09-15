@@ -30,6 +30,9 @@ importers:
       '@babel/plugin-syntax-dynamic-import':
         specifier: ^7.8.3
         version: 7.8.3(@babel/core@7.23.9)
+      '@babel/plugin-syntax-import-meta':
+        specifier: ^7.10.4
+        version: 7.10.4(@babel/core@7.23.9)
       '@babel/plugin-transform-runtime':
         specifier: ^7.23.9
         version: 7.23.9(@babel/core@7.23.9)

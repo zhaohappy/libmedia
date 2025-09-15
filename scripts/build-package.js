@@ -782,7 +782,7 @@ function buildAvrender() {
 
 function buildAvplayer() {
   printTaskLog(0, 'AVPlayer', 'START', `starting built AVPlayer`);
-
+  fs.rmSync(path.resolve(__dirname, '../src/avplayer/dist'), { recursive: true, force: true });
   process.env.NODE_ENV = 'production';
 
   printTaskLog(1, 'AVPlayer', 'START', `built umd AVPlayer starting`);
@@ -814,7 +814,7 @@ function buildAvplayer() {
 
 function buildAvtranscoder() {
   printTaskLog(0, 'AVTranscoder', 'START', `starting built AVTranscoder`);
-
+  fs.rmSync(path.resolve(__dirname, '../src/avtranscoder/dist'), { recursive: true, force: true });
   printTaskLog(1, 'AVTranscoder', 'START', `built umd AVTranscoder starting`);
   spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avtranscoder=1', 'release=1', `dist=${path.resolve(__dirname, '../src/avtranscoder/dist/umd')}`], {
     stdio: 'ignore'
@@ -844,6 +844,7 @@ function buildAvtranscoder() {
 
 function buildAvplayerUI() {
   printTaskLog(0, 'AVPlayerUI', 'START', `starting built AVPlayerUI`);
+  fs.rmSync(path.resolve(__dirname, '../src/ui/avplayer/dist'), { recursive: true, force: true });
 
   printTaskLog(1, 'AVPlayerUI', 'START', `built umd AVPlayerUI starting`);
   spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'ui=1', 'release=1', `dist=${path.resolve(__dirname, '../src/ui/avplayer/dist/umd')}`], {
