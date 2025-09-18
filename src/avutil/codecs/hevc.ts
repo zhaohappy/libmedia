@@ -577,8 +577,14 @@ export function annexbAddExtradata(data: Uint8ArrayInterface, extradata: Uint8Ar
  * 需要保证 data 是 safe 的
  * 
  */
-export function avcc2Annexb(data: Uint8ArrayInterface, extradata?: Uint8ArrayInterface) {
-  const naluLengthSizeMinusOne = extradata ? (extradata[21] & 0x03) : NALULengthSizeMinusOne
+export function avcc2Annexb(
+  data: Uint8ArrayInterface,
+  extradata?: Uint8ArrayInterface,
+  naluLengthSizeMinusOne: int32 = NALULengthSizeMinusOne
+) {
+  if (extradata) {
+    naluLengthSizeMinusOne = extradata[21] & 0x03
+  }
 
   let vpss: Uint8ArrayInterface[] = []
   let spss: Uint8ArrayInterface[] = []
@@ -628,7 +634,6 @@ export function parseAVCodecParameters(
     })
   }
   else if (extradata && extradata.length >= 6) {
-    stream.metadata.naluLengthSizeMinusOne = (extradata[21] & 0x03)
     const { spss } = extradata2VpsSpsPps(extradata)
     if (spss.length) {
       sps = spss[0]
