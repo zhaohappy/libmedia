@@ -94,6 +94,12 @@ export type IOLoaderOptions = {
   preferSubtitleCodec?: string
   /**
    * 优先分辨率（dash 或 hls 选择优先分辨率）
+   * 
+   * 设置宽度和高度 1920*720
+   * 
+   * 设置宽度 1920
+   * 
+   * 设置高度 *720
    */
   preferResolution?: string
   /**
