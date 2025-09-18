@@ -360,7 +360,18 @@ export default class IMpegtsFormat extends IFormat {
         while (true) {
           const next = nalusUtil.getNextNaluStart(pes.payload, offset)
           if (next.offset >= 0) {
-            if (next.startCode === 4) {
+            if (next.startCode === 4
+              || next.startCode === 3
+                && ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H265
+                    && (next.offset + 3 < pes.payload.length)
+                    && ((pes.payload[next.offset + 3] >>> 1) & 0x3f) === hevc.HEVCNaluType.kSliceSEI_PREFIX
+                )
+                  || (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+                    && (next.offset + 4 < pes.payload.length)
+                    && ((pes.payload[next.offset + 4] >>> 3) & 0x1f) === vvc.VVCNaluType.kPREFIX_SEI_NUT
+                  )
+                )
+            ) {
               offset = next.offset
               break
             }
