@@ -425,25 +425,14 @@ export default class IMatroskaFormat extends IFormat {
           stream.codecpar.extradata = avMalloc(reinterpret_cast<size>(stream.codecpar.extradataSize))
           memcpyFromUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize), attachment.data.data)
         }
-      })
-    }
-
-    if (this.context.tags) {
-      array.each(this.context.tags.entry, (tag) => {
-        if (tag.tag?.name === 'DURATION') {
-          let time = tag.tag.string.replaceAll('\x00', '').split('.')
-          let f = time[0].split(':')
-
-          let duration = BigInt(+f[0]) * BigInt(1000000 * 60 * 60)
-            + BigInt(+f[1]) * BigInt(1000000 * 60)
-            + BigInt(+f[2]) * 1000000n
-            + (BigInt(+time[1]) / 1000n)
-
-          const stream = findStreamByTrackUid(formatContext.streams, tag.target.trackUid)
-
-          if (stream) {
-            stream.duration = avRescaleQ(duration, AV_TIME_BASE_Q, stream.timeBase)
-          }
+        if (attachment.name) {
+          stream.metadata[AVStreamMetadataKey.TITLE] = attachment.name
+        }
+        if (attachment.mime) {
+          stream.metadata[AVStreamMetadataKey.MIME] = attachment.mime
+        }
+        if (attachment.description) {
+          stream.metadata[AVStreamMetadataKey.DESCRIPTION] = attachment.description
         }
       })
     }
@@ -462,13 +451,76 @@ export default class IMatroskaFormat extends IFormat {
                 den: 1000000000
               },
               metadata: {
-                title: item.display?.title || '',
-                language: item.display?.language || ''
+                [AVStreamMetadataKey.TITLE]: item.display?.title || '',
+                [AVStreamMetadataKey.LANGUAGE]: item.display?.language || ''
               }
             })
           })
         }
       })
+    }
+
+    if (this.context.tags) {
+      array.each(this.context.tags.entry, (tag) => {
+        if (tag.tag) {
+          tag.tag.forEach((t) => {
+            const key = t.name
+            let value: any = t.string
+            if (tag.target) {
+              if (key === 'DURATION') {
+                let time = t.string.replaceAll('\x00', '').split('.')
+                let f = time[0].split(':')
+
+                value = BigInt(+f[0]) * BigInt(1000000 * 60 * 60)
+                  + BigInt(+f[1]) * BigInt(1000000 * 60)
+                  + BigInt(+f[2]) * 1000000n
+                  + (BigInt(+time[1]) / 1000n)
+              }
+
+              if (tag.target.chapterUid) {
+                for (let i = 0; i < formatContext.chapters.length; i++) {
+                  const chapter = formatContext.chapters[i]
+                  if (chapter.id === tag.target.chapterUid) {
+                    chapter.metadata[key] = value
+                  }
+                }
+              }
+              else if (tag.target.trackUid || tag.target.attachUid) {
+                const stream = findStreamByTrackUid(formatContext.streams, tag.target.trackUid || tag.target.attachUid)
+                if (stream) {
+                  if (key === 'DURATION') {
+                    stream.duration = avRescaleQ(value, AV_TIME_BASE_Q, stream.timeBase)
+                  }
+                  else {
+                    stream.metadata[key] = value
+                  }
+                }
+              }
+              else {
+                formatContext.metadata[key] = value
+              }
+            }
+            else {
+              formatContext.metadata[key] = value
+            }
+          })
+        }
+      })
+    }
+
+    if (this.context.info) {
+      if (this.context.info.muxingApp) {
+        formatContext.metadata[AVStreamMetadataKey.ENCODER] = this.context.info.muxingApp
+      }
+      if (this.context.info.title) {
+        formatContext.metadata[AVStreamMetadataKey.TITLE] = this.context.info.title
+      }
+      if (this.context.info.dateUTC?.data?.byteLength === 8) {
+        const view = new DataView(this.context.info.dateUTC.data.buffer)
+        // Convert to seconds and adjust by number of seconds between 2001-01-01 and Epoch
+        const ts = view.getBigUint64(0) / 1000000n + 978307200000n
+        formatContext.metadata[AVStreamMetadataKey.CREATION_TIME] = (new Date(Number(ts))).toISOString()
+      }
     }
   }
 

@@ -55,10 +55,6 @@ export const enum AVStreamMetadataKey {
    */
   LANGUAGE = 'language',
   /**
-   * 语言描述
-   */
-  LANGUAGE_STRING = 'languageString',
-  /**
    * 歌曲或作品的标题
    */
   TITLE = 'title',
@@ -127,6 +123,10 @@ export const enum AVStreamMetadataKey {
    */
   MODIFICATION_TIME = 'modificationTime',
   /**
+   * 专辑表演者排序
+   */
+  ALBUM_ARTIST_SORT = 'albumArtistSort',
+  /**
    * 专辑排序
    */
   ALBUM_SORT = 'albumSort',
@@ -138,6 +138,10 @@ export const enum AVStreamMetadataKey {
    * 标题排序
    */
   TITLE_SORT = 'titleSort',
+  /**
+   * 作曲者排序
+   */
+  COMPOSER_SORT = 'composerSort',
   /**
    * 分组
    */

@@ -266,6 +266,7 @@ export function writeInfo(writer: IOWriterSync, context: OMatroskaContext, info:
     writeEbmlDouble(eleWriter, EBMLId.DURATION, static_cast<double>(info.duration))
     writeEbmlString(eleWriter, EBMLId.MUXING_APP, info.muxingApp)
     writeEbmlString(eleWriter, EBMLId.WRITING_APP, info.writingApp)
+    writeEbmlBuffer(eleWriter, EBMLId.DATE_UTC, info.dateUTC.data)
   })
 }
 
@@ -390,7 +391,9 @@ export function writeTagTarget(writer: IOWriterSync, context: OMatroskaContext, 
 export function writeTag(writer: IOWriterSync, context: OMatroskaContext, tag: Tag) {
   writeEleData(writer, context, EBMLId.TAG, (eleWriter) => {
     if (tag.tag) {
-      writeTagTag(eleWriter, context, tag.tag)
+      tag.tag.forEach((t) => {
+        writeTagTag(eleWriter, context, t)
+      })
     }
     if (tag.target) {
       writeTagTarget(eleWriter, context, tag.target)
@@ -477,8 +480,12 @@ export function writeAttachment(writer: IOWriterSync, context: OMatroskaContext,
 
   const now = writer.getPos()
   writeEbmlUid(writer, EBMLId.FILE_UID, attachment.uid)
-  writeEbmlString(writer, EBMLId.FILE_NAME, attachment.name)
-  writeEbmlString(writer, EBMLId.FILE_MIMETYPE, attachment.mime)
+  if (attachment.name) {
+    writeEbmlString(writer, EBMLId.FILE_NAME, attachment.name)
+  }
+  if (attachment.mime) {
+    writeEbmlString(writer, EBMLId.FILE_MIMETYPE, attachment.mime)
+  }
   if (attachment.description) {
     writeEbmlString(writer, EBMLId.FILE_DESC, attachment.description)
   }

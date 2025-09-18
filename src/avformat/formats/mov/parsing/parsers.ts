@@ -56,6 +56,8 @@ import tenc from './tenc'
 import saio from './saio'
 import saiz from './saiz'
 import senc from './senc'
+import meta from './meta'
+import chpl from './chpl'
 
 import mktag from '../../../function/mktag'
 
@@ -90,7 +92,10 @@ number,
   [mktag(BoxType.TENC)]: tenc,
   [mktag(BoxType.SAIO)]: saio,
   [mktag(BoxType.SAIZ)]: saiz,
-  [mktag(BoxType.SENC)]: senc
+  [mktag(BoxType.SENC)]: senc,
+
+  [mktag(BoxType.META)]: meta,
+  [mktag(BoxType.CHPL)]: chpl,
 }
 
 export default parsers

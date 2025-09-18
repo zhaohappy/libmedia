@@ -1,5 +1,5 @@
 /*
- * libmedia mp4 mdhd box parser
+ * libmedia mp4 chpl box parser
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -27,57 +27,50 @@ import IOReader from 'common/io/IOReader'
 import Stream from 'avutil/AVStream'
 import { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVChapter } from '../../../AVFormatContext'
+import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
+
   const now = ioReader.getPos()
 
   const version = await ioReader.readUint8()
   // flags
   await ioReader.skip(3)
 
-  let creationTime: bigint = 0n
-  let modificationTime: bigint = 0n
-  let timescale = 0
-  let duration: bigint = 0n
-
-  if (version === 1) {
-    creationTime = await ioReader.readUint64()
-    modificationTime = await ioReader.readUint64()
-    timescale = await ioReader.readUint32()
-    duration = await ioReader.readUint64()
-  }
-  else {
-    creationTime = static_cast<int64>(await ioReader.readUint32())
-    modificationTime = static_cast<int64>(await ioReader.readUint32())
-    timescale = await ioReader.readUint32()
-    duration = static_cast<int64>(await ioReader.readUint32())
+  if (version) {
+    await ioReader.skip(4)
   }
 
-  stream.duration = duration
-  stream.timeBase.den = timescale
-  stream.timeBase.num = 1
-  stream.metadata[AVStreamMetadataKey.CREATION_TIME] = creationTime
-  stream.metadata[AVStreamMetadataKey.MODIFICATION_TIME] = modificationTime
-
-
-  const language = await ioReader.readUint16()
-  const chars = []
-  chars[0] = (language >> 10) & 0x1F
-  chars[1] = (language >> 5) & 0x1F
-  chars[2] = language & 0x1F
-
-  const languageString = String.fromCharCode(chars[0] + 0x60, chars[1] + 0x60, chars[2] + 0x60)
-
-  stream.metadata[AVStreamMetadataKey.LANGUAGE] = languageString
-
-  await ioReader.skip(2)
+  const count = await ioReader.readUint8()
+  if (count) {
+    const chapters: AVChapter[] = []
+    for (let i = 0; i < count; i++) {
+      const start = await ioReader.readInt64()
+      const len = await ioReader.readUint8()
+      const chapter: AVChapter = {
+        id: BigInt(i),
+        timeBase: {
+          num: 1,
+          den: 10000000
+        },
+        start,
+        end: NOPTS_VALUE_BIGINT,
+        metadata: {}
+      }
+      if (len) {
+        chapter.metadata.title = await ioReader.readString(len)
+      }
+      chapters.push(chapter)
+    }
+    movContext.chapters = chapters
+  }
 
   const remainingLength = atom.size - Number(ioReader.getPos() - now)
   if (remainingLength > 0) {
     await ioReader.skip(remainingLength)
   }
   else if (remainingLength < 0) {
-    logger.error(`read mdhd error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
+    logger.error(`read vpcc error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
   }
 }

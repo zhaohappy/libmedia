@@ -29,7 +29,7 @@ import mktag from '../../function/mktag'
 import { BoxType, FullBoxs } from './boxType'
 import * as array from 'common/util/array'
 import { AVOFormatContext } from '../../AVFormatContext'
-import Stream from 'avutil/AVStream'
+import Stream, { AVStreamMetadataKey } from 'avutil/AVStream'
 import writers from './writing/writers'
 import { BoxLayout, FragmentTrackBoxLayoutMap, MoofTrafBoxLayout, TrackBoxLayoutMap } from './layout'
 import updatePositionSize from './function/updatePositionSize'
@@ -38,6 +38,7 @@ import { AVPacketSideDataType } from 'avutil/codec'
 import { encryptionSideData2InitInfo } from 'avutil/util/encryption'
 import { mapUint8Array } from 'cheap/std/memory'
 import { EncryptionInitInfo } from 'avutil/struct/encryption'
+import * as text from 'common/util/text'
 
 export function updateSize(ioWriter: IOWriter, pointer: number, size: number) {
   const current = ioWriter.getPointer()
@@ -201,11 +202,34 @@ export function writeMoov(ioWriter: IOWriter, formatContext: AVOFormatContext, m
       movContext
     )
 
+    const title = stream.metadata[AVStreamMetadataKey.TITLE]
+    if (title) {
+      const buffer = text.encode(title)
+      ioWriter.writeUint32(16 + buffer.length)
+      ioWriter.writeUint32(mktag(BoxType.UDTA))
+      ioWriter.writeUint32(8 + buffer.length)
+      ioWriter.writeUint32(mktag('name'))
+      ioWriter.writeBuffer(buffer)
+    }
+
     movContext.boxsPositionInfo.push({
       pos,
       type: BoxType.TRAK,
       size: Number(ioWriter.getPos() - pos)
     })
+  })
+
+  let udtaPos = ioWriter.getPos()
+  ioWriter.writeUint32(0)
+  ioWriter.writeUint32(mktag(BoxType.UDTA))
+  writers[BoxType.META](ioWriter, null, movContext)
+  if (movContext.chapters?.length) {
+    writers[BoxType.CHPL](ioWriter, null, movContext)
+  }
+  movContext.boxsPositionInfo.push({
+    pos: udtaPos,
+    type: BoxType.UDTA,
+    size: Number(ioWriter.getPos() - udtaPos)
   })
 
   if (movContext.fragment) {

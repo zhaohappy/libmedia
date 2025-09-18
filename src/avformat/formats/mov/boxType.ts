@@ -134,7 +134,9 @@ export const enum BoxType {
   SAIO = 'saio',
   SENC = 'senc',
   SCHM = 'schm',
-  TENC = 'tenc'
+  TENC = 'tenc',
+  META = 'meta',
+  CHPL = 'chpl'
 }
 
 export const BasicBoxs = [
@@ -203,7 +205,8 @@ export const ContainerBoxs = [
   BoxType.ENCV,
   BoxType.ENCA,
   BoxType.SINF,
-  BoxType.SCHI
+  BoxType.SCHI,
+  BoxType.UDTA
 ]
 
 export const enum TFHDFlags {

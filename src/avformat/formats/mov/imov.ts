@@ -41,6 +41,9 @@ import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { NOPTS_VALUE } from 'avutil/constant'
 import { encryptionInitInfo2SideData } from 'avutil/util/encryption'
 import { addSideData } from 'avutil/util/avpacket'
+import digital2Tag from '../../function/digital2Tag'
+import { iTunesKeyMap } from './iTunes'
+import { readITunesTagValue } from './parsing/meta'
 
 
 export async function readFtyp(ioReader: IOReader, context: MOVContext, atom: Atom) {
@@ -184,6 +187,35 @@ async function parseOneBox(
         movContext
       )
     }
+    else if (type === mktag('name') && atom.type === mktag(BoxType.UDTA) && (size - 8) > 0) {
+      const title = await ioReader.readString(size - 8)
+      if (stream) {
+        stream.metadata[AVStreamMetadataKey.TITLE] = title
+      }
+      else {
+        if (!movContext.metadata) {
+          movContext.metadata = {}
+        }
+        movContext.metadata[AVStreamMetadataKey.TITLE] = title
+      }
+    }
+    else if (atom.type === mktag(BoxType.UDTA)
+      && iTunesKeyMap[digital2Tag(type)]
+      && (size - 8) > 0
+    ) {
+      const data = await readITunesTagValue(ioReader, size - 8)
+      if (data.length) {
+        if (stream) {
+          stream.metadata[iTunesKeyMap[digital2Tag(type)]] = data.length === 1 ? data[0] : data
+        }
+        else {
+          if (!movContext.metadata) {
+            movContext.metadata = {}
+          }
+          movContext.metadata[iTunesKeyMap[digital2Tag(type)]] = data.length === 1 ? data[0] : data
+        }
+      }
+    }
     else {
       await ioReader.skip(size - 8)
     }
@@ -279,6 +311,19 @@ export async function readMoov(
     }
     else if (type === mktag(BoxType.MVEX)) {
       movContext.fragment = true
+      await parseOneBox(
+        ioReader,
+        null,
+        {
+          type,
+          size: size - 8
+        },
+        movContext
+      )
+    }
+    else if (ContainerBoxs.some((boxType) => {
+      return mktag(boxType) === type
+    })) {
       await parseOneBox(
         ioReader,
         null,

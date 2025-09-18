@@ -632,7 +632,8 @@ export const EbmlSyntaxTag: Partial<Record<EBMLId, EbmlSyntax<Tag>>> = {
   [EBMLId.TAG_SIMPLE]: {
     type: EbmlType.OBJECT,
     filedName: 'tag',
-    child: EbmlSyntaxSimpleTag
+    child: EbmlSyntaxSimpleTag,
+    isArray: true
   },
   [EBMLId.TAG_TARGETS]: {
     type: EbmlType.OBJECT,

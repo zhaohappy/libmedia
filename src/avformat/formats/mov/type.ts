@@ -28,6 +28,8 @@ import { BoxType } from './boxType'
 import { EncryptionInitInfo, EncryptionInfo } from 'avutil/struct/encryption'
 import IOReader from 'common/io/IOReader'
 import AVStream from 'avutil/AVStream'
+import { Data } from 'common/types/type'
+import { AVChapter } from '../../AVFormatContext'
 
 export interface BoxsPositionSizeInfo {
   pos: bigint
@@ -173,6 +175,9 @@ export interface MOVContext {
   ) => Promise<void>
 
   audioOnly?: boolean
+  metadata?: Data
+  chapters?: AVChapter[]
+  useMetadataTags?: boolean
 }
 
 export interface MOVStreamContext {

@@ -50,7 +50,7 @@ export interface Info {
   title?: string
   muxingApp?: string
   writingApp?: string
-  dateUTC?: Uint8Array
+  dateUTC?: EbmlBin
   segmentUUID?: uint64
 }
 
@@ -254,7 +254,7 @@ export interface SimpleTag {
 }
 
 export interface Tag {
-  tag?: SimpleTag
+  tag?: SimpleTag[]
   target?: TagTargets
 }
 

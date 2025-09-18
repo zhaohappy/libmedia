@@ -86,7 +86,7 @@ import getTimestamp from 'common/function/getTimestamp'
 import Timer from 'common/timer/Timer'
 import createMessageChannel from './function/createMessageChannel'
 import Controller, { ControllerObserver } from './Controller'
-import { AVFormatContextInterface } from 'avformat/AVFormatContext'
+import { AVChapter, AVFormatContextInterface } from 'avformat/AVFormatContext'
 import dump, { dumpCodecName, dumpTime } from 'avformat/dump'
 import { Data } from 'common/types/type'
 import os from 'common/util/os'
@@ -184,6 +184,8 @@ export interface TaskOptions {
     file: FileSystemFileHandle | IOWriterSync
     format?: keyof (typeof Format2AVFormat)
     formatOptions?: Data
+    metadata?: Data
+    chapters?: AVChapter[]
     video?: {
       /**
        * 输出编码类型
@@ -1966,6 +1968,21 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       await this.setTaskOutput(task)
 
       const formatContext = task.formatContext = await this.analyzeInputStreams(task)
+
+      await this.MuxThread.addFormatContextMetadata(
+        task.taskId,
+        object.extend({}, task.options.output.metadata ?? {}, formatContext.metadata)
+      )
+      if (formatContext.chapters.length || task.options.output.chapters?.length) {
+        const chapters: AVChapter[] = []
+        if (formatContext.chapters.length) {
+          chapters.push(...formatContext.chapters)
+        }
+        if (task.options.output.chapters?.length) {
+          chapters.push(...task.options.output.chapters)
+        }
+        await this.MuxThread.addFormatContextChapters(task.taskId, chapters)
+      }
 
       task.iformat = formatContext.format
 

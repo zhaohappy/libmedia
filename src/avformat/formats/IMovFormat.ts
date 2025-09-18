@@ -49,6 +49,7 @@ import { IOFlags } from 'avutil/avformat'
 import * as intread from 'avutil/util/intread'
 import { encryptionInfo2SideData } from 'avutil/util/encryption'
 import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
+import * as object from 'common/util/object'
 
 export interface IMovFormatOptions {
   /**
@@ -196,6 +197,27 @@ export default class IMovFormat extends IFormat {
             }
           }
         })
+      }
+
+      if (this.context.metadata) {
+        object.extend(formatContext.metadata, this.context.metadata)
+      }
+      if (this.context.chapters?.length) {
+        for (let i = 1; i < this.context.chapters.length; i++) {
+          this.context.chapters[i - 1].end = avRescaleQ(
+            this.context.chapters[i].start,
+            this.context.chapters[i].timeBase,
+            this.context.chapters[i - 1].timeBase,
+          )
+        }
+        const lastChapter = this.context.chapters[this.context.chapters.length - 1]
+        formatContext.streams.forEach((stream) => {
+          const d = avRescaleQ(stream.duration, stream.timeBase, lastChapter.timeBase)
+          if (d > lastChapter.end) {
+            lastChapter.end = d
+          }
+        })
+        formatContext.chapters.push(...this.context.chapters)
       }
 
       return ret

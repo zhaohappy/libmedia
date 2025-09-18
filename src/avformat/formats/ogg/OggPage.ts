@@ -231,7 +231,7 @@ export class OggsCommentPage implements PagePayload {
   public comments: UserComment
 
   constructor() {
-    this.vendorString = defined(VERSION)
+    this.vendorString = `libmedia-${defined(VERSION)}`
     this.vendorStringLength = this.vendorString.length
     this.userCommentListLength = 0
     this.comments = new UserComment()

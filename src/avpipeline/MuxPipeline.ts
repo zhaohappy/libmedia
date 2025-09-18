@@ -26,7 +26,7 @@
 import Pipeline, { TaskOptions } from './Pipeline'
 import * as errorType from 'avutil/error'
 import IPCPort from 'common/network/IPCPort'
-import { AVOFormatContext, createAVOFormatContext } from 'avformat/AVFormatContext'
+import { AVChapter, AVOFormatContext, createAVOFormatContext } from 'avformat/AVFormatContext'
 import * as mux from 'avformat/mux'
 import { AVFormat } from 'avutil/avformat'
 import List from 'cheap/std/collection/List'
@@ -41,7 +41,7 @@ import { avRescaleQ2 } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import OFormat from 'avformat/formats/OFormat'
 import IOWriterSync from 'common/io/IOWriterSync'
-import { AVStreamInterface } from 'avutil/AVStream'
+import AVStream, { AVStreamInterface } from 'avutil/AVStream'
 import { copyCodecParameters } from 'avutil/util/codecparameters'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { AVMediaType } from 'avutil/codec'
@@ -67,7 +67,7 @@ type SelfTask = MuxTaskOptions & {
   loop: LoopTask
   ended: boolean
   streams: {
-    stream: AVStreamInterface
+    stream: AVStream
     pullIPC: IPCPort
     avpacketQueue: pointer<AVPacketRef>[]
     ended: boolean
@@ -253,21 +253,41 @@ export default class MuxPipeline extends Pipeline {
   public async addStream(taskId: string, stream: AVStreamInterface, port: MessagePort) {
     const task = this.tasks.get(taskId)
     if (task) {
+      const ostream = task.formatContext.createStream()
+      ostream.id = stream.id
+      copyCodecParameters(addressof(ostream.codecpar), stream.codecpar)
+      ostream.timeBase.num = stream.timeBase.num
+      ostream.timeBase.den = stream.timeBase.den
+      ostream.metadata = stream.metadata
+
       task.streams.push({
-        stream,
+        stream: ostream,
         pullIPC: new IPCPort(port),
         avpacketQueue: [],
         ended: stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_ATTACHMENT
           || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_DATA,
         pulling: null
       })
-      const ostream = task.formatContext.createStream()
-      ostream.id = stream.id
-      ostream.index = stream.index
-      copyCodecParameters(addressof(ostream.codecpar), stream.codecpar)
-      ostream.timeBase.num = stream.timeBase.num
-      ostream.timeBase.den = stream.timeBase.den
-      ostream.metadata = stream.metadata
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+
+  public async addFormatContextMetadata(taskId: string, metadata: Data) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      object.extend(task.formatContext.metadata, metadata)
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+
+  public async addFormatContextChapters(taskId: string, chapters: AVChapter[]) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      task.formatContext.chapters.push(...chapters)
     }
     else {
       logger.fatal('task not found')

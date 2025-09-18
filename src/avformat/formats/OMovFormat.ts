@@ -113,6 +113,10 @@ export interface OMovFormatOptions {
    * fragment 结束时是否追加 tfra 用于 seek
    */
   hasTfra?: boolean
+  /**
+   * Use mdta atom for metadata
+   */
+  useMetadataTags?: boolean
 }
 
 const defaultOptions: OMovFormatOptions = {
@@ -125,7 +129,8 @@ const defaultOptions: OMovFormatOptions = {
   ignoreEncryption: false,
   minFragmentLength: 5000,
   minFragmentIndexLength: 5000,
-  hasTfra: true
+  hasTfra: true,
+  useMetadataTags: false
 }
 
 export default class OMovFormat extends OFormat {
@@ -161,6 +166,8 @@ export default class OMovFormat extends OFormat {
       }
     })
     this.avpacket = createAVPacket()
+    this.context.metadata = formatContext.metadata
+    this.context.chapters = formatContext.chapters
 
     return 0
   }
@@ -235,6 +242,7 @@ export default class OMovFormat extends OFormat {
     this.context.compatibleBrand = [mktag('isom')]
     this.context.timescale = 1000
     this.context.ignoreEncryption = this.options.ignoreEncryption
+    this.context.useMetadataTags = this.options.useMetadataTags
 
     if (this.options.fragment) {
       this.context.compatibleBrand.push(mktag('iso6'))
