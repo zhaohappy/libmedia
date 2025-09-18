@@ -1,10 +1,10 @@
-import { AVFormatContext, AVFormatContextInterface, AVIFormatContext, AVOFormatContext } from './AVFormatContext'
+import { AVChapter, AVFormatContext, AVFormatContextInterface, AVIFormatContext, AVOFormatContext } from './AVFormatContext'
 import AVStream, { AVDisposition, AVStreamInterface } from 'avutil/AVStream'
 import * as object from 'common/util/object'
 import * as stringEnum from 'avutil/stringEnum'
 import * as is from 'common/util/is'
 import { avQ2D, avReduce, avRescaleQ } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE } from 'avutil/constant'
+import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as string from 'common/util/string'
 import toString from 'common/function/toString'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
@@ -239,7 +239,10 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
   if (Object.keys(stream.metadata).length) {
     dump += `${prefix}  Metadata:\n`
     object.each(stream.metadata, (value, key) => {
-      if (!is.object(value) && !is.array(value)) {
+      if (!is.object(value) && !is.array(value) && !is.arrayBuffer(value) && !ArrayBuffer.isView(value)) {
+        if (is.string(value)) {
+          value = value.replaceAll('\n', '\n' + ' '.repeat(6 + key.length))
+        }
         dump += `${prefix}    ${key}: ${value}\n`
       }
       else if (key === 'matrix' && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
@@ -251,12 +254,42 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
   return dump
 }
 
+export function dumpChapter(chapter: AVChapter, index: number, cheapIndex: number, prefix: string) {
+  let start = 'N/A'
+  let end = 'N/A'
+
+  if (chapter.start !== NOPTS_VALUE_BIGINT) {
+    start = dumpTime(avRescaleQ(chapter.start, chapter.timeBase, AV_MILLI_TIME_BASE_Q))
+  }
+  if (chapter.end !== NOPTS_VALUE_BIGINT) {
+    end = dumpTime(avRescaleQ(chapter.end, chapter.timeBase, AV_MILLI_TIME_BASE_Q))
+  }
+
+  let dump = `${prefix}Chapter #${index}:${cheapIndex} start: ${start}, end: ${end}\n`
+
+  if (Object.keys(chapter.metadata).length) {
+    dump += `${prefix}  Metadata:\n`
+    object.each(chapter.metadata, (value, key) => {
+      if (!is.object(value) && !is.array(value) && !is.arrayBuffer(value) && !ArrayBuffer.isView(value)) {
+        if (is.string(value)) {
+          value = value.replaceAll('\n', '\n' + ' '.repeat(6 + key.length))
+        }
+        dump += `${prefix}    ${key}: ${value}\n`
+      }
+    })
+  }
+  return dump
+}
+
 export function dumpAVFormatContextInterface(formatContext: AVFormatContextInterface, index: number, input: DumpIOInfo) {
   let dump = `${input.tag} #${index}, ${input.isLive ? 'live' : 'vod'}, ${dumpKey(stringEnum.Format2AVFormat, formatContext.format)}, from '${input.from}':\n`
   if (Object.keys(formatContext.metadata).length) {
     dump += '  Metadata:\n'
     object.each(formatContext.metadata, (value, key) => {
-      if (!is.object(value) || !is.array(value)) {
+      if (!is.object(value) && !is.array(value) && !is.arrayBuffer(value) && !ArrayBuffer.isView(value)) {
+        if (is.string(value)) {
+          value = value.replaceAll('\n', '\n' + ' '.repeat(6 + key.length))
+        }
         dump += `    ${key}: ${value}\n`
       }
     })
@@ -280,6 +313,14 @@ export function dumpAVFormatContextInterface(formatContext: AVFormatContextInter
   })
 
   dump += `  Duration: ${dumpTime(duration)}, start: ${dumpTime(start)}, bitrate: ${dumpBitrate(bitrate)}\n`
+
+  if (formatContext.chapters?.length) {
+    dump += '  Chapters:\n'
+    formatContext.chapters.forEach((chapter, i) => {
+      dump += dumpChapter(chapter, index, i, '  ')
+    })
+  }
+
   formatContext.streams.forEach((stream, i) => {
     dump += dumpAVStreamInterface(stream, index, '  ')
   })
