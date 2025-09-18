@@ -2409,11 +2409,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       return
     }
     else if (this.status === AVPlayerStatus.ENDED) {
+      if (this.isLive()) {
+        logger.warn('ignored call play because of player status is ended with live mode')
+        return
+      }
       logger.info('replay to 0n because of player status is ended')
       await this.replayTo(0n)
       this.status = AVPlayerStatus.PLAYED
       this.fire(eventType.PLAYED)
       return
+    }
+    else if (this.status !== AVPlayerStatus.LOADED && this.status !== AVPlayerStatus.PAUSED) {
+      logger.fatal('player status is not loaded, please call load method first')
     }
 
     if (!options.audio && !options.video) {
