@@ -755,6 +755,45 @@
             mediaStreamModeVideo.srcObject = container
             document.querySelector(id).appendChild(mediaStreamModeVideo)
           }
+          player.on('ended', () => {
+            if (statsTimer) {
+              clearTimeout(statsTimer)
+              statsTimer = null
+              handleStats(player.getStats())
+            }
+            if (slider) {
+              slider.currentTime = slider.duration
+            }
+            // player.destroy().then(() => {
+            //   player = null
+            //   console.log('player destroy')
+            // })
+          })
+          
+          player.on('played', () => {
+            if (statsTimer) {
+              clearTimeout(statsTimer)
+            }
+            statsTimer = setInterval(() => {
+              handleStats(player.getStats())
+            }, 1000)
+          })
+
+          player.on('time', (pts) => {
+            if (slider && !isSeeking) {
+              slider.currentTime = Number(pts)
+            }
+          })
+          player.on('changing', (mediaType, newStreamId, oldStreamId) => {
+            console.log('changing', mediaType, newStreamId, oldStreamId)
+          })
+          player.on('changed', (mediaType, newStreamId, oldStreamId) => {
+            console.log('changed', mediaType, newStreamId, oldStreamId)
+          })
+
+          player.on('error', (error) => {
+            console.log(error)
+          })
         }
         else {
           player.options.enableHardware = enableHardwareComponent.enableHardwareAcceleration
@@ -1114,40 +1153,6 @@
               })
             // })
           })
-        })
-
-        player.on('ended', () => {
-          if (statsTimer) {
-            clearTimeout(statsTimer)
-            statsTimer = null
-            handleStats(player.getStats())
-          }
-          if (slider) {
-            slider.currentTime = slider.duration
-          }
-          // player.destroy().then(() => {
-          //   player = null
-          //   console.log('player destroy')
-          // })
-        })
-        
-        player.on('played', () => {
-          if (statsTimer) {
-            clearTimeout(statsTimer)
-          }
-          statsTimer = setInterval(() => {
-            handleStats(player.getStats())
-          }, 1000)
-        })
-
-        player.on('time', (pts) => {
-          if (slider && !isSeeking) {
-            slider.currentTime = Number(pts)
-          }
-        })
-
-        player.on('error', (error) => {
-          console.log(error)
         })
 
         if (statsTimer) {
