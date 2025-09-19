@@ -485,13 +485,13 @@ class MediaLoader {
     }
   }
 
-  public async seek(timestamp: int64) {
+  public async seek(timestamp: int64, start: number = 0) {
     if (this.loader) {
       await this.loader.abort()
       this.loader = null
     }
 
-    let duration = 0
+    let duration = start
     let seekTime = Number(timestamp)
     let index = -1
 
@@ -542,6 +542,21 @@ class MediaLoader {
   public getDuration() {
     return this.mediaPlayList.duration
   }
+
+  public getNextFragmentStart(start: number = 0) {
+    if (this.segmentIndex >= this.mediaPlayList.segments.length - 1) {
+      return -1
+    }
+    for (let i = 0; i < this.segmentIndex + 1; i++) {
+      if (is.number(this.mediaPlayList.segments[i].duration)) {
+        start += this.mediaPlayList.segments[i].duration
+      }
+      else {
+        return -1
+      }
+    }
+    return start
+  }
 }
 
 export default class HlsIOLoader extends IOLoader {
@@ -560,6 +575,7 @@ export default class HlsIOLoader extends IOLoader {
 
   private sleep: Sleep
   private aborted: boolean
+  private start: number
 
   private async fetchMasterPlayList() {
     try {
@@ -754,6 +770,7 @@ export default class HlsIOLoader extends IOLoader {
     this.status = IOLoaderStatus.CONNECTING
     this.retryCount = 0
     this.aborted = false
+    this.start = 0
 
     await this.fetchMasterPlayList()
 
@@ -787,7 +804,7 @@ export default class HlsIOLoader extends IOLoader {
       return errorType.INVALID_ARGUMENT
     }
 
-    await this.loaders.get(options.mediaType).seek(timestamp)
+    await this.loaders.get(options.mediaType).seek(timestamp, this.start)
 
     if (this.status === IOLoaderStatus.COMPLETE) {
       this.status = IOLoaderStatus.BUFFERING
@@ -893,32 +910,30 @@ export default class HlsIOLoader extends IOLoader {
     }
   }
 
-  public selectVideo(index: number) {
+  public async selectVideo(index: number) {
     if (this.masterPlaylist) {
       const currentVariant = this.masterPlaylist.variants[index]
       if (currentVariant) {
         const mediaUrl = this.buildUrl(currentVariant.uri)
-        fetchMediaPlayList(
+        const list = await fetchMediaPlayList(
           mediaUrl,
           this.info,
           this.options
-        ).then((list) => {
-          this.loaders.get(AVMediaType.AVMEDIA_TYPE_VIDEO).setMediaPlayList(mediaUrl, list)
-          this.mediaPlayListIndex = index
-        })
+        )
+        this.loaders.get(AVMediaType.AVMEDIA_TYPE_VIDEO).setMediaPlayList(mediaUrl, list)
+        this.mediaPlayListIndex = index
 
         if (currentVariant.audio.length === 1
           && this.loaders.has(AVMediaType.AVMEDIA_TYPE_AUDIO)
           && this.buildUrl(currentVariant.audio[0].uri) !== this.loaders.get(AVMediaType.AVMEDIA_TYPE_AUDIO).getMediaListUrl()
         ) {
           const mediaUrl = this.buildUrl(currentVariant.audio[0].uri)
-          fetchMediaPlayList(
+          const list = await fetchMediaPlayList(
             mediaUrl,
             this.info,
             this.options
-          ).then((list) => {
-            this.loaders.get(AVMediaType.AVMEDIA_TYPE_AUDIO).setMediaPlayList(mediaUrl, list)
-          })
+          )
+          this.loaders.get(AVMediaType.AVMEDIA_TYPE_AUDIO).setMediaPlayList(mediaUrl, list)
         }
 
         if (currentVariant.subtitles.length === 1
@@ -926,53 +941,60 @@ export default class HlsIOLoader extends IOLoader {
           && this.buildUrl(currentVariant.subtitles[0].uri) !== this.loaders.get(AVMediaType.AVMEDIA_TYPE_SUBTITLE).getMediaListUrl()
         ) {
           const mediaUrl = this.buildUrl(currentVariant.subtitles[0].uri)
-          fetchMediaPlayList(
+          const list = await fetchMediaPlayList(
             mediaUrl,
             this.info,
             this.options
-          ).then((list) => {
-            this.loaders.get(AVMediaType.AVMEDIA_TYPE_SUBTITLE).setMediaPlayList(mediaUrl, list)
-          })
+          )
+          this.loaders.get(AVMediaType.AVMEDIA_TYPE_SUBTITLE).setMediaPlayList(mediaUrl, list)
         }
+        return this.loaders.get(AVMediaType.AVMEDIA_TYPE_VIDEO).getNextFragmentStart(this.start)
       }
     }
+    return -1
   }
 
-  public selectAudio(index: number) {
+  public async selectAudio(index: number) {
     if (this.masterPlaylist) {
       const currentVariant = this.masterPlaylist.variants[this.mediaPlayListIndex]
       if (currentVariant?.audio[index]) {
         const mediaUrl = this.buildUrl(currentVariant.audio[index].uri)
-        fetchMediaPlayList(
+        const list = await fetchMediaPlayList(
           mediaUrl,
           this.info,
           this.options
-        ).then((list) => {
-          this.loaders.get(AVMediaType.AVMEDIA_TYPE_AUDIO).setMediaPlayList(mediaUrl, list)
-          this.audioSelectedIndex = index
-        })
+        )
+        this.loaders.get(AVMediaType.AVMEDIA_TYPE_AUDIO).setMediaPlayList(mediaUrl, list)
+        this.audioSelectedIndex = index
+        return this.loaders.get(AVMediaType.AVMEDIA_TYPE_AUDIO).getNextFragmentStart(this.start)
       }
     }
+    return -1
   }
 
-  public selectSubtitle(index: number) {
+  public async selectSubtitle(index: number) {
     if (this.masterPlaylist) {
       const currentVariant = this.masterPlaylist.variants[this.mediaPlayListIndex]
       if (currentVariant?.subtitles[index]) {
         const mediaUrl = this.buildUrl(currentVariant.subtitles[index].uri)
-        fetchMediaPlayList(
+        const list = await fetchMediaPlayList(
           mediaUrl,
           this.info,
           this.options
-        ).then((list) => {
-          this.loaders.get(AVMediaType.AVMEDIA_TYPE_SUBTITLE).setMediaPlayList(mediaUrl, list)
-          this.subtitleSelectedIndex = index
-        })
+        )
+        this.loaders.get(AVMediaType.AVMEDIA_TYPE_SUBTITLE).setMediaPlayList(mediaUrl, list)
+        this.subtitleSelectedIndex = index
+        return this.loaders.get(AVMediaType.AVMEDIA_TYPE_SUBTITLE).getNextFragmentStart(this.start)
       }
     }
+    return -1
   }
 
   public getMinBuffer() {
     return this.mainLoader?.getMinBuffer() ?? 0
+  }
+
+  public setStart(start: number) {
+    this.start = start
   }
 }

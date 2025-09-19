@@ -79,7 +79,7 @@ import * as array from 'common/util/array'
 import isHdr from 'avutil/function/isHdr'
 import hasAlphaChannel from 'avutil/function/hasAlphaChannel'
 import SubtitleRender from './subtitle/SubtitleRender'
-import { Data, Fn } from 'common/types/type'
+import { Data, Fn, PromisePending } from 'common/types/type'
 import { playerEventChanged, playerEventChanging, playerEventError, playerEventNoParam,
   playerEventProgress, playerEventSubtitleDelayChange, playerEventTime, playerEventVolumeChange
 } from './type'
@@ -111,6 +111,7 @@ import kid2Base64 from './drm/kid2Base64'
 import * as text from 'common/util/text'
 import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 import { IOLoaderOptions } from 'avnetwork/ioLoader/IOLoader'
+import Timer from 'common/timer/Timer'
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -603,6 +604,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
   private externalSubtitleTasks: ExternalSubtitleTask[]
 
+  private changingStreamPending: {
+    pending: PromisePending
+    mediaType: AVMediaType
+    start: number
+  }[]
+  private handleChangingStreamPendingTimer: Timer
+
   constructor(options: AVPlayerOptions) {
     super(true)
     this.options = object.extend({}, defaultAVPlayerOptions, options)
@@ -627,6 +635,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     )
     this.externalSubtitleTasks = []
     this.lastSelectedInnerSubtitleStreamIndex = -1
+    this.changingStreamPending = []
+    this.handleChangingStreamPendingTimer = new Timer(() => {
+      this.handleChangingStreamPending()
+    }, 200, 200)
 
     mutex.init(addressof(this.GlobalData.avpacketListMutex))
     mutex.init(addressof(this.GlobalData.avframeListMutex))
@@ -877,6 +889,27 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.audio = audio
   }
 
+  private handleChangingStreamPending() {
+    const currentTime = Number(this.currentTime) / 1000
+    const notRun: {
+      pending: PromisePending
+      mediaType: AVMediaType
+      start: number
+    }[] = []
+    this.changingStreamPending.forEach((task) => {
+      if (task.start <= currentTime) {
+        task.pending.resolve()
+      }
+      else {
+        notRun.push(task)
+      }
+    })
+    this.changingStreamPending = notRun
+    if (!this.changingStreamPending.length) {
+      this.handleChangingStreamPendingTimer.stop()
+    }
+  }
+
   private handleTimeupdate(element: HTMLAudioElement | HTMLVideoElement) {
     let lastNotifyTime = 0
     element.ontimeupdate = () => {
@@ -979,20 +1012,32 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
       await this.drmSession.generateRequest(initDataType, initData)
     }
+
+    if (element instanceof HTMLVideoElement) {
+      element.onresize = () => {
+        this.GlobalData.stats.width = element.videoWidth
+        this.GlobalData.stats.height = element.videoHeight
+      }
+    }
   }
 
   private async replayTo(timestamp: int64) {
 
-    let seekedTimestamp = -1n
+    let seekedTimestamp = NOPTS_VALUE_BIGINT
 
     if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()
       || defined(ENABLE_PROTOCOL_HLS) && this.isHls()
     ) {
-      seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.TIMESTAMP)
-      if (this.subTaskId) {
-        await AVPlayer.DemuxerThread.seek(this.subTaskId, timestamp, AVSeekFlags.TIMESTAMP)
+      if (!this.subTaskId || this.selectedAudioStream) {
+        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.TIMESTAMP)
       }
-      if (this.subtitleTaskId) {
+      if (this.subTaskId && this.selectedVideoStream) {
+        const ts = await AVPlayer.DemuxerThread.seek(this.subTaskId, timestamp, AVSeekFlags.TIMESTAMP)
+        if (seekedTimestamp === NOPTS_VALUE_BIGINT) {
+          seekedTimestamp = ts
+        }
+      }
+      if (this.subtitleTaskId && this.selectedSubtitleStream) {
         await AVPlayer.DemuxerThread.seek(this.subtitleTaskId, timestamp, AVSeekFlags.TIMESTAMP)
       }
     }
@@ -1000,8 +1045,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.FRAME)
     }
 
-    for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
-      await AVPlayer.DemuxerThread.seek(this.externalSubtitleTasks[0].taskId, timestamp, AVSeekFlags.FRAME)
+    if (this.subtitleRender) {
+      for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
+        await AVPlayer.DemuxerThread.seek(this.externalSubtitleTasks[0].taskId, timestamp, AVSeekFlags.FRAME)
+      }
     }
 
     this.fire(eventType.TIME, [timestamp])
@@ -1095,6 +1142,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       else {
         this.status = AVPlayerStatus.ENDED
         this.fire(eventType.ENDED)
+        this.changingStreamPending.length = 0
       }
     }
   }
@@ -1117,7 +1165,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     return this.ext === 'mpd'
   }
 
-  private getMinStartPTS() {
+  /**
+   * 获取最小开始时间
+   * 
+   * @returns 
+   */
+  public getMinStartPTS() {
     let minPTS = NOPTS_VALUE_BIGINT
     for (const stream of this.formatContext.streams) {
       if (stream.startTime !== NOPTS_VALUE_BIGINT) {
@@ -1375,7 +1428,21 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   public async load(source: string | File | CustomIOLoader, options: AVPlayerLoadOptions = {}) {
 
-    if (this.status === AVPlayerStatus.ENDED) {
+    if (this.status !== AVPlayerStatus.STOPPED
+      && this.status !== AVPlayerStatus.ENDED
+      && this.status !== AVPlayerStatus.PAUSED
+      && this.status !== AVPlayerStatus.PLAYED
+      && this.status !== AVPlayerStatus.LOADED
+    ) {
+      logger.fatal('cannot call load on player status without (stopped, ended, paused, played, loaded)')
+    }
+
+    if (this.status === AVPlayerStatus.ENDED
+      || this.status === AVPlayerStatus.PAUSED
+      || this.status === AVPlayerStatus.PLAYED
+      || this.status === AVPlayerStatus.LOADED
+    ) {
+      logger.info(`call stop before load because of player status ${this.status}`)
       await this.stop(true)
     }
 
@@ -1817,12 +1884,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (!this.isLive_) {
       let start = NOPTS_VALUE_BIGINT
       formatContext.streams.forEach((stream) => {
-        const s = avRescaleQ(stream.startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q)
-        if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
-          || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
-        ) {
-          if (s < start || start === -1n) {
-            start = s
+        if (stream.startTime !== NOPTS_VALUE_BIGINT) {
+          const s = avRescaleQ(stream.startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+          if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
+            || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
+          ) {
+            if (s < start || start === -1n) {
+              start = s
+            }
           }
         }
       })
@@ -1830,7 +1899,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (start < 0n && start !== NOPTS_VALUE_BIGINT) {
         await this.seek(0n)
       }
+      else if (start > 0 && this.isHls()) {
+        await AVPlayer.IOThread.setStart(this.taskId, static_cast<float>(start) / 1000)
+      }
     }
+
+    this.changingStreamPending.length = 0
 
     this.status = AVPlayerStatus.LOADED
 
@@ -2516,11 +2590,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
       })
     }
-    promises.push(AVPlayer.DemuxerThread.startDemux(this.taskId, this.isLive_, minQueueLength))
-    if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subTaskId) {
+    if (!this.subTaskId || this.selectedAudioStream) {
+      promises.push(AVPlayer.DemuxerThread.startDemux(this.taskId, this.isLive_, minQueueLength))
+    }
+    if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subTaskId && this.selectedVideoStream) {
       promises.push(AVPlayer.DemuxerThread.startDemux(this.subTaskId, this.isLive_, minQueueLength))
     }
-    if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId) {
+    if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId && this.selectedSubtitleStream) {
       promises.push(AVPlayer.DemuxerThread.startDemux(this.subtitleTaskId, this.isLive_, 10))
     }
 
@@ -2690,21 +2766,26 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await options.onBeforeSeek()
     }
 
-    let seekedTimestamp = -1n
+    let seekedTimestamp = NOPTS_VALUE_BIGINT
 
     if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()
       || defined(ENABLE_PROTOCOL_HLS) && this.isHls()
     ) {
-      seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.TIMESTAMP)
-      if (this.subTaskId) {
-        await AVPlayer.DemuxerThread.seek(this.subTaskId, timestamp, AVSeekFlags.TIMESTAMP)
+      if (!this.subTaskId || this.selectedAudioStream) {
+        seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.TIMESTAMP)
+      }
+      if (this.subTaskId && this.selectedVideoStream) {
+        let ts = await AVPlayer.DemuxerThread.seek(this.subTaskId, timestamp, AVSeekFlags.TIMESTAMP)
+        if (seekedTimestamp === NOPTS_VALUE_BIGINT) {
+          seekedTimestamp = ts
+        }
       }
     }
     else {
       seekedTimestamp = await AVPlayer.DemuxerThread.seek(this.taskId, timestamp, AVSeekFlags.FRAME, streamIndex)
     }
 
-    if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId) {
+    if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId && this.selectedSubtitleStream) {
       await AVPlayer.DemuxerThread.seek(this.subtitleTaskId, timestamp, AVSeekFlags.TIMESTAMP)
     }
 
@@ -2779,8 +2860,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     ) {
       this.seekedTimestamp = seekedTimestamp > timestamp ? seekedTimestamp : timestamp
     }
-    for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
-      await AVPlayer.DemuxerThread.seek(this.externalSubtitleTasks[i].taskId, this.currentTime, AVSeekFlags.FRAME)
+    if (this.subtitleRender) {
+      for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
+        await AVPlayer.DemuxerThread.seek(this.externalSubtitleTasks[i].taskId, this.currentTime, AVSeekFlags.FRAME)
+      }
     }
     if (defined(ENABLE_SUBTITLE_RENDER) && this.subtitleRender) {
       this.subtitleRender.reset()
@@ -3072,6 +3155,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.jitterBufferController.stop()
       this.jitterBufferController = null
     }
+
+    this.changingStreamPending.length = 0
 
     this.status = AVPlayerStatus.STOPPED
 
@@ -3531,12 +3616,67 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * 设置播放视频轨道
    * 
    * @param id 流 id，dash 传 getVideoList 列表中的 index
+   * @param smooth 平滑切换（hls 和 dash 使用，切换下一个加载的切片）
    * @returns 
    */
-  public async selectVideo(id: number) {
+  public async selectVideo(id: number, smooth?: boolean) {
     if (defined(ENABLE_PROTOCOL_HLS) && this.isHls() || defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
       logger.info(`call IOThread selectVideo, index: ${id}, taskId: ${this.taskId}`)
-      return AVPlayer.IOThread?.selectVideo(this.taskId, id)
+
+      if (this.status === AVPlayerStatus.CHANGING) {
+        logger.warn(`player is changing now, taskId: ${this.taskId}`)
+        return
+      }
+
+      const { selectedIndex } = await AVPlayer.IOThread.getVideoList(this.taskId)
+      this.lastStatus = this.status
+      this.status = AVPlayerStatus.CHANGING
+      this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_VIDEO, id, selectedIndex])
+
+      if (!smooth && !this.isLive()) {
+        let currentTime = this.currentTime
+        let streamIndex = -1
+        if (this.selectedVideoStream) {
+          streamIndex = this.selectedVideoStream.index
+        }
+        else if (this.selectedAudioStream) {
+          streamIndex = this.selectedAudioStream.index
+        }
+        await this.doSeek(currentTime, streamIndex, {
+          onBeforeSeek: async () => {
+            await AVPlayer.IOThread.selectVideo(this.taskId, id)
+          }
+        })
+        this.status = this.lastStatus
+      }
+      else {
+        const start = await AVPlayer.IOThread.selectVideo(this.taskId, id)
+        this.status = this.lastStatus
+        if (start >= 0) {
+          const task = this.changingStreamPending.find((task) => {
+            return task.mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO
+              && task.start === start
+          })
+          await new Promise<void>((resolve) => {
+            if (task) {
+              task.pending.resolve = resolve
+            }
+            else {
+              this.changingStreamPending.push({
+                pending: {
+                  resolve
+                },
+                mediaType: AVMediaType.AVMEDIA_TYPE_VIDEO,
+                start
+              })
+              if (!this.handleChangingStreamPendingTimer.isStarted()) {
+                this.handleChangingStreamPendingTimer.start()
+              }
+            }
+          })
+        }
+      }
+      this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_VIDEO, id, selectedIndex])
     }
     else {
       const stream = this.formatContext.streams.find((stream) => stream.id === id)
@@ -3546,9 +3686,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           logger.warn(`player is changing now, taskId: ${this.taskId}`)
           return
         }
+        const lastSelectStreamId = this.selectedSubtitleStream.id
         this.lastStatus = this.status
         this.status = AVPlayerStatus.CHANGING
-        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.id, this.selectedVideoStream.id])
+        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.id, lastSelectStreamId])
 
         if (this.useMSE && defined(ENABLE_MSE)) {
           if (browser.safari) {
@@ -3598,7 +3739,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
 
         this.status = this.lastStatus
-        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.id, this.selectedVideoStream.id])
+        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.id, lastSelectStreamId])
       }
     }
   }
@@ -3607,12 +3748,67 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * 设置播放音频轨道
    * 
    * @param id 流 id，dash 传 getAudioList 列表中的 index
+   * @param smooth 平滑切换（hls 和 dash 使用，切换下一个加载的切片）
    * @returns 
    */
-  public async selectAudio(id: number) {
+  public async selectAudio(id: number, smooth?: boolean) {
     if (defined(ENABLE_PROTOCOL_HLS) && this.isHls() || defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
       logger.info(`call IOThread selectAudio, index: ${id}, taskId: ${this.taskId}`)
-      return AVPlayer.IOThread?.selectAudio(this.taskId, id)
+
+      if (this.status === AVPlayerStatus.CHANGING) {
+        logger.warn(`player is changing now, taskId: ${this.taskId}`)
+        return
+      }
+
+      const { selectedIndex } = await AVPlayer.IOThread.getAudioList(this.taskId)
+      this.lastStatus = this.status
+      this.status = AVPlayerStatus.CHANGING
+      this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_AUDIO, id, selectedIndex])
+
+      if (!smooth && !this.isLive()) {
+        let currentTime = this.currentTime
+        let streamIndex = -1
+        if (this.selectedVideoStream) {
+          streamIndex = this.selectedVideoStream.index
+        }
+        else if (this.selectedAudioStream) {
+          streamIndex = this.selectedAudioStream.index
+        }
+        await this.doSeek(currentTime, streamIndex, {
+          onBeforeSeek: async () => {
+            await AVPlayer.IOThread.selectAudio(this.taskId, id)
+          }
+        })
+        this.status = this.lastStatus
+      }
+      else {
+        const start = await AVPlayer.IOThread.selectAudio(this.taskId, id)
+        this.status = this.lastStatus
+        if (start >= 0) {
+          const task = this.changingStreamPending.find((task) => {
+            return task.mediaType === AVMediaType.AVMEDIA_TYPE_AUDIO
+              && task.start === start
+          })
+          await new Promise<void>((resolve, reject) => {
+            if (task) {
+              task.pending.resolve = resolve
+            }
+            else {
+              this.changingStreamPending.push({
+                pending: {
+                  resolve
+                },
+                mediaType: AVMediaType.AVMEDIA_TYPE_AUDIO,
+                start
+              })
+              if (!this.handleChangingStreamPendingTimer.isStarted()) {
+                this.handleChangingStreamPendingTimer.start()
+              }
+            }
+          })
+        }
+      }
+      this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_AUDIO, id, selectedIndex])
     }
     else {
       const stream = this.formatContext.streams.find((stream) => stream.id === id)
@@ -3621,9 +3817,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           logger.warn(`player is changing now, taskId: ${this.taskId}`)
           return
         }
+        const lastSelectStreamId = this.selectedSubtitleStream.id
         this.lastStatus = this.status
         this.status = AVPlayerStatus.CHANGING
-        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.id, this.selectedAudioStream.id])
+        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.id, lastSelectStreamId])
 
         if (stream.codecpar.codecId !== this.selectedAudioStream.codecpar.codecId
           || stream.codecpar.sampleRate !== this.selectedAudioStream.codecpar.sampleRate
@@ -3691,7 +3888,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         this.selectedAudioStream = stream
 
         this.status = this.lastStatus
-        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.id, this.selectedAudioStream.id])
+        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.id, lastSelectStreamId])
       }
     }
   }
@@ -3706,7 +3903,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (defined(ENABLE_SUBTITLE_RENDER)) {
       if (defined(ENABLE_PROTOCOL_HLS) && this.isHls() || defined(ENABLE_PROTOCOL_DASH) && this.isDash()) {
         logger.info(`call IOThread selectSubtitle, index: ${id}, taskId: ${this.taskId}`)
-        await AVPlayer.IOThread?.selectSubtitle(this.taskId, id)
+
+        if (this.status === AVPlayerStatus.CHANGING) {
+          logger.warn(`player is changing now, taskId: ${this.taskId}`)
+          return
+        }
+
+        const { selectedIndex } = await AVPlayer.IOThread.getSubtitleList(this.taskId)
+        this.lastStatus = this.status
+        this.status = AVPlayerStatus.CHANGING
+        this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, id, selectedIndex])
+
+        await AVPlayer.IOThread.selectSubtitle(this.taskId, id)
         if (this.subtitleTaskId) {
           await AVPlayer.DemuxerThread.seek(this.subtitleTaskId, this.currentTime, AVSeekFlags.TIMESTAMP)
         }
@@ -3714,6 +3922,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           this.subtitleRender.reset()
           this.subtitleRender.start()
         }
+        this.status = this.lastStatus
+        this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, id, selectedIndex])
       }
       else {
         const stream = this.formatContext.streams.find((stream) => stream.id === id)
@@ -3722,9 +3932,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             logger.warn(`player is changing now, taskId: ${this.taskId}`)
             return
           }
+          const lastSelectStreamId = this.selectedSubtitleStream.id
           this.lastStatus = this.status
           this.status = AVPlayerStatus.CHANGING
-          this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.id, this.selectedSubtitleStream.id])
+          this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.id, lastSelectStreamId])
 
           this.subtitleRender.reopenDecoder(stream.codecpar)
 
@@ -3763,7 +3974,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           this.selectedSubtitleStream = stream
 
           this.status = this.lastStatus
-          this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.id, this.selectedSubtitleStream.id])
+          this.fire(eventType.CHANGED, [AVMediaType.AVMEDIA_TYPE_SUBTITLE, stream.id, lastSelectStreamId])
         }
         else {
           logger.error(`call selectSubtitle failed, id: ${id}, taskId: ${this.taskId}`)

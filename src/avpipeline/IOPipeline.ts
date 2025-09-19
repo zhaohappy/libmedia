@@ -408,6 +408,18 @@ export default class IOPipeline extends Pipeline {
     return 0
   }
 
+  public async setStart(taskId: string, start: number) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      if (defined(ENABLE_PROTOCOL_HLS)) {
+        if (task.type === IOType.HLS) {
+          return (task.ioLoader as HlsIOLoader).setStart(start)
+        }
+      }
+    }
+    return 0
+  }
+
   public async registerTask(options: IOTaskOptions): Promise<number> {
     if (this.tasks.has(options.taskId)) {
       return errorType.INVALID_OPERATE

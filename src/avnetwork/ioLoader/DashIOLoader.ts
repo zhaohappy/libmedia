@@ -800,7 +800,13 @@ export default class DashIOLoader extends IOLoader {
         }))
         this.videoResource.initSegmentPadding = media.initSegment
       }
+      if (media.mediaSegments
+        && (this.videoResource.segmentIndex - (media.initSegment ? 1 : 0)) < media.mediaSegments.length - 1
+      ) {
+        return media.mediaSegments[this.videoResource.segmentIndex + (media.initSegment ? 0 : 1)].start
+      }
     }
+    return -1
   }
 
   public selectAudio(index: number) {
@@ -836,7 +842,13 @@ export default class DashIOLoader extends IOLoader {
         }))
         this.audioResource.initSegmentPadding = media.initSegment
       }
+      if (media.mediaSegments
+        && (this.audioResource.segmentIndex - (media.initSegment ? 1 : 0)) < media.mediaSegments.length - 1
+      ) {
+        return media.mediaSegments[this.audioResource.segmentIndex + (media.initSegment ? 0 : 1)].start
+      }
     }
+    return -1
   }
 
   public selectSubtitle(index: number) {
@@ -872,7 +884,13 @@ export default class DashIOLoader extends IOLoader {
         }))
         this.subtitleResource.initSegmentPadding = media.initSegment
       }
+      if (media.mediaSegments
+        && (this.subtitleResource.segmentIndex - (media.initSegment ? 1 : 0)) < media.mediaSegments.length - 1
+      ) {
+        return media.mediaSegments[this.subtitleResource.segmentIndex + (media.initSegment ? 0 : 1)].start
+      }
     }
+    return -1
   }
 
   public getCurrentProtection(mediaType: AVMediaType) {
