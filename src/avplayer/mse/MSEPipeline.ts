@@ -48,7 +48,7 @@ import getTimestamp from 'common/function/getTimestamp'
 import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
 import SeekableWriteBuffer from 'common/io/SeekableWriteBuffer'
-import { addAVPacketData, getAVPacketSideData, hasAVPacketSideData, refAVPacket } from 'avutil/util/avpacket'
+import { addAVPacketData, addAVPacketSideData, getAVPacketSideData, hasAVPacketSideData, refAVPacket } from 'avutil/util/avpacket'
 import { mapUint8Array, memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avFree, avMalloc, avMallocz } from 'avutil/util/mem'
 import browser from 'common/util/browser'
@@ -176,6 +176,7 @@ export default class MSEPipeline extends Pipeline {
   private async syncToKeyframe(task: SelfTask) {
     let firstIsKeyframe = true
     if (task.video) {
+      let audioNewExtradata: Uint8Array
       // 寻找下一个关键帧
       while (true) {
         task.video.backPacket = await this.pullAVPacket(task.video, task)
@@ -194,6 +195,10 @@ export default class MSEPipeline extends Pipeline {
         ) {
           while (true) {
             if (task.audio.backPacket > 0) {
+              const extradata = getAVPacketSideData(task.audio.backPacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+              if (extradata) {
+                audioNewExtradata = mapUint8Array(extradata.data, reinterpret_cast<size>(extradata.size)).slice()
+              }
               task.avpacketPool.release(task.audio.backPacket)
             }
             task.audio.backPacket = await this.pullAVPacket(task.audio, task)
@@ -231,6 +236,15 @@ export default class MSEPipeline extends Pipeline {
         }
         firstIsKeyframe = false
         task.avpacketPool.release(task.video.backPacket)
+      }
+
+      if (task.audio.backPacket
+        && !hasAVPacketSideData(task.audio.backPacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+        && audioNewExtradata
+      ) {
+        const extradata = avMalloc(audioNewExtradata.length)
+        memcpyFromUint8Array(extradata, audioNewExtradata.length, audioNewExtradata)
+        addAVPacketSideData(task.audio.backPacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, extradata, audioNewExtradata.length)
       }
     }
     return firstIsKeyframe
@@ -663,7 +677,10 @@ export default class MSEPipeline extends Pipeline {
       resource.bufferQueue.write(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)).slice())
     }
     else {
-      if (resource.type === 'video' && (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)) {
+      if (resource.type === 'video'
+        && (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+        || resource.type === 'audio'
+      ) {
         const extradata = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
         if (extradata && checkExtradataChanged(
           resource.oformatContext.streams[0].codecpar.extradata,
