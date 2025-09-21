@@ -159,7 +159,7 @@ export default class IWavFormat extends IFormat {
           | ((await formatContext.ioReader.readUint8()) & 0x7F)
 
         formatContext.ioReader.setEndian(true)
-        await id3v2.parse(formatContext.ioReader, len, id3v2Header, stream.metadata)
+        await id3v2.parse(formatContext.ioReader, len, id3v2Header, formatContext.metadata)
         formatContext.ioReader.setEndian(false)
 
         if (len + 10 < size) {

@@ -29,6 +29,7 @@ import * as logger from 'common/util/logger'
 import * as text from 'common/util/text'
 import IOWriterSync from 'common/io/IOWriterSync'
 import { IOFlags } from 'avutil/avformat'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 
 const enum ID3v2Encoding {
   ISO8859,
@@ -312,7 +313,7 @@ export function write(ioWriter: IOWriterSync, version: number, padding: int32, m
     const buffer = text.encode(str)
 
     ioWriter.writeString(key)
-    ioWriter.writeUint32(buffer.length + 1)
+    version === 4 ? putSize(ioWriter, buffer.length + 1) : ioWriter.writeUint32(buffer.length + 1)
     // flags
     ioWriter.writeUint16(0)
 
@@ -322,114 +323,114 @@ export function write(ioWriter: IOWriterSync, version: number, padding: int32, m
 
   function writeBuffer(key: string, buffer: Uint8Array) {
     ioWriter.writeString(key)
-    ioWriter.writeUint32(buffer.length)
+    version === 4 ? putSize(ioWriter, buffer.length) : ioWriter.writeUint32(buffer.length)
     // flags
     ioWriter.writeUint16(0)
 
     ioWriter.writeBuffer(buffer)
   }
 
-  if (metadata.poster) {
-    writeBuffer('APIC', metadata.poster)
+  if (metadata[AVStreamMetadataKey.POSTER]) {
+    writeBuffer('APIC', metadata[AVStreamMetadataKey.POSTER])
   }
 
-  if (metadata.title) {
-    writeText('TIT2', metadata.title)
+  if (metadata[AVStreamMetadataKey.TITLE]) {
+    writeText('TIT2', metadata[AVStreamMetadataKey.TITLE])
   }
 
-  if (metadata.artist) {
-    writeText('TPE1', metadata.artist)
+  if (metadata[AVStreamMetadataKey.ARTIST]) {
+    writeText('TPE1', metadata[AVStreamMetadataKey.ARTIST])
   }
 
-  if (metadata.albumArtist) {
-    writeText('TPE2', metadata.albumArtist)
+  if (metadata[AVStreamMetadataKey.ALBUM_ARTIST]) {
+    writeText('TPE2', AVStreamMetadataKey.ALBUM_ARTIST)
   }
 
-  if (metadata.disc) {
-    writeText('TPOS', metadata.disc)
+  if (metadata[AVStreamMetadataKey.DISC]) {
+    writeText('TPOS', metadata[AVStreamMetadataKey.DISC])
   }
-  if (metadata.copyright) {
-    writeText('TCOP', metadata.copyright)
-  }
-
-  if (metadata.album) {
-    writeText('TALB', metadata.album)
+  if (metadata[AVStreamMetadataKey.COPYRIGHT]) {
+    writeText('TCOP', metadata[AVStreamMetadataKey.COPYRIGHT])
   }
 
-  if (metadata.track) {
-    writeText('TRCK', metadata.track)
+  if (metadata[AVStreamMetadataKey.ALBUM]) {
+    writeText('TALB', metadata[AVStreamMetadataKey.ALBUM])
   }
 
-  if (metadata.date) {
-    writeText('TDRC', metadata.date)
+  if (metadata[AVStreamMetadataKey.TRACK]) {
+    writeText('TRCK', metadata[AVStreamMetadataKey.TRACK])
   }
 
-  if (metadata.comment) {
-    let comment = metadata.comment
+  if (metadata[AVStreamMetadataKey.DATE]) {
+    writeText('TDRC', metadata[AVStreamMetadataKey.DATE])
+  }
+
+  if (metadata[AVStreamMetadataKey.COMMENT]) {
+    let comment = metadata[AVStreamMetadataKey.COMMENT]
     if (comment[3] === ' ') {
       comment = comment.slice(0, 3) + comment.slice(4)
     }
     writeText('COMM', comment)
   }
 
-  if (metadata.lyrics) {
-    let lyrics = metadata.lyrics
+  if (metadata[AVStreamMetadataKey.LYRICS]) {
+    let lyrics = metadata[AVStreamMetadataKey.LYRICS]
     if (lyrics[3] === ' ') {
       lyrics = lyrics.slice(0, 3) + lyrics.slice(4)
     }
     writeText('USLT', lyrics)
   }
 
-  if (metadata.genre) {
-    writeText('TCON', metadata.genre + '')
+  if (metadata[AVStreamMetadataKey.GENRE]) {
+    writeText('TCON', metadata[AVStreamMetadataKey.GENRE] + '')
   }
 
-  if (metadata.encoder) {
-    writeText('TSSE', metadata.encoder)
+  if (metadata[AVStreamMetadataKey.ENCODER]) {
+    writeText('TSSE', metadata[AVStreamMetadataKey.ENCODER])
   }
 
-  if (metadata.composer) {
-    writeText('TCOM', metadata.composer)
+  if (metadata[AVStreamMetadataKey.COMPOSER]) {
+    writeText('TCOM', metadata[AVStreamMetadataKey.COMPOSER])
   }
 
-  if (metadata.vendor) {
-    writeText('TENC', metadata.vendor)
+  if (metadata[AVStreamMetadataKey.VENDOR]) {
+    writeText('TENC', metadata[AVStreamMetadataKey.VENDOR])
   }
 
-  if (metadata.language) {
-    writeText('TLAN', metadata.language)
+  if (metadata[AVStreamMetadataKey.LANGUAGE]) {
+    writeText('TLAN', metadata[AVStreamMetadataKey.LANGUAGE])
   }
 
-  if (metadata.performer) {
-    writeText('TPE3', metadata.performer)
+  if (metadata[AVStreamMetadataKey.PERFORMER]) {
+    writeText('TPE3', metadata[AVStreamMetadataKey.PERFORMER])
   }
 
-  if (metadata.publisher) {
-    writeText('TPUB', metadata.publisher)
+  if (metadata[AVStreamMetadataKey.PUBLISHER]) {
+    writeText('TPUB', metadata[AVStreamMetadataKey.PUBLISHER])
   }
 
-  if (metadata.compilation) {
-    writeText('TCMP', metadata.compilation)
+  if (metadata[AVStreamMetadataKey.COMPILATION]) {
+    writeText('TCMP', metadata[AVStreamMetadataKey.COMPILATION])
   }
 
-  if (metadata.creationTime) {
-    writeText('TDEN', metadata.creationTime)
+  if (metadata[AVStreamMetadataKey.CREATION_TIME]) {
+    writeText('TDEN', metadata[AVStreamMetadataKey.CREATION_TIME])
   }
 
-  if (metadata.albumSort) {
-    writeText('TSOA', metadata.albumSort)
+  if (metadata[AVStreamMetadataKey.ALBUM_SORT]) {
+    writeText('TSOA', metadata[AVStreamMetadataKey.ALBUM_SORT])
   }
 
-  if (metadata.artistSort) {
-    writeText('TSOP', metadata.artistSort)
+  if (metadata[AVStreamMetadataKey.ARTIST_SORT]) {
+    writeText('TSOP', metadata[AVStreamMetadataKey.ARTIST_SORT])
   }
 
-  if (metadata.titleSort) {
-    writeText('TSOT', metadata.titleSort)
+  if (metadata[AVStreamMetadataKey.TITLE_SORT]) {
+    writeText('TSOT', metadata[AVStreamMetadataKey.TITLE_SORT])
   }
 
-  if (metadata.grouping) {
-    writeText('TIT1', metadata.grouping)
+  if (metadata[AVStreamMetadataKey.GROUPING]) {
+    writeText('TIT1', metadata[AVStreamMetadataKey.GROUPING])
   }
 
   if (padding < 10) {

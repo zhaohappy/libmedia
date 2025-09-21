@@ -32,7 +32,7 @@ import { AVFormat, AVSeekFlags } from 'avutil/avformat'
 import { mapSafeUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData } from 'avutil/util/avpacket'
-import AVStream from 'avutil/AVStream'
+import AVStream, { AVStreamMetadataKey } from 'avutil/AVStream'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as text from 'common/util/text'
 import { IOFlags } from 'avutil/avformat'
@@ -98,7 +98,7 @@ export default class IMp3Format extends IFormat {
         | (((await formatContext.ioReader.readUint8()) & 0x7F) << 7)
         | ((await formatContext.ioReader.readUint8()) & 0x7F)
 
-      await id3v2.parse(formatContext.ioReader, len, this.context.id3v2, stream.metadata)
+      await id3v2.parse(formatContext.ioReader, len, this.context.id3v2, formatContext.metadata)
 
       if (is.bigint(stream.metadata['com.apple.streaming.transportStreamTimestamp'])) {
         const mp3Context = stream.privData as Mp3StreamContext
@@ -132,8 +132,6 @@ export default class IMp3Format extends IFormat {
 
     stream.privData = mp3Context
 
-    const metadata: Mp3MetaData = stream.metadata = {}
-
     const fileSize = await formatContext.ioReader.fileSize()
 
     if ((formatContext.ioReader.flags & IOFlags.SEEKABLE)
@@ -145,6 +143,7 @@ export default class IMp3Format extends IFormat {
         const isID3V1 = (await formatContext.ioReader.readString(3)) === 'TAG'
 
         if (isID3V1) {
+          const metadata: Mp3MetaData = formatContext.metadata = {}
           let buffer = await formatContext.ioReader.readBuffer(30)
           metadata.title = text.decode(buffer).replace(/\s/g, '')
 
@@ -263,7 +262,7 @@ export default class IMp3Format extends IFormat {
       if (flags & XingFlag.QSCALE) {
         await formatContext.ioReader.skip(4)
       }
-      metadata.encoder = await formatContext.ioReader.readString(9)
+      stream.metadata[AVStreamMetadataKey.ENCODER] = await formatContext.ioReader.readString(9)
 
       this.context.firstFramePos += static_cast<int64>(frameLength)
     }
@@ -312,6 +311,10 @@ export default class IMp3Format extends IFormat {
       for (let i = 0; i < XING_TOC_COUNT; i++) {
         mp3Context.tocIndexes[i].pos += this.context.firstFramePos
       }
+    }
+
+    if (mp3Context.nbFrame) {
+      stream.nbFrames = mp3Context.nbFrame
     }
 
     return 0

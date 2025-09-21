@@ -354,7 +354,12 @@ export default class OMp3Format extends OFormat {
     })
 
     if (this.options.id3v2Version) {
-      id3v2.write(formatContext.ioWriter, this.options.id3v2Version, formatContext.metadataHeaderPadding, stream.metadata)
+      id3v2.write(
+        formatContext.ioWriter,
+        this.options.id3v2Version,
+        formatContext.metadataHeaderPadding,
+        object.extend({}, formatContext.metadata, stream.metadata)
+      )
     }
 
     if (this.options.hasXing) {
@@ -413,7 +418,7 @@ export default class OMp3Format extends OFormat {
         return stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3
       })
 
-      const metadata = stream.metadata as Mp3MetaData || {}
+      const metadata = object.extend({}, formatContext.metadata, stream.metadata as Mp3MetaData)
 
       const id1Buffer = new Uint8Array(ID3V1_SIZE)
       const id1Writer = new BufferWriter(id1Buffer)
