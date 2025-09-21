@@ -37,6 +37,8 @@ import { addAVPacketData } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import { readFormatTag } from './riff/iriff'
 import { getBitsPerSample } from 'avutil/util/pcm'
+import { ID3V2 } from './mp3/type'
+import * as id3v2 from './mp3/id3v2'
 
 const PACKET_SAMPLE_COUNT = 1024
 
@@ -138,8 +140,35 @@ export default class IWavFormat extends IFormat {
         }
         await formatContext.ioReader.seek(this.pcmStartPos + this.dataSize)
       }
+      else if (tag === 'ID3 '
+        || tag === 'id3 '
+      ) {
+        await formatContext.ioReader.skip(3)
+        const id3v2Header: ID3V2 = {
+          version: 0,
+          revision: 0,
+          flags: 0
+        }
+        id3v2Header.version = await formatContext.ioReader.readUint8()
+        id3v2Header.revision = await formatContext.ioReader.readUint8()
+        id3v2Header.flags = await formatContext.ioReader.readUint8()
+
+        const len = (((await formatContext.ioReader.readUint8()) & 0x7F) << 21)
+          | (((await formatContext.ioReader.readUint8()) & 0x7F) << 14)
+          | (((await formatContext.ioReader.readUint8()) & 0x7F) << 7)
+          | ((await formatContext.ioReader.readUint8()) & 0x7F)
+
+        formatContext.ioReader.setEndian(true)
+        await id3v2.parse(formatContext.ioReader, len, id3v2Header, stream.metadata)
+        formatContext.ioReader.setEndian(false)
+
+        if (len + 10 < size) {
+          await formatContext.ioReader.skip(size - 10 - len)
+        }
+      }
       else {
-        if (this.pcmStartPos + this.dataSize === fileSize) {
+        if (formatContext.ioReader.getPos() + static_cast<int64>(size) === fileSize
+        ) {
           break
         }
         await formatContext.ioReader.seek(formatContext.ioReader.getPos() + static_cast<int64>(size))

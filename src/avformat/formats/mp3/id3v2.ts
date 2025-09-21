@@ -28,6 +28,7 @@ import { ID3V2, Mp3MetaData } from './type'
 import * as logger from 'common/util/logger'
 import * as text from 'common/util/text'
 import IOWriterSync from 'common/io/IOWriterSync'
+import { IOFlags } from 'avutil/avformat'
 
 const enum ID3v2Encoding {
   ISO8859,
@@ -68,6 +69,19 @@ function decodeString(encoding: ID3v2Encoding, buffer: Uint8Array) {
   return decoder.decode(buffer)
 }
 
+function sizeToSyncSafe(size: number) {
+  return ((size & (0x7f <<  0)) >> 0) +
+    ((size & (0x7f <<  8)) >> 1) +
+    ((size & (0x7f << 16)) >> 2) +
+    ((size & (0x7f << 24)) >> 3)
+}
+
+async function isTag(ioReader: IOReader, pos: int64) {
+  await ioReader.seek(pos)
+  const tag = await ioReader.readString(4)
+  return /^[A-Z0-9]+$/.test(tag)
+}
+
 export async function parse(ioReader: IOReader, len: int32, id3v2: ID3V2, metadata: Mp3MetaData) {
   const isV34 = id3v2.version !== 2
   const tagHeaderLen = isV34 ? 10 : 6
@@ -75,7 +89,7 @@ export async function parse(ioReader: IOReader, len: int32, id3v2: ID3V2, metada
   let end = ioReader.getPos() + static_cast<int64>(len)
 
   async function error() {
-    await ioReader.seek(end)
+    await ioReader.skip(static_cast<int32>(end - ioReader.getPos()))
   }
 
   if (isV34 && (id3v2.flags & 0x40)) {
@@ -92,7 +106,6 @@ export async function parse(ioReader: IOReader, len: int32, id3v2: ID3V2, metada
     len -= extLen + 4
     if (len < 0) {
       logger.error('extended header too long')
-      await ioReader.seek(end)
       return await error()
     }
   }
@@ -107,6 +120,30 @@ export async function parse(ioReader: IOReader, len: int32, id3v2: ID3V2, metada
       if (!size) {
         logger.error('invalid frame size')
         break
+      }
+
+      if (id3v2.version === 4) {
+        if (size > 0x7f) {
+          if (size < len) {
+            await ioReader.flush()
+            const cur = ioReader.getPos()
+            if (!(ioReader.flags & IOFlags.SEEKABLE
+              || 6 + size < ioReader.remainingLength()
+            )) {
+              break
+            }
+            if (await isTag(ioReader, cur + 2n + static_cast<int64>(sizeToSyncSafe(size) as uint32))) {
+              size = sizeToSyncSafe(size)
+            }
+            else if (!(await isTag(ioReader, cur + 2n + static_cast<int64>(size as uint32)))) {
+              break
+            }
+            await ioReader.seek(cur)
+          }
+          else {
+            size = sizeToSyncSafe(size)
+          }
+        }
       }
 
       // flags
@@ -257,7 +294,7 @@ export async function parse(ioReader: IOReader, len: int32, id3v2: ID3V2, metada
     end += 10n
   }
 
-  await ioReader.seek(end)
+  await ioReader.skip(static_cast<int32>(end - ioReader.getPos()))
 
 }
 
