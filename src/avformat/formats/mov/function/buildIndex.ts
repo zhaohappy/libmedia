@@ -162,4 +162,5 @@ export function buildIndex(stream: Stream, movContext: MOVContext) {
   }
 
   context.samplesIndex = samplesIndex
+  stream.nbFrames = static_cast<int64>(samplesIndex.length as uint32)
 }
