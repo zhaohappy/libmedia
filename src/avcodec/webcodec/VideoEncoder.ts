@@ -46,6 +46,7 @@ import * as vp9 from 'avutil/codecs/vp9'
 import isPointer from 'cheap/std/function/isPointer'
 import { AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { AVPixelFormat } from 'avutil/pixfmt'
+import * as object from 'common/util/object'
 
 export type WebVideoEncoderOptions = {
   onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
@@ -136,7 +137,7 @@ export default class WebVideoEncoder {
         this.parameters.colorTrc = mapColorTrc(metadata.decoderConfig.colorSpace.transfer || '')
       }
 
-      encodedVideoChunk2AVPacket(chunk, avpacket)
+      encodedVideoChunk2AVPacket(chunk, avpacket, metadata ? object.extend({}, metadata, { decoderConfig: undefined }) : undefined)
 
       if (!this.extradata) {
         let extradata: Uint8Array | undefined

@@ -28,6 +28,7 @@ import { avMalloc } from '../util/mem'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { AV_TIME_BASE } from '../constant'
 import { AVPacketSideDataType } from '../codec'
+import * as intwrite from '../util/intwrite'
 
 export default function encodedVideoChunk2AVPacket(chunk: EncodedVideoChunk, avpacket: pointer<AVPacket> = nullptr, metadata?: EncodedVideoChunkMetadata & {
   svc?: {
@@ -62,7 +63,7 @@ export default function encodedVideoChunk2AVPacket(chunk: EncodedVideoChunk, avp
       addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, extradata, buffer.length)
     }
     if (metadata.alphaSideData) {
-      const extradata = avMalloc(metadata.alphaSideData.byteLength)
+      const extradata = avMalloc(metadata.alphaSideData.byteLength + 8)
       let buffer: Uint8Array
       if (metadata.alphaSideData instanceof ArrayBuffer) {
         buffer = new Uint8Array(metadata.alphaSideData)
@@ -70,7 +71,9 @@ export default function encodedVideoChunk2AVPacket(chunk: EncodedVideoChunk, avp
       else {
         buffer = new Uint8Array(metadata.alphaSideData.buffer)
       }
-      memcpyFromUint8Array(extradata, buffer.length, buffer)
+      // 1 stands for alpha channel data
+      intwrite.wb64(data, 1n)
+      memcpyFromUint8Array(extradata + 8, buffer.length, buffer)
       addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_MATROSKA_BLOCKADDITIONAL, extradata, buffer.length)
     }
   }
