@@ -30,7 +30,7 @@ import * as is from 'common/util/is'
 import { Range } from 'common/types/type'
 
 export interface FileInfo {
-  file: File
+  file: Blob
 }
 
 // chrome 目前使用 arrayBuffer 读文件数据会造成内存泄漏，先关闭
