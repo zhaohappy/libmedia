@@ -42,6 +42,7 @@ import wave from './wave'
 import dfla from './dfla'
 import dops from './dops'
 import colr from './colr'
+import pcmc from './pcmc'
 
 import ac3 from './dac3'
 import eac3 from './dec3'
@@ -67,6 +68,8 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
     if (tag2CodecId[type]) {
       stream.codecpar.codecId = tag2CodecId[type]
     }
+
+    streamContext.format = type
 
     if (size === 0) {
       logger.warn('stsd entry invalid box size 0, skip')
@@ -366,6 +369,17 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
         }
         else if (type === mktag(BoxType.DEC3)) {
           await eac3(
+            ioReader,
+            stream,
+            {
+              type,
+              size: size - 8
+            },
+            movContext
+          )
+        }
+        else if (type === mktag(BoxType.PCMC)) {
+          await pcmc(
             ioReader,
             stream,
             {

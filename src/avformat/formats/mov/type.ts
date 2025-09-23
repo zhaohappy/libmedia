@@ -224,6 +224,8 @@ export interface MOVStreamContext {
   perStreamGrouping: boolean
   index: number
   flags: number
+  isPcm?: boolean
+  format?: number
 }
 
 export interface ElstEntry {

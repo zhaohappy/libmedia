@@ -112,45 +112,59 @@ export function buildIndex(stream: Stream, movContext: MOVContext) {
     }
     chunkSamples = stscSamplesPerChunk[stscIndex]
 
-    while (chunkSamples > 0) {
+    if (context.isPcm) {
       const sample: Sample = {
         dts: currentDts,
         pts: currentDts,
         pos: currentOffset,
-        size: sampleSizes[currentSample],
-        duration: sttsSampleDeltas[sttsIndex],
-        flags: 0
+        size: sampleSizes[0] * chunkSamples,
+        duration: sttsSampleDeltas[0] * chunkSamples,
+        flags: AVPacketFlags.AV_PKT_FLAG_KEY
       }
-
-      if (stssSampleNumbers && stssSampleNumbers.has(currentSample + 1)
-        || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
-      ) {
-        sample.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
-      }
-
-      if (cttsSampleOffsets) {
-        sample.pts = sample.dts + static_cast<int64>(cttsSampleOffsets[cttsIndex])
-        cttsCurrentIndex++
-        if (cttsCurrentIndex === cttsSampleCounts[cttsIndex]) {
-          cttsIndex++
-          cttsCurrentIndex = 0
-        }
-      }
-
-      currentOffset += static_cast<int64>(sample.size)
-
-      currentDts += static_cast<int64>(sttsSampleDeltas[sttsIndex])
-      sttsCurrentIndex++
-      if (sttsCurrentIndex === sttsSampleCounts[sttsIndex]) {
-        sttsIndex++
-        sttsCurrentIndex = 0
-      }
-
-      currentSample++
-
+      currentDts += static_cast<int64>(sample.duration)
       samplesIndex.push(sample)
+    }
+    else {
+      while (chunkSamples > 0) {
+        const sample: Sample = {
+          dts: currentDts,
+          pts: currentDts,
+          pos: currentOffset,
+          size: sampleSizes[currentSample],
+          duration: sttsSampleDeltas[sttsIndex],
+          flags: 0
+        }
 
-      chunkSamples--
+        if (stssSampleNumbers && stssSampleNumbers.has(currentSample + 1)
+          || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
+        ) {
+          sample.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+        }
+
+        if (cttsSampleOffsets) {
+          sample.pts = sample.dts + static_cast<int64>(cttsSampleOffsets[cttsIndex])
+          cttsCurrentIndex++
+          if (cttsCurrentIndex === cttsSampleCounts[cttsIndex]) {
+            cttsIndex++
+            cttsCurrentIndex = 0
+          }
+        }
+
+        currentOffset += static_cast<int64>(sample.size)
+
+        currentDts += static_cast<int64>(sttsSampleDeltas[sttsIndex])
+        sttsCurrentIndex++
+        if (sttsCurrentIndex === sttsSampleCounts[sttsIndex]) {
+          sttsIndex++
+          sttsCurrentIndex = 0
+        }
+
+        currentSample++
+
+        samplesIndex.push(sample)
+
+        chunkSamples--
+      }
     }
   }
 
