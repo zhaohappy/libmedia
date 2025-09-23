@@ -23,10 +23,10 @@
  *
  */
 
-import AVFrame, { AVFrameSideData, AVFrameSideDataType, AV_NUM_DATA_POINTERS } from '../struct/avframe'
+import AVFrame, { AVFrameSideData, AVFrameSideDataType } from '../struct/avframe'
 import { avFree, avFreep, avMalloc, avMallocz, avRealloc } from './mem'
 import { memcpy, memset } from 'cheap/std/memory'
-import { INT32_MAX, NOPTS_VALUE_BIGINT } from '../constant'
+import { INT32_MAX, NOPTS_VALUE_BIGINT, AV_NUM_DATA_POINTERS } from '../constant'
 import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from '../pixfmt'
 import { avbufferAlloc, avbufferRef, avbufferReplace, avbufferUnref } from './avbuffer'
 import { avDictCopy, freeAVDict } from './avdict'

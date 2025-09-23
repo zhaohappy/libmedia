@@ -71,3 +71,5 @@ export const UINT8_MAX: uint8 = 255
 export const UINT16_MAX: uint16 = 65535
 export const UINT32_MAX: uint32 = 4294967295
 export const UINT64_MAX: uint64 = 18446744073709551615n
+
+export const AV_NUM_DATA_POINTERS = 8

@@ -23,7 +23,7 @@
  *
  */
 
-import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from '../constant'
+import { AV_NUM_DATA_POINTERS, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from '../constant'
 import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from '../pixfmt'
 import { AVBufferRef } from './avbuffer'
 import { unrefAVFrame } from '../util/avframe'
@@ -31,8 +31,6 @@ import { AVDictionary } from './avdict'
 import { Rational } from './rational'
 import { symbolStructAddress } from 'cheap/symbol'
 import { AVChannelLayout } from './audiosample'
-
-export const AV_NUM_DATA_POINTERS = 8
 
 export const enum AVFrameFlags {
   AV_FRAME_FLAG_NONE = 0,

@@ -23,13 +23,14 @@
  */
 
 import { createAVFrame, unrefAVFrame } from '../util/avframe'
-import AVFrame, { AV_NUM_DATA_POINTERS } from '../struct/avframe'
+import AVFrame from '../struct/avframe'
 import { sampleFormatIsPlanar } from '../util/sample'
 import AVPCMBuffer from '../struct/avpcmbuffer'
 import { avFreep, avMalloc } from '../util/mem'
 import * as errorType from '../error'
 import { avbufferCreate } from '../util/avbuffer'
 import { memcpy } from 'cheap/std/memory'
+import { AV_NUM_DATA_POINTERS } from '../constant'
 
 export function avPCMBuffer2AVFrame(pcmBuffer: pointer<AVPCMBuffer>, copy: boolean = false, avframe: pointer<AVFrame> = nullptr) {
   if (avframe === nullptr) {
