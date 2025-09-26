@@ -238,7 +238,8 @@ export default class MSEPipeline extends Pipeline {
         task.avpacketPool.release(task.video.backPacket)
       }
 
-      if (task.audio.backPacket
+      if (task.audio
+        && task.audio.backPacket
         && !hasAVPacketSideData(task.audio.backPacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
         && audioNewExtradata
       ) {
