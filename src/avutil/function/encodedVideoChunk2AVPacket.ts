@@ -26,7 +26,7 @@ import { addAVPacketData, addAVPacketSideData, createAVPacket } from '../util/av
 import AVPacket, { AVPacketFlags } from '../struct/avpacket'
 import { avMalloc } from '../util/mem'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { AV_TIME_BASE } from '../constant'
+import { AV_TIME_BASE, NOPTS_VALUE_BIGINT } from '../constant'
 import { AVPacketSideDataType } from '../codec'
 import * as intwrite from '../util/intwrite'
 
@@ -43,7 +43,7 @@ export default function encodedVideoChunk2AVPacket(chunk: EncodedVideoChunk, avp
   avpacket.pts = static_cast<int64>(chunk.timestamp)
   avpacket.timeBase.den = AV_TIME_BASE
   avpacket.timeBase.num = 1
-  avpacket.duration = static_cast<int64>(chunk.duration)
+  avpacket.duration = chunk.duration == null ? NOPTS_VALUE_BIGINT : static_cast<int64>(chunk.duration)
   const data: pointer<uint8> = avMalloc(chunk.byteLength)
   chunk.copyTo(mapUint8Array(data, chunk.byteLength))
 

@@ -26,7 +26,7 @@ import { addAVPacketData, addAVPacketSideData, createAVPacket } from '../util/av
 import AVPacket, { AVPacketFlags } from '../struct/avpacket'
 import { avMalloc } from '../util/mem'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { AV_TIME_BASE } from '../constant'
+import { AV_TIME_BASE, NOPTS_VALUE_BIGINT } from '../constant'
 import { AVPacketSideDataType } from '../codec'
 
 export default function encodedAudioChunk2AVPacket(chunk: EncodedAudioChunk, avpacket: pointer<AVPacket> = nullptr, metadata?: EncodedAudioChunkMetadata) {
@@ -35,7 +35,7 @@ export default function encodedAudioChunk2AVPacket(chunk: EncodedAudioChunk, avp
   }
 
   avpacket.pts = avpacket.dts = static_cast<int64>(chunk.timestamp)
-  avpacket.duration = static_cast<int64>(chunk.duration || 0)
+  avpacket.duration = chunk.duration == null ? NOPTS_VALUE_BIGINT : static_cast<int64>(chunk.duration)
   avpacket.timeBase.den = AV_TIME_BASE
   avpacket.timeBase.num = 1
   avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY

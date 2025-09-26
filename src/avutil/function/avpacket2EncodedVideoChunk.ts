@@ -31,6 +31,7 @@ export default function avpacket2EncodedVideoChunk(avpacket: pointer<AVPacket>) 
   const key = avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
   return new EncodedVideoChunk({
     type: key ? 'key' : 'delta',
+    duration: avpacket.duration < 0 ? undefined : static_cast<double>(avRescaleQ2(avpacket.duration, addressof(avpacket.timeBase), AV_TIME_BASE_Q)),
     timestamp: avpacket.pts === NOPTS_VALUE_BIGINT ? NOPTS_VALUE : static_cast<double>(avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), AV_TIME_BASE_Q)),
     data: mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
   })
