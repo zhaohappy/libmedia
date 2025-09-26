@@ -23,9 +23,9 @@
  *
  */
 
-import { AVIFormatContext } from '../../AVFormatContext'
+import type { AVIFormatContext } from '../../AVFormatContext'
 import { EBMLId, EbmlType } from './matroska'
-import { Addition, Additions, Attachment, Attachments, AudioTrack,
+import type { Addition, Additions, Attachment, Attachments, AudioTrack,
   BlockGroup, Chapter, ChapterAtom, ChapterDisplay, Chapters, Cluster,
   CuePoint, CuePointPos, Cues, Header, Info, MasteringMeta, MatroskaContext, SeekHead, SeekHeadEntry,
   SimpleTag, Tag, TagTargets, Tags, TrackCombinePlanes, TrackEncoding,
@@ -37,7 +37,7 @@ import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
 import * as is from 'common/util/is'
 import * as array from 'common/util/array'
-import { BytesReader, BytesReaderSync } from 'common/io/interface'
+import type { BytesReader, BytesReaderSync } from 'common/io/interface'
 
 const MAX_ATTACHMENT_READ_SIZE = static_cast<int64>(20 * 1024 * 1024)
 

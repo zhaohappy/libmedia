@@ -23,8 +23,8 @@
  *
  */
 
-import BitReader from 'common/io/BitReader'
-import { FrameInfo } from './type'
+import type BitReader from 'common/io/BitReader'
+import type { FrameInfo } from './type'
 import * as errorType from 'avutil/error'
 import * as logger from 'common/util/logger'
 import { BlockSizeTable, FLAC_MAX_CHANNELS, FlacCHMode, SampleRateTable, SampleSizeTable } from 'avutil/codecs/flac'

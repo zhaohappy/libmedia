@@ -23,7 +23,7 @@
  *
  */
 
-import { MOVContext } from '../type'
+import type { MOVContext } from '../type'
 import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 export default function createMovContext(): MOVContext {

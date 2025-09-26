@@ -24,9 +24,9 @@
  */
 
 import { BoxType } from '../boxType'
-import IOReader from 'common/io/IOReader'
-import Stream from 'avutil/AVStream'
-import { Atom, MOVContext } from '../type'
+import type IOReader from 'common/io/IOReader'
+import type Stream from 'avutil/AVStream'
+import type { Atom, MOVContext } from '../type'
 
 import stts from './stts'
 import ctts from './ctts'

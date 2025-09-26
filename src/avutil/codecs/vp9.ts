@@ -24,15 +24,16 @@
  */
 
 import { AVPacketSideDataType } from '../codec'
-import { Uint8ArrayInterface } from 'common/io/interface'
+import type { Uint8ArrayInterface } from 'common/io/interface'
 import BitReader from 'common/io/BitReader'
-import AVCodecParameters from '../struct/avcodecparameters'
+import type AVCodecParameters from '../struct/avcodecparameters'
 import { NOPTS_VALUE } from '../constant'
 import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
 import { avQ2D } from '../util/rational'
-import { AVChromaLocation, AVColorRange, AVPixelFormat } from '../pixfmt'
+import type { AVPixelFormat } from '../pixfmt'
+import { AVChromaLocation, AVColorRange } from '../pixfmt'
 import BufferWriter from 'common/io/BufferWriter'
-import AVPacket from '../struct/avpacket'
+import type AVPacket from '../struct/avpacket'
 
 export const enum VP9Profile {
   Profile0,

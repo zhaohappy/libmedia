@@ -23,8 +23,10 @@
  *
  */
 
-import { NOTIFY, RpcMessage } from 'common/network/IPCPort'
-import AudioWorkletNodeBase, { AudioWorkletNodeObserver } from '../base/AudioWorkletNodeBase'
+import type { RpcMessage } from 'common/network/IPCPort'
+import { NOTIFY } from 'common/network/IPCPort'
+import type { AudioWorkletNodeObserver } from '../base/AudioWorkletNodeBase'
+import AudioWorkletNodeBase from '../base/AudioWorkletNodeBase'
 
 export interface MeterWorkletNodeObserver extends AudioWorkletNodeObserver {
   onAudioLevel: (audioLevel: number) => void

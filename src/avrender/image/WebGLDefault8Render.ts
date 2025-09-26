@@ -24,10 +24,11 @@
  */
 
 import type AVFrame from 'avutil/struct/avframe'
-import { AVPixelFormat } from 'avutil/pixfmt'
+import type { AVPixelFormat } from 'avutil/pixfmt'
 import { mapUint8Array } from 'cheap/std/memory'
-import { WebGLRenderOptions } from './WebGLRender'
-import { AVPixelFormatDescriptor, getAVPixelFormatDescriptor, AVPixelFormatFlags } from 'avutil/pixelFormatDescriptor'
+import type { WebGLRenderOptions } from './WebGLRender'
+import type { AVPixelFormatDescriptor} from 'avutil/pixelFormatDescriptor'
+import { getAVPixelFormatDescriptor, AVPixelFormatFlags } from 'avutil/pixelFormatDescriptor'
 import WebGLDefaultRender from './WebGLDefaultRender'
 import VideoProgram8 from './webgl/program/VideoProgram8'
 import generateSteps from './colorTransform/generateSteps'

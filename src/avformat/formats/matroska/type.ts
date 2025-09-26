@@ -23,7 +23,7 @@
  *
  */
 
-import IOWriterSync from 'common/io/IOWriterSync'
+import type IOWriterSync from 'common/io/IOWriterSync'
 
 export interface Header {
   version: int32

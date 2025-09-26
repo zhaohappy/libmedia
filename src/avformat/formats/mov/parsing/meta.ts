@@ -23,14 +23,14 @@
  *
  */
 
-import IOReader from 'common/io/IOReader'
-import Stream from 'avutil/AVStream'
-import { Atom, MOVContext } from '../type'
+import type IOReader from 'common/io/IOReader'
+import type Stream from 'avutil/AVStream'
+import type { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 import * as is from 'common/util/is'
 import { iTunesKeyMap } from '../iTunes'
 import digital2Tag from '../../../function/digital2Tag'
-import { Data } from 'common/types/type'
+import type { Data } from 'common/types/type'
 
 export async function readITunesTagValue(ioReader: IOReader, tagSize: int32) {
   const data: (string | Uint8Array | number)[] = []

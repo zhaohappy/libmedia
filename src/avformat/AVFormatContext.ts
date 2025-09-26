@@ -23,22 +23,23 @@
  *
  */
 
-import { AVCodecID, AVMediaType } from 'avutil/codec'
+import type { AVCodecID, AVMediaType } from 'avutil/codec'
 
-import AVStream, { AVStreamInterface } from 'avutil/AVStream'
-import AVPacket from 'avutil/struct/avpacket'
+import type { AVStreamInterface } from 'avutil/AVStream'
+import AVStream from 'avutil/AVStream'
+import type AVPacket from 'avutil/struct/avpacket'
 
-import OFormat from './formats/OFormat'
-import IFormat from './formats/IFormat'
+import type OFormat from './formats/OFormat'
+import type IFormat from './formats/IFormat'
 
-import IOWriterSync from 'common/io/IOWriterSync'
-import IOReader from 'common/io/IOReader'
-import IOWriter from 'common/io/IOWriter'
-import IOReaderSync from 'common/io/IOReaderSync'
-import { WebAssemblyResource } from 'cheap/webassembly/compiler'
+import type IOWriterSync from 'common/io/IOWriterSync'
+import type IOReader from 'common/io/IOReader'
+import type IOWriter from 'common/io/IOWriter'
+import type IOReaderSync from 'common/io/IOReaderSync'
+import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import { AVFormat } from 'avutil/avformat'
 import { destroyAVPacket } from 'avutil/util/avpacket'
-import { Rational } from 'avutil/struct/rational'
+import type { Rational } from 'avutil/struct/rational'
 import * as staticData from 'cheap/staticData'
 import { Mutex, lock, unlock } from 'cheap/thread/mutex'
 

@@ -23,11 +23,12 @@
  *
  */
 
-import AVPacket from 'avutil/struct/avpacket'
+import type AVPacket from 'avutil/struct/avpacket'
 import Decoder from './Decoder'
 import { getAVPacketData } from 'avutil/util/avpacket'
-import { Rational } from 'avutil/struct/rational'
-import { AVSubtitle, AVSubtitleType } from 'avutil/struct/avsubtitle'
+import type { Rational } from 'avutil/struct/rational'
+import type { AVSubtitle} from 'avutil/struct/avsubtitle'
+import { AVSubtitleType } from 'avutil/struct/avsubtitle'
 import * as text from 'common/util/text'
 
 export default class TextDecoder extends Decoder {

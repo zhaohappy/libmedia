@@ -23,9 +23,9 @@
  *
  */
 
-import Stream from 'avutil/AVStream'
-import { MOVContext, MOVStreamContext } from '../type'
-import IOWriter from 'common/io/IOWriterSync'
+import type Stream from 'avutil/AVStream'
+import type { MOVContext, MOVStreamContext } from '../type'
+import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType, MP4Tag } from '../boxType'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { AVCodecID2Mp4a } from '../mov'

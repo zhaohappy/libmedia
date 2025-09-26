@@ -23,9 +23,9 @@
  *
  */
 
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import AVPacket from 'avutil/struct/avpacket'
-import Decoder from './decoder/Decoder'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
+import type AVPacket from 'avutil/struct/avpacket'
+import type Decoder from './decoder/Decoder'
 import { AVCodecID } from 'avutil/codec'
 import * as errorType from 'avutil/error'
 import WebVttDecoder from './decoder/WebVttDecoder'
@@ -34,7 +34,7 @@ import AssDecoder from './decoder/AssDecoder'
 import TtmlDecoder from './decoder/TtmlDecoder'
 import TimedTextDecoder from './decoder/TimedTextDecoder'
 import TextDecoder from './decoder/TextDecoder'
-import { AVSubtitle } from 'avutil/struct/avsubtitle'
+import type { AVSubtitle } from 'avutil/struct/avsubtitle'
 
 export type SubtitleDecoderOptions = {
   onReceiveSubtitle?: (subtitle: AVSubtitle) => void

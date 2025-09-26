@@ -23,10 +23,10 @@
  *
  */
 
-import BufferReader from 'common/io/BufferReader'
-import IOReader from 'common/io/IOReader'
-import BufferWriter from 'common/io/BufferWriter'
-import IOWriterSync from 'common/io/IOWriterSync'
+import type BufferReader from 'common/io/BufferReader'
+import type IOReader from 'common/io/IOReader'
+import type BufferWriter from 'common/io/BufferWriter'
+import type IOWriterSync from 'common/io/IOWriterSync'
 import * as is from 'common/util/is'
 import * as array from 'common/util/array'
 import * as object from 'common/util/object'

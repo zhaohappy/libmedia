@@ -25,14 +25,15 @@
  */
 
 import * as is from 'common/util/is'
-import { AVPlayerGlobalData } from '../struct'
+import type { AVPlayerGlobalData } from '../struct'
 import * as logger from 'common/util/logger'
 import VideoDecodePipeline from 'avpipeline/VideoDecodePipeline'
 import VideoRenderPipeline from 'avpipeline/VideoRenderPipeline'
 import { unrefAVFrame } from 'avutil/util/avframe'
 import { unrefAVPacket } from 'avutil/util/avpacket'
 import * as mutex from 'cheap/thread/mutex'
-import IPCPort, { NOTIFY, RpcMessage } from 'common/network/IPCPort'
+import type { RpcMessage } from 'common/network/IPCPort'
+import IPCPort, { NOTIFY } from 'common/network/IPCPort'
 import Timer from 'common/timer/Timer'
 import * as object from 'common/util/object'
 

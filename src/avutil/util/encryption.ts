@@ -23,8 +23,8 @@
  *
  */
 
-import { Uint8ArrayInterface } from 'common/io/interface'
-import { EncryptionInfo, EncryptionInitInfo } from '../struct/encryption'
+import type { Uint8ArrayInterface } from 'common/io/interface'
+import type { EncryptionInfo, EncryptionInitInfo } from '../struct/encryption'
 import BufferReader from 'common/io/BufferReader'
 import BufferWriter from 'common/io/BufferWriter'
 

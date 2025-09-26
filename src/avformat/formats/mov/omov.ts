@@ -23,21 +23,23 @@
  *
  */
 
-import { MOVContext, MOVStreamContext } from './type'
-import IOWriter from 'common/io/IOWriterSync'
+import type { MOVContext, MOVStreamContext } from './type'
+import type IOWriter from 'common/io/IOWriterSync'
 import mktag from '../../function/mktag'
 import { BoxType, FullBoxs } from './boxType'
 import * as array from 'common/util/array'
-import { AVOFormatContext } from '../../AVFormatContext'
-import Stream, { AVStreamMetadataKey } from 'avutil/AVStream'
+import type { AVOFormatContext } from '../../AVFormatContext'
+import type Stream from 'avutil/AVStream'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 import writers from './writing/writers'
-import { BoxLayout, FragmentTrackBoxLayoutMap, MoofTrafBoxLayout, TrackBoxLayoutMap } from './layout'
+import type { BoxLayout} from './layout'
+import { FragmentTrackBoxLayoutMap, MoofTrafBoxLayout, TrackBoxLayoutMap } from './layout'
 import updatePositionSize from './function/updatePositionSize'
 import { getSideData } from 'avutil/util/avpacket'
 import { AVPacketSideDataType } from 'avutil/codec'
 import { encryptionSideData2InitInfo } from 'avutil/util/encryption'
 import { mapUint8Array } from 'cheap/std/memory'
-import { EncryptionInitInfo } from 'avutil/struct/encryption'
+import type { EncryptionInitInfo } from 'avutil/struct/encryption'
 import * as text from 'common/util/text'
 
 export function updateSize(ioWriter: IOWriter, pointer: number, size: number) {

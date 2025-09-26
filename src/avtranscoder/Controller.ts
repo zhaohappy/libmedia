@@ -23,10 +23,11 @@
  *
  */
 
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import IPCPort, { REQUEST, RpcMessage } from 'common/network/IPCPort'
+import type { AVCodecID, AVMediaType } from 'avutil/codec'
+import type { RpcMessage } from 'common/network/IPCPort'
+import IPCPort, { REQUEST } from 'common/network/IPCPort'
 import createMessageChannel from './function/createMessageChannel'
-import { WebAssemblyResource } from 'cheap/webassembly/compiler'
+import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
 
 export interface ControllerObserver {
   onGetDecoderResource: (mediaType: AVMediaType, codecId: AVCodecID) => Promise<WebAssemblyResource | ArrayBuffer>

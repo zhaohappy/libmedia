@@ -29,10 +29,11 @@
  * https://datatracker.ietf.org/doc/html/rfc7845
  */
 
-import IOWriter from 'common/io/IOWriterSync'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { OggsCommentPage, PagePayload } from './OggPage'
-import IOReaderSync from 'common/io/IOReaderSync'
+import type IOWriter from 'common/io/IOWriterSync'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
+import type { PagePayload } from './OggPage'
+import { OggsCommentPage } from './OggPage'
+import type IOReaderSync from 'common/io/IOReaderSync'
 import * as text from 'common/util/text'
 
 class ChannelMapping {

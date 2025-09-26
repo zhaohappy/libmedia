@@ -25,7 +25,7 @@
 
 import { AVChannelLayout } from '../audiosamplefmt'
 import BitReader from 'common/io/BitReader'
-import { Uint8ArrayInterface } from 'common/io/interface'
+import type { Uint8ArrayInterface } from 'common/io/interface'
 
 export const enum AC3DeltaStrategy {
   DBA_REUSE = 0,

@@ -23,7 +23,8 @@
  */
 
 import { avRescaleQ2 } from '../util/rational'
-import AVPacket, { AVPacketFlags } from '../struct/avpacket'
+import type AVPacket from '../struct/avpacket'
+import { AVPacketFlags } from '../struct/avpacket'
 import { mapUint8Array } from 'cheap/std/memory'
 import { AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from '../constant'
 

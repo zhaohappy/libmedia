@@ -23,14 +23,15 @@
  *
  */
 
-import { AVIFormatContext } from '../AVFormatContext'
-import AVStream from 'avutil/AVStream'
+import type { AVIFormatContext } from '../AVFormatContext'
+import type AVStream from 'avutil/AVStream'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { getBytesByDuration } from './getBytesByDuration'
 import { createAVPacket, destroyAVPacket, unrefAVPacket } from 'avutil/util/avpacket'
 import * as errorType from 'avutil/error'
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
 import * as logger from 'common/util/logger'
 import { IOFlags } from 'avutil/avformat'
 import { IOError } from 'common/io/error'

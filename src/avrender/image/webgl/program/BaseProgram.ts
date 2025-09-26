@@ -24,8 +24,8 @@
  */
 
 import Program from './Program'
-import VertexShader from '../shader/VertexShader'
-import FragmentShader from '../shader/FragmentShader'
+import type VertexShader from '../shader/VertexShader'
+import type FragmentShader from '../shader/FragmentShader'
 export default class BaseProgram extends Program {
 
   protected enableColor: boolean

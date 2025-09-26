@@ -23,10 +23,12 @@
  *
  */
 
-import AVStream from 'avutil/AVStream'
-import { AVIFormatContext } from '../AVFormatContext'
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
-import { OggPage, OggsCommentPage, PagePayload } from './ogg/OggPage'
+import type AVStream from 'avutil/AVStream'
+import type { AVIFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
+import type { PagePayload } from './ogg/OggPage'
+import { OggPage, OggsCommentPage } from './ogg/OggPage'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import { OpusOggsIdPage, OpusOggsCommentPage } from './ogg/opus'

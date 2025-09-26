@@ -23,7 +23,7 @@
  *
  */
 
-import { Data } from 'common/types/type'
+import type { Data } from 'common/types/type'
 
 export interface Segment {
   idx: number

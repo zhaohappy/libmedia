@@ -23,7 +23,7 @@
  *
  */
 
-import { AlphaVideoFrame } from './struct/type'
+import type { AlphaVideoFrame } from './struct/type'
 
 export function isAlphaVideoFrame(frame: VideoFrame | AlphaVideoFrame): frame is AlphaVideoFrame {
   return (frame as AlphaVideoFrame).alpha && (frame as AlphaVideoFrame).alpha instanceof VideoFrame

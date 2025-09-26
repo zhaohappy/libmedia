@@ -26,7 +26,8 @@
 import { avFree, avFreep, avMalloc, avMallocz, avRealloc } from './mem'
 import * as atomics from 'cheap/thread/atomics'
 import { memcpy, memset } from 'cheap/std/memory'
-import { AVBuffer, AVBufferPool, AVBufferRef, AVBufferFlags, BufferPoolEntry } from '../struct/avbuffer'
+import type { AVBufferPool, BufferPoolEntry } from '../struct/avbuffer'
+import { AVBuffer, AVBufferRef, AVBufferFlags } from '../struct/avbuffer'
 import * as mutex from 'cheap/thread/mutex'
 import * as stack from 'cheap/stack'
 

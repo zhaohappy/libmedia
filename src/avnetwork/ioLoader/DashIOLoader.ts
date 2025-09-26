@@ -24,20 +24,23 @@
  */
 
 import Sleep from 'common/timer/Sleep'
-import IOLoader, { IOLoaderAudioStreamInfo, IOLoaderStatus,
+import type { IOLoaderAudioStreamInfo,
   IOLoaderSubtitleStreamInfo, IOLoaderVideoStreamInfo
+} from './IOLoader'
+import IOLoader, { IOLoaderStatus
 } from './IOLoader'
 import * as object from 'common/util/object'
 import { IOError } from 'common/io/error'
-import { Uint8ArrayInterface } from 'common/io/interface'
+import type { Uint8ArrayInterface } from 'common/io/interface'
 import * as logger from 'common/util/logger'
 
 import dashParser from 'avprotocol/dash/parser'
-import FetchIOLoader, { FetchInfo } from './FetchIOLoader'
-import { MPDMediaList, Segment } from 'avprotocol/dash/type'
+import type { FetchInfo } from './FetchIOLoader'
+import FetchIOLoader from './FetchIOLoader'
+import type { MPDMediaList, Segment } from 'avprotocol/dash/type'
 import getTimestamp from 'common/function/getTimestamp'
 import * as errorType from 'avutil/error'
-import { Data } from 'common/types/type'
+import type { Data } from 'common/types/type'
 import { AVMediaType } from 'avutil/codec'
 
 const FETCHED_HISTORY_LIST_MAX = 100

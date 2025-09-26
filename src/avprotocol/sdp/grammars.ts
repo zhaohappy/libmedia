@@ -2,7 +2,7 @@
  * from https://github.com/clux/sdp-transform
  */
 
-import { Data } from 'common/types/type'
+import type { Data } from 'common/types/type'
 import * as is from 'common/util/is'
 
 export type SdpGrammar = {

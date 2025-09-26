@@ -24,11 +24,12 @@
  */
 
 import IOWriter from 'common/io/IOWriterSync'
-import Stream from 'avutil/AVStream'
-import { AVOFormatContext } from '../AVFormatContext'
-import AVPacket from 'avutil/struct/avpacket'
+import type Stream from 'avutil/AVStream'
+import type { AVOFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
-import { OggPage, OggsCommentPage, PagePayload } from './ogg/OggPage'
+import type { PagePayload } from './ogg/OggPage'
+import { OggPage, OggsCommentPage } from './ogg/OggPage'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { AVFormat } from 'avutil/avformat'
 import * as logger from 'common/util/logger'

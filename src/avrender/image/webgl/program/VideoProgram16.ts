@@ -23,7 +23,7 @@
  *
  */
 
-import HdrMetadata from '../../struct/HdrMetadata'
+import type HdrMetadata from '../../struct/HdrMetadata'
 import VideoProgram from './VideoProgram'
 
 export default class VideoProgram16 extends VideoProgram {

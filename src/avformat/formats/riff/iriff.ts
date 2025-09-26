@@ -1,5 +1,5 @@
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import IOReader from 'common/io/IOReader'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
+import type IOReader from 'common/io/IOReader'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
@@ -9,8 +9,8 @@ import { avFree, avMalloc } from 'avutil/util/mem'
 import { mapSafeUint8Array, mapUint8Array } from 'cheap/std/memory'
 import * as intread from 'avutil/util/intread'
 import { AVChannelOrder } from 'avutil/audiosamplefmt'
-import { Data } from 'common/types/type'
-import AVStream from 'avutil/AVStream'
+import type { Data } from 'common/types/type'
+import type AVStream from 'avutil/AVStream'
 import { setChannelLayoutFromMask, unInitChannelLayout } from 'avutil/util/channel'
 
 export function getWavCodecId(tag: int32, bitsPerCodedSample: int32) {

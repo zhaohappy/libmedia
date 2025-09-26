@@ -23,9 +23,10 @@
  *
  */
 
-import AVFrame from 'avutil/struct/avframe'
+import type AVFrame from 'avutil/struct/avframe'
 import vertexSource from './webgpu/wgsl/vertex.wgsl'
-import WebGPURender, { WebGPURenderOptions } from './WebGPURender'
+import type { WebGPURenderOptions } from './WebGPURender'
+import WebGPURender from './WebGPURender'
 
 export default abstract class WebGPUDefaultRender extends WebGPURender {
 

@@ -23,15 +23,15 @@
  *
  */
 
-import IOReader from 'common/io/IOReader'
-import IOWriter from 'common/io/IOWriter'
+import type IOReader from 'common/io/IOReader'
+import type IOWriter from 'common/io/IOWriter'
 import { RtmpPacket } from './RtmpPacket'
 import * as crypto from 'avutil/util/crypto'
 import getTimestamp from 'common/function/getTimestamp'
 import BufferWriter from 'common/io/BufferWriter'
 import { APP_MAX_LENGTH, RtmpChannel, RtmpPacketType } from './rtmp'
 import * as amf from 'avutil/util/amf'
-import { Data } from 'common/types/type'
+import type { Data } from 'common/types/type'
 import { readRtmpPacket, sendRtmpPacket } from './util'
 import BufferReader from 'common/io/BufferReader'
 import * as logger from 'common/util/logger'

@@ -23,10 +23,12 @@
  *
  */
 
-import { createThreadFromClass, joinThread, Thread } from 'cheap/thread/thread'
+import type { Thread } from 'cheap/thread/thread'
+import { createThreadFromClass, joinThread } from 'cheap/thread/thread'
 import AudioPipeline from './AudioPipeline'
-import Stats from 'avpipeline/struct/stats'
-import IPCPort, { NOTIFY, RpcMessage } from 'common/network/IPCPort'
+import type Stats from 'avpipeline/struct/stats'
+import type { RpcMessage } from 'common/network/IPCPort'
+import IPCPort, { NOTIFY } from 'common/network/IPCPort'
 import * as object from 'common/util/object'
 
 export default class AudioPipelineProxy {

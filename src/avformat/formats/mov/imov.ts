@@ -23,12 +23,13 @@
  *
  */
 
-import AVStream, { AVStreamMetadataKey } from 'avutil/AVStream'
-import { Atom, FragmentTrack, MOVContext, MOVStreamContext, Sample } from './type'
-import IOReader from 'common/io/IOReader'
+import type AVStream from 'avutil/AVStream'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
+import type { Atom, FragmentTrack, MOVContext, MOVStreamContext, Sample } from './type'
+import type IOReader from 'common/io/IOReader'
 import mktag from '../../function/mktag'
 import { BoxType, ContainerBoxs } from './boxType'
-import { AVIFormatContext } from '../../AVFormatContext'
+import type { AVIFormatContext } from '../../AVFormatContext'
 import parsers from './parsing/parsers'
 import * as logger from 'common/util/logger'
 import { buildFragmentIndex } from './function/buildFragmentIndex'

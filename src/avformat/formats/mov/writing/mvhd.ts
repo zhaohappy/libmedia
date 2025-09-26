@@ -23,9 +23,9 @@
  *
  */
 
-import Stream from 'avutil/AVStream'
-import { MOVContext } from '../type'
-import IOWriter from 'common/io/IOWriterSync'
+import type Stream from 'avutil/AVStream'
+import type { MOVContext } from '../type'
+import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
 import { UINT32_MAX } from 'avutil/constant'
 import writeMatrix from './function/writeMatrix'

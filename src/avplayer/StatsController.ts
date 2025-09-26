@@ -23,7 +23,7 @@
  *
  */
 
-import Stats from 'avpipeline/struct/stats'
+import type Stats from 'avpipeline/struct/stats'
 import Timer from 'common/timer/Timer'
 import * as bigint from 'common/util/bigint'
 

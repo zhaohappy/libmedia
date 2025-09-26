@@ -24,8 +24,8 @@
  */
 
 
-import VertexShader from '../shader/VertexShader'
-import FragmentShader from '../shader/FragmentShader'
+import type VertexShader from '../shader/VertexShader'
+import type FragmentShader from '../shader/FragmentShader'
 import * as logger from 'common/util/logger'
 
 export default class Program {

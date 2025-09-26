@@ -25,7 +25,7 @@
 
 import { NOPTS_VALUE } from 'avutil/constant'
 import { PAT, PMT } from '../struct'
-import { MpegtsContext } from '../type'
+import type { MpegtsContext } from '../type'
 
 export default function createMpegtsContext(): MpegtsContext {
 

@@ -23,8 +23,8 @@
  *
  */
 
-import Stream from 'avutil/AVStream'
-import { MOVContext, MOVStreamContext, Sample } from '../type'
+import type Stream from 'avutil/AVStream'
+import type { MOVContext, MOVStreamContext, Sample } from '../type'
 import { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'

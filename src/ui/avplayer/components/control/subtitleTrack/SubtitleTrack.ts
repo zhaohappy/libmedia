@@ -1,12 +1,13 @@
-import { ComponentOptions } from 'yox'
-import AVPlayer, { AVPlayerStatus } from 'avplayer/AVPlayer'
+import type { ComponentOptions } from 'yox'
+import type AVPlayer from 'avplayer/AVPlayer'
+import { AVPlayerStatus } from 'avplayer/AVPlayer'
 import * as eventType from 'avplayer/eventType'
 
 import template from './SubtitleTrack.hbs'
 import style from './SubtitleTrack.styl'
-import { AVStreamInterface } from 'avutil/AVStream'
+import type { AVStreamInterface } from 'avutil/AVStream'
 import { AVMediaType } from 'avutil/codec'
-import { IOLoaderSubtitleStreamInfo } from 'avnetwork/ioLoader/IOLoader'
+import type { IOLoaderSubtitleStreamInfo } from 'avnetwork/ioLoader/IOLoader'
 import { subtitleExt } from '../../folder/Node'
 
 const SubtitleTrack: ComponentOptions = {

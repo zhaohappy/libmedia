@@ -23,10 +23,10 @@
  *
  */
 
-import IOReader from 'common/io/IOReader'
+import type IOReader from 'common/io/IOReader'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import Stream from 'avutil/AVStream'
-import { Atom, MOVContext } from '../type'
+import type Stream from 'avutil/AVStream'
+import type { Atom, MOVContext } from '../type'
 import { avFree, avMalloc } from 'avutil/util/mem'
 import { mapSafeUint8Array } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'

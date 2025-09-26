@@ -23,8 +23,8 @@
  *
  */
 
-import IOReader from 'common/io/IOReader'
-import IOWriter from 'common/io/IOWriterSync'
+import type IOReader from 'common/io/IOReader'
+import type IOWriter from 'common/io/IOWriterSync'
 
 export default class FlvHeader {
   /**

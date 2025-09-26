@@ -24,7 +24,8 @@
  */
 
 import * as array from 'common/util/array'
-import AVPacket, { AVPacketFlags } from '../struct/avpacket'
+import type AVPacket from '../struct/avpacket'
+import { AVPacketFlags } from '../struct/avpacket'
 import BufferWriter from 'common/io/BufferWriter'
 import BufferReader from 'common/io/BufferReader'
 import { AVPacketSideDataType } from '../codec'
@@ -34,12 +35,12 @@ import { mapUint8Array } from 'cheap/std/memory'
 import * as naluUtil from '../util/nalu'
 import { avMalloc } from '../util/mem'
 import * as expgolomb from '../util/expgolomb'
-import { Uint8ArrayInterface } from 'common/io/interface'
+import type { Uint8ArrayInterface } from 'common/io/interface'
 import * as intread from '../util/intread'
 import * as intwrite from '../util/intwrite'
 import { AVPixelFormat } from '../pixfmt'
-import AVCodecParameters from '../struct/avcodecparameters'
-import { Data } from 'common/types/type'
+import type AVCodecParameters from '../struct/avcodecparameters'
+import type { Data } from 'common/types/type'
 
 export const H264_MAX_DPB_FRAMES = 16
 

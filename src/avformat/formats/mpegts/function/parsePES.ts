@@ -23,7 +23,7 @@
  *
  */
 
-import { PES } from '../struct'
+import type { PES } from '../struct'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as logger from 'common/util/logger'
 import { TSStreamId, TSStreamType } from '../mpegts'

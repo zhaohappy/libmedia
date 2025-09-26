@@ -25,9 +25,9 @@
 
 import { AVPacketSideDataType } from 'avutil/codec'
 import getAudioCodec from 'avutil/function/getAudioCodec'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { mapUint8Array } from 'cheap/std/memory'
-import AVPacket from 'avutil/struct/avpacket'
+import type AVPacket from 'avutil/struct/avpacket'
 import { getAVPacketSideData } from 'avutil/util/avpacket'
 import avpacket2EncodedAudioChunk from 'avutil/function/avpacket2EncodedAudioChunk'
 import * as logger from 'common/util/logger'

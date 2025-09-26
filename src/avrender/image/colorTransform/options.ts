@@ -23,7 +23,7 @@
  *
  */
 
-import HdrMetadata from '../struct/HdrMetadata'
+import type HdrMetadata from '../struct/HdrMetadata'
 
 export const enum GLType {
   kWebGL,

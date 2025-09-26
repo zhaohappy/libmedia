@@ -5,13 +5,14 @@
  */
 
 import * as utils from './utils'
+import type {
+  Byterange} from './types'
 import {
   Rendition,
   Variant,
   SessionData,
   Key,
   MediaInitializationSection,
-  Byterange,
   DateRange,
   SpliceInfo,
   MasterPlaylist,
@@ -21,7 +22,7 @@ import {
   PrefetchSegment,
   RenditionReport
 } from './types'
-import { Data } from 'common/types/type'
+import type { Data } from 'common/types/type'
 
 import * as logger from 'common/util/logger'
 

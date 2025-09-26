@@ -23,10 +23,10 @@
  *
  */
 
-import { AVSampleFormat } from 'avutil/audiosamplefmt'
-import { AVChannelLayout } from 'avutil/struct/audiosample'
-import AVPCMBuffer from 'avutil/struct/avpcmbuffer'
-import { WebAssemblyResource } from 'cheap/webassembly/compiler'
+import type { AVSampleFormat } from 'avutil/audiosamplefmt'
+import type { AVChannelLayout } from 'avutil/struct/audiosample'
+import type AVPCMBuffer from 'avutil/struct/avpcmbuffer'
+import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'

@@ -24,8 +24,9 @@
  */
 
 import BufferReader from 'common/io/BufferReader'
-import { PAT, TSSliceQueue } from '../struct'
-import { MpegtsContext } from '../type'
+import type { TSSliceQueue } from '../struct'
+import { PAT } from '../struct'
+import type { MpegtsContext } from '../type'
 import concatTypeArray from 'common/function/concatTypeArray'
 import * as logger from 'common/util/logger'
 

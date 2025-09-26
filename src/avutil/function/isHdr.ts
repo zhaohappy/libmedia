@@ -25,8 +25,9 @@
 
 import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
 import { AVMediaType } from '../codec'
-import AVCodecParameters from '../struct/avcodecparameters'
-import { AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
+import type AVCodecParameters from '../struct/avcodecparameters'
+import type { AVPixelFormat } from '../pixfmt'
+import { AVColorTransferCharacteristic } from '../pixfmt'
 
 export default function isHdr(parameters: pointer<AVCodecParameters>) {
   if (parameters.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO) {

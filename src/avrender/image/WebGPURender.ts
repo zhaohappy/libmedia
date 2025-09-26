@@ -24,7 +24,8 @@
  */
 
 import * as logger from 'common/util/logger'
-import ImageRender, { ImageRenderOptions } from './ImageRender'
+import type { ImageRenderOptions } from './ImageRender'
+import ImageRender from './ImageRender'
 import { RenderMode } from './ImageRender'
 import * as array from 'common/util/array'
 import flipVertex from './function/flipVertex'

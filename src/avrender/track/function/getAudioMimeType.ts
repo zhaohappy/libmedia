@@ -25,7 +25,7 @@
 
 import getAudioCodec from 'avutil/function/getAudioCodec'
 import { AVCodecID } from 'avutil/codec'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
 import browser from 'common/util/browser'
 
 export default function getAudioMimeType(codecpar: pointer<AVCodecParameters>) {

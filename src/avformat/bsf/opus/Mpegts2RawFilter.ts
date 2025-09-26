@@ -23,10 +23,11 @@
  *
  */
 
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { Rational } from 'avutil/struct/rational'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
+import type { Rational } from 'avutil/struct/rational'
 import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'
 import * as opus from 'avutil/codecs/opus'

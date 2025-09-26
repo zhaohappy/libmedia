@@ -23,7 +23,7 @@
  *
  */
 
-import AVCodecParameters from '../struct/avcodecparameters'
+import type AVCodecParameters from '../struct/avcodecparameters'
 import { memcpy, memset } from 'cheap/std/memory'
 import { avFree, avFreep, avMalloc, avMallocz } from './mem'
 import { unInitChannelLayout } from './channel'

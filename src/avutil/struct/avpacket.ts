@@ -25,7 +25,7 @@
 
 import { AVPacketSideDataType } from '../codec'
 import { AV_TIME_BASE, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from '../constant'
-import { AVBufferRef } from './avbuffer'
+import type { AVBufferRef } from './avbuffer'
 import { Rational } from './rational'
 
 export const enum AVPacketType {

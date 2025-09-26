@@ -1,6 +1,7 @@
 
-import AVPlayer, { AVPlayerOptions, AVPlayerStatus, AVPlayerSupportedCodecs } from 'avplayer/AVPlayer'
-import { Component, ComponentOptions } from 'yox'
+import type { AVPlayerOptions} from 'avplayer/AVPlayer'
+import AVPlayer, { AVPlayerStatus, AVPlayerSupportedCodecs } from 'avplayer/AVPlayer'
+import type { Component, ComponentOptions } from 'yox'
 import Yox from 'yox/dist/standard/runtime/yox'
 import * as object from 'common/util/object'
 import * as eventType from 'avplayer/eventType'
@@ -33,7 +34,7 @@ import style from './AVPlayer.styl'
 import getLanguage from './i18n/getLanguage'
 import debounce from 'common/function/debounce'
 import { AVMediaType } from 'avutil/codec'
-import { AVStreamInterface } from 'avutil/AVStream'
+import type { AVStreamInterface } from 'avutil/AVStream'
 import Keyboard from './Keyboard'
 import * as eventTypeUI from './eventType'
 

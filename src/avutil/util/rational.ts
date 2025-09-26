@@ -24,7 +24,7 @@
  */
 
 import { INT32_MAX } from '../constant'
-import { Rational } from '../struct/rational'
+import type { Rational } from '../struct/rational'
 import gcd from 'common/math/gcd'
 
 /**

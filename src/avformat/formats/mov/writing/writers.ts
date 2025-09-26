@@ -24,9 +24,9 @@
  */
 
 import { BoxType } from '../boxType'
-import IOWriter from 'common/io/IOWriterSync'
-import Stream from 'avutil/AVStream'
-import { MOVContext } from '../type'
+import type IOWriter from 'common/io/IOWriterSync'
+import type Stream from 'avutil/AVStream'
+import type { MOVContext } from '../type'
 
 import stts from './stts'
 import ctts from './ctts'

@@ -23,11 +23,11 @@
  *
  */
 
-import { Data } from 'common/types/type'
+import type { Data } from 'common/types/type'
 import AVCodecParameters from './struct/avcodecparameters'
-import { AVPacketSideDataType } from './codec'
+import type { AVPacketSideDataType } from './codec'
 import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from './constant'
-import { Rational } from './struct/rational'
+import type { Rational } from './struct/rational'
 
 export const enum AVStreamMetadataKey {
   /**

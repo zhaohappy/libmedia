@@ -24,8 +24,9 @@
  */
 
 import { AVColorTransferCharacteristic } from 'avutil/pixfmt'
-import ColorSpace from '../colorSpace/ColorSpace'
-import { ColorTransformOptions, DefaultSDRWhiteLevel, GLType, HLGRefMaxLumNits } from './options'
+import type ColorSpace from '../colorSpace/ColorSpace'
+import type { ColorTransformOptions} from './options'
+import { DefaultSDRWhiteLevel, GLType, HLGRefMaxLumNits } from './options'
 
 function computeSrcMaxLumRelative(src: ColorSpace, options: ColorTransformOptions) {
   let srcMaxLumNits = HLGRefMaxLumNits

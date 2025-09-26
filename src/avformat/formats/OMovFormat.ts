@@ -24,10 +24,11 @@
  */
 
 import OFormat from './OFormat'
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVOFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
+import type { AVOFormatContext } from '../AVFormatContext'
 
-import { MOVContext, MOVStreamContext } from './mov/type'
+import type { MOVContext, MOVStreamContext } from './mov/type'
 import createMovContext from './mov/function/createMovContext'
 import mktag from '../function/mktag'
 import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
@@ -46,7 +47,9 @@ import * as object from 'common/util/object'
 import rewriteIO from '../function/rewriteIO'
 
 import arrayItemSame from '../function/arrayItemSame'
-import AVStream, { AVDisposition, AVStreamMetadataEncryption, AVStreamMetadataKey } from 'avutil/AVStream'
+import type { AVStreamMetadataEncryption} from 'avutil/AVStream'
+import type AVStream from 'avutil/AVStream'
+import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import { AVFormat } from 'avutil/avformat'
 import { avQ2D, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { createAVPacket, destroyAVPacket, getAVPacketData, getSideData } from 'avutil/util/avpacket'

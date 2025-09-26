@@ -23,8 +23,8 @@
  *
  */
 
-import { Uint8ArrayInterface } from 'common/io/interface'
-import { Data, Timeout, Range } from 'common/types/type'
+import type { Uint8ArrayInterface } from 'common/io/interface'
+import type { Data, Timeout, Range } from 'common/types/type'
 import * as object from 'common/util/object'
 
 export const enum IOLoaderStatus {

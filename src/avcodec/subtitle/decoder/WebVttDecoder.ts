@@ -23,13 +23,14 @@
  *
  */
 
-import AVPacket from 'avutil/struct/avpacket'
+import type AVPacket from 'avutil/struct/avpacket'
 import Decoder from './Decoder'
 import * as text from 'common/util/text'
 import { getAVPacketData } from 'avutil/util/avpacket'
-import { Rational } from 'avutil/struct/rational'
+import type { Rational } from 'avutil/struct/rational'
 import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
-import { AVSubtitle, AVSubtitleType } from 'avutil/struct/avsubtitle'
+import type { AVSubtitle} from 'avutil/struct/avsubtitle'
+import { AVSubtitleType } from 'avutil/struct/avsubtitle'
 import { AV_MILLI_TIME_BASE } from 'avutil/constant'
 
 export default class WebVttDecoder extends Decoder {

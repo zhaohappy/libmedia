@@ -1,12 +1,12 @@
 
 import { AVPlayerStatus } from 'avplayer/AVPlayer'
 import * as keyboard from 'common/util/keyboard'
-import AVPlayerUI from './AVPlayer'
+import type AVPlayerUI from './AVPlayer'
 import * as object from 'common/util/object'
 import * as array from 'common/util/array'
 import CommandQueue from 'common/helper/CommandQueue'
 import * as bigint from 'common/util/bigint'
-import { Timeout } from 'common/types/type'
+import type { Timeout } from 'common/types/type'
 import * as is from 'common/util/is'
 
 export const enum KeyboardPlayerActionKey {

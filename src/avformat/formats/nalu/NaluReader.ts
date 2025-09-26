@@ -23,7 +23,7 @@
  *
  */
 
-import IOReader from 'common/io/IOReader'
+import type IOReader from 'common/io/IOReader'
 import * as nalu from 'avutil/util/nalu'
 import concatTypeArray from 'common/function/concatTypeArray'
 

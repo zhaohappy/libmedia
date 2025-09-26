@@ -23,9 +23,10 @@
  *
  */
 
-import AVStream from 'avutil/AVStream'
-import { AVIFormatContext } from '../AVFormatContext'
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
+import type AVStream from 'avutil/AVStream'
+import type { AVIFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
@@ -40,7 +41,8 @@ import { AV_TIME_BASE_Q, INT32_MAX, INT64_MAX, NOPTS_VALUE, NOPTS_VALUE_BIGINT }
 import concatTypeArray from 'common/function/concatTypeArray'
 import * as is from 'common/util/is'
 import mktagle from '../function/mktagle'
-import { AVFIndexFlags, AVIFlags, AVIMainHeader, AVISample, AVIStreamContext } from './avi/type'
+import type { AVIMainHeader, AVISample, AVIStreamContext } from './avi/type'
+import { AVFIndexFlags, AVIFlags } from './avi/type'
 import { avReduce, avRescaleQ } from 'avutil/util/rational'
 import * as intread from 'avutil/util/intread'
 import { codecBmpTags } from './riff/riff'

@@ -24,8 +24,9 @@
  */
 
 import BufferReader from 'common/io/BufferReader'
-import { Uint8ArrayInterface } from 'common/io/interface'
-import { RTCPCommonHeader, RTCPSendReport, Report } from './RTCPPacket'
+import type { Uint8ArrayInterface } from 'common/io/interface'
+import type { RTCPCommonHeader} from './RTCPPacket'
+import { RTCPSendReport, Report } from './RTCPPacket'
 
 export function parseHeader(packet: RTCPCommonHeader, reader: BufferReader) {
   let byte = reader.readUint8()

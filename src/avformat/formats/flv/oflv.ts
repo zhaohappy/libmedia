@@ -25,15 +25,16 @@
 
 import { AVCodecID } from 'avutil/codec'
 import { AVPacketFlags } from 'avutil/struct/avpacket'
-import IOWriterSync from 'common/io/IOWriterSync'
-import { AudioPacketModExType, AudioPacketType, AVCodecID2FlvCodecTag, AVCodecID2FlvCodecType, AVMultiTrackType, FlvTag, VideoFrameType, VideoPacketModExType, VideoPacketType } from './flv'
-import { FlvContext, FlvStreamContext } from './type'
-import { Rational } from 'avutil/struct/rational'
+import type IOWriterSync from 'common/io/IOWriterSync'
+import type { FlvTag} from './flv'
+import { AudioPacketModExType, AudioPacketType, AVCodecID2FlvCodecTag, AVCodecID2FlvCodecType, AVMultiTrackType, VideoFrameType, VideoPacketModExType, VideoPacketType } from './flv'
+import type { FlvContext, FlvStreamContext } from './type'
+import type { Rational } from 'avutil/struct/rational'
 import { avRescaleQ2 } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, AV_NANO_TIME_BASE_Q } from 'avutil/constant'
 import mktag from '../../function/mktag'
 import * as is from 'common/util/is'
-import AVStream from 'avutil/AVStream'
+import type AVStream from 'avutil/AVStream'
 
 export function updateSize(ioWriter: IOWriterSync, pos: int64, size: int32) {
   const now = ioWriter.getPos()

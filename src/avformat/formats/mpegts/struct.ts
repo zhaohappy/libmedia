@@ -25,7 +25,7 @@
 
 import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { TSStreamType } from './mpegts'
-import { PID } from './type'
+import type { PID } from './type'
 
 export class TSPacketAdaptationFieldInfo {
   discontinuityIndicator: number = 0

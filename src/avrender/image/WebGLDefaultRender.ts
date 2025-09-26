@@ -24,8 +24,9 @@
  */
 
 import VideoTexture from './webgl/texture/VideoTexture'
-import WebGLRender, { WebGLRenderOptions } from './WebGLRender'
-import VideoProgram from './webgl/program/VideoProgram'
+import type { WebGLRenderOptions } from './WebGLRender'
+import WebGLRender from './WebGLRender'
+import type VideoProgram from './webgl/program/VideoProgram'
 
 export default abstract class WebGLDefaultRender extends WebGLRender {
 

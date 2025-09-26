@@ -23,10 +23,10 @@
  *
  */
 
-import IOWriter from 'common/io/IOWriter'
+import type IOWriter from 'common/io/IOWriter'
 import { RtmpPacket } from './RtmpPacket'
 import { RtmpPacketHeaderSize } from './rtmp'
-import IOReader from 'common/io/IOReader'
+import type IOReader from 'common/io/IOReader'
 import concatTypeArray from 'common/function/concatTypeArray'
 import * as logger from 'common/util/logger'
 

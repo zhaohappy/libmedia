@@ -23,8 +23,8 @@
  *
  */
 
-import AVStream from 'avutil/AVStream'
-import { TrackEntry } from '../type'
+import type AVStream from 'avutil/AVStream'
+import type { TrackEntry } from '../type'
 
 export default function findStreamByTrackNumber(streams: AVStream[], number: uint32) {
   for (let i = 0; i < streams.length; i++) {

@@ -24,7 +24,7 @@
 
 import { createAVFrame, getAudioBuffer } from '../util/avframe'
 import { AVSampleFormat } from '../audiosamplefmt'
-import AVFrame from '../struct/avframe'
+import type AVFrame from '../struct/avframe'
 import { sampleFormatIsPlanar } from '../util/sample'
 import { mapUint8Array } from 'cheap/std/memory'
 import { AV_TIME_BASE, NOPTS_VALUE_BIGINT } from '../constant'

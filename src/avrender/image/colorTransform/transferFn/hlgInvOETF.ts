@@ -23,7 +23,8 @@
  *
  */
 
-import { ColorTransformOptions, GLType } from '../options'
+import type { ColorTransformOptions} from '../options'
+import { GLType } from '../options'
 import colorTransformPerChannelTransferFn from './colorTransformPerChannelTransferFn'
 
 export default function hlgInvOETF(options: ColorTransformOptions) {

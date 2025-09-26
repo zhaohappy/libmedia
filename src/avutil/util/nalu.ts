@@ -26,7 +26,7 @@
 import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
 import BufferReader from 'common/io/BufferReader'
 import BufferWriter from 'common/io/BufferWriter'
-import { Uint8ArrayInterface } from 'common/io/interface'
+import type { Uint8ArrayInterface } from 'common/io/interface'
 import * as array from 'common/util/array'
 
 export function isAnnexb(data: Uint8ArrayInterface) {

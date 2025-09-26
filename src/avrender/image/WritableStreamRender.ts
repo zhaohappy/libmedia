@@ -26,7 +26,7 @@
 import isPointer from 'cheap/std/function/isPointer'
 import { RenderMode } from './ImageRender'
 import ImageRender from './ImageRender'
-import AVFrame from 'avutil/struct/avframe'
+import type AVFrame from 'avutil/struct/avframe'
 import getTimestamp from 'common/function/getTimestamp'
 import { avframe2VideoFrame } from 'avutil/function/avframe2VideoFrame'
 

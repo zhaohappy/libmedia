@@ -1,5 +1,6 @@
-import AVFilterNode, { AVFilterNodePort } from './AVFilterNode'
-import AVInputNode from './AVInputNode'
+import type AVFilterNode from './AVFilterNode'
+import { AVFilterNodePort } from './AVFilterNode'
+import type AVInputNode from './AVInputNode'
 
 export default class AVOutputNode {
 

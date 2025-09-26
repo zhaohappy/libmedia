@@ -24,7 +24,7 @@
  */
 
 import { avFree } from '../util/mem'
-import { Mutex } from 'cheap/thread/mutex'
+import type { Mutex } from 'cheap/thread/mutex'
 
 export const enum AVBufferFlags {
   NONE = 0,

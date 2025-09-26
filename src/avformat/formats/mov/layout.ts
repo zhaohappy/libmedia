@@ -25,8 +25,8 @@
 
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { BoxType } from './boxType'
-import { FragmentTrack, MOVContext, MOVStreamContext } from './type'
-import AVStream from 'avutil/AVStream'
+import type { FragmentTrack, MOVContext, MOVStreamContext } from './type'
+import type AVStream from 'avutil/AVStream'
 import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 
 export interface BoxLayout {

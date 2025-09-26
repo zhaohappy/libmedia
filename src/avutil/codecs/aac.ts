@@ -26,9 +26,9 @@
 import { AVSampleFormat } from '../audiosamplefmt'
 import { AVPacketSideDataType } from '../codec'
 import { NOPTS_VALUE } from '../constant'
-import AVCodecParameters from '../struct/avcodecparameters'
+import type AVCodecParameters from '../struct/avcodecparameters'
 import BitReader from 'common/io/BitReader'
-import { Uint8ArrayInterface } from 'common/io/interface'
+import type { Uint8ArrayInterface } from 'common/io/interface'
 
 export const enum MPEG4AudioObjectTypes {
   NULL = 0,

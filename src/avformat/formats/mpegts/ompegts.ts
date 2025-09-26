@@ -23,12 +23,12 @@
  *
  */
 
-import IOWriter from 'common/io/IOWriterSync'
-import { PAT, PES, PMT, SectionPacket, TSPacket } from './struct'
-import { MpegtsContext, MpegtsStreamContext } from './type'
+import type IOWriter from 'common/io/IOWriterSync'
+import type { PAT, PES, PMT, SectionPacket, TSPacket } from './struct'
+import type { MpegtsContext, MpegtsStreamContext } from './type'
 import * as mpegts from './mpegts'
 import * as logger from 'common/util/logger'
-import Stream from 'avutil/AVStream'
+import type Stream from 'avutil/AVStream'
 import mktag from '../../function/mktag'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import concatTypeArray from 'common/function/concatTypeArray'

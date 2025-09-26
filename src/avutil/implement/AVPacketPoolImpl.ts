@@ -23,12 +23,13 @@
  *
  */
 
-import List from 'cheap/std/collection/List'
-import { Mutex } from 'cheap/thread/mutex'
+import type List from 'cheap/std/collection/List'
+import type { Mutex } from 'cheap/thread/mutex'
 import * as atomics from 'cheap/thread/atomics'
 import * as mutex from 'cheap/thread/mutex'
 import { avMallocz } from '../util/mem'
-import { AVPacketPool, AVPacketRef } from '../struct/avpacket'
+import type { AVPacketPool} from '../struct/avpacket'
+import { AVPacketRef } from '../struct/avpacket'
 import { getAVPacketDefault, unrefAVPacket } from '../util/avpacket'
 
 export default class AVPacketPoolImpl implements AVPacketPool {

@@ -23,7 +23,8 @@
  *
  */
 
-import IPCPort, { REQUEST, RpcMessage } from 'common/network/IPCPort'
+import type { RpcMessage } from 'common/network/IPCPort'
+import IPCPort, { REQUEST } from 'common/network/IPCPort'
 import AudioWorkletProcessorBase from './audioWorklet/base/AudioWorkletProcessorBase'
 import * as is from 'common/util/is'
 import * as logger from 'common/util/logger'

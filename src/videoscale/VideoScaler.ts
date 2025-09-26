@@ -23,9 +23,10 @@
  *
  */
 
-import { AVColorRange, AVColorSpace, AVPixelFormat } from 'avutil/pixfmt'
-import AVFrame from 'avutil/struct/avframe'
-import { WebAssemblyResource } from 'cheap/webassembly/compiler'
+import type { AVPixelFormat } from 'avutil/pixfmt'
+import { AVColorRange, AVColorSpace } from 'avutil/pixfmt'
+import type AVFrame from 'avutil/struct/avframe'
+import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'

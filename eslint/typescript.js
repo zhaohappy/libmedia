@@ -137,7 +137,8 @@ const eslintConfig = {
 			'anonymous': 'always',
 			'named': 'never',
 			'asyncArrow': 'always'
-		}]
+		}],
+        "@typescript-eslint/consistent-type-imports": ["error", { "prefer": "type-imports" }]
 	}
 }
 

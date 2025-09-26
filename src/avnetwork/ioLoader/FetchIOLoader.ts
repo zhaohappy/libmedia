@@ -24,13 +24,15 @@
  */
 
 import Sleep from 'common/timer/Sleep'
-import IOLoader, { IOLoaderOptions, IOLoaderStatus } from './IOLoader'
+import type { IOLoaderOptions} from './IOLoader'
+import IOLoader, { IOLoaderStatus } from './IOLoader'
 import * as object from 'common/util/object'
 import { IOError } from 'common/io/error'
-import { Uint8ArrayInterface } from 'common/io/interface'
+import type { Uint8ArrayInterface } from 'common/io/interface'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
-import { Data, HttpOptions, Range } from 'common/types/type'
+import type { Data, HttpOptions, Range } from 'common/types/type'
+import getTimestamp from 'common/function/getTimestamp'
 
 export interface FetchInfo {
   url: string

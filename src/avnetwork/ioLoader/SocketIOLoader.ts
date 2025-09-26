@@ -23,10 +23,11 @@
  *
  */
 
-import { Uint8ArrayInterface } from 'common/io/interface'
-import IOLoader, { IOLoaderOptions, IOLoaderStatus } from './IOLoader'
+import type { Uint8ArrayInterface } from 'common/io/interface'
+import type { IOLoaderOptions} from './IOLoader'
+import IOLoader, { IOLoaderStatus } from './IOLoader'
 import { IOError } from 'common/io/error'
-import { Data } from 'common/types/type'
+import type { Data } from 'common/types/type'
 
 export default abstract class SocketIOLoader extends IOLoader {
   protected readQueue: Uint8Array[]

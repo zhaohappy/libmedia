@@ -23,7 +23,7 @@
  *
  */
 
-import { AVChannelCustom, AVChannelLayout } from '../struct/audiosample'
+import type { AVChannelCustom, AVChannelLayout } from '../struct/audiosample'
 import { popCount64 } from './common'
 import { AVChannel, AVChannelOrder } from '../audiosamplefmt'
 import { avFreep, avMallocz } from './mem'

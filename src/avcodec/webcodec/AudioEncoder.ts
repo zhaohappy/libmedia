@@ -23,14 +23,16 @@
  *
  */
 
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import AVPacket, { AVPacketPool } from 'avutil/struct/avpacket'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
+import type { AVPacketPool } from 'avutil/struct/avpacket'
+import type AVPacket from 'avutil/struct/avpacket'
 import getAudioCodec from 'avutil/function/getAudioCodec'
-import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
+import type { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
+import type AVFrame from 'avutil/struct/avframe'
 import { avframe2AudioData } from 'avutil/function/avframe2AudioData'
 import { createAVPacket } from 'avutil/util/avpacket'
 import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
-import { Rational } from 'avutil/struct/rational'
+import type { Rational } from 'avutil/struct/rational'
 import encodedAudioChunk2AVPacket from 'avutil/function/encodedAudioChunk2AVPacket'
 import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'

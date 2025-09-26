@@ -23,7 +23,7 @@
  *
  */
 
-import { FrameHeader } from './frameHeader'
+import type { FrameHeader } from './frameHeader'
 
 export interface Mp3MetaData {
   title?: string

@@ -23,9 +23,9 @@
  *
  */
 
-import Stream from 'avutil/AVStream'
-import { MOVContext } from '../type'
-import IOWriter from 'common/io/IOWriterSync'
+import type Stream from 'avutil/AVStream'
+import type { MOVContext } from '../type'
+import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
 
 export default function write(ioWriter: IOWriter, stream: Stream, movContext: MOVContext) {

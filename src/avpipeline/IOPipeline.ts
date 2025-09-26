@@ -23,13 +23,16 @@
  *
  */
 
-import { Data, Range } from 'common/types/type'
-import Pipeline, { TaskOptions } from './Pipeline'
+import type { Data, Range } from 'common/types/type'
+import type { TaskOptions } from './Pipeline'
+import Pipeline from './Pipeline'
 import FetchIOLoader from 'avnetwork/ioLoader/FetchIOLoader'
-import IOLoader, { IOLoaderOptions } from 'avnetwork/ioLoader/IOLoader'
+import type { IOLoaderOptions } from 'avnetwork/ioLoader/IOLoader'
+import type IOLoader from 'avnetwork/ioLoader/IOLoader'
 import * as errorType from 'avutil/error'
 import IPCPort from 'common/network/IPCPort'
-import { REQUEST, RpcMessage } from 'common/network/IPCPort'
+import type { RpcMessage } from 'common/network/IPCPort'
+import { REQUEST } from 'common/network/IPCPort'
 import { mapSafeUint8Array } from 'cheap/std/memory'
 import FileIOLoader from 'avnetwork/ioLoader/FileIOLoader'
 import * as logger from 'common/util/logger'
@@ -38,7 +41,7 @@ import type HlsIOLoader from 'avnetwork/ioLoader/HlsIOLoader'
 import WebSocketIOLoader from 'avnetwork/ioLoader/WebSocketIOLoader'
 import WebTransportIOLoader from 'avnetwork/ioLoader/WebTransportIOLoader'
 import { IOType } from 'avutil/avformat'
-import { AVMediaType } from 'avutil/codec'
+import type { AVMediaType } from 'avutil/codec'
 
 export interface IOTaskOptions extends TaskOptions {
   type: IOType

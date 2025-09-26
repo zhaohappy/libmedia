@@ -24,8 +24,8 @@
  */
 
 import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
-import { PAT, PES, PMT, TSPacket, TSSliceQueue } from './struct'
-import AVBSFilter from '../../bsf/AVBSFilter'
+import type { PAT, PES, PMT, TSPacket, TSSliceQueue } from './struct'
+import type AVBSFilter from '../../bsf/AVBSFilter'
 import List from 'cheap/std/collection/List'
 import { AVPacketRef } from 'avutil/struct/avpacket'
 

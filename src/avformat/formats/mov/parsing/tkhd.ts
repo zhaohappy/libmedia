@@ -23,9 +23,10 @@
  *
  */
 
-import IOReader from 'common/io/IOReader'
-import Stream, { AVDisposition } from 'avutil/AVStream'
-import { Atom, MOVContext, MOVStreamContext } from '../type'
+import type IOReader from 'common/io/IOReader'
+import type Stream from 'avutil/AVStream'
+import { AVDisposition } from 'avutil/AVStream'
+import type { Atom, MOVContext, MOVStreamContext } from '../type'
 import * as logger from 'common/util/logger'
 import { TKHDFlags } from '../boxType'
 import { AVStreamMetadataKey } from 'avutil/AVStream'

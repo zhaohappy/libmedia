@@ -23,7 +23,7 @@
  *
  */
 
-import Stats from './struct/stats'
+import type Stats from './struct/stats'
 import * as logger from 'common/util/logger'
 
 export interface TaskOptions {

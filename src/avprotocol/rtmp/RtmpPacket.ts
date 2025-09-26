@@ -23,7 +23,7 @@
  *
  */
 
-import { RtmpPacketType } from './rtmp'
+import type { RtmpPacketType } from './rtmp'
 
 export class RtmpPacket {
   /**

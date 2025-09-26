@@ -23,13 +23,13 @@
  *
  */
 
-import { AVOFormatContext } from '../AVFormatContext'
-import AVPacket from 'avutil/struct/avpacket'
+import type { AVOFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
 import { AVCodecID } from 'avutil/codec'
 import { AVFormat } from 'avutil/avformat'
 import * as logger from 'common/util/logger'
-import { Mp3FormatOptions, Mp3MetaData } from './mp3/type'
+import type { Mp3FormatOptions, Mp3MetaData } from './mp3/type'
 import * as errorType from 'avutil/error'
 import * as mp3 from 'avutil/codecs/mp3'
 import { INT32_MAX } from 'avutil/constant'

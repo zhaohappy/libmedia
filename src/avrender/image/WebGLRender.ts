@@ -24,13 +24,14 @@
  */
 
 import * as logger from 'common/util/logger'
-import ImageRender, { ImageRenderOptions } from './ImageRender'
+import type { ImageRenderOptions } from './ImageRender'
+import ImageRender from './ImageRender'
 
-import AVFrame from 'avutil/struct/avframe'
+import type AVFrame from 'avutil/struct/avframe'
 import { RenderMode } from './ImageRender'
-import VideoProgram from './webgl/program/VideoProgram'
+import type VideoProgram from './webgl/program/VideoProgram'
 import flipVertex from './function/flipVertex'
-import { Timeout } from 'common/types/type'
+import type { Timeout } from 'common/types/type'
 
 export interface WebGLRenderOptions extends ImageRenderOptions {
 }

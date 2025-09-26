@@ -23,13 +23,15 @@
  *
  */
 
-import List from 'cheap/std/collection/List'
-import { Mutex } from 'cheap/thread/mutex'
-import { AVFrameRef } from 'avutil/struct/avframe'
+import type List from 'cheap/std/collection/List'
+import type { Mutex } from 'cheap/thread/mutex'
+import type { AVFrameRef } from 'avutil/struct/avframe'
 import AVFramePoolImpl from 'avutil/implement/AVFramePoolImpl'
 import * as error from 'avutil/error'
-import Pipeline, { TaskOptions } from 'avpipeline/Pipeline'
-import { FilterGraph, FilterGraphDes, FilterGraphPortDes, checkFilterGraphInvalid, createFilterGraph } from 'avfilter/graph'
+import type { TaskOptions } from 'avpipeline/Pipeline'
+import Pipeline from 'avpipeline/Pipeline'
+import type { FilterGraph, FilterGraphDes, FilterGraphPortDes} from 'avfilter/graph'
+import { checkFilterGraphInvalid, createFilterGraph } from 'avfilter/graph'
 import AVInputNode from 'avfilter/AVInputNode'
 import AVOutputNode from 'avfilter/AVOutputNode'
 

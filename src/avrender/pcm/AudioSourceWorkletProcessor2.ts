@@ -23,7 +23,8 @@
  *
  */
 
-import IPCPort, { REQUEST, RpcMessage } from 'common/network/IPCPort'
+import type { RpcMessage } from 'common/network/IPCPort'
+import IPCPort, { REQUEST } from 'common/network/IPCPort'
 import AudioWorkletProcessorBase from './audioWorklet/base/AudioWorkletProcessorBase'
 import { initThread, getHeap } from 'cheap/heap'
 import AVPCMBuffer from 'avutil/struct/avpcmbuffer'

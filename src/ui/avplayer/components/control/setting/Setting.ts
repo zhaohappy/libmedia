@@ -1,5 +1,5 @@
-import { ComponentOptions } from 'yox'
-import AVPlayer from 'avplayer/AVPlayer'
+import type { ComponentOptions } from 'yox'
+import type AVPlayer from 'avplayer/AVPlayer'
 
 import template from './Setting.hbs'
 import style from './Setting.styl'

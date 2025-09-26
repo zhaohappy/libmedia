@@ -23,9 +23,9 @@
  *
  */
 
-import Stream from 'avutil/AVStream'
-import { MOVContext } from '../type'
-import IOWriter from 'common/io/IOWriterSync'
+import type Stream from 'avutil/AVStream'
+import type { MOVContext } from '../type'
+import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
 import { AVMediaType } from 'avutil/codec'
 import { AVStreamMetadataKey } from 'avutil/AVStream'

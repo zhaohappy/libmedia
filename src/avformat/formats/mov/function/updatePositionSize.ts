@@ -23,8 +23,8 @@
  *
  */
 
-import IOWriter from 'common/io/IOWriterSync'
-import { BoxsPositionSizeInfo, MOVContext } from '../type'
+import type IOWriter from 'common/io/IOWriterSync'
+import type { BoxsPositionSizeInfo, MOVContext } from '../type'
 import * as array from 'common/util/array'
 
 export default function updatePositionSize(ioWriter: IOWriter, movContext: MOVContext) {

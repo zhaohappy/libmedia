@@ -1,12 +1,13 @@
-import { ComponentOptions } from 'yox'
-import AVPlayer, { AVPlayerStatus } from 'avplayer/AVPlayer'
+import type { ComponentOptions } from 'yox'
+import type AVPlayer from 'avplayer/AVPlayer'
+import { AVPlayerStatus } from 'avplayer/AVPlayer'
 import * as eventType from 'avplayer/eventType'
 
 import template from './AudioTrack.hbs'
 import style from './AudioTrack.styl'
-import { AVStreamInterface } from 'avutil/AVStream'
+import type { AVStreamInterface } from 'avutil/AVStream'
 import { AVMediaType } from 'avutil/codec'
-import { IOLoaderAudioStreamInfo } from 'avnetwork/ioLoader/IOLoader'
+import type { IOLoaderAudioStreamInfo } from 'avnetwork/ioLoader/IOLoader'
 
 const AudioTrack: ComponentOptions = {
 

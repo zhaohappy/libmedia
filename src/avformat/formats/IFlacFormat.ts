@@ -23,9 +23,10 @@
  *
  */
 
-import AVStream from 'avutil/AVStream'
-import { AVIFormatContext } from '../AVFormatContext'
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
+import type AVStream from 'avutil/AVStream'
+import type { AVIFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
@@ -36,7 +37,7 @@ import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import { MetaDataBlockType } from 'avutil/codecs/flac'
-import { FlacContext, FrameInfo } from './flac/type'
+import type { FlacContext, FrameInfo } from './flac/type'
 import { decodeFrameHeader } from './flac/iflac'
 import BitReader from 'common/io/BitReader'
 import concatTypeArray from 'common/function/concatTypeArray'

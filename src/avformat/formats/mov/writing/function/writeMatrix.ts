@@ -23,7 +23,7 @@
  *
  */
 
-import IOWriter from 'common/io/IOWriterSync'
+import type IOWriter from 'common/io/IOWriterSync'
 
 /**
  * transformation matrix

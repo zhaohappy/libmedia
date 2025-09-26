@@ -23,7 +23,8 @@
  *
  */
 
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'
@@ -32,8 +33,8 @@ import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'a
 import { avCodecParameters2Extradata } from 'avutil/codecs/aac'
 import { avRescaleQ } from 'avutil/util/rational'
 import { avFree, avMalloc } from 'avutil/util/mem'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { Rational } from 'avutil/struct/rational'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
+import type { Rational } from 'avutil/struct/rational'
 import { addAVPacketData, addAVPacketSideData, unrefAVPacket } from 'avutil/util/avpacket'
 import { AVPacketSideDataType } from 'avutil/codec'
 import BitReader from 'common/io/BitReader'

@@ -25,7 +25,8 @@
  */
 
 import * as logger from 'common/util/logger'
-import { AssEvent, AssEventsFormatList, AssEventType, AssStylesFormatList } from './ass'
+import type { AssEvent} from './ass'
+import { AssEventsFormatList, AssEventType, AssStylesFormatList } from './ass'
 import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
 
 import { parseEffect } from 'ass-compiler/src/parser/effect'

@@ -23,10 +23,10 @@
  *
  */
 
-import IOReader from 'common/io/IOReader'
+import type IOReader from 'common/io/IOReader'
 import { AVMediaType } from 'avutil/codec'
-import Stream from 'avutil/AVStream'
-import { Atom, MOVContext } from '../type'
+import type Stream from 'avutil/AVStream'
+import type { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 import * as tags from '../../isom/tags'
 

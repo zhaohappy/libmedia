@@ -23,7 +23,7 @@
  *
  */
 
-import { AVChannel, AVChannelOrder } from '../audiosamplefmt'
+import type { AVChannel, AVChannelOrder } from '../audiosamplefmt'
 
 @struct
 export class AVChannelCustom {

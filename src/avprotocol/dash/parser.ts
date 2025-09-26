@@ -4,8 +4,8 @@
  */
 
 import xml2Json from 'common/util/xml2Json'
-import { MPD, MPDMediaList, Period, Protection, SegmentTemplate } from './type'
-import { Data } from 'common/types/type'
+import type { MPD, MPDMediaList, Period, Protection, SegmentTemplate } from './type'
+import type { Data } from 'common/types/type'
 import * as is from 'common/util/is'
 import * as object from 'common/util/object'
 import toString from 'common/function/toString'

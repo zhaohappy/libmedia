@@ -23,7 +23,8 @@
  *
  */
 
-import Stats, { JitterBuffer } from 'avpipeline/struct/stats'
+import type { JitterBuffer } from 'avpipeline/struct/stats'
+import type Stats from 'avpipeline/struct/stats'
 import Timer from 'common/timer/Timer'
 import WorkerTimer from 'common/timer/WorkerTimer'
 

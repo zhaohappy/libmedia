@@ -23,8 +23,9 @@
  *
  */
 
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVIFormatContext } from './AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
+import type { AVIFormatContext } from './AVFormatContext'
 import * as object from 'common/util/object'
 import * as array from 'common/util/array'
 import { AV_MILLI_TIME_BASE_Q, INT32_MAX, NOPTS_VALUE_BIGINT } from 'avutil/constant'
@@ -38,7 +39,8 @@ import { copyAVPacketData, createAVPacket, destroyAVPacket,
 } from 'avutil/util/avpacket'
 import { DURATION_MAX_READ_SIZE, SAMPLE_INDEX_STEP } from './config'
 import * as errorType from 'avutil/error'
-import AVStream, { AVStreamMetadataKey } from 'avutil/AVStream'
+import type AVStream from 'avutil/AVStream'
+import { AVStreamMetadataKey } from 'avutil/AVStream'
 import * as logger from 'common/util/logger'
 import { IOError } from 'common/io/error'
 import WasmVideoDecoder from 'avcodec/wasmcodec/VideoDecoder'

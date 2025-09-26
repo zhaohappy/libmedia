@@ -1,4 +1,4 @@
-import { ComponentOptions } from 'yox'
+import type { ComponentOptions } from 'yox'
 
 import * as is from 'common/util/is'
 import * as array from 'common/util/array'

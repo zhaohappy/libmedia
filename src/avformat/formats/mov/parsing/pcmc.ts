@@ -23,10 +23,10 @@
  *
  */
 
-import IOReader from 'common/io/IOReader'
+import type IOReader from 'common/io/IOReader'
 import { AVCodecID } from 'avutil/codec'
-import Stream from 'avutil/AVStream'
-import { Atom, MOVContext, MOVStreamContext } from '../type'
+import type Stream from 'avutil/AVStream'
+import type { Atom, MOVContext, MOVStreamContext } from '../type'
 import * as logger from 'common/util/logger'
 import mktag from '../../../function/mktag'
 import { getBitsPerSample } from 'avutil/util/pcm'

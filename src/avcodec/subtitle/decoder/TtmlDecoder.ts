@@ -23,12 +23,13 @@
  *
  */
 
-import AVPacket from 'avutil/struct/avpacket'
+import type AVPacket from 'avutil/struct/avpacket'
 import Decoder from './Decoder'
 import * as text from 'common/util/text'
 import { getAVPacketData } from 'avutil/util/avpacket'
 import { AV_MILLI_TIME_BASE } from 'avutil/constant'
-import { AVSubtitle, AVSubtitleType } from 'avutil/struct/avsubtitle'
+import type { AVSubtitle} from 'avutil/struct/avsubtitle'
+import { AVSubtitleType } from 'avutil/struct/avsubtitle'
 import * as ittml from 'avutil/codecs/ttml'
 
 export default class TtmlDecoder extends Decoder {

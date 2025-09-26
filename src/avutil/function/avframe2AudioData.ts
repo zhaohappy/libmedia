@@ -24,7 +24,7 @@
  */
 
 import { mapFloat32Array, mapInt16Array, mapInt32Array, mapUint8Array } from 'cheap/std/memory'
-import AVFrame from '../struct/avframe'
+import type AVFrame from '../struct/avframe'
 import { AVSampleFormat } from '../audiosamplefmt'
 import { getBytesPerSample, sampleFormatIsPlanar } from '../util/sample'
 import { avRescaleQ2 } from '../util/rational'

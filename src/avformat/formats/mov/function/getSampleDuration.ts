@@ -24,7 +24,7 @@
  */
 
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { MOVStreamContext } from '../type'
+import type { MOVStreamContext } from '../type'
 
 export default function getSampleDuration(context: MOVStreamContext) {
   if (context.startPts !== NOPTS_VALUE_BIGINT) {

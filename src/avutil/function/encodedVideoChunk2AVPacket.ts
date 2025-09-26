@@ -23,7 +23,8 @@
  */
 
 import { addAVPacketData, addAVPacketSideData, createAVPacket } from '../util/avpacket'
-import AVPacket, { AVPacketFlags } from '../struct/avpacket'
+import type AVPacket from '../struct/avpacket'
+import { AVPacketFlags } from '../struct/avpacket'
 import { avMalloc } from '../util/mem'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { AV_TIME_BASE, NOPTS_VALUE_BIGINT } from '../constant'

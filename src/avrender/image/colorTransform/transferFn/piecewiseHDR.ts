@@ -23,8 +23,9 @@
  *
  */
 
-import ColorSpace from '../../colorSpace/ColorSpace'
-import { ColorTransformOptions, GLType, TransferFunction } from '../options'
+import type ColorSpace from '../../colorSpace/ColorSpace'
+import type { ColorTransformOptions, TransferFunction } from '../options'
+import { GLType } from '../options'
 import colorTransformPerChannelTransferFn from './colorTransformPerChannelTransferFn'
 
 export function getPiecewiseHDRPar(space: ColorSpace) {

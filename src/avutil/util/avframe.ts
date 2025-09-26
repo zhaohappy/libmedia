@@ -23,7 +23,8 @@
  *
  */
 
-import AVFrame, { AVFrameSideData, AVFrameSideDataType } from '../struct/avframe'
+import type { AVFrameSideDataType } from '../struct/avframe'
+import AVFrame, { AVFrameSideData } from '../struct/avframe'
 import { avFree, avFreep, avMalloc, avMallocz, avRealloc } from './mem'
 import { memcpy, memset } from 'cheap/std/memory'
 import { INT32_MAX, NOPTS_VALUE_BIGINT, AV_NUM_DATA_POINTERS } from '../constant'
@@ -33,7 +34,7 @@ import { avDictCopy, freeAVDict } from './avdict'
 import { INVALID_ARGUMENT, NO_MEMORY } from '../error'
 import { getChannelLayoutNBChannels, unInitChannelLayout } from './channel'
 import { sampleFormatGetLinesize, sampleFormatIsPlanar } from './sample'
-import { AVBufferRef } from '../struct/avbuffer'
+import type { AVBufferRef } from '../struct/avbuffer'
 import * as errorType from '../error'
 import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
 import * as stack from 'cheap/stack'

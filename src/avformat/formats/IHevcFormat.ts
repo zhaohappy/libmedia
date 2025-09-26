@@ -23,8 +23,9 @@
  *
  */
 
-import { AVIFormatContext } from '../AVFormatContext'
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
+import type { AVIFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { IOError } from 'common/io/error'
 import * as errorType from 'avutil/error'
@@ -33,8 +34,8 @@ import { AVFormat, AVSeekFlags } from 'avutil/avformat'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData, createAVPacket, destroyAVPacket, refAVPacket } from 'avutil/util/avpacket'
-import AVStream from 'avutil/AVStream'
-import { Rational } from 'avutil/struct/rational'
+import type AVStream from 'avutil/AVStream'
+import type { Rational } from 'avutil/struct/rational'
 import * as object from 'common/util/object'
 import concatTypeArray from 'common/function/concatTypeArray'
 import * as hevc from 'avutil/codecs/hevc'

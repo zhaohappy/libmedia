@@ -25,7 +25,7 @@
 import { IOType } from '../avformat'
 import { Ext2IOLoader } from '../stringEnum'
 import concatTypeArray from 'common/function/concatTypeArray'
-import { Data, HttpOptions } from 'common/types/type'
+import type { Data, HttpOptions } from 'common/types/type'
 import * as object from 'common/util/object'
 import * as text from 'common/util/text'
 import * as urlUtils from 'common/util/url'

@@ -23,7 +23,7 @@
  *
  */
 
-import { MOVStreamContext } from '../type'
+import type { MOVStreamContext } from '../type'
 import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 export default function createMovStreamContext(): MOVStreamContext {

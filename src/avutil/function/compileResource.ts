@@ -23,7 +23,8 @@
  */
 
 import * as cheapConfig from 'cheap/config'
-import compile, { WebAssemblyResource } from 'cheap/webassembly/compiler'
+import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
+import compile from 'cheap/webassembly/compiler'
 import * as is from 'common/util/is'
 
 export default async function compileResource(wasmUrl: string | ArrayBuffer | WebAssemblyResource, thread: boolean = false) {

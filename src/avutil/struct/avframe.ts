@@ -25,12 +25,12 @@
 
 import { AV_NUM_DATA_POINTERS, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from '../constant'
 import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from '../pixfmt'
-import { AVBufferRef } from './avbuffer'
+import type { AVBufferRef } from './avbuffer'
 import { unrefAVFrame } from '../util/avframe'
-import { AVDictionary } from './avdict'
+import type { AVDictionary } from './avdict'
 import { Rational } from './rational'
 import { symbolStructAddress } from 'cheap/symbol'
-import { AVChannelLayout } from './audiosample'
+import type { AVChannelLayout } from './audiosample'
 
 export const enum AVFrameFlags {
   AV_FRAME_FLAG_NONE = 0,

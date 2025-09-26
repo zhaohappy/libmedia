@@ -23,21 +23,23 @@
  *
  */
 
-import AVPacket from 'avutil/struct/avpacket'
-import AVFrame, { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
-import { WebAssemblyResource } from 'cheap/webassembly/compiler'
+import type AVPacket from 'avutil/struct/avpacket'
+import type { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
+import type AVFrame from 'avutil/struct/avframe'
+import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
-import AVCodecParameters, { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
+import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 import { createAVFrame, destroyAVFrame } from 'avutil/util/avframe'
 import * as logger from 'common/util/logger'
 import support from 'common/util/support'
 import { AVDictionary } from 'avutil/struct/avdict'
-import { Data } from 'common/types/type'
+import type { Data } from 'common/types/type'
 import * as object from 'common/util/object'
 import * as dict from 'avutil/util/avdict'
 import * as is from 'common/util/is'
 import { avMallocz } from 'avutil/util/mem'
-import { Rational } from 'avutil/struct/rational'
+import type { Rational } from 'avutil/struct/rational'
 import * as errorType from 'avutil/error'
 
 export type WasmVideoDecoderOptions = {

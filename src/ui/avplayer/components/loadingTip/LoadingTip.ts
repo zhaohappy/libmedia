@@ -1,10 +1,11 @@
-import { ComponentOptions } from 'yox'
-import AVPlayer, { AVPlayerProgress, AVPlayerStatus } from 'avplayer/AVPlayer'
+import type { ComponentOptions } from 'yox'
+import type AVPlayer from 'avplayer/AVPlayer'
+import { AVPlayerProgress, AVPlayerStatus } from 'avplayer/AVPlayer'
 import * as eventType from 'avplayer/eventType'
 
 import template from './LoadingTip.hbs'
 import style from './LoadingTip.styl'
-import { AVStreamInterface } from 'avutil/AVStream'
+import type { AVStreamInterface } from 'avutil/AVStream'
 import { dumpCodecName } from 'avformat/dump'
 import IntervalQueueTask from 'common/helper/IntervalQueueTask'
 

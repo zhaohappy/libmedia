@@ -26,11 +26,11 @@
 import * as mpegts from './mpegts'
 import { IOError } from 'common/io/error'
 import analyzeTSLength from './function/analyzeTSLength'
-import { MpegtsContext } from './type'
+import type { MpegtsContext } from './type'
 import * as logger from 'common/util/logger'
 import { TSPacket } from './struct'
 import parseAdaptationField from './function/parseAdaptationField'
-import IOReader from 'common/io/IOReader'
+import type IOReader from 'common/io/IOReader'
 import median from 'common/math/median'
 
 export async function getPacketSize(ioReader: IOReader): Promise<number> {

@@ -23,12 +23,12 @@
  *
  */
 
-import AVStream from 'avutil/AVStream'
-import { MOVContext, MOVStreamContext } from '../type'
+import type AVStream from 'avutil/AVStream'
+import type { MOVContext, MOVStreamContext } from '../type'
 import { BoxType } from '../boxType'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
-import IOWriter from 'common/io/IOWriterSync'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import type IOWriter from 'common/io/IOWriterSync'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { AVPixelFormat } from 'avutil/pixfmt'
 
 import avcc from './avcc'

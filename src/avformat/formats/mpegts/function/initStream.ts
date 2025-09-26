@@ -23,15 +23,15 @@
  *
  */
 
-import { MpegtsContext, MpegtsStreamContext, PID } from '../type'
+import type { MpegtsContext, MpegtsStreamContext, PID } from '../type'
 import createMpegtsStreamContext from './createMpegtsStreamContext'
 import * as mpegts from '../mpegts'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
-import AVBSFilter from '../../../bsf/AVBSFilter'
+import type AVBSFilter from '../../../bsf/AVBSFilter'
 import AACADTS2RawFilter from '../../../bsf/aac/ADTS2RawFilter'
 import AACLATM2RawFilter from '../../../bsf/aac/LATM2RawFilter'
 import OpusMpegts2RawFilter from '../../../bsf/opus/Mpegts2RawFilter'
-import Stream from 'avutil/AVStream'
+import type Stream from 'avutil/AVStream'
 import * as opus from 'avutil/codecs/opus'
 import { avMalloc } from 'avutil/util/mem'
 import { memcpyFromUint8Array } from 'cheap/std/memory'

@@ -23,9 +23,9 @@
  *
  */
 
-import Stream from 'avutil/AVStream'
-import { MOVContext, MOVStreamContext } from '../type'
-import IOWriter from 'common/io/IOWriterSync'
+import type Stream from 'avutil/AVStream'
+import type { MOVContext, MOVStreamContext } from '../type'
+import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
 import { INT32_MAX, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'

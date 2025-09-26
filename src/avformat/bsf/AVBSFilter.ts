@@ -23,9 +23,9 @@
  *
  */
 
-import AVPacket from 'avutil/struct/avpacket'
+import type AVPacket from 'avutil/struct/avpacket'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { Rational } from 'avutil/struct/rational'
+import type { Rational } from 'avutil/struct/rational'
 import { avMallocz } from 'avutil/util/mem'
 import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
 

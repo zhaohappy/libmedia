@@ -23,9 +23,9 @@
  *
  */
 
-import AVStream from 'avutil/AVStream'
-import { AVIFormatContext } from '../AVFormatContext'
-import AVPacket from 'avutil/struct/avpacket'
+import type AVStream from 'avutil/AVStream'
+import type { AVIFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'

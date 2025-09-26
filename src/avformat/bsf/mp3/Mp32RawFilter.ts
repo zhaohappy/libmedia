@@ -23,7 +23,8 @@
  *
  */
 
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import * as logger from 'common/util/logger'
@@ -31,8 +32,8 @@ import * as errorType from 'avutil/error'
 import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'
 import { avMalloc } from 'avutil/util/mem'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { Rational } from 'avutil/struct/rational'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
+import type { Rational } from 'avutil/struct/rational'
 import { addAVPacketData, unrefAVPacket } from 'avutil/util/avpacket'
 import * as frameHeader from '../../formats/mp3/frameHeader'
 import * as mp3 from 'avutil/codecs/mp3'

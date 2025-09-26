@@ -1,4 +1,4 @@
-import { ComponentOptions } from 'yox'
+import type { ComponentOptions } from 'yox'
 import AVPlayer, { AVPlayerStatus } from 'avplayer/AVPlayer'
 import * as eventType from 'avplayer/eventType'
 

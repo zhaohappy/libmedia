@@ -23,7 +23,7 @@
  *
  */
 
-import { AVSampleFormat } from '../audiosamplefmt'
+import type { AVSampleFormat } from '../audiosamplefmt'
 
 @struct
 export default class AVPCMBuffer {

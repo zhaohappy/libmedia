@@ -23,11 +23,11 @@
  *
  */
 
-import IOReader from 'common/io/IOReader'
-import { ID3V2, Mp3MetaData } from './type'
+import type IOReader from 'common/io/IOReader'
+import type { ID3V2, Mp3MetaData } from './type'
 import * as logger from 'common/util/logger'
 import * as text from 'common/util/text'
-import IOWriterSync from 'common/io/IOWriterSync'
+import type IOWriterSync from 'common/io/IOWriterSync'
 import { IOFlags } from 'avutil/avformat'
 import { AVStreamMetadataKey } from 'avutil/AVStream'
 

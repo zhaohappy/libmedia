@@ -23,7 +23,7 @@
  *
  */
 
-import { Rational } from './rational'
+import type { Rational } from './rational'
 
 export const enum AVSubtitleType {
   SUBTITLE_NONE,

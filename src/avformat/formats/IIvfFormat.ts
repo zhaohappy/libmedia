@@ -23,8 +23,8 @@
  *
  */
 
-import { AVIFormatContext } from '../AVFormatContext'
-import AVPacket from 'avutil/struct/avpacket'
+import type { AVIFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import { IOError } from 'common/io/error'
@@ -34,7 +34,7 @@ import { AVFormat, AVSeekFlags } from 'avutil/avformat'
 import { mapSafeUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
 import { addAVPacketData } from 'avutil/util/avpacket'
-import AVStream from 'avutil/AVStream'
+import type AVStream from 'avutil/AVStream'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 
 export const enum IVFCodec {

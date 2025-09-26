@@ -1,5 +1,5 @@
-import { ComponentOptions } from 'yox'
-import AVPlayer from 'avplayer/AVPlayer'
+import type { ComponentOptions } from 'yox'
+import type AVPlayer from 'avplayer/AVPlayer'
 import * as storage from '../../../../util/storage'
 import Slider from '../../../../components/slider/Slider'
 import * as eventType from 'avplayer/eventType'

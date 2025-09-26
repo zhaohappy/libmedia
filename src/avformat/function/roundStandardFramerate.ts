@@ -23,7 +23,7 @@
  *
  */
 
-import { Rational } from 'avutil/struct/rational'
+import type { Rational } from 'avutil/struct/rational'
 import { avQ2D, avReduce } from 'avutil/util/rational'
 
 const MAX_STD_FRAMERATE = 30 * 12 + 30 + 3 + 6

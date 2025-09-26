@@ -23,9 +23,9 @@
  *
  */
 
-import AVStream from 'avutil/AVStream'
-import { AVIFormatContext } from '../AVFormatContext'
-import AVPacket from 'avutil/struct/avpacket'
+import type AVStream from 'avutil/AVStream'
+import type { AVIFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
 import { AVMediaType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
@@ -37,7 +37,7 @@ import { addAVPacketData } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import { readFormatTag } from './riff/iriff'
 import { getBitsPerSample } from 'avutil/util/pcm'
-import { ID3V2 } from './mp3/type'
+import type { ID3V2 } from './mp3/type'
 import * as id3v2 from './mp3/id3v2'
 
 const PACKET_SAMPLE_COUNT = 1024

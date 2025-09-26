@@ -23,7 +23,7 @@
  *
  */
 
-import { ColorTransformOptions } from './options'
+import type { ColorTransformOptions } from './options'
 
 export function computeSdrRelativeToNitsFactor(unityNits: float, options: ColorTransformOptions) {
   options.metadata.sdrRelativeToNitsFactor = options.dstSdrMaxLuminanceNits / unityNits

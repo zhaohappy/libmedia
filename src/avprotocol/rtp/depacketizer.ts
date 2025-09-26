@@ -24,7 +24,8 @@
  */
 
 import * as logger from 'common/util/logger'
-import { HEVCPayloadContext, Mpeg4PayloadContext, RTP_HEVC_DOND_FIELD_SIZE,
+import type { HEVCPayloadContext, Mpeg4PayloadContext} from './rtp'
+import { RTP_HEVC_DOND_FIELD_SIZE,
   RTP_HEVC_DONL_FIELD_SIZE, RTP_HEVC_PAYLOAD_HEADER_SIZE, RTP_MAX_PACKET_LENGTH } from './rtp'
 import concatTypeArray from 'common/function/concatTypeArray'
 import BitReader from 'common/io/BitReader'
@@ -32,7 +33,7 @@ import * as h264Util from 'avutil/codecs/h264'
 import * as hevcUtil from 'avutil/codecs/hevc'
 import * as av1Util from 'avutil/codecs/av1'
 import * as vp9Util from 'avutil/codecs/vp9'
-import { RTPPacket } from './RTPPacket'
+import type { RTPPacket } from './RTPPacket'
 import { AVMediaType } from 'avutil/codec'
 
 export function h264(rtps: RTPPacket[]) {

@@ -23,13 +23,13 @@
  *
  */
 
-import Stream from 'avutil/AVStream'
-import { AVIFormatContext } from '../../../AVFormatContext'
-import { MOVContext, MOVStreamContext, Sample } from '../type'
+import type Stream from 'avutil/AVStream'
+import type { AVIFormatContext } from '../../../AVFormatContext'
+import type { MOVContext, MOVStreamContext, Sample } from '../type'
 import { AV_TIME_BASE_Q } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'
 import { IOFlags } from 'avutil/avformat'
-import { EncryptionInfo } from 'avutil/struct/encryption'
+import type { EncryptionInfo } from 'avutil/struct/encryption'
 
 export function getNextSample(context: AVIFormatContext, movContext: MOVContext, ioFlags: int32) {
   let sample: Sample

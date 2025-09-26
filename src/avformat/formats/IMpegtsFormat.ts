@@ -23,12 +23,13 @@
  *
  */
 
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVIFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
+import type { AVIFormatContext } from '../AVFormatContext'
 import * as logger from 'common/util/logger'
 
 import { IOError } from 'common/io/error'
-import { MpegtsContext, MpegtsStreamContext } from './mpegts/type'
+import type { MpegtsContext, MpegtsStreamContext } from './mpegts/type'
 import createMpegtsContext from './mpegts/function/createMpegtsContext'
 import * as impegts from './mpegts/impegts'
 import * as mpegts from './mpegts/mpegts'
@@ -37,7 +38,8 @@ import * as errorType from 'avutil/error'
 import parsePES from './mpegts/function/parsePES'
 import parsePESSlice from './mpegts/function/parsePESSlice'
 import clearTSSliceQueue from './mpegts/function/clearTSSliceQueue'
-import { PES, TSSliceQueue } from './mpegts/struct'
+import type { PES} from './mpegts/struct'
+import { TSSliceQueue } from './mpegts/struct'
 import IFormat from './IFormat'
 import initStream from './mpegts/function/initStream'
 import { AVFormat, AVSeekFlags } from 'avutil/avformat'
@@ -45,7 +47,7 @@ import { addAVPacketData, createAVPacket, deleteAVPacketSideData,
   destroyAVPacket, getAVPacketData, getAVPacketSideData
 } from 'avutil/util/avpacket'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import AVStream from 'avutil/AVStream'
+import type AVStream from 'avutil/AVStream'
 import seekInBytes from '../function/seekInBytes'
 import { avRescaleQ } from 'avutil/util/rational'
 import * as array from 'common/util/array'

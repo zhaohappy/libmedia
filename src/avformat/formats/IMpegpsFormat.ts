@@ -23,12 +23,13 @@
  *
  */
 
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVIFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
+import type { AVIFormatContext } from '../AVFormatContext'
 import * as logger from 'common/util/logger'
 
 import { IOError } from 'common/io/error'
-import { MpegpsContext, MpegpsSlice, MpegpsStreamContext } from './mpegts/type'
+import type { MpegpsContext, MpegpsSlice, MpegpsStreamContext } from './mpegts/type'
 import * as mpegts from './mpegts/mpegts'
 import * as errorType from 'avutil/error'
 import parsePES from './mpegts/function/parsePES'
@@ -39,7 +40,7 @@ import { addAVPacketData, createAVPacket, deleteAVPacketSideData,
   destroyAVPacket, getAVPacketData, getAVPacketSideData
 } from 'avutil/util/avpacket'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import AVStream from 'avutil/AVStream'
+import type AVStream from 'avutil/AVStream'
 import seekInBytes from '../function/seekInBytes'
 import { avRescaleQ } from 'avutil/util/rational'
 import * as array from 'common/util/array'

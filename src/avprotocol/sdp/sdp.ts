@@ -2,9 +2,10 @@
  * from https://github.com/clux/sdp-transform
  */
 
-import { SessionDescription, Media } from './type'
-import { grammars, SdpGrammar } from './grammars'
-import { Data } from 'common/types/type'
+import type { SessionDescription, Media } from './type'
+import type { SdpGrammar } from './grammars'
+import { grammars } from './grammars'
+import type { Data } from 'common/types/type'
 import * as is from 'common/util/is'
 
 /*

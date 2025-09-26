@@ -23,7 +23,7 @@
  */
 
 import { createAVFrame, getVideoBuffer, unrefAVFrame } from '../util/avframe'
-import AVFrame from '../struct/avframe'
+import type AVFrame from '../struct/avframe'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
 import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
 import { getHeap } from 'cheap/heap'

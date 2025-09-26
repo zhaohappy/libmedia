@@ -24,8 +24,9 @@
  */
 
 import { RenderMode } from './ImageRender'
-import ImageRender, { ImageRenderOptions } from './ImageRender'
-import AVFrame from 'avutil/struct/avframe'
+import type { ImageRenderOptions } from './ImageRender'
+import ImageRender from './ImageRender'
+import type AVFrame from 'avutil/struct/avframe'
 import * as logger from 'common/util/logger'
 import AlphaMask from './webgl/postprocess/AlphaMask'
 import support from 'common/util/support'

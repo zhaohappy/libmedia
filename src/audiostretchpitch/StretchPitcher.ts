@@ -23,7 +23,7 @@
  *
  */
 
-import { WebAssemblyResource } from 'cheap/webassembly/compiler'
+import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
 
 export interface StretchPitchParameters {

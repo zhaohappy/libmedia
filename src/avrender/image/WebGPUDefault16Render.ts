@@ -24,16 +24,19 @@
  */
 
 import type AVFrame from 'avutil/struct/avframe'
-import { AVContentLightMetadata, AVFrameSideDataType } from 'avutil/struct/avframe'
-import { AVPixelFormat } from 'avutil/pixfmt'
+import type { AVContentLightMetadata} from 'avutil/struct/avframe'
+import { AVFrameSideDataType } from 'avutil/struct/avframe'
+import type { AVPixelFormat } from 'avutil/pixfmt'
 
-import { WebGPURenderOptions } from './WebGPURender'
+import type { WebGPURenderOptions } from './WebGPURender'
 import WebGPUDefaultRender from './WebGPUDefaultRender'
-import { AVPixelFormatDescriptor, getAVPixelFormatDescriptor, AVPixelFormatFlags } from 'avutil/pixelFormatDescriptor'
+import type { AVPixelFormatDescriptor} from 'avutil/pixelFormatDescriptor'
+import { getAVPixelFormatDescriptor, AVPixelFormatFlags } from 'avutil/pixelFormatDescriptor'
 import { mapUint8Array } from 'cheap/std/memory'
 import ColorSpace from './colorSpace/ColorSpace'
 
-import { ColorTransformOptions, DefaultSDRWhiteLevel, GLType } from './colorTransform/options'
+import type { ColorTransformOptions} from './colorTransform/options'
+import { DefaultSDRWhiteLevel, GLType } from './colorTransform/options'
 import generateSteps from './colorTransform/generateSteps'
 import HdrMetadata from './struct/HdrMetadata'
 import { getAVFrameSideData } from 'avutil/util/avframe'

@@ -23,16 +23,19 @@
  *
  */
 
-import { createThreadFromClass, joinThread, Thread } from 'cheap/thread/thread'
+import type { Thread } from 'cheap/thread/thread'
+import { createThreadFromClass, joinThread } from 'cheap/thread/thread'
 import IODemuxPipeline from './IODemuxPipeline'
-import { AVStreamInterface } from 'avutil/AVStream'
-import { AVCodecParametersSerialize, unserializeAVCodecParameters } from 'avutil/util/serialize'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import type { AVStreamInterface } from 'avutil/AVStream'
+import type { AVCodecParametersSerialize} from 'avutil/util/serialize'
+import { unserializeAVCodecParameters } from 'avutil/util/serialize'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
 import * as is from 'common/util/is'
 import isPointer from 'cheap/std/function/isPointer'
 import { freeCodecParameters } from 'avutil/util/codecparameters'
-import IPCPort, { NOTIFY, RpcMessage } from 'common/network/IPCPort'
-import Stats from 'avpipeline/struct/stats'
+import type { RpcMessage } from 'common/network/IPCPort'
+import IPCPort, { NOTIFY } from 'common/network/IPCPort'
+import type Stats from 'avpipeline/struct/stats'
 import * as object from 'common/util/object'
 
 export default class IODemuxPipelineProxy {

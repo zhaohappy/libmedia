@@ -23,13 +23,13 @@
  *
  */
 
-import IOWriter from 'common/io/IOWriterSync'
-import { BoxType } from './boxType'
-import { EncryptionInitInfo, EncryptionInfo } from 'avutil/struct/encryption'
-import IOReader from 'common/io/IOReader'
-import AVStream from 'avutil/AVStream'
-import { Data } from 'common/types/type'
-import { AVChapter } from '../../AVFormatContext'
+import type IOWriter from 'common/io/IOWriterSync'
+import type { BoxType } from './boxType'
+import type { EncryptionInitInfo, EncryptionInfo } from 'avutil/struct/encryption'
+import type IOReader from 'common/io/IOReader'
+import type AVStream from 'avutil/AVStream'
+import type { Data } from 'common/types/type'
+import type { AVChapter } from '../../AVFormatContext'
 
 export interface BoxsPositionSizeInfo {
   pos: bigint

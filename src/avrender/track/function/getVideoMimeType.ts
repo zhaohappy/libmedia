@@ -25,7 +25,7 @@
 
 import { AVCodecID } from 'avutil/codec'
 import getVideoCodec from 'avutil/function/getVideoCodec'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
 
 export default function getVideoMimeType(codecpar: pointer<AVCodecParameters>) {
   if (codecpar.codecId === AVCodecID.AV_CODEC_ID_VP8) {

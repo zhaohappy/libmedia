@@ -23,8 +23,8 @@
  *
  */
 
-import AVPacket from 'avutil/struct/avpacket'
-import { AVOFormatContext } from './AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
+import type { AVOFormatContext } from './AVFormatContext'
 import * as object from 'common/util/object'
 import * as logger from 'common/util/logger'
 import { OFormatSupportedCodecs } from './formats/OFormat'

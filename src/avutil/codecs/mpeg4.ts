@@ -23,7 +23,7 @@
  *
  */
 
-import AVPacket from '../struct/avpacket'
+import type AVPacket from '../struct/avpacket'
 
 export const enum Mpeg4PictureType {
   I = 0,

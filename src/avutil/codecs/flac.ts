@@ -25,8 +25,8 @@
 
 import BufferReader from 'common/io/BufferReader'
 import { AVPacketSideDataType } from '../codec'
-import { Uint8ArrayInterface } from 'common/io/interface'
-import AVCodecParameters from '../struct/avcodecparameters'
+import type { Uint8ArrayInterface } from 'common/io/interface'
+import type AVCodecParameters from '../struct/avcodecparameters'
 
 export const enum MetaDataBlockType {
   STREAMINFO,

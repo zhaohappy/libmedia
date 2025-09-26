@@ -23,8 +23,9 @@
  *
  */
 
-import AVFrame from 'avutil/struct/avframe'
-import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from 'avutil/pixfmt'
+import type AVFrame from 'avutil/struct/avframe'
+import type { AVPixelFormat } from 'avutil/pixfmt'
+import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from 'avutil/pixfmt'
 import ColorSpace from './colorSpace/ColorSpace'
 
 export type ImageRenderOptions = {

@@ -25,13 +25,15 @@
 
 import { NOPTS_VALUE } from '../constant'
 import { AVCodecID, AVMediaType } from '../codec'
-import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace,
-  AVColorTransferCharacteristic, AVFieldOrder, AVPixelFormat
+import type { AVPixelFormat
 } from '../pixfmt'
-import { AVSampleFormat } from '../audiosamplefmt'
+import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace,
+  AVColorTransferCharacteristic, AVFieldOrder
+} from '../pixfmt'
+import type { AVSampleFormat } from '../audiosamplefmt'
 import { Rational } from './rational'
-import { AVPacketSideData } from './avpacket'
-import { AVChannelLayout } from './audiosample'
+import type { AVPacketSideData } from './avpacket'
+import type { AVChannelLayout } from './audiosample'
 import { freeCodecParameters } from '../util/codecparameters'
 import { symbolStructAddress } from 'cheap/symbol'
 

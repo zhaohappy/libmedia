@@ -23,9 +23,9 @@
  */
 
 import { createAVFrame, unrefAVFrame } from '../util/avframe'
-import AVFrame from '../struct/avframe'
+import type AVFrame from '../struct/avframe'
 import { sampleFormatIsPlanar } from '../util/sample'
-import AVPCMBuffer from '../struct/avpcmbuffer'
+import type AVPCMBuffer from '../struct/avpcmbuffer'
 import { avFreep, avMalloc } from '../util/mem'
 import * as errorType from '../error'
 import { avbufferCreate } from '../util/avbuffer'

@@ -23,7 +23,7 @@
  *
  */
 
-import { Uint8ArrayInterface } from 'common/io/interface'
+import type { Uint8ArrayInterface } from 'common/io/interface'
 import { IOLoaderStatus } from './IOLoader'
 import { IOError } from 'common/io/error'
 import SocketIOLoader from './SocketIOLoader'
@@ -33,7 +33,7 @@ import RtmpSession from 'avprotocol/rtmp/RtmpSession'
 import IOReader from 'common/io/IOReader'
 import IOWriter from 'common/io/IOWriter'
 import * as url from 'common/util/url'
-import { RtmpPacket } from 'avprotocol/rtmp/RtmpPacket'
+import type { RtmpPacket } from 'avprotocol/rtmp/RtmpPacket'
 import IOWriterSync from 'common/io/IOWriterSync'
 import FlvHeader from 'avformat/formats/flv/FlvHeader'
 import { RtmpPacketType } from 'avprotocol/rtmp/rtmp'

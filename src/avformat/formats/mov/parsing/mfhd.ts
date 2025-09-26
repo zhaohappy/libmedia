@@ -23,9 +23,9 @@
  *
  */
 
-import IOReader from 'common/io/IOReader'
-import Stream from 'avutil/AVStream'
-import { Atom, MOVContext } from '../type'
+import type IOReader from 'common/io/IOReader'
+import type Stream from 'avutil/AVStream'
+import type { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 
 export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {

@@ -24,7 +24,8 @@
  */
 
 import vertexSource from './webgpu/wgsl/vertex.wgsl'
-import WebGPURender, { WebGPURenderOptions } from './WebGPURender'
+import type { WebGPURenderOptions } from './WebGPURender'
+import WebGPURender from './WebGPURender'
 import type AVFrame from 'avutil/struct/avframe'
 
 const HDRPrimaries = ['bt2020', 'bt2100', 'st2048', 'p3-dcl', 'hlg']

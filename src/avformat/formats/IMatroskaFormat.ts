@@ -23,8 +23,9 @@
  *
  */
 
-import { AVIFormatContext } from '../AVFormatContext'
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
+import type { AVIFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
 import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import { IOError } from 'common/io/error'
@@ -34,11 +35,12 @@ import { AVFormat, AVSeekFlags } from 'avutil/avformat'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avFree, avMalloc } from 'avutil/util/mem'
 import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/util/avpacket'
-import AVStream, { AVDisposition } from 'avutil/AVStream'
+import type AVStream from 'avutil/AVStream'
+import { AVDisposition } from 'avutil/AVStream'
 import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { EBMLId, MATROSKABlockAddIdType, MATROSKALacingMode, MATROSKATrackEncodingComp, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
 import { IOFlags } from 'avutil/avformat'
-import { Additions, ClusterIndex, MatroskaContext, TrackEntry } from './matroska/type'
+import type { Additions, ClusterIndex, MatroskaContext, TrackEntry } from './matroska/type'
 import { EbmlSyntaxAttachments, EbmlSyntaxBlockGroup, EbmlSyntaxChapters, EbmlSyntaxCluster, EbmlSyntaxCues, EbmlSyntaxHeadSeek,
   EbmlSyntaxHeader, EbmlSyntaxInfo, EbmlSyntaxTags, EbmlSyntaxTracks, parseEbmlSyntax, readEbmlId, readVInt, readVInt64,
   readVSint

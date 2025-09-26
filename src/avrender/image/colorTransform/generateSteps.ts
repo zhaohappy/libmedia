@@ -32,7 +32,8 @@
 
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from 'avutil/pixfmt'
 import ColorSpace from '../colorSpace/ColorSpace'
-import { ColorTransformOptions, DefaultSDRWhiteLevel, HLGRefMaxLumNits, PQRefMaxLumNits } from './options'
+import type { ColorTransformOptions} from './options'
+import { DefaultSDRWhiteLevel, HLGRefMaxLumNits, PQRefMaxLumNits } from './options'
 import colorTransformMatrix from './colorTransformMatrix'
 import hlgInvOETF from './transferFn/hlgInvOETF'
 import pq2Linear from './transferFn/pq2Linear'

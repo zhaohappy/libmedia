@@ -24,7 +24,7 @@
  */
 
 import colorTransformPerChannelTransferFn from './colorTransformPerChannelTransferFn'
-import { ColorTransformOptions, TransferFunction } from '../options'
+import type { ColorTransformOptions, TransferFunction } from '../options'
 import toFloatString from '../function/toFloatString'
 
 export default function transferFn(tfn: TransferFunction, extended: boolean, options: ColorTransformOptions) {

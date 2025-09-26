@@ -23,12 +23,12 @@
  *
  */
 
-import IOReader from 'common/io/IOReader'
+import type IOReader from 'common/io/IOReader'
 import IOWriterSync from 'common/io/IOWriterSync'
 
 import concatTypeArray from 'common/function/concatTypeArray'
 import * as logger from 'common/util/logger'
-import { FlvMetaData } from './type'
+import type { FlvMetaData } from './type'
 import { FlvTag } from './flv'
 
 import * as flv from './oflv'

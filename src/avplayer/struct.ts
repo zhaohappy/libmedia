@@ -24,11 +24,11 @@
  *
  */
 
-import Stats from 'avpipeline/struct/stats'
-import { AVFrameRef } from 'avutil/struct/avframe'
-import { AVPacketRef } from 'avutil/struct/avpacket'
-import List from 'cheap/std/collection/List'
-import { Mutex } from 'cheap/thread/mutex'
+import type Stats from 'avpipeline/struct/stats'
+import type { AVFrameRef } from 'avutil/struct/avframe'
+import type { AVPacketRef } from 'avutil/struct/avpacket'
+import type List from 'cheap/std/collection/List'
+import type { Mutex } from 'cheap/thread/mutex'
 
 @struct
 export class AVPlayerGlobalData {

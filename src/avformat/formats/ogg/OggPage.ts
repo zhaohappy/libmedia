@@ -23,10 +23,10 @@
  *
  */
 
-import IOReader from 'common/io/IOReader'
-import IOWriter from 'common/io/IOWriterSync'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import IOReaderSync from 'common/io/IOReaderSync'
+import type IOReader from 'common/io/IOReader'
+import type IOWriter from 'common/io/IOWriterSync'
+import type AVCodecParameters from 'avutil/struct/avcodecparameters'
+import type IOReaderSync from 'common/io/IOReaderSync'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as text from 'common/util/text'
 

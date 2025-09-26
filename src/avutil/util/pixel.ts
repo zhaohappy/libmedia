@@ -23,7 +23,8 @@
  *
  */
 
-import { AVPixelFormatDescriptor, getAVPixelFormatDescriptor, AVPixelFormatFlags } from '../pixelFormatDescriptor'
+import type { AVPixelFormatDescriptor} from '../pixelFormatDescriptor'
+import { getAVPixelFormatDescriptor, AVPixelFormatFlags } from '../pixelFormatDescriptor'
 import { AVChromaLocation, AVPixelFormat } from '../pixfmt'
 import * as errorType from '../error'
 import { INT32_MAX } from '../constant'

@@ -23,10 +23,10 @@
  *
  */
 
-import IOReader from 'common/io/IOReader'
+import type IOReader from 'common/io/IOReader'
 import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import Stream from 'avutil/AVStream'
-import { Atom, MOVContext } from '../type'
+import type Stream from 'avutil/AVStream'
+import type { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 import { newSideData } from 'avutil/util/avpacket'
 import { AVChannelLayout } from 'avutil/audiosamplefmt'

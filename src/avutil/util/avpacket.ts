@@ -25,12 +25,12 @@
 
 import AVPacket, { AVPacketSideData } from '../struct/avpacket'
 import { memcpy, memset, mapUint8Array, mapSafeUint8Array } from 'cheap/std/memory'
-import { AVPacketSideDataType } from '../codec'
+import type { AVPacketSideDataType } from '../codec'
 import { avFree, avFreep, avMalloc, avMallocz } from './mem'
 import { AV_TIME_BASE, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from '../constant'
 import { avbufferCreate, avbufferRealloc, avbufferRef, avbufferReplace, avbufferUnref } from './avbuffer'
-import { AVBufferRef } from '../struct/avbuffer'
-import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
+import type { AVBufferRef } from '../struct/avbuffer'
+import type SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
 
 const AV_INPUT_BUFFER_PADDING_SIZE = 64
 

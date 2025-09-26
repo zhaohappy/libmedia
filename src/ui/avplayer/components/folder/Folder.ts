@@ -1,5 +1,7 @@
-import { ComponentOptions } from 'yox'
-import AVPlayer, { AVPlayerStatus, ExternalSubtitle } from 'avplayer/AVPlayer'
+import type { ComponentOptions } from 'yox'
+import type { ExternalSubtitle } from 'avplayer/AVPlayer'
+import type AVPlayer from 'avplayer/AVPlayer'
+import { AVPlayerStatus } from 'avplayer/AVPlayer'
 import * as eventType from 'avplayer/eventType'
 
 import template from './Folder.hbs'
@@ -11,7 +13,7 @@ import generateUUID from 'common/function/generateUUID'
 import * as logger from 'common/util/logger'
 import * as urlUtil from 'common/util/url'
 import * as is from 'common/util/is'
-import CustomEvent from 'common/event/CustomEvent'
+import type CustomEvent from 'common/event/CustomEvent'
 
 interface FileNode {
   id: string

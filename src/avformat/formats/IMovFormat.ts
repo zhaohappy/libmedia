@@ -23,13 +23,14 @@
  *
  */
 
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVIFormatContext } from '../AVFormatContext'
+import type AVPacket from 'avutil/struct/avpacket'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
+import type { AVIFormatContext } from '../AVFormatContext'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
 
 import { IOError } from 'common/io/error'
-import { MOVContext, MOVStreamContext } from './mov/type'
+import type { MOVContext, MOVStreamContext } from './mov/type'
 import mktag from '../function/mktag'
 import { BoxType } from './mov/boxType'
 import * as imov from './mov/imov'
@@ -43,7 +44,7 @@ import { mapSafeUint8Array, memcpy, memcpyFromUint8Array } from 'cheap/std/memor
 import { avMalloc, avMallocz } from 'avutil/util/mem'
 import { addAVPacketData, addAVPacketSideData } from 'avutil/util/avpacket'
 import { avRescaleQ } from 'avutil/util/rational'
-import AVStream from 'avutil/AVStream'
+import type AVStream from 'avutil/AVStream'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { IOFlags } from 'avutil/avformat'
 import * as intread from 'avutil/util/intread'

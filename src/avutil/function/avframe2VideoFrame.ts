@@ -23,7 +23,7 @@
  *
  */
 
-import AVFrame from '../struct/avframe'
+import type AVFrame from '../struct/avframe'
 import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
 import { avRescaleQ2 } from '../util/rational'

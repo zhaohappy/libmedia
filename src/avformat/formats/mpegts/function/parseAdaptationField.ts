@@ -23,7 +23,7 @@
  *
  */
 
-import { TSPacket } from '../struct'
+import type { TSPacket } from '../struct'
 
 export default function parseAdaptationField(buffer: Uint8Array, tsPacket: TSPacket) {
   let i = 0
