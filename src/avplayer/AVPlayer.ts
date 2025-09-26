@@ -2153,8 +2153,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           avframeList: addressof(this.GlobalData.avframeList),
           avframeListMutex: addressof(this.GlobalData.avframeListMutex),
-          preferWebCodecs: !isHdr(videoStream.codecpar) && !hasAlphaChannel(videoStream.codecpar) && !!this.options.enableWebCodecs,
-          preferLatency: this.isLive()
+          preferWebCodecs: !isHdr(videoStream.codecpar)
+            && (!hasAlphaChannel(videoStream.codecpar)
+              || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP8
+              || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
+              || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1
+            )
+            && !!this.options.enableWebCodecs,
+          preferLatency: this.isLive(),
+          keepAlpha: true
         })
 
       let ret = await this.VideoDecoderThread.open(this.taskId, serializeAVCodecParameters(videoStream.codecpar))
