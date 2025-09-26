@@ -39,6 +39,7 @@ export interface FetchInfo {
 
 export interface FetchIOLoaderOptions extends IOLoaderOptions {
   disableSegment?: boolean
+  enableBandwidthReader?: boolean
 }
 
 export default class FetchIOLoader extends IOLoader {
@@ -70,6 +71,10 @@ export default class FetchIOLoader extends IOLoader {
   private abortSleep_: Sleep
 
   private aborted: boolean
+
+  private bandwidth: number
+
+  private delay: number
 
   constructor(options: FetchIOLoaderOptions = {}) {
     super(options)
@@ -155,6 +160,7 @@ export default class FetchIOLoader extends IOLoader {
     this.buffers = []
     this.supportRange = true
     this.aborted = false
+    this.bandwidth = 0
 
     if (this.range.to > 0) {
       this.eofIndex = range.to
@@ -195,6 +201,55 @@ export default class FetchIOLoader extends IOLoader {
     return 0
   }
 
+  private getBandwidthReader(reader: ReadableStreamDefaultReader<Uint8Array<ArrayBufferLike>>, start: number) {
+    const buffers: Uint8Array<ArrayBufferLike>[] = []
+    let end = false
+    let pending: () => void
+    let totals = 0
+    const me = this
+    const stream = new ReadableStream({
+      async start(controller) {
+        while (true) {
+          const { value, done } = await reader.read()
+          if (done) {
+            end = true
+            const duration = (getTimestamp() - start) / 1000
+            me.bandwidth = totals * 8 / duration
+            if (pending) {
+              pending()
+              pending = null
+            }
+            break
+          }
+          else {
+            buffers.push(value)
+            totals += value.length
+            if (pending) {
+              pending()
+              pending = null
+            }
+          }
+        }
+      },
+      async pull(controller) {
+        while (true) {
+          if (buffers.length) {
+            controller.enqueue(buffers.shift())
+            return
+          }
+          if (end && !buffers.length) {
+            controller.close()
+            return
+          }
+          await new Promise<void>((resolve) => {
+            pending = resolve
+          })
+        }
+      }
+    })
+    return stream.getReader()
+  }
+
   private async openReader() {
     const params: RequestInit = {
       method: 'GET',
@@ -230,9 +285,12 @@ export default class FetchIOLoader extends IOLoader {
     }
 
     try {
+      const start = getTimestamp()
       const res = await fetch(this.info.url, params)
+      const openStart = getTimestamp()
+      this.delay = openStart - start
       if (res.ok && (res.status >= 200 && res.status <= 299)) {
-        this.reader = res.body.getReader()
+        this.reader = this.options.enableBandwidthReader ? this.getBandwidthReader(res.body.getReader(), openStart) : res.body.getReader()
       }
       else {
         this.status = IOLoaderStatus.ERROR

@@ -666,7 +666,7 @@ export default class HlsIOLoader extends IOLoader {
           return this.fetchMasterPlayList()
         }
         this.mainLoader = new MediaLoader(
-          this.options,
+          object.extend({ enableBandwidthReader: true }, this.options),
           this.info,
           this.info.url,
           mediaPlayList
@@ -737,7 +737,7 @@ export default class HlsIOLoader extends IOLoader {
       const mediaUrl = this.buildUrl(currentVariant.uri)
 
       this.mainLoader = new MediaLoader(
-        this.options,
+        object.extend({ enableBandwidthReader: true }, this.options),
         this.info,
         mediaUrl,
         await fetchMediaPlayList(

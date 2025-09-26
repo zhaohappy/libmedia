@@ -511,7 +511,11 @@ export default class DashIOLoader extends IOLoader {
         resource.lastPendingSegmentDuration = segments[0].duration || this.mediaPlayList.maxSegmentDuration
       }
 
-      resource.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
+      resource.loader = new FetchIOLoader(object.extend({}, this.options, {
+        disableSegment: true,
+        loop: false,
+        enableBandwidthReader: resource.type === AVMediaType.AVMEDIA_TYPE_VIDEO
+      }))
 
       await resource.loader.open(
         object.extend({}, this.info, {
@@ -525,7 +529,11 @@ export default class DashIOLoader extends IOLoader {
       return resource.loader.read(buffer)
     }
     else {
-      resource.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
+      resource.loader = new FetchIOLoader(object.extend({}, this.options, {
+        disableSegment: true,
+        loop: false,
+        enableBandwidthReader: resource.type === AVMediaType.AVMEDIA_TYPE_VIDEO
+      }))
       if (resource.initSegmentPadding) {
         await resource.loader.open(
           object.extend({}, this.info, {
