@@ -66,7 +66,7 @@ export default abstract class WebGLRender extends ImageRender {
     this.gl = this.canvas.getContext(
       'webgl2',
       {
-        alpha: false,
+        alpha: true,
         antialias: false,
         preserveDrawingBuffer: this.options.preserveDrawingBuffer
       }
@@ -75,7 +75,7 @@ export default abstract class WebGLRender extends ImageRender {
       this.gl = this.canvas.getContext(
         'webgl',
         {
-          alpha: false,
+          alpha: true,
           antialias: false,
           preserveDrawingBuffer: this.options.preserveDrawingBuffer
         }
@@ -85,7 +85,7 @@ export default abstract class WebGLRender extends ImageRender {
       this.gl = (this.canvas as HTMLCanvasElement).getContext(
         'experimental-webgl',
         {
-          alpha: false,
+          alpha: true,
           antialias: false,
           preserveDrawingBuffer: this.options.preserveDrawingBuffer
         }

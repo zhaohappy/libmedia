@@ -62,6 +62,7 @@ export default function (api) {
     
     memo.resolve.alias
       .set('../glsl/vertex.vert', path.resolve(__dirname, './hook/vertex.vert.ts'))
+      .set('./webgpu/wgsl/vertex.wgsl', path.resolve(__dirname, './hook/vertex.wgls.ts'))
       .set('./memory.asm', path.resolve(__dirname, './hook/memory.asm.ts'))
       .set('./libc.asm', path.resolve(__dirname, './hook/libc.asm.ts'))
       .set('./atomics.asm', path.resolve(__dirname, './hook/atomics.asm.ts'))

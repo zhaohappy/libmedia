@@ -23,7 +23,8 @@
  *
  */
 
-import AVFrame, { AVContentLightMetadata, AVFrameSideDataType } from 'avutil/struct/avframe'
+import type AVFrame from 'avutil/struct/avframe'
+import { AVContentLightMetadata, AVFrameSideDataType } from 'avutil/struct/avframe'
 import { AVPixelFormat } from 'avutil/pixfmt'
 import { mapUint16Array } from 'cheap/std/memory'
 import { WebGLRenderOptions } from './WebGLRender'

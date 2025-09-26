@@ -23,7 +23,7 @@
  *
  */
 
-import AVFrame from 'avutil/struct/avframe'
+import type AVFrame from 'avutil/struct/avframe'
 import { AVPixelFormat } from 'avutil/pixfmt'
 import { WebGPURenderOptions } from './WebGPURender'
 import WebGPUDefaultRender from './WebGPUDefaultRender'
@@ -285,7 +285,7 @@ export default class WebGPUDefault8Render extends WebGPUDefaultRender {
           r: 0,
           g: 0,
           b: 0,
-          a: 1
+          a: 0
         },
         loadOp: 'clear',
         storeOp: 'store'

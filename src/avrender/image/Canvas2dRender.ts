@@ -27,6 +27,8 @@ import { RenderMode } from './ImageRender'
 import ImageRender, { ImageRenderOptions } from './ImageRender'
 import AVFrame from 'avutil/struct/avframe'
 import * as logger from 'common/util/logger'
+import AlphaMask from './webgl/postprocess/AlphaMask'
+import support from 'common/util/support'
 
 export interface CanvasImageRenderOptions extends ImageRenderOptions {
   colorSpace?: 'rec2100-pq' | 'rec2100-hlg'
@@ -44,6 +46,9 @@ export default class CanvasImageRender extends ImageRender {
 
   private flipX: number
   private flipY: number
+
+  private hasAlpha: boolean
+  private alphaMask: AlphaMask
 
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: CanvasImageRenderOptions) {
     super(canvas, options)
@@ -88,26 +93,39 @@ export default class CanvasImageRender extends ImageRender {
     }
   }
 
-  private checkFrame(frame: VideoFrame) {
+  private checkFrame(frame: VideoFrame, alpha?: VideoFrame) {
+    const hasAlpha = !!alpha
     if (frame.codedWidth !== this.textureWidth
       || frame.codedHeight !== this.videoHeight
       || frame.codedWidth !== this.videoWidth
+      || this.hasAlpha !== hasAlpha
     ) {
+      if (this.alphaMask) {
+        this.alphaMask.destroy()
+        this.alphaMask = null
+      }
+      this.hasAlpha = hasAlpha
       this.videoWidth = frame.codedWidth
       this.videoHeight = frame.codedHeight
       this.textureWidth = frame.codedWidth
       this.layout()
+      this.clear()
+
+      if (this.hasAlpha && support.offscreenCanvas && support.webgl) {
+        this.alphaMask = new AlphaMask(frame.codedWidth, frame.codedHeight)
+      }
     }
   }
 
-  public render(frame: VideoFrame): void {
+  public render(frame: VideoFrame, alpha?: VideoFrame): void {
 
     if (this.lost) {
       return
     }
 
-    this.checkFrame(frame)
+    this.checkFrame(frame, alpha)
 
+    this.clear()
     this.context.drawImage(
       frame,
       this.paddingLeft,
@@ -115,6 +133,19 @@ export default class CanvasImageRender extends ImageRender {
       this.canvasWidth * this.options.devicePixelRatio - 2 * this.paddingLeft,
       this.canvasHeight * this.options.devicePixelRatio - 2 * this.paddingTop
     )
+
+    if (this.alphaMask) {
+      this.context.globalCompositeOperation = 'destination-in'
+      this.alphaMask.process(alpha)
+      this.context.drawImage(
+        this.alphaMask.getTarget(),
+        this.paddingLeft,
+        this.paddingTop,
+        this.canvasWidth * this.options.devicePixelRatio - 2 * this.paddingLeft,
+        this.canvasHeight * this.options.devicePixelRatio - 2 * this.paddingTop
+      )
+      this.context.globalCompositeOperation = 'source-over'
+    }
   }
 
   protected layout(): void {
@@ -236,6 +267,10 @@ export default class CanvasImageRender extends ImageRender {
 
   public destroy(): void {
     this.context = null
+    if (this.alphaMask) {
+      this.alphaMask.destroy()
+      this.alphaMask = null
+    }
     super.destroy()
   }
 

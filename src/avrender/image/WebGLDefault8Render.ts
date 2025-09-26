@@ -23,7 +23,7 @@
  *
  */
 
-import AVFrame from 'avutil/struct/avframe'
+import type AVFrame from 'avutil/struct/avframe'
 import { AVPixelFormat } from 'avutil/pixfmt'
 import { mapUint8Array } from 'cheap/std/memory'
 import { WebGLRenderOptions } from './WebGLRender'

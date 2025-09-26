@@ -24,34 +24,56 @@
  */
 
 import vertexSource from './webgpu/wgsl/vertex.wgsl'
-import externalFragmentSource from './webgpu/wgsl/fragment/external.wgsl'
 import WebGPURender, { WebGPURenderOptions } from './WebGPURender'
-import AVFrame from 'avutil/struct/avframe'
+import type AVFrame from 'avutil/struct/avframe'
 
 const HDRPrimaries = ['bt2020', 'bt2100', 'st2048', 'p3-dcl', 'hlg']
 export default class WebGPUExternalRender extends WebGPURender {
+
+  private hasAlpha: boolean
+
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions) {
     super(canvas, options)
     this.vertexSource = vertexSource
-    this.fragmentSource = externalFragmentSource
   }
 
-  private checkFrame(frame: VideoFrame) {
+  private generateFragmentSource() {
+    this.fragmentSource =  `
+      @group(0) @binding(1) var eTexture: texture_external;
+      @group(0) @binding(2) var s: sampler;
+      ${this.hasAlpha ? '@group(0) @binding(3) var aTexture: texture_external;' : ''}
+
+      @fragment
+      fn main(@location(0) in_texcoord: vec4<f32>) -> @location(0) vec4<f32> {
+        let rgb: vec4<f32> = textureSampleBaseClampToEdge(eTexture, s, in_texcoord.xy);
+        let alpha: f32 = ${this.hasAlpha ? 'textureSampleBaseClampToEdge(aTexture, s, in_texcoord.xy).r' : 'rgb.a'};
+        return vec4<f32>(rgb.rgb, alpha);
+      }
+    `
+  }
+
+  private checkFrame(frame: VideoFrame, alpha?: VideoFrame) {
+    const hasAlpha = !!alpha
     if (frame.codedWidth !== this.textureWidth
       || frame.codedHeight !== this.videoHeight
       || frame.codedWidth !== this.videoWidth
+      || this.hasAlpha !== hasAlpha
     ) {
       this.videoWidth = frame.codedWidth
       this.videoHeight = frame.codedHeight
       this.textureWidth = frame.codedWidth
+      this.hasAlpha = hasAlpha
       this.layout()
+
+      this.generateFragmentSource()
 
       this.generatePipeline()
     }
   }
 
   protected generateBindGroup(): void {
-    this.bindGroupLayout = this.device.createBindGroupLayout({
+
+    const descriptor: GPUBindGroupLayoutDescriptor = {
       entries: [
         {
           binding: 0,
@@ -74,18 +96,27 @@ export default class WebGPUExternalRender extends WebGPURender {
           }
         }
       ]
-    })
+    }
+    if (this.hasAlpha) {
+      descriptor.entries.push({
+        binding: 3,
+        visibility: GPUShaderStage.FRAGMENT,
+        externalTexture: {
+        }
+      })
+    }
+    this.bindGroupLayout = this.device.createBindGroupLayout(descriptor)
   }
 
-  public render(frame: VideoFrame): void {
+  public render(frame: VideoFrame, alpha?: VideoFrame): void {
 
     if (this.lost) {
       return
     }
 
-    this.checkFrame(frame)
+    this.checkFrame(frame, alpha)
 
-    const bindGroup = this.device.createBindGroup({
+    const descriptor: GPUBindGroupDescriptor = {
       layout: this.renderPipeline.getBindGroupLayout(0),
       entries: [
         {
@@ -106,7 +137,18 @@ export default class WebGPUExternalRender extends WebGPURender {
           resource: this.sampler
         }
       ]
-    })
+    }
+
+    if (alpha) {
+      descriptor.entries.push({
+        binding: 3,
+        resource: this.device.importExternalTexture({
+          source: alpha
+        })
+      })
+    }
+
+    const bindGroup = this.device.createBindGroup(descriptor)
 
     const commandEncoder = this.device.createCommandEncoder()
 
@@ -118,7 +160,7 @@ export default class WebGPUExternalRender extends WebGPURender {
             r: 0,
             g: 0,
             b: 0,
-            a: 1
+            a: 0
           },
           loadOp: 'clear',
           storeOp: 'store'
