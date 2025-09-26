@@ -441,7 +441,10 @@ export default class WebVideoDecoder {
                 duration: videoChunk.duration != null ? videoChunk.duration : undefined,
                 data: mapUint8Array(sideData.data + 8, reinterpret_cast<size>((sideData.size - 8) as uint32))
               }))
-              const { promise, resolve } = Promise.withResolvers<void>()
+              let resolve
+              const promise = new Promise<void>((res) => {
+                resolve = res
+              })
               this.alphaPending.set(videoChunk.timestamp, {
                 promise,
                 resolve
