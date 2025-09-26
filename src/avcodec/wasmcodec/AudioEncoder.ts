@@ -104,7 +104,7 @@ class AudioFrameResizer {
       && avframe.timeBase.num !== 0
       && (this.posEnd - this.pos) === 0
     ) {
-      this.pts = avRescaleQ2(avframe.pts, addressof(avframe.timeBase), { num: 1, den: this.parameters.sampleRate})
+      this.pts = avRescaleQ2(avframe.pts, addressof(avframe.timeBase), { num: 1, den: this.parameters.sampleRate })
     }
 
     const size = avframe.nbSamples * this.bytesPerSample * (this.planar ? 1 : this.channels)

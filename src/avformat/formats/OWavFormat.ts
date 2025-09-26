@@ -209,7 +209,7 @@ export default class OWavFormat extends OFormat {
     if (rf64) {
       let sampleCount = this.sampleCount
       if (!this.sampleCount) {
-        sampleCount = avRescaleQ(this.maxPts - this.minPts + this.lastDuration, stream.timeBase, {num: 1, den: stream.codecpar.sampleRate})
+        sampleCount = avRescaleQ(this.maxPts - this.minPts + this.lastDuration, stream.timeBase, { num: 1, den: stream.codecpar.sampleRate })
       }
       formatContext.ioWriter.seek(0n)
       formatContext.ioWriter.writeString('RF64')

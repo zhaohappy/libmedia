@@ -1,5 +1,5 @@
 
-import type { AVPlayerOptions} from 'avplayer/AVPlayer'
+import type { AVPlayerOptions } from 'avplayer/AVPlayer'
 import AVPlayer, { AVPlayerStatus, AVPlayerSupportedCodecs } from 'avplayer/AVPlayer'
 import type { Component, ComponentOptions } from 'yox'
 import Yox from 'yox/dist/standard/runtime/yox'

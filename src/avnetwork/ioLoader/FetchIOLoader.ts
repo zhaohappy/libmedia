@@ -24,7 +24,7 @@
  */
 
 import Sleep from 'common/timer/Sleep'
-import type { IOLoaderOptions} from './IOLoader'
+import type { IOLoaderOptions } from './IOLoader'
 import IOLoader, { IOLoaderStatus } from './IOLoader'
 import * as object from 'common/util/object'
 import { IOError } from 'common/io/error'

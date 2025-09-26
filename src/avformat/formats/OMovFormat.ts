@@ -47,7 +47,7 @@ import * as object from 'common/util/object'
 import rewriteIO from '../function/rewriteIO'
 
 import arrayItemSame from '../function/arrayItemSame'
-import type { AVStreamMetadataEncryption} from 'avutil/AVStream'
+import type { AVStreamMetadataEncryption } from 'avutil/AVStream'
 import type AVStream from 'avutil/AVStream'
 import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import { AVFormat } from 'avutil/avformat'

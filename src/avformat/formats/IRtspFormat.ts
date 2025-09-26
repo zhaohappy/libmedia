@@ -45,7 +45,7 @@ import * as mpegvideo from 'avutil/codecs/mpegvideo'
 
 import * as mp3 from 'avutil/codecs/mp3'
 import { RtspStreamingMode } from 'avprotocol/rtsp/rtsp'
-import type { HEVCPayloadContext, Mpeg4PayloadContext} from 'avprotocol/rtp/rtp'
+import type { HEVCPayloadContext, Mpeg4PayloadContext } from 'avprotocol/rtp/rtp'
 import { RTPCodecName2AVCodeId, StaticRTPPayloadCodec } from 'avprotocol/rtp/rtp'
 import type { Data } from 'common/types/type'
 import RTPFrameQueue from 'avprotocol/rtp/RTPFrameQueue'

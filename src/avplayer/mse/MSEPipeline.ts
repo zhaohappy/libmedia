@@ -66,7 +66,7 @@ import getMediaSource from '../function/getMediaSource'
 import * as intread from 'avutil/util/intread'
 import * as h264 from 'avutil/codecs/h264'
 import * as hevc from 'avutil/codecs/hevc'
-import type { AVCodecParametersSerialize, AVPacketSerialize} from 'avutil/util/serialize'
+import type { AVCodecParametersSerialize, AVPacketSerialize } from 'avutil/util/serialize'
 import {
   unserializeAVCodecParameters, unserializeAVPacket
 } from 'avutil/util/serialize'

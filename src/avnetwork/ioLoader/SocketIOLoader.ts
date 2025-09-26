@@ -24,7 +24,7 @@
  */
 
 import type { Uint8ArrayInterface } from 'common/io/interface'
-import type { IOLoaderOptions} from './IOLoader'
+import type { IOLoaderOptions } from './IOLoader'
 import IOLoader, { IOLoaderStatus } from './IOLoader'
 import { IOError } from 'common/io/error'
 import type { Data } from 'common/types/type'

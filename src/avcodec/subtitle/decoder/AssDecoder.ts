@@ -27,7 +27,7 @@ import type AVPacket from 'avutil/struct/avpacket'
 import Decoder from './Decoder'
 import { getAVPacketData } from 'avutil/util/avpacket'
 import type { Rational } from 'avutil/struct/rational'
-import type { AVSubtitle} from 'avutil/struct/avsubtitle'
+import type { AVSubtitle } from 'avutil/struct/avsubtitle'
 import { AVSubtitleType } from 'avutil/struct/avsubtitle'
 import * as text from 'common/util/text'
 

@@ -24,7 +24,7 @@
  */
 
 import { readCString, writeCString } from 'cheap/std/memory'
-import type { AVDictionary} from '../struct/avdict'
+import type { AVDictionary } from '../struct/avdict'
 import { AVDictFlags, AVDictionaryEntry } from '../struct/avdict'
 import { avFreep, avMallocz } from './mem'
 import * as is from 'common/util/is'

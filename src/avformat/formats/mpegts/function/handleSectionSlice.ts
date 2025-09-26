@@ -24,7 +24,7 @@
  */
 
 import type { MpegtsContext } from '../type'
-import type { TSPacket} from '../struct'
+import type { TSPacket } from '../struct'
 import { TSSliceQueue } from '../struct'
 import clearTSSliceQueue from '../function/clearTSSliceQueue'
 import parseSection from '../function/parseSection'

@@ -138,7 +138,8 @@ const eslintConfig = {
 			'named': 'never',
 			'asyncArrow': 'always'
 		}],
-        "@typescript-eslint/consistent-type-imports": ["error", { "prefer": "type-imports" }]
+        "@typescript-eslint/consistent-type-imports": ["error", { "prefer": "type-imports" }],
+        "object-curly-spacing": ["error", "always"]
 	}
 }
 

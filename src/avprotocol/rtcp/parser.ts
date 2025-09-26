@@ -25,7 +25,7 @@
 
 import BufferReader from 'common/io/BufferReader'
 import type { Uint8ArrayInterface } from 'common/io/interface'
-import type { RTCPCommonHeader} from './RTCPPacket'
+import type { RTCPCommonHeader } from './RTCPPacket'
 import { RTCPSendReport, Report } from './RTCPPacket'
 
 export function parseHeader(packet: RTCPCommonHeader, reader: BufferReader) {

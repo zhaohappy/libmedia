@@ -96,7 +96,7 @@ class Variant {
     video = [],
     subtitles = [],
     closedCaptions = [],
-    currentRenditions = {audio: 0, video: 0, subtitles: 0, closedCaptions: 0}
+    currentRenditions = { audio: 0, video: 0, subtitles: 0, closedCaptions: 0 }
   }: any) {
     this.uri = uri
     this.isIFrameOnly = isIFrameOnly
@@ -290,7 +290,7 @@ class MasterPlaylist extends Playlist {
   sessionKeyList: Key[]
 
   constructor(params: Partial<MasterPlaylist> = {}) {
-    super({...params, isMasterPlaylist: true})
+    super({ ...params, isMasterPlaylist: true })
     const {
       variants = [],
       currentVariant,
@@ -329,7 +329,7 @@ class MediaPlaylist extends Playlist {
   timestamp: number
 
   constructor(params: Partial<MediaPlaylist> = {}) {
-    super({...params, isMasterPlaylist: false})
+    super({ ...params, isMasterPlaylist: false })
     const {
       targetDuration,
       mediaSequenceBase = 0,

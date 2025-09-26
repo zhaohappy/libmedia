@@ -23,7 +23,7 @@
  *
  */
 
-import type { ColorTransformOptions} from './options'
+import type { ColorTransformOptions } from './options'
 import { GLType } from './options'
 
 // The luminance vector in rec2020 linear space.

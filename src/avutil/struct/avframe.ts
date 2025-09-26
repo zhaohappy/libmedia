@@ -397,7 +397,7 @@ export default class AVFrame {
   /**
    * Sample aspect ratio for the video frame, 0/1 if unknown/unspecified.
    */
-  sampleAspectRatio: Rational = new Rational({den: 1, num: 0})
+  sampleAspectRatio: Rational = new Rational({ den: 1, num: 0 })
 
   /**
    * Presentation timestamp in time_base units (time when frame should be shown to user).

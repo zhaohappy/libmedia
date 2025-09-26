@@ -26,7 +26,7 @@
 import { AVCodecID } from 'avutil/codec'
 import { AVPacketFlags } from 'avutil/struct/avpacket'
 import type IOWriterSync from 'common/io/IOWriterSync'
-import type { FlvTag} from './flv'
+import type { FlvTag } from './flv'
 import { AudioPacketModExType, AudioPacketType, AVCodecID2FlvCodecTag, AVCodecID2FlvCodecType, AVMultiTrackType, VideoFrameType, VideoPacketModExType, VideoPacketType } from './flv'
 import type { FlvContext, FlvStreamContext } from './type'
 import type { Rational } from 'avutil/struct/rational'

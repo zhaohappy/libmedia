@@ -24,7 +24,7 @@
  */
 
 import colorTransformPerChannelTransferFn from './colorTransformPerChannelTransferFn'
-import type { ColorTransformOptions} from '../options'
+import type { ColorTransformOptions } from '../options'
 import { GLType } from '../options'
 import { AVColorTransferCharacteristic } from 'avutil/pixfmt'
 

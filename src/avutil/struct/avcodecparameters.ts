@@ -156,7 +156,7 @@ export default class AVCodecParameters {
    * When the aspect ratio is unknown / undefined, the numerator should be
    * set to 0 (the denominator may have any value).
    */
-  sampleAspectRatio: Rational = new Rational({den: 1, num: 1})
+  sampleAspectRatio: Rational = new Rational({ den: 1, num: 1 })
 
   /**
    * Video only. Number of frames per second, for streams with constant frame
@@ -168,7 +168,7 @@ export default class AVCodecParameters {
    * timestamps, when available. It should thus be used only as a last resort,
    * when no higher-level timing information is available.
    */
-  framerate: Rational = new Rational({den: 1, num: 0})
+  framerate: Rational = new Rational({ den: 1, num: 0 })
 
   /**
    * Video only. The order of the fields in interlaced video.

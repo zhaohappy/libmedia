@@ -235,7 +235,7 @@ export default class DashIOLoader extends IOLoader {
             if (this.options.isLive) {
               addIgnoreSegment(this.audioResource, media.mediaSegments, this.minBuffer)
             }
-            this.audioResource.segments = [{url: media.initSegment}].concat(media.mediaSegments.map((s) => {
+            this.audioResource.segments = [{ url: media.initSegment }].concat(media.mediaSegments.map((s) => {
               return {
                 url: s.url,
                 pending: s.pending,
@@ -305,7 +305,7 @@ export default class DashIOLoader extends IOLoader {
             if (this.options.isLive) {
               addIgnoreSegment(this.videoResource, media.mediaSegments, this.minBuffer)
             }
-            this.videoResource.segments = [{url: media.initSegment}].concat(media.mediaSegments.map((s) => {
+            this.videoResource.segments = [{ url: media.initSegment }].concat(media.mediaSegments.map((s) => {
               return {
                 url: s.url,
                 pending: s.pending,
@@ -369,7 +369,7 @@ export default class DashIOLoader extends IOLoader {
             if (this.options.isLive) {
               addIgnoreSegment(this.subtitleResource, media.mediaSegments, this.minBuffer)
             }
-            this.subtitleResource.segments = [{url: media.initSegment}].concat(media.mediaSegments.map((s) => {
+            this.subtitleResource.segments = [{ url: media.initSegment }].concat(media.mediaSegments.map((s) => {
               return {
                 url: s.url,
                 pending: s.pending,
@@ -802,7 +802,7 @@ export default class DashIOLoader extends IOLoader {
           })
           this.addHistory(this.videoResource, media.mediaSegments, segmentIndex + 1)
         }
-        this.videoResource.segments = [{url: media.initSegment}].concat(media.mediaSegments.map((s) => {
+        this.videoResource.segments = [{ url: media.initSegment }].concat(media.mediaSegments.map((s) => {
           return {
             url: s.url,
             pending: s.pending,
@@ -844,7 +844,7 @@ export default class DashIOLoader extends IOLoader {
           })
           this.addHistory(this.audioResource, media.mediaSegments, segmentIndex + 1)
         }
-        this.audioResource.segments = [{url: media.initSegment}].concat(media.mediaSegments.map((s) => {
+        this.audioResource.segments = [{ url: media.initSegment }].concat(media.mediaSegments.map((s) => {
           return {
             url: s.url,
             pending: s.pending,
@@ -886,7 +886,7 @@ export default class DashIOLoader extends IOLoader {
           })
           this.addHistory(this.subtitleResource, media.mediaSegments, segmentIndex + 1)
         }
-        this.subtitleResource.segments = [{url: media.initSegment}].concat(media.mediaSegments.map((s) => {
+        this.subtitleResource.segments = [{ url: media.initSegment }].concat(media.mediaSegments.map((s) => {
           return {
             url: s.url,
             pending: s.pending,

@@ -23,7 +23,7 @@
  *
  */
 
-import type { AVPCMBufferPool} from '../struct/avpcmbuffer'
+import type { AVPCMBufferPool } from '../struct/avpcmbuffer'
 import { AVPCMBufferRef } from '../struct/avpcmbuffer'
 import type List from 'cheap/std/collection/List'
 import type { Mutex } from 'cheap/thread/mutex'

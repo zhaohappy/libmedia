@@ -23,7 +23,7 @@
  *
  */
 
-import type { ColorTransformOptions} from './options'
+import type { ColorTransformOptions } from './options'
 import { DefaultSDRWhiteLevel } from './options'
 
 export function computeNitsToSdrRelativeFactor(unityNits: float, useSrcSdrWhite: boolean, options: ColorTransformOptions) {

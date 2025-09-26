@@ -25,7 +25,7 @@
  */
 
 import * as logger from 'common/util/logger'
-import type { AssEvent} from './ass'
+import type { AssEvent } from './ass'
 import { AssEventsFormatList, AssEventType, AssStylesFormatList } from './ass'
 import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
 

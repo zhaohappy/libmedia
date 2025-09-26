@@ -24,7 +24,7 @@
  */
 
 import * as logger from 'common/util/logger'
-import type { HEVCPayloadContext, Mpeg4PayloadContext} from './rtp'
+import type { HEVCPayloadContext, Mpeg4PayloadContext } from './rtp'
 import { RTP_HEVC_DOND_FIELD_SIZE,
   RTP_HEVC_DONL_FIELD_SIZE, RTP_HEVC_PAYLOAD_HEADER_SIZE, RTP_MAX_PACKET_LENGTH } from './rtp'
 import concatTypeArray from 'common/function/concatTypeArray'

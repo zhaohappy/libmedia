@@ -48,14 +48,14 @@ export default function roundStandardFramerate(framerate: Rational) {
   let bestFps = 0
   let bestError = 0.01
   for (let i = 0; i < MAX_STD_FRAMERATE; i++) {
-    const error = Math.abs(avQ2D(framerate) / avQ2D({ num: getStdFramerate(i), den: 12 * 1001}) - 1)
+    const error = Math.abs(avQ2D(framerate) / avQ2D({ num: getStdFramerate(i), den: 12 * 1001 }) - 1)
     if (error < bestError) {
       bestError = error
       bestFps = getStdFramerate(i)
     }
   }
   if (bestFps) {
-    const f = { num: bestFps, den: 12 * 1001}
+    const f = { num: bestFps, den: 12 * 1001 }
     avReduce(f)
     framerate.num = f.num
     framerate.den = f.den

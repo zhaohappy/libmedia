@@ -6,7 +6,7 @@
 
 import * as utils from './utils'
 import type {
-  Byterange} from './types'
+  Byterange } from './types'
 import {
   Rendition,
   Variant,
@@ -83,17 +83,17 @@ function getTagCategory(tagName: string): TagCategory {
 
 function parseEXTINF(param: string) {
   const pair = utils.splitAt(param, ',') as [string, string]
-  return {duration: utils.toNumber(pair[0]), title: decodeURIComponent(escape(pair[1]))}
+  return { duration: utils.toNumber(pair[0]), title: decodeURIComponent(escape(pair[1])) }
 }
 
 function parseBYTERANGE(param: string): Byterange {
   const pair = utils.splitAt(param, '@')
-  return {length: utils.toNumber(pair[0]), offset: pair[1] ? utils.toNumber(pair[1]) : -1}
+  return { length: utils.toNumber(pair[0]), offset: pair[1] ? utils.toNumber(pair[1]) : -1 }
 }
 
 function parseResolution(str: string) {
   const pair = utils.splitAt(str, 'x') as [string, string]
-  return {width: utils.toNumber(pair[0]), height: utils.toNumber(pair[1])}
+  return { width: utils.toNumber(pair[0]), height: utils.toNumber(pair[1]) }
 }
 
 function parseAllowedCpc(str: string) {
@@ -109,7 +109,7 @@ function parseAllowedCpc(str: string) {
       logger.error(message)
       continue
     }
-    allowedCpcList.push({format, cpcList: cpcText.split('/')})
+    allowedCpcList.push({ format, cpcList: cpcText.split('/') })
   }
   return allowedCpcList
 }
@@ -274,7 +274,7 @@ function splitTag(line: string): [string, string | null] {
   return [line.slice(1, index).trim(), line.slice(index + 1).trim()]
 }
 
-function parseRendition({attributes}: Tag): Rendition {
+function parseRendition({ attributes }: Tag): Rendition {
   const rendition = new Rendition({
     type: attributes['TYPE'],
     uri: attributes['URI'],
@@ -358,7 +358,7 @@ function parseVariant(lines: Tag[], variantAttrs: Data, uri: Tag, iFrameOnly: bo
       if (variantAttrs[renditionType] === renditionAttrs['GROUP-ID']) {
         addRendition(variant, line, renditionType)
         if (renditionType === 'CLOSED-CAPTIONS') {
-          for (const {instreamId} of variant.closedCaptions) {
+          for (const { instreamId } of variant.closedCaptions) {
             if (instreamId && instreamId.startsWith('SERVICE') && params.compatibleVersion < 7) {
               params.compatibleVersion = 7
               break
@@ -408,7 +408,7 @@ function sameKey(key1: Key, key2: Key) {
 function parseMasterPlaylist(lines: Line[], params: Record<string, any>): MasterPlaylist {
   const playlist = new MasterPlaylist()
   let variantIsScored = false
-  for (const [index, {name, value, attributes}] of (lines as Tag[]).entries()) {
+  for (const [index, { name, value, attributes }] of (lines as Tag[]).entries()) {
     if (name === 'EXT-X-VERSION') {
       playlist.version = value
     }
@@ -476,7 +476,7 @@ function parseMasterPlaylist(lines: Line[], params: Record<string, any>): Master
       if (typeof attributes['TIME-OFFSET'] !== 'number') {
         logger.fatal('EXT-X-START: TIME-OFFSET attribute is REQUIRED')
       }
-      playlist.start = {offset: attributes['TIME-OFFSET'], precise: attributes['PRECISE'] || false}
+      playlist.start = { offset: attributes['TIME-OFFSET'], precise: attributes['PRECISE'] || false }
     }
   }
   if (variantIsScored) {
@@ -505,11 +505,11 @@ function parseSegment(
   discontinuitySequence: number,
   params: Record<string, any>
 ) {
-  const segment = new Segment({uri, mediaSequenceNumber, discontinuitySequence})
+  const segment = new Segment({ uri, mediaSequenceNumber, discontinuitySequence })
   let mapHint = false
   let partHint = false
   for (let i = start; i <= end; i++) {
-    const {name, value, attributes} = lines[i] as Tag
+    const { name, value, attributes } = lines[i] as Tag
     if (name === 'EXTINF') {
       if (!Number.isInteger(value.duration) && params.compatibleVersion < 3) {
         params.compatibleVersion = 3
@@ -628,7 +628,7 @@ function parseSegment(
       segment.map = new MediaInitializationSection({
         hint: true,
         uri: attributes['URI'],
-        byterange: {length: attributes['BYTERANGE-LENGTH'], offset: attributes['BYTERANGE-START'] || 0}
+        byterange: { length: attributes['BYTERANGE-LENGTH'], offset: attributes['BYTERANGE-START'] || 0 }
       })
     }
     else if (name === 'EXT-X-PART' || (name === 'EXT-X-PRELOAD-HINT' && attributes['TYPE'] === 'PART')) {
@@ -641,7 +641,7 @@ function parseSegment(
       const partialSegment = new PartialSegment({
         hint: (name === 'EXT-X-PRELOAD-HINT'),
         uri: attributes['URI'],
-        byterange: (name === 'EXT-X-PART' ? attributes['BYTERANGE'] : {length: attributes['BYTERANGE-LENGTH'], offset: attributes['BYTERANGE-START'] || 0}),
+        byterange: (name === 'EXT-X-PART' ? attributes['BYTERANGE'] : { length: attributes['BYTERANGE-LENGTH'], offset: attributes['BYTERANGE-START'] || 0 }),
         duration: attributes['DURATION'],
         independent: attributes['INDEPENDENT'],
         gap: attributes['GAP']
@@ -661,9 +661,9 @@ function parsePrefetchSegment(
   discontinuitySequence: number,
   params: Record<string, any>
 ) {
-  const segment = new PrefetchSegment({uri, mediaSequenceNumber, discontinuitySequence})
+  const segment = new PrefetchSegment({ uri, mediaSequenceNumber, discontinuitySequence })
   for (let i = start; i <= end; i++) {
-    const {name, attributes} = lines[i] as Tag
+    const { name, attributes } = lines[i] as Tag
     if (name === 'EXTINF') {
       logger.fatal('A prefetch segment must not be advertised with an EXTINF tag.')
     }
@@ -703,7 +703,7 @@ function parseMediaPlaylist(lines: Line[], params: Record<string, any>) {
   let currentMap: MediaInitializationSection | null = null
   let containsParts = false
   for (const [index, line] of lines.entries()) {
-    const {name, value, attributes, category} = line as Tag
+    const { name, value, attributes, category } = line as Tag
     if (category === 'Segment') {
       if (segmentStart === -1) {
         segmentStart = index
@@ -764,7 +764,7 @@ function parseMediaPlaylist(lines: Line[], params: Record<string, any>) {
       if (typeof attributes['TIME-OFFSET'] !== 'number') {
         logger.fatal('EXT-X-START: TIME-OFFSET attribute is REQUIRED')
       }
-      playlist.start = {offset: attributes['TIME-OFFSET'], precise: attributes['PRECISE'] || false}
+      playlist.start = { offset: attributes['TIME-OFFSET'], precise: attributes['PRECISE'] || false }
     }
     else if (name === 'EXT-X-SERVER-CONTROL') {
       if (!attributes['CAN-BLOCK-RELOAD']) {
@@ -865,7 +865,7 @@ function parseMediaPlaylist(lines: Line[], params: Record<string, any>) {
       if (segment.key === null) {
         currentKey = undefined
       }
-      const {parts} = segment
+      const { parts } = segment
       if (parts.length > 0 && !playlist.endlist && !parts[parts.length - 1]?.hint) {
         logger.fatal('If the Playlist contains EXT-X-PART tags and does not contain an EXT-X-ENDLIST tag, the Playlist must contain an EXT-X-PRELOAD-HINT tag with a TYPE=PART attribute')
       }
@@ -892,7 +892,7 @@ function addSegment(
   currentKey?: Key,
   currentMap?: MediaInitializationSection
 ): [number, Key, MediaInitializationSection] {
-  const {discontinuity, key, map, byterange, uri} = segment
+  const { discontinuity, key, map, byterange, uri } = segment
   if (discontinuity) {
     segment.discontinuitySequence = discontinuitySequence + 1
   }
@@ -903,7 +903,7 @@ function addSegment(
     segment.map = currentMap!
   }
   if (byterange && byterange.offset === -1) {
-    const {segments} = playlist
+    const { segments } = playlist
     if (segments.length > 0) {
       const prevSegment = segments[segments.length - 1]!
       if (prevSegment.byterange && prevSegment.uri === uri) {
@@ -927,7 +927,7 @@ function checkDateRange(segments: Segment[]) {
   let hasDateRange = false
   let hasProgramDateTime = false
   for (let i = segments.length - 1; i >= 0; i--) {
-    const {programDateTime, dateRange} = segments[i]
+    const { programDateTime, dateRange } = segments[i]
     if (programDateTime) {
       hasProgramDateTime = true
     }
@@ -955,10 +955,10 @@ function checkDateRange(segments: Segment[]) {
             logger.fatal('DATERANGE tags with the same CLASS should not overlap')
           }
         }
-        range.push({start, end})
+        range.push({ start, end })
       }
       else if (dateRange.classId) {
-        rangeList.set(dateRange.classId, [{start, end}])
+        rangeList.set(dateRange.classId, [{ start, end }])
       }
     }
   }
@@ -967,8 +967,8 @@ function checkDateRange(segments: Segment[]) {
   }
 }
 
-function checkLowLatencyCompatibility({lowLatencyCompatibility, targetDuration, partTargetDuration, segments, renditionReports}: any, containsParts) {
-  const {canSkipUntil, holdBack, partHoldBack} = lowLatencyCompatibility
+function checkLowLatencyCompatibility({ lowLatencyCompatibility, targetDuration, partTargetDuration, segments, renditionReports }: any, containsParts) {
+  const { canSkipUntil, holdBack, partHoldBack } = lowLatencyCompatibility
   if (canSkipUntil < targetDuration * 6) {
     logger.fatal('The Skip Boundary must be at least six times the EXT-X-TARGETDURATION.')
   }
@@ -986,11 +986,11 @@ function checkLowLatencyCompatibility({lowLatencyCompatibility, targetDuration, 
     if (partHoldBack < partTargetDuration) {
       logger.fatal('PART-HOLD-BACK must be at least PART-TARGET')
     }
-    for (const [segmentIndex, {parts}] of segments.entries()) {
+    for (const [segmentIndex, { parts }] of segments.entries()) {
       // if (parts.length > 0 && segmentIndex < segments.length - 3) {
       //   logger.fatal('Remove EXT-X-PART tags from the Playlist after they are greater than three target durations from the end of the Playlist.')
       // }
-      for (const [partIndex, {duration}] of parts.entries()) {
+      for (const [partIndex, { duration }] of parts.entries()) {
         if (duration === undefined) {
           continue
         }
@@ -1057,7 +1057,7 @@ function parseTag(line: string, params: Record<string, any>): Tag | null {
     params.hash[name] = true
   }
   const [value, attributes] = parseTagParam(name, param)
-  return {name, category, value, attributes}
+  return { name, category, value, attributes }
 }
 
 type Line = string | Tag

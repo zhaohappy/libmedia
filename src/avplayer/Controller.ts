@@ -23,7 +23,7 @@
  *
  */
 
-import type { AVCodecID} from 'avutil/codec'
+import type { AVCodecID } from 'avutil/codec'
 import { AVMediaType } from 'avutil/codec'
 import type { RpcMessage } from 'common/network/IPCPort'
 import IPCPort, { NOTIFY, REQUEST } from 'common/network/IPCPort'
