@@ -60,6 +60,8 @@ import * as h264 from 'avutil/codecs/h264'
 import * as hevc from 'avutil/codecs/hevc'
 import * as vvc from 'avutil/codecs/vvc'
 import * as intread from 'avutil/util/intread'
+import { AlphaVideoFrame } from './struct/type'
+import { isAlphaVideoFrame } from './util'
 
 export interface VideoDecodeTaskOptions extends TaskOptions {
   resource: ArrayBuffer | WebAssemblyResource
@@ -70,6 +72,7 @@ export interface VideoDecodeTaskOptions extends TaskOptions {
   avframeListMutex: pointer<Mutex>
   preferWebCodecs?: boolean
   preferLatency?: boolean
+  keepAlpha?: boolean
 }
 
 type SelfTask = Omit<VideoDecodeTaskOptions, 'resource'> & {
@@ -82,7 +85,7 @@ type SelfTask = Omit<VideoDecodeTaskOptions, 'resource'> & {
   hardwareDecoder?: WebVideoDecoder
   targetDecoder: WasmVideoDecoder | WebVideoDecoder
 
-  frameCaches: (pointer<AVFrameRef> | VideoFrame)[]
+  frameCaches: (pointer<AVFrameRef> | VideoFrame | AlphaVideoFrame)[]
   inputEnd: boolean
 
   needKeyFrame: boolean
@@ -154,7 +157,10 @@ export default class VideoDecodePipeline extends Pipeline {
         task.needKeyFrame = true
         task.leftIPCPort.request('requestKeyframe')
       },
-      onReceiveVideoFrame(frame) {
+      onReceiveVideoFrame(frame, alpha) {
+        if (alpha) {
+          (frame as AlphaVideoFrame).alpha = alpha
+        }
         task.firstDecoded = true
         task.frameCaches.push(frame)
         task.stats.videoFrameDecodeCount++
@@ -167,7 +173,8 @@ export default class VideoDecodePipeline extends Pipeline {
         }
       },
       enableHardwareAcceleration,
-      optimizeForLatency: task.preferLatency
+      optimizeForLatency: task.preferLatency,
+      alpha: task.keepAlpha ? 'keep' : 'discard'
     })
   }
 
@@ -254,19 +261,29 @@ export default class VideoDecodePipeline extends Pipeline {
 
     this.tasks.set(options.taskId, task)
 
+    function replyFrame(request: RpcMessage, frame: pointer<AVFrameRef> | VideoFrame | AlphaVideoFrame) {
+      if (is.number(frame)) {
+        rightIPCPort.reply(request, frame)
+      }
+      else if (isAlphaVideoFrame(frame)) {
+        rightIPCPort.reply(request, { ref: frame, alpha: frame.alpha }, null, [frame, frame.alpha])
+      }
+      else {
+        rightIPCPort.reply(request, frame, null, [frame])
+      }
+    }
+
     rightIPCPort.on(REQUEST, async (request: RpcMessage) => {
       switch (request.method) {
         case 'pull': {
           if (frameCaches.length) {
-            const frame = frameCaches.shift()
-            rightIPCPort.reply(request, frame, null, (isPointer(frame) || is.number(frame)) ? null : [frame])
+            replyFrame(request, frameCaches.shift())
             break
           }
           else if (!task.inputEnd) {
             while (true) {
               if (frameCaches.length) {
-                const frame = frameCaches.shift()
-                rightIPCPort.reply(request, frame, null, (isPointer(frame) || is.number(frame)) ? null : [frame])
+                replyFrame(request, frameCaches.shift())
                 break
               }
 
@@ -313,8 +330,7 @@ export default class VideoDecodePipeline extends Pipeline {
                   await new Sleep(0)
                 }
                 if (frameCaches.length) {
-                  const frame = frameCaches.shift()
-                  rightIPCPort.reply(request, frame, null, task.targetDecoder === task.hardwareDecoder ? [frame] : null)
+                  replyFrame(request, frameCaches.shift())
                   break
                 }
                 else {
@@ -811,6 +827,9 @@ export default class VideoDecodePipeline extends Pipeline {
         }
         else {
           frame.close()
+          if (isAlphaVideoFrame(frame)) {
+            frame.alpha.close()
+          }
         }
       })
       task.frameCaches.length = 0
@@ -846,6 +865,9 @@ export default class VideoDecodePipeline extends Pipeline {
         }
         else {
           frame.close()
+          if (isAlphaVideoFrame(frame)) {
+            frame.alpha.close()
+          }
         }
       })
       if (task.parameters) {

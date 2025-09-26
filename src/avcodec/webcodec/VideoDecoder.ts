@@ -39,20 +39,23 @@ import * as hevc from 'avutil/codecs/hevc'
 import * as vvc from 'avutil/codecs/vvc'
 import * as errorType from 'avutil/error'
 import * as array from 'common/util/array'
-import { AV_TIME_BASE_Q } from 'avutil/constant'
+import { AV_TIME_BASE_Q, NOPTS_VALUE } from 'avutil/constant'
 import { avRescaleQ2 } from 'avutil/util/rational'
+import * as intread from 'avutil/util/intread'
 
 export type WebVideoDecoderOptions = {
-  onReceiveVideoFrame: (frame: VideoFrame) => void
+  onReceiveVideoFrame: (frame: VideoFrame, alpha?: VideoFrame) => void
   onError: (error?: Error) => void
   enableHardwareAcceleration?: boolean
   optimizeForLatency?: boolean
+  alpha?: 'keep' | 'discard'
   codec?: string
 }
 
 export default class WebVideoDecoder {
 
   private decoder: VideoDecoder | undefined
+  private alphaDecoder: VideoDecoder | undefined
 
   private options: WebVideoDecoderOptions
   private parameters: pointer<AVCodecParameters> = nullptr
@@ -69,6 +72,11 @@ export default class WebVideoDecoder {
 
   private keyframeRequire: boolean = false
   private extradataRequire: boolean = false
+  private alphaQueue: VideoFrame[]
+  private alphaPending: Map<number, {
+    promise: Promise<void>
+    resolve: () => void
+  }>
 
   constructor(options: WebVideoDecoderOptions) {
 
@@ -76,9 +84,22 @@ export default class WebVideoDecoder {
     this.inputQueue = []
     this.outputQueue = []
     this.dtsQueue = []
+    this.alphaQueue = []
+    this.alphaPending = new Map()
 
     // safari 输出帧在有 B 帧的情况下没有按 pts 排序递增输出，这里需要进行排序输出
     this.sort = !!(browser.safari || os.ios)
+  }
+
+  private getAlphaFrame(frame: VideoFrame) {
+    if (this.alphaQueue.length) {
+      let i = this.alphaQueue.length - 1
+      for (; i >= 0; i--) {
+        if (this.alphaQueue[i].timestamp === frame.timestamp) {
+          return this.alphaQueue.splice(i, 1).shift()
+        }
+      }
+    }
   }
 
   private async output(frame: VideoFrame) {
@@ -90,6 +111,14 @@ export default class WebVideoDecoder {
         timestamp: this.dtsQueue.shift()
       })
       old.close()
+    }
+    if (this.alphaPending.has(frame.timestamp)) {
+      await this.alphaPending.get(frame.timestamp)!.promise
+      // decoder 关闭触发的直接 close VideoFrame 退出
+      if (!this.decoder) {
+        frame.close()
+        return
+      }
     }
     if (this.sort) {
       let i = 0
@@ -107,28 +136,53 @@ export default class WebVideoDecoder {
         && this.outputQueue[0].timestamp === this.inputQueue[0]
       ) {
         const output = this.outputQueue.shift()!
+        const alphaVideoFrame = this.getAlphaFrame(output)
         if (this.options.onReceiveVideoFrame) {
-          this.options.onReceiveVideoFrame(output)
+          this.options.onReceiveVideoFrame(output, alphaVideoFrame)
         }
         else {
           output.close()
+          if (alphaVideoFrame) {
+            alphaVideoFrame.close()
+          }
         }
         this.inputQueue.shift()
       }
     }
     else {
+      const alphaVideoFrame = this.getAlphaFrame(frame)
       if (this.options.onReceiveVideoFrame) {
-        this.options.onReceiveVideoFrame(frame)
+        this.options.onReceiveVideoFrame(frame, alphaVideoFrame)
       }
       else {
         frame.close()
+        if (alphaVideoFrame) {
+          alphaVideoFrame.close()
+        }
       }
+    }
+  }
+
+  private async outputAlpha(frame: VideoFrame) {
+    this.alphaQueue.push(frame)
+    if (this.alphaPending.has(frame.timestamp)) {
+      this.alphaPending.get(frame.timestamp)!.resolve()
+      this.alphaPending.delete(frame.timestamp)
     }
   }
 
   private error(error: Error) {
     this.currentError = error
     this.options.onError(error)
+  }
+
+  private errorAlpha(error: Error) {
+    this.currentError = error
+    this.options.onError(error)
+    this.alphaPending.forEach((item) => {
+      item.resolve()
+    })
+    this.alphaPending.clear()
   }
 
   private changeExtraData(buffer: Uint8Array) {
@@ -177,6 +231,10 @@ export default class WebVideoDecoder {
     }
 
     this.decoder!.configure(config)
+
+    if (this.alphaDecoder) {
+      this.alphaDecoder.configure(config)
+    }
 
     if (this.currentError) {
       logger.error(`change extra data error, ${this.currentError}`)
@@ -233,6 +291,9 @@ export default class WebVideoDecoder {
     if (this.decoder && this.decoder.state !== 'closed') {
       this.decoder.close()
     }
+    if (this.alphaDecoder && this.alphaDecoder.state !== 'closed') {
+      this.alphaDecoder.close()
+    }
 
     this.decoder = new VideoDecoder({
       output: this.output.bind(this),
@@ -241,6 +302,21 @@ export default class WebVideoDecoder {
 
     this.decoder.reset()
     this.decoder.configure(config)
+
+    if ((parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_ALPHA)
+      && (parameters.codecId === AVCodecID.AV_CODEC_ID_VP8
+        || parameters.codecId === AVCodecID.AV_CODEC_ID_VP9
+        || parameters.codecId === AVCodecID.AV_CODEC_ID_AV1
+      )
+      && this.options.alpha === 'keep'
+    ) {
+      this.alphaDecoder = new VideoDecoder({
+        output: this.outputAlpha.bind(this),
+        error: this.errorAlpha.bind(this)
+      })
+      this.alphaDecoder.reset()
+      this.alphaDecoder.configure(config)
+    }
 
     if (this.currentError) {
       logger.error(`open video decoder error, ${this.currentError}`)
@@ -260,10 +336,21 @@ export default class WebVideoDecoder {
         frame.close()
       })
     }
+    if (this.alphaQueue.length) {
+      this.alphaQueue.forEach((frame) => {
+        frame.close()
+      })
+    }
+
+    this.alphaPending.forEach((item) => {
+      item.resolve()
+    })
+    this.alphaPending.clear()
 
     this.inputQueue.length = 0
     this.outputQueue.length = 0
     this.dtsQueue.length = 0
+    this.alphaQueue.length = 0
 
     return 0
   }
@@ -340,6 +427,31 @@ export default class WebVideoDecoder {
     }
 
     try {
+      if (this.alphaDecoder) {
+        const sideData = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_MATROSKA_BLOCKADDITIONAL)
+        if (sideData) {
+          const id = intread.rb64(sideData.data)
+          if (id === 1n) {
+            if (videoChunk.timestamp !== NOPTS_VALUE) {
+              this.alphaDecoder.decode(new EncodedVideoChunk({
+                type: videoChunk.type,
+                timestamp: videoChunk.timestamp,
+                duration: videoChunk.duration != null ? videoChunk.duration : undefined,
+                data: mapUint8Array(sideData.data + 8, reinterpret_cast<size>((sideData.size - 8) as uint32))
+              }))
+              const { promise, resolve } = Promise.withResolvers<void>()
+              this.alphaPending.set(videoChunk.timestamp, {
+                promise,
+                resolve
+              })
+            }
+            else {
+              logger.warn('decode with alpha need avpacket\'s pts, ignore alpha channel data')
+            }
+          }
+        }
+      }
+
       this.decoder!.decode(videoChunk)
       if (this.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS) {
         this.dtsQueue.push(static_cast<double>(avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), AV_TIME_BASE_Q)))
@@ -363,6 +475,9 @@ export default class WebVideoDecoder {
       return errorType.DATA_INVALID
     }
     try {
+      if (this.alphaDecoder) {
+        await this.alphaDecoder.flush()
+      }
       await this.decoder!.flush()
     }
     catch (error) {
@@ -372,11 +487,15 @@ export default class WebVideoDecoder {
     if (this.sort) {
       while (this.outputQueue.length) {
         const frame = this.outputQueue.shift()!
+        const alphaVideoFrame = this.getAlphaFrame(frame)
         if (this.options.onReceiveVideoFrame) {
-          this.options.onReceiveVideoFrame(frame)
+          this.options.onReceiveVideoFrame(frame, alphaVideoFrame)
         }
         else {
           frame.close()
+          if (alphaVideoFrame) {
+            alphaVideoFrame.close()
+          }
         }
       }
     }
@@ -388,7 +507,16 @@ export default class WebVideoDecoder {
     if (this.decoder && this.decoder.state !== 'closed') {
       this.decoder.close()
     }
+    if (this.alphaDecoder && this.alphaDecoder.state !== 'closed') {
+      this.alphaDecoder.close()
+    }
+    this.alphaPending.forEach((item) => {
+      item.resolve()
+    })
+    this.alphaPending.clear()
+
     this.decoder = undefined
+    this.alphaDecoder = undefined
     this.currentError = null
 
     if (this.outputQueue.length) {
@@ -396,9 +524,15 @@ export default class WebVideoDecoder {
         frame.close()
       })
     }
+    if (this.alphaQueue.length) {
+      this.alphaQueue.forEach((frame) => {
+        frame.close()
+      })
+    }
 
     this.inputQueue.length = 0
     this.outputQueue.length = 0
+    this.alphaQueue.length = 0
   }
 
   public getQueueLength() {

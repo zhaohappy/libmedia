@@ -624,7 +624,7 @@ export default class IMatroskaFormat extends IFormat {
     return 0
   }
 
-  private parseAdditions(avpacket: pointer<AVPacket>, additions: Additions) {
+  private parseAdditions(avpacket: pointer<AVPacket>, additions: Additions, stream: AVStream) {
     for (let i = 0; i < additions.entry.length; i++) {
       const addition = additions.entry[i]
       if (addition.additional?.size) {
@@ -637,6 +637,15 @@ export default class IMatroskaFormat extends IFormat {
         intwrite.wb64(data, static_cast<uint64>(addition.additionalId))
         memcpyFromUint8Array(data + 8, addition.additional.data.length, addition.additional.data)
         addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_MATROSKA_BLOCKADDITIONAL, data, addition.additional.data.length + 8)
+
+        if (addition.additionalId === 1
+          && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP8
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1
+          )
+        ) {
+          stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_ALPHA
+        }
       }
     }
   }
@@ -831,7 +840,7 @@ export default class IMatroskaFormat extends IFormat {
       }
 
       if (additions) {
-        this.parseAdditions(avpacket, additions)
+        this.parseAdditions(avpacket, additions, stream)
       }
 
       if (i !== 0) {

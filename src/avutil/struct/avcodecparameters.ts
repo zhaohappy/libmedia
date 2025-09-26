@@ -49,7 +49,12 @@ export const enum AVCodecParameterFlags {
   /**
    * 解封装层没有 dts
    */
-  AV_CODECPAR_FLAG_NO_DTS = 4
+  AV_CODECPAR_FLAG_NO_DTS = 4,
+
+  /**
+   * 封装层有 alpha 通道数据
+   */
+  AV_CODECPAR_FLAG_ALPHA = 8
 }
 
 /**

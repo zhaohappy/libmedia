@@ -59,6 +59,8 @@ import nextTick from 'common/function/nextTick'
 import isPointer from 'cheap/std/function/isPointer'
 import os from 'common/util/os'
 import MasterTimer from 'common/timer/MasterTimer'
+import { AlphaVideoFrame } from './struct/type'
+import { isAlphaVideoFrame } from './util'
 
 type WebGPURenderFactory = {
   new(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions): WebGPURender,
@@ -120,9 +122,9 @@ type SelfTask = VideoRenderTaskOptions & {
   lastNotifyPTS: int64
   // playRate / 100 
   playRate: int64
-  frontFrame: pointer<AVFrameRef> | VideoFrame
-  backFrame: pointer<AVFrameRef> | VideoFrame
-  renderFrame: pointer<AVFrameRef> | VideoFrame
+  frontFrame: pointer<AVFrameRef> | VideoFrame | AlphaVideoFrame
+  backFrame: pointer<AVFrameRef> | VideoFrame | AlphaVideoFrame
+  renderFrame: pointer<AVFrameRef> | VideoFrame | AlphaVideoFrame
   renderFrameCount: int64
 
   loop: LoopTask
@@ -243,6 +245,15 @@ export default class VideoRenderPipeline extends Pipeline {
     return 0
   }
 
+  private async pullFrame(task: SelfTask) {
+    const frame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame | { ref: VideoFrame, alpha: VideoFrame }>('pull')
+    if (is.number(frame) || frame instanceof VideoFrame) {
+      return frame
+    }
+    (frame.ref as AlphaVideoFrame).alpha = frame.alpha
+    return frame.ref
+  }
+
   private swap(task: SelfTask) {
     if (task.seeking) {
       return
@@ -250,6 +261,9 @@ export default class VideoRenderPipeline extends Pipeline {
     if (task.backFrame) {
       if (!isPointer(task.backFrame)) {
         task.backFrame.close()
+        if (isAlphaVideoFrame(task.backFrame)) {
+          task.backFrame.alpha.close()
+        }
       }
       else {
         task.avframePool.release(task.backFrame)
@@ -280,7 +294,7 @@ export default class VideoRenderPipeline extends Pipeline {
     }
     task.frontBuffered = false
 
-    task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull').then((frame) => {
+    this.pullFrame(task).then((frame) => {
       if (task.afterPullResolver) {
         task.afterPullResolver()
       }
@@ -315,7 +329,7 @@ export default class VideoRenderPipeline extends Pipeline {
     }
   }
 
-  private async createRender(task: SelfTask, frame: pointer<AVFrameRef> | VideoFrame, fallback: boolean = false) {
+  private async createRender(task: SelfTask, frame: pointer<AVFrameRef> | VideoFrame | AlphaVideoFrame, fallback: boolean = false) {
     if (task.renderCreating) {
       return
     }
@@ -436,7 +450,7 @@ export default class VideoRenderPipeline extends Pipeline {
       task.render.setRotate(task.renderRotate ?? 0, false)
       task.render.enableHorizontalFlip(task.flipHorizontal ?? false)
       task.render.enableVerticalFlip(task.flipVertical ?? false)
-      task.render.render(frame)
+      task.render.render(frame, (frame as AlphaVideoFrame).alpha)
       task.render.clear()
     }
     catch (error) {
@@ -475,7 +489,7 @@ export default class VideoRenderPipeline extends Pipeline {
       }
 
       if (!(isPointer(task.backFrame) || is.object(task.backFrame))) {
-        task.backFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
+        task.backFrame = await this.pullFrame(task)
       }
 
       if (is.number(task.backFrame) && task.backFrame < 0) {
@@ -486,7 +500,7 @@ export default class VideoRenderPipeline extends Pipeline {
       }
 
       if (!(isPointer(task.frontFrame) || is.object(task.frontFrame))) {
-        task.frontFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
+        task.frontFrame = await this.pullFrame(task)
       }
 
       task.frontBuffered = true
@@ -634,7 +648,7 @@ export default class VideoRenderPipeline extends Pipeline {
             && !task.skipRender
             && (inWorker || (-diff < 100n) || (task.renderFrameCount & 0x01n))
           ) {
-            task.render.render(task.backFrame)
+            task.render.render(task.backFrame, (task.backFrame as AlphaVideoFrame).alpha)
             task.stats.videoFrameRenderCount++
             if (task.lastRenderTimestamp) {
               task.stats.videoFrameRenderIntervalMax = Math.max(
@@ -700,10 +714,10 @@ export default class VideoRenderPipeline extends Pipeline {
       }
 
       if (!task.backFrame) {
-        task.backFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
+        task.backFrame = await this.pullFrame(task)
       }
       if (!task.frontFrame) {
-        task.frontFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
+        task.frontFrame = await this.pullFrame(task)
       }
 
       task.frontBuffered = true
@@ -812,7 +826,7 @@ export default class VideoRenderPipeline extends Pipeline {
         task.render.setRenderMode(mode)
         nextTick(() => {
           if (task.pausing && task.backFrame && task.render) {
-            task.render.render(task.backFrame)
+            task.render.render(task.backFrame, (task.backFrame as AlphaVideoFrame).alpha)
           }
         })
       }
@@ -827,7 +841,7 @@ export default class VideoRenderPipeline extends Pipeline {
         task.render.setRotate(rotate)
         nextTick(() => {
           if (task.pausing && task.backFrame && task.render) {
-            task.render.render(task.backFrame)
+            task.render.render(task.backFrame, (task.backFrame as AlphaVideoFrame).alpha)
           }
         })
       }
@@ -842,7 +856,7 @@ export default class VideoRenderPipeline extends Pipeline {
         task.render.enableHorizontalFlip(enable)
         nextTick(() => {
           if (task.pausing && task.backFrame && task.render) {
-            task.render.render(task.backFrame)
+            task.render.render(task.backFrame, (task.backFrame as AlphaVideoFrame).alpha)
           }
         })
       }
@@ -857,7 +871,7 @@ export default class VideoRenderPipeline extends Pipeline {
         task.render.enableVerticalFlip(enable)
         nextTick(() => {
           if (task.pausing && task.backFrame && task.render) {
-            task.render.render(task.backFrame)
+            task.render.render(task.backFrame, (task.backFrame as AlphaVideoFrame).alpha)
           }
         })
       }
@@ -871,7 +885,7 @@ export default class VideoRenderPipeline extends Pipeline {
         task.render.viewport(width, height)
         nextTick(() => {
           if (task.pausing && task.backFrame && task.render) {
-            task.render.render(task.backFrame)
+            task.render.render(task.backFrame, (task.backFrame as AlphaVideoFrame).alpha)
           }
         })
       }
@@ -909,6 +923,9 @@ export default class VideoRenderPipeline extends Pipeline {
       if (task.backFrame) {
         if (!isPointer(task.backFrame)) {
           task.backFrame.close()
+          if (isAlphaVideoFrame(task.backFrame)) {
+            task.backFrame.alpha.close()
+          }
         }
         else {
           task.avframePool.release(task.backFrame)
@@ -917,6 +934,9 @@ export default class VideoRenderPipeline extends Pipeline {
       if (task.frontFrame) {
         if (!isPointer(task.frontFrame)) {
           task.frontFrame.close()
+          if (isAlphaVideoFrame(task.frontFrame)) {
+            task.frontFrame.alpha.close()
+          }
         }
         else {
           task.avframePool.release(task.frontFrame)
@@ -944,7 +964,7 @@ export default class VideoRenderPipeline extends Pipeline {
           return
         }
 
-        task.backFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
+        task.backFrame = await this.pullFrame(task)
 
         if (is.number(task.backFrame) && task.backFrame < 0) {
           task.ended = true
@@ -990,6 +1010,9 @@ export default class VideoRenderPipeline extends Pipeline {
             logger.trace(`skip video frame pts: ${task.backFrame.timestamp}(${pts}ms), which is earlier then the seeked time(${timestamp}ms), taskId: ${task.taskId}`)
           }
           task.backFrame.close()
+          if (isAlphaVideoFrame(task.backFrame)) {
+            task.backFrame.alpha.close()
+          }
         }
         else {
           if (defined(ENABLE_LOG_TRACE)) {
@@ -1017,7 +1040,7 @@ export default class VideoRenderPipeline extends Pipeline {
         return
       }
 
-      task.frontFrame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull')
+      task.frontFrame = await this.pullFrame(task)
 
       if (is.number(task.frontFrame) && task.frontFrame < 0) {
         task.frontFrame = null
@@ -1033,6 +1056,9 @@ export default class VideoRenderPipeline extends Pipeline {
         if (task.backFrame) {
           if (!isPointer(task.backFrame)) {
             task.backFrame.close()
+            if (isAlphaVideoFrame(task.backFrame)) {
+              task.backFrame.alpha.close()
+            }
           }
           else {
             task.avframePool.release(task.backFrame)
@@ -1042,6 +1068,9 @@ export default class VideoRenderPipeline extends Pipeline {
         if (task.frontFrame) {
           if (!isPointer(task.frontFrame)) {
             task.frontFrame.close()
+            if (isAlphaVideoFrame(task.frontFrame)) {
+              task.frontFrame.alpha.close()
+            }
           }
           else {
             task.avframePool.release(task.frontFrame)
@@ -1077,7 +1106,7 @@ export default class VideoRenderPipeline extends Pipeline {
         task.loop.start()
       }
       else if (task.backFrame) {
-        task.render.render(task.backFrame)
+        task.render.render(task.backFrame, (task.backFrame as AlphaVideoFrame).alpha)
       }
 
       logger.debug(`after seek end, taskId: ${task.taskId}`)
@@ -1099,7 +1128,7 @@ export default class VideoRenderPipeline extends Pipeline {
             AV_TIME_BASE_Q,
             AV_MILLI_TIME_BASE_Q
           )
-        task.render.render(task.backFrame)
+        task.render.render(task.backFrame, (task.backFrame as AlphaVideoFrame).alpha)
         task.stats.videoCurrentTime = pts
         task.stats.videoFrameRenderCount++
         task.currentPTS = pts
@@ -1139,20 +1168,30 @@ export default class VideoRenderPipeline extends Pipeline {
         task.render = null
       }
       if (task.backFrame) {
-        if (isPointer(task.backFrame) && task.backFrame > 0) {
-          task.avframePool.release(task.backFrame)
+        if (isPointer(task.backFrame)) {
+          if (task.backFrame > 0) {
+            task.avframePool.release(task.backFrame)
+          }
         }
         else {
           task.backFrame.close()
+          if (isAlphaVideoFrame(task.backFrame)) {
+            task.backFrame.alpha.close()
+          }
         }
         task.backFrame = null
       }
       if (task.frontFrame) {
-        if (isPointer(task.frontFrame) && task.frontFrame > 0) {
-          task.avframePool.release(task.frontFrame)
+        if (isPointer(task.frontFrame)) {
+          if (task.frontFrame > 0) {
+            task.avframePool.release(task.frontFrame)
+          }
         }
         else {
           task.frontFrame.close()
+          if (isAlphaVideoFrame(task.frontFrame)) {
+            task.frontFrame.alpha.close()
+          }
         }
         task.frontFrame = null
       }
