@@ -115,22 +115,22 @@ export async function readITunesTagValue(ioReader: IOReader, tagSize: int32) {
         data.push(await ioReader.readFloat())
         dataSize -= 4
       }
-      else if (dateType === 1) {
+      else if (dateType === 1 && dataSize > 0) {
         data.push(await ioReader.readString(dataSize))
         dataSize = 0
       }
-      else {
+      else if (dataSize > 0) {
         data.push(await ioReader.readBuffer(dataSize))
         dataSize = 0
       }
 
-      if (dataSize) {
+      if (dataSize > 0) {
         await ioReader.skip(dataSize)
       }
     }
   }
 
-  if (tagSize) {
+  if (tagSize > 0) {
     await ioReader.skip(tagSize)
   }
   return data
