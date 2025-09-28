@@ -39,7 +39,7 @@ export default class WebGPUExternalRender extends WebGPURender {
   }
 
   private generateFragmentSource() {
-    this.fragmentSource =  `
+    this.fragmentSource = `
       @group(0) @binding(1) var eTexture: texture_external;
       @group(0) @binding(2) var s: sampler;
       ${this.hasAlpha ? '@group(0) @binding(3) var aTexture: texture_external;' : ''}

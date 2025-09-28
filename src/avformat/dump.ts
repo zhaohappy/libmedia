@@ -320,7 +320,7 @@ export function dumpAVFormatContextInterface(formatContext: AVFormatContextInter
   if (formatContext.chapters?.length) {
     dump += '  Chapters:\n'
     formatContext.chapters.forEach((chapter, i) => {
-      dump += dumpChapter(chapter, index, i, '  ')
+      dump += dumpChapter(chapter, index, i, '    ')
     })
   }
 
