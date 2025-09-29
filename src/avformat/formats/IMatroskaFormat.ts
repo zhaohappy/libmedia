@@ -130,6 +130,8 @@ export default class IMatroskaFormat extends IFormat {
 
   private analyzeStreams(formatContext: AVIFormatContext) {
 
+    let duration = NOPTS_VALUE_BIGINT
+
     const tag2CodecId = this.context.header.docType === 'webm' ? WebmTag2CodecId : MkvTag2CodecId
 
     if (this.context.tracks) {
@@ -439,29 +441,6 @@ export default class IMatroskaFormat extends IFormat {
       })
     }
 
-    if (this.context.chapters) {
-      array.each(this.context.chapters.entry, (chapter) => {
-        const atom = chapter.atom
-        if (atom) {
-          array.each(atom, (item) => {
-            formatContext.chapters.push({
-              id: item.uid,
-              start: item.start,
-              end: item.end,
-              timeBase: {
-                num: 1,
-                den: 1000000000
-              },
-              metadata: {
-                [AVStreamMetadataKey.TITLE]: item.display?.title || '',
-                [AVStreamMetadataKey.LANGUAGE]: item.display?.language || ''
-              }
-            })
-          })
-        }
-      })
-    }
-
     if (this.context.tags) {
       array.each(this.context.tags.entry, (tag) => {
         if (tag.tag) {
@@ -492,6 +471,9 @@ export default class IMatroskaFormat extends IFormat {
                 if (stream) {
                   if (key === 'DURATION') {
                     stream.duration = avRescaleQ(value, AV_TIME_BASE_Q, stream.timeBase)
+                    if (value > duration) {
+                      duration = value
+                    }
                   }
                   else {
                     stream.metadata[key] = value
@@ -522,6 +504,43 @@ export default class IMatroskaFormat extends IFormat {
         // Convert to seconds and adjust by number of seconds between 2001-01-01 and Epoch
         const ts = view.getBigUint64(0) / 1000000n + 978307200000n
         formatContext.metadata[AVStreamMetadataKey.CREATION_TIME] = (new Date(Number(ts))).toISOString()
+      }
+    }
+
+    if (this.context.chapters) {
+      array.each(this.context.chapters.entry, (chapter) => {
+        const atom = chapter.atom
+        if (atom) {
+          array.each(atom, (item) => {
+            formatContext.chapters.push({
+              id: item.uid,
+              start: item.start ?? NOPTS_VALUE_BIGINT,
+              end: item.end ?? NOPTS_VALUE_BIGINT,
+              timeBase: {
+                num: 1,
+                den: 1000000000
+              },
+              metadata: {
+                [AVStreamMetadataKey.TITLE]: item.display?.title || '',
+                [AVStreamMetadataKey.LANGUAGE]: item.display?.language || ''
+              }
+            })
+          })
+        }
+      })
+      if (formatContext.chapters.length) {
+        for (let i = 0; i < formatContext.chapters.length - 1; i++) {
+          if (formatContext.chapters[i].end === NOPTS_VALUE_BIGINT) {
+            formatContext.chapters[i].end = formatContext.chapters[i + 1].start
+          }
+        }
+        if (formatContext.chapters[formatContext.chapters.length - 1].end === NOPTS_VALUE_BIGINT) {
+          formatContext.chapters[formatContext.chapters.length - 1].end = avRescaleQ(
+            duration,
+            AV_TIME_BASE_Q,
+            formatContext.chapters[formatContext.chapters.length - 1].timeBase
+          )
+        }
       }
     }
   }
