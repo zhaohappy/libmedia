@@ -52,7 +52,7 @@ import type AVStream from 'avutil/AVStream'
 import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import { AVFormat } from 'avutil/avformat'
 import { avQ2D, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
-import { createAVPacket, destroyAVPacket, getAVPacketData, getSideData } from 'avutil/util/avpacket'
+import { createAVPacket, destroyAVPacket, getAVPacketData, getAVPacketSideData, getSideData } from 'avutil/util/avpacket'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
 import * as is from 'common/util/is'
 import * as bigint from 'common/util/bigint'
@@ -662,7 +662,7 @@ export default class OMovFormat extends OFormat {
 
     let dts = avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
     let pts = avRescaleQ2(avpacket.pts !== NOPTS_VALUE_BIGINT ? avpacket.pts : avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
-    const duration = avpacket.duration !== NOPTS_VALUE_BIGINT ? avRescaleQ2(avpacket.duration, addressof(avpacket.timeBase), stream.timeBase) : -1n
+    const duration = avpacket.duration !== NOPTS_VALUE_BIGINT ? avRescaleQ2(avpacket.duration, addressof(avpacket.timeBase), stream.timeBase) : NOPTS_VALUE_BIGINT
 
     if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
@@ -820,8 +820,65 @@ export default class OMovFormat extends OFormat {
         currentChunk.sampleCount++
       }
 
-      formatContext.ioWriter.writeBuffer(getAVPacketData(avpacket))
-      streamContext.sampleSizes.push(avpacket.size)
+      if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_WEBVTT) {
+        if (streamContext.lastDuration > 0) {
+          const lastCueEndTimestamp = streamContext.lastDts + static_cast<int64>(streamContext.lastDuration)
+          // add empty sample vtte
+          if (lastCueEndTimestamp < dts && avRescaleQ(dts - lastCueEndTimestamp, stream.timeBase, AV_MILLI_TIME_BASE_Q) > 200) {
+            formatContext.ioWriter.writeUint32(8)
+            formatContext.ioWriter.writeString(BoxType.VTTE)
+            currentChunk.sampleCount++
+            streamContext.sampleSizes.push(8)
+            const deltas = static_cast<double>(lastCueEndTimestamp - streamContext.lastDts)
+            if (!streamContext.sttsSampleCounts.length) {
+              streamContext.sttsSampleCounts.push(1)
+              streamContext.sttsSampleDeltas.push(deltas)
+            }
+            else {
+              if (streamContext.sttsSampleDeltas[streamContext.sttsSampleDeltas.length - 1] === deltas) {
+                streamContext.sttsSampleCounts[streamContext.sttsSampleCounts.length - 1]++
+              }
+              else {
+                streamContext.sttsSampleCounts.push(1)
+                streamContext.sttsSampleDeltas.push(deltas)
+              }
+            }
+            streamContext.lastPts = lastCueEndTimestamp
+            streamContext.lastDts = lastCueEndTimestamp
+            streamContext.lastDuration = static_cast<double>((dts - lastCueEndTimestamp) as int64)
+          }
+        }
+        const identifier = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_IDENTIFIER)
+        const settings = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_SETTINGS)
+
+        let size = avpacket.size + 8
+        if (identifier) {
+          size += 8 + static_cast<int32>(identifier.size)
+        }
+        if (settings) {
+          size += 8 + static_cast<int32>(settings.size)
+        }
+        formatContext.ioWriter.writeUint32(8 + size)
+        formatContext.ioWriter.writeString(BoxType.VTTC)
+        if (identifier) {
+          formatContext.ioWriter.writeUint32(8 + identifier.size)
+          formatContext.ioWriter.writeString('iden')
+          formatContext.ioWriter.writeBuffer(mapUint8Array(identifier.data, reinterpret_cast<size>(identifier.size)))
+        }
+        if (settings) {
+          formatContext.ioWriter.writeUint32(8 + settings.size)
+          formatContext.ioWriter.writeString('sttg')
+          formatContext.ioWriter.writeBuffer(mapUint8Array(settings.data, reinterpret_cast<size>(settings.size)))
+        }
+        formatContext.ioWriter.writeUint32(8 + avpacket.size)
+        formatContext.ioWriter.writeString(BoxType.PAYL)
+        formatContext.ioWriter.writeBuffer(getAVPacketData(avpacket))
+        streamContext.sampleSizes.push(8 + size)
+      }
+      else {
+        formatContext.ioWriter.writeBuffer(getAVPacketData(avpacket))
+        streamContext.sampleSizes.push(avpacket.size)
+      }
 
       if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
         && avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY

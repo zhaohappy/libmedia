@@ -184,6 +184,12 @@ export interface TrackEntry {
 
   maxPts?: int64
   lastPts?: int64
+
+  ass?: {
+    hasLayer?: boolean
+    order?: number
+    popIndex?: number[]
+  }
 }
 
 export interface Tracks {

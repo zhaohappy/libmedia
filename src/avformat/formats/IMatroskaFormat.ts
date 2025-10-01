@@ -34,10 +34,10 @@ import IFormat from './IFormat'
 import { AVFormat, AVSeekFlags } from 'avutil/avformat'
 import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avFree, avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/util/avpacket'
+import { addAVPacketData, addAVPacketSideData, createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
 import type AVStream from 'avutil/AVStream'
 import { AVDisposition } from 'avutil/AVStream'
-import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { AV_MILLI_TIME_BASE, AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { EBMLId, MATROSKABlockAddIdType, MATROSKALacingMode, MATROSKATrackEncodingComp, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
 import { IOFlags } from 'avutil/avformat'
 import type { Additions, ClusterIndex, MatroskaContext, TrackEntry } from './matroska/type'
@@ -72,6 +72,23 @@ import isDef from 'common/function/isDef'
 import * as naluUtil from 'avutil/util/nalu'
 import { AVStreamMetadataKey } from 'avutil/AVStream'
 import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
+import * as string from 'common/util/string'
+
+/**
+ * 毫秒时间戳转 hh:mm:ss.mill
+ * 
+ * @param time 
+ */
+function int642HHColonDDColonSSDotMill(time: int64) {
+  if (time < 0) {
+    time = 0n
+  }
+  const ms = Math.round(static_cast<int32>(time % 1000n) / 10)
+  const secs = static_cast<int32>(time / 1000n % 60n)
+  const mins = static_cast<int32>(time / 1000n / 60n % 60n)
+  const hours = static_cast<int32>(time / 1000n / 3600n)
+  return string.format('%s:%02d:%02d.%02d', hours, mins, secs, ms)
+}
 
 export default class IMatroskaFormat extends IFormat {
 
@@ -263,6 +280,9 @@ export default class IMatroskaFormat extends IFormat {
           if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_SSA
             || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_ASS
           ) {
+            track.ass = {
+              hasLayer: false
+            }
             const header = text.decode(codecPrivateData)
             let lines = header.split(/\r?\n/)
             let format: string
@@ -277,12 +297,23 @@ export default class IMatroskaFormat extends IFormat {
             }
             if (format) {
               format = format.replace(/^Format:/, '')
-              format = format.split(',').map((v) => v.trim()).filter((v) => v !== 'Start' && v !== 'End').join(', ')
-              format = `Format: ReadOrder, ${format}`
+              const list = format.split(',').map((v) => v.trim()).filter((v) => v !== 'Start' && v !== 'End')
+              track.ass.hasLayer = list[0] === 'Layer'
+              if (track.ass.hasLayer) {
+                list.splice(1, 0, 'Start', 'End')
+              }
+              else {
+                list.unshift('End')
+                list.unshift('Start')
+              }
+              format = `Format: ${list.join(', ')}`
             }
             // add the default Events Format
             lines.push('[Events]')
-            lines.push(format || 'Format: ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text')
+            lines.push(format || 'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text')
+            if (!format) {
+              track.ass.hasLayer = true
+            }
             codecPrivateData = text.encode(lines.join('\n'))
           }
 
@@ -653,22 +684,67 @@ export default class IMatroskaFormat extends IFormat {
           // TODO handle ITU_T_T35
           logger.warn('ITU_T_T35 not support now')
         }
-
-        const data = avMalloc(addition.additional.data.length + 8)
-        intwrite.wb64(data, static_cast<uint64>(addition.additionalId))
-        memcpyFromUint8Array(data + 8, addition.additional.data.length, addition.additional.data)
-        addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_MATROSKA_BLOCKADDITIONAL, data, addition.additional.data.length + 8)
-
-        if (addition.additionalId === 1
-          && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP8
-            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
-            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1
-          )
-        ) {
-          stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_ALPHA
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_WEBVTT) {
+          const content = text.decode(addition.additional.data)
+          const list = content.split('\n')
+          if (list.length >= 2) {
+            if (list[0]) {
+              const buffer = text.encode(list[0])
+              const data = avMalloc(buffer.length)
+              memcpyFromUint8Array(data, buffer.length, buffer)
+              addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_SETTINGS, data, buffer.length)
+            }
+            if (list[1]) {
+              const buffer = text.encode(list[1])
+              const data = avMalloc(buffer.length)
+              memcpyFromUint8Array(data, buffer.length, buffer)
+              addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_IDENTIFIER, data, buffer.length)
+            }
+          }
+        }
+        else {
+          const data = avMalloc(addition.additional.data.length + 8)
+          intwrite.wb64(data, static_cast<uint64>(addition.additionalId ?? MATROSKABlockAddIdType.OPAQUE))
+          memcpyFromUint8Array(data + 8, addition.additional.data.length, addition.additional.data)
+          addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_MATROSKA_BLOCKADDITIONAL, data, addition.additional.data.length + 8)
+          if (addition.additionalId === 1
+            && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP8
+              || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
+              || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1
+            )
+          ) {
+            stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_ALPHA
+          }
         }
       }
     }
+  }
+
+  private processAss(avpacket: pointer<AVPacket>, stream: AVStream) {
+
+    const track = stream.privData as TrackEntry
+
+    const context = text.decode(getAVPacketData(avpacket))
+
+    const list = context.split(',').map((v) => v.trim())
+    // 去掉 readOrder
+    list.shift()
+    const start = int642HHColonDDColonSSDotMill(avRescaleQ(avpacket.pts, avpacket.timeBase, AV_MILLI_TIME_BASE_Q))
+    const end = int642HHColonDDColonSSDotMill(avRescaleQ(avpacket.pts + avpacket.duration, avpacket.timeBase, AV_MILLI_TIME_BASE_Q))
+
+    if (track.ass.hasLayer) {
+      list.splice(1, 0, start, end)
+    }
+    else {
+      list.unshift(end)
+      list.unshift(start)
+    }
+
+    const buffer = text.encode(`Dialogue: ${list.join(',')}`)
+
+    const data: pointer<uint8> = avMalloc(buffer.length)
+    memcpyFromUint8Array(data, buffer.length, buffer)
+    addAVPacketData(avpacket, data, buffer.length)
   }
 
   private async parseBlock(formatContext: AVIFormatContext, packet: pointer<AVPacket>) {
@@ -862,6 +938,11 @@ export default class IMatroskaFormat extends IFormat {
 
       if (additions) {
         this.parseAdditions(avpacket, additions, stream)
+      }
+      if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_SSA
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_ASS
+      ) {
+        this.processAss(avpacket, stream)
       }
 
       if (i !== 0) {

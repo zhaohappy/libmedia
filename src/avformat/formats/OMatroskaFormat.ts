@@ -36,7 +36,7 @@ import * as object from 'common/util/object'
 import type { Attachment, ChapterAtom, OMatroskaContext, TrackEntry } from './matroska/type'
 import IOWriterSync from 'common/io/IOWriterSync'
 import * as omatroska from './matroska/omatroska'
-import { EBMLId, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
+import { EBMLId, MATROSKABlockAddIdType, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
 import * as crypto from 'avutil/util/crypto'
 import type AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { mapUint8Array } from 'cheap/std/memory'
@@ -56,6 +56,8 @@ import { AVStreamMetadataKey } from 'avutil/AVStream'
 import * as errorType from 'avutil/error'
 import * as is from 'common/util/is'
 import getTimestamp from 'common/function/getTimestamp'
+import * as text from 'common/util/text'
+import toString from 'common/function/toString'
 
 export interface OMatroskaFormatOptions {
   /**
@@ -370,6 +372,40 @@ export default class OMatroskaFormat extends OFormat {
         track.lastPts = 0n
         stream.privData = track
 
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_SSA
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_ASS
+        ) {
+          if (!track.codecPrivate) {
+            logger.fatal('ass need extradata')
+          }
+          track.ass = {
+            order: 1,
+            popIndex: []
+          }
+          const header = text.decode(track.codecPrivate.data)
+          let lines = header.split(/\r?\n/)
+          let format: string
+          for (let i = 0; i < lines.length; i++) {
+            if (lines[i].trim() === '[Events]') {
+              if (lines[i + 1] && /^Format:/.test(lines[i + 1])) {
+                format = lines[i + 1]
+              }
+              lines = lines.slice(0, i)
+              break
+            }
+          }
+          if (format) {
+            format = format.replace(/^Format:/, '')
+            const list = format.split(',').map((v) => v.trim())
+            if (list.indexOf('Start') > -1) {
+              track.ass.popIndex.push(list.indexOf('Start'))
+            }
+            if (list.indexOf('End') > -1) {
+              track.ass.popIndex.push(list.indexOf('End'))
+            }
+            track.ass.popIndex.sort((a, b) => b - a)
+          }
+        }
         context.tracks.entry.push(track)
       }
     })
@@ -472,6 +508,22 @@ export default class OMatroskaFormat extends OFormat {
     return 0
   }
 
+  private processAss(buffer: Uint8Array, stream: AVStream) {
+    const track = stream.privData as TrackEntry
+    let context = text.decode(buffer)
+    if (/^Dialogue:/.test(context)) {
+      context = context.replace(/^Dialogue:/, '')
+    }
+    const list = context.split(',').map((v) => v.trim())
+    if (track.ass.popIndex?.length) {
+      track.ass.popIndex.forEach((index) => {
+        list.splice(index, 1)
+      })
+    }
+    list.unshift(toString(track.ass.order++))
+    return text.encode(list.join(','))
+  }
+
   private writeBlock(stream: AVStream, avpacket: pointer<AVPacket>, id: EBMLId.SIMPLE_BLOCK | EBMLId.BLOCK = EBMLId.SIMPLE_BLOCK) {
     const track = stream.privData as TrackEntry
     omatroska.writeEbmlId(this.context.eleWriter, id)
@@ -484,7 +536,13 @@ export default class OMatroskaFormat extends OFormat {
       this.annexb2AvccFilter.receiveAVPacket(this.avpacket)
       avpacket = this.avpacket
     }
-    omatroska.writeEbmlLength(this.context.eleWriter, omatroska.ebmlLengthSize(track.number) + 2 + 1 + avpacket.size)
+    let buffer = getAVPacketData(avpacket)
+    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_ASS
+      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_SSA
+    ) {
+      buffer = this.processAss(buffer, stream)
+    }
+    omatroska.writeEbmlLength(this.context.eleWriter, omatroska.ebmlLengthSize(track.number) + 2 + 1 + buffer.length)
     omatroska.writeEbmlNum(this.context.eleWriter, track.number, omatroska.ebmlLengthSize(track.number))
     const pts = avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q)
 
@@ -506,7 +564,7 @@ export default class OMatroskaFormat extends OFormat {
         }
       }
     }
-    this.context.eleWriter.writeBuffer(getAVPacketData(avpacket))
+    this.context.eleWriter.writeBuffer(buffer)
   }
 
   private writeBlockGroup(stream: AVStream, avpacket: pointer<AVPacket>) {
@@ -515,16 +573,29 @@ export default class OMatroskaFormat extends OFormat {
         omatroska.writeEbmlUint(eleWriter, EBMLId.BLOCK_DURATION, avRescaleQ2(avpacket.duration, addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q))
       }
       const additions: {
-        additionalId: int64
+        additionalId: int32
         buffer: Uint8ArrayInterface
       }[] = []
+      let vtt = []
       for (let i = 0; i < avpacket.sideDataElems; i++) {
         if (avpacket.sideData[i].type === AVPacketSideDataType.AV_PKT_DATA_MATROSKA_BLOCKADDITIONAL) {
           additions.push({
-            additionalId: intread.rb64(avpacket.sideData[i].data),
+            additionalId: static_cast<int32>(intread.rb64(avpacket.sideData[i].data)),
             buffer: mapUint8Array(avpacket.sideData[i].data + 8, avpacket.sideData[i].size - 8)
           })
         }
+        else if (avpacket.sideData[i].type === AVPacketSideDataType.AV_PKT_DATA_WEBVTT_IDENTIFIER) {
+          vtt.push(mapUint8Array(avpacket.sideData[i].data, avpacket.sideData[i].size), [0x0a])
+        }
+        else if (avpacket.sideData[i].type === AVPacketSideDataType.AV_PKT_DATA_WEBVTT_SETTINGS) {
+          vtt.push(mapUint8Array(avpacket.sideData[i].data, avpacket.sideData[i].size), [0x0a])
+        }
+      }
+      if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_WEBVTT && vtt.length) {
+        additions.push({
+          additionalId: MATROSKABlockAddIdType.OPAQUE,
+          buffer: concatTypeArray(Uint8Array, vtt)
+        })
       }
       if (additions.length) {
         omatroska.writeEleData(this.context.eleWriter, this.context, EBMLId.BLOCK_ADDITIONS, (eleWriter) => {
@@ -622,6 +693,8 @@ export default class OMatroskaFormat extends OFormat {
 
     if (avpacket.duration > 0
       || hasAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_MATROSKA_BLOCKADDITIONAL)
+      || hasAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_IDENTIFIER)
+      || hasAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_SETTINGS)
     ) {
       this.writeBlockGroup(stream, avpacket)
     }

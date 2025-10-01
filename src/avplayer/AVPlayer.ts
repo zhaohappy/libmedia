@@ -3629,7 +3629,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   /**
    * 设置播放视频轨道
    * 
-   * @param id 流 id，dash 传 getVideoList 列表中的 index
+   * @param id 流 id，dash 和 hls 传 getVideoList 列表中的 index
    * @param smooth 平滑切换（hls 和 dash 使用，切换下一个加载的切片）
    * @returns 
    */
@@ -3761,7 +3761,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   /**
    * 设置播放音频轨道
    * 
-   * @param id 流 id，dash 传 getAudioList 列表中的 index
+   * @param id 流 id，dash 和 hls 传 getAudioList 列表中的 index
    * @param smooth 平滑切换（hls 和 dash 使用，切换下一个加载的切片）
    * @returns 
    */
@@ -3910,7 +3910,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   /**
    * 设置播放字幕轨道
    * 
-   * @param id 流 id，dash 传 getSubtitleList 列表中的 index
+   * @param id 流 id，dash 和 hls 传 getSubtitleList 列表中的 index
    * @returns 
    */
   public async selectSubtitle(id: number) {

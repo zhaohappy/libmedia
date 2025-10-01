@@ -57,6 +57,9 @@ const AVCodecID2Tag = {
   [AVCodecID.AV_CODEC_ID_VP9]: BoxType.VP09,
   [AVCodecID.AV_CODEC_ID_AC3]: BoxType.AC_3,
   [AVCodecID.AV_CODEC_ID_EAC3]: BoxType.EC_3,
+  [AVCodecID.AV_CODEC_ID_WEBVTT]: BoxType.WVTT,
+  [AVCodecID.AV_CODEC_ID_TTML]: BoxType.STPP,
+  [AVCodecID.AV_CODEC_ID_MOV_TEXT]: BoxType.TX3G
 }
 
 function getTag(codecpar: AVCodecParameters): BoxType {

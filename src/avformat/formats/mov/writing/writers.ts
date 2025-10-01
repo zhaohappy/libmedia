@@ -43,6 +43,8 @@ import stsd from './stsd'
 import vmhd from './vmhd'
 import edts from './edts'
 import smhd from './smhd'
+import nmhd from './nmhd'
+import sthd from './sthd'
 import dref from './dref'
 
 import trex from './trex'
@@ -75,6 +77,8 @@ const writers: Partial<Record<BoxType, (ioWriter: IOWriter, stream: Stream, movC
   [BoxType.VMHD]: vmhd,
   [BoxType.EDTS]: edts,
   [BoxType.SMHD]: smhd,
+  [BoxType.NMHD]: nmhd,
+  [BoxType.STHD]: sthd,
   [BoxType.DREF]: dref,
 
   [BoxType.TREX]: trex,

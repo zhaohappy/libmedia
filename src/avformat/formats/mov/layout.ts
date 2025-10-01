@@ -196,7 +196,77 @@ function getTrackBoxVideoLayout(context: MOVContext, stream: AVStream) {
   ] as BoxLayout[]
 }
 
-function getFragmentTrackAudioBoxLayout(context: MOVContext) {
+function getTrackBoxSubtitleLayout(context: MOVContext, stream: AVStream) {
+  return [
+    {
+      type: BoxType.TKHD
+    },
+    {
+      type: BoxType.EDTS
+    },
+    {
+      type: BoxType.MDIA,
+      children: [
+        {
+          type: BoxType.MDHD
+        },
+        {
+          type: BoxType.HDLR
+        },
+        {
+          type: BoxType.MINF,
+          children: [
+            {
+              type: stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_TTML
+                ? BoxType.STHD
+                : BoxType.NMHD
+            },
+            context.isom
+              ? {
+                type: BoxType.MINF_HDLR
+              }
+              : null,
+            {
+              type: BoxType.DINF,
+              children: [
+                {
+                  type: BoxType.DREF,
+                  children: [
+                    {
+                      type: BoxType.URL
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              type: BoxType.STBL,
+              children: [
+                {
+                  type: BoxType.STSD
+                },
+                {
+                  type: BoxType.STTS
+                },
+                {
+                  type: BoxType.STSC
+                },
+                {
+                  type: BoxType.STSZ
+                },
+                {
+                  type: context.use64Mdat ? BoxType.CO64 : BoxType.STCO
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ] as BoxLayout[]
+}
+
+function getFragmentTrackAudioBoxLayout(context: MOVContext, stream: AVStream) {
   return [
     {
       type: BoxType.TKHD
@@ -261,7 +331,7 @@ function getFragmentTrackAudioBoxLayout(context: MOVContext) {
   ] as BoxLayout[]
 }
 
-function getFragmentTrackVideoBoxLayout(context: MOVContext) {
+function getFragmentTrackVideoBoxLayout(context: MOVContext, stream: AVStream) {
   return [
     {
       type: BoxType.TKHD
@@ -326,14 +396,83 @@ function getFragmentTrackVideoBoxLayout(context: MOVContext) {
   ] as BoxLayout[]
 }
 
-export const FragmentTrackBoxLayoutMap: Record<number, (context: MOVContext) => BoxLayout[]> = {
+function getFragmentTrackSubtitleBoxLayout(context: MOVContext, stream: AVStream) {
+  return [
+    {
+      type: BoxType.TKHD
+    },
+    {
+      type: BoxType.MDIA,
+      children: [
+        {
+          type: BoxType.MDHD
+        },
+        {
+          type: BoxType.HDLR
+        },
+        {
+          type: BoxType.MINF,
+          children: [
+            {
+              type: stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_TTML
+                ? BoxType.STHD
+                : BoxType.NMHD
+            },
+            context.isom
+              ? {
+                type: BoxType.MINF_HDLR
+              }
+              : null,
+            {
+              type: BoxType.DINF,
+              children: [
+                {
+                  type: BoxType.DREF,
+                  children: [
+                    {
+                      type: BoxType.URL
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              type: BoxType.STBL,
+              children: [
+                {
+                  type: BoxType.STSD
+                },
+                {
+                  type: BoxType.STTS
+                },
+                {
+                  type: BoxType.STSC
+                },
+                {
+                  type: BoxType.STSZ
+                },
+                {
+                  type: BoxType.STCO
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ] as BoxLayout[]
+}
+
+export const FragmentTrackBoxLayoutMap: Record<number, (context: MOVContext, stream: AVStream) => BoxLayout[]> = {
   [AVMediaType.AVMEDIA_TYPE_AUDIO]: getFragmentTrackAudioBoxLayout,
-  [AVMediaType.AVMEDIA_TYPE_VIDEO]: getFragmentTrackVideoBoxLayout
+  [AVMediaType.AVMEDIA_TYPE_VIDEO]: getFragmentTrackVideoBoxLayout,
+  [AVMediaType.AVMEDIA_TYPE_SUBTITLE]: getFragmentTrackSubtitleBoxLayout
 }
 
 export const TrackBoxLayoutMap: Record<number, (context: MOVContext, stream: AVStream) => BoxLayout[]> = {
   [AVMediaType.AVMEDIA_TYPE_AUDIO]: getTrackBoxAudioLayout,
-  [AVMediaType.AVMEDIA_TYPE_VIDEO]: getTrackBoxVideoLayout
+  [AVMediaType.AVMEDIA_TYPE_VIDEO]: getTrackBoxVideoLayout,
+  [AVMediaType.AVMEDIA_TYPE_SUBTITLE]: getTrackBoxSubtitleLayout
 }
 
 export const MoofTrafBoxLayout = function (track: FragmentTrack) {
