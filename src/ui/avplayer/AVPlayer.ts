@@ -34,7 +34,7 @@ import style from './AVPlayer.styl'
 import getLanguage from './i18n/getLanguage'
 import debounce from 'common/function/debounce'
 import { AVMediaType } from 'avutil/codec'
-import type { AVStreamInterface } from 'avutil/AVStream'
+import { AVDisposition, type AVStreamInterface } from 'avutil/AVStream'
 import Keyboard from './Keyboard'
 import * as eventTypeUI from './eventType'
 
@@ -216,6 +216,7 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
         && streams
           .filter((stream: AVStreamInterface) => stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
           .filter((stream) => array.has(AVPlayerSupportedCodecs, stream.codecpar.codecId))
+          .filter((stream) => !(stream.disposition & AVDisposition.ATTACHED_PIC))
           .length === 0
     }
   },
