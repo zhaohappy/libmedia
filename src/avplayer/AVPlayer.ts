@@ -2121,8 +2121,24 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     let audioStartTime: int64 = 0n
     let videoStartTime: int64 = 0n
 
-    const videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
-    const audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
+    let videoStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_VIDEO)
+    let audioStream = this.findBestStream(this.formatContext.streams, AVMediaType.AVMEDIA_TYPE_AUDIO)
+
+    if (!videoStream && !audioStream) {
+      logger.fatal('not has any stream to play')
+    }
+
+    if (videoStream && !this.isCodecIdSupported(videoStream.codecpar.codecId, AVMediaType.AVMEDIA_TYPE_VIDEO)) {
+      videoStream = null
+      logger.warn('video codec not support')
+    }
+    if (audioStream && !this.isCodecIdSupported(audioStream.codecpar.codecId, AVMediaType.AVMEDIA_TYPE_AUDIO)) {
+      audioStream = null
+      logger.warn('audio codec not support')
+    }
+    if (!audioStream && !videoStream) {
+      logger.fatal('not has any supported stream to play')
+    }
 
     if (videoStream && options.video) {
       this.fire(eventType.PROGRESS, [AVPlayerProgress.LOAD_VIDEO_DECODER, videoStream])
