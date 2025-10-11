@@ -201,6 +201,16 @@
                   return `../../dist/decode/wmv${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`
                 case 7 /* AVCodecID.AV_CODEC_ID_MJPEG */:
                   return `../../dist/decode/mjpeg${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`
+                case 61 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                  return `../../dist/decode/png${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`;
+                case 171 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                  return `../../dist/decode/webp${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`;
+                case 97 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                  return `../../dist/decode/gif${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`;
+                case 96 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                  return `../../dist/decode/tiff${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`;
+                case 78 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                  return `../../dist/decode/bmp${useWasm64 ? '-64' : (supportSimd ? '-simd' : (supportAtomic ? '-atomic' : ''))}.wasm`;
                   default:
                   return null
               }
