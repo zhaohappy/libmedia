@@ -432,6 +432,12 @@ export default class IFlacFormat extends IFormat {
         ? this.context.frameInfo.frameOrSampleNum
         : this.context.frameInfo.frameOrSampleNum * static_cast<int64>(this.context.frameInfo.blocksize)
 
+      if (!this.context.frameInfo.isVarSize
+        && formatContext.ioReader.getPos() === this.context.fileSize
+      ) {
+        avpacket.dts = avpacket.pts = this.context.frameInfo.frameOrSampleNum * static_cast<int64>(this.context.streamInfo.minimumBlockSize)
+      }
+
       if (this.context.isVarSize < 0) {
         this.context.isVarSize = this.context.frameInfo.isVarSize
       }
