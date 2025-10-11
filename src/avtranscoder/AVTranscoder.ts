@@ -2108,7 +2108,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           updated = true
         }
         if (updated) {
-          await this.MuxThread.updateAVCodecParameters(task.taskId, streams[i].output.index, streams[i].output.codecpar)
+          await this.MuxThread.updateAVCodecParameters(task.taskId, streams[i].output.id, streams[i].output.codecpar)
         }
       }
 

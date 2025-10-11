@@ -297,10 +297,10 @@ export default class MuxPipeline extends Pipeline {
     }
   }
 
-  public async updateAVCodecParameters(taskId: string, streamIndex: int32, codecpar: pointer<AVCodecParameters>) {
+  public async updateAVCodecParameters(taskId: string, streamId: int32, codecpar: pointer<AVCodecParameters>) {
     const task = this.tasks.get(taskId)
     if (task) {
-      const stream = task.formatContext.getStreamByIndex(streamIndex)
+      const stream = task.formatContext.getStreamById(streamId)
       if (stream) {
         copyCodecParameters(addressof(stream.codecpar), codecpar)
       }
