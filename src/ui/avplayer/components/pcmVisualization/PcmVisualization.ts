@@ -6,6 +6,7 @@ import template from './PcmVisualization.hbs'
 import style from './PcmVisualization.styl'
 import debounce from 'common/function/debounce'
 import getTimestamp from 'common/function/getTimestamp'
+import { AVDisposition } from 'avutil/AVStream'
 
 // 将 RGB 转换为 HSL
 function rgbToHsl(r: number, g: number, b: number) {
@@ -242,7 +243,11 @@ const PcmVisualization: ComponentOptions = {
     },
 
     init(player: AVPlayer) {
-      if (player.hasVideo()) {
+      if (player.hasVideo()
+        && !(player.getStreams().find((stream) => stream.id === player.getSelectedVideoStreamId()).disposition
+          & AVDisposition.ATTACHED_PIC
+        )
+      ) {
         this.playing = false
         this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height)
       }
