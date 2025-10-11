@@ -30,6 +30,8 @@ import { AV_TIME_BASE_Q } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'
 import { IOFlags } from 'avutil/avformat'
 import type { EncryptionInfo } from 'avutil/struct/encryption'
+import { AVDiscard } from 'avutil/AVStream'
+import { AVPacketFlags } from 'avutil/enum'
 
 export function getNextSample(context: AVIFormatContext, movContext: MOVContext, ioFlags: int32) {
   let sample: Sample
@@ -47,9 +49,21 @@ export function getNextSample(context: AVIFormatContext, movContext: MOVContext,
   context.streams.forEach((s) => {
     const context = s.privData as MOVStreamContext
 
-    if (!context.samplesIndex || !context.samplesIndex.length) {
+    if (!context.samplesIndex || !context.samplesIndex.length || s.discard === AVDiscard.AVDISCARD_ALL) {
       context.sampleEnd = true
       return true
+    }
+
+    if (s.discard === AVDiscard.AVDISCARD_NONKEY) {
+      while (context.currentSample < context.samplesIndex.length
+        && !(context.samplesIndex[context.currentSample].flags & AVPacketFlags.AV_PKT_FLAG_KEY)
+      ) {
+        context.currentSample++
+      }
+      if (context.currentSample >= context.samplesIndex.length) {
+        context.sampleEnd = true
+        return true
+      }
     }
 
     if (!context.sampleEnd

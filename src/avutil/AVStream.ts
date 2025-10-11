@@ -245,6 +245,25 @@ export const enum AVDisposition {
   STILL_IMAGE = 0x100000
 }
 
+export const enum AVDiscard {
+  /* We leave some space between them for extensions (drop some
+    * keyframes for intra-only or drop just some bidir frames). */
+  // /< discard nothing
+  AVDISCARD_NONE = -16,
+  // /< discard useless packets like 0 size packets in avi
+  AVDISCARD_DEFAULT = 0,
+  // /< discard all non reference
+  AVDISCARD_NONREF = 8,
+  // /< discard all bidirectional frames
+  AVDISCARD_BIDIR = 16,
+  // /< discard all non intra frames
+  AVDISCARD_NONINTRA = 24,
+  // /< discard all frames except keyframes
+  AVDISCARD_NONKEY = 32,
+  // /< discard all
+  AVDISCARD_ALL = 48
+}
+
 /**
  * from FFmpeg
  * 
@@ -326,6 +345,11 @@ export default class AVStream {
    * AV_DISPOSITION_* bit field
    */
   disposition: AVDisposition = AVDisposition.NONE
+
+  /**
+   * Selects which packets can be discarded at will and do not need to be demuxed.
+   */
+  discard: AVDiscard = AVDiscard.AVDISCARD_NONE
 
   /**
    *
