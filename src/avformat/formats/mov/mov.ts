@@ -107,7 +107,14 @@ export const tag2CodecId = {
   [mktag('vvi1')]: AVCodecID.AV_CODEC_ID_VVC,
 
   [mktag('text')]: AVCodecID.AV_CODEC_ID_MOV_TEXT,
-  [mktag('tx3g')]: AVCodecID.AV_CODEC_ID_MOV_TEXT
+  [mktag('tx3g')]: AVCodecID.AV_CODEC_ID_MOV_TEXT,
+
+  [mktag('png ')]: AVCodecID.AV_CODEC_ID_PNG,
+  [mktag('MNG ')]: AVCodecID.AV_CODEC_ID_PNG,
+  [mktag('gif ')]: AVCodecID.AV_CODEC_ID_GIF,
+  [mktag('tiff')]: AVCodecID.AV_CODEC_ID_TIFF,
+  [mktag('H263')]: AVCodecID.AV_CODEC_ID_H263,
+  [mktag('3IVD')]: AVCodecID.AV_CODEC_ID_MSMPEG4V3
 }
 
 export const enum MovFragmentMode {

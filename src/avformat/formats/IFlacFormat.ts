@@ -34,7 +34,7 @@ import IFormat from './IFormat'
 import { AVFormat, AVSeekFlags } from 'avutil/avformat'
 import { mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData } from 'avutil/util/avpacket'
+import { addAVPacketData, createAVPacket } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import { MetaDataBlockType } from 'avutil/codecs/flac'
 import type { FlacContext, FrameInfo } from './flac/type'
@@ -45,8 +45,9 @@ import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import seekInBytes from '../function/seekInBytes'
 import * as array from 'common/util/array'
 import { avRescaleQ } from 'avutil/util/rational'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import { parseVorbisComment } from './ogg/vorbis'
+import { ID3v2Mime2CodecId, ID3v2PictureType } from './mp3/id3v2'
 
 const PACKET_SIZE = 1024
 
@@ -246,6 +247,31 @@ export default class IFlacFormat extends IFormat {
         this.context.picture.indexedColor = await formatContext.ioReader.readUint32()
         len = await formatContext.ioReader.readUint32()
         this.context.picture.data = await formatContext.ioReader.readBuffer(len)
+
+        let codecId = ID3v2Mime2CodecId[this.context.picture.mimeType] || AVCodecID.AV_CODEC_ID_NONE
+        if (codecId) {
+          const stream = formatContext.createStream()
+          stream.codecpar.codecId = codecId
+          if (this.context.picture.data.length >= 8) {
+            if (array.same(this.context.picture.data.subarray(0, 8), new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) {
+              codecId = AVCodecID.AV_CODEC_ID_PNG
+            }
+          }
+          stream.codecpar.width = this.context.picture.width
+          stream.codecpar.height = this.context.picture.height
+          stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_VIDEO
+          stream.disposition |= AVDisposition.ATTACHED_PIC
+          stream.attachedPic = createAVPacket()
+          stream.attachedPic.streamIndex = stream.index
+          const data: pointer<uint8> = avMalloc(this.context.picture.data.length)
+          memcpyFromUint8Array(data, this.context.picture.data.length, this.context.picture.data)
+          addAVPacketData(stream.attachedPic, data, this.context.picture.data.length)
+          stream.attachedPic.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+          stream.metadata[AVStreamMetadataKey.COMMENT] = ID3v2PictureType[this.context.picture.type]
+          if (this.context.picture.description) {
+            stream.metadata[AVStreamMetadataKey.TITLE] = this.context.picture.description
+          }
+        }
       }
       else {
         await formatContext.ioReader.skip(blockLen)

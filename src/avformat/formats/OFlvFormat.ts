@@ -120,12 +120,14 @@ export default class OFlvFormat extends OFormat {
   private getDefaultStream(formatContext: AVOFormatContext, mediaType: AVMediaType) {
     let streams = formatContext.streams.filter((stream) => {
       return stream.codecpar.codecType === mediaType
+        && !(stream.disposition & AVDisposition.ATTACHED_PIC)
     })
     if (streams.length < 2) {
       return streams[0]
     }
     const legacy = streams.filter((stream) => {
       return !this.isEnhancedStream(stream)
+        && !(stream.disposition & AVDisposition.ATTACHED_PIC)
     })
     return legacy.find((stream) => !!(stream.disposition & AVDisposition.DEFAULT)) || legacy[0] || streams[0]
   }
@@ -157,6 +159,9 @@ export default class OFlvFormat extends OFormat {
     let videoNextTrack = 1
 
     formatContext.streams.forEach((stream) => {
+      if (stream.disposition & AVDisposition.ATTACHED_PIC) {
+        return
+      }
       if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
         this.header.hasAudio = true
         this.script.onMetaData.hasAudio = true
@@ -401,6 +406,9 @@ export default class OFlvFormat extends OFormat {
     }
 
     formatContext.streams.forEach((stream) => {
+      if (stream.disposition & AVDisposition.ATTACHED_PIC) {
+        return
+      }
       const streamContext = stream.privData as FlvStreamContext
       if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
         if (stream.codecpar.extradata && (this.isEnhancedStream(stream) || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC)) {
@@ -510,7 +518,7 @@ export default class OFlvFormat extends OFormat {
 
     const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
 
-    if (!stream) {
+    if (!stream || (stream.disposition & AVDisposition.ATTACHED_PIC)) {
       logger.warn(`can not found the stream width the packet\'s streamIndex: ${avpacket.streamIndex}, ignore it`)
       return
     }
@@ -715,6 +723,9 @@ export default class OFlvFormat extends OFormat {
   public writeTrailer(formatContext: AVOFormatContext): number {
 
     formatContext.streams.forEach((stream) => {
+      if (stream.disposition & AVDisposition.ATTACHED_PIC) {
+        return
+      }
       const streamContext = stream.privData as FlvStreamContext
       if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
         || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC

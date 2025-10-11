@@ -1,5 +1,5 @@
 /*
- * libmedia mp3 interface
+ * libmedia mp4 chap box parser
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -23,51 +23,28 @@
  *
  */
 
-import type { FrameHeader } from './frameHeader'
+import type IOReader from 'common/io/IOReader'
+import type Stream from 'avutil/AVStream'
+import type { Atom, MOVContext } from '../type'
+import * as logger from 'common/util/logger'
 
-export interface Mp3MetaData {
-  title?: string
-  artist?: string
-  album?: string
-  date?: string
-  comment?: string
-  track?: string
-  genre?: string | number
-  encoder?: string
-  lyrics?: string
-  albumArtist?: string
-  disc?: string
-  copyright?: string
-  language?: string
-  performer?: string
-  publisher?: string
-  vendor?: string
-  composer?: string
-  compilation?: string
-  creationTime?: string
-  albumSort?: string
-  artistSort?: string
-  titleSort?: string
-  grouping?: string
-  apic?: Uint8Array[]
-}
+export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
 
-export interface ID3V2 {
-  version: number
-  revision: number
-  flags: number
-}
+  const now = ioReader.getPos()
 
-export interface Mp3StreamContext {
-  nbFrame: int64
-  frameHeader: FrameHeader
-  tocIndexes: { pos: int64, dts: int64 }[]
-  nextDTS: int64
-  frameLength: int32
-}
+  const count = Math.floor(atom.size / 4)
 
-export interface Mp3FormatOptions {
-  id3v2Version?: 0 | 2 | 3 | 4
-  hasID3v1?: boolean
-  hasXing?: boolean
+  movContext.chapterTrack = []
+
+  for (let i = 0; i < count; i++) {
+    movContext.chapterTrack.push(await ioReader.readUint32())
+  }
+
+  const remainingLength = atom.size - Number(ioReader.getPos() - now)
+  if (remainingLength > 0) {
+    await ioReader.skip(remainingLength)
+  }
+  else if (remainingLength < 0) {
+    logger.error(`read chap error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
+  }
 }

@@ -23,7 +23,7 @@
  *
  */
 
-import type { Data } from 'common/types/type'
+import type { Data, Task } from 'common/types/type'
 import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
 import * as errorType from 'avutil/error'
@@ -52,8 +52,8 @@ import * as array from 'common/util/array'
 import { avRescaleQ2 } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE } from 'avutil/constant'
 import * as bigint from 'common/util/bigint'
-import type { AVStreamInterface } from 'avutil/AVStream'
-import { addAVPacketSideData, getAVPacketData, getAVPacketSideData } from 'avutil/util/avpacket'
+import { AVDisposition, type AVStreamInterface } from 'avutil/AVStream'
+import { addAVPacketSideData, getAVPacketData, getAVPacketSideData, refAVPacket } from 'avutil/util/avpacket'
 import { mapUint8Array, memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
 import analyzeAVFormat from 'avutil/function/analyzeAVFormat'
 import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
@@ -558,7 +558,8 @@ export default class DemuxPipeline extends Pipeline {
           timeBase: {
             den: stream.timeBase.den,
             num: stream.timeBase.num
-          }
+          },
+          attachedPic: stream.attachedPic
         })
       }
       return {
@@ -603,7 +604,7 @@ export default class DemuxPipeline extends Pipeline {
             const cacheAVPackets = task.cacheAVPackets.get(ipcPort.streamIndex)
             if (cacheAVPackets.length) {
               const avpacket = cacheAVPackets.shift()
-              if (task.stats !== nullptr) {
+              if (task.stats !== nullptr && avpacket > 0) {
                 if (task.formatContext.streams[avpacket.streamIndex].codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
                   task.stats.audioPacketQueueLength--
                 }
@@ -883,6 +884,23 @@ export default class DemuxPipeline extends Pipeline {
     return ret
   }
 
+  private doAttachedPicture(task: SelfTask) {
+    task.cacheAVPackets.forEach((list, streamIndex) => {
+      const stream = task.formatContext.streams.find((stream) => {
+        return stream.index === streamIndex
+      })
+      if ((stream.disposition & AVDisposition.ATTACHED_PIC) && stream.attachedPic) {
+        const avpacket = task.avpacketPool.alloc()
+        refAVPacket(avpacket, stream.attachedPic)
+        list.push(avpacket)
+        list.push(IOError.END as pointer<AVPacketRef>)
+        if (task.stats !== nullptr) {
+          task.stats.videoPacketQueueLength = 1
+        }
+      }
+    })
+  }
+
   public async startDemux(taskId: string, isLive: boolean, minQueueLength: int32) {
     const task = this.tasks.get(taskId)
     if (task) {
@@ -902,6 +920,7 @@ export default class DemuxPipeline extends Pipeline {
             })
             if (list.length < minQueueLength
               && (stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_SUBTITLE
+                && !(stream.disposition & AVDisposition.ATTACHED_PIC)
                 || task.cacheAVPackets.size === 1
               )
             ) {
@@ -946,6 +965,8 @@ export default class DemuxPipeline extends Pipeline {
         }
       }
 
+      this.doAttachedPicture(task)
+
       task.loop.start()
 
       logger.debug(`start demux loop, taskId: ${task.taskId}`)
@@ -962,7 +983,6 @@ export default class DemuxPipeline extends Pipeline {
         await task.loop.stopBeforeNextTick()
         let ret: int32 | int64 = await demux.seek(task.formatContext, streamIndex, timestamp, flags)
         if (ret >= 0n) {
-
           function resetList(list: pointer<AVPacketRef>[]) {
             array.each(list, (avpacket) => {
               if (task.formatContext.ioReader.flags & IOFlags.SLICE) {
@@ -1017,6 +1037,7 @@ export default class DemuxPipeline extends Pipeline {
                 task.stats.videoPacketQueueLength++
               }
             }
+            this.doAttachedPicture(task)
             task.loop.start()
             return avRescaleQ2(bigint.max(avpacket.pts, 0n), addressof(avpacket.timeBase), AV_MILLI_TIME_BASE_Q)
           }
@@ -1028,6 +1049,9 @@ export default class DemuxPipeline extends Pipeline {
             task.demuxEnded = true
             return timestamp
           }
+        }
+        else {
+          task.loop.start()
         }
         return ret
       }

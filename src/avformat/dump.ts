@@ -134,9 +134,9 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
     if (stream.codecpar.format !== NOPTS_VALUE) {
       const pixfmt = dumpKey(stringEnum.PixfmtString2AVPixelFormat, stream.codecpar.format, `unknown(${stream.codecpar.format})`)
       const range = dumpKey(stringEnum.colorRange2AVColorRange, stream.codecpar.colorRange, 'tv')
-      const space = dumpKey(stringEnum.colorSpace2AVColorSpace, stream.codecpar.colorSpace, 'bt709')
-      const primary = dumpKey(stringEnum.colorPrimaries2AVColorPrimaries, stream.codecpar.colorPrimaries, 'bt709')
-      const trc = dumpKey(stringEnum.colorTrc2AVColorTransferCharacteristic, stream.codecpar.colorTrc, 'bt709')
+      const space = dumpKey(stringEnum.colorSpace2AVColorSpace, stream.codecpar.colorSpace)
+      const primary = dumpKey(stringEnum.colorPrimaries2AVColorPrimaries, stream.codecpar.colorPrimaries)
+      const trc = dumpKey(stringEnum.colorTrc2AVColorTransferCharacteristic, stream.codecpar.colorTrc)
       const isHdr_ = isHdr(stream.codecpar)
       if (space === primary && primary === trc) {
         list.push(`${pixfmt}(${range}, ${space}, ${isHdr_ ? 'HDR' : 'SDR'})`)
@@ -176,6 +176,8 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
     }
   }
   else {
+    const codecName = dumpKey(stringEnum.DataCodecString2CodecId, stream.codecpar.codecId)
+    list.push(codecName)
     if (stream.codecpar.bitrate > 0n) {
       list.push(`${dumpBitrate(stream.codecpar.bitrate)}`)
     }
@@ -346,7 +348,8 @@ export default function dump(formatContexts: (AVFormatContextInterface | AVIForm
           duration: stream.duration,
           startTime: stream.startTime,
           disposition: stream.disposition,
-          timeBase: stream.timeBase
+          timeBase: stream.timeBase,
+          attachedPic: stream.attachedPic
         })
       }
       formatContext = {

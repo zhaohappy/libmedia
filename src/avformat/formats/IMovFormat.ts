@@ -42,7 +42,7 @@ import { AVFormat, AVSeekFlags } from 'avutil/avformat'
 import * as array from 'common/util/array'
 import { mapSafeUint8Array, memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc, avMallocz } from 'avutil/util/mem'
-import { addAVPacketData, addAVPacketSideData } from 'avutil/util/avpacket'
+import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/util/avpacket'
 import { avRescaleQ } from 'avutil/util/rational'
 import type AVStream from 'avutil/AVStream'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
@@ -51,12 +51,17 @@ import * as intread from 'avutil/util/intread'
 import { encryptionInfo2SideData } from 'avutil/util/encryption'
 import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
 import * as object from 'common/util/object'
+import { AVDiscard, AVDisposition } from 'avutil/AVStream'
+import createMovStreamContext from './mov/function/createMovStreamContext'
+import * as text from 'common/util/text'
 
 export interface IMovFormatOptions {
   /**
    * 忽略 editlist 的约束
    */
   ignoreEditlist?: boolean
+
+  ignoreChapters?: boolean
 }
 
 export default class IMovFormat extends IFormat {
@@ -219,6 +224,111 @@ export default class IMovFormat extends IFormat {
           }
         })
         formatContext.chapters.push(...this.context.chapters)
+      }
+      if (this.context.covr) {
+        let codecId = AVCodecID.AV_CODEC_ID_NONE
+
+        switch (this.context.covr.type) {
+          case 0xd:
+            codecId = AVCodecID.AV_CODEC_ID_MJPEG
+            break
+          case 0xe:
+            codecId = AVCodecID.AV_CODEC_ID_PNG
+            break
+          case 0x1b:
+            codecId = AVCodecID.AV_CODEC_ID_BMP
+            break
+          default:
+            logger.error(`"Unknown cover type: ${this.context.covr.type}`)
+        }
+
+        if (codecId) {
+          if (this.context.covr.data.length >= 8
+            && codecId !== AVCodecID.AV_CODEC_ID_BMP
+          ) {
+            if (array.same(this.context.covr.data.subarray(0, 8), new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) {
+              codecId = AVCodecID.AV_CODEC_ID_PNG
+            }
+            else {
+              codecId = AVCodecID.AV_CODEC_ID_MJPEG
+            }
+          }
+
+          const stream = formatContext.createStream()
+          stream.privData = createMovStreamContext()
+          stream.codecpar.codecId = codecId
+          stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_VIDEO
+          stream.disposition |= AVDisposition.ATTACHED_PIC
+          stream.attachedPic = createAVPacket()
+          stream.attachedPic.streamIndex = stream.index
+          const data: pointer<uint8> = avMalloc(this.context.covr.data.length)
+          memcpyFromUint8Array(data, this.context.covr.data.length, this.context.covr.data)
+          addAVPacketData(stream.attachedPic, data, this.context.covr.data.length)
+          stream.attachedPic.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+        }
+      }
+      if (this.context.chapterTrack && (formatContext.ioReader.flags & IOFlags.SEEKABLE) && !this.options.ignoreChapters) {
+        for (let i = 0; i < this.context.chapterTrack.length; i++) {
+          const trackId = this.context.chapterTrack[i]
+          const stream = formatContext.streams.find((stream) => {
+            const track = stream.privData as MOVStreamContext
+            return track.trackId === trackId
+          })
+          if (stream) {
+            const now = formatContext.ioReader.getPos()
+            const track = stream.privData as MOVStreamContext
+            if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+              stream.disposition |= AVDisposition.ATTACHED_PIC
+              stream.disposition |= AVDisposition.TIMED_THUMBNAILS
+              if (!stream.attachedPic) {
+                const sample = track.samplesIndex[0]
+                if (sample) {
+                  await formatContext.ioReader.seek(sample.pos)
+                  stream.attachedPic = createAVPacket()
+                  stream.attachedPic.streamIndex = stream.index
+                  stream.attachedPic.dts = sample.dts
+                  stream.attachedPic.pts = sample.pts
+                  stream.attachedPic.flags |= sample.flags
+                  stream.attachedPic.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+                  stream.attachedPic.pos = sample.pos
+                  const data: pointer<uint8> = avMalloc(sample.size)
+                  memcpyFromUint8Array(data, sample.size, await formatContext.ioReader.readBuffer(sample.size))
+                  addAVPacketData(stream.attachedPic, data, sample.size)
+                }
+              }
+            }
+            else {
+              stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_DATA
+              stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_BIN_DATA
+              stream.discard = AVDiscard.AVDISCARD_ALL
+              for (let i = 0; i < track.samplesIndex.length; i++) {
+                const sample = track.samplesIndex[i]
+                await formatContext.ioReader.seek(sample.pos)
+                const len = await formatContext.ioReader.readUint16()
+                if (len > sample.size - 2) {
+                  continue
+                }
+                let end = sample.pts + static_cast<int64>(sample.duration as int32)
+                if (end < sample.pts) {
+                  end = NOPTS_VALUE_BIGINT
+                }
+                formatContext.chapters.push({
+                  id: static_cast<uint64>(i as uint32),
+                  timeBase: {
+                    den: stream.timeBase.den,
+                    num: stream.timeBase.num
+                  },
+                  start: sample.pts,
+                  end,
+                  metadata: {
+                    title: len ? text.decode(await formatContext.ioReader.readBuffer(len)) : ''
+                  }
+                })
+              }
+            }
+            await formatContext.ioReader.seek(now)
+          }
+        }
       }
 
       return ret
@@ -488,7 +598,7 @@ export default class IMovFormat extends IFormat {
       streamContext.currentSample = index
       streamContext.sampleEnd = false
       array.each(formatContext.streams, (st) => {
-        if (st !== stream) {
+        if (st !== stream && !(st.disposition & AVDisposition.ATTACHED_PIC)) {
           const stContext = st.privData as MOVStreamContext
           let timestamp = avRescaleQ(streamContext.samplesIndex[streamContext.currentSample].pts, stream.timeBase, st.timeBase)
 

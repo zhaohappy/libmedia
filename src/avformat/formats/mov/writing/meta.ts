@@ -60,6 +60,7 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
   let tags: {
     key: number
     value: string | Uint8Array | number
+    type?: number
   }[] = []
 
   const iTunesKeyMapRevert = object.reverse(iTunesKeyMap)
@@ -80,6 +81,13 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
     key: getKey(AVStreamMetadataKey.ENCODER),
     value: `libmedia-${defined(VERSION)}`
   })
+  if (movContext.covr) {
+    tags.push({
+      key: getKey('covr'),
+      value: movContext.covr.data,
+      type: movContext.covr.type
+    })
+  }
 
   if (movContext.metadata) {
     object.each(movContext.metadata, (value, key) => {
@@ -137,7 +145,7 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
         dataSize = 4
       }
       else if (tag.value instanceof Uint8Array) {
-        dataType = 0
+        dataType = tag.type ?? 0
         dataSize = tag.value.length
       }
       else if (is.string(tag.value)) {
@@ -158,7 +166,7 @@ export default function write(ioWriter: IOWriter, stream: Stream, movContext: MO
       ioWriter.writeUint32(dataType)
       ioWriter.writeUint32(0)
 
-      if (dataType === 0) {
+      if (dataType === 0 || tag.value instanceof Uint8Array) {
         ioWriter.writeBuffer(tag.value as Uint8Array)
       }
       else if (dataType === 1) {

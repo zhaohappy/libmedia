@@ -36,13 +36,17 @@ import * as pcmUtil from 'avutil/util/pcm'
 import gcd from 'common/math/gcd'
 import { NOPTS_VALUE_BIGINT, UINT32_MAX, UINT64_MAX } from 'avutil/constant'
 import { avRescaleQ } from 'avutil/util/rational'
+import * as id3v2 from './mp3/id3v2'
+import { AVDisposition } from 'avutil/AVStream'
 
 export interface OWavFormatOptions {
   forceRF64?: boolean
+  id3v2Version?: 0 | 2 | 3 | 4
 }
 
 const defaultOptions: OWavFormatOptions = {
-  forceRF64: false
+  forceRF64: false,
+  id3v2Version: 4
 }
 
 
@@ -152,7 +156,7 @@ export default class OWavFormat extends OFormat {
 
     const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
 
-    if (!stream) {
+    if (!stream || (stream.disposition & AVDisposition.ATTACHED_PIC)) {
       logger.warn(`can not found the stream width the packet\'s streamIndex: ${avpacket.streamIndex}, ignore it`)
       return
     }
@@ -191,9 +195,30 @@ export default class OWavFormat extends OFormat {
     formatContext.ioWriter.flush()
 
     const stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_AUDIO)
-
-    const fileSize = formatContext.ioWriter.getPos()
+    let fileSize = formatContext.ioWriter.getPos()
     const dataSize = fileSize - this.dataPos - 8n
+
+    if (this.options.id3v2Version) {
+      const metadata = object.extend({}, formatContext.metadata)
+      const apic = id3v2.writeAPIC(formatContext, this.options.id3v2Version)
+      if (apic.length) {
+        metadata.apic = apic
+      }
+      if (object.keys(metadata).length) {
+        formatContext.ioWriter.writeString('id3 ')
+        const pos = formatContext.ioWriter.getPos()
+        formatContext.ioWriter.writeUint32(0)
+        formatContext.ioWriter.setEndian(true)
+        id3v2.write(formatContext.ioWriter, this.options.id3v2Version, formatContext.metadataHeaderPadding, metadata)
+        formatContext.ioWriter.setEndian(false)
+        const id3Size = formatContext.ioWriter.getPos() - pos + 4n
+        fileSize += id3Size
+        formatContext.ioWriter.seek(pos)
+        formatContext.ioWriter.writeUint32(static_cast<double>((id3Size - 8n) as uint64))
+        formatContext.ioWriter.seek(fileSize)
+      }
+    }
+
     let rf64 = false
     if (this.options.forceRF64 || fileSize - 8n > static_cast<int64>(UINT32_MAX as uint32)) {
       rf64 = true

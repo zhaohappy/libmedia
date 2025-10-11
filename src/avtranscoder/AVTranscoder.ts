@@ -58,7 +58,7 @@ import { AudioCodecString2CodecId, Ext2Format,
 import MuxPipeline from 'avpipeline/MuxPipeline'
 import type IOWriterSync from 'common/io/IOWriterSync'
 import type { AVStreamInterface } from 'avutil/AVStream'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import type Stats from 'avpipeline/struct/stats'
 import type { RpcMessage } from 'common/network/IPCPort'
 import IPCPort, { NOTIFY, REQUEST } from 'common/network/IPCPort'
@@ -71,7 +71,7 @@ import SafeFileIO from 'common/io/SafeFileIO'
 import Emitter from 'common/event/Emitter'
 import * as eventType from './eventType'
 import { unrefAVFrame } from 'avutil/util/avframe'
-import { unrefAVPacket } from 'avutil/util/avpacket'
+import { createAVPacket, destroyAVPacket, refAVPacket, unrefAVPacket } from 'avutil/util/avpacket'
 
 import * as aac from 'avutil/codecs/aac'
 import * as opus from 'avutil/codecs/opus'
@@ -399,6 +399,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     logger.info('create transcoder')
   }
 
+  /**
+   * @hidden
+   */
   private async getResource(type: 'decoder' | 'resampler' | 'scaler' | 'encoder', codecId?: AVCodecID, mediaType?: AVMediaType) {
     const key = codecId != null ? `${type}-${codecId}` : type
 
@@ -447,6 +450,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     }
   }
 
+  /**
+   * @hidden
+   */
   private report() {
     this.tasks.forEach((task) => {
       if (task.startTime) {
@@ -493,6 +499,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     })
   }
 
+  /**
+   * @hidden
+   */
   private async startDemuxPipeline() {
     if (this.DemuxThreadReady) {
       return this.DemuxThreadReady
@@ -511,6 +520,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     })
   }
 
+  /**
+   * @hidden
+   */
   private async startVideoPipeline() {
     if (this.VideoThreadReady) {
       return this.VideoThreadReady
@@ -540,6 +552,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     })
   }
 
+  /**
+   * @hidden
+   */
   private async startAudioPipeline() {
     if (this.AudioThreadReady) {
       return this.AudioThreadReady
@@ -569,6 +584,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     })
   }
 
+  /**
+   * @hidden
+   */
   private async startMuxPipeline() {
     if (this.MuxThreadReady) {
       return this.MuxThreadReady
@@ -583,6 +601,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     })
   }
 
+  /**
+   * @hidden
+   */
   private isHls(task: SelfTask) {
     if (task.ext) {
       return task.ext === 'm3u8' || task.ext === 'm3u'
@@ -593,6 +614,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     return task.options.input.ext === 'm3u8'
   }
 
+  /**
+   * @hidden
+   */
   private isDash(task: SelfTask) {
     if (task.ext) {
       return task.ext === 'mpd'
@@ -611,6 +635,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     logger.info('AVTranscoder pipelines started')
   }
 
+  /**
+   * @hidden
+   */
   private changeAVStreamTimebase(stream: AVStreamInterface, timeBase: Rational) {
     let startTime = stream.startTime
     let duration = stream.duration
@@ -629,6 +656,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     stream.timeBase.num = timeBase.num
   }
 
+  /**
+   * @hidden
+   */
   private copyAVStreamInterface(task: SelfTask, stream: AVStreamInterface, copy: boolean = false) {
     const newStream = object.extend({}, stream)
     newStream.codecpar = reinterpret_cast<pointer<AVCodecParameters>>(avMallocz(sizeof(AVCodecParameters)))
@@ -664,6 +694,10 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       newStream.codecpar.extradata = nullptr
       newStream.codecpar.extradataSize = 0
     }
+    if (stream.attachedPic) {
+      newStream.attachedPic = createAVPacket()
+      refAVPacket(newStream.attachedPic, stream.attachedPic)
+    }
 
     if (task.options.duration) {
       newStream.duration = avRescaleQ(static_cast<int64>(task.options.duration), AV_MILLI_TIME_BASE_Q, newStream.timeBase)
@@ -676,6 +710,23 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     return newStream
   }
 
+  /**
+   * @hidden
+   */
+  private freeAVStreamInterface(stream: AVStreamInterface) {
+    if (stream.codecpar) {
+      freeCodecParameters(stream.codecpar)
+      stream.codecpar = nullptr
+    }
+    if (stream.attachedPic) {
+      destroyAVPacket(stream.attachedPic)
+      stream.attachedPic = nullptr
+    }
+  }
+
+  /**
+   * @hidden
+   */
   private async setTaskInput(task: SelfTask) {
     const taskId = task.taskId
     const taskOptions = task.options
@@ -835,6 +886,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     }
   }
 
+  /**
+   * @hidden
+   */
   private async setTaskOutput(task: SelfTask) {
     const muxer2OutputChannel = task.muxer2OutputChannel = createMessageChannel()
     const ipcPort = task.outputIPCPort = new IPCPort(muxer2OutputChannel.port2)
@@ -962,6 +1016,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     })
   }
 
+  /**
+   * @hidden
+   */
   private async analyzeInputStreams(task: SelfTask) {
     const taskId = task.taskId
     const ioloader2DemuxerChannel = task.ioloader2DemuxerChannel
@@ -1098,6 +1155,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     return formatContext
   }
 
+  /**
+   * @hidden
+   */
   private async handleAudioStream(stream: AVStreamInterface, task: SelfTask): Promise<number> {
     const audioConfig = task.options.output.audio
     if (audioConfig?.disable) {
@@ -1115,7 +1175,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           .transfer(demuxer2MuxerChannel.port2)
           .invoke(task.taskId, newStream, demuxer2MuxerChannel.port2)
 
-        freeCodecParameters(newStream.codecpar)
+        this.freeAVStreamInterface(newStream)
         task.streams.push({
           input: stream,
           demuxer2MuxerChannel
@@ -1123,7 +1183,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         return 0
       }
       catch (error) {
-        freeCodecParameters(newStream.codecpar)
+        this.freeAVStreamInterface(newStream)
         throw error
       }
     }
@@ -1143,6 +1203,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         if (audioConfig.codec && audioConfig.codec !== 'copy') {
           const codecId = AudioCodecString2CodecId[audioConfig.codec]
           if (!is.number(codecId)) {
+            this.freeAVStreamInterface(newStream)
             logger.fatal(`invalid codec name(${audioConfig.codec})`)
           }
           newStream.codecpar.codecId = codecId
@@ -1164,6 +1225,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         if (audioConfig.sampleFmt) {
           const sampleFmt = SampleFmtString2SampleFormat[audioConfig.sampleFmt]
           if (!is.number(sampleFmt)) {
+            this.freeAVStreamInterface(newStream)
             logger.fatal(`invalid sampleFmt name(${audioConfig.sampleFmt})`)
           }
           newStream.codecpar.format = sampleFmt
@@ -1250,8 +1312,12 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           newStream.codecpar.sampleRate = 48000
         }
       }
+      else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VORBIS) {
+        newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_FLTP
+      }
       else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_OPUS) {
         newStream.codecpar.sampleRate = 48000
+        newStream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_FLTP
       }
       else if (newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_FLAC) {
         if (newStream.codecpar.format !== AVSampleFormat.AV_SAMPLE_FMT_S16
@@ -1342,14 +1408,14 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
 
       if (ret < 0) {
         logger.error(`cannot open audio ${dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} decoder`)
-        freeCodecParameters(newStream.codecpar)
+        this.freeAVStreamInterface(newStream)
         return ret
       }
 
       let resamplerResource = await this.getResource('resampler')
       if (!resamplerResource) {
         logger.error('resampler not found')
-        freeCodecParameters(newStream.codecpar)
+        this.freeAVStreamInterface(newStream)
         return errorType.OPERATE_NOT_SUPPORT
       }
 
@@ -1422,13 +1488,13 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           })
           if (!isSupport.supported) {
             logger.error(`AudioEncoder ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} codecId ${newStream.codecpar.codecId} not support`)
-            freeCodecParameters(newStream.codecpar)
+            this.freeAVStreamInterface(newStream)
             return errorType.OPERATE_NOT_SUPPORT
           }
         }
         else {
           logger.error(`${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder codecId ${newStream.codecpar.codecId} not support`)
-          freeCodecParameters(newStream.codecpar)
+          this.freeAVStreamInterface(newStream)
           return errorType.OPERATE_NOT_SUPPORT
         }
       }
@@ -1453,7 +1519,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
 
       if (ret < 0) {
         logger.error(`cannot open audio ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder`)
-        freeCodecParameters(newStream.codecpar)
+        this.freeAVStreamInterface(newStream)
         return ret
       }
 
@@ -1475,6 +1541,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     }
   }
 
+  /**
+   * @hidden
+   */
   private async handleVideoStream(stream: AVStreamInterface, task: SelfTask): Promise<number> {
     const videoConfig = task.options.output.video
     if (videoConfig?.disable) {
@@ -1492,7 +1561,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           .transfer(demuxer2MuxerChannel.port2)
           .invoke(task.taskId, newStream, demuxer2MuxerChannel.port2)
 
-        freeCodecParameters(newStream.codecpar)
+        this.freeAVStreamInterface(newStream)
         task.streams.push({
           input: stream,
           demuxer2MuxerChannel
@@ -1500,7 +1569,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         return 0
       }
       catch (error) {
-        freeCodecParameters(newStream.codecpar)
+        this.freeAVStreamInterface(newStream)
         throw error
       }
     }
@@ -1523,6 +1592,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         if (videoConfig.codec && videoConfig.codec !== 'copy') {
           const codecId = VideoCodecString2CodecId[videoConfig.codec]
           if (!is.number(codecId)) {
+            this.freeAVStreamInterface(newStream)
             logger.fatal(`invalid codec name(${videoConfig.codec})`)
           }
           newStream.codecpar.codecId = codecId
@@ -1649,13 +1719,13 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           })
           if (!isSupport.supported) {
             logger.error(`VideoDecoder codecId ${stream.codecpar.codecId} not support`)
-            freeCodecParameters(newStream.codecpar)
+            this.freeAVStreamInterface(newStream)
             return errorType.OPERATE_NOT_SUPPORT
           }
         }
         else {
           logger.error(`video decoder codecId ${stream.codecpar.codecId} not support`)
-          freeCodecParameters(newStream.codecpar)
+          this.freeAVStreamInterface(newStream)
           return errorType.OPERATE_NOT_SUPPORT
         }
       }
@@ -1688,7 +1758,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
 
       if (ret < 0) {
         logger.error(`cannot open video ${dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} decoder`)
-        freeCodecParameters(newStream.codecpar)
+        this.freeAVStreamInterface(newStream)
         return ret
       }
 
@@ -1800,13 +1870,13 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           })
           if (!isSupport.supported) {
             logger.error(`VideoEncoder ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} codecId ${newStream.codecpar.codecId} not support`)
-            freeCodecParameters(newStream.codecpar)
+            this.freeAVStreamInterface(newStream)
             return errorType.OPERATE_NOT_SUPPORT
           }
         }
         else {
           logger.error(`${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder codecId ${newStream.codecpar.codecId} not support`)
-          freeCodecParameters(newStream.codecpar)
+          this.freeAVStreamInterface(newStream)
           return errorType.OPERATE_NOT_SUPPORT
         }
       }
@@ -1854,7 +1924,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
 
       if (ret < 0) {
         logger.error(`cannot open video ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder`)
-        freeCodecParameters(newStream.codecpar)
+        this.freeAVStreamInterface(newStream)
         return ret
       }
 
@@ -1875,19 +1945,25 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     }
   }
 
+  /**
+   * @hidden
+   */
   private async handleCopyStream(stream: AVStreamInterface, task: SelfTask): Promise<number> {
     let newStream = this.copyAVStreamInterface(task, stream, true)
     try {
       const demuxer2MuxerChannel = createMessageChannel()
-      await this.DemuxerThread.connectStreamTask
-        .transfer(demuxer2MuxerChannel.port1)
-        .invoke(task.subTaskId || task.taskId, newStream.index, demuxer2MuxerChannel.port1)
+
+      if (!(stream.disposition & AVDisposition.ATTACHED_PIC)) {
+        await this.DemuxerThread.connectStreamTask
+          .transfer(demuxer2MuxerChannel.port1)
+          .invoke(task.subTaskId || task.taskId, newStream.index, demuxer2MuxerChannel.port1)
+      }
 
       await this.MuxThread.addStream
         .transfer(demuxer2MuxerChannel.port2)
         .invoke(task.taskId, newStream, demuxer2MuxerChannel.port2)
 
-      freeCodecParameters(newStream.codecpar)
+      this.freeAVStreamInterface(newStream)
       task.streams.push({
         input: stream,
         demuxer2MuxerChannel
@@ -1895,11 +1971,14 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       return 0
     }
     catch (error) {
-      freeCodecParameters(newStream.codecpar)
+      this.freeAVStreamInterface(newStream)
       throw error
     }
   }
 
+  /**
+   * @hidden
+   */
   private async clearTask(task: SelfTask) {
     this.MuxThread.unregisterTask(task.taskId)
     for (let i = 0; i < task.streams.length; i++) {
@@ -1916,7 +1995,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         }
       }
       if (task.streams[i].output) {
-        freeCodecParameters(task.streams[i].output.codecpar)
+        this.freeAVStreamInterface(task.streams[i].output)
       }
     }
 
@@ -1997,7 +2076,9 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         if (mediaType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
           ret = await this.handleAudioStream(formatContext.streams[i], task)
         }
-        else if (mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+        else if (mediaType === AVMediaType.AVMEDIA_TYPE_VIDEO
+          && !(formatContext.streams[i].disposition & AVDisposition.ATTACHED_PIC)
+        ) {
           ret = await this.handleVideoStream(formatContext.streams[i], task)
         }
         else {
@@ -2016,7 +2097,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         chapters: []
       }
 
-      let mappingDump = ''
+      let mappingDump = 'Mapping:\n'
       task.streams.forEach((stream) => {
         if (stream.output) {
           oformatContext.streams.push(stream.output)
@@ -2035,6 +2116,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           from: is.string(task.options.input.file) ? task.options.input.file : (task.options.input.file instanceof File ? task.options.input.file.name : 'ioReader'),
           tag: 'Input'
         }])
+        + '\n'
         + mappingDump
         + '\n'
         + dump([oformatContext], [{

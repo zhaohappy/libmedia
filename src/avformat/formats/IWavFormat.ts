@@ -160,6 +160,10 @@ export default class IWavFormat extends IFormat {
 
         formatContext.ioReader.setEndian(true)
         await id3v2.parse(formatContext.ioReader, len, id3v2Header, formatContext.metadata)
+        if (formatContext.metadata.apic) {
+          id3v2.parseAPIC(formatContext, formatContext.metadata.apic, id3v2Header)
+          delete formatContext.metadata.apic
+        }
         formatContext.ioReader.setEndian(false)
 
         if (len + 10 < size) {
@@ -195,13 +199,21 @@ export default class IWavFormat extends IFormat {
 
   public async readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
 
+    if (formatContext.ioReader.getPos() >= this.pcmStartPos + this.dataSize) {
+      return IOError.END
+    }
+
     const stream: AVStream = formatContext.streams.find((stream) => {
       return stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
     })
 
     try {
 
-      const length = (PACKET_SAMPLE_COUNT * stream.codecpar.chLayout.nbChannels * getBitsPerSample(stream.codecpar.codecId)) >>> 3
+      let length = (PACKET_SAMPLE_COUNT * stream.codecpar.chLayout.nbChannels * getBitsPerSample(stream.codecpar.codecId)) >>> 3
+      const remainingLength = (this.pcmStartPos + this.dataSize) - formatContext.ioReader.getPos()
+      if (length > remainingLength) {
+        length = static_cast<double>(remainingLength as uint64)
+      }
 
       const data: pointer<uint8> = avMalloc(length)
       addAVPacketData(avpacket, data, length)

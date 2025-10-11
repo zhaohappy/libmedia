@@ -27,16 +27,62 @@ import type IOReader from 'common/io/IOReader'
 import type { ID3V2, Mp3MetaData } from './type'
 import * as logger from 'common/util/logger'
 import * as text from 'common/util/text'
-import type IOWriterSync from 'common/io/IOWriterSync'
+import IOWriterSync from 'common/io/IOWriterSync'
 import { IOFlags } from 'avutil/avformat'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVCodecID, AVMediaType } from 'avutil/codec'
+import { type AVOFormatContext, type AVIFormatContext } from '../../AVFormatContext'
+import BufferReader from 'common/io/BufferReader'
+import { addAVPacketData, createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
+import { avMalloc } from 'avutil/util/mem'
+import { memcpyFromUint8Array } from 'cheap/std/memory'
+import { AVPacketFlags } from 'avutil/enum'
+import * as array from 'common/util/array'
+import * as object from 'common/util/object'
+import concatTypeArray from 'common/function/concatTypeArray'
 
-const enum ID3v2Encoding {
+export const enum ID3v2Encoding {
   ISO8859,
   UTF16BOM,
   UTF16BE,
   UTF8
 }
+
+export const ID3v2Mime2CodecId: Record<string, AVCodecID> = {
+  'image/gif': AVCodecID.AV_CODEC_ID_GIF,
+  'image/jpeg': AVCodecID.AV_CODEC_ID_MJPEG,
+  'image/jpg': AVCodecID.AV_CODEC_ID_MJPEG,
+  'image/png': AVCodecID.AV_CODEC_ID_PNG,
+  'image/tiff': AVCodecID.AV_CODEC_ID_TIFF,
+  'image/bmp': AVCodecID.AV_CODEC_ID_BMP,
+  'image/webp': AVCodecID.AV_CODEC_ID_WEBP,
+  'JPG': AVCodecID.AV_CODEC_ID_MJPEG,
+  'PNG': AVCodecID.AV_CODEC_ID_PNG
+}
+
+export const ID3v2PictureType: string[] = [
+  'Other',
+  '32x32 pixels \'file icon\'',
+  'Other file icon',
+  'Cover (front)',
+  'Cover (back)',
+  'Leaflet page',
+  'Media (e.g. label side of CD)',
+  'Lead artist/lead performer/soloist',
+  'Artist/performer',
+  'Conductor',
+  'Band/Orchestra',
+  'Composer',
+  'Lyricist/text writer',
+  'Recording Location',
+  'During recording',
+  'During performance',
+  'Movie/video screen capture',
+  'A bright coloured fish',
+  'Illustration',
+  'Band/artist logotype',
+  'Publisher/Studio logotype',
+]
 
 async function getSize(ioReader: IOReader, len: number) {
   let v = 0
@@ -156,7 +202,10 @@ export async function parse(ioReader: IOReader, len: int32, id3v2: ID3V2, metada
     }
 
     if (type === 'APIC') {
-      metadata.poster = await ioReader.readBuffer(size)
+      if (!metadata.apic) {
+        metadata.apic = []
+      }
+      metadata.apic.push(await ioReader.readBuffer(size))
     }
     else if (type === 'USLT') {
       const encoding = await ioReader.readUint8()
@@ -299,6 +348,62 @@ export async function parse(ioReader: IOReader, len: int32, id3v2: ID3V2, metada
 
 }
 
+export function parseAPIC(formatContext: AVIFormatContext, apic: Uint8Array[], id3v2: ID3V2) {
+  const isV34 = id3v2.version !== 2
+  apic.forEach((buffer) => {
+    const reader = new BufferReader(buffer)
+    const encoding = reader.readUint8()
+    let mimetype: string
+    function getNextEOF() {
+      let pos = Number(reader.getPos())
+      while (pos < buffer.length && buffer[pos]) {
+        pos++
+      }
+      return pos
+    }
+
+    if (isV34) {
+      mimetype = reader.readString(getNextEOF() - Number(reader.getPos()))
+      reader.skip(1)
+    }
+    else {
+      mimetype = reader.readString(3)
+    }
+
+    if (!ID3v2Mime2CodecId[mimetype]) {
+      return
+    }
+
+    const pictureType = reader.readUint8()
+    let description: string
+
+    const describeLen = getNextEOF() - Number(reader.getPos())
+    if (describeLen) {
+      description = decodeString(encoding, reader.readBuffer(describeLen))
+    }
+    reader.skip(1)
+    const stream = formatContext.createStream()
+    stream.codecpar.codecId = ID3v2Mime2CodecId[mimetype]
+    stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_VIDEO
+    stream.disposition |= AVDisposition.ATTACHED_PIC
+    stream.attachedPic = createAVPacket()
+    stream.attachedPic.streamIndex = stream.index
+    const size = reader.remainingSize()
+    const data: pointer<uint8> = avMalloc(size)
+    const pictureBuffer = reader.readBuffer(size)
+    memcpyFromUint8Array(data, size, pictureBuffer)
+    if (pictureBuffer.length >= 8 && array.same(pictureBuffer.subarray(0, 8), new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) {
+      stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_PNG
+    }
+    addAVPacketData(stream.attachedPic, data, size)
+    stream.attachedPic.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+    stream.metadata[AVStreamMetadataKey.COMMENT] = ID3v2PictureType[pictureType]
+    if (description) {
+      stream.metadata[AVStreamMetadataKey.TITLE] = description
+    }
+  })
+}
+
 export function write(ioWriter: IOWriterSync, version: number, padding: int32, metadata: Mp3MetaData) {
   let now = ioWriter.getPos()
   ioWriter.writeString('ID3')
@@ -332,6 +437,11 @@ export function write(ioWriter: IOWriterSync, version: number, padding: int32, m
 
   if (metadata[AVStreamMetadataKey.POSTER]) {
     writeBuffer('APIC', metadata[AVStreamMetadataKey.POSTER])
+  }
+  if (metadata.apic) {
+    metadata.apic.forEach((apic) => {
+      writeBuffer('APIC', apic)
+    })
   }
 
   if (metadata[AVStreamMetadataKey.TITLE]) {
@@ -450,4 +560,67 @@ export function write(ioWriter: IOWriterSync, version: number, padding: int32, m
   ioWriter.seek(sizePos)
   putSize(ioWriter, len)
   ioWriter.seek(now)
+}
+
+export function writeAPIC(formatContext: AVOFormatContext, id3v2Version: number) {
+  const apic: Uint8Array[] = []
+
+  const writer = new IOWriterSync()
+  const buffers: Uint8Array[] = []
+  writer.onFlush = (data) => {
+    buffers.push(data.slice())
+    return 0
+  }
+  const isV34 = id3v2Version !== 2
+  formatContext.streams.forEach((stream) => {
+    if (stream.disposition & AVDisposition.ATTACHED_PIC
+      && ((isV34
+          && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MJPEG
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PNG
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_TIFF
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_GIF
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_WEBP
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_BMP
+          ))
+        || (!isV34
+          && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PNG
+            || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MJPEG
+          ))
+      )
+      && stream.attachedPic
+    ) {
+      buffers.length = 0
+      writer.writeUint8(ID3v2Encoding.UTF8)
+      if (isV34) {
+        writer.writeString(object.reverse(ID3v2Mime2CodecId)[stream.codecpar.codecId])
+        writer.writeUint8(0)
+      }
+      else {
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PNG) {
+          writer.writeString('PNG')
+        }
+        else {
+          writer.writeString('JPG')
+        }
+      }
+      let pictureType = 0
+      if (stream.metadata[AVStreamMetadataKey.COMMENT]) {
+        if (ID3v2PictureType.indexOf(stream.metadata[AVStreamMetadataKey.COMMENT]) > -1) {
+          pictureType = ID3v2PictureType.indexOf(stream.metadata[AVStreamMetadataKey.COMMENT])
+        }
+      }
+      writer.writeUint8(pictureType)
+
+      if (stream.metadata[AVStreamMetadataKey.DESCRIPTION]) {
+        writer.writeString(stream.metadata[AVStreamMetadataKey.DESCRIPTION])
+      }
+      writer.writeUint8(0)
+
+      writer.writeBuffer(getAVPacketData(stream.attachedPic))
+      writer.flush()
+      apic.push(concatTypeArray(Uint8Array, buffers))
+    }
+  })
+
+  return apic
 }

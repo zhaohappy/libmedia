@@ -32,6 +32,7 @@ import * as logger from 'common/util/logger'
 import { avRescaleQ2 } from 'avutil/util/rational'
 import { getAVPacketData } from 'avutil/util/avpacket'
 import * as errorType from 'avutil/error'
+import { AVDisposition } from 'avutil/AVStream'
 
 export const enum IVFCodec {
   VP8 = 'VP80',
@@ -75,6 +76,8 @@ export default class OIVFFormat extends OFormat {
 
   public header: IVFHeader
 
+  private muxStreamIndex: number
+
   constructor() {
     super()
 
@@ -88,16 +91,18 @@ export default class OIVFFormat extends OFormat {
 
   public writeHeader(formatContext: AVOFormatContext): number {
 
-    const stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
+    const stream = formatContext.streams.find((stream) => {
+      return (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP8
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1)
+        && !(stream.disposition & AVDisposition.ATTACHED_PIC)
+    })
 
-    if (!stream
-      || (stream.codecpar.codecId !== AVCodecID.AV_CODEC_ID_VP8
-        && stream.codecpar.codecId !== AVCodecID.AV_CODEC_ID_VP9
-        && stream.codecpar.codecId !== AVCodecID.AV_CODEC_ID_AV1
-      )
-    ) {
+    if (!stream) {
       return errorType.CODEC_NOT_SUPPORT
     }
+
+    this.muxStreamIndex = stream.index
 
     if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9) {
       this.header.codec = IVFCodec.VP9
@@ -142,12 +147,12 @@ export default class OIVFFormat extends OFormat {
 
     const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
 
-    if (!stream) {
+    if (!stream || (stream.disposition & AVDisposition.ATTACHED_PIC)) {
       logger.warn(`can not found the stream width the packet\'s streamIndex: ${avpacket.streamIndex}, ignore it`)
       return
     }
 
-    if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+    if (stream.index === this.muxStreamIndex) {
       const stream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
       if (stream) {
         formatContext.ioWriter.writeUint32(avpacket.size)

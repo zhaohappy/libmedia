@@ -40,7 +40,7 @@ import { copyAVPacketData, createAVPacket, destroyAVPacket,
 import { DURATION_MAX_READ_SIZE, SAMPLE_INDEX_STEP } from './config'
 import * as errorType from 'avutil/error'
 import type AVStream from 'avutil/AVStream'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import * as logger from 'common/util/logger'
 import { IOError } from 'common/io/error'
 import WasmVideoDecoder from 'avcodec/wasmcodec/VideoDecoder'
@@ -291,20 +291,58 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
     }
   }
 
-  function finalizeAnalyze() {
-    formatContext.streams.forEach((stream) => {
-      calculate(stream, true)
-      if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-        if (stream.codecpar.chLayout.nbChannels === 1) {
-          stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVChannelLayout.AV_CHANNEL_LAYOUT_MONO as uint32)
-          stream.codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
-        }
-        else if (stream.codecpar.chLayout.nbChannels === 2) {
-          stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVChannelLayout.AV_CHANNEL_LAYOUT_STEREO as uint32)
-          stream.codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
+  async function finalizeAnalyze() {
+    for (let i = 0; i < formatContext.streams.length; i++) {
+      const stream = formatContext.streams[i]
+
+      if (stream.disposition & AVDisposition.ATTACHED_PIC) {
+        if (stream.attachedPic && formatContext.getDecoderResource) {
+          const resource = await formatContext.getDecoderResource(stream.codecpar.codecType, stream.codecpar.codecId)
+          if (!resource) {
+            continue
+          }
+          if (resource.threadModule) {
+            delete resource.threadModule
+          }
+          const decoder = new WasmVideoDecoder({
+            resource,
+            onReceiveAVFrame: (avframe) => {
+              stream.codecpar.format = avframe.format
+              stream.codecpar.colorRange = avframe.colorRange
+              stream.codecpar.colorSpace = avframe.colorSpace
+              stream.codecpar.colorPrimaries = avframe.colorPrimaries
+              stream.codecpar.colorTrc = avframe.colorTrc
+              stream.codecpar.chromaLocation = avframe.chromaLocation
+              if (avframe.sampleAspectRatio.num && avframe.sampleAspectRatio.den) {
+                stream.codecpar.sampleAspectRatio = avframe.sampleAspectRatio
+              }
+              stream.codecpar.width = avframe.width
+              stream.codecpar.height = avframe.height
+              destroyAVFrame(avframe)
+            }
+          })
+          const ret = await decoder.open(addressof(stream.codecpar))
+          if (!ret) {
+            decoder.decode(stream.attachedPic)
+            await decoder.flush()
+          }
+          decoder.close()
         }
       }
-    })
+      else {
+        calculate(stream, true)
+        if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+          if (stream.codecpar.chLayout.nbChannels === 1) {
+            stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVChannelLayout.AV_CHANNEL_LAYOUT_MONO as uint32)
+            stream.codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
+          }
+          else if (stream.codecpar.chLayout.nbChannels === 2) {
+            stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVChannelLayout.AV_CHANNEL_LAYOUT_STEREO as uint32)
+            stream.codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
+          }
+        }
+      }
+    }
   }
 
   while (true) {
@@ -312,7 +350,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
       && (formatContext.options as DemuxOptions).fastOpen
       && checkStreamParameters(formatContext)
     ) {
-      finalizeAnalyze()
+      await finalizeAnalyze()
       break
     }
 
@@ -323,7 +361,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
     ret = await readAVPacket(formatContext, avpacket)
 
     if (ret !== 0) {
-      finalizeAnalyze()
+      await finalizeAnalyze()
       break
     }
 
@@ -456,7 +494,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
       )
       && checkPictureGot()
     ) {
-      finalizeAnalyze()
+      await finalizeAnalyze()
       if (packetCached) {
         avpacket = nullptr
       }

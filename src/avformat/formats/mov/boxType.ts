@@ -139,7 +139,8 @@ export const enum BoxType {
   CHPL = 'chpl',
   PCMC = 'pcmC',
   GMHD = 'gmhd',
-  STHD = 'sthd'
+  STHD = 'sthd',
+  CHAP = 'chap'
 }
 
 export const BasicBoxs = [

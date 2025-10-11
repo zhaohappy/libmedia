@@ -36,7 +36,7 @@ import * as object from 'common/util/object'
 import type { Attachment, ChapterAtom, OMatroskaContext, TrackEntry } from './matroska/type'
 import IOWriterSync from 'common/io/IOWriterSync'
 import * as omatroska from './matroska/omatroska'
-import { EBMLId, MATROSKABlockAddIdType, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
+import { EBMLId, MATROSKABlockAddIdType, MATROSKATrackType, MkvImageMime2CodecId, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
 import * as crypto from 'avutil/util/crypto'
 import type AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { mapUint8Array } from 'cheap/std/memory'
@@ -52,7 +52,7 @@ import * as hevc from 'avutil/codecs/hevc'
 import * as vvc from 'avutil/codecs/vvc'
 import * as intread from 'avutil/util/intread'
 import type { Uint8ArrayInterface } from 'common/io/interface'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import * as errorType from 'avutil/error'
 import * as is from 'common/util/is'
 import getTimestamp from 'common/function/getTimestamp'
@@ -232,14 +232,18 @@ export default class OMatroskaFormat extends OFormat {
     let notSupport = false
 
     formatContext.streams.forEach((stream) => {
-      if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_ATTACHMENT) {
+      if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_ATTACHMENT
+        || stream.disposition & AVDisposition.ATTACHED_PIC
+      ) {
         crypto.random(this.random)
         const attachment: Attachment = {
           uid: this.randomView.getBigUint64(0),
           name: stream.metadata[AVStreamMetadataKey.TITLE],
-          mime: stream.metadata[AVStreamMetadataKey.MIME],
+          mime: object.reverse(MkvImageMime2CodecId)[stream.codecpar.codecId] ?? stream.metadata[AVStreamMetadataKey.MIME],
           data: {
-            data: mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)),
+            data: stream.attachedPic
+              ? getAVPacketData(stream.attachedPic)
+              : mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)),
             size: static_cast<int64>(stream.codecpar.extradataSize),
             pos: -1n
           },
@@ -654,7 +658,7 @@ export default class OMatroskaFormat extends OFormat {
 
     const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
 
-    if (!stream) {
+    if (!stream || (stream.disposition & AVDisposition.ATTACHED_PIC)) {
       logger.warn(`can not found the stream width the avpacket\'s streamIndex: ${avpacket.streamIndex}, ignore it`)
       return
     }

@@ -40,6 +40,8 @@ import { addVorbisComment, VorbisOggsCommentPage, VorbisOggsIdPage } from './ogg
 import { mapUint8Array } from 'cheap/std/memory'
 import IOReaderSync from 'common/io/IOReaderSync'
 import * as errorType from 'avutil/error'
+import { AVDisposition } from 'avutil/AVStream'
+import { avRescaleQ2 } from 'avutil/util/rational'
 
 const PAGE_MAX = 255 * 255
 
@@ -346,17 +348,25 @@ export default class OOggFormat extends OFormat {
 
     const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
 
-    if (!stream) {
+    if (!stream || (stream.disposition & AVDisposition.ATTACHED_PIC)) {
       logger.warn(`can not found the stream width the packet\'s streamIndex: ${avpacket.streamIndex}, ignore it`)
       return
     }
 
+    if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+      (stream.privData as OggsStreamPrivData).granulePosition = avRescaleQ2(
+        avpacket.pts,
+        addressof(avpacket.timeBase),
+        {
+          den: stream.codecpar.sampleRate,
+          num: 1
+        }
+      )
+    }
+
     this.writePage(stream, formatContext.ioWriter, getAVPacketData(avpacket), 0)
 
-    if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-      (stream.privData as OggsStreamPrivData).granulePosition += static_cast<int64>(stream.codecpar.frameSize)
-    }
-    else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+    if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
       (stream.privData as OggsStreamPrivData).granulePosition++
     }
 

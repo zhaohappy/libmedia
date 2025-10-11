@@ -42,7 +42,7 @@ import * as id3v2 from './mp3/id3v2'
 import { mapUint8Array } from 'cheap/std/memory'
 import * as text from 'common/util/text'
 import * as object from 'common/util/object'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 
 const XING_NUM_BAGS = 400
 
@@ -354,11 +354,14 @@ export default class OMp3Format extends OFormat {
     })
 
     if (this.options.id3v2Version) {
+
+      const apic = id3v2.writeAPIC(formatContext, this.options.id3v2Version)
+
       id3v2.write(
         formatContext.ioWriter,
         this.options.id3v2Version,
         formatContext.metadataHeaderPadding,
-        object.extend({}, formatContext.metadata, stream.metadata)
+        object.extend({ apic }, formatContext.metadata, stream.metadata)
       )
     }
 
@@ -377,7 +380,7 @@ export default class OMp3Format extends OFormat {
 
     const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
 
-    if (!stream) {
+    if (!stream || (stream.disposition & AVDisposition.ATTACHED_PIC)) {
       logger.warn(`can not found the stream width the packet\'s streamIndex: ${avpacket.streamIndex}, ignore it`)
       return
     }

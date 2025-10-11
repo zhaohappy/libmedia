@@ -30,13 +30,13 @@ import { BoxType, FullBoxs } from './boxType'
 import * as array from 'common/util/array'
 import type { AVOFormatContext } from '../../AVFormatContext'
 import type Stream from 'avutil/AVStream'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import writers from './writing/writers'
 import type { BoxLayout } from './layout'
 import { FragmentTrackBoxLayoutMap, MoofTrafBoxLayout, TrackBoxLayoutMap } from './layout'
 import updatePositionSize from './function/updatePositionSize'
 import { getSideData } from 'avutil/util/avpacket'
-import { AVPacketSideDataType } from 'avutil/codec'
+import { AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import { encryptionSideData2InitInfo } from 'avutil/util/encryption'
 import { mapUint8Array } from 'cheap/std/memory'
 import type { EncryptionInitInfo } from 'avutil/struct/encryption'
@@ -191,6 +191,16 @@ export function writeMoov(ioWriter: IOWriter, formatContext: AVOFormatContext, m
 
   writers[BoxType.MVHD](ioWriter, null, movContext)
   array.each(formatContext.streams, (stream) => {
+
+    if ((stream.disposition & AVDisposition.ATTACHED_PIC)
+      || !(stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
+        || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
+        || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE
+      )
+    ) {
+      return true
+    }
+
     const pos = ioWriter.getPos()
     ioWriter.writeUint32(0)
     ioWriter.writeUint32(mktag(BoxType.TRAK))
@@ -240,6 +250,14 @@ export function writeMoov(ioWriter: IOWriter, formatContext: AVOFormatContext, m
     ioWriter.writeUint32(mktag(BoxType.MVEX))
 
     array.each(formatContext.streams, (stream) => {
+      if ((stream.disposition & AVDisposition.ATTACHED_PIC)
+        || !(stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO
+          || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
+          || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE
+        )
+      ) {
+        return true
+      }
       writers[BoxType.TREX](ioWriter, stream, movContext)
     })
 

@@ -32,7 +32,7 @@ import { iTunesKeyMap } from '../iTunes'
 import digital2Tag from '../../../function/digital2Tag'
 import type { Data } from 'common/types/type'
 
-export async function readITunesTagValue(ioReader: IOReader, tagSize: int32) {
+export async function readITunesTagValue(ioReader: IOReader, tagSize: int32, params: Data) {
   const data: (string | Uint8Array | number)[] = []
 
   if ((await ioReader.peekUint16()) + 4 === tagSize) {
@@ -122,6 +122,7 @@ export async function readITunesTagValue(ioReader: IOReader, tagSize: int32) {
       else if (dataSize > 0) {
         data.push(await ioReader.readBuffer(dataSize))
         dataSize = 0
+        params.type = dateType
       }
 
       if (dataSize > 0) {
@@ -192,15 +193,23 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
           tagKey = digital2Tag(tagKey, 4)
         }
 
-        const data = await readITunesTagValue(ioReader, tagSize - 8)
+        const params: Data = {}
+        const data = await readITunesTagValue(ioReader, tagSize - 8, params)
 
         if (data.length) {
-          tags.push({
-            key: tagKey,
-            value: data.length === 1 ? data[0] : data
-          })
+          if (tagKey === 'covr') {
+            movContext.covr = {
+              type: params.type,
+              data: data[0] as Uint8Array
+            }
+          }
+          else {
+            tags.push({
+              key: tagKey,
+              value: data.length === 1 ? data[0] : data
+            })
+          }
         }
-
         itemSize -= tagSize
       }
     }

@@ -120,6 +120,12 @@ export interface OMovFormatOptions {
    * Use mdta atom for metadata
    */
   useMetadataTags?: boolean
+  /**
+   * 新的 fragment 开始
+   * 
+   * @returns 
+   */
+  onFragmentStart?: () => void
 }
 
 const defaultOptions: OMovFormatOptions = {
@@ -208,6 +214,7 @@ export default class OMovFormat extends OFormat {
     array.each(formatContext.streams, (stream, index) => {
       if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_UNKNOWN
         || stream.codecpar.codecType >= AVMediaType.AVMEDIA_TYPE_NB
+        || (stream.disposition & AVDisposition.ATTACHED_PIC)
       ) {
         return true
       }
@@ -246,6 +253,26 @@ export default class OMovFormat extends OFormat {
     this.context.timescale = 1000
     this.context.ignoreEncryption = this.options.ignoreEncryption
     this.context.useMetadataTags = this.options.useMetadataTags
+
+    const cover = formatContext.streams.find((stream) => {
+      return (stream.disposition & AVDisposition.ATTACHED_PIC)
+        && (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MJPEG
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_PNG
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_BMP
+        )
+    })
+    if (cover && cover.attachedPic) {
+      this.context.covr = {
+        type: 0x1b,
+        data: getAVPacketData(cover.attachedPic)
+      }
+      if (cover.codecpar.codecId === AVCodecID.AV_CODEC_ID_PNG) {
+        this.context.covr.type = 0xe
+      }
+      else if (cover.codecpar.codecId === AVCodecID.AV_CODEC_ID_MJPEG) {
+        this.context.covr.type = 0xd
+      }
+    }
 
     if (this.options.fragment) {
       this.context.compatibleBrand.push(mktag('iso6'))
@@ -298,35 +325,37 @@ export default class OMovFormat extends OFormat {
         streamContext.sttsSampleDeltas = []
         streamContext.alternateGroup = index
 
-        const track = createFragmentTrack()
-        track.baseIsMoof = this.options.defaultBaseIsMoof
-        track.streamIndex = stream.index
-        track.trackId = this.context.nextTrackId++
-        streamContext.trackId = track.trackId
+        if (!(stream.disposition & AVDisposition.ATTACHED_PIC)) {
+          const track = createFragmentTrack()
+          track.baseIsMoof = this.options.defaultBaseIsMoof
+          track.streamIndex = stream.index
+          track.trackId = this.context.nextTrackId++
+          streamContext.trackId = track.trackId
 
-        const encryption = this.options.encryption || stream.metadata[AVStreamMetadataKey.ENCRYPTION] as AVStreamMetadataEncryption
-        if (encryption) {
-          const cenc = this.context.cencs || {}
-          cenc[track.trackId] = {
-            schemeType: encryption.schemeType,
-            schemeVersion: encryption.schemeVersion,
-            cryptByteBlock: encryption.cryptByteBlock,
-            skipByteBlock: encryption.skipByteBlock,
-            defaultConstantIV: encryption.constantIV,
-            isProtected: 1,
-            defaultPerSampleIVSize: encryption.perSampleIVSize,
-            defaultKeyId: encryption.kid,
-            pattern: !!encryption.pattern
+          const encryption = this.options.encryption || stream.metadata[AVStreamMetadataKey.ENCRYPTION] as AVStreamMetadataEncryption
+          if (encryption) {
+            const cenc = this.context.cencs || {}
+            cenc[track.trackId] = {
+              schemeType: encryption.schemeType,
+              schemeVersion: encryption.schemeVersion,
+              cryptByteBlock: encryption.cryptByteBlock,
+              skipByteBlock: encryption.skipByteBlock,
+              defaultConstantIV: encryption.constantIV,
+              isProtected: 1,
+              defaultPerSampleIVSize: encryption.perSampleIVSize,
+              defaultKeyId: encryption.kid,
+              pattern: !!encryption.pattern
+            }
+            this.context.cencs = cenc
           }
-          this.context.cencs = cenc
-        }
 
-        track.ioWriter = new IOWriter()
-        track.ioWriter.onFlush = (data) => {
-          track.buffers.push(data.slice())
-          return 0
+          track.ioWriter = new IOWriter()
+          track.ioWriter.onFlush = (data) => {
+            track.buffers.push(data.slice())
+            return 0
+          }
+          this.context.currentFragment.tracks.push(track)
         }
-        this.context.currentFragment.tracks.push(track)
       })
 
       this.enableStreams(formatContext)
@@ -522,6 +551,9 @@ export default class OMovFormat extends OFormat {
       })
 
       formatContext.ioWriter.flush()
+      if (this.options.onFragmentStart) {
+        this.options.onFragmentStart()
+      }
       omov.writeMoof(formatContext.ioWriter, formatContext, this.context)
 
       let dataOffset = this.context.currentFragment.size + 8
@@ -653,7 +685,7 @@ export default class OMovFormat extends OFormat {
 
     const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
 
-    if (!stream) {
+    if (!stream || (stream.disposition & AVDisposition.ATTACHED_PIC)) {
       logger.warn(`can not found the stream width the avpacket\'s streamIndex: ${avpacket.streamIndex}, ignore it`)
       return
     }
@@ -949,6 +981,9 @@ export default class OMovFormat extends OFormat {
       let duration = 0n
 
       array.each(formatContext.streams, (stream) => {
+        if (stream.disposition & AVDisposition.ATTACHED_PIC) {
+          return true
+        }
         const streamContext = stream.privData as MOVStreamContext
         if (streamContext.sampleSizes.length) {
           if (streamContext.sttsSampleDeltas.length) {

@@ -53,6 +53,7 @@ import * as h264 from 'avutil/codecs/h264'
 import * as hevc from 'avutil/codecs/hevc'
 import * as vvc from 'avutil/codecs/vvc'
 import type { Uint8ArrayInterface } from 'common/io/interface'
+import { AVDisposition } from 'avutil/AVStream'
 
 export interface OMpegtsFormatOptions {
   pesMaxSize?: number
@@ -104,8 +105,8 @@ export default class OMpegtsFormat extends OFormat {
     this.patPeriod = static_cast<int64>(this.options.patPeriod * AV_TIME_BASE)
   }
 
-  public init(context: AVOFormatContext): number {
-    context.ioWriter.setEndian(true)
+  public init(formatContext: AVOFormatContext): number {
+    formatContext.ioWriter.setEndian(true)
     this.avpacket = createAVPacket()
     return 0
   }
@@ -113,6 +114,9 @@ export default class OMpegtsFormat extends OFormat {
   public async destroy(context: AVOFormatContext) {
     super.destroy(context)
     array.each(context.streams, (stream) => {
+      if (stream.disposition & AVDisposition.ATTACHED_PIC) {
+        return true
+      }
       const streamContext = stream.privData as MpegtsStreamContext
       if (streamContext.filter) {
         streamContext.filter.destroy()
@@ -134,6 +138,9 @@ export default class OMpegtsFormat extends OFormat {
     this.context.pmt.programNumber = 1
 
     array.each(context.streams, (stream) => {
+      if (stream.disposition & AVDisposition.ATTACHED_PIC) {
+        return true
+      }
 
       stream.timeBase.den = 90000
       stream.timeBase.num = 1
@@ -210,7 +217,9 @@ export default class OMpegtsFormat extends OFormat {
 
     this.sdtPacket.payload = ompegts.getSDTPayload()
     this.patPacket.payload = ompegts.getPATPayload(this.context.pat)
-    this.pmtPacket.payload = ompegts.getPMTPayload(this.context.pmt, context.streams)
+    this.pmtPacket.payload = ompegts.getPMTPayload(this.context.pmt, context.streams.filter((stream) => {
+      return !(stream.disposition & AVDisposition.ATTACHED_PIC)
+    }))
 
     ompegts.writeSection(context.ioWriter, this.sdtPacket, this.context)
     ompegts.writeSection(context.ioWriter, this.patPacket, this.context)
@@ -228,7 +237,7 @@ export default class OMpegtsFormat extends OFormat {
 
     const stream = formatContext.getStreamByIndex(avpacket.streamIndex)
 
-    if (!stream) {
+    if (!stream || (stream.disposition & AVDisposition.ATTACHED_PIC)) {
       logger.warn(`can not found the stream width the packet\'s streamIndex: ${avpacket.streamIndex}, ignore it`)
       return
     }
@@ -485,11 +494,13 @@ export default class OMpegtsFormat extends OFormat {
 
     array.each(context.streams, (stream) => {
       const streamContext = stream.privData as MpegtsStreamContext
-      if (streamContext.pesSlices.total) {
-        ompegts.writePES(context.ioWriter, streamContext.pes, streamContext.pesSlices, stream, this.context)
+      if (streamContext) {
+        if (streamContext.pesSlices.total) {
+          ompegts.writePES(context.ioWriter, streamContext.pes, streamContext.pesSlices, stream, this.context)
+        }
+        streamContext.pesSlices.total = 0
+        streamContext.pesSlices.buffers = []
       }
-      streamContext.pesSlices.total = 0
-      streamContext.pesSlices.buffers = []
     })
 
     context.ioWriter.flush()

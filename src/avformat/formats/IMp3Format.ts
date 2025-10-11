@@ -101,6 +101,10 @@ export default class IMp3Format extends IFormat {
         | ((await formatContext.ioReader.readUint8()) & 0x7F)
 
       await id3v2.parse(formatContext.ioReader, len, this.context.id3v2, formatContext.metadata)
+      if (formatContext.metadata.apic) {
+        id3v2.parseAPIC(formatContext, formatContext.metadata.apic, this.context.id3v2)
+        delete formatContext.metadata.apic
+      }
 
       if (is.bigint(stream.metadata['com.apple.streaming.transportStreamTimestamp'])) {
         const mp3Context = stream.privData as Mp3StreamContext

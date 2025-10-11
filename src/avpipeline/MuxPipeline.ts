@@ -43,13 +43,14 @@ import { avRescaleQ2 } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import type OFormat from 'avformat/formats/OFormat'
 import IOWriterSync from 'common/io/IOWriterSync'
-import type { AVStreamInterface } from 'avutil/AVStream'
+import { AVDisposition, type AVStreamInterface } from 'avutil/AVStream'
 import type AVStream from 'avutil/AVStream'
 import { copyCodecParameters } from 'avutil/util/codecparameters'
 import type AVCodecParameters from 'avutil/struct/avcodecparameters'
 import { AVMediaType } from 'avutil/codec'
 import type { Data } from 'common/types/type'
 import * as object from 'common/util/object'
+import { createAVPacket, refAVPacket } from 'avutil/util/avpacket'
 
 const MIN_QUEUE_CACHE = 30
 
@@ -261,14 +262,20 @@ export default class MuxPipeline extends Pipeline {
       copyCodecParameters(addressof(ostream.codecpar), stream.codecpar)
       ostream.timeBase.num = stream.timeBase.num
       ostream.timeBase.den = stream.timeBase.den
+      ostream.disposition = stream.disposition
       ostream.metadata = stream.metadata
+      if (stream.attachedPic) {
+        ostream.attachedPic = createAVPacket()
+        refAVPacket(ostream.attachedPic, stream.attachedPic)
+      }
 
       task.streams.push({
         stream: ostream,
         pullIPC: new IPCPort(port),
         avpacketQueue: [],
         ended: stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_ATTACHMENT
-          || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_DATA,
+          || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_DATA
+          || !!(stream.disposition & AVDisposition.ATTACHED_PIC),
         pulling: null
       })
     }

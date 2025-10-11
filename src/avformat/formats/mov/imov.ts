@@ -204,7 +204,7 @@ async function parseOneBox(
       && iTunesKeyMap[digital2Tag(type)]
       && (size - 8) > 0
     ) {
-      const data = await readITunesTagValue(ioReader, size - 8)
+      const data = await readITunesTagValue(ioReader, size - 8, {})
       if (data.length) {
         if (stream) {
           stream.metadata[iTunesKeyMap[digital2Tag(type)]] = data.length === 1 ? data[0] : data

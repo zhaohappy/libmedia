@@ -58,6 +58,7 @@ import saiz from './saiz'
 import senc from './senc'
 import meta from './meta'
 import chpl from './chpl'
+import chap from './chap'
 
 import mktag from '../../../function/mktag'
 
@@ -96,6 +97,7 @@ number,
 
   [mktag(BoxType.META)]: meta,
   [mktag(BoxType.CHPL)]: chpl,
+  [mktag(BoxType.CHAP)]: chap
 }
 
 export default parsers

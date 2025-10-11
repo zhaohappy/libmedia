@@ -178,6 +178,12 @@ export interface MOVContext {
   metadata?: Data
   chapters?: AVChapter[]
   useMetadataTags?: boolean
+
+  covr?: {
+    type: int32
+    data: Uint8Array
+  }
+  chapterTrack?: number[]
 }
 
 export interface MOVStreamContext {

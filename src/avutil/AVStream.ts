@@ -28,6 +28,8 @@ import AVCodecParameters from './struct/avcodecparameters'
 import type { AVPacketSideDataType } from './codec'
 import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from './constant'
 import type { Rational } from './struct/rational'
+import type AVPacket from './struct/avpacket'
+import { destroyAVPacket } from './util/avpacket'
 
 export const enum AVStreamMetadataKey {
   /**
@@ -382,6 +384,14 @@ export default class AVStream {
    */
   sampleIndexesPosMap: Map<int64, int32> = new Map()
 
+  /**
+   * For streams with AV_DISPOSITION_ATTACHED_PIC disposition, this packet
+   * will contain the attached picture.
+   *
+   * decoding: set by libavformat, must not be modified by the caller.
+   * encoding: unused
+   */
+  attachedPic: pointer<AVPacket> = nullptr
 
   public destroy() {
     if (this.codecpar) {
@@ -392,6 +402,10 @@ export default class AVStream {
     if (this.timeBase) {
       unmake(this.timeBase)
       this.timeBase = null
+    }
+    if (this.attachedPic) {
+      destroyAVPacket(this.attachedPic)
+      this.attachedPic = nullptr
     }
     this.sampleIndexes.length = 0
     this.sampleIndexesPosMap.clear()
@@ -408,6 +422,7 @@ export interface AVStreamInterface {
   startTime: int64
   disposition: int32
   timeBase: Rational
+  attachedPic: pointer<AVPacket>
 }
 
 export interface AVStreamMetadataEncryption {

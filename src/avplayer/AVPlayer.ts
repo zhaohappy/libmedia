@@ -699,6 +699,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   /**
    * @hidden
    */
+  private isAttachmentPicture(stream: AVStreamInterface) {
+    return stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
+      && stream.disposition & AVDisposition.ATTACHED_PIC
+  }
+
+  /**
+   * @hidden
+   */
   private findBestStream(streams: AVStreamInterface[], mediaType: AVMediaType, isMSE: boolean = false) {
     if (this.options.findBestStream) {
       return this.options.findBestStream(streams, mediaType)
@@ -708,13 +716,31 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     })
     if (ss.length) {
       if (ss.length === 1) {
-        return ss[0]
+        if (!isMSE || !this.isAttachmentPicture(ss[0])) {
+          return ss[0]
+        }
+        return undefined
       }
       const defaultStream = ss.find((stream) => !!(stream.disposition & AVDisposition.DEFAULT))
       if (defaultStream && this.isCodecIdSupported(defaultStream.codecpar.codecId, defaultStream.codecpar.codecType, isMSE)) {
         return defaultStream
       }
-      return ss.find((stream) => this.isCodecIdSupported(stream.codecpar.codecId, stream.codecpar.codecType, isMSE)) || ss[0]
+      let stream = ss.find((stream) => {
+        return this.isCodecIdSupported(stream.codecpar.codecId, stream.codecpar.codecType, isMSE)
+          && !this.isAttachmentPicture(stream)
+      })
+      if (stream) {
+        return stream
+      }
+      stream = ss.find((stream) => {
+        return !this.isAttachmentPicture(stream)
+      })
+      if (stream) {
+        return stream
+      }
+      if (!isMSE || !this.isAttachmentPicture(ss[0])) {
+        return ss[0]
+      }
     }
   }
 
@@ -2176,7 +2202,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           leftPort: this.demuxer2VideoDecoderChannel.port2,
           rightPort: this.videoDecoder2VideoRenderChannel.port1,
           stats: addressof(this.GlobalData.stats),
-          enableHardware: this.options.enableHardware && this.options.enableWebCodecs,
+          enableHardware: this.options.enableHardware
+            && this.options.enableWebCodecs
+            && !(videoStream.disposition & AVDisposition.ATTACHED_PIC),
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
           avframeList: addressof(this.GlobalData.avframeList),
@@ -2187,7 +2215,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
               || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VP9
               || videoStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1
             )
-            && !!this.options.enableWebCodecs,
+            && !!this.options.enableWebCodecs
+            && !(videoStream.disposition & AVDisposition.ATTACHED_PIC),
           preferLatency: this.isLive(),
           keepAlpha: true
         })
@@ -2934,7 +2963,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       let streamIndex = -1
 
-      if (this.selectedVideoStream) {
+      if (this.selectedVideoStream && !this.isAttachmentPicture(this.selectedVideoStream)) {
         streamIndex = this.selectedVideoStream.index
       }
       else if (this.selectedAudioStream) {
@@ -3715,7 +3744,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
     else {
       const stream = this.formatContext.streams.find((stream) => stream.id === id)
-      if (this.selectedVideoStream && stream && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO && stream !== this.selectedVideoStream) {
+      if (this.selectedVideoStream
+        && stream
+        && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
+        && stream !== this.selectedVideoStream
+        && !(stream.disposition & AVDisposition.ATTACHED_PIC)
+      ) {
 
         if (this.status === AVPlayerStatus.CHANGING) {
           logger.warn(`player is changing now, taskId: ${this.taskId}`)

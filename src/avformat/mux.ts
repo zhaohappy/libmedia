@@ -35,6 +35,7 @@ import * as errorType from 'avutil/error'
 import { dumpCodecName, dumpFormatName } from './dump'
 import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as bigint from 'common/util/bigint'
+import { AVDisposition } from 'avutil/AVStream'
 
 export type MuxOptions = {
   zeroStart?: boolean
@@ -71,6 +72,9 @@ export function open(formatContext: AVOFormatContext, options: MuxOptions = {}) 
   let supportCodecs = OFormatSupportedCodecs[formatContext.oformat.type]
   if (supportCodecs) {
     for (let i = 0; i < formatContext.streams.length; i++) {
+      if (formatContext.streams[i].disposition & AVDisposition.ATTACHED_PIC) {
+        continue
+      }
       const codecId = formatContext.streams[i].codecpar.codecId
       const codecType = formatContext.streams[i].codecpar.codecType
       if (formatContext.oformat.type === AVFormat.WAV) {

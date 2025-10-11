@@ -23,10 +23,10 @@
  *
  */
 
-import type { AVCodecID, AVMediaType } from 'avutil/codec'
+import { type AVCodecID, AVMediaType } from 'avutil/codec'
 
 import type { AVStreamInterface } from 'avutil/AVStream'
-import AVStream from 'avutil/AVStream'
+import AVStream, { AVDisposition } from 'avutil/AVStream'
 import type AVPacket from 'avutil/struct/avpacket'
 
 import type OFormat from './formats/OFormat'
@@ -230,7 +230,11 @@ export class AVFormatContext {
   }
 
   public getStreamByMediaType(mediaType: AVMediaType) {
-    return this.streams.find((stream) => stream.codecpar?.codecType === mediaType)
+    return this.streams.find((stream) => stream.codecpar?.codecType === mediaType && !(stream.disposition & AVDisposition.ATTACHED_PIC))
+  }
+
+  public getAttachmentPicture() {
+    return this.streams.find((stream) => stream.codecpar?.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO && (stream.disposition & AVDisposition.ATTACHED_PIC))
   }
 
   public createStream() {

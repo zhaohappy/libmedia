@@ -38,7 +38,7 @@ import { addAVPacketData, addAVPacketSideData, createAVPacket, getAVPacketData }
 import type AVStream from 'avutil/AVStream'
 import { AVDisposition } from 'avutil/AVStream'
 import { AV_MILLI_TIME_BASE, AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { EBMLId, MATROSKABlockAddIdType, MATROSKALacingMode, MATROSKATrackEncodingComp, MATROSKATrackType, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
+import { EBMLId, MATROSKABlockAddIdType, MATROSKALacingMode, MATROSKATrackEncodingComp, MATROSKATrackType, MkvImageMime2CodecId, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
 import { IOFlags } from 'avutil/avformat'
 import type { Additions, ClusterIndex, MatroskaContext, TrackEntry } from './matroska/type'
 import { EbmlSyntaxAttachments, EbmlSyntaxBlockGroup, EbmlSyntaxChapters, EbmlSyntaxCluster, EbmlSyntaxCues, EbmlSyntaxHeadSeek,
@@ -455,11 +455,6 @@ export default class IMatroskaFormat extends IFormat {
         const stream = formatContext.createStream()
         stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_ATTACHMENT
         stream.privData = attachment
-        if (attachment.data) {
-          stream.codecpar.extradataSize = static_cast<int32>(attachment.data.size)
-          stream.codecpar.extradata = avMalloc(reinterpret_cast<size>(stream.codecpar.extradataSize))
-          memcpyFromUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize), attachment.data.data)
-        }
         if (attachment.name) {
           stream.metadata[AVStreamMetadataKey.TITLE] = attachment.name
         }
@@ -468,6 +463,24 @@ export default class IMatroskaFormat extends IFormat {
         }
         if (attachment.description) {
           stream.metadata[AVStreamMetadataKey.DESCRIPTION] = attachment.description
+        }
+        if (attachment.data) {
+          if (MkvImageMime2CodecId[attachment.mime]) {
+            stream.codecpar.codecId = MkvImageMime2CodecId[attachment.mime]
+            stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_VIDEO
+            stream.disposition |= AVDisposition.ATTACHED_PIC
+            stream.attachedPic = createAVPacket()
+            stream.attachedPic.streamIndex = stream.index
+            const data: pointer<uint8> = avMalloc(static_cast<size>(attachment.data.size))
+            memcpyFromUint8Array(data, static_cast<size>(attachment.data.size), attachment.data.data)
+            addAVPacketData(stream.attachedPic, data, static_cast<int32>(attachment.data.size))
+            stream.attachedPic.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+          }
+          else {
+            stream.codecpar.extradataSize = static_cast<int32>(attachment.data.size)
+            stream.codecpar.extradata = avMalloc(reinterpret_cast<size>(stream.codecpar.extradataSize))
+            memcpyFromUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize), attachment.data.data)
+          }
         }
       })
     }

@@ -453,3 +453,10 @@ export const WebmTag2CodecId: Record<string, AVCodecID> = {
   'D_WEBVTT/DESCRIPTIONS': AVCodecID.AV_CODEC_ID_WEBVTT,
   'D_WEBVTT/METADATA': AVCodecID.AV_CODEC_ID_WEBVTT,
 }
+
+export const MkvImageMime2CodecId: Record<string, AVCodecID> = {
+  'image/gif': AVCodecID.AV_CODEC_ID_GIF,
+  'image/jpeg': AVCodecID.AV_CODEC_ID_MJPEG,
+  'image/png': AVCodecID.AV_CODEC_ID_PNG,
+  'image/tiff': AVCodecID.AV_CODEC_ID_TIFF
+}
