@@ -223,8 +223,10 @@ export default class IWavFormat extends IFormat {
       avpacket.streamIndex = stream.index
       avpacket.timeBase.den = stream.timeBase.den
       avpacket.timeBase.num = stream.timeBase.num
+      const sampleCount = ((length << 3) / stream.codecpar.chLayout.nbChannels / getBitsPerSample(stream.codecpar.codecId)) >>> 0
+      avpacket.duration = static_cast<int64>(sampleCount as uint32)
 
-      this.currentPts += static_cast<int64>(PACKET_SAMPLE_COUNT)
+      this.currentPts += avpacket.duration
       return 0
     }
     catch (error) {

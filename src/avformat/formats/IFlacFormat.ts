@@ -428,6 +428,7 @@ export default class IFlacFormat extends IFormat {
       avpacket.timeBase.den = stream.timeBase.den
       avpacket.timeBase.num = stream.timeBase.num
       avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+      avpacket.duration = static_cast<int64>(this.context.frameInfo.blocksize)
       avpacket.dts = avpacket.pts = this.context.frameInfo.isVarSize
         ? this.context.frameInfo.frameOrSampleNum
         : this.context.frameInfo.frameOrSampleNum * static_cast<int64>(this.context.frameInfo.blocksize)
