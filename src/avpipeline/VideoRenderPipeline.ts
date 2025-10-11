@@ -734,8 +734,14 @@ export default class VideoRenderPipeline extends Pipeline {
       task.seeking = false
 
       if (!task.frontFrame || is.number(task.frontFrame) && task.frontFrame < 0) {
+        task.frontFrame = null
         task.frontBuffered = false
         task.ended = true
+      }
+
+      if (!task.backFrame || is.number(task.backFrame) && task.backFrame < 0) {
+        task.backFrame = null
+        return
       }
 
       task.currentPTS = isPointer(task.backFrame)
