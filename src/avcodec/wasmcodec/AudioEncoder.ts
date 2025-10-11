@@ -304,6 +304,9 @@ export default class WasmAudioEncoder {
         return ret
       }
       else {
+        if (this.ptsQueue.length > 1) {
+          this.ptsQueue.pop()
+        }
         break
       }
     }
