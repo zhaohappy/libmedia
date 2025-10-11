@@ -100,7 +100,12 @@ export const VideoCodecString2CodecId = {
   'rv10': AVCodecID.AV_CODEC_ID_RV10,
   'rv20': AVCodecID.AV_CODEC_ID_RV20,
   'rv30': AVCodecID.AV_CODEC_ID_RV30,
-  'rv40': AVCodecID.AV_CODEC_ID_RV40
+  'rv40': AVCodecID.AV_CODEC_ID_RV40,
+  'png': AVCodecID.AV_CODEC_ID_PNG,
+  'bmp': AVCodecID.AV_CODEC_ID_BMP,
+  'webp': AVCodecID.AV_CODEC_ID_WEBP,
+  'tiff': AVCodecID.AV_CODEC_ID_TIFF,
+  'gif': AVCodecID.AV_CODEC_ID_GIF
 }
 
 export const AudioCodecString2CodecId = {
@@ -143,6 +148,10 @@ export const SubtitleCodecString2CodecId = {
   'eia_608': AVCodecID.AV_CODEC_ID_EIA_608
 }
 
+export const DataCodecString2CodecId = {
+  'bin_data': AVCodecID.AV_CODEC_ID_BIN_DATA
+}
+
 export const PixfmtString2AVPixelFormat = {
   'yuv420p': AVPixelFormat.AV_PIX_FMT_YUV420P,
   'yuv422p': AVPixelFormat.AV_PIX_FMT_YUV422P,
@@ -167,6 +176,10 @@ export const PixfmtString2AVPixelFormat = {
   'yuva420p10be': AVPixelFormat.AV_PIX_FMT_YUVA420P10BE,
   'yuva422p10be': AVPixelFormat.AV_PIX_FMT_YUVA422P10BE,
   'yuva444p10be': AVPixelFormat.AV_PIX_FMT_YUVA444P10BE,
+  'rgba': AVPixelFormat.AV_PIX_FMT_RGBA,
+  'rgb24': AVPixelFormat.AV_PIX_FMT_RGB24,
+  'bgr24': AVPixelFormat.AV_PIX_FMT_BGR24,
+  'gray': AVPixelFormat.AV_PIX_FMT_GRAY8
 }
 
 export const SampleFmtString2SampleFormat = {

@@ -715,6 +715,16 @@
                       return `../dist/decode/wmv${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? defaultVersion : '')}.wasm`;
                     case 7 /* AVCodecID.AV_CODEC_ID_MJPEG */:
                       return `../dist/decode/mjpeg${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? defaultVersion : '')}.wasm`;
+                    case 61 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                      return `../dist/decode/png${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? defaultVersion : '')}.wasm`;
+                    case 171 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                      return `../dist/decode/webp${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? defaultVersion : '')}.wasm`;
+                    case 97 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                      return `../dist/decode/gif${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? defaultVersion : '')}.wasm`;
+                    case 96 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                      return `../dist/decode/tiff${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? defaultVersion : '')}.wasm`;
+                    case 78 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                      return `../dist/decode/bmp${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? defaultVersion : '')}.wasm`;
                     default:
                       return null
                   }

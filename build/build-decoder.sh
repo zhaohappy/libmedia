@@ -107,6 +107,34 @@ elif [ $decode == "vp9" ]; then
       fi
     fi
   fi
+elif [ $decode == "png" ]; then
+  if [ $ENABLE_WASM64 == "1" ]; then
+    DECODER_LIB="$PROJECT_ROOT_PATH/lib/zlib-64/lib/libz.a"
+  else
+    if [ $ENABLE_SIMD == "1" ]; then
+      DECODER_LIB="$PROJECT_ROOT_PATH/lib/zlib-simd/lib/libz.a"
+    else
+      if [ $ENABLE_ATOMIC == "1" ]; then
+        DECODER_LIB="$PROJECT_ROOT_PATH/lib/zlib-atomic/lib/libz.a"
+      else
+        DECODER_LIB="$PROJECT_ROOT_PATH/lib/zlib/lib/libz.a"
+      fi
+    fi
+  fi
+elif [ $decode == "tiff" ]; then
+  if [ $ENABLE_WASM64 == "1" ]; then
+    DECODER_LIB="$PROJECT_ROOT_PATH/lib/zlib-64/lib/libz.a"
+  else
+    if [ $ENABLE_SIMD == "1" ]; then
+      DECODER_LIB="$PROJECT_ROOT_PATH/lib/zlib-simd/lib/libz.a"
+    else
+      if [ $ENABLE_ATOMIC == "1" ]; then
+        DECODER_LIB="$PROJECT_ROOT_PATH/lib/zlib-atomic/lib/libz.a"
+      else
+        DECODER_LIB="$PROJECT_ROOT_PATH/lib/zlib/lib/libz.a"
+      fi
+    fi
+  fi
 elif [ $decode == "mpeg4" ]; then
   echo "#define CODEC_ID AV_CODEC_ID_MPEG4" >> $INCLUDE_PATH/config.h
 elif [ $decode == "av1" ]; then

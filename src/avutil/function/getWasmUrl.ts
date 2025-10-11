@@ -108,6 +108,16 @@ export default function getWasmUrl(baseUrl: string, type: 'decoder' | 'encoder' 
           return `${baseUrl}/decode/wmv${tag}.wasm`
         case AVCodecID.AV_CODEC_ID_MJPEG:
           return `${baseUrl}/decode/mjpeg${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_PNG:
+          return `${baseUrl}/decode/png${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_WEBP:
+          return `${baseUrl}/decode/webp${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_GIF:
+          return `${baseUrl}/decode/gif${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_TIFF:
+          return `${baseUrl}/decode/tiff${tag}.wasm`
+        case AVCodecID.AV_CODEC_ID_BMP:
+          return `${baseUrl}/decode/bmp${tag}.wasm`
         default:
           return null
       }

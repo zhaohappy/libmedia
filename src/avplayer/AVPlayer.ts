@@ -385,6 +385,11 @@ export const AVPlayerSupportedCodecs = [
   AVCodecID.AV_CODEC_ID_WMV2,
   AVCodecID.AV_CODEC_ID_WMV3,
   AVCodecID.AV_CODEC_ID_MJPEG,
+  AVCodecID.AV_CODEC_ID_PNG,
+  AVCodecID.AV_CODEC_ID_WEBP,
+  AVCodecID.AV_CODEC_ID_GIF,
+  AVCodecID.AV_CODEC_ID_TIFF,
+  AVCodecID.AV_CODEC_ID_BMP,
 
   AVCodecID.AV_CODEC_ID_AAC,
   AVCodecID.AV_CODEC_ID_MP3,
@@ -678,7 +683,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * @hidden
    */
   private isCodecIdSupported(codecId: AVCodecID, codecType: AVMediaType, isMSE: boolean = false) {
-    if ((codecId > AVCodecID.AV_CODEC_ID_FIRST_AUDIO && codecId <= AVCodecID.AV_CODEC_ID_PCM_SGA)
+    if ((codecId >= AVCodecID.AV_CODEC_ID_FIRST_AUDIO && codecId <= AVCodecID.AV_CODEC_ID_PCM_SGA)
       || (codecId >= AVCodecID.AV_CODEC_ID_ADPCM_IMA_QT && codecId <= AVCodecID.AV_CODEC_ID_ADPCM_XMD)
     ) {
       return true

@@ -146,6 +146,16 @@ export function getWasm(type: 'decoder' | 'encoder' | 'resampler' | 'scaler' | '
           return `${BASE_CDN}/decode/wmv${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
         case AVCodecID.AV_CODEC_ID_MJPEG:
           return `${BASE_CDN}/decode/mjpeg${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_PNG:
+          return `${BASE_CDN}/decode/png${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_WEBP:
+          return `${BASE_CDN}/decode/webp${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_GIF:
+          return `${BASE_CDN}/decode/gif${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_TIFF:
+          return `${BASE_CDN}/decode/tiff${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+        case AVCodecID.AV_CODEC_ID_BMP:
+          return `${BASE_CDN}/decode/bmp${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
         default:
           return null
       }

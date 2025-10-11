@@ -118,6 +118,26 @@ if [[ $decode == "vp9" ]]; then
   fi
 fi
 
+if [[ $decode == "png" ]]; then
+  EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-zlib"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/zlib/include"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/zlib-64/lib -lz"
+  else
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/zlib/lib -lz"
+  fi
+fi
+
+if [[ $decode == "tiff" ]]; then
+  EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-zlib"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -I$PROJECT_ROOT_PATH/lib/zlib/include"
+  if [[ $wasm64 == "1" ]]; then
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/zlib-64/lib -lz"
+  else
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L$PROJECT_ROOT_PATH/lib/zlib/lib -lz"
+  fi
+fi
+
 if [[ $decode == "h263" ]]; then
   realDecoder="h263"
   EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-decoder=h263i --enable-decoder=h263p"

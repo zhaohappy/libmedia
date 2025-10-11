@@ -154,6 +154,11 @@ The 64 version uses the 64-bit WebAssembly instruction set (wasm64) and includes
 | ralf        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | G.711 A-law | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | G.711 μ-law | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| png         | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| webp        | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| tiff        | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| bmp         | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| gif         | ✅         | ✅          | ✅          | ✅            | ❌                 |
 
 #### Supported encode codecs status
 
