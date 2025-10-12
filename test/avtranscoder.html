@@ -35,6 +35,7 @@
       <el-radio v-model="radio" label="ogg">ogg</el-radio>
       <el-radio v-model="radio" label="mp3">mp3</el-radio>
       <el-radio v-model="radio" label="wav">wav</el-radio>
+      <el-radio v-model="radio" label="flac">flac</el-radio>
     </div>
   </div>
 
@@ -410,6 +411,51 @@
                     // vp9
                     case 167:
                       return '../dist/decode/vp9' + defaultVersion
+                    case 86022 /* AVCodecID.AV_CODEC_ID_DVAUDIO */:
+                      return '../dist/decode/dvaudio' + defaultVersion;
+                    case 24 /* AVCodecID.AV_CODEC_ID_DVVIDEO */:
+                      return '../dist/decode/dvvideo' + defaultVersion;
+                    case 3 /* AVCodecID.AV_CODEC_ID_H261 */:
+                      return '../dist/decode/h261' + defaultVersion;
+                    case 4 /* AVCodecID.AV_CODEC_ID_H263 */:
+                    case 20 /* AVCodecID.AV_CODEC_ID_H263I */:
+                    case 19 /* AVCodecID.AV_CODEC_ID_H263P */:
+                      return '../dist/decode/h263' + defaultVersion;
+                    case 14 /* AVCodecID.AV_CODEC_ID_MSMPEG4V1 */:
+                    case 15 /* AVCodecID.AV_CODEC_ID_MSMPEG4V2 */:
+                    case 16 /* AVCodecID.AV_CODEC_ID_MSMPEG4V3 */:
+                      return '../dist/decode/msmpeg4' + defaultVersion;
+                    case 5 /* AVCodecID.AV_CODEC_ID_RV10 */:
+                    case 6 /* AVCodecID.AV_CODEC_ID_RV20 */:
+                    case 68 /* AVCodecID.AV_CODEC_ID_RV30 */:
+                    case 69 /* AVCodecID.AV_CODEC_ID_RV40 */:
+                      return '../dist/decode/msmpeg4' + defaultVersion;
+                    case 86036 /* AVCodecID.AV_CODEC_ID_COOK */:
+                    case 86057 /* AVCodecID.AV_CODEC_ID_SIPR */:
+                    case 86073 /* AVCodecID.AV_CODEC_ID_RALF */:
+                      return '../dist/decode/ra' + defaultVersion;
+                    case 86023 /* AVCodecID.AV_CODEC_ID_WMAV1 */:
+                    case 86024 /* AVCodecID.AV_CODEC_ID_WMAV2 */:
+                    case 86052 /* AVCodecID.AV_CODEC_ID_WMAVOICE */:
+                    case 86054 /* AVCodecID.AV_CODEC_ID_WMALOSSLESS */:
+                    case 86053 /* AVCodecID.AV_CODEC_ID_WMAPRO */:
+                      return '../dist/decode/wma' + defaultVersion;
+                    case 17 /* AVCodecID.AV_CODEC_ID_WMV1 */:
+                    case 18 /* AVCodecID.AV_CODEC_ID_WMV2 */:
+                    case 71 /* AVCodecID.AV_CODEC_ID_WMV3 */:
+                      return '../dist/decode/wmv' + defaultVersion;
+                    case 7 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                      return '../dist/decode/mjpeg' + defaultVersion;
+                    case 61 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                      return '../dist/decode/png' + defaultVersion;
+                    case 171 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                      return '../dist/decode/webp' + defaultVersion;
+                    case 97 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                      return '../dist/decode/gif' + defaultVersion;
+                    case 96 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                      return '../dist/decode/tiff' + defaultVersion;
+                    case 78 /* AVCodecID.AV_CODEC_ID_MJPEG */:
+                      return '../dist/decode/bmp' + defaultVersion;
                     default:
                       return null
                   }

@@ -47,7 +47,7 @@ libmedia 可以完成以下功能:
 | ogg      | ✅       | ✅        |
 | ivf      | ✅       | ✅        |
 | aac      | ✅       | ❌        |
-| flac     | ✅       | ❌        |
+| flac     | ✅       | ✅        |
 | wav      | ✅       | ✅        |
 | webvtt   | ✅       | ❌        |
 | srt      | ✅       | ❌        |

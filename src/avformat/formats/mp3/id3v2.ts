@@ -49,15 +49,15 @@ export const enum ID3v2Encoding {
 }
 
 export const ID3v2Mime2CodecId: Record<string, AVCodecID> = {
+  'JPG': AVCodecID.AV_CODEC_ID_MJPEG,
+  'PNG': AVCodecID.AV_CODEC_ID_PNG,
   'image/gif': AVCodecID.AV_CODEC_ID_GIF,
   'image/jpeg': AVCodecID.AV_CODEC_ID_MJPEG,
   'image/jpg': AVCodecID.AV_CODEC_ID_MJPEG,
   'image/png': AVCodecID.AV_CODEC_ID_PNG,
   'image/tiff': AVCodecID.AV_CODEC_ID_TIFF,
   'image/bmp': AVCodecID.AV_CODEC_ID_BMP,
-  'image/webp': AVCodecID.AV_CODEC_ID_WEBP,
-  'JPG': AVCodecID.AV_CODEC_ID_MJPEG,
-  'PNG': AVCodecID.AV_CODEC_ID_PNG
+  'image/webp': AVCodecID.AV_CODEC_ID_WEBP
 }
 
 export const ID3v2PictureType: string[] = [

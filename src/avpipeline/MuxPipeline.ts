@@ -195,6 +195,15 @@ export default class MuxPipeline extends Pipeline {
             return errorType.FORMAT_NOT_SUPPORT
           }
           break
+        case AVFormat.FLAC:
+          if (defined(ENABLE_MUXER_FLAC)) {
+            oformat = new ((await import('avformat/formats/OFlacFormat')).default)(task.formatOptions)
+          }
+          else {
+            logger.error('flac format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
         case AVFormat.MATROSKA:
         case AVFormat.WEBM:
           if (defined(ENABLE_MUXER_MATROSKA)) {

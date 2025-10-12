@@ -158,6 +158,20 @@ export function getAVPixelFormatDescriptor(format: AVPixelFormat) {
   return descriptor
 }
 
+export function getBitsPerPixel(format: AVPixelFormat) {
+  const descriptor = getAVPixelFormatDescriptor(format)
+  if (descriptor) {
+    let c = 0, bits = 0
+    let log2Pixels = descriptor.log2ChromaW + descriptor.log2ChromaH
+    for (c = 0; c < descriptor.comp.length; c++) {
+      let s = c == 1 || c == 2 ? 0 : log2Pixels
+      bits += descriptor.comp[c].depth << s
+    }
+    return bits >> log2Pixels
+  }
+  return 0
+}
+
 type DescriptorPlane = [
   plane: number,
   step: number,
