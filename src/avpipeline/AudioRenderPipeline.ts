@@ -779,6 +779,13 @@ export default class AudioRenderPipeline extends Pipeline {
     }
   }
 
+  public async isEnd(taskId: string) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      return task.ended
+    }
+  }
+
   public async afterSeek(taskId: string, timestamp: int64) {
     const task = this.tasks.get(taskId)
     if (task) {

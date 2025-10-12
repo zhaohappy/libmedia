@@ -1132,11 +1132,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           seekedTimestamp >= 0 ? (seekedTimestamp > timestamp ? seekedTimestamp : timestamp) : NOPTS_VALUE_BIGINT,
           maxQueueLength
         )
-        await AVPlayer.AudioRenderThread.restart(this.taskId)
-        this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_AUDIO)
+        this.audioEnded = await AVPlayer.AudioRenderThread.isEnd(this.taskId)
+        if (!this.audioEnded) {
+          await AVPlayer.AudioRenderThread.restart(this.taskId)
+          this.controller.setTimeUpdateListenType(AVMediaType.AVMEDIA_TYPE_AUDIO)
+        }
       }
 
-      if (this.audioSourceNode) {
+      if (this.audioSourceNode && !this.audioEnded) {
         await this.audioSourceNode.request('restart')
         if (AVPlayer.audioContext.state === 'suspended'
           // @ts-ignore
@@ -1144,7 +1147,6 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         ) {
           await AVPlayer.AudioRenderThread.fakePlay(this.taskId)
         }
-        this.audioEnded = false
       }
 
       if (this.videoDecoder2VideoRenderChannel) {
@@ -1155,8 +1157,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           seekedTimestamp >= 0 ? (seekedTimestamp > timestamp ? seekedTimestamp : timestamp) : NOPTS_VALUE_BIGINT,
           maxQueueLength
         )
-        await this.VideoRenderThread.restart(this.taskId)
-        this.videoEnded = false
+        this.videoEnded = await this.VideoRenderThread.isEnd(this.taskId)
+        if (!this.videoEnded) {
+          await this.VideoRenderThread.restart(this.taskId)
+        }
       }
     }
 
