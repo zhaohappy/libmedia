@@ -58,7 +58,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 
 | Format   | Input   | Output    |
 | ---------| --------|-----------|
-| flv      | ✅       | ✅        |
+| flv(enhanced-rtmp-v2)      | ✅       | ✅        |
 | mov      | ✅       | ✅        |
 | mp4      | ✅       | ✅        |
 | mpegts   | ✅       | ✅        |

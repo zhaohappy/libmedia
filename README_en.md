@@ -57,7 +57,7 @@ Check out the [build configuration examples](https://github.com/zhaohappy/libmed
 
 | Format   | Input   | Output    |
 | ---------| --------|-----------|
-| flv      | ✅       | ✅        |
+| flv(enhanced-rtmp-v2)      | ✅       | ✅        |
 | mov      | ✅       | ✅        |
 | mp4      | ✅       | ✅        |
 | mpegts   | ✅       | ✅        |
