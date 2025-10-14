@@ -3759,7 +3759,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           logger.warn(`player is changing now, taskId: ${this.taskId}`)
           return
         }
-        const lastSelectStreamId = this.selectedSubtitleStream.id
+        const lastSelectStreamId = this.selectedVideoStream.id
         this.lastStatus = this.status
         this.status = AVPlayerStatus.CHANGING
         this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_VIDEO, stream.id, lastSelectStreamId])
@@ -3890,7 +3890,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           logger.warn(`player is changing now, taskId: ${this.taskId}`)
           return
         }
-        const lastSelectStreamId = this.selectedSubtitleStream.id
+        const lastSelectStreamId = this.selectedAudioStream.id
         this.lastStatus = this.status
         this.status = AVPlayerStatus.CHANGING
         this.fire(eventType.CHANGING, [AVMediaType.AVMEDIA_TYPE_AUDIO, stream.id, lastSelectStreamId])
