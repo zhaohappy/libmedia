@@ -42,7 +42,7 @@ import * as logger from 'common/util/logger'
 import concatTypeArray from 'common/function/concatTypeArray'
 import updatePositionSize from './mov/function/updatePositionSize'
 import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT, UINT32_MAX } from 'avutil/constant'
-import { MovFragmentMode, MovMode } from './mov/mov'
+import { Mp4FragmentMode, Mp4Mode } from './mov/mov'
 import * as object from 'common/util/object'
 import rewriteIO from '../function/rewriteIO'
 
@@ -63,19 +63,19 @@ import getSampleDuration from './mov/function/getSampleDuration'
 import { encryptionSideData2Info } from 'avutil/util/encryption'
 
 export {
-  MovFragmentMode,
-  MovMode
+  Mp4FragmentMode,
+  Mp4Mode
 }
 
-export interface OMovFormatOptions {
+export interface OIsobmffFormatOptions {
   /**
    * fragment 按 gop 分段还是按帧分段
    */
-  fragmentMode?: MovFragmentMode
+  fragmentMode?: Mp4FragmentMode
   /**
    * mp4 还是 mov
    */
-  movMode?: MovMode
+  movMode?: Mp4Mode
   /**
    * fragment 模式
    */
@@ -128,9 +128,9 @@ export interface OMovFormatOptions {
   onFragmentStart?: () => void
 }
 
-const defaultOptions: OMovFormatOptions = {
-  fragmentMode: MovFragmentMode.GOP,
-  movMode: MovMode.MP4,
+const defaultOptions: OIsobmffFormatOptions = {
+  fragmentMode: Mp4FragmentMode.GOP,
+  movMode: Mp4Mode.MP4,
   fragment: false,
   fastOpen: false,
   defaultBaseIsMoof: false,
@@ -142,18 +142,18 @@ const defaultOptions: OMovFormatOptions = {
   useMetadataTags: false
 }
 
-export default class OMovFormat extends OFormat {
+export default class OIsobmffFormat extends OFormat {
 
-  public type: AVFormat = AVFormat.MOV
+  public type: AVFormat = AVFormat.ISOBMFF
 
   private context: MOVContext
 
-  public options: OMovFormatOptions
+  public options: OIsobmffFormatOptions
 
   private annexb2AvccFilter: Annexb2AvccFilter
   private avpacket: pointer<AVPacket>
 
-  constructor(options: OMovFormatOptions = {}) {
+  constructor(options: OIsobmffFormatOptions = {}) {
     super()
 
     this.options = object.extend({}, defaultOptions, options)
@@ -278,13 +278,13 @@ export default class OMovFormat extends OFormat {
       this.context.compatibleBrand.push(mktag('iso6'))
       this.context.fragment = true
     }
-    if (this.options.movMode === MovMode.MOV) {
+    if (this.options.movMode === Mp4Mode.MOV) {
       this.context.isom = true
       this.context.majorBrand = mktag('qt  ')
       this.context.compatibleBrand = [this.context.majorBrand]
     }
 
-    if (this.options.movMode !== MovMode.MOV) {
+    if (this.options.movMode !== Mp4Mode.MOV) {
       this.context.compatibleBrand.push(mktag('iso2'))
 
       const videoStream = formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)
@@ -538,7 +538,7 @@ export default class OMovFormat extends OFormat {
 
         if (this.options.hasTfra) {
           if (!streamContext.fragIndexes.length
-            || this.options.fragmentMode === MovFragmentMode.GOP
+            || this.options.fragmentMode === Mp4FragmentMode.GOP
             || avRescaleQ(track.baseDataOffset - track.lastFragIndexDts, stream.timeBase, AV_MILLI_TIME_BASE_Q) >= this.options.minFragmentIndexLength
           ) {
             streamContext.fragIndexes.push({
@@ -734,13 +734,13 @@ export default class OMovFormat extends OFormat {
         dts += track.tfdtDelay
         pts += track.trunPtsDelay
 
-        if (this.options.fragmentMode === MovFragmentMode.GOP
+        if (this.options.fragmentMode === Mp4FragmentMode.GOP
           && (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
             && avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
             || this.context.audioOnly
               && avRescaleQ(dts - track.baseMediaDecodeTime, stream.timeBase, AV_MILLI_TIME_BASE_Q) >= this.options.minFragmentLength
           )
-          || this.options.fragmentMode === MovFragmentMode.FRAME
+          || this.options.fragmentMode === Mp4FragmentMode.FRAME
         ) {
           if (this.context.currentFragment.tracks.length === 1) {
             this.updateCurrentFragment(formatContext, dts)

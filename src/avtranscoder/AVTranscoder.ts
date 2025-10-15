@@ -679,7 +679,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         this.changeAVStreamTimebase(newStream, { num: 1, den: 90000 })
       }
     }
-    if (task.oformat === AVFormat.MOV
+    if (task.oformat === AVFormat.ISOBMFF
       && newStream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
     ) {
       // 如果是整数帧率，调整时间基为 framerate 的倍数，节省 stts box 的大小
@@ -1360,7 +1360,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         }
       }
 
-      if (task.oformat === AVFormat.MOV) {
+      if (task.oformat === AVFormat.ISOBMFF) {
         this.changeAVStreamTimebase(newStream, { num: 1, den: newStream.codecpar.sampleRate })
       }
 

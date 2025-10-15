@@ -55,7 +55,7 @@ import { AVDiscard, AVDisposition } from 'avutil/AVStream'
 import createMovStreamContext from './mov/function/createMovStreamContext'
 import * as text from 'common/util/text'
 
-export interface IMovFormatOptions {
+export interface IIsobmffFormatOptions {
   /**
    * 忽略 editlist 的约束
    */
@@ -64,16 +64,16 @@ export interface IMovFormatOptions {
   ignoreChapters?: boolean
 }
 
-export default class IMovFormat extends IFormat {
+export default class IIsobmffFormat extends IFormat {
 
-  public type: AVFormat = AVFormat.MOV
+  public type: AVFormat = AVFormat.ISOBMFF
 
   private context: MOVContext
   private firstAfterSeek: boolean
 
-  public options: IMovFormatOptions
+  public options: IIsobmffFormatOptions
 
-  constructor(options: IMovFormatOptions = {}) {
+  constructor(options: IIsobmffFormatOptions = {}) {
     super()
 
     this.options = options

@@ -35,7 +35,7 @@ export default async function analyzeAVFormat(ioReader: IOReader, defaultFormat:
     return AVFormat.IVF
   }
   else if (/^ftyp/.test(magic.slice(4, 8))) {
-    return AVFormat.MP4
+    return AVFormat.ISOBMFF
   }
   else if (/^OggS/.test(magic)) {
     return AVFormat.OGG

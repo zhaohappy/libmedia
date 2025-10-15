@@ -141,8 +141,8 @@ export default class MuxPipeline extends Pipeline {
             return errorType.FORMAT_NOT_SUPPORT
           }
           break
-        case AVFormat.MP4:
-          if (defined(ENABLE_MUXER_MP4) || defined(ENABLE_PROTOCOL_DASH)) {
+        case AVFormat.ISOBMFF:
+          if (defined(ENABLE_MUXER_ISOBMFF) || defined(ENABLE_PROTOCOL_DASH)) {
             oformat = new ((await import('avformat/formats/OMovFormat')).default)(task.formatOptions)
           }
           else {
@@ -151,7 +151,7 @@ export default class MuxPipeline extends Pipeline {
           }
           break
         case AVFormat.MPEGTS:
-          if (defined(ENABLE_MUXER_MP4) || defined(ENABLE_PROTOCOL_HLS)) {
+          if (defined(ENABLE_MUXER_ISOBMFF) || defined(ENABLE_PROTOCOL_HLS)) {
             oformat = new ((await import('avformat/formats/OMpegtsFormat')).default)(task.formatOptions)
           }
           else {
@@ -336,7 +336,7 @@ export default class MuxPipeline extends Pipeline {
       }
 
       let ret = mux.open(task.formatContext, {
-        nonnegative: task.format !== AVFormat.MOV
+        nonnegative: task.format !== AVFormat.ISOBMFF
           && task.format !== AVFormat.MATROSKA
           || (task.nonnegative ?? false),
         zeroStart: task.zeroStart ?? false

@@ -28,20 +28,6 @@ import { AVCodecID } from 'avutil/codec'
 import { AVMediaType } from 'avutil/codec'
 import { BoxType } from './boxType'
 
-export const Mp4Tag2AVCodecID = {
-  mp4v: AVCodecID.AV_CODEC_ID_MPEG4,
-  avc1: AVCodecID.AV_CODEC_ID_H264,
-  avc3: AVCodecID.AV_CODEC_ID_H264,
-  hev1: AVCodecID.AV_CODEC_ID_HEVC,
-  hvc1: AVCodecID.AV_CODEC_ID_HEVC,
-  vvc1: AVCodecID.AV_CODEC_ID_VVC,
-  vvi1: AVCodecID.AV_CODEC_ID_VVC,
-  vp09: AVCodecID.AV_CODEC_ID_VP9,
-  av01: AVCodecID.AV_CODEC_ID_AV1,
-  mp4a: AVCodecID.AV_CODEC_ID_AAC,
-  opus: AVCodecID.AV_CODEC_ID_OPUS
-}
-
 export const AVCodecID2Mp4a = {
   [AVCodecID.AV_CODEC_ID_AAC]: 0x40,
   [AVCodecID.AV_CODEC_ID_MP3]: 0x69,
@@ -78,6 +64,7 @@ export const Mp4aObj2AVCodecID = {
 
 export const HandlerType2MediaType = {
   vide: AVMediaType.AVMEDIA_TYPE_VIDEO,
+  pict: AVMediaType.AVMEDIA_TYPE_VIDEO,
   soun: AVMediaType.AVMEDIA_TYPE_AUDIO,
   clcp: AVMediaType.AVMEDIA_TYPE_SUBTITLE,
   sbtl: AVMediaType.AVMEDIA_TYPE_SUBTITLE,
@@ -101,6 +88,7 @@ export const tag2CodecId = {
   [mktag('vp08')]: AVCodecID.AV_CODEC_ID_VP8,
   [mktag('vp09')]: AVCodecID.AV_CODEC_ID_VP9,
   [mktag('avc1')]: AVCodecID.AV_CODEC_ID_H264,
+  [mktag('avc3')]: AVCodecID.AV_CODEC_ID_H264,
   [mktag('hev1')]: AVCodecID.AV_CODEC_ID_HEVC,
   [mktag('hvc1')]: AVCodecID.AV_CODEC_ID_HEVC,
   [mktag('vvc1')]: AVCodecID.AV_CODEC_ID_VVC,
@@ -117,12 +105,12 @@ export const tag2CodecId = {
   [mktag('3IVD')]: AVCodecID.AV_CODEC_ID_MSMPEG4V3
 }
 
-export const enum MovFragmentMode {
+export const enum Mp4FragmentMode {
   GOP,
   FRAME
 }
 
-export const enum MovMode {
+export const enum Mp4Mode {
   MP4,
   MOV
 }

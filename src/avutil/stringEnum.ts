@@ -40,8 +40,8 @@ export const CodecId2MimeType = {
 
 export const Ext2Format: Record<string, AVFormat> = {
   'flv': AVFormat.FLV,
-  'mp4': AVFormat.MOV,
-  'm4s': AVFormat.MOV,
+  'mp4': AVFormat.MP4,
+  'm4s': AVFormat.MP4,
   'mov': AVFormat.MOV,
   'ts': AVFormat.MPEGTS,
   'mts': AVFormat.MPEGTS,
@@ -52,7 +52,7 @@ export const Ext2Format: Record<string, AVFormat> = {
   'ogg': AVFormat.OGG,
   'm3u8': AVFormat.MPEGTS,
   'm3u': AVFormat.MPEGTS,
-  'mpd': AVFormat.MOV,
+  'mpd': AVFormat.MP4,
   'mp3': AVFormat.MP3,
   'mkv': AVFormat.MATROSKA,
   'mka': AVFormat.MATROSKA,
@@ -212,7 +212,7 @@ export const SampleFmtString2SampleFormat = {
 
 export const Format2AVFormat: Record<string, AVFormat> = {
   'flv': AVFormat.FLV,
-  'mp4': AVFormat.MOV,
+  'mp4': AVFormat.MP4,
   'mov': AVFormat.MOV,
   'ts': AVFormat.MPEGTS,
   'mpegts': AVFormat.MPEGTS,
@@ -222,7 +222,7 @@ export const Format2AVFormat: Record<string, AVFormat> = {
   'opus': AVFormat.OGG,
   'm3u8': AVFormat.MPEGTS,
   'm3u': AVFormat.MPEGTS,
-  'mpd': AVFormat.MOV,
+  'mpd': AVFormat.MP4,
   'mp3': AVFormat.MP3,
   'mkv': AVFormat.MATROSKA,
   'matroska': AVFormat.MATROSKA,

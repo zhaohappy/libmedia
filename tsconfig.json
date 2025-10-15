@@ -91,8 +91,8 @@
       "ENABLE_DEMUXER_MPEGTS": true,
       // 开启支持 mpegps 解封装格式
       "ENABLE_DEMUXER_MPEGPS": true,
-      // 开启支持 mp4 解封装格式
-      "ENABLE_DEMUXER_MP4": true,
+      // 开启支持 ISOBMFF 解封装格式
+      "ENABLE_DEMUXER_ISOBMFF": true,
       // 开启支持 flv 解封装格式
       "ENABLE_DEMUXER_FLV": true,
       // 开启支持 ivf 解封装格式
@@ -128,8 +128,8 @@
 
       // 开启支持 flv 封装格式
       "ENABLE_MUXER_FLV": true,
-      // 开启支持 mp4 封装格式
-      "ENABLE_MUXER_MP4": true,
+      // 开启支持 ISOBMFF 封装格式
+      "ENABLE_MUXER_ISOBMFF": true,
       // 开启支持 mp3 封装格式
       "ENABLE_MUXER_MP3": true,
       // 开启支持 matroska 封装格式

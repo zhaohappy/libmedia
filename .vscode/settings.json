@@ -190,6 +190,7 @@
         "intwrite",
         "ioloader",
         "iriff",
+        "ISOBMFF",
         "isom",
         "itouch",
         "ittml",
