@@ -192,31 +192,56 @@ export const enum AVStreamMetadataKey {
 
 export const enum AVDisposition {
   NONE = 0,
-  DEFAULT = 0x0001,
-  DUB = 0x0002,
-  ORIGINAL = 0x0004,
-  COMMENT = 0x0008,
-  LYRICS = 0x0010,
-  KARAOKE = 0x0020,
+  /**
+   * The stream should be chosen by default among other streams of the same type,
+   * unless the user has explicitly specified otherwise.
+   */
+  DEFAULT = 1 << 0,
+  /**
+   * The stream is not in original language.
+   *
+   * @note AV_DISPOSITION_ORIGINAL is the inverse of this disposition. At most
+   *       one of them should be set in properly tagged streams.
+   * @note This disposition may apply to any stream type, not just audio.
+   */
+  DUB = 1 << 1,
+  /**
+   * The stream is in original language.
+   *
+   * @see the notes for AV_DISPOSITION_DUB
+   */
+  ORIGINAL = 1 << 2,
+  /**
+   * The stream is a commentary track.
+   */
+  COMMENT = 1 << 3,
+  /**
+   * The stream contains song lyrics.
+   */
+  LYRICS = 1 << 4,
+  /**
+   * The stream contains karaoke audio.
+   */
+  KARAOKE = 1 << 5,
 
   /**
    * Track should be used during playback by default.
    * Useful for subtitle track that should be displayed
    * even when user did not explicitly ask for subtitles.
    */
-  FORCED = 0x0040,
+  FORCED = 1 << 6,
   /**
    * stream for hearing impaired audiences
    */
-  HEARING_IMPAIRED = 0x0080,
+  HEARING_IMPAIRED = 1 << 7,
   /**
    * stream for visual impaired audiences
    */
-  VISUAL_IMPAIRED = 0x0100,
+  VISUAL_IMPAIRED = 1 << 8,
   /**
    * stream without voice
    */
-  CLEAN_EFFECTS = 0x0200,
+  CLEAN_EFFECTS = 1 << 9,
   /**
    * The stream is stored in the file as an attached picture/"cover art" (e.g.
    * APIC frame in ID3v2). The first (usually only) packet associated with it
@@ -224,27 +249,55 @@ export const enum AVDisposition {
    * seeking takes place. It can also be accessed at any time in
    * AVStream.attached_pic.
    */
-  ATTACHED_PIC = 0x0400,
+  ATTACHED_PIC = 1 << 10,
   /**
    * The stream is sparse, and contains thumbnail images, often corresponding
    * to chapter markers. Only ever used with AV_DISPOSITION_ATTACHED_PIC.
    */
-  TIMED_THUMBNAILS = 0x0800,
+  TIMED_THUMBNAILS = 1 << 11,
 
   /**
-   * To specify text track kind (different from subtitles default).
+   * The stream is intended to be mixed with a spatial audio track. For example,
+   * it could be used for narration or stereo music, and may remain unchanged by
+   * listener head rotation.
    */
-  CAPTIONS = 0x10000,
-  DESCRIPTIONS = 0x20000,
-  METADATA = 0x40000,
+  NON_DIEGETIC = 1 << 12,
+
   /**
-   * dependent audio stream (mix_type=0 in mpegts)
+   * The stream is sparse, thumbnail images for other stream in picture format like heif
    */
-  DEPENDENT = 0x80000,
+  THUMBNAIL = 1 << 13,
+
+  /**
+   * The subtitle stream contains captions, providing a transcription and possibly
+   * a translation of audio. Typically intended for hearing-impaired audiences.
+   */
+  CAPTIONS = 1 << 16,
+  /**
+   * The subtitle stream contains a textual description of the video content.
+   * Typically intended for visually-impaired audiences or for the cases where the
+   * video cannot be seen.
+   */
+  DESCRIPTIONS = 1 << 17,
+  /**
+   * The subtitle stream contains time-aligned metadata that is not intended to be
+   * directly presented to the user.
+   */
+  METADATA = 1 << 18,
+  /**
+   * The stream is intended to be mixed with another stream before presentation.
+   * Used for example to signal the stream contains an image part of a HEIF grid,
+   * or for mix_type=0 in mpegts.
+   */
+  DEPENDENT = 1 << 19,
   /**
    * still images in video stream (still_picture_flag=1 in mpegts
    */
-  STILL_IMAGE = 0x100000
+  STILL_IMAGE = 1 << 20,
+  /**
+   * still images in video stream (still_picture_flag=1 in mpegts
+   */
+  MULTILAYER = 1 << 21
 }
 
 export const enum AVDiscard {
@@ -264,6 +317,13 @@ export const enum AVDiscard {
   AVDISCARD_NONKEY = 32,
   // /< discard all
   AVDISCARD_ALL = 48
+}
+
+export const enum AVStreamGroupParamsType {
+  NONE,
+  IAMF_AUDIO_ELEMENT,
+  IAMF_MIX_PRESENTATION,
+  TILE_GRID,
 }
 
 /**
@@ -412,9 +472,179 @@ export default class AVStream {
   }
 }
 
+export class AVStreamGroupTileGrid {
+  /**
+   * Width of the canvas.
+   *
+   * Must be > 0.
+   */
+  codedWidth: int32 = 0
+  /**
+   * Width of the canvas.
+   *
+   * Must be > 0.
+   */
+  codedHeight: int32 = 0
+
+  /**
+   * An @ref nb_tiles sized array of offsets in pixels from the topleft edge
+   * of the canvas, indicating where each stream should be placed.
+   * It must be allocated with the av_malloc() family of functions.
+   *
+   * - demuxing: set by libavformat, must not be modified by the caller.
+   * - muxing: set by the caller before avformat_write_header().
+   *
+   * Freed by libavformat in avformat_free_context().
+   */
+  offsets: {
+    /**
+     * Index of the stream in the group this tile references.
+     *
+     * Must be < @ref AVStreamGroup.nb_streams "nb_streams".
+     */
+    idx: int32
+    /**
+     * Offset in pixels from the left edge of the canvas where the tile
+     * should be placed.
+     */
+    horizontal: int32
+    /**
+     * Offset in pixels from the top edge of the canvas where the tile
+     * should be placed.
+     */
+    vertical: int32
+  }[] = []
+
+  /**
+   * The pixel value per channel in RGBA format used if no pixel of any tile
+   * is located at a particular pixel location.
+   *
+   * @see av_image_fill_color().
+   * @see av_parse_color().
+   */
+  background: uint8[] = null
+
+  /**
+   * Offset in pixels from the left edge of the canvas where the actual image
+   * meant for presentation starts.
+   *
+   * This field must be >= 0 and < @ref coded_width.
+   */
+  horizontalOffset: int32 = NOPTS_VALUE
+
+  /**
+   * Offset in pixels from the top edge of the canvas where the actual image
+   * meant for presentation starts.
+   *
+   * This field must be >= 0 and < @ref coded_height.
+   */
+  verticalOffset: int32 = NOPTS_VALUE
+
+  /**
+   * Width of the final image for presentation.
+   *
+   * Must be > 0 and <= (@ref coded_width - @ref horizontal_offset).
+   * When it's not equal to (@ref coded_width - @ref horizontal_offset), the
+   * result of (@ref coded_width - width - @ref horizontal_offset) is the
+   * amount amount of pixels to be cropped from the right edge of the
+   * final image before presentation.
+   */
+  width: int32 = 0
+
+  /**
+   * Height of the final image for presentation.
+   *
+   * Must be > 0 and <= (@ref coded_height - @ref vertical_offset).
+   * When it's not equal to (@ref coded_height - @ref vertical_offset), the
+   * result of (@ref coded_height - height - @ref vertical_offset) is the
+   * amount amount of pixels to be cropped from the bottom edge of the
+   * final image before presentation.
+   */
+  height: int32 = 0
+
+  /**
+   * Additional data associated with the grid.
+   *
+   * Should be allocated with av_packet_side_data_new() or
+   * av_packet_side_data_add(), and will be freed by avformat_free_context().
+   */
+  sideData: Partial<Record<AVPacketSideDataType, Uint8Array>> = {}
+}
+
+export class AVStreamGroup {
+  /**
+   * format private data
+   */
+  privData: Data = null
+
+  /**
+   * Group index in AVFormatContext.
+   */
+  index: int32 = NOPTS_VALUE
+
+  /**
+   * Group type-specific group ID.
+   *
+   * decoding: set by libavformat
+   * encoding: may set by the user
+   */
+  id: int32 = NOPTS_VALUE
+
+  /**
+   * Group type
+   *
+   * decoding: set by libavformat on group creation
+   * encoding: set by avformat_stream_group_create()
+   */
+  type: AVStreamGroupParamsType = AVStreamGroupParamsType.NONE
+
+  /**
+   * Group type-specific parameters
+   */
+  params: AVStreamGroupTileGrid = null
+
+  /**
+   * Metadata that applies to the whole group.
+   *
+   * - demuxing: set by libavformat on group creation
+   * - muxing: may be set by the caller before avformat_write_header()
+   *
+   * Freed by libavformat in avformat_free_context().
+   */
+  metadata: Data = {}
+
+  /**
+   * A list of streams in the group. New entries are created with
+   * avformat_stream_group_add_stream().
+   *
+   * - demuxing: entries are created by libavformat on group creation.
+   *             If AVFMTCTX_NOHEADER is set in ctx_flags, then new entries may also
+   *             appear in av_read_frame().
+   * - muxing: entries are created by the user before avformat_write_header().
+   *
+   * Freed by libavformat in avformat_free_context().
+   */
+  streams: AVStream[] = []
+
+  /**
+   * Stream group disposition - a combination of AV_DISPOSITION_* flags.
+   * This field currently applies to all defined AVStreamGroupParamsType.
+   *
+   * - demuxing: set by libavformat when creating the group or in
+   *             avformat_find_stream_info().
+   * - muxing: may be set by the caller before avformat_write_header().
+   */
+  disposition: int32 = 0
+
+  destroy() {
+    this.streams.length = 0
+    this.params = null
+  }
+}
+
 export interface AVStreamInterface {
-  index: number
-  id: number
+  index: int32
+  id: int32
   codecpar: pointer<AVCodecParameters>
   nbFrames: int64
   metadata: Data
@@ -423,6 +653,16 @@ export interface AVStreamInterface {
   disposition: int32
   timeBase: Rational
   attachedPic: pointer<AVPacket>
+}
+
+export interface AVStreamGroupInterface {
+  index: int32
+  id: int32
+  type: AVStreamGroupParamsType
+  params: AVStreamGroupTileGrid
+  metadata: Data
+  streams: AVStreamInterface[]
+  disposition: int32
 }
 
 export interface AVStreamMetadataEncryption {

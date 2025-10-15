@@ -2,7 +2,7 @@ import { AVFormat, IOType } from './avformat'
 import { AVCodecID, AVMediaType } from './codec'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from './pixfmt'
 import { AVChannelLayout, AVSampleFormat } from './audiosamplefmt'
-import { AVDisposition } from './AVStream'
+import { AVDisposition, AVStreamGroupParamsType } from './AVStream'
 
 export const CodecId2MimeType = {
   [AVCodecID.AV_CODEC_ID_MP3]: 'mp3',
@@ -292,6 +292,12 @@ export const mediaType2AVMediaType: Record<string, AVMediaType> = {
   'Data': AVMediaType.AVMEDIA_TYPE_DATA
 }
 
+export const streamGroup2ParamsType: Record<string, AVStreamGroupParamsType> = {
+  'Tile Grid': AVStreamGroupParamsType.TILE_GRID,
+  'Audio Element': AVStreamGroupParamsType.IAMF_AUDIO_ELEMENT,
+  'Mix Presentation': AVStreamGroupParamsType.IAMF_MIX_PRESENTATION
+}
+
 export const disposition2AVDisposition: Record<string, AVDisposition> = {
   'default': AVDisposition.DEFAULT,
   'dub': AVDisposition.DUB,
@@ -309,7 +315,8 @@ export const disposition2AVDisposition: Record<string, AVDisposition> = {
   'descriptions': AVDisposition.DESCRIPTIONS,
   'metadata': AVDisposition.METADATA,
   'dependent': AVDisposition.DEPENDENT,
-  'still image': AVDisposition.STILL_IMAGE
+  'still image': AVDisposition.STILL_IMAGE,
+  'thumbnail': AVDisposition.THUMBNAIL
 }
 
 export const layoutName2AVChannelLayout: Record<string, AVChannelLayout> = {

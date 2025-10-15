@@ -2094,7 +2094,8 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         streams: [],
         format: task.oformat,
         metadata: {},
-        chapters: []
+        chapters: [],
+        streamGroups: []
       }
 
       let mappingDump = 'Mapping:\n'

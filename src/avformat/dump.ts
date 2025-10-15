@@ -1,8 +1,8 @@
 import type { AVChapter, AVFormatContextInterface, AVIFormatContext, AVOFormatContext } from './AVFormatContext'
 import { AVFormatContext } from './AVFormatContext'
-import type { AVStreamInterface } from 'avutil/AVStream'
+import type { AVStreamGroup, AVStreamGroupInterface, AVStreamInterface } from 'avutil/AVStream'
 import type AVStream from 'avutil/AVStream'
-import { AVDisposition } from 'avutil/AVStream'
+import { AVDisposition, AVStreamGroupParamsType } from 'avutil/AVStream'
 import * as object from 'common/util/object'
 import * as stringEnum from 'avutil/stringEnum'
 import * as is from 'common/util/is'
@@ -101,51 +101,86 @@ export function dumpProfileName(codecId: AVCodecID, profile: int32) {
   }
 }
 
-export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix: string) {
-  const mediaType = dumpKey(stringEnum.mediaType2AVMediaType, stream.codecpar.codecType)
-
-  const list = []
-
-  if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-    const profileName = dumpProfileName(stream.codecpar.codecId, stream.codecpar.profile)
-    const codecName = dumpKey(stringEnum.AudioCodecString2CodecId, stream.codecpar.codecId)
-    list.push(`${codecName}${profileName ? ` (${profileName})` : ''}`)
-
-    list.push(`${stream.codecpar.sampleRate} Hz`)
-    let channel = `${stream.codecpar.chLayout.nbChannels} channels`
-
-    if (stream.codecpar.chLayout.order === AVChannelOrder.AV_CHANNEL_ORDER_NATIVE) {
-      const name = dumpKey(layoutName2AVChannelLayout, static_cast<double>(stream.codecpar.chLayout.u.mask), '')
-      if (name) {
-        channel = name
-      }
+export function dumpDisposition(flags: int32) {
+  let disposition = ''
+  if (flags) {
+    disposition = ' '
+    if (flags & AVDisposition.DEFAULT) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DEFAULT)}) `
     }
-    list.push(channel)
-    list.push(dumpKey(stringEnum.SampleFmtString2SampleFormat, stream.codecpar.format))
-    if (stream.codecpar.bitrate > 0n) {
-      list.push(`${dumpBitrate(stream.codecpar.bitrate)}`)
+    if (flags & AVDisposition.DUB) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DUB)}) `
+    }
+    if (flags & AVDisposition.ORIGINAL) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.ORIGINAL)}) `
+    }
+    if (flags & AVDisposition.COMMENT) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.COMMENT)}) `
+    }
+    if (flags & AVDisposition.LYRICS) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.LYRICS)}) `
+    }
+    if (flags & AVDisposition.KARAOKE) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.KARAOKE)}) `
+    }
+    if (flags & AVDisposition.FORCED) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.FORCED)}) `
+    }
+    if (flags & AVDisposition.HEARING_IMPAIRED) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.HEARING_IMPAIRED)}) `
+    }
+    if (flags & AVDisposition.VISUAL_IMPAIRED) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.VISUAL_IMPAIRED)}) `
+    }
+    if (flags & AVDisposition.CLEAN_EFFECTS) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.CLEAN_EFFECTS)}) `
+    }
+    if (flags & AVDisposition.ATTACHED_PIC) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.ATTACHED_PIC)}) `
+    }
+    if (flags & AVDisposition.TIMED_THUMBNAILS) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.TIMED_THUMBNAILS)}) `
+    }
+    if (flags & AVDisposition.CAPTIONS) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.CAPTIONS)}) `
+    }
+    if (flags & AVDisposition.DESCRIPTIONS) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DESCRIPTIONS)}) `
+    }
+    if (flags & AVDisposition.METADATA) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.METADATA)}) `
+    }
+    if (flags & AVDisposition.DEPENDENT) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DEPENDENT)}) `
+    }
+    if (flags & AVDisposition.STILL_IMAGE) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.STILL_IMAGE)}) `
+    }
+    if (flags & AVDisposition.THUMBNAIL) {
+      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.THUMBNAIL)}) `
     }
   }
-  else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
-    const profileName = dumpProfileName(stream.codecpar.codecId, stream.codecpar.profile)
-    const codecName = dumpKey(stringEnum.VideoCodecString2CodecId, stream.codecpar.codecId)
-    list.push(`${codecName}${profileName ? ` (${profileName})` : ''}`)
+  return disposition
+}
 
-    if (stream.codecpar.format !== NOPTS_VALUE) {
-      const pixfmt = dumpKey(stringEnum.PixfmtString2AVPixelFormat, stream.codecpar.format, `unknown(${stream.codecpar.format})`)
-      const range = dumpKey(stringEnum.colorRange2AVColorRange, stream.codecpar.colorRange, 'tv')
-      const space = dumpKey(stringEnum.colorSpace2AVColorSpace, stream.codecpar.colorSpace)
-      const primary = dumpKey(stringEnum.colorPrimaries2AVColorPrimaries, stream.codecpar.colorPrimaries)
-      const trc = dumpKey(stringEnum.colorTrc2AVColorTransferCharacteristic, stream.codecpar.colorTrc)
-      const isHdr_ = isHdr(stream.codecpar)
-      if (space === primary && primary === trc) {
-        list.push(`${pixfmt}(${range}, ${space}, ${isHdr_ ? 'HDR' : 'SDR'})`)
-      }
-      else {
-        list.push(`${pixfmt}(${range}, ${space}/${primary}/${trc}, ${isHdr_ ? 'HDR' : 'SDR'})`)
-      }
+function dumpVideoStream(stream: AVStreamInterface, list: string[]) {
+  const profileName = dumpProfileName(stream.codecpar.codecId, stream.codecpar.profile)
+  const codecName = dumpKey(stringEnum.VideoCodecString2CodecId, stream.codecpar.codecId)
+  list.push(`${codecName}${profileName ? ` (${profileName})` : ''}`)
+
+  if (stream.codecpar.format !== NOPTS_VALUE) {
+    const pixfmt = dumpKey(stringEnum.PixfmtString2AVPixelFormat, stream.codecpar.format, `unknown(${stream.codecpar.format})`)
+    const range = dumpKey(stringEnum.colorRange2AVColorRange, stream.codecpar.colorRange, 'tv')
+    const space = dumpKey(stringEnum.colorSpace2AVColorSpace, stream.codecpar.colorSpace)
+    const primary = dumpKey(stringEnum.colorPrimaries2AVColorPrimaries, stream.codecpar.colorPrimaries)
+    const trc = dumpKey(stringEnum.colorTrc2AVColorTransferCharacteristic, stream.codecpar.colorTrc)
+    const isHdr_ = isHdr(stream.codecpar)
+    if (space === primary && primary === trc) {
+      list.push(`${pixfmt}(${range}, ${space}, ${isHdr_ ? 'HDR' : 'SDR'})`)
     }
-
+    else {
+      list.push(`${pixfmt}(${range}, ${space}/${primary}/${trc}, ${isHdr_ ? 'HDR' : 'SDR'})`)
+    }
     const dar = {
       num: stream.codecpar.width * stream.codecpar.sampleAspectRatio.num,
       den: stream.codecpar.height * stream.codecpar.sampleAspectRatio.den
@@ -153,8 +188,43 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
     avReduce(dar)
 
     list.push(`${stream.codecpar.width}x${stream.codecpar.height} [SAR: ${stream.codecpar.sampleAspectRatio.num}:${stream.codecpar.sampleAspectRatio.den} DAR ${dar.num}:${dar.den}]`)
+  }
+}
 
-    if (stream.codecpar.bitrate > 0n) {
+function dumpAudioStream(stream: AVStreamInterface, list: string[]) {
+  const profileName = dumpProfileName(stream.codecpar.codecId, stream.codecpar.profile)
+  const codecName = dumpKey(stringEnum.AudioCodecString2CodecId, stream.codecpar.codecId)
+  list.push(`${codecName}${profileName ? ` (${profileName})` : ''}`)
+
+  list.push(`${stream.codecpar.sampleRate} Hz`)
+  let channel = `${stream.codecpar.chLayout.nbChannels} channels`
+
+  if (stream.codecpar.chLayout.order === AVChannelOrder.AV_CHANNEL_ORDER_NATIVE) {
+    const name = dumpKey(layoutName2AVChannelLayout, static_cast<double>(stream.codecpar.chLayout.u.mask), '')
+    if (name) {
+      channel = name
+    }
+  }
+  list.push(channel)
+  list.push(dumpKey(stringEnum.SampleFmtString2SampleFormat, stream.codecpar.format))
+}
+
+export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, prefix: string) {
+  const mediaType = dumpKey(stringEnum.mediaType2AVMediaType, stream.codecpar.codecType)
+
+  const list = []
+
+  if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+    dumpAudioStream(stream, list)
+    if (stream.codecpar.bitrate > 0n && stream.nbFrames !== 1n) {
+      list.push(`${dumpBitrate(stream.codecpar.bitrate)}`)
+    }
+  }
+  else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+
+    dumpVideoStream(stream, list)
+
+    if (stream.codecpar.bitrate > 0n && stream.nbFrames !== 1n) {
       list.push(`${dumpBitrate(stream.codecpar.bitrate)}`)
     }
     if (avQ2D(stream.codecpar.framerate) > 0) {
@@ -165,8 +235,6 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
       num: stream.timeBase.den,
       den: stream.timeBase.num
     })))} tbn`)
-
-
   }
   else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE) {
     const codecName = dumpKey(stringEnum.SubtitleCodecString2CodecId, stream.codecpar.codecId)
@@ -183,63 +251,7 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
     }
   }
 
-  let disposition = ''
-  if (stream.disposition) {
-    disposition = ' '
-    if (stream.disposition & AVDisposition.DEFAULT) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DEFAULT)}) `
-    }
-    if (stream.disposition & AVDisposition.DUB) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DUB)}) `
-    }
-    if (stream.disposition & AVDisposition.ORIGINAL) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.ORIGINAL)}) `
-    }
-    if (stream.disposition & AVDisposition.COMMENT) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.COMMENT)}) `
-    }
-    if (stream.disposition & AVDisposition.LYRICS) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.LYRICS)}) `
-    }
-    if (stream.disposition & AVDisposition.KARAOKE) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.KARAOKE)}) `
-    }
-    if (stream.disposition & AVDisposition.FORCED) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.FORCED)}) `
-    }
-    if (stream.disposition & AVDisposition.HEARING_IMPAIRED) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.HEARING_IMPAIRED)}) `
-    }
-    if (stream.disposition & AVDisposition.VISUAL_IMPAIRED) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.VISUAL_IMPAIRED)}) `
-    }
-    if (stream.disposition & AVDisposition.CLEAN_EFFECTS) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.CLEAN_EFFECTS)}) `
-    }
-    if (stream.disposition & AVDisposition.ATTACHED_PIC) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.ATTACHED_PIC)}) `
-    }
-    if (stream.disposition & AVDisposition.TIMED_THUMBNAILS) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.TIMED_THUMBNAILS)}) `
-    }
-    if (stream.disposition & AVDisposition.CAPTIONS) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.CAPTIONS)}) `
-    }
-    if (stream.disposition & AVDisposition.DESCRIPTIONS) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DESCRIPTIONS)}) `
-    }
-    if (stream.disposition & AVDisposition.METADATA) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.METADATA)}) `
-    }
-    if (stream.disposition & AVDisposition.DEPENDENT) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.DEPENDENT)}) `
-    }
-    if (stream.disposition & AVDisposition.STILL_IMAGE) {
-      disposition += `(${dumpKey(stringEnum.disposition2AVDisposition, AVDisposition.STILL_IMAGE)}) `
-    }
-  }
-
-  let dump = `${prefix}Stream #${index}:${stream.index} ${mediaType}: ${list.join(', ')}${disposition}\n`
+  let dump = `${prefix}Stream #${index}:${stream.index} ${mediaType}: ${list.join(', ')}${dumpDisposition(stream.disposition)}\n`
 
   if (Object.keys(stream.metadata).length) {
     dump += `${prefix}  Metadata:\n`
@@ -253,6 +265,37 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
       else if (key === 'matrix' && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
         dump += `${prefix}    ${key}: [${value.toString()}]\n`
       }
+    })
+  }
+
+  return dump
+}
+
+export function dumpAVStreamGroupInterface(group: AVStreamGroupInterface, index: number, prefix: string, dumpedStream: Record<number, true>) {
+
+  const groupType = dumpKey(stringEnum.streamGroup2ParamsType, group.type)
+
+  const list = []
+
+  if (group.type === AVStreamGroupParamsType.TILE_GRID) {
+    const stream = group.streams[0]
+    if (stream) {
+      if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
+        dumpAudioStream(stream, list)
+      }
+      else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
+        dumpVideoStream(stream, list)
+        list.push(`${group.params.width}x${group.params.height}`)
+      }
+    }
+  }
+
+  let dump = `${prefix}Stream Group #${index}:${group.index} ${groupType}: ${list.join(', ')}${dumpDisposition(group.disposition)}\n`
+
+  if (group.streams.length) {
+    group.streams.forEach((stream) => {
+      dump += dumpAVStreamInterface(stream, index, prefix + '  ')
+      dumpedStream[stream.id] = true
     })
   }
 
@@ -325,9 +368,14 @@ export function dumpAVFormatContextInterface(formatContext: AVFormatContextInter
       dump += dumpChapter(chapter, index, i, '    ')
     })
   }
-
-  formatContext.streams.forEach((stream, i) => {
-    dump += dumpAVStreamInterface(stream, index, '  ')
+  const dumpedStream: Record<number, true> = {}
+  formatContext.streamGroups.forEach((group) => {
+    dump += dumpAVStreamGroupInterface(group, index, '  ', dumpedStream)
+  })
+  formatContext.streams.forEach((stream) => {
+    if (!dumpedStream[stream.id]) {
+      dump += dumpAVStreamInterface(stream, index, '  ')
+    }
   })
   return dump
 }
@@ -337,6 +385,7 @@ export default function dump(formatContexts: (AVFormatContextInterface | AVIForm
   formatContexts.forEach((formatContext, index) => {
     if (formatContext instanceof AVFormatContext) {
       const streams: AVStreamInterface[] = []
+      const streamGroups: AVStreamGroupInterface[] = []
       for (let i = 0; i < formatContext.streams.length; i++) {
         const stream = formatContext.streams[i] as AVStream
         streams.push({
@@ -352,11 +401,26 @@ export default function dump(formatContexts: (AVFormatContextInterface | AVIForm
           attachedPic: stream.attachedPic
         })
       }
+      for (let i = 0; i < formatContext.streamGroups.length; i++) {
+        const group = formatContext.streamGroups[i] as AVStreamGroup
+        streamGroups.push({
+          index: group.index,
+          id: group.id,
+          type: group.type,
+          params: group.params,
+          metadata: group.metadata,
+          disposition: group.disposition,
+          streams: group.streams.map((stream) => {
+            return streams.find((s) => s.id === stream.id)
+          })
+        })
+      }
       formatContext = {
         metadata: formatContext.metadata,
         format: formatContext.format,
         chapters: formatContext.chapters,
-        streams
+        streams,
+        streamGroups
       }
     }
     dump += dumpAVFormatContextInterface(formatContext as AVFormatContextInterface, index, inputs[index])

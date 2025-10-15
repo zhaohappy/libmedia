@@ -931,6 +931,79 @@ export const enum AVPacketSideDataType {
   AV_PKT_DATA_DYNAMIC_HDR10_PLUS,
 
   /**
+   * IAMF Mix Gain Parameter Data associated with the audio frame. This metadata
+   * is in the form of the AVIAMFParamDefinition struct and contains information
+   * defined in sections 3.6.1 and 3.8.1 of the Immersive Audio Model and
+   * Formats standard.
+   */
+  AV_PKT_DATA_IAMF_MIX_GAIN_PARAM,
+
+  /**
+   * IAMF Demixing Info Parameter Data associated with the audio frame. This
+   * metadata is in the form of the AVIAMFParamDefinition struct and contains
+   * information defined in sections 3.6.1 and 3.8.2 of the Immersive Audio Model
+   * and Formats standard.
+   */
+  AV_PKT_DATA_IAMF_DEMIXING_INFO_PARAM,
+
+  /**
+   * IAMF Recon Gain Info Parameter Data associated with the audio frame. This
+   * metadata is in the form of the AVIAMFParamDefinition struct and contains
+   * information defined in sections 3.6.1 and 3.8.3 of the Immersive Audio Model
+   * and Formats standard.
+   */
+  AV_PKT_DATA_IAMF_RECON_GAIN_INFO_PARAM,
+
+  /**
+   * Ambient viewing environment metadata, as defined by H.274. This metadata
+   * should be associated with a video stream and contains data in the form
+   * of the AVAmbientViewingEnvironment struct.
+  */
+  AV_PKT_DATA_AMBIENT_VIEWING_ENVIRONMENT,
+
+  /**
+   * The number of pixels to discard from the top/bottom/left/right border of the
+   * decoded frame to obtain the sub-rectangle intended for presentation.
+   *
+   * @code
+   * u32le crop_top
+   * u32le crop_bottom
+   * u32le crop_left
+   * u32le crop_right
+   * @endcode
+   */
+  AV_PKT_DATA_FRAME_CROPPING,
+
+  /**
+   * Raw LCEVC payload data, as a uint8_t array, with NAL emulation
+   * bytes intact.
+   */
+  AV_PKT_DATA_LCEVC,
+
+  /**
+   * This side data contains information about the reference display width(s)
+   * and reference viewing distance(s) as well as information about the
+   * corresponding reference stereo pair(s), i.e., the pair(s) of views to be
+   * displayed for the viewer's left and right eyes on the reference display
+   * at the reference viewing distance.
+   * The payload is the AV3DReferenceDisplaysInfo struct defined in
+   * libavutil/tdrdi.h.
+   */
+  AV_PKT_DATA_3D_REFERENCE_DISPLAYS,
+
+  /**
+   * Contains the last received RTCP SR (Sender Report) information
+   * in the form of the AVRTCPSenderReport struct.
+   */
+  AV_PKT_DATA_RTCP_SR,
+
+  /**
+   * Extensible image file format metadata. The payload is a buffer containing
+   * EXIF metadata, starting with either 49 49 2a 00, or 4d 4d 00 2a.
+   */
+  AV_PKT_DATA_EXIF,
+
+  /**
    * The number of side data types.
    * This is not part of the public API/ABI in the sense that it may
    * change when new side data types are added.

@@ -52,6 +52,7 @@ import * as array from 'common/util/array'
 import { avRescaleQ2 } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE } from 'avutil/constant'
 import * as bigint from 'common/util/bigint'
+import type { AVStreamGroup, AVStreamGroupInterface } from 'avutil/AVStream'
 import { AVDisposition, type AVStreamInterface } from 'avutil/AVStream'
 import { addAVPacketSideData, getAVPacketData, getAVPacketSideData, refAVPacket } from 'avutil/util/avpacket'
 import { mapUint8Array, memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
@@ -544,6 +545,7 @@ export default class DemuxPipeline extends Pipeline {
       }
 
       const streams: AVStreamInterface[] = []
+      const streamGroups: AVStreamGroupInterface[] = []
       for (let i = 0; i < task.formatContext.streams.length; i++) {
         const stream = task.formatContext.streams[i]
         streams.push({
@@ -562,11 +564,26 @@ export default class DemuxPipeline extends Pipeline {
           attachedPic: stream.attachedPic
         })
       }
+      for (let i = 0; i < task.formatContext.streamGroups.length; i++) {
+        const group = task.formatContext.streamGroups[i] as AVStreamGroup
+        streamGroups.push({
+          index: group.index,
+          id: group.id,
+          type: group.type,
+          params: group.params,
+          metadata: group.metadata,
+          disposition: group.disposition,
+          streams: group.streams.map((stream) => {
+            return streams.find((s) => s.id === stream.id)
+          })
+        })
+      }
       return {
         metadata: task.formatContext.metadata,
         format: task.realFormat,
         chapters: task.formatContext.chapters,
-        streams
+        streams,
+        streamGroups
       }
     }
     else {
