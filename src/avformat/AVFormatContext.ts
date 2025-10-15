@@ -40,12 +40,7 @@ import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
 import { AVFormat } from 'avutil/avformat'
 import { destroyAVPacket } from 'avutil/util/avpacket'
 import type { Rational } from 'avutil/struct/rational'
-import * as staticData from 'cheap/staticData'
-import { Mutex, lock, unlock } from 'cheap/thread/mutex'
-
-// 在静态区分配 stream 计数器和计数器操作锁
-const streamCounter: pointer<int32> = reinterpret_cast<pointer<int32>>(staticData.malloc(sizeof(int32), sizeof(int32)))
-const streamCounterMutex: pointer<Mutex> = reinterpret_cast<pointer<Mutex>>(staticData.malloc(sizeof(Mutex), sizeof(atomic_int32)))
+import getUniqueCounter32 from 'cheap/std/function/getUniqueCounter32'
 
 export interface AVChapter {
   /**
@@ -276,15 +271,7 @@ export class AVFormatContext {
   public createStream() {
     const stream = new AVStream()
     stream.index = this.streamIndex++
-
-    if (defined(ENABLE_THREADS)) {
-      lock(streamCounterMutex)
-    }
-    stream.id = accessof(streamCounter)
-    accessof(streamCounter) <- reinterpret_cast<int32>(stream.id + 1)
-    if (defined(ENABLE_THREADS)) {
-      unlock(streamCounterMutex)
-    }
+    stream.id = reinterpret_cast<int32>(getUniqueCounter32())
 
     this.removeStreamByIndex(stream.index)
     this.streams.push(stream)
@@ -295,15 +282,7 @@ export class AVFormatContext {
     const group = new AVStreamGroup()
     group.index = this.streamGroupIndex++
     group.type = type
-
-    if (defined(ENABLE_THREADS)) {
-      lock(streamCounterMutex)
-    }
-    group.id = accessof(streamCounter)
-    accessof(streamCounter) <- reinterpret_cast<int32>(group.id + 1)
-    if (defined(ENABLE_THREADS)) {
-      unlock(streamCounterMutex)
-    }
+    group.id = reinterpret_cast<int32>(getUniqueCounter32())
 
     this.removeStreamGroupByIndex(group.index)
     this.streamGroups.push(group)
