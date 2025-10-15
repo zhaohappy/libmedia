@@ -721,9 +721,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         }
         return undefined
       }
-      const defaultStream = ss.find((stream) => !!(stream.disposition & AVDisposition.DEFAULT))
-      if (defaultStream && this.isCodecIdSupported(defaultStream.codecpar.codecId, defaultStream.codecpar.codecType, isMSE)) {
-        return defaultStream
+      const defaultStream = ss.filter((stream) => !!(stream.disposition & AVDisposition.DEFAULT)
+        && this.isCodecIdSupported(stream.codecpar.codecId, stream.codecpar.codecType, isMSE))
+      if (defaultStream.length) {
+        if (defaultStream.length === 1 || mediaType !== AVMediaType.AVMEDIA_TYPE_VIDEO) {
+          return defaultStream[0]
+        }
+        // 优先播放动画
+        const videoStream = defaultStream.find((stream) => stream.nbFrames !== 1n)
+        if (videoStream) {
+          return videoStream
+        }
+        return defaultStream[0]
       }
       let stream = ss.find((stream) => {
         return this.isCodecIdSupported(stream.codecpar.codecId, stream.codecpar.codecType, isMSE)
