@@ -140,7 +140,15 @@ export const enum BoxType {
   PCMC = 'pcmC',
   GMHD = 'gmhd',
   STHD = 'sthd',
-  CHAP = 'chap'
+  CHAP = 'chap',
+
+  IINF = 'iinf',
+  ILOC = 'iloc',
+  IPMA = 'ipma',
+  ISPE = 'ispe',
+  PITM = 'pitm',
+  IMIR = 'imir',
+  IROT = 'irot'
 }
 
 export const BasicBoxs = [
@@ -210,7 +218,8 @@ export const ContainerBoxs = [
   BoxType.ENCA,
   BoxType.SINF,
   BoxType.SCHI,
-  BoxType.UDTA
+  BoxType.UDTA,
+  BoxType.IPRP
 ]
 
 export const enum TFHDFlags {

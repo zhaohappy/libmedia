@@ -24,9 +24,9 @@
  */
 
 import type AVStream from 'avutil/AVStream'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
-import type { Atom, FragmentTrack, MOVContext, MOVStreamContext, Sample } from './type'
-import type IOReader from 'common/io/IOReader'
+import { AVDisposition, AVStreamGroup, AVStreamGroupParamsType, AVStreamGroupTileGrid, AVStreamMetadataKey } from 'avutil/AVStream'
+import type { Atom, FragmentTrack, HEIFGrid, HEIFItem, MOVContext, MOVStreamContext, Sample } from './type'
+import IOReader from 'common/io/IOReader'
 import mktag from '../../function/mktag'
 import { BoxType, ContainerBoxs } from './boxType'
 import type { AVIFormatContext } from '../../AVFormatContext'
@@ -36,7 +36,7 @@ import { buildFragmentIndex } from './function/buildFragmentIndex'
 import { buildIndex } from './function/buildIndex'
 import createFragmentTrack from './function/createFragmentTrack'
 import createMovStreamContext from './function/createMovStreamContext'
-import { AVPacketSideDataType } from 'avutil/codec'
+import { AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import { avFree, avMalloc } from 'avutil/util/mem'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { NOPTS_VALUE } from 'avutil/constant'
@@ -45,6 +45,10 @@ import { addSideData } from 'avutil/util/avpacket'
 import digital2Tag from '../../function/digital2Tag'
 import { iTunesKeyMap } from './iTunes'
 import { readITunesTagValue } from './parsing/meta'
+import { tag2CodecId } from './mov'
+import { AVPacketFlags, IOFlags } from 'avutil/enum'
+import * as object from 'common/util/object'
+import * as errorType from 'avutil/error'
 
 
 export async function readFtyp(ioReader: IOReader, context: MOVContext, atom: Atom) {
@@ -536,4 +540,429 @@ export async function readMfra(
     context.currentSample = samplesIndexMap[stream.index]?.currentSample ?? 0
     context.sampleEnd = samplesIndexMap[stream.index]?.sampleEnd ?? false
   })
+}
+
+async function readGrid(
+  ioReader: IOReader,
+  formatContext: AVIFormatContext,
+  grid: HEIFGrid,
+  tileGrid: AVStreamGroupTileGrid,
+  movContext: MOVContext
+) {
+  let offset = 0n
+  if (grid.item.isIdatRelative) {
+    if (!movContext.heif.idatOffset) {
+      logger.warn('missing idat box required by the image grid')
+      return errorType.INVALID_PARAMETERS
+    }
+    offset = movContext.heif.idatOffset
+  }
+  if (!(ioReader.flags & IOFlags.SEEKABLE)) {
+    logger.error('grid box with non seekable input')
+    return errorType.INVALID_PARAMETERS
+  }
+  const now = ioReader.getPos()
+  await ioReader.seek(BigInt(grid.item.extentOffset) + offset)
+
+  await ioReader.readUint8()
+  const flags = await ioReader.readUint8()
+  const tileRows = (await ioReader.readUint8()) + 1
+  const tileCols = (await ioReader.readUint8()) + 1
+  tileGrid.width = (flags & 1) ? await ioReader.readUint32() : await ioReader.readUint16()
+  tileGrid.height = (flags & 1) ? await ioReader.readUint32() : await ioReader.readUint16()
+  await ioReader.seek(now)
+
+  let size = tileRows * tileCols
+
+  if (size !== grid.tileIdList.length) {
+    return errorType.INVALID_PARAMETERS
+  }
+  tileGrid.codedWidth = 0
+  tileGrid.codedHeight = 0
+  for (let i = 0; i < tileCols; i++) {
+    let stream = formatContext.streams.find((stream) => {
+      const movStreamContext = stream.privData as MOVStreamContext
+      return movStreamContext.trackId === grid.tileIdList[i]
+    })
+    if (!stream) {
+      return errorType.INVALID_PARAMETERS
+    }
+    tileGrid.codedWidth += stream.codecpar.width
+  }
+  for (let i = 0; i < size; i += tileCols) {
+    let stream = formatContext.streams.find((stream) => {
+      const movStreamContext = stream.privData as MOVStreamContext
+      return movStreamContext.trackId === grid.tileIdList[i]
+    })
+    if (!stream) {
+      return errorType.INVALID_PARAMETERS
+    }
+    tileGrid.codedHeight += stream.codecpar.height
+  }
+  tileGrid.offsets = new Array(size)
+  let x = 0, y = 0, i = 0
+  while (y < tileGrid.codedHeight) {
+    let leftCol = i
+    while (x < tileGrid.codedWidth) {
+      if (i === size) {
+        return errorType.INVALID_PARAMETERS
+      }
+
+      let stream = formatContext.streams.find((stream) => {
+        const movStreamContext = stream.privData as MOVStreamContext
+        return movStreamContext.trackId === grid.tileIdList[i]
+      })
+      if (!stream) {
+        return errorType.INVALID_PARAMETERS
+      }
+
+      tileGrid.offsets[i] = {
+        idx: stream.id,
+        horizontal: x,
+        vertical: y
+      }
+
+      x += stream.codecpar.width
+
+      i++
+    }
+    if (x > tileGrid.codedWidth) {
+      logger.error('Non uniform HEIF tiles')
+      return errorType.INVALID_PARAMETERS
+    }
+    x = 0
+    let stream = formatContext.streams.find((stream) => {
+      const movStreamContext = stream.privData as MOVStreamContext
+      return movStreamContext.trackId === grid.tileIdList[leftCol]
+    })
+    if (!stream) {
+      return errorType.INVALID_PARAMETERS
+    }
+    y += stream.codecpar.height
+  }
+
+  if (y > tileGrid.codedHeight || i !== size) {
+    logger.error('Non uniform HEIF tiles')
+    return errorType.INVALID_PARAMETERS
+  }
+  return 0
+}
+async function readIovl(
+  ioReader: IOReader,
+  formatContext: AVIFormatContext,
+  grid: HEIFGrid,
+  tileGrid: AVStreamGroupTileGrid,
+  movContext: MOVContext
+) {
+  let offset = 0n
+  if (grid.item.isIdatRelative) {
+    if (!movContext.heif.idatOffset) {
+      logger.warn('missing idat box required by the image grid')
+      return errorType.INVALID_PARAMETERS
+    }
+    offset = movContext.heif.idatOffset
+  }
+  if (!(ioReader.flags & IOFlags.SEEKABLE)) {
+    logger.error('grid box with non seekable input')
+    return errorType.INVALID_PARAMETERS
+  }
+
+  const now = ioReader.getPos()
+  await ioReader.seek(BigInt(grid.item.extentOffset) + offset)
+
+  await ioReader.readUint8()
+  const flags = await ioReader.readUint8()
+
+  tileGrid.background = []
+  for (let i = 0; i < 4; i++) {
+    tileGrid.background.push(await ioReader.readUint16())
+  }
+  tileGrid.width = tileGrid.codedWidth = (flags & 1) ? await ioReader.readUint32() : await ioReader.readUint16()
+  tileGrid.height = tileGrid.codedHeight = (flags & 1) ? await ioReader.readUint32() : await ioReader.readUint16()
+
+  tileGrid.offsets = new Array(grid.tileIdList.length)
+
+  for (let i = 0; i < grid.tileIdList.length; i++) {
+    let stream = formatContext.streams.find((stream) => {
+      const movStreamContext = stream.privData as MOVStreamContext
+      return movStreamContext.trackId === grid.tileIdList[grid.tileIdList[i]]
+    })
+    if (!stream) {
+      return errorType.INVALID_PARAMETERS
+    }
+    tileGrid.offsets[i] = {
+      idx: stream.id,
+      horizontal: (flags & 1) ? await ioReader.readUint32() : await ioReader.readUint16(),
+      vertical: (flags & 1) ? await ioReader.readUint32() : await ioReader.readUint16()
+    }
+  }
+
+  await ioReader.seek(now)
+}
+
+export async function readHEIF(
+  ioReader: IOReader,
+  formatContext: AVIFormatContext,
+  movContext: MOVContext,
+  atom: Atom
+) {
+  movContext.parseOneBox = parseOneBox
+  movContext.parsers = parsers
+  const endPos = ioReader.getPos() + static_cast<int64>(atom.size)
+
+  movContext.heif = {}
+
+  if (atom.size > 12) {
+    if ((await ioReader.peekString(12)).substring(8) === 'hdlr') {
+      // full box(flags version)
+      await ioReader.skip(4)
+    }
+  }
+
+  while (ioReader.getPos() < endPos) {
+    const size = await ioReader.readUint32()
+    const type = await ioReader.readUint32()
+
+    if (size < 8) {
+      logger.error(`invalid box, type: ${type}, size ${size}`)
+      return
+    }
+    if (type === mktag(BoxType.HDLR)) {
+      await ioReader.skip(size - 8)
+    }
+    else if (type === mktag(BoxType.IDAT)) {
+      movContext.heif.idatOffset = ioReader.getPos()
+      await ioReader.skip(size - 8)
+    }
+    else if (parsers[type]) {
+      await parsers[type](
+        ioReader,
+        null,
+        {
+          type,
+          size: size - 8
+        },
+        movContext
+      )
+    }
+    else if (ContainerBoxs.some((boxType) => {
+      return mktag(boxType) === type
+    })) {
+      await parseOneBox(
+        ioReader,
+        null,
+        {
+          type,
+          size: size - 8
+        },
+        movContext
+      )
+    }
+    else {
+      await ioReader.skip(size - 8)
+    }
+  }
+
+  const now = ioReader.getPos()
+
+  if (movContext.heif.foundIloc && movContext.heif.foundIinf && movContext.heif.items?.length) {
+    movContext.foundHEIF = true
+
+    const bufferReader = new IOReader()
+
+    for (let i = 0; i < movContext.heif.items.length; i++) {
+      const item = movContext.heif.items[i]
+      if (item.type !== 'av01' && item.type !== 'hvc1') {
+        continue
+      }
+
+      const stream = formatContext.createStream()
+      const streamContext = createMovStreamContext()
+      stream.privData = streamContext
+      streamContext.trackId = item.id
+      stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_VIDEO
+      if (tag2CodecId[mktag(item.type)]) {
+        stream.codecpar.codecId = tag2CodecId[mktag(item.type)]
+      }
+      stream.nbFrames = 1n
+      stream.codecpar.framerate.den = 1
+      stream.codecpar.framerate.num = 1
+      stream.timeBase.den = 1
+      stream.timeBase.num = 1
+      if (movContext.heif.primaryId === item.id) {
+        stream.disposition |= AVDisposition.DEFAULT
+      }
+      if (item.name) {
+        stream.metadata[AVStreamMetadataKey.TITLE] = item.name
+      }
+      if (item.ipma && movContext.heif.ipcoItem) {
+        for (let j = 0; j < item.ipma.length; j++) {
+          const ipma = movContext.heif.ipcoItem[item.ipma[j]]
+          if (ipma && parsers[ipma.tag]) {
+            bufferReader.reset()
+            bufferReader.appendBuffer(ipma.data)
+            movContext.heif.currentItem = item
+            await parsers[ipma.tag](bufferReader, stream, {
+              type: ipma.tag,
+              size: ipma.data.length
+            }, movContext)
+            movContext.heif.currentItem = null
+          }
+        }
+      }
+      let offset = 0n
+      if (item.isIdatRelative) {
+        if (!movContext.heif.idatOffset) {
+          logger.warn(`Missing idat box for item ${item.id}`)
+          formatContext.removeStream(stream)
+          formatContext.streamIndex--
+        }
+        offset = movContext.heif.idatOffset
+      }
+      streamContext.samplesIndex = [{
+        pos: BigInt(item.extentOffset) + offset,
+        dts: 0n,
+        pts: 0n,
+        size: item.extentLength,
+        flags: AVPacketFlags.AV_PKT_FLAG_KEY,
+        duration: NOPTS_VALUE
+      }]
+    }
+    if (movContext.heif.grid) {
+      for (let i = 0; i < movContext.heif.grid.length; i++) {
+        const grid = movContext.heif.grid[i]
+        if (grid.item) {
+          const stg = formatContext.createStreamGroup(AVStreamGroupParamsType.TILE_GRID)
+          stg.privData = grid
+          stg.params = new AVStreamGroupTileGrid()
+          if (grid.tileIdList?.length) {
+            grid.tileIdList.forEach((tile) => {
+              const stream = formatContext.streams.find((stream) => {
+                const movStreamContext = stream.privData as MOVStreamContext
+                return movStreamContext.trackId === tile
+              })
+              if (stream) {
+                formatContext.addStreamToStreamGroup(stg, stream)
+              }
+            })
+          }
+          if (grid.item.id === movContext.heif.primaryId) {
+            stg.disposition |= AVDisposition.DEFAULT
+          }
+
+          if (grid.item.name) {
+            stg.metadata[AVStreamMetadataKey.TITLE] = grid.item.name
+          }
+          if (grid.item.ipma && movContext.heif.ipcoItem) {
+            for (let j = 0; j < grid.item.ipma.length; j++) {
+              const ipma = movContext.heif.ipcoItem[grid.item.ipma[j]]
+              if (ipma && parsers[ipma.tag]) {
+                bufferReader.reset()
+                bufferReader.appendBuffer(ipma.data)
+                movContext.heif.currentItem = grid.item
+                await parsers[ipma.tag](bufferReader, stg.params as any, {
+                  type: ipma.tag,
+                  size: ipma.data.length
+                }, movContext)
+                movContext.heif.currentItem = null
+              }
+            }
+          }
+
+          if (grid.item.type === 'grid') {
+            let ret = await readGrid(ioReader, formatContext, grid, stg.params, movContext)
+            if (ret < 0) {
+              formatContext.removeStreamGroup(stg)
+              formatContext.streamGroupIndex--
+              continue
+            }
+          }
+          else if (grid.item.type === 'iovl') {
+            let ret = await readIovl(ioReader, formatContext, grid, stg.params, movContext)
+            if (ret < 0) {
+              formatContext.removeStreamGroup(stg)
+              formatContext.streamGroupIndex--
+              continue
+            }
+          }
+
+          if (grid.item.rotation || grid.item.hflip || grid.item.vflip) {
+            const matrix = new Float32Array(9)
+            const radians = grid.item.rotation * Math.PI / 180
+            const c = Math.cos(radians)
+            const s = Math.sin(radians)
+            matrix[0] = c
+            matrix[1] = -s
+            matrix[3] = s
+            matrix[4] = c
+            matrix[8] = 1 << 30
+            const flip = [1 - 2 * (!!grid.item.hflip ? 1 : 0), 1 - 2 * (!!grid.item.vflip ? 1 : 0), 1]
+            if (grid.item.hflip || grid.item.vflip) {
+              for (let i = 0; i < 9; i++) {
+                matrix[i] *= flip[i % 3]
+              }
+            }
+            stg.params.sideData[AVPacketSideDataType.AV_PKT_DATA_DISPLAYMATRIX] = new Uint8Array(matrix.buffer)
+          }
+        }
+      }
+    }
+
+    for (let i = 0; i < movContext.heif.items.length; i++) {
+      const item = movContext.heif.items[i]
+      if (item.refs) {
+        const keys = object.keys(item.refs)
+        for (let j = 0; j < keys.length; j++) {
+          const type = keys[j]
+          const id = item.refs[type]
+          if (type === 'thmb') {
+            const stream = formatContext.streams.find((stream) => {
+              const movStreamContext = stream.privData as MOVStreamContext
+              return movStreamContext.trackId === id
+            })
+            if (stream) {
+              stream.disposition |= AVDisposition.THUMBNAIL
+            }
+          }
+          else {
+            let item = movContext.heif.items.find((item) => item.id === id)
+            if (item && item.type === 'Exif' && (ioReader.flags & IOFlags.SEEKABLE)) {
+              let offset = 0n
+              if (item.isIdatRelative) {
+                if (!movContext.heif.idatOffset) {
+                  logger.warn(`Missing idat box for item ${item.id}`)
+                  continue
+                }
+                offset = movContext.heif.idatOffset
+              }
+              const now = ioReader.getPos()
+              await ioReader.seek(BigInt(item.extentOffset) + offset)
+              const exif = await ioReader.readBuffer(item.extentLength)
+              await ioReader.seek(now)
+
+              let stream = formatContext.streams.find((stream) => {
+                const movStreamContext = stream.privData as MOVStreamContext
+                return movStreamContext.trackId === item.id
+              })
+              if (stream) {
+                stream.sideData[AVPacketSideDataType.AV_PKT_DATA_EXIF] = exif
+              }
+              else {
+                const group = formatContext.streamGroups.find((group) => {
+                  const groupContext = group.privData as HEIFGrid
+                  if (groupContext.item.refs) {
+                    return object.has(object.reverse(groupContext.item.refs), item.id)
+                  }
+                })
+                if (group) {
+                  group.params.sideData[AVPacketSideDataType.AV_PKT_DATA_EXIF] = exif
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  await ioReader.seek(now)
 }

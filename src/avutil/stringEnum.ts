@@ -79,7 +79,9 @@ export const Ext2Format: Record<string, AVFormat> = {
   'mpg': AVFormat.MPEGPS,
   'rtsp': AVFormat.RTSP,
   'rtmp': AVFormat.RTMP,
-  'avi': AVFormat.AVI
+  'avi': AVFormat.AVI,
+  'avif': AVFormat.AVIF,
+  'heic': AVFormat.HEIF
 }
 
 export const Ext2IOLoader: Record<string, IOType> = {

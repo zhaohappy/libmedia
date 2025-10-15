@@ -1,5 +1,5 @@
 /*
- * libmedia create mov context
+ * libmedia mp4 imir box parser
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -23,31 +23,26 @@
  *
  */
 
-import type { MOVContext } from '../type'
-import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import type IOReader from 'common/io/IOReader'
+import type Stream from 'avutil/AVStream'
+import type { Atom, MOVContext } from '../type'
+import * as logger from 'common/util/logger'
 
-export default function createMovContext(): MOVContext {
-  return {
-    isom: false,
-    timescale: NOPTS_VALUE,
-    duration: NOPTS_VALUE_BIGINT,
-    foundMoov: false,
-    foundMdat: false,
-    foundHEIF: false,
-    majorBrand: 0,
-    minorVersion: 0,
-    compatibleBrand: [],
-    creationTime: 0n,
-    modificationTime: 0n,
-    rate: NOPTS_VALUE,
-    volume: NOPTS_VALUE,
-    matrix: null,
-    nextTrackId: 1,
-    fragment: false,
-    trexs: [],
-    currentFragment: null,
-    boxsPositionInfo: [],
-    holdMoovPos: 0n,
-    currentChunk: null
+export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
+  const now = ioReader.getPos()
+
+  let axis = await ioReader.readUint8() & 0x1
+
+  if (movContext.heif?.currentItem) {
+    movContext.heif.currentItem.hflip = !!axis
+    movContext.heif.currentItem.vflip = !axis
+  }
+
+  const remainingLength = atom.size - Number(ioReader.getPos() - now)
+  if (remainingLength > 0) {
+    await ioReader.skip(remainingLength)
+  }
+  else if (remainingLength < 0) {
+    logger.error(`read imir error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
   }
 }

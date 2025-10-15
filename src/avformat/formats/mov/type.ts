@@ -118,12 +118,33 @@ export interface Cenc {
   pattern: boolean
 }
 
+export interface HEIFItem {
+  id?: number
+  name?: string
+  type?: string
+  ipma?: number[]
+  isIdatRelative?: boolean
+  extentLength?: number
+  extentOffset?: number
+  extentIndex?: number
+  rotation?: number
+  hflip?: boolean
+  vflip?: boolean
+  refs?: Record<string, number>
+}
+
+export interface HEIFGrid {
+  item: HEIFItem
+  tileIdList: number[]
+}
+
 export interface MOVContext {
   isom: boolean
   timescale: number
   duration: bigint
   foundMoov: boolean
   foundMdat: boolean
+  foundHEIF: boolean
   majorBrand: number
   minorVersion: number
   compatibleBrand: number[]
@@ -184,6 +205,20 @@ export interface MOVContext {
     data: Uint8Array
   }
   chapterTrack?: number[]
+
+  heif?: {
+    primaryId?: number
+    ipcoItem?: {
+      tag: uint32
+      data: Uint8Array
+    }[]
+    idatOffset?: int64
+    items?: HEIFItem[]
+    grid?: HEIFGrid[]
+    foundIinf?: boolean
+    foundIloc?: boolean
+    currentItem?: HEIFItem
+  }
 }
 
 export interface MOVStreamContext {

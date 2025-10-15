@@ -60,6 +60,19 @@ import meta from './meta'
 import chpl from './chpl'
 import chap from './chap'
 
+import iinf from './iinf'
+import iloc from './iloc'
+import ipco from './ipco'
+import ipma from './ipma'
+import iref from './iref'
+import ispe from './ispe'
+import pitm from './pitm'
+import irot from './irot'
+import imir from './imir'
+
+import hvcc from './hvcc'
+import av1c from './av1c'
+
 import mktag from '../../../function/mktag'
 
 const parsers: Partial<Record<
@@ -97,7 +110,20 @@ number,
 
   [mktag(BoxType.META)]: meta,
   [mktag(BoxType.CHPL)]: chpl,
-  [mktag(BoxType.CHAP)]: chap
+  [mktag(BoxType.CHAP)]: chap,
+
+  [mktag(BoxType.IINF)]: iinf,
+  [mktag(BoxType.ILOC)]: iloc,
+  [mktag(BoxType.IPCO)]: ipco,
+  [mktag(BoxType.IPMA)]: ipma,
+  [mktag(BoxType.IREF)]: iref,
+  [mktag(BoxType.ISPE)]: ispe,
+  [mktag(BoxType.PITM)]: pitm,
+  [mktag(BoxType.IMIR)]: imir,
+  [mktag(BoxType.IROT)]: irot,
+
+  [mktag(BoxType.HVCC)]: hvcc,
+  [mktag(BoxType.AV1C)]: av1c
 }
 
 export default parsers

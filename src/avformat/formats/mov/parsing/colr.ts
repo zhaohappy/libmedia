@@ -24,13 +24,13 @@
  */
 
 import type IOReader from 'common/io/IOReader'
-import type Stream from 'avutil/AVStream'
+import AVStream, { type AVStreamGroupTileGrid } from 'avutil/AVStream'
 import type { Atom, MOVContext } from '../type'
 import * as logger from 'common/util/logger'
 import { AVPacketSideDataType } from 'avutil/codec'
 import { AVColorRange, AVColorPrimaries, AVColorTransferCharacteristic, AVColorSpace } from 'avutil/pixfmt'
 
-export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, movContext: MOVContext) {
+export default async function read(ioReader: IOReader, stream: AVStream | AVStreamGroupTileGrid, atom: Atom, movContext: MOVContext) {
 
   const now = ioReader.getPos()
 
@@ -44,7 +44,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
       const buffer = await ioReader.readBuffer(atom.size - 4)
       stream.sideData[AVPacketSideDataType.AV_PKT_DATA_ICC_PROFILE] = buffer
     }
-    else {
+    else if (stream instanceof AVStream) {
       let colorPrimaries = await ioReader.readUint16()
       let colorTrc = await ioReader.readUint16()
       let colorMatrix = await ioReader.readUint16()
@@ -82,6 +82,6 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
     await ioReader.skip(remainingLength)
   }
   else if (remainingLength < 0) {
-    logger.error(`read vpcc error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
+    logger.error(`read colr error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
   }
 }

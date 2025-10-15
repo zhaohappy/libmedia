@@ -1,5 +1,5 @@
 /*
- * libmedia create mov context
+ * libmedia mp4 ispe box parser
  *
  * 版权所有 (C) 2024 赵高兴
  * Copyright (C) 2024 Gaoxing Zhao
@@ -23,31 +23,35 @@
  *
  */
 
-import type { MOVContext } from '../type'
-import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import type IOReader from 'common/io/IOReader'
+import AVStream from 'avutil/AVStream'
+import type { Atom, MOVContext } from '../type'
+import * as logger from 'common/util/logger'
+import { type AVStreamGroupTileGrid } from 'avutil/AVStream'
 
-export default function createMovContext(): MOVContext {
-  return {
-    isom: false,
-    timescale: NOPTS_VALUE,
-    duration: NOPTS_VALUE_BIGINT,
-    foundMoov: false,
-    foundMdat: false,
-    foundHEIF: false,
-    majorBrand: 0,
-    minorVersion: 0,
-    compatibleBrand: [],
-    creationTime: 0n,
-    modificationTime: 0n,
-    rate: NOPTS_VALUE,
-    volume: NOPTS_VALUE,
-    matrix: null,
-    nextTrackId: 1,
-    fragment: false,
-    trexs: [],
-    currentFragment: null,
-    boxsPositionInfo: [],
-    holdMoovPos: 0n,
-    currentChunk: null
+export default async function read(ioReader: IOReader, stream: AVStream | AVStreamGroupTileGrid, atom: Atom, movContext: MOVContext) {
+  const now = ioReader.getPos()
+
+  // version flags
+  await ioReader.skip(4)
+
+  const width = await ioReader.readUint32()
+  const height = await ioReader.readUint32()
+
+  if (stream instanceof AVStream) {
+    stream.codecpar.width = width
+    stream.codecpar.height = height
+  }
+  else {
+    stream.width = width
+    stream.height = height
+  }
+
+  const remainingLength = atom.size - Number(ioReader.getPos() - now)
+  if (remainingLength > 0) {
+    await ioReader.skip(remainingLength)
+  }
+  else if (remainingLength < 0) {
+    logger.error(`read ispe error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
   }
 }

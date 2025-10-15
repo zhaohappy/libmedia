@@ -54,6 +54,7 @@ import * as object from 'common/util/object'
 import { AVDiscard, AVDisposition } from 'avutil/AVStream'
 import createMovStreamContext from './mov/function/createMovStreamContext'
 import * as text from 'common/util/text'
+import digital2Tag from '../function/digital2Tag'
 
 export interface IIsobmffFormatOptions {
   /**
@@ -116,6 +117,9 @@ export default class IIsobmffFormat extends IFormat {
         const pos = formatContext.ioReader.getPos()
 
         if (pos === fileSize) {
+          if (this.context.foundHEIF) {
+            break
+          }
           logger.error('the file format is not mp4')
           return errorType.DATA_INVALID
         }
@@ -128,7 +132,15 @@ export default class IIsobmffFormat extends IFormat {
           size = static_cast<double>(await formatContext.ioReader.readUint64())
         }
 
-        if (size < 8 || fileSize && (pos + static_cast<int64>(size) > fileSize)) {
+        if (size < 8
+          || (fileSize && (pos + static_cast<int64>(size) > fileSize))
+          || !/^[\x20-\x7E]{4}$/.test(digital2Tag(type))
+        ) {
+          if (this.context.foundMdat && (
+            this.context.foundMoov || this.context.foundHEIF
+          )) {
+            break
+          }
           logger.error(`invalid box size ${size}`)
           return errorType.DATA_INVALID
         }
@@ -138,7 +150,7 @@ export default class IIsobmffFormat extends IFormat {
             firstMdatPos = pos
           }
           this.context.foundMdat = true
-          await formatContext.ioReader.seek(pos + static_cast<int64>(size))
+          await formatContext.ioReader.seek(pos + static_cast<int64>(size), false, false)
         }
         else if (type === mktag(BoxType.MOOV)) {
           await imov.readMoov(formatContext.ioReader, formatContext, this.context, {
@@ -146,6 +158,22 @@ export default class IIsobmffFormat extends IFormat {
             type
           })
           this.context.foundMoov = true
+        }
+        else if (type === mktag(BoxType.META)
+          && (this.context.majorBrand === mktag('avif')
+            || this.context.majorBrand === mktag('avis')
+            || this.context.majorBrand === mktag('heic')
+            || this.context.majorBrand === mktag('heix')
+            || this.context.majorBrand === mktag('hevc')
+            || this.context.majorBrand === mktag('hevx')
+            || this.context.majorBrand === mktag('mif1')
+            || this.context.majorBrand === mktag('msf1')
+          )
+        ) {
+          await imov.readHEIF(formatContext.ioReader, formatContext, this.context, {
+            size: size - 8,
+            type
+          })
         }
         else {
           await formatContext.ioReader.seek(pos + static_cast<int64>(size))
