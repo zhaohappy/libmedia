@@ -55,6 +55,8 @@ libmedia can complete the following functions:
 | ass      | ✅       | ❌        |
 | ssa      | ✅       | ❌        |
 | ttml     | ✅       | ❌        |
+| avif     | ✅       | ❌        |
+| heif     | ✅       | ❌        |
 
 ## Protocols
 

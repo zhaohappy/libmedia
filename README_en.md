@@ -79,6 +79,8 @@ Check out the [build configuration examples](https://github.com/zhaohappy/libmed
 | ass      | ✅       | ❌        |
 | ssa      | ✅       | ❌        |
 | ttml     | ✅       | ❌        |
+| avif     | ✅       | ❌        |
+| heif     | ✅       | ❌        |
 
 ### Protocol
 
