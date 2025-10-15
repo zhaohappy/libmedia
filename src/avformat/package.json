@@ -147,10 +147,10 @@
       "require": "./dist/cjs/formats/IMatroskaFormat.js",
       "types": "./dist/esm/formats/IMatroskaFormat.d.ts"
     },
-    "./formats/IMovFormat": {
-      "import": "./dist/esm/formats/IMovFormat.js",
-      "require": "./dist/cjs/formats/IMovFormat.js",
-      "types": "./dist/esm/formats/IMovFormat.d.ts"
+    "./formats/IIsobmffFormat": {
+      "import": "./dist/esm/formats/IIsobmffFormat.js",
+      "require": "./dist/cjs/formats/IIsobmffFormat.js",
+      "types": "./dist/esm/formats/IIsobmffFormat.d.ts"
     },
     "./formats/IMp3Format": {
       "import": "./dist/esm/formats/IMp3Format.js",
@@ -227,10 +227,10 @@
       "require": "./dist/cjs/formats/OMatroskaFormat.js",
       "types": "./dist/esm/formats/OMatroskaFormat.d.ts"
     },
-    "./formats/OMovFormat": {
-      "import": "./dist/esm/formats/OMovFormat.js",
-      "require": "./dist/cjs/formats/OMovFormat.js",
-      "types": "./dist/esm/formats/OMovFormat.d.ts"
+    "./formats/OIsobmffFormat": {
+      "import": "./dist/esm/formats/OIsobmffFormat.js",
+      "require": "./dist/cjs/formats/OIsobmffFormat.js",
+      "types": "./dist/esm/formats/OIsobmffFormat.d.ts"
     },
     "./formats/OMp3Format": {
       "import": "./dist/esm/formats/OMp3Format.js",

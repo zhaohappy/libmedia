@@ -2,7 +2,7 @@ import IOWriterSync from 'common/io/IOWriterSync'
 import * as mux from 'avformat/mux'
 import AVPacket from 'avutil/struct/avpacket'
 import { createAVOFormatContext } from 'avformat/AVFormatContext'
-import OMovFormat from 'avformat/formats/OMovFormat'
+import OIsobmffFormat from 'avformat/formats/OIsobmffFormat'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
 
 /**
@@ -14,7 +14,7 @@ export async function muxFile() {
 
   const ioWriter = new IOWriterSync()
   // 封装为 mp4 为例
-  const oformat = new OMovFormat()
+  const oformat = new OIsobmffFormat()
 
   const oformatContext = createAVOFormatContext()
 

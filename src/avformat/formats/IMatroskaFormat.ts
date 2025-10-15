@@ -246,12 +246,12 @@ export default class IMatroskaFormat extends IFormat {
           stream.codecpar.codecId = riff.codecBmpTags[stream.codecpar.codecTag] || AVCodecID.AV_CODEC_ID_NONE
 
           if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_NONE) {
-            stream.codecpar.codecId === isomTags.codecMovVideoTags[stream.codecpar.codecTag] || AVCodecID.AV_CODEC_ID_NONE
+            stream.codecpar.codecId === isomTags.codecIsobmffVideoTags[stream.codecpar.codecTag] || AVCodecID.AV_CODEC_ID_NONE
           }
           extradataOffset = 40
         }
         else if (track.codecId === 'V_QUICKTIME' && track.codecPrivate?.size >= 21) {
-          const tags = stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO ? isomTags.codecMovAudioTags : isomTags.codecMovVideoTags
+          const tags = stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO ? isomTags.codecIsobmffAudioTags : isomTags.codecIsobmffVideoTags
           stream.codecpar.codecTag = (track.codecPrivate.data[3] << 24) |  (track.codecPrivate.data[2] << 16)
           | (track.codecPrivate.data[1] << 8) | track.codecPrivate.data[0]
 

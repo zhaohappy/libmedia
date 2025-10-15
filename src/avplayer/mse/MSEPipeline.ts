@@ -34,7 +34,7 @@ import * as logger from 'common/util/logger'
 import type OFormat from 'avformat/formats/OFormat'
 import IOWriter from 'common/io/IOWriterSync'
 import * as mux from 'avformat/mux'
-import OMovFormat, { Mp4FragmentMode, Mp4Mode } from 'avformat/formats/OMovFormat'
+import OIsobmffFormat, { Mp4FragmentMode, Mp4Mode } from 'avformat/formats/OIsobmffFormat'
 import AVCodecParameters from 'avutil/struct/avcodecparameters'
 import type { Rational } from 'avutil/struct/rational'
 import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
@@ -492,11 +492,11 @@ export default class MSEPipeline extends Pipeline {
       this.getMimeType(addressof(codecpar)),
       resource.enableRawMpeg ? 'sequence' : 'segments'
     )
-    const oformat = new OMovFormat({
+    const oformat = new OIsobmffFormat({
       fragmentMode: Mp4FragmentMode.FRAME,
       fragment: true,
       fastOpen: true,
-      movMode: Mp4Mode.MP4,
+      mp4Mode: Mp4Mode.MP4,
       defaultBaseIsMoof: true,
       reverseSpsInAvcc: true,
       hasTfra: false
@@ -519,11 +519,11 @@ export default class MSEPipeline extends Pipeline {
           this.getMimeType(addressof(resource.oformatContext.streams[0].codecpar)),
           resource.enableRawMpeg ? 'sequence' : 'segments'
         )
-        const oformat = new OMovFormat({
+        const oformat = new OIsobmffFormat({
           fragmentMode: Mp4FragmentMode.FRAME,
           fragment: true,
           fastOpen: true,
-          movMode: Mp4Mode.MP4,
+          mp4Mode: Mp4Mode.MP4,
           defaultBaseIsMoof: true,
           reverseSpsInAvcc: true,
           ignoreEncryption: !hasCenc,
@@ -924,11 +924,11 @@ export default class MSEPipeline extends Pipeline {
   private resetResource(resource: MSEResource, task: SelfTask) {
     resource.bufferQueue.flush()
     resource.oformatContext.oformat.destroy(resource.oformatContext)
-    const oformat = new OMovFormat({
+    const oformat = new OIsobmffFormat({
       fragmentMode: Mp4FragmentMode.FRAME,
       fragment: true,
       fastOpen: true,
-      movMode: Mp4Mode.MP4,
+      mp4Mode: Mp4Mode.MP4,
       defaultBaseIsMoof: true,
       reverseSpsInAvcc: true,
       hasTfra: false
@@ -998,11 +998,11 @@ export default class MSEPipeline extends Pipeline {
 
       const ioWriter = new IOWriter(1024 * 1024)
       const oformatContext = createAVOFormatContext()
-      const oformat = new OMovFormat({
+      const oformat = new OIsobmffFormat({
         fragmentMode: Mp4FragmentMode.FRAME,
         fragment: true,
         fastOpen: true,
-        movMode: Mp4Mode.MP4,
+        mp4Mode: Mp4Mode.MP4,
         defaultBaseIsMoof: true,
         reverseSpsInAvcc: true,
         hasTfra: false
@@ -1150,11 +1150,11 @@ export default class MSEPipeline extends Pipeline {
 
         resource.track.reset()
 
-        const oformat = new OMovFormat({
+        const oformat = new OIsobmffFormat({
           fragmentMode: Mp4FragmentMode.FRAME,
           fragment: true,
           fastOpen: true,
-          movMode: Mp4Mode.MP4,
+          mp4Mode: Mp4Mode.MP4,
           defaultBaseIsMoof: true,
           reverseSpsInAvcc: true,
           hasTfra: false

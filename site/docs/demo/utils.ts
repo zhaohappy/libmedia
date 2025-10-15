@@ -9,7 +9,7 @@ import IOLoader from '@libmedia/avnetwork/ioLoader/IOLoader'
 import * as is from '@libmedia/common/util/is'
 import * as url from '@libmedia/common/util/url'
 
-import IMovFormat from '@libmedia/avformat/formats/IMovFormat'
+import IIsobmffFormat from '@libmedia/avformat/formats/IIsobmffFormat'
 import IFlvFormat from '@libmedia/avformat/formats/IFlvFormat'
 import IAacFormat from '@libmedia/avformat/formats/IAacFormat'
 import IFlacFormat from '@libmedia/avformat/formats/IFlacFormat'
@@ -283,8 +283,8 @@ export async function getAVFormat(ioReader: IOReader, source: string | File) {
     case AVFormat.FLV:
       iformat = new IFlvFormat()
       break
-    case AVFormat.MP4:
-      iformat = new IMovFormat()
+    case AVFormat.ISOBMFF:
+      iformat = new IIsobmffFormat()
       break
     case AVFormat.MPEGTS:
       iformat = new IMpegtsFormat()

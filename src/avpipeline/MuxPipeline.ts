@@ -143,7 +143,7 @@ export default class MuxPipeline extends Pipeline {
           break
         case AVFormat.ISOBMFF:
           if (defined(ENABLE_MUXER_ISOBMFF) || defined(ENABLE_PROTOCOL_DASH)) {
-            oformat = new ((await import('avformat/formats/OMovFormat')).default)(task.formatOptions)
+            oformat = new ((await import('avformat/formats/OIsobmffFormat')).default)(task.formatOptions)
           }
           else {
             logger.error('mp4 format not support, maybe you can rebuild avmedia')

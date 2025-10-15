@@ -71,7 +71,7 @@ import support from 'common/util/support'
 
 import { type IRtspFormatOptions } from 'avformat/formats/IRtspFormat'
 import { type IFlvFormatOptions } from 'avformat/formats/IFlvFormat'
-import { type IIsobmffFormatOptions } from 'avformat/formats/IMovFormat'
+import { type IIsobmffFormatOptions } from 'avformat/formats/IIsobmffFormat'
 import { type IH264FormatOptions } from 'avformat/formats/IH264Format'
 import { type IHevcFormatOptions } from 'avformat/formats/IHevcFormat'
 import { type IVvcFormatOptions } from 'avformat/formats/IVvcFormat'
@@ -334,7 +334,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.ISOBMFF:
           if (defined(ENABLE_DEMUXER_ISOBMFF) || defined(ENABLE_PROTOCOL_DASH)) {
-            iformat = new ((await import('avformat/formats/IMovFormat')).default)(task.formatOptions as IIsobmffFormatOptions)
+            iformat = new ((await import('avformat/formats/IIsobmffFormat')).default)(task.formatOptions as IIsobmffFormatOptions)
           }
           else {
             logger.error('mp4 format not support, maybe you can rebuild avmedia')

@@ -3,7 +3,7 @@ import * as mux from '@libmedia/avformat/mux'
 import { createAVIFormatContext, createAVOFormatContext } from '@libmedia/avformat/AVFormatContext'
 import { createAVPacket, destroyAVPacket } from '@libmedia/avutil/util/avpacket'
 import IOWriterSync from '@libmedia/common/io/IOWriterSync'
-import OMovFormat from '@libmedia/avformat/formats/OMovFormat'
+import OIsobmffFormat from '@libmedia/avformat/formats/OIsobmffFormat'
 import { copyCodecParameters } from '@libmedia/avutil/util/codecparameters'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept } from './utils'
@@ -27,7 +27,7 @@ async function muxFile(log: (v: string) => void) {
   const oformatContext = createAVOFormatContext()
   const ioWriter = new IOWriterSync()
   oformatContext.ioWriter = ioWriter
-  oformatContext.oformat = new OMovFormat()
+  oformatContext.oformat = new OIsobmffFormat()
 
   ioWriter.onFlush = (buffer, pos) => {
     log(`got output data size: ${buffer.length}\n`)
