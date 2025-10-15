@@ -214,6 +214,7 @@ export const SampleFmtString2SampleFormat = {
 
 export const Format2AVFormat: Record<string, AVFormat> = {
   'flv': AVFormat.FLV,
+  'isobmff': AVFormat.ISOBMFF,
   'mp4': AVFormat.MP4,
   'mov': AVFormat.MOV,
   'ts': AVFormat.MPEGTS,
