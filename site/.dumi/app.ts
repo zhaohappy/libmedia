@@ -27,6 +27,14 @@ function createTemplate(memo: { files: IFiles } | Project, props: any, isStackBl
       if (isStackBlitz && name === 'App.tsx') {
         content = `import '@libmedia/cheap/cheapdef'\n` + content;
       }
+      // TODO 线上包先兼容旧 mp4 路径，后面发布新包去掉
+      if (isStackBlitz && /utils\.ts$/.test(name)) {
+        content = content.replace('@libmedia/avformat/formats/IIsobmffFormat', '@libmedia/avformat/formats/IMovFormat')
+        content = content.replace('case AVFormat.ISOBMFF:', 'case AVFormat.MP4:')
+      }
+      if (isStackBlitz && /mux\.tsx$/.test(name)) {
+        content = content.replace('@libmedia/avformat/formats/OIsobmffFormat', '@libmedia/avformat/formats/OMovFormat')
+      }
       memo.files[`src/${name}`] = content;
     }
     delete memo.files[name];
