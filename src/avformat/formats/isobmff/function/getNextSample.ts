@@ -31,7 +31,7 @@ import { avRescaleQ } from 'avutil/util/rational'
 import { IOFlags } from 'avutil/avformat'
 import type { EncryptionInfo } from 'avutil/struct/encryption'
 import { AVDiscard } from 'avutil/AVStream'
-import { AVPacketFlags } from 'avutil/enum'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
 
 export function getNextSample(context: AVIFormatContext, isobmffContext: IsobmffContext, ioFlags: int32) {
   let sample: Sample

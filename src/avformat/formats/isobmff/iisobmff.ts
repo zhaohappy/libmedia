@@ -24,7 +24,7 @@
  */
 
 import type AVStream from 'avutil/AVStream'
-import { AVDisposition, AVStreamGroup, AVStreamGroupParamsType, AVStreamGroupTileGrid, AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVDisposition, AVStreamGroupParamsType, AVStreamGroupTileGrid, AVStreamMetadataKey } from 'avutil/AVStream'
 import type { Atom, FragmentTrack, HEIFGrid, HEIFItem, IsobmffContext, IsobmffStreamContext, Sample } from './type'
 import IOReader from 'common/io/IOReader'
 import mktag from '../../function/mktag'
@@ -46,9 +46,10 @@ import digital2Tag from '../../function/digital2Tag'
 import { iTunesKeyMap } from './iTunes'
 import { readITunesTagValue } from './parsing/meta'
 import { tag2CodecId } from './isobmff'
-import { AVPacketFlags, IOFlags } from 'avutil/enum'
 import * as object from 'common/util/object'
 import * as errorType from 'avutil/error'
+import { IOFlags } from 'avutil/avformat'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
 
 
 export async function readFtyp(ioReader: IOReader, context: IsobmffContext, atom: Atom) {

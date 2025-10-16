@@ -36,10 +36,10 @@ import BufferReader from 'common/io/BufferReader'
 import { addAVPacketData, createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
 import { avMalloc } from 'avutil/util/mem'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
-import { AVPacketFlags } from 'avutil/enum'
 import * as array from 'common/util/array'
 import * as object from 'common/util/object'
 import concatTypeArray from 'common/function/concatTypeArray'
+import { AVPacketFlags } from 'avutil/struct/avpacket'
 
 export const enum ID3v2Encoding {
   ISO8859,

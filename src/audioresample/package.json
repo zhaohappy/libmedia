@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/audioresample",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "libmedia 音频重采样模块",
   "repository": {
     "type": "git",

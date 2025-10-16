@@ -214,6 +214,12 @@ function getVersion() {
 }
 
 function compile(fileNames, options, writeCallback, cjs = false, defined = {}) {
+  if (options.outDir) {
+    fs.rmSync(options.outDir, { recursive: true, force: true })
+  }
+  if (options.declarationDir) {
+    fs.rmSync(options.declarationDir, { recursive: true, force: true })
+  }
   const program = ts.createProgram(fileNames, options);
   const emitResult = program.emit(undefined, writeCallback, undefined, undefined, {
     before: [

@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avpipeline",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "libmedia 处理管线模块",
   "repository": {
     "type": "git",

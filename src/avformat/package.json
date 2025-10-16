@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avformat",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "libmedia avformat",
   "repository": {
     "type": "git",
@@ -251,6 +251,11 @@
       "import": "./dist/esm/formats/OWavFormat.js",
       "require": "./dist/cjs/formats/OWavFormat.js",
       "types": "./dist/esm/formats/OWavFormat.d.ts"
+    },
+    "./formats/OFlacFormat": {
+      "import": "./dist/esm/formats/OFlacFormat.js",
+      "require": "./dist/cjs/formats/OFlacFormat.js",
+      "types": "./dist/esm/formats/OFlacFormat.d.ts"
     },
     "./formats/flv/FlvHeader": {
       "import": "./dist/esm/formats/flv/FlvHeader.js",

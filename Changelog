@@ -1,3 +1,34 @@
+version 0.12.0:
+
+feat:
+  - feat(avformat): dump chapters
+  - feat(avformat): 增强 mp4 和 mkv 对 metadata 的支持能力，mp4 支持章节
+  - feat(avplayer): hls 和 dash 切换分辨率支持立即切换和平滑切换
+  - feat(avformat): wav 支持解析 id3 标签
+  - refactor(avformat): wav、mp3、flac 的 metadata 移到 formatContext 下面变成文件级元数据
+  - feat(avnetwork): FileIOLoader 支持传 blob
+  - feat(avformat): mp4 支持 pcm 音频格式
+  - feat(avrender): 各个 render 支持 alpha 渲染
+  - feat(avcodec): webcodecs 解码器支持解码 alpha（vp8、vp9、av1） 视频
+  - feat(avplayer): avplayer 支持使用 webcodecs 播放透明的 webm 和 mkv 视频
+  - feat(avformat): mp4 支持写 webvtt，mkv 支持写 ass 和 webvtt
+  - feat(avcodec): 添加 png、webp、gif、bmp、tiff 图片解码器
+  - feat(avformat): AVStream 新增 discard 字段，用于控制 demux.readAVPacket 是否读取某些流的包（mp4 格式使用）
+  - feat(avformat): 支持音频格式中封面流解析、播放、转码
+  - feat(avformat): flac 和 wav 的 AVPacket 支持 duration 字段
+  - feat(avformat): 添加 flac 封装器
+  - refactor(avformat): OMovFormat -> OIsobmffFormat，IMovFormat -> IIsobmffFormat（需更改导入路径）
+  - feat(avformat): avformat 支持 stream group
+  - feat(avformat): 支持 heif、avif 格式
+  - feat(avcodec): WebVideoDecoder options 新增可以配置 colorSpace、rotation、flip 等参数
+
+bugfix:
+  - fix(avformat): ts 对跨 pes 的 nalu 判断前置 sei 为一帧的开始
+  - fix(avplayer): mes 支持 audio extradata 变化
+  - fix(avutil): AVPacket 和 EncodedChunk 直接转换处理 duration
+  - fix(avplayer): 音频或者视频不支持解码忽略而不是报错
+
+
 version 0.11.0:
 
 feat:
