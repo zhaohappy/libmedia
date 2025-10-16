@@ -266,7 +266,7 @@ export default class VideoDecodePipeline extends Pipeline {
     this.tasks.set(options.taskId, task)
 
     function replyFrame(request: RpcMessage, frame: pointer<AVFrameRef> | VideoFrame | AlphaVideoFrame) {
-      if (is.number(frame)) {
+      if (is.number(frame) || isPointer(frame)) {
         rightIPCPort.reply(request, frame)
       }
       else if (isAlphaVideoFrame(frame)) {

@@ -252,8 +252,8 @@ export default class VideoRenderPipeline extends Pipeline {
 
   private async pullFrame(task: SelfTask) {
     const frame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame | { ref: VideoFrame, alpha: VideoFrame }>('pull')
-    if (is.number(frame) || frame instanceof VideoFrame) {
-      return frame
+    if (is.number(frame) || isPointer(frame) || frame instanceof VideoFrame) {
+      return frame as (pointer<AVFrameRef> | VideoFrame)
     }
     (frame.ref as AlphaVideoFrame).alpha = frame.alpha
     return frame.ref
@@ -344,6 +344,7 @@ export default class VideoRenderPipeline extends Pipeline {
 
     if (task.render) {
       task.render.destroy()
+      task.render = null
     }
 
     if (typeof WritableStream === 'function' && task.canvas instanceof WritableStream) {

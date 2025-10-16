@@ -212,7 +212,7 @@ export default class WebGPUDefault8Render extends WebGPUDefaultRender {
       },
       getHeap(),
       {
-        offset: frame.data[plane],
+        offset: static_cast<double>(reinterpret_cast<size>(frame.data[plane])),
         bytesPerRow: frame.linesize[plane++],
         rowsPerImage: this.yTexture.height
       },
@@ -230,7 +230,7 @@ export default class WebGPUDefault8Render extends WebGPUDefaultRender {
         },
         getHeap(),
         {
-          offset: frame.data[plane],
+          offset: static_cast<double>(reinterpret_cast<size>(frame.data[plane])),
           bytesPerRow: frame.linesize[plane++],
           rowsPerImage: this.uTexture.height
         },
@@ -247,7 +247,7 @@ export default class WebGPUDefault8Render extends WebGPUDefaultRender {
           },
           getHeap(),
           {
-            offset: frame.data[plane],
+            offset: static_cast<double>(reinterpret_cast<size>(frame.data[plane])),
             bytesPerRow: frame.linesize[plane++],
             rowsPerImage: this.vTexture.height
           },
@@ -265,7 +265,7 @@ export default class WebGPUDefault8Render extends WebGPUDefaultRender {
           },
           getHeap(),
           {
-            offset: frame.data[plane],
+            offset: static_cast<double>(reinterpret_cast<size>(frame.data[plane])),
             bytesPerRow: frame.linesize[plane],
             rowsPerImage: this.aTexture.height
           },
