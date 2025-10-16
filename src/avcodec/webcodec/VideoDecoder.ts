@@ -52,6 +52,9 @@ export type WebVideoDecoderOptions = {
   optimizeForLatency?: boolean
   alpha?: 'keep' | 'discard'
   codec?: string
+  rotation?: number
+  flip?: boolean
+  colorSpace?: VideoColorSpaceInit
 }
 
 export default class WebVideoDecoder {
@@ -231,6 +234,17 @@ export default class WebVideoDecoder {
     if (this.options.optimizeForLatency) {
       config.optimizeForLatency = this.options.optimizeForLatency
     }
+    if (this.options.colorSpace) {
+      config.colorSpace = this.options.colorSpace
+    }
+    if (this.options.rotation) {
+      // @ts-ignore
+      config.rotation = this.options.rotation
+    }
+    if (this.options.flip) {
+      // @ts-ignore
+      config.flip = this.options.flip
+    }
 
     this.decoder!.configure(config)
 
@@ -265,6 +279,17 @@ export default class WebVideoDecoder {
     }
     if (this.options.optimizeForLatency) {
       config.optimizeForLatency = this.options.optimizeForLatency
+    }
+    if (this.options.colorSpace) {
+      config.colorSpace = this.options.colorSpace
+    }
+    if (this.options.rotation) {
+      // @ts-ignore
+      config.rotation = this.options.rotation
+    }
+    if (this.options.flip) {
+      // @ts-ignore
+      config.flip = this.options.flip
     }
 
     if (!config.description) {
