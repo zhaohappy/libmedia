@@ -453,14 +453,14 @@ export default class OIsobmffFormat extends OFormat {
             }
             else if (stream.codecpar.frameSize > 0) {
               track.sampleDurations.push(static_cast<double>(avRescaleQ(
-                static_cast<int64>(stream.codecpar.frameSize / stream.codecpar.sampleRate * AV_TIME_BASE),
+                static_cast<int64>((stream.codecpar.frameSize / stream.codecpar.sampleRate * AV_TIME_BASE) as double),
                 AV_TIME_BASE_Q,
                 stream.timeBase
               )))
             }
             else if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC) {
               track.sampleDurations.push(static_cast<double>(avRescaleQ(
-                static_cast<int64>(1024 / stream.codecpar.sampleRate * AV_TIME_BASE),
+                static_cast<int64>((1024 / stream.codecpar.sampleRate * AV_TIME_BASE) as double),
                 AV_TIME_BASE_Q,
                 stream.timeBase
               )))
@@ -468,7 +468,7 @@ export default class OIsobmffFormat extends OFormat {
             else {
               // 随便猜一个？每帧一个 fragment 没有 sampleDuration QuickTime 无法播放
               track.sampleDurations.push(static_cast<double>(avRescaleQ(
-                static_cast<int64>(1024 / stream.codecpar.sampleRate * AV_TIME_BASE),
+                static_cast<int64>((1024 / stream.codecpar.sampleRate * AV_TIME_BASE) as double),
                 AV_TIME_BASE_Q,
                 stream.timeBase
               )))
@@ -676,6 +676,79 @@ export default class OIsobmffFormat extends OFormat {
     }
   }
 
+  private writeTrackData(ioWriter: IOWriter, avpacket: pointer<AVPacket>, dts: int64, stream: AVStream) {
+    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_WEBVTT) {
+      const streamContext = stream.privData as IsobmffStreamContext
+      if (streamContext.lastDuration > 0) {
+        const lastCueEndTimestamp = streamContext.lastDts + static_cast<int64>(streamContext.lastDuration)
+        // add empty sample vtte
+        if (lastCueEndTimestamp < dts && avRescaleQ(dts - lastCueEndTimestamp, stream.timeBase, AV_MILLI_TIME_BASE_Q) > 200) {
+          ioWriter.writeUint32(8)
+          ioWriter.writeString(BoxType.VTTE)
+
+          const duration = static_cast<double>((dts - lastCueEndTimestamp) as int64)
+
+          if (this.context.fragment) {
+            const track = this.context.currentFragment.tracks.find((track) => {
+              return track.streamIndex === avpacket.streamIndex
+            })
+            track.sampleCount++
+            if (!track.sampleSizes.length) {
+              track.baseMediaDecodeTime = lastCueEndTimestamp
+            }
+            track.sampleDurations.push(duration)
+            track.sampleSizes.push(8)
+          }
+          else {
+            const deltas = static_cast<double>((lastCueEndTimestamp - streamContext.lastDts) as int64)
+            this.context.currentChunk.sampleCount++
+            streamContext.sampleSizes.push(8)
+            if (streamContext.sttsSampleDeltas[streamContext.sttsSampleDeltas.length - 1] === deltas) {
+              streamContext.sttsSampleCounts[streamContext.sttsSampleCounts.length - 1]++
+            }
+            else {
+              streamContext.sttsSampleCounts.push(1)
+              streamContext.sttsSampleDeltas.push(deltas)
+            }
+          }
+          streamContext.lastPts = lastCueEndTimestamp
+          streamContext.lastDts = lastCueEndTimestamp
+          streamContext.lastDuration = duration
+        }
+      }
+      const identifier = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_IDENTIFIER)
+      const settings = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_SETTINGS)
+
+      let size = avpacket.size + 8
+      if (identifier) {
+        size += 8 + static_cast<int32>(identifier.size)
+      }
+      if (settings) {
+        size += 8 + static_cast<int32>(settings.size)
+      }
+      ioWriter.writeUint32(8 + size)
+      ioWriter.writeString(BoxType.VTTC)
+      if (identifier) {
+        ioWriter.writeUint32(8 + identifier.size)
+        ioWriter.writeString('iden')
+        ioWriter.writeBuffer(mapUint8Array(identifier.data, reinterpret_cast<size>(identifier.size)))
+      }
+      if (settings) {
+        ioWriter.writeUint32(8 + settings.size)
+        ioWriter.writeString('sttg')
+        ioWriter.writeBuffer(mapUint8Array(settings.data, reinterpret_cast<size>(settings.size)))
+      }
+      ioWriter.writeUint32(8 + avpacket.size)
+      ioWriter.writeString(BoxType.PAYL)
+      ioWriter.writeBuffer(getAVPacketData(avpacket))
+      return 8 + size
+    }
+    else {
+      ioWriter.writeBuffer(getAVPacketData(avpacket))
+      return avpacket.size
+    }
+  }
+
   public writeAVPacket(formatContext: AVOFormatContext, avpacket: pointer<AVPacket>): number {
 
     if (!avpacket.size) {
@@ -692,13 +765,13 @@ export default class OIsobmffFormat extends OFormat {
 
     const streamContext = stream.privData as IsobmffStreamContext
 
-    let dts = avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
-    let pts = avRescaleQ2(avpacket.pts !== NOPTS_VALUE_BIGINT ? avpacket.pts : avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
-    const duration = avpacket.duration !== NOPTS_VALUE_BIGINT ? avRescaleQ2(avpacket.duration, addressof(avpacket.timeBase), stream.timeBase) : NOPTS_VALUE_BIGINT
+    let dts: int64 = avRescaleQ2(avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
+    let pts: int64 = avRescaleQ2(avpacket.pts !== NOPTS_VALUE_BIGINT ? avpacket.pts : avpacket.dts, addressof(avpacket.timeBase), stream.timeBase)
+    const duration: int64 = avpacket.duration !== NOPTS_VALUE_BIGINT ? avRescaleQ2(avpacket.duration, addressof(avpacket.timeBase), stream.timeBase) : NOPTS_VALUE_BIGINT
 
     if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
-      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
     )
       && (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)
     ) {
@@ -707,7 +780,7 @@ export default class OIsobmffFormat extends OFormat {
       avpacket = this.avpacket
     }
     else if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3
-      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_EAC3
+        || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_EAC3
     )
       && (!this.context.ac3Info || !this.context.ac3Info.done)
     ) {
@@ -750,7 +823,7 @@ export default class OIsobmffFormat extends OFormat {
           }
         }
 
-        track.ioWriter.writeBuffer(getAVPacketData(avpacket))
+        const dataSize = this.writeTrackData(track.ioWriter, avpacket, dts, stream)
 
         if (!track.sampleSizes.length) {
           track.baseMediaDecodeTime = dts
@@ -763,14 +836,10 @@ export default class OIsobmffFormat extends OFormat {
         ) {
           track.sampleDurations[track.sampleSizes.length - 1] = static_cast<double>(dts - streamContext.lastDts)
         }
-        if (avpacket.duration > 0) {
-          track.sampleDurations.push(static_cast<double>(avRescaleQ(
-            avpacket.duration,
-            avpacket.timeBase,
-            stream.timeBase
-          )))
+        if (duration > 0) {
+          track.sampleDurations.push(static_cast<double>(duration))
         }
-        track.sampleSizes.push(avpacket.size)
+        track.sampleSizes.push(dataSize)
 
         if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
           let flag = 0
@@ -781,7 +850,6 @@ export default class OIsobmffFormat extends OFormat {
             flag |= (SampleFlags.DEPENDS_YES | SampleFlags.IS_NON_SYN)
           }
           track.sampleCompositionTimeOffset.push(static_cast<double>((pts !== NOPTS_VALUE_BIGINT ? pts : dts) - dts))
-
           track.sampleFlags.push(flag)
         }
 
@@ -823,6 +891,9 @@ export default class OIsobmffFormat extends OFormat {
         track.sampleCount++
         streamContext.lastPts = bigint.max(streamContext.lastPts, pts + (duration !== NOPTS_VALUE_BIGINT ? duration : 0n))
         streamContext.lastDts = dts
+        if (duration > 0) {
+          streamContext.lastDuration = static_cast<double>(duration)
+        }
         this.context.currentFragment.firstWrote = true
       }
       else {
@@ -852,65 +923,7 @@ export default class OIsobmffFormat extends OFormat {
         currentChunk.sampleCount++
       }
 
-      if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_WEBVTT) {
-        if (streamContext.lastDuration > 0) {
-          const lastCueEndTimestamp = streamContext.lastDts + static_cast<int64>(streamContext.lastDuration)
-          // add empty sample vtte
-          if (lastCueEndTimestamp < dts && avRescaleQ(dts - lastCueEndTimestamp, stream.timeBase, AV_MILLI_TIME_BASE_Q) > 200) {
-            formatContext.ioWriter.writeUint32(8)
-            formatContext.ioWriter.writeString(BoxType.VTTE)
-            currentChunk.sampleCount++
-            streamContext.sampleSizes.push(8)
-            const deltas = static_cast<double>(lastCueEndTimestamp - streamContext.lastDts)
-            if (!streamContext.sttsSampleCounts.length) {
-              streamContext.sttsSampleCounts.push(1)
-              streamContext.sttsSampleDeltas.push(deltas)
-            }
-            else {
-              if (streamContext.sttsSampleDeltas[streamContext.sttsSampleDeltas.length - 1] === deltas) {
-                streamContext.sttsSampleCounts[streamContext.sttsSampleCounts.length - 1]++
-              }
-              else {
-                streamContext.sttsSampleCounts.push(1)
-                streamContext.sttsSampleDeltas.push(deltas)
-              }
-            }
-            streamContext.lastPts = lastCueEndTimestamp
-            streamContext.lastDts = lastCueEndTimestamp
-            streamContext.lastDuration = static_cast<double>((dts - lastCueEndTimestamp) as int64)
-          }
-        }
-        const identifier = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_IDENTIFIER)
-        const settings = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_WEBVTT_SETTINGS)
-
-        let size = avpacket.size + 8
-        if (identifier) {
-          size += 8 + static_cast<int32>(identifier.size)
-        }
-        if (settings) {
-          size += 8 + static_cast<int32>(settings.size)
-        }
-        formatContext.ioWriter.writeUint32(8 + size)
-        formatContext.ioWriter.writeString(BoxType.VTTC)
-        if (identifier) {
-          formatContext.ioWriter.writeUint32(8 + identifier.size)
-          formatContext.ioWriter.writeString('iden')
-          formatContext.ioWriter.writeBuffer(mapUint8Array(identifier.data, reinterpret_cast<size>(identifier.size)))
-        }
-        if (settings) {
-          formatContext.ioWriter.writeUint32(8 + settings.size)
-          formatContext.ioWriter.writeString('sttg')
-          formatContext.ioWriter.writeBuffer(mapUint8Array(settings.data, reinterpret_cast<size>(settings.size)))
-        }
-        formatContext.ioWriter.writeUint32(8 + avpacket.size)
-        formatContext.ioWriter.writeString(BoxType.PAYL)
-        formatContext.ioWriter.writeBuffer(getAVPacketData(avpacket))
-        streamContext.sampleSizes.push(8 + size)
-      }
-      else {
-        formatContext.ioWriter.writeBuffer(getAVPacketData(avpacket))
-        streamContext.sampleSizes.push(avpacket.size)
-      }
+      streamContext.sampleSizes.push(this.writeTrackData(formatContext.ioWriter, avpacket, dts, stream))
 
       if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
         && avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY
@@ -925,18 +938,12 @@ export default class OIsobmffFormat extends OFormat {
       }
       else {
         const deltas = static_cast<double>(dts - streamContext.lastDts)
-        if (!streamContext.sttsSampleCounts.length) {
-          streamContext.sttsSampleCounts.push(1)
-          streamContext.sttsSampleDeltas.push(deltas)
+        if (streamContext.sttsSampleDeltas[streamContext.sttsSampleDeltas.length - 1] === deltas) {
+          streamContext.sttsSampleCounts[streamContext.sttsSampleCounts.length - 1]++
         }
         else {
-          if (streamContext.sttsSampleDeltas[streamContext.sttsSampleDeltas.length - 1] === deltas) {
-            streamContext.sttsSampleCounts[streamContext.sttsSampleCounts.length - 1]++
-          }
-          else {
-            streamContext.sttsSampleCounts.push(1)
-            streamContext.sttsSampleDeltas.push(deltas)
-          }
+          streamContext.sttsSampleCounts.push(1)
+          streamContext.sttsSampleDeltas.push(deltas)
         }
       }
 
