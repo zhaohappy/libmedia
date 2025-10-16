@@ -251,7 +251,7 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
     }
   }
 
-  let dump = `${prefix}Stream #${index}:${stream.index} ${mediaType}: ${list.join(', ')}${dumpDisposition(stream.disposition)}\n`
+  let dump = `${prefix}Stream #${index}:${stream.index}[0x${string.format('%02x', stream.id)}] ${mediaType}: ${list.join(', ')}${dumpDisposition(stream.disposition)}\n`
 
   if (Object.keys(stream.metadata).length) {
     dump += `${prefix}  Metadata:\n`
