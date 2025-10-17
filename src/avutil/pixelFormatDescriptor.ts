@@ -593,6 +593,14 @@ const AVPixelFormatDescriptorsData: Partial<Record<AVPixelFormat, DescriptorData
     0, 0, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
     PlaneYUVA10
   ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA420P12BE]: [
+    1, 1, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA12
+  ],
+  [AVPixelFormat.AV_PIX_FMT_YUVA420P12LE]: [
+    1, 1, AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
+    PlaneYUVA12
+  ],
   [AVPixelFormat.AV_PIX_FMT_YUVA422P12BE]: [
     1, 0, AVPixelFormatFlags.BIG_ENDIAN | AVPixelFormatFlags.PLANER | AVPixelFormatFlags.ALPHA,
     PlaneYUVA12

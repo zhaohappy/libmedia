@@ -136,9 +136,9 @@ export default class WebVideoEncoder {
         this.extradata = buffer
       }
       if (metadata?.decoderConfig?.colorSpace) {
-        this.parameters.colorSpace = mapColorSpace(metadata.decoderConfig.colorSpace.matrix || '')
-        this.parameters.colorPrimaries = mapColorPrimaries(metadata.decoderConfig.colorSpace.primaries || '')
-        this.parameters.colorTrc = mapColorTrc(metadata.decoderConfig.colorSpace.transfer || '')
+        this.parameters.colorSpace = mapColorSpace(metadata.decoderConfig.colorSpace.matrix!)
+        this.parameters.colorPrimaries = mapColorPrimaries(metadata.decoderConfig.colorSpace.primaries!)
+        this.parameters.colorTrc = mapColorTrc(metadata.decoderConfig.colorSpace.transfer!)
       }
 
       encodedVideoChunk2AVPacket(chunk, avpacket, metadata ? object.extend({}, metadata, { decoderConfig: undefined }) : undefined)

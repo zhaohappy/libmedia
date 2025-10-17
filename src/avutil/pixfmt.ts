@@ -1068,7 +1068,16 @@ export const enum AVPixelFormat {
   /**
    * number of pixel formats, DO NOT USE THIS if you want to link with shared libav* because the number of formats might differ between versions
    */
-  AV_PIX_FMT_NB
+  AV_PIX_FMT_NB,
+
+  /**
+   * planar YUVA 4:2:0,48bpp, (1 Cr & Cb sample per 2x1 Y samples), 12b alpha, little-endian
+   */
+  AV_PIX_FMT_YUVA420P12LE,
+  /**
+   * planar YUVA 4:2:0,48bpp, (1 Cr & Cb sample per 2x1 Y samples), 12b alpha, big-endian
+   */
+  AV_PIX_FMT_YUVA420P12BE
 }
 
 /**

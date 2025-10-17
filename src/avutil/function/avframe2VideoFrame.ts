@@ -25,93 +25,32 @@
 
 import type AVFrame from '../struct/avframe'
 import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
-import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
+import { AVColorRange, type AVPixelFormat } from '../pixfmt'
 import { avRescaleQ2 } from '../util/rational'
 import { AV_TIME_BASE_Q } from '../constant'
 import { getHeap } from 'cheap/heap'
 import * as object from 'common/util/object'
+import { pixelFormatMap, colorPrimariesMap, colorSpaceMap, colorTrcMap } from './constant/webcodecs'
+
+const pixelFormatMapReverse = object.reverse(pixelFormatMap)
+const colorPrimariesMapReverse = object.reverse(colorPrimariesMap)
+const colorSpaceMapReverse = object.reverse(colorSpaceMap)
+const colorTrcMapReverse = object.reverse(colorTrcMap)
 
 export function avPixelFormat2Format(pixfmt: AVPixelFormat) {
-  switch (pixfmt) {
-    case AVPixelFormat.AV_PIX_FMT_YUV420P:
-      return 'I420'
-    case AVPixelFormat.AV_PIX_FMT_YUVA420P:
-      return 'I420A'
-    case AVPixelFormat.AV_PIX_FMT_YUV422P:
-      return 'I422'
-    case AVPixelFormat.AV_PIX_FMT_YUV444P:
-      return 'I444'
-    case AVPixelFormat.AV_PIX_FMT_BGRA:
-      return 'BGRA'
-    case AVPixelFormat.AV_PIX_FMT_RGBA:
-      return 'RGBA'
-    case AVPixelFormat.AV_PIX_FMT_NV12:
-      return 'NV12'
-    default:
-      return null
-  }
+  return pixelFormatMapReverse[pixfmt] ?? null
 }
 
 export function getVideoColorSpaceInit(avframe: pointer<AVFrame>) {
   const init: VideoColorSpaceInit = {
     fullRange: false,
-    matrix: null,
-    primaries: null,
-    transfer: null
+    matrix: colorSpaceMapReverse[avframe.colorSpace] ?? null,
+    primaries: colorPrimariesMapReverse[avframe.colorPrimaries] ?? null,
+    transfer: colorTrcMapReverse[avframe.colorTrc] ?? null
   }
-
-  switch (avframe.colorSpace) {
-    case AVColorSpace.AVCOL_SPC_BT709:
-      init.matrix = 'bt709'
-      break
-    case AVColorSpace.AVCOL_SPC_SMPTE170M:
-      init.matrix = 'smpte170m'
-      break
-    case AVColorSpace.AVCOL_SPC_BT470BG:
-      init.matrix = 'bt470bg'
-      break
-    case AVColorSpace.AVCOL_SPC_RGB:
-      init.matrix = 'rgb'
-      break
-    default:
-      init.matrix = 'bt709'
-      break
-  }
-
-  switch (avframe.colorPrimaries) {
-    case AVColorPrimaries.AVCOL_PRI_BT709:
-      init.primaries = 'bt709'
-      break
-    case AVColorPrimaries.AVCOL_PRI_BT470BG:
-      init.primaries = 'bt470bg'
-      break
-    case AVColorPrimaries.AVCOL_PRI_SMPTE170M:
-      init.primaries = 'smpte170m'
-      break
-    default:
-      init.primaries = 'bt709'
-      break
-  }
-
-  switch (avframe.colorTrc) {
-    case AVColorTransferCharacteristic.AVCOL_TRC_BT709:
-      init.transfer = 'bt709'
-      break
-    case AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_1:
-      init.transfer = 'iec61966-2-1'
-      break
-    case AVColorTransferCharacteristic.AVCOL_TRC_SMPTE170M:
-      init.transfer = 'smpte170m'
-      break
-    default:
-      init.transfer = 'bt709'
-      break
-  }
-
   if (avframe.colorRange === AVColorRange.AVCOL_RANGE_JPEG) {
     init.fullRange = true
   }
-
   return init
 }
 
@@ -125,7 +64,7 @@ export function avframe2VideoFrame(avframe: pointer<AVFrame>, pts?: int64, video
 
   for (let i = 0; i < des.comp.length; i++) {
     layout.push({
-      offset: reinterpret_cast<double>(avframe.data[i]),
+      offset: static_cast<double>(reinterpret_cast<size>(avframe.data[i])),
       stride: avframe.linesize[i]
     })
   }

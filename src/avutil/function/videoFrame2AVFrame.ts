@@ -28,71 +28,22 @@ import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteri
 import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
 import { getHeap } from 'cheap/heap'
 import { AV_TIME_BASE } from '../constant'
+import { pixelFormatMap, colorPrimariesMap, colorSpaceMap, colorTrcMap } from './constant/webcodecs'
 
 export function mapFormat(format: VideoPixelFormat) {
-  switch (format) {
-    case 'BGRA':
-      return AVPixelFormat.AV_PIX_FMT_BGRA
-    case 'BGRX':
-      return AVPixelFormat.AV_PIX_FMT_BGR0
-    case 'I420':
-      return AVPixelFormat.AV_PIX_FMT_YUV420P
-    case 'I420A':
-      return AVPixelFormat.AV_PIX_FMT_YUVA420P
-    case 'I422':
-      return AVPixelFormat.AV_PIX_FMT_YUV422P
-    case 'I444':
-      return AVPixelFormat.AV_PIX_FMT_YUV444P
-    case 'NV12':
-      return AVPixelFormat.AV_PIX_FMT_NV12
-    case 'RGBA':
-      return AVPixelFormat.AV_PIX_FMT_RGBA
-    case 'RGBX':
-      return AVPixelFormat.AV_PIX_FMT_RGB0
-    default:
-      return AVPixelFormat.AV_PIX_FMT_NONE
-  }
+  return pixelFormatMap[format] ?? AVPixelFormat.AV_PIX_FMT_NONE
 }
 
-export function mapColorSpace(colorSpace: string) {
-  switch (colorSpace) {
-    case 'bt709' :
-      return AVColorSpace.AVCOL_SPC_BT709
-    case 'smpte170m':
-      return AVColorSpace.AVCOL_SPC_SMPTE170M
-    case 'bt470bg':
-      return AVColorSpace.AVCOL_SPC_BT470BG
-    case 'rgb':
-      return AVColorSpace.AVCOL_SPC_RGB
-    default:
-      return AVColorSpace.AVCOL_SPC_BT709
-  }
+export function mapColorSpace(colorSpace: VideoMatrixCoefficients) {
+  return colorSpaceMap[colorSpace] ?? AVColorSpace.AVCOL_SPC_BT709
 }
 
-export function mapColorPrimaries(colorPrimaries: string) {
-  switch (colorPrimaries) {
-    case 'bt709':
-      return AVColorPrimaries.AVCOL_PRI_BT709
-    case 'bt470bg':
-      return AVColorPrimaries.AVCOL_PRI_BT470BG
-    case 'smpte170m':
-      return AVColorPrimaries.AVCOL_PRI_SMPTE170M
-    default:
-      return AVColorPrimaries.AVCOL_PRI_BT709
-  }
+export function mapColorPrimaries(colorPrimaries: VideoColorPrimaries) {
+  return colorPrimariesMap[colorPrimaries] ?? AVColorPrimaries.AVCOL_PRI_BT709
 }
 
-export function mapColorTrc(colorTrc: string) {
-  switch (colorTrc) {
-    case 'bt709':
-      return AVColorTransferCharacteristic.AVCOL_TRC_BT709
-    case 'iec61966-2-1':
-      return AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_1
-    case 'smpte170m':
-      return AVColorTransferCharacteristic.AVCOL_TRC_SMPTE170M
-    default:
-      return AVColorTransferCharacteristic.AVCOL_TRC_BT709
-  }
+export function mapColorTrc(colorTrc: VideoTransferCharacteristics) {
+  return colorTrcMap[colorTrc] ?? AVColorTransferCharacteristic.AVCOL_TRC_BT709
 }
 
 export async function videoFrame2AVFrame(videoFrame: VideoFrame, avframe: pointer<AVFrame> = nullptr) {
@@ -131,7 +82,7 @@ export async function videoFrame2AVFrame(videoFrame: VideoFrame, avframe: pointe
   for (let i = 0; i < des.comp.length; i++) {
     if (des.comp[i].plane >= i) {
       layout.push({
-        offset: reinterpret_cast<double>(avframe.data[i]),
+        offset: static_cast<double>(reinterpret_cast<size>(avframe.data[i])),
         stride: avframe.linesize[i]
       })
     }

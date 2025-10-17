@@ -311,7 +311,7 @@ function compile(fileNames, options, writeCallback, cjs = false, defined = {}) {
         ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
       );
     }
-  });
+  })
 }
 
 function parseCommandLine(configPath) {
