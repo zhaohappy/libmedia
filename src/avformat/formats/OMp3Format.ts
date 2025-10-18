@@ -476,7 +476,7 @@ export default class OMp3Format extends OFormat {
     return 0
   }
 
-  getCapabilities() {
+  public getCapabilities() {
     return OMp3Format.Capabilities
   }
 

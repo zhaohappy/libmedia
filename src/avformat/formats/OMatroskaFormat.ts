@@ -820,7 +820,7 @@ export default class OMatroskaFormat extends OFormat {
     return 0
   }
 
-  getCapabilities(format: AVFormat.MATROSKA | AVFormat.WEBM) {
+  public getCapabilities(format: AVFormat.MATROSKA | AVFormat.WEBM) {
     return format === AVFormat.WEBM ? OMatroskaFormat.CapabilitiesWebm : OMatroskaFormat.CapabilitiesMKV
   }
 

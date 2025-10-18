@@ -838,7 +838,7 @@ export default class OFlvFormat extends OFormat {
     return 0
   }
 
-  getCapabilities() {
+  public getCapabilities() {
     return OFlvFormat.Capabilities
   }
 

@@ -513,7 +513,7 @@ export default class OMpegtsFormat extends OFormat {
     return 0
   }
 
-  getCapabilities() {
+  public getCapabilities() {
     return OMpegtsFormat.Capabilities
   }
 

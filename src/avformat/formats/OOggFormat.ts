@@ -382,7 +382,7 @@ export default class OOggFormat extends OFormat {
     return 0
   }
 
-  getCapabilities() {
+  public getCapabilities() {
     return OOggFormat.Capabilities
   }
 

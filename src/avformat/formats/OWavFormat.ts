@@ -261,7 +261,7 @@ export default class OWavFormat extends OFormat {
     return 0
   }
 
-  getCapabilities() {
+  public getCapabilities() {
     return OWavFormat.Capabilities
   }
 

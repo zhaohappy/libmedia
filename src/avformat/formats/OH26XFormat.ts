@@ -147,7 +147,7 @@ export default class OH26XFormat extends OFormat {
     return 0
   }
 
-  getCapabilities() {
+  public getCapabilities() {
     return OH26XFormat.Capabilities
   }
 

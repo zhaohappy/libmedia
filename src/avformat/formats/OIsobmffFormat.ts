@@ -1138,7 +1138,7 @@ export default class OIsobmffFormat extends OFormat {
     return 0
   }
 
-  getCapabilities() {
+  public getCapabilities() {
     return OIsobmffFormat.Capabilities
   }
 
