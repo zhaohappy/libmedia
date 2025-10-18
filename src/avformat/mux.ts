@@ -27,7 +27,6 @@ import type AVPacket from 'avutil/struct/avpacket'
 import type { AVOFormatContext } from './AVFormatContext'
 import * as object from 'common/util/object'
 import * as logger from 'common/util/logger'
-import { OFormatSupportedCodecs } from './formats/OFormat'
 import * as array from 'common/util/array'
 import { AVFormat } from 'avutil/avformat'
 import { AVCodecID, AVMediaType } from 'avutil/codec'
@@ -69,7 +68,7 @@ export function open(formatContext: AVOFormatContext, options: MuxOptions = {}) 
     dtsPtsDelta: new Map()
   }
 
-  let supportCodecs = OFormatSupportedCodecs[formatContext.oformat.type]
+  let supportCodecs = formatContext.oformat.getCapabilities(formatContext.format)
   if (supportCodecs) {
     for (let i = 0; i < formatContext.streams.length; i++) {
       if (formatContext.streams[i].disposition & AVDisposition.ATTACHED_PIC) {

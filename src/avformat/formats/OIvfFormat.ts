@@ -180,4 +180,13 @@ export default class OIVFFormat extends OFormat {
     return 0
   }
 
+  getCapabilities() {
+    return OIVFFormat.Capabilities
+  }
+
+  static Capabilities: AVCodecID[] = [
+    AVCodecID.AV_CODEC_ID_VP8,
+    AVCodecID.AV_CODEC_ID_VP9,
+    AVCodecID.AV_CODEC_ID_AV1
+  ]
 }

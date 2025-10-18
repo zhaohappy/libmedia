@@ -838,4 +838,29 @@ export default class OFlvFormat extends OFormat {
     return 0
   }
 
+  getCapabilities() {
+    return OFlvFormat.Capabilities
+  }
+
+  static Capabilities: AVCodecID[] = [
+    AVCodecID.AV_CODEC_ID_MP3,
+    AVCodecID.AV_CODEC_ID_AAC,
+    AVCodecID.AV_CODEC_ID_SPEEX,
+    AVCodecID.AV_CODEC_ID_ADPCM_SWF,
+    AVCodecID.AV_CODEC_ID_NELLYMOSER,
+    AVCodecID.AV_CODEC_ID_PCM_ALAW,
+    AVCodecID.AV_CODEC_ID_PCM_MULAW,
+    AVCodecID.AV_CODEC_ID_AC3,
+    AVCodecID.AV_CODEC_ID_EAC3,
+    AVCodecID.AV_CODEC_ID_OPUS,
+    AVCodecID.AV_CODEC_ID_FLAC,
+
+    AVCodecID.AV_CODEC_ID_MPEG4,
+    AVCodecID.AV_CODEC_ID_H264,
+    AVCodecID.AV_CODEC_ID_HEVC,
+    AVCodecID.AV_CODEC_ID_AV1,
+    AVCodecID.AV_CODEC_ID_VP9,
+    AVCodecID.AV_CODEC_ID_VP8,
+    AVCodecID.AV_CODEC_ID_VVC
+  ]
 }

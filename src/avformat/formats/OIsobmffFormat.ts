@@ -1137,4 +1137,29 @@ export default class OIsobmffFormat extends OFormat {
     formatContext.ioWriter.flush()
     return 0
   }
+
+  getCapabilities() {
+    return OIsobmffFormat.Capabilities
+  }
+
+  static Capabilities: AVCodecID[] = [
+    AVCodecID.AV_CODEC_ID_VORBIS,
+    AVCodecID.AV_CODEC_ID_OPUS,
+    AVCodecID.AV_CODEC_ID_AAC,
+    AVCodecID.AV_CODEC_ID_MP3,
+    AVCodecID.AV_CODEC_ID_FLAC,
+    AVCodecID.AV_CODEC_ID_SPEEX,
+    AVCodecID.AV_CODEC_ID_AC3,
+    AVCodecID.AV_CODEC_ID_EAC3,
+
+    AVCodecID.AV_CODEC_ID_VP9,
+    AVCodecID.AV_CODEC_ID_AV1,
+    AVCodecID.AV_CODEC_ID_H264,
+    AVCodecID.AV_CODEC_ID_HEVC,
+    AVCodecID.AV_CODEC_ID_VVC,
+    AVCodecID.AV_CODEC_ID_MPEG4,
+
+    AVCodecID.AV_CODEC_ID_WEBVTT,
+    AVCodecID.AV_CODEC_ID_MOV_TEXT
+  ]
 }

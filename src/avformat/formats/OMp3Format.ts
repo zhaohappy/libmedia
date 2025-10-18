@@ -476,4 +476,11 @@ export default class OMp3Format extends OFormat {
     return 0
   }
 
+  getCapabilities() {
+    return OMp3Format.Capabilities
+  }
+
+  static Capabilities: AVCodecID[] = [
+    AVCodecID.AV_CODEC_ID_MP3
+  ]
 }

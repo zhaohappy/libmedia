@@ -382,4 +382,14 @@ export default class OOggFormat extends OFormat {
     return 0
   }
 
+  getCapabilities() {
+    return OOggFormat.Capabilities
+  }
+
+  static Capabilities: AVCodecID[] = [
+    AVCodecID.AV_CODEC_ID_VORBIS,
+    AVCodecID.AV_CODEC_ID_OPUS,
+    AVCodecID.AV_CODEC_ID_FLAC,
+    AVCodecID.AV_CODEC_ID_SPEEX
+  ]
 }

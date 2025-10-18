@@ -820,4 +820,48 @@ export default class OMatroskaFormat extends OFormat {
     return 0
   }
 
+  getCapabilities(format: AVFormat.MATROSKA | AVFormat.WEBM) {
+    return format === AVFormat.WEBM ? OMatroskaFormat.CapabilitiesWebm : OMatroskaFormat.CapabilitiesMKV
+  }
+
+  static CapabilitiesMKV: AVCodecID[] = [
+    AVCodecID.AV_CODEC_ID_VORBIS,
+    AVCodecID.AV_CODEC_ID_OPUS,
+    AVCodecID.AV_CODEC_ID_AAC,
+    AVCodecID.AV_CODEC_ID_MP3,
+    AVCodecID.AV_CODEC_ID_FLAC,
+    AVCodecID.AV_CODEC_ID_ALAC,
+    AVCodecID.AV_CODEC_ID_DTS,
+    AVCodecID.AV_CODEC_ID_EAC3,
+    AVCodecID.AV_CODEC_ID_AC3,
+    AVCodecID.AV_CODEC_ID_PCM_F32LE,
+    AVCodecID.AV_CODEC_ID_PCM_S16BE,
+    AVCodecID.AV_CODEC_ID_PCM_S16LE,
+
+    AVCodecID.AV_CODEC_ID_VP8,
+    AVCodecID.AV_CODEC_ID_VP9,
+    AVCodecID.AV_CODEC_ID_AV1,
+    AVCodecID.AV_CODEC_ID_H264,
+    AVCodecID.AV_CODEC_ID_HEVC,
+    AVCodecID.AV_CODEC_ID_VVC,
+    AVCodecID.AV_CODEC_ID_MPEG4,
+    AVCodecID.AV_CODEC_ID_THEORA,
+
+    AVCodecID.AV_CODEC_ID_WEBVTT,
+    AVCodecID.AV_CODEC_ID_SSA,
+    AVCodecID.AV_CODEC_ID_ASS,
+    AVCodecID.AV_CODEC_ID_TEXT,
+    AVCodecID.AV_CODEC_ID_SUBRIP
+  ]
+
+  static CapabilitiesWebm: AVCodecID[] = [
+    AVCodecID.AV_CODEC_ID_VORBIS,
+    AVCodecID.AV_CODEC_ID_OPUS,
+
+    AVCodecID.AV_CODEC_ID_VP8,
+    AVCodecID.AV_CODEC_ID_VP9,
+    AVCodecID.AV_CODEC_ID_AV1,
+
+    AVCodecID.AV_CODEC_ID_WEBVTT
+  ]
 }

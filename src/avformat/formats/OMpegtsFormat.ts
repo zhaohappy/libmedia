@@ -513,4 +513,23 @@ export default class OMpegtsFormat extends OFormat {
     return 0
   }
 
+  getCapabilities() {
+    return OMpegtsFormat.Capabilities
+  }
+
+  static Capabilities: AVCodecID[] = [
+    AVCodecID.AV_CODEC_ID_OPUS,
+    AVCodecID.AV_CODEC_ID_AAC,
+    AVCodecID.AV_CODEC_ID_MP3,
+    AVCodecID.AV_CODEC_ID_AC3,,
+    AVCodecID.AV_CODEC_ID_DTS,
+    AVCodecID.AV_CODEC_ID_AAC_LATM,
+    AVCodecID.AV_CODEC_ID_EAC3,
+
+    AVCodecID.AV_CODEC_ID_MPEG4,
+    AVCodecID.AV_CODEC_ID_AV1,
+    AVCodecID.AV_CODEC_ID_H264,
+    AVCodecID.AV_CODEC_ID_HEVC,
+    AVCodecID.AV_CODEC_ID_VVC
+  ]
 }

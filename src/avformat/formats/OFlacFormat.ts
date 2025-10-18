@@ -273,4 +273,9 @@ export default class OFlacFormat extends OFormat {
     return 0
   }
 
+  getCapabilities() {
+    return OFlacFormat.Capabilities
+  }
+
+  static Capabilities: AVCodecID[] = [AVCodecID.AV_CODEC_ID_FLAC]
 }
