@@ -218,6 +218,17 @@ export default class MuxPipeline extends Pipeline {
             return errorType.FORMAT_NOT_SUPPORT
           }
           break
+        case AVFormat.H264:
+        case AVFormat.HEVC:
+        case AVFormat.VVC:
+          if (defined(ENABLE_MUXER_H26X)) {
+            oformat = new (((await import('avformat/formats/OH26XFormat')).default))()
+          }
+          else {
+            logger.error('h26x format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
         default:
           logger.error('format not support')
           return errorType.FORMAT_NOT_SUPPORT

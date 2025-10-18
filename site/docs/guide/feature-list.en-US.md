@@ -41,9 +41,9 @@ libmedia can complete the following functions:
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
-| h264 raw | ✅       | ❌        |
-| hevc raw | ✅       | ❌        |
-| vvc  raw | ✅       | ❌        |
+| h264 raw | ✅       | ✅        |
+| hevc raw | ✅       | ✅        |
+| vvc  raw | ✅       | ✅        |
 | mp3      | ✅       | ✅        |
 | ogg      | ✅       | ✅        |
 | ivf      | ✅       | ✅        |

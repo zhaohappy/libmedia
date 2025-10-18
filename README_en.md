@@ -65,9 +65,9 @@ Check out the [build configuration examples](https://github.com/zhaohappy/libmed
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
-| h264     | ✅       | ❌        |
-| hevc     | ✅       | ❌        |
-| vvc      | ✅       | ❌        |
+| h264     | ✅       | ✅        |
+| hevc     | ✅       | ✅        |
+| vvc      | ✅       | ✅        |
 | mp3      | ✅       | ✅        |
 | ogg      | ✅       | ✅        |
 | ivf      | ✅       | ✅        |

@@ -1695,7 +1695,11 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
         || newStream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
       ) {
-        if (task.oformat === AVFormat.MPEGTS) {
+        if (task.oformat === AVFormat.MPEGTS
+          || task.oformat === AVFormat.H264
+          || task.oformat === AVFormat.HEVC
+          || task.oformat === AVFormat.VVC
+        ) {
           newStream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB
         }
         else {

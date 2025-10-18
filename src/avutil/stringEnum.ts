@@ -239,7 +239,10 @@ export const Format2AVFormat: Record<string, AVFormat> = {
   'raw_vvc': AVFormat.VVC,
   'rtsp': AVFormat.RTSP,
   'rtmp': AVFormat.RTMP,
-  'avi': AVFormat.AVI
+  'avi': AVFormat.AVI,
+  'h264': AVFormat.H264,
+  'h265': AVFormat.HEVC,
+  'h266': AVFormat.VVC
 }
 
 export const colorRange2AVColorRange: Record<string, AVColorRange> = {
