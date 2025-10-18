@@ -706,9 +706,26 @@ export function avcc2Annexb(
     const type = (nalu[1] >>> 3) & 0x1f
     return type !== VVCNaluType.kAUD_NUT
   })
-
+  const others: Uint8ArrayInterface[] = []
+  nalus.forEach((nalu) => {
+    const naluType = (nalu[1] >>> 3) & 0x1f
+    if (naluType === VVCNaluType.kSPS_NUT && !spss.length) {
+      spss.push(nalu)
+    }
+    else if (naluType === VVCNaluType.kPPS_NUT && !ppss.length) {
+      ppss.push(nalu)
+    }
+    else if (naluType !== VVCNaluType.kAUD_NUT) {
+      others.push(nalu)
+    }
+    if (naluType === VVCNaluType.kIDR_N_LP
+      || naluType === VVCNaluType.kIDR_W_RADL
+    ) {
+      key = true
+    }
+  })
   return {
-    ...nalus2Annexb(vpss, spss, ppss, nalus, key),
+    ...nalus2Annexb(vpss, spss, ppss, others, key),
     key
   }
 }

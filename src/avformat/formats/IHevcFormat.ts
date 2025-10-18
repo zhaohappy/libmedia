@@ -209,8 +209,8 @@ export default class IHevcFormat extends IFormat {
           return type === hevc.HEVCNaluType.kSlicePPS
         })
 
-        this.sps = hevc.parseSPS(sps)
-        this.pps = hevc.parsePPS(pps)
+        this.sps = hevc.parseSPS(sps[2] === 1 ? sps.subarray(3) : sps.subarray(4))
+        this.pps = hevc.parsePPS(pps[2] === 1 ? pps.subarray(3) : pps.subarray(4))
 
         const avpacket = createAVPacket()
 
@@ -260,13 +260,13 @@ export default class IHevcFormat extends IFormat {
     nalus.forEach((n) => {
       const header = n[2] === 1 ? n[3] : n[4]
       const type = (header >>> 1) & 0x3f
-      const temporalId = (n[2] === 1 ? n[4] : n[5]) & 0x07
+      const temporalId = ((n[2] === 1 ? n[4] : n[5]) & 0x07) - 1
 
       if (type === hevc.HEVCNaluType.kSliceSPS) {
-        this.sps = hevc.parseSPS(n)
+        this.sps = hevc.parseSPS(n[2] === 1 ? n.subarray(3) : n.subarray(4))
       }
       if (type === hevc.HEVCNaluType.kSlicePPS) {
-        this.pps = hevc.parsePPS(n)
+        this.pps = hevc.parsePPS(n[2] === 1 ? n.subarray(3) : n.subarray(4))
       }
 
       if (type === hevc.HEVCNaluType.kSliceIDR_W_RADL

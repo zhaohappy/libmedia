@@ -215,7 +215,7 @@ export default class IH264Format extends IFormat {
           return type === h264.H264NaluType.kSliceSPS
         })
 
-        this.sps = h264.parseSPS(sps)
+        this.sps = h264.parseSPS(sps[2] === 1 ? sps.subarray(3) : sps.subarray(4))
 
         const avpacket = createAVPacket()
 
@@ -268,7 +268,7 @@ export default class IH264Format extends IFormat {
       const nalRefIdc = (header >>> 5) & 0x03
 
       if (type === h264.H264NaluType.kSliceSPS) {
-        this.sps = h264.parseSPS(n)
+        this.sps = h264.parseSPS(n[2] === 1 ? n.subarray(3) : n.subarray(4))
       }
       if (type === h264.H264NaluType.kSliceIDR) {
         isKey = true

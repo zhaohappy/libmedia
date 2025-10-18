@@ -604,9 +604,27 @@ export function avcc2Annexb(
     const type = (nalu[0] >>> 1) & 0x3f
     return type !== HEVCNaluType.kSliceAUD
   })
+  const others: Uint8ArrayInterface[] = []
+  nalus.forEach((nalu) => {
+    const naluType = (nalu[0] >>> 1) & 0x3f
+    if (naluType === HEVCNaluType.kSliceSPS && !spss.length) {
+      spss.push(nalu)
+    }
+    else if (naluType === HEVCNaluType.kSlicePPS && !ppss.length) {
+      ppss.push(nalu)
+    }
+    else if (naluType !== HEVCNaluType.kSliceAUD) {
+      others.push(nalu)
+    }
+    if (naluType === HEVCNaluType.kSliceIDR_W_RADL
+      || naluType === HEVCNaluType.kSliceIDR_N_LP
+    ) {
+      key = true
+    }
+  })
 
   return {
-    ...nalus2Annexb(vpss, spss, ppss, nalus),
+    ...nalus2Annexb(vpss, spss, ppss, others),
     key
   }
 }

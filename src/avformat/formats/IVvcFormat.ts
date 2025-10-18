@@ -207,7 +207,7 @@ export default class IHevcFormat extends IFormat {
           const type = (n[(n[2] === 1 ? 4 : 5)] >>> 3) & 0x1f
           return type === vvc.VVCNaluType.kSPS_NUT
         })
-        this.sps = vvc.parseSPS(sps)
+        this.sps = vvc.parseSPS(sps[2] === 1 ? sps.subarray(3) : sps.subarray(4))
 
         const avpacket = createAVPacket()
 
@@ -348,7 +348,7 @@ export default class IHevcFormat extends IFormat {
       const temporalId = (header & 0x07) - 1
 
       if (type === vvc.VVCNaluType.kSPS_NUT) {
-        this.sps = vvc.parseSPS(n)
+        this.sps = vvc.parseSPS(n[2] === 1 ? n.subarray(3) : n.subarray(4))
       }
 
       if (type === vvc.VVCNaluType.kIDR_N_LP

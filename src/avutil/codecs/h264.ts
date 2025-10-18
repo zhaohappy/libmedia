@@ -560,6 +560,12 @@ export function avcc2Annexb(
     if (naluType === H264NaluType.kSliceSEI) {
       seis.push(nalu)
     }
+    else if (naluType === H264NaluType.kSliceSPS && !spss.length) {
+      spss.push(nalu)
+    }
+    else if (naluType === H264NaluType.kSlicePPS && !ppss.length) {
+      ppss.push(nalu)
+    }
     else if (naluType !== H264NaluType.kSliceAUD) {
       others.push(nalu)
     }
