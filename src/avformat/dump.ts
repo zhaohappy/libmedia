@@ -360,7 +360,7 @@ export function dumpAVFormatContextInterface(formatContext: AVFormatContextInter
     bitrate += stream.codecpar.bitrate
   })
 
-  dump += `  Duration: ${dumpTime(duration)}, start: ${dumpTime(start)}, bitrate: ${dumpBitrate(bitrate)}\n`
+  dump += `  Duration: ${duration ? dumpTime(duration) : 'N/A'}, start: ${dumpTime(start)}, bitrate: ${dumpBitrate(bitrate)}\n`
 
   if (formatContext.chapters?.length) {
     dump += '  Chapters:\n'
