@@ -27,22 +27,24 @@ import type AVStream from 'avutil/AVStream'
 import type { AVIFormatContext } from '../AVFormatContext'
 import type AVPacket from 'avutil/struct/avpacket'
 import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
+import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import * as logger from 'common/util/logger'
 import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
 import { AVFormat, AVSeekFlags, IOFlags } from 'avutil/avformat'
 import { memcpyFromUint8Array } from 'cheap/std/memory'
 import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData } from 'avutil/util/avpacket'
+import { addAVPacketData, addAVPacketSideData } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import { avRescaleQ } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import * as array from 'common/util/array'
-import { avCodecParameters2Extradata, parseLATMHeader, parseADTSHeader } from 'avutil/codecs/aac'
+import { avCodecParameters2Extradata, parseLATMHeader, parseADTSHeader, MPEG4SamplingFrequencies, MPEG4Channels } from 'avutil/codecs/aac'
 import * as is from 'common/util/is'
 import LATM2RawFilter from '../bsf/aac/LATM2RawFilter'
 import * as id3v2 from './mp3/id3v2'
+import BitReader from 'common/io/BitReader'
+import concatTypeArray from 'common/function/concatTypeArray'
 
 const enum FrameType {
   ADIF,
@@ -63,6 +65,15 @@ export default class IAacFormat extends IFormat {
   private latmFilter: LATM2RawFilter
 
   private encodeSampleRate: int32
+  private currentPos: int64
+  private pendingData: Uint8Array
+  private firstFramePos: int64
+  private pendingPos: int64
+  private streamMuxConfig: {
+    profile: number
+    sampleRate: number
+    channels: number
+  }
 
   constructor() {
     super()
@@ -70,6 +81,13 @@ export default class IAacFormat extends IFormat {
 
   public init(formatContext: AVIFormatContext): void {
     this.currentPts = 0n
+    this.currentPos = 0n
+    this.firstFramePos = 0n
+    this.streamMuxConfig = {
+      profile: NOPTS_VALUE,
+      sampleRate: NOPTS_VALUE,
+      channels: NOPTS_VALUE
+    }
   }
 
   public async destroy(formatContext: AVIFormatContext) {
@@ -146,8 +164,100 @@ export default class IAacFormat extends IFormat {
       this.frameType = FrameType.ADIF
 
       stream.duration = this.fileSize
+
+      const bitReader = new BitReader()
+      bitReader.appendBuffer(await formatContext.ioReader.readBuffer(Math.min(20, static_cast<double>(this.fileSize))))
+      bitReader.skip(32)
+      // copyright_id_present
+      if (bitReader.readU1()) {
+        bitReader.skip(72)
+      }
+      // original_copy
+      bitReader.skip(1)
+      // home
+      bitReader.skip(1)
+      // bitstream_type
+      bitReader.skip(1)
+      const bitrate = bitReader.readU(23)
       stream.timeBase.den = PACKET_SIZE * 16
       stream.timeBase.num = 1
+      if (bitrate) {
+        stream.timeBase.den = bitrate
+      }
+      const numProgramConfigElements = bitReader.readU(4)
+      if (formatContext.ioReader.getPos() < this.fileSize) {
+        bitReader.appendBuffer(await formatContext.ioReader.readBuffer(Math.min(
+          numProgramConfigElements * 312,
+          static_cast<double>(this.fileSize - formatContext.ioReader.getPos())
+        )))
+      }
+
+      for (let i = 0; i < numProgramConfigElements; i++) {
+        bitReader.readU(4)
+        const profile = bitReader.readU(2)
+        const samplingFreqIndex = bitReader.readU(4)
+        const numFront = bitReader.readU(4)
+        const numSide = bitReader.readU(4)
+        const numBack = bitReader.readU(4)
+        const numLfe = bitReader.readU(2)
+        const numAssoc = bitReader.readU(3)
+        const numValid = bitReader.readU(4)
+
+        // mono_mixdown_tag
+        if (bitReader.readU1()) {
+          bitReader.skip(4)
+        }
+        // stereo_mixdown_tag
+        if (bitReader.readU1()) {
+          bitReader.skip(4)
+        }
+        // mixdown_coeff_index and pseudo_surround
+        if (bitReader.readU1()) {
+          bitReader.skip(3)
+        }
+        let channels = numLfe
+        for (i = 0; i < numFront; i++) {
+          channels += bitReader.readU1() ? 2 : 1
+          bitReader.skip(4)
+        }
+        for (i = 0; i < numSide; i++) {
+          channels += bitReader.readU1() ? 2 : 1
+          bitReader.skip(4)
+        }
+        for (i = 0; i < numBack; i++) {
+          channels += bitReader.readU1() ? 2 : 1
+          bitReader.skip(4)
+        }
+        for (i = 0; i < numLfe; i++) {
+          bitReader.skip(4)
+        }
+        for (i = 0; i < numAssoc; i++) {
+          bitReader.skip(4)
+        }
+        for (i = 0; i < numValid; i++) {
+          bitReader.skip(5)
+        }
+        bitReader.skipPadding()
+        const commentField = bitReader.readU(8)
+        if (commentField) {
+          bitReader.skip(commentField * 8)
+        }
+        if (!i) {
+          stream.codecpar.profile = profile
+          stream.codecpar.chLayout.nbChannels = channels
+          stream.codecpar.sampleRate = MPEG4SamplingFrequencies[samplingFreqIndex]
+          const extradata = avCodecParameters2Extradata(stream.codecpar)
+          stream.codecpar.extradata = avMalloc(extradata.length)
+          memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
+          stream.codecpar.extradataSize = extradata.length
+        }
+      }
+      bitReader.skipPadding()
+      this.firstFramePos = bitReader.getPos()
+      if (bitReader.remainingLength()) {
+        this.pendingData = bitReader.getBuffer().slice(bitReader.getPointer())
+        this.pendingPos = this.firstFramePos
+      }
     }
     // ADTS
     else if (signature[0] === 0xff && (signature[1] & 0xf0) === 0xf0) {
@@ -171,6 +281,9 @@ export default class IAacFormat extends IFormat {
       stream.codecpar.extradataSize = extradata.length
       stream.timeBase.den = stream.codecpar.sampleRate
       stream.timeBase.num = 1
+      this.streamMuxConfig.profile = info.profile
+      this.streamMuxConfig.sampleRate = info.sampleRate
+      this.streamMuxConfig.channels = info.channels
 
       if (!(formatContext.ioReader.flags & IOFlags.SLICE)) {
         stream.duration = avRescaleQ(
@@ -213,8 +326,8 @@ export default class IAacFormat extends IFormat {
       memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
       stream.codecpar.extradataSize = extradata.length
 
-      stream.duration = this.fileSize
-      stream.timeBase.den = PACKET_SIZE * 16
+      stream.duration = NOPTS_VALUE_BIGINT
+      stream.timeBase.den = info.sampleRate
       stream.timeBase.num = 1
 
       this.latmFilter = new LATM2RawFilter()
@@ -251,11 +364,36 @@ export default class IAacFormat extends IFormat {
         }
       }
 
-      const now = formatContext.ioReader.getPos()
+      let now = formatContext.ioReader.getPos()
       let nextFrame: Uint8Array
 
       if (this.frameType === FrameType.ADIF) {
-        nextFrame = await formatContext.ioReader.readBuffer(Math.min(PACKET_SIZE, static_cast<int32>(this.fileSize - now)))
+        let len = PACKET_SIZE
+        if (this.pendingData) {
+          now = this.pendingPos
+          nextFrame = this.pendingData.subarray(0, len)
+          len -= nextFrame.length
+          if (nextFrame.length < this.pendingData.length) {
+            this.pendingData = this.pendingData.subarray(nextFrame.length)
+            this.pendingPos += static_cast<int64>(nextFrame.length as uint32)
+          }
+          else {
+            this.pendingData = null
+          }
+        }
+        if (len) {
+          const remainLen = Math.min(len, static_cast<int32>(this.fileSize - now))
+          const remain = remainLen ? await formatContext.ioReader.readBuffer(remainLen) : undefined
+          if (nextFrame && remain) {
+            nextFrame = concatTypeArray(Uint8Array, [nextFrame, remain])
+          }
+          else if (remain) {
+            nextFrame = remain
+          }
+        }
+        if (!nextFrame) {
+          return IOError.END
+        }
         const data: pointer<uint8> = avMalloc(nextFrame.length)
         memcpyFromUint8Array(data, nextFrame.length, nextFrame)
         addAVPacketData(avpacket, data, nextFrame.length)
@@ -266,6 +404,33 @@ export default class IAacFormat extends IFormat {
         const header = await formatContext.ioReader.readBuffer(7)
 
         const protectionAbsent = header[1] & 0x01
+
+        const profile = ((header[2] & 0xC0) >>> 6) + 1
+        const samplingFrequencyIndex = (header[2] & 0x3C) >>> 2
+        const channelConfiguration = ((header[2] & 0x01) << 2) | ((header[3] & 0xC0) >>> 6)
+
+        const sampleRate = MPEG4SamplingFrequencies[samplingFrequencyIndex]
+        const channels = MPEG4Channels[channelConfiguration]
+
+        if (this.streamMuxConfig.profile !== profile
+          || this.streamMuxConfig.sampleRate !== sampleRate
+          || this.streamMuxConfig.channels !== channels
+        ) {
+          this.streamMuxConfig.profile = profile
+          this.streamMuxConfig.sampleRate = sampleRate
+          this.streamMuxConfig.channels = channels
+
+          const extradata = avCodecParameters2Extradata({
+            profile,
+            sampleRate,
+            chLayout: {
+              nbChannels: channels
+            }
+          })
+          const data = avMalloc(extradata.length)
+          memcpyFromUint8Array(data, extradata.length, extradata)
+          addAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA, data, extradata.length)
+        }
 
         const aacFrameLength = ((header[3] & 0x03) << 11)
           | (header[4] << 3)
@@ -304,6 +469,7 @@ export default class IAacFormat extends IFormat {
             if (formatContext.ioReader.getPos() === this.fileSize) {
               return IOError.END
             }
+            avpacket.pos = formatContext.ioReader.getPos()
             nextFrame = await formatContext.ioReader.readBuffer(Math.min(PACKET_SIZE, static_cast<int32>(this.fileSize - now)))
             const data: pointer<uint8> = avMalloc(nextFrame.length)
             memcpyFromUint8Array(data, nextFrame.length, nextFrame)
@@ -315,8 +481,9 @@ export default class IAacFormat extends IFormat {
             return ret
           }
           else {
-            avpacket.duration = static_cast<int64>(avpacket.size)
-            avpacket.pos = this.currentPts
+            avpacket.duration = 1024n
+            avpacket.pos = this.currentPos
+            this.currentPos += static_cast<int64>(avpacket.size)
             break
           }
         }
@@ -405,7 +572,9 @@ export default class IAacFormat extends IFormat {
       return 0n
     }
 
-    if (this.frameType === FrameType.ADTS) {
+    if (this.frameType === FrameType.ADTS
+      || this.frameType === FrameType.LATM
+    ) {
       const now = formatContext.ioReader.getPos()
       if (flags & AVSeekFlags.BYTE) {
 
@@ -448,6 +617,10 @@ export default class IAacFormat extends IFormat {
           }
         }
 
+        if (this.frameType === FrameType.LATM) {
+          return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)
+        }
+
         logger.debug('not found any keyframe index, try to seek in bytes')
 
         if (stream.duration) {
@@ -482,7 +655,7 @@ export default class IAacFormat extends IFormat {
         }
       }
     }
-    else if (this.frameType === FrameType.ADIF || this.frameType === FrameType.LATM) {
+    else if (this.frameType === FrameType.ADIF) {
 
       if (this.latmFilter) {
         this.latmFilter.reset()
@@ -490,8 +663,8 @@ export default class IAacFormat extends IFormat {
 
       const now = formatContext.ioReader.getPos()
 
-      if (timestamp < 0n) {
-        timestamp = 0n
+      if (timestamp <= 0n) {
+        timestamp = this.firstFramePos
       }
       else if (timestamp > this.fileSize) {
         timestamp = this.fileSize
@@ -500,9 +673,6 @@ export default class IAacFormat extends IFormat {
 
       this.currentPts = timestamp
 
-      if (this.frameType === FrameType.LATM && !(flags & AVSeekFlags.ANY)) {
-        await this.syncFrame(formatContext)
-      }
       return now
     }
     return static_cast<int64>(errorType.FORMAT_NOT_SUPPORT)

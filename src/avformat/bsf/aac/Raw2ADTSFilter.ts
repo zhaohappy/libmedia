@@ -27,13 +27,14 @@ import type AVPacket from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
 import type AVCodecParameters from 'avutil/struct/avcodecparameters'
 import type { Rational } from 'avutil/struct/rational'
-import { MPEG4SamplingFrequencyIndex } from 'avutil/codecs/aac'
+import { getAVCodecParameters, MPEG4SamplingFrequencyIndex } from 'avutil/codecs/aac'
 import { mapUint8Array } from 'cheap/std/memory'
 import { addAVPacketData, copyAVPacketProps, createAVPacket,
-  destroyAVPacket, refAVPacket, unrefAVPacket
+  destroyAVPacket, getAVPacketSideData, refAVPacket, unrefAVPacket
 } from 'avutil/util/avpacket'
 import { avMalloc } from 'avutil/util/mem'
 import * as errorType from 'avutil/error'
+import { AVPacketSideDataType } from 'avutil/codec'
 
 export default class Raw2ADTSFilter extends AVBSFilter {
 
@@ -57,6 +58,14 @@ export default class Raw2ADTSFilter extends AVBSFilter {
   public sendAVPacket(avpacket: pointer<AVPacket>): number {
     if (!avpacket.data || !avpacket.size) {
       return 0
+    }
+
+    const element = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
+    if (element) {
+      const { profile, sampleRate, channels } = getAVCodecParameters(mapUint8Array(element.data, element.size))
+      this.inCodecpar.profile = profile
+      this.inCodecpar.sampleRate = sampleRate
+      this.inCodecpar.chLayout.nbChannels = channels
     }
 
     const size = 7 + avpacket.size
