@@ -91,6 +91,8 @@ declare const ENABLE_MUXER_FLAC: boolean
 
 declare const ENABLE_MUXER_H26X: boolean
 
+declare const ENABLE_MUXER_AAC: boolean
+
 declare const ENABLE_MSE: boolean
 
 declare const ENABLE_WORKER_PROXY: boolean

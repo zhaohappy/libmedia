@@ -146,6 +146,8 @@
       "ENABLE_MUXER_FLAC": true,
       // 开启支持 h26x 封装格式
       "ENABLE_MUXER_H26X": true,
+      // 开启支持 aac 封装格式
+      "ENABLE_MUXER_AAC": true,
 
       // 开启支持 mse 模式
       "ENABLE_MSE": true,

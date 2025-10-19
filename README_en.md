@@ -71,7 +71,7 @@ Check out the [build configuration examples](https://github.com/zhaohappy/libmed
 | mp3      | ✅       | ✅        |
 | ogg      | ✅       | ✅        |
 | ivf      | ✅       | ✅        |
-| aac      | ✅       | ❌        |
+| aac      | ✅       | ✅        |
 | flac     | ✅       | ✅        |
 | wav      | ✅       | ✅        |
 | webvtt   | ✅       | ❌        |

@@ -176,7 +176,13 @@ export function parseAVCodecParameters(
   }
 }
 
-export function avCodecParameters2Extradata(codecpar: AVCodecParameters) {
+export function avCodecParameters2Extradata(codecpar: {
+  profile: int32
+  sampleRate: int32
+  chLayout: {
+    nbChannels: int32
+  }
+}) {
   const samplingFreqIndex = MPEG4SamplingFrequencyIndex[codecpar.sampleRate]
   const channelConfig = codecpar.chLayout.nbChannels
   const profile = codecpar.profile === NOPTS_VALUE ? MPEG4AudioObjectTypes.AAC_LC : codecpar.profile

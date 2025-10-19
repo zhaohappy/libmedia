@@ -204,6 +204,15 @@ export default class MuxPipeline extends Pipeline {
             return errorType.FORMAT_NOT_SUPPORT
           }
           break
+        case AVFormat.AAC:
+          if (defined(ENABLE_MUXER_AAC)) {
+            oformat = new ((await import('avformat/formats/OAacFormat')).default)(task.formatOptions)
+          }
+          else {
+            logger.error('aac format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
         case AVFormat.MATROSKA:
         case AVFormat.WEBM:
           if (defined(ENABLE_MUXER_MATROSKA)) {

@@ -47,7 +47,7 @@ libmedia can complete the following functions:
 | mp3      | ✅       | ✅        |
 | ogg      | ✅       | ✅        |
 | ivf      | ✅       | ✅        |
-| aac      | ✅       | ❌        |
+| aac      | ✅       | ✅        |
 | flac     | ✅       | ✅        |
 | wav      | ✅       | ✅        |
 | webvtt   | ✅       | ❌        |
