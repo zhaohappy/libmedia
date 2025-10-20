@@ -144,7 +144,7 @@ The 64 version uses the 64-bit WebAssembly instruction set (wasm64) and includes
 | aac         | ✅         | ✅          | ✅          | ✅            | ✅                 |
 | mp3         | ✅         | ✅          | ✅          | ✅            | ✅                 |
 | opus        | ✅         | ✅          | ✅          | ✅            | ✅                 |
-| flac        | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| flac        | ✅         | ✅          | ✅          | ✅            | ✅                 |
 | speex       | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | vorbis      | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | ac3         | ✅         | ✅          | ✅          | ✅            | ❌                 |

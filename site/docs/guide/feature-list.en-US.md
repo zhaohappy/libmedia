@@ -86,7 +86,7 @@ In the browser environment we cannot be used TCP and UDP, RTMP and RTSP need to 
 | aac         | ✅         | ✅          | ✅          | ✅                 |
 | mp3         | ✅         | ✅          | ✅          | ✅                 |
 | opus        | ✅         | ✅          | ✅          | ✅                 |
-| flac        | ✅         | ✅          | ✅          | ❌                 |
+| flac        | ✅         | ✅          | ✅          | ✅                 |
 | speex       | ✅         | ✅          | ✅          | ❌                 |
 | vorbis      | ✅         | ✅          | ✅          | ❌                 |
 | ac3         | ✅         | ✅          | ✅          | ❌                 |
