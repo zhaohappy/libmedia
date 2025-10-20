@@ -44,5 +44,7 @@ export default abstract class OFormat {
 
   public abstract writeTrailer(formatContext: AVOFormatContext): number
 
-  public abstract getCapabilities(format?: AVFormat): AVCodecID[]
+  public abstract getCapabilities(): AVCodecID[]
+
+  static Capabilities: AVCodecID[] = []
 }

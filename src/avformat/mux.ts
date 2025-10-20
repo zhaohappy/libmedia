@@ -68,7 +68,7 @@ export function open(formatContext: AVOFormatContext, options: MuxOptions = {}) 
     dtsPtsDelta: new Map()
   }
 
-  let supportCodecs = formatContext.oformat.getCapabilities(formatContext.format)
+  let supportCodecs = formatContext.oformat.getCapabilities()
   if (supportCodecs) {
     for (let i = 0; i < formatContext.streams.length; i++) {
       if (formatContext.streams[i].disposition & AVDisposition.ATTACHED_PIC) {

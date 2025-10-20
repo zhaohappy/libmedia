@@ -820,11 +820,11 @@ export default class OMatroskaFormat extends OFormat {
     return 0
   }
 
-  public getCapabilities(format: AVFormat.MATROSKA | AVFormat.WEBM) {
-    return format === AVFormat.WEBM ? OMatroskaFormat.CapabilitiesWebm : OMatroskaFormat.CapabilitiesMKV
+  public getCapabilities() {
+    return this.options.docType === 'webm' ? OMatroskaFormat.CapabilitiesWebm : OMatroskaFormat.Capabilities
   }
 
-  static CapabilitiesMKV: AVCodecID[] = [
+  static Capabilities: AVCodecID[] = [
     AVCodecID.AV_CODEC_ID_VORBIS,
     AVCodecID.AV_CODEC_ID_OPUS,
     AVCodecID.AV_CODEC_ID_AAC,
