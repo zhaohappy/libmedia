@@ -1,3 +1,28 @@
+/*
+ * libmedia dump
+ *
+ * 版权所有 (C) 2024 赵高兴
+ * Copyright (C) 2024 Gaoxing Zhao
+ *
+ * 此文件是 libmedia 的一部分
+ * This file is part of libmedia.
+ * 
+ * libmedia 是自由软件；您可以根据 GNU Lesser General Public License（GNU LGPL）3.1
+ * 或任何其更新的版本条款重新分发或修改它
+ * libmedia is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3.1 of the License, or (at your option) any later version.
+ * 
+ * libmedia 希望能够为您提供帮助，但不提供任何明示或暗示的担保，包括但不限于适销性或特定用途的保证
+ * 您应自行承担使用 libmedia 的风险，并且需要遵守 GNU Lesser General Public License 中的条款和条件。
+ * libmedia is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ */
+
 import type { AVChapter, AVFormatContextInterface, AVIFormatContext, AVOFormatContext } from './AVFormatContext'
 import { AVFormatContext } from './AVFormatContext'
 import type { AVStreamGroup, AVStreamGroupInterface, AVStreamInterface } from 'avutil/AVStream'
@@ -343,24 +368,28 @@ export function dumpAVFormatContextInterface(formatContext: AVFormatContextInter
     })
   }
 
-  let duration = 0n
+  let duration = NOPTS_VALUE_BIGINT
   let bitrate = 0n
-  let start = -1n
+  let start = NOPTS_VALUE_BIGINT
 
   formatContext.streams.forEach((stream) => {
-    const d = avRescaleQ(stream.duration, stream.timeBase, AV_MILLI_TIME_BASE_Q)
-    const s = avRescaleQ(stream.startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+    const d = stream.duration !== NOPTS_VALUE_BIGINT
+      ? avRescaleQ(stream.duration, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+      : NOPTS_VALUE_BIGINT
+    const s = stream.startTime !== NOPTS_VALUE_BIGINT
+      ? avRescaleQ(stream.startTime, stream.timeBase, AV_MILLI_TIME_BASE_Q)
+      : NOPTS_VALUE_BIGINT
 
     if (d > duration) {
       duration = d
     }
-    if (s < start || start === -1n) {
+    if (s < start || start === NOPTS_VALUE_BIGINT) {
       start = s
     }
     bitrate += stream.codecpar.bitrate
   })
 
-  dump += `  Duration: ${duration ? dumpTime(duration) : 'N/A'}, start: ${dumpTime(start)}, bitrate: ${dumpBitrate(bitrate)}\n`
+  dump += `  Duration: ${duration !== NOPTS_VALUE_BIGINT ? dumpTime(duration) : 'N/A'}, start: ${start !== NOPTS_VALUE_BIGINT ? dumpTime(start) : 'N/A'}, bitrate: ${bitrate ? dumpBitrate(bitrate) : 'N/A'}\n`
 
   if (formatContext.chapters?.length) {
     dump += '  Chapters:\n'
