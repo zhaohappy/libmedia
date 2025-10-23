@@ -44,16 +44,14 @@ export default function updatePositionSize(ioWriter: IOWriter, isobmffContext: I
     }
   })
 
-  array.each(seeks, (item) => {
-    ioWriter.seek(item.pos)
-    ioWriter.writeUint32(item.size)
-  })
+  ioWriter.seekInline(pointer)
 
   if (seeks.length) {
+    array.each(seeks, (item) => {
+      ioWriter.seek(item.pos)
+      ioWriter.writeUint32(item.size)
+    })
     ioWriter.seek(pos)
-  }
-  else {
-    ioWriter.seekInline(pointer)
   }
 
   isobmffContext.boxsPositionInfo = []
