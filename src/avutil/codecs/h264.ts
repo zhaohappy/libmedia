@@ -741,7 +741,7 @@ export function parseSPS(sps: Uint8ArrayInterface): H264SPS {
   bitReader.readU1()
   // constraint_set4_flag
   bitReader.readU1()
-  // constraint_set4_flag
+  // constraint_set5_flag
   bitReader.readU1()
   // reserved_zero_2bits
   bitReader.readU(2)
