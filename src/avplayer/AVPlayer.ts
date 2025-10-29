@@ -4419,7 +4419,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     })
 
     if (support.audioWorklet) {
-      if (defined(ENV_WEBPACK)) {
+      if (defined(ENV_WEBPACK) && !defined(ENV_CSP)) {
         await registerProcessor(
           AVPlayer.audioContext,
           defined(ENABLE_THREADS)
@@ -4435,8 +4435,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           && cheapConfig.USE_THREADS
           && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
           && (!os.ios || browser.checkVersion(os.version, '16.1', true))
-          ? new URL('avrender/dist/AudioSourceWorkletProcessor2.js', import.meta.url)
-          : new URL('avrender/dist/AudioSourceWorkletProcessor.js', import.meta.url))
+          ? new URL('avrender/dist/AudioSourceWorkletProcessor2Worklet.js', import.meta.url)
+          : new URL('avrender/dist/AudioSourceWorkletProcessorWorklet.js', import.meta.url))
       }
     }
   }

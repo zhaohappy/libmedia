@@ -115,6 +115,15 @@ module.exports = (env) => {
     library = 'processor';
     libraryTarget = 'var';
   }
+  else if (env.thread_entry) {
+    entry = {
+      'threadEntry': path.resolve(__dirname, './src/cheap/webassembly/runThread.ts'),
+    };
+    outputPath = path.resolve(__dirname, './src/cheap/webassembly');
+    output = '[name].js';
+    library = '__CHeap_ThreadEntry__';
+    libraryTarget = 'var';
+  }
   else {
     return;
   }
@@ -301,6 +310,20 @@ module.exports = (env) => {
   };
 
   if (!env.transformer) {
+
+    const defined = {
+      VERSION: getVersion()
+    }
+
+    if (env.thread_entry) {
+      defined.ENV_NODE = false
+      defined.ENV_CSP = true
+    }
+    if (env.webassembly_runner) {
+      defined.ENV_NODE = false
+      defined.ENV_CSP = false
+    }
+
     config.plugins.push(
       new CheapPlugin({
         name: 'libmedia',
@@ -321,9 +344,7 @@ module.exports = (env) => {
             file: path.resolve(__dirname, 'src/avpipeline/IOPipeline.ts')
           }
         ],
-        defined: {
-          VERSION: getVersion()
-        }
+        defined
       })
     );
   }

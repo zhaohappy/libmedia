@@ -68,6 +68,8 @@
       "DEBUG": false,
       // 开启 trace log
       "ENABLE_LOG_TRACE": false,
+      // 开启 csp 模式编译
+      "ENV_CSP": false,
 
       // 开启多线程
       "ENABLE_THREADS": true,

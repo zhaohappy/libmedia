@@ -18,6 +18,7 @@
     "build-cheap-polyfill": "cross-env NODE_ENV=production webpack --progress --env polyfill=1 release=1",
     "build-webassembly-runner": "cross-env NODE_ENV=production webpack --progress --env webassembly_runner=1 release=1",
     "build-pcm-worklet-processor": "cross-env NODE_ENV=production webpack --progress --env pcm_worklet_processor=1 release=1",
+    "build-thread-entry": "cross-env NODE_ENV=production webpack --progress --env thread_entry=1 release=1",
     "build-avplayer": "cross-env NODE_ENV=production webpack --progress --env avplayer=1 release=1",
     "build-avplayer-legacy": "cross-env NODE_ENV=production webpack --progress --env avplayer=1 release=1 legacy=1",
     "build-avplayer-dev": "cross-env NODE_ENV=development node --max-old-space-size=8192 ./node_modules/webpack/bin/webpack.js --progress --env avplayer=1 release=0",
