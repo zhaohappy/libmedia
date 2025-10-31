@@ -23,7 +23,7 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
+import type AVStream from 'avutil/AVStream'
 import type { AVIFormatContext } from '../AVFormatContext'
 import type AVPacket from 'avutil/struct/avpacket'
 import { AVFormat } from 'avutil/avformat'
@@ -32,16 +32,12 @@ export default abstract class IFormat {
 
   public type: AVFormat = AVFormat.UNKNOWN
 
-  public onStreamAdd: (stream: Stream) => void
+  public onStreamAdd: (stream: AVStream) => void
 
   public abstract init(formatContext: AVIFormatContext): void
-
-  public async destroy(formatContext: AVIFormatContext): Promise<void> {}
-
   public abstract getAnalyzeStreamsCount(): number
   public abstract readHeader(formatContext: AVIFormatContext): Promise<number>
   public abstract readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number>
-
   /**
    * seek
    * 
@@ -54,8 +50,10 @@ export default abstract class IFormat {
    */
   public abstract seek(
     formatContext: AVIFormatContext,
-    stream: Stream,
+    stream: AVStream,
     timestamp: int64,
     flags: int32
   ): Promise<int64>
+
+  public async destroy(formatContext: AVIFormatContext): Promise<void> {}
 }
