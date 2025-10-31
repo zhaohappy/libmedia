@@ -926,8 +926,6 @@ export default class IFlvFormat extends IFormat {
 
     if (tagSize !== prev) {
       logger.warn(`tag ${type} size not match, size: ${tagSize}, previousTagSize: ${prev}`)
-      // 数据不合法，返回错误
-      return errorType.DATA_INVALID
     }
     if (needRedo) {
       return this.readAVPacket_(formatContext, avpacket)
