@@ -383,7 +383,7 @@ export function dumpAVFormatContextInterface(formatContext: AVFormatContextInter
     if (d > duration) {
       duration = d
     }
-    if (s < start || start === NOPTS_VALUE_BIGINT) {
+    if (s !== NOPTS_VALUE_BIGINT && s < start || start === NOPTS_VALUE_BIGINT) {
       start = s
     }
     bitrate += stream.codecpar.bitrate
