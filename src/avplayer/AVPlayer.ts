@@ -66,7 +66,7 @@ import createMessageChannel from './function/createMessageChannel'
 import getVideoCodec from 'avutil/function/getVideoCodec'
 import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
 import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
-import MSEPipeline from './mse/MSEPipeline'
+import type MSEPipeline from './mse/MSEPipeline'
 import { getHardwarePreference } from 'avutil/function/getHardwarePreference'
 import Sleep from 'common/timer/Sleep'
 import StatsController from './StatsController'
@@ -83,7 +83,7 @@ import dump, { dumpCodecName, dumpKey } from 'avformat/dump'
 import * as array from 'common/util/array'
 import isHdr from 'avutil/function/isHdr'
 import hasAlphaChannel from 'avutil/function/hasAlphaChannel'
-import SubtitleRender from './subtitle/SubtitleRender'
+import type SubtitleRender from './subtitle/SubtitleRender'
 import type { Data, Fn, PromisePending } from 'common/types/type'
 import type { playerEventChanged, playerEventChanging, playerEventError, playerEventNoParam,
   playerEventProgress, playerEventSubtitleDelayChange, playerEventTime, playerEventVolumeChange
@@ -1288,14 +1288,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
   }
 
-  private createSubtitleRender(subtitleStream: AVStreamInterface, taskId: string) {
+  private async createSubtitleRender(subtitleStream: AVStreamInterface, taskId: string) {
 
     if (this.isMediaStreamMode()) {
       return
     }
 
     if (defined(ENABLE_SUBTITLE_RENDER)) {
-      this.subtitleRender = new SubtitleRender({
+      this.subtitleRender = new (await import('./subtitle/SubtitleRender')).default({
         dom: this.canvas || this.video || this.options.container as HTMLDivElement,
         getCurrentTime: () => {
           return this.currentTime
@@ -1454,7 +1454,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     if (defined(ENABLE_SUBTITLE_RENDER)) {
       if (handleStatus && !this.subtitleRender) {
-        this.createSubtitleRender(stream, taskId)
+        await this.createSubtitleRender(stream, taskId)
         this.subtitleRender.start()
       }
       else if (this.subtitleRender) {
@@ -2638,7 +2638,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         const externalTask = this.externalSubtitleTasks.find((task) => {
           return task.streamId === subtitleStream.id
         })
-        this.createSubtitleRender(subtitleStream, externalTask ? externalTask.taskId : (this.subtitleTaskId || this.taskId))
+        await this.createSubtitleRender(subtitleStream, externalTask ? externalTask.taskId : (this.subtitleTaskId || this.taskId))
       }
 
       if (this.subtitleRender && this.externalSubtitleTasks.length) {
@@ -4505,6 +4505,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
       return AVPlayer.MSEThreadReady = new Promise(async (resolve) => {
         if (cheapConfig.USE_THREADS || !support.worker || !enableWorker || !support.workerMSE || !defined(ENABLE_WORKER_PROXY)) {
+          const MSEPipeline = (await import('./mse/MSEPipeline')).default
           AVPlayer.MSEThread = await createThreadFromClass(MSEPipeline, {
             name: 'MSEThread',
             disableWorker: !support.workerMSE
@@ -4512,6 +4513,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           AVPlayer.MSEThread.setLogLevel(AVPlayer.level)
         }
         else {
+          await import('./mse/MSEPipeline')
           AVPlayer.MSEPipelineProxy = new MSEPipelineProxy()
           await AVPlayer.MSEPipelineProxy.run()
           AVPlayer.MSEPipelineProxy.setLogLevel(AVPlayer.level)

@@ -646,16 +646,13 @@ function buildCheap() {
   })
   printTaskLog(1, 'cheap', 'SUCCESS', `built cheap thread entry completed`);
 
-  fs.mkdirSync(path.resolve(__dirname, '../src/cheap/dist/esm/webassembly'), { recursive: true });
-  fs.mkdirSync(path.resolve(__dirname, '../src/cheap/dist/cjs/webassembly'), { recursive: true });
+  buildPackage('cheap')
+
   fs.copyFileSync(path.resolve(__dirname, '../dist/cheap-polyfill.js'), path.resolve(__dirname, '../src/cheap/dist/cheap-polyfill.js'));
   fs.copyFileSync(path.resolve(__dirname, '../src/cheap/webassembly/WebAssemblyRunnerWorker.js'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/WebAssemblyRunnerWorker.js'));
   fs.copyFileSync(path.resolve(__dirname, '../src/cheap/webassembly/threadEntry.js'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/threadEntry.js'));
   fs.copyFileSync(path.resolve(__dirname, '../src/cheap/webassembly/WebAssemblyRunnerWorker.js'), path.resolve(__dirname, '../src/cheap/dist/cjs/webassembly/WebAssemblyRunnerWorker.js'));
-  
-  printTaskLog(1, 'cheap', 'SUCCESS', `copy cheap-polyfill.js WebAssemblyRunnerWorker.js completed`);
-
-  buildPackage('cheap')
+  printTaskLog(1, 'cheap', 'SUCCESS', `copy cheap-polyfill.js WebAssemblyRunnerWorker.js threadEntry.js completed`);
 
   addPackageExport(path.resolve(__dirname, '../src/cheap/'), {
     "./build/webpack/CheapPlugin": "./build/webpack/plugin/CheapPlugin.js",

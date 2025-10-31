@@ -34,7 +34,7 @@ import type { RpcMessage } from 'common/network/IPCPort'
 import IPCPort, { NOTIFY } from 'common/network/IPCPort'
 import Timer from 'common/timer/Timer'
 import * as object from 'common/util/object'
-import MSEPipeline from '../mse/MSEPipeline'
+import type MSEPipeline from '../mse/MSEPipeline'
 
 export default class MSEPipelineWorker {
 
@@ -47,7 +47,6 @@ export default class MSEPipelineWorker {
   private timer: Timer
 
   constructor() {
-    this.mse = new MSEPipeline()
     this.globalDataMap = new Map()
   }
 
@@ -74,6 +73,7 @@ export default class MSEPipelineWorker {
   }
 
   public async init(controlPort: MessagePort) {
+    this.mse = new ((await import('../mse/MSEPipeline')).default)()
     this.controlPort = new IPCPort(controlPort)
     this.timer = new Timer(() => {
       const result = []
