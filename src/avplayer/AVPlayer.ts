@@ -2269,11 +2269,15 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       if (!resource) {
         if (support.audioDecoder) {
-          const isSupport = await AudioDecoder.isConfigSupported({
+          const config: AudioDecoderConfig = {
             codec: getAudioCodec(audioStream.codecpar),
             sampleRate: audioStream.codecpar.sampleRate,
             numberOfChannels: audioStream.codecpar.chLayout.nbChannels
-          })
+          }
+          if (audioStream.codecpar.extradata) {
+            config.description = mapUint8Array(audioStream.codecpar.extradata, reinterpret_cast<size>(audioStream.codecpar.extradataSize)).slice()
+          }
+          const isSupport = await AudioDecoder.isConfigSupported(config)
           if (!isSupport.supported) {
             logger.fatal(`${dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} codecId ${audioStream.codecpar.codecId} not support`)
           }
