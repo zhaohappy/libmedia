@@ -618,6 +618,13 @@ export default class IAviFormat extends IFormat {
         this.context.nonInterleaved = false
       }
 
+      formatContext.streams.forEach((stream) => {
+        const streamContext = stream.privData as AVIStreamContext
+        if (streamContext.samples?.length) {
+          stream.nbFrames = static_cast<int64>(streamContext.samples.length as uint32)
+        }
+      })
+
     }
     catch (error) {
       return errorType.DATA_INVALID
@@ -980,6 +987,9 @@ export default class IAviFormat extends IFormat {
     avpacket.streamIndex = stream.index
     avpacket.dts = streamContext.currentDts
     avpacket.pos = formatContext.ioReader.getPos() - 8n
+    if (stream.codecpar.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) {
+      avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
+    }
 
     if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
       if (streamContext.samples?.length) {
