@@ -307,10 +307,10 @@ function writeVideoTagHeader(ioWriter: IOWriter, stream: AVStream, isobmffContex
     || (stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_RAWVIDEO
       && stream.codecpar.format == AVPixelFormat.AV_PIX_FMT_YUYV422
     )
-    ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V308
-    ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V408
-    ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V410
-    ||  stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V210)
+    || stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V308
+    || stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V408
+    || stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V410
+    || stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_V210)
   // Reserved
   ioWriter.writeUint32(0)
   // Reserved

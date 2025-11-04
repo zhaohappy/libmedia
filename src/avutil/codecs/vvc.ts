@@ -45,38 +45,38 @@ import type AVCodecParameters from '../struct/avcodecparameters'
 const NALULengthSizeMinusOne = 3
 
 export const enum VVCNaluType {
-  kTRAIL_NUT      = 0,
-  kSTSA_NUT       = 1,
-  kRADL_NUT       = 2,
-  kRASL_NUT       = 3,
-  kRSV_VCL_4      = 4,
-  kRSV_VCL_5      = 5,
-  kRSV_VCL_6      = 6,
-  kIDR_W_RADL     = 7,
-  kIDR_N_LP       = 8,
-  kCRA_NUT        = 9,
-  kGDR_NUT        = 10,
-  kRSV_IRAP_11    = 11,
-  kOPI_NUT        = 12,
-  kDCI_NUT        = 13,
-  kVPS_NUT        = 14,
-  kSPS_NUT        = 15,
-  kPPS_NUT        = 16,
+  kTRAIL_NUT = 0,
+  kSTSA_NUT = 1,
+  kRADL_NUT = 2,
+  kRASL_NUT = 3,
+  kRSV_VCL_4 = 4,
+  kRSV_VCL_5 = 5,
+  kRSV_VCL_6 = 6,
+  kIDR_W_RADL = 7,
+  kIDR_N_LP = 8,
+  kCRA_NUT = 9,
+  kGDR_NUT = 10,
+  kRSV_IRAP_11 = 11,
+  kOPI_NUT = 12,
+  kDCI_NUT = 13,
+  kVPS_NUT = 14,
+  kSPS_NUT = 15,
+  kPPS_NUT = 16,
   kPREFIX_APS_NUT = 17,
   kSUFFIX_APS_NUT = 18,
-  kPH_NUT         = 19,
-  kAUD_NUT        = 20,
-  kEOS_NUT        = 21,
-  kEOB_NUT        = 22,
+  kPH_NUT = 19,
+  kAUD_NUT = 20,
+  kEOS_NUT = 21,
+  kEOB_NUT = 22,
   kPREFIX_SEI_NUT = 23,
   kSUFFIX_SEI_NUT = 24,
-  kFD_NUT         = 25,
-  kRSV_NVCL_26    = 26,
-  kRSV_NVCL_27    = 27,
-  kUNSPEC_28      = 28,
-  kUNSPEC_29      = 29,
-  kUNSPEC_30      = 30,
-  kUNSPEC_31      = 31,
+  kFD_NUT = 25,
+  kRSV_NVCL_26 = 26,
+  kRSV_NVCL_27 = 27,
+  kUNSPEC_28 = 28,
+  kUNSPEC_29 = 29,
+  kUNSPEC_30 = 30,
+  kUNSPEC_31 = 31,
 }
 
 export const enum VVCSliceType {
@@ -87,8 +87,8 @@ export const enum VVCSliceType {
 }
 
 export const enum VVCAPSType {
-  kALF     = 0,
-  kLMCS    = 1,
+  kALF = 0,
+  kLMCS = 1,
   kSCALING = 2
 }
 
@@ -968,11 +968,11 @@ export function parseSPS(sps: Uint8ArrayInterface): VvcSPS {
   if (bitReader.readU1()) {
     const sps_num_subpics_minus1 = expgolomb.readUE(bitReader)
     const ctb_log2_size_y = sps_log2_ctu_size_minus5 + 5
-    const ctb_size_y      = 1 << ctb_log2_size_y
-    const tmp_width_val   = sps_pic_width_max_in_luma_samples / (1 << ctb_log2_size_y)
-    const tmp_height_val  = sps_pic_height_max_in_luma_samples / (1 << ctb_log2_size_y)
-    const wlen            = Math.ceil(Math.log2(tmp_width_val))
-    const hlen            = Math.ceil(Math.log2(tmp_height_val))
+    const ctb_size_y = 1 << ctb_log2_size_y
+    const tmp_width_val = sps_pic_width_max_in_luma_samples / (1 << ctb_log2_size_y)
+    const tmp_height_val = sps_pic_height_max_in_luma_samples / (1 << ctb_log2_size_y)
+    const wlen = Math.ceil(Math.log2(tmp_width_val))
+    const hlen = Math.ceil(Math.log2(tmp_height_val))
 
     let sps_subpic_id_len = 0
     let sps_subpic_same_size_flag = 0
@@ -1034,7 +1034,7 @@ export function parseSPS(sps: Uint8ArrayInterface): VvcSPS {
     sps_extra_ph_bit_present_flag[i] = bitReader.readU(1)
   }
 
-  const videoDelay = (spsMaxSublayersMinus1 + 1)  > 2 ? 2 : spsMaxSublayersMinus1
+  const videoDelay = (spsMaxSublayersMinus1 + 1) > 2 ? 2 : spsMaxSublayersMinus1
 
   return {
     profile,

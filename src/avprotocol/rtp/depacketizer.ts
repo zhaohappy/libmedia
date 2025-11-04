@@ -41,7 +41,7 @@ export function h264(rtps: RTPPacket[]) {
   let isKey = false
 
   for (let i = 0; i < rtps.length; i++) {
-    const payload =  rtps[i].payload
+    const payload = rtps[i].payload
     const type = payload[0] & 0x1f
 
     switch (type) {
@@ -125,7 +125,7 @@ export function hevc(rtps: RTPPacket[], context: HEVCPayloadContext) {
   let isKey = false
 
   for (let i = 0; i < rtps.length; i++) {
-    const payload =  rtps[i].payload
+    const payload = rtps[i].payload
     const type = (payload[0] >>> 1) & 0x3f
 
     if (type > 50) {

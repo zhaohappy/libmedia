@@ -76,7 +76,7 @@ export function writeEbmlId(writer: BytesWriterSync, id: EBMLId) {
   }
 }
 
-export function writeEbmlLength(writer: BytesWriterSync, length:  number | bigint, bytes: int32 = 0) {
+export function writeEbmlLength(writer: BytesWriterSync, length: number | bigint, bytes: int32 = 0) {
   let need = ebmlLengthSize(length)
 
   if (bytes === 0) {

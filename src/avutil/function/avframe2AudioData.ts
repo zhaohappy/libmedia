@@ -101,7 +101,7 @@ export function avframe2AudioData(avframe: pointer<AVFrame>, pts?: int64) {
   const sampleSize = getBytesPerSample(avframe.format)
 
   if (planar) {
-    const linesize = avframe.nbSamples *  sampleSize
+    const linesize = avframe.nbSamples * sampleSize
     const buffer = new Uint8Array(planes * linesize)
     let offset = 0
     for (let i = 0; i < planes; i++) {

@@ -1165,7 +1165,7 @@ export const enum AVColorTransferCharacteristic {
    * also ITU-R BT601-6 525 or 625 / ITU-R BT1358 525 or 625 / ITU-R BT1700 NTSC
    */
   AVCOL_TRC_SMPTE170M = 6,
-  AVCOL_TRC_SMPTE240M  = 7,
+  AVCOL_TRC_SMPTE240M = 7,
   /**
    * Linear transfer characteristics
    */

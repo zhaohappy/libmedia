@@ -171,7 +171,7 @@ export function parseAVCodecParameters(
     stream.codecpar.profile = profile
     stream.codecpar.sampleRate = sampleRate
     stream.codecpar.chLayout.nbChannels = channels
-    stream.codecpar.frameSize = profile ===  MPEG4AudioObjectTypes.AAC_SBR ? 2048 : 1024
+    stream.codecpar.frameSize = profile === MPEG4AudioObjectTypes.AAC_SBR ? 2048 : 1024
     stream.codecpar.format = AVSampleFormat.AV_SAMPLE_FMT_FLTP
   }
 }

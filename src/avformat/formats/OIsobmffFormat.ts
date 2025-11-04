@@ -438,7 +438,7 @@ export default class OIsobmffFormat extends OFormat {
         })
 
         if (!track.sampleCount || !stream) {
-          return  true
+          return true
         }
 
         const streamContext = stream.privData as IsobmffStreamContext
@@ -561,7 +561,7 @@ export default class OIsobmffFormat extends OFormat {
       let mdatSize = 8
       array.each(this.context.currentFragment.tracks, (track) => {
         if (!track.sampleCount) {
-          return  true
+          return true
         }
 
         track.ioWriter.flush()

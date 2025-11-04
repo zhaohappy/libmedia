@@ -952,7 +952,7 @@ export async function parseEbmlSyntax<T extends Record<string, any>>(
   formatContext: AVIFormatContext,
   size: int64,
   syntax: Partial<Record<EBMLId, EbmlSyntax<T>>>,
-  ebml:  Partial<T> = {},
+  ebml: Partial<T> = {},
   stopId: EBMLId[] = []
 ) {
   await parseEbml(formatContext, size, async (id, length) => {

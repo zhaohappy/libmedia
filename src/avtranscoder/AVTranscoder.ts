@@ -461,7 +461,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         let dts: int64 = 0n
         let duration: int64 = 0n
         if (task.stats.lastVideoMuxDts) {
-          const stream =  task.streams.find((s) => s.input.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
+          const stream = task.streams.find((s) => s.input.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO)
           dts = task.stats.lastVideoMuxDts - task.stats.firstVideoMuxDts
           if (stream.output) {
             duration = avRescaleQ(stream.output.duration, stream.output.timeBase, AV_MILLI_TIME_BASE_Q)
@@ -471,7 +471,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           }
         }
         if (task.stats.lastAudioMuxDts && !dts) {
-          const stream =  task.streams.find((s) => s.input.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO)
+          const stream = task.streams.find((s) => s.input.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO)
           dts = task.stats.lastAudioMuxDts - task.stats.firstAudioMuxDts
           if (stream.output) {
             duration = avRescaleQ(stream.output.duration, stream.output.timeBase, AV_MILLI_TIME_BASE_Q)

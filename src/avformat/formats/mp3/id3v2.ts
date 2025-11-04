@@ -117,8 +117,8 @@ function decodeString(encoding: ID3v2Encoding, buffer: Uint8Array) {
 }
 
 function sizeToSyncSafe(size: number) {
-  return ((size & (0x7f <<  0)) >> 0) +
-    ((size & (0x7f <<  8)) >> 1) +
+  return ((size & (0x7f << 0)) >> 0) +
+    ((size & (0x7f << 8)) >> 1) +
     ((size & (0x7f << 16)) >> 2) +
     ((size & (0x7f << 24)) >> 3)
 }

@@ -63,7 +63,7 @@ export const INT16_MAX: int16 = 32767
 export const INT32_MAX: int32 = 2147483647
 export const INT64_MAX: int64 = 9223372036854775807n
 
-export const INT8_MIN: int8  = -128
+export const INT8_MIN: int8 = -128
 export const INT16_MIN: int16 = -32768
 export const INT32_MIN: int32 = -INT32_MAX - 1
 

@@ -73,7 +73,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
     }
   }
 
-  const count  = await ioReader.readUint32()
+  const count = await ioReader.readUint32()
   for (let i = 0; i < count; i++) {
     trackContext.cenc.sampleInfoOffset.push(version === 0 ? await ioReader.readUint32() : await ioReader.readUint64())
   }

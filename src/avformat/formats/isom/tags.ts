@@ -103,7 +103,7 @@ export const codecIsobmffAudioTags: Record<uint32, AVCodecID> = {
   [mktagle('NONE')]: AVCodecID.AV_CODEC_ID_PCM_U8
 }
 
-export const codecIsobmffSubtiteTags:  Record<uint32, AVCodecID> = {
+export const codecIsobmffSubtiteTags: Record<uint32, AVCodecID> = {
   [mktagle('text')]: AVCodecID.AV_CODEC_ID_MOV_TEXT,
   [mktagle('tx3g')]: AVCodecID.AV_CODEC_ID_MOV_TEXT,
   [mktagle('c608')]: AVCodecID.AV_CODEC_ID_EIA_608

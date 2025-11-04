@@ -953,15 +953,15 @@ export function parseSPS(sps: Uint8ArrayInterface): HevcSPS {
   const log2_ctb_size = log2_min_cb_size + log2_diff_max_min_coding_block_size
   const log2_min_pu_size = log2_min_cb_size - 1
 
-  const ctb_width  = (width  + (1 << log2_ctb_size) - 1) >> log2_ctb_size
+  const ctb_width = (width + (1 << log2_ctb_size) - 1) >> log2_ctb_size
   const ctb_height = (height + (1 << log2_ctb_size) - 1) >> log2_ctb_size
-  const ctb_size   = ctb_width * ctb_height
+  const ctb_size = ctb_width * ctb_height
 
-  const min_cb_width  = width  >> log2_min_cb_size
+  const min_cb_width = width >> log2_min_cb_size
   const min_cb_height = height >> log2_min_cb_size
-  const min_tb_width  = width  >> log2_min_tb_size
+  const min_tb_width = width >> log2_min_tb_size
   const min_tb_height = height >> log2_min_tb_size
-  const min_pu_width  = width  >> log2_min_pu_size
+  const min_pu_width = width >> log2_min_pu_size
   const min_pu_height = height >> log2_min_pu_size
 
   return {

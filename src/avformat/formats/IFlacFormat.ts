@@ -535,7 +535,7 @@ export default class IFlacFormat extends IFormat {
           break
         }
       }
-      const cue =  context.seekPoints[index]
+      const cue = context.seekPoints[index]
       logger.debug(`seek in seekPoints, found index: ${index}, pts: ${cue.pts}, pos: ${cue.pos + context.firstFramePos}`)
       await formatContext.ioReader.seek(cue.pos + context.firstFramePos)
       context.cacheBuffer = null

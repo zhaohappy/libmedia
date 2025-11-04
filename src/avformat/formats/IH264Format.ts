@@ -301,7 +301,7 @@ export default class IH264Format extends IFormat {
         if (fieldPicFlag) {
           bottomFieldFlag = this.bitReader.readU1()
         }
-        if (type ===  h264.H264NaluType.kSliceIDR) {
+        if (type === h264.H264NaluType.kSliceIDR) {
           // idr_pic_id
           expgolomb.readUE(this.bitReader)
         }

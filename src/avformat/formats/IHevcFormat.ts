@@ -321,7 +321,7 @@ export default class IHevcFormat extends IFormat {
         }
         else {
           const picOrderCntLsb = this.bitReader.readU(this.sps.log2_max_poc_lsb)
-          let maxPocLsb  = 1 << this.sps.log2_max_poc_lsb
+          let maxPocLsb = 1 << this.sps.log2_max_poc_lsb
           let prevPocLsb = this.pocTid0 % maxPocLsb
           let prevPocMsb = this.pocTid0 - prevPocLsb
           let pocMsb = 0

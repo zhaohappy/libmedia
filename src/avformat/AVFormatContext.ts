@@ -223,7 +223,7 @@ export class AVFormatContext {
     this.streams = []
     this.streamGroups = []
     this.errorFlag = 0
-    this.streamIndex  = 0
+    this.streamIndex = 0
     this.streamGroupIndex = 0
     this.interval = new AVFormatContextInterval()
 

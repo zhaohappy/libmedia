@@ -66,9 +66,9 @@ export const BlockSizeTable: number[] = [
 
 export const enum FlacChmode {
   FLAC_CHMODE_INDEPENDENT = 0,
-  FLAC_CHMODE_LEFT_SIDE   = 1,
-  FLAC_CHMODE_RIGHT_SIDE  = 2,
-  FLAC_CHMODE_MID_SIDE    = 3,
+  FLAC_CHMODE_LEFT_SIDE = 1,
+  FLAC_CHMODE_RIGHT_SIDE = 2,
+  FLAC_CHMODE_MID_SIDE = 3,
 }
 
 export const enum FlacMetadataType {

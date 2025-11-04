@@ -240,7 +240,7 @@ export default class IMatroskaFormat extends IFormat {
 
         if (track.codecId === 'V_MS/VFW/FOURCC' && track.codecPrivate?.size >= 40) {
           stream.codecpar.bitsPerCodedSample = (track.codecPrivate.data[15] << 8) | track.codecPrivate.data[14]
-          stream.codecpar.codecTag = (track.codecPrivate.data[19] << 24) |  (track.codecPrivate.data[18] << 16)
+          stream.codecpar.codecTag = (track.codecPrivate.data[19] << 24) | (track.codecPrivate.data[18] << 16)
             | (track.codecPrivate.data[17] << 8) | track.codecPrivate.data[16]
 
           stream.codecpar.codecId = riff.codecBmpTags[stream.codecpar.codecTag] || AVCodecID.AV_CODEC_ID_NONE
@@ -252,7 +252,7 @@ export default class IMatroskaFormat extends IFormat {
         }
         else if (track.codecId === 'V_QUICKTIME' && track.codecPrivate?.size >= 21) {
           const tags = stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO ? isomTags.codecIsobmffAudioTags : isomTags.codecIsobmffVideoTags
-          stream.codecpar.codecTag = (track.codecPrivate.data[3] << 24) |  (track.codecPrivate.data[2] << 16)
+          stream.codecpar.codecTag = (track.codecPrivate.data[3] << 24) | (track.codecPrivate.data[2] << 16)
           | (track.codecPrivate.data[1] << 8) | track.codecPrivate.data[0]
 
           let codecId = tags[stream.codecpar.codecTag]
@@ -267,7 +267,7 @@ export default class IMatroskaFormat extends IFormat {
             track.codecPrivate.data = concatTypeArray(Uint8Array, [data, track.codecPrivate.data])
           }
           else {
-            stream.codecpar.codecTag = (track.codecPrivate.data[7] << 24) |  (track.codecPrivate.data[6] << 16)
+            stream.codecpar.codecTag = (track.codecPrivate.data[7] << 24) | (track.codecPrivate.data[6] << 16)
               | (track.codecPrivate.data[5] << 8) | track.codecPrivate.data[4]
             codecId = tags[stream.codecpar.codecTag]
           }
@@ -1199,7 +1199,7 @@ export default class IMatroskaFormat extends IFormat {
     if (this.context.cues?.entry.length) {
       const track = stream.privData as TrackEntry
       for (let i = 0; i < this.context.cues.entry.length; i++) {
-        const cue =  this.context.cues.entry[i]
+        const cue = this.context.cues.entry[i]
         const time = (cue.time || 0n) * static_cast<int64>(this.context.info.timestampScale) / 1000n
         if (time > pts) {
           const poses = this.context.cues.entry[Math.max(i - 1, 0)].pos

@@ -93,7 +93,7 @@ export const XYZD65 = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.3127, 0.3290]
 export const Invalid = [0, 0, 0, 0, 0, 0, 0, 0]
 
 // The GenericRGB space on macOS.
-export const AppleGenericRGB = [0.63002, 0.34000, 0.29505, 0.60498, 0.15501, 0.07701, 0.3127,  0.3290]
+export const AppleGenericRGB = [0.63002, 0.34000, 0.29505, 0.60498, 0.15501, 0.07701, 0.3127, 0.3290]
 
 // Primaries where the colors are rotated and the gamut is huge. Good for
 // testing.
@@ -103,11 +103,11 @@ function adaptToXYZ50(wx: float, wy: float) {
   const wXYZ = new Vector3([wx / wy, 1, (1 - wx - wy) / wy])
   const wXYZD50 = new Vector3([0.96422, 1.0, 0.82521])
   const xyzToLms = Matrix3.RowMajor([
-    0.8951,  0.2664, -0.1614,
+    0.8951, 0.2664, -0.1614,
     -0.7502, 1.7135, 0.0367,
     0.0389, -0.0685, 1.0296
   ])
-  const lmsToXyz  = Matrix3.RowMajor([
+  const lmsToXyz = Matrix3.RowMajor([
     0.9869929, -0.1470543, 0.1599627,
     0.4323053, 0.5183603, 0.0492912,
     -0.0085287, 0.0400428, 0.9684867

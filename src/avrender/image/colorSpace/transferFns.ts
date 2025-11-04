@@ -43,7 +43,7 @@ export const TransferFnSRGB = {
   g: 2.4, a: 1.0 / 1.055, b: 0.055 / 1.055, c: 1 / 12.92, d: 0.04045, e: 0.0, f: 0.0
 }
 // eslint-disable-next-line camelcase
-export  const TransferFnSMPETST428_1 = {
+export const TransferFnSMPETST428_1 = {
   g: 2.6, a: 1.034080527699, b: 0.0, c: 0.0, d: 0.0, e: 0.0, f: 0.0
 }
 

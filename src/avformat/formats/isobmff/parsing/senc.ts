@@ -49,7 +49,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
       sampleInfoOffset: []
     }
   }
-  const count  = await ioReader.readUint32()
+  const count = await ioReader.readUint32()
   const useSubsamples = flags & 0x02
   const ivSize = cenc.defaultPerSampleIVSize
 

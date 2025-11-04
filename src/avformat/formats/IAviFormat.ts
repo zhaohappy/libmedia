@@ -223,7 +223,7 @@ export default class IAviFormat extends IFormat {
               moviGot = true
             }
             else if (subTag === 'INFO') {
-              await readInfo(formatContext.ioReader,  static_cast<int64>(size as uint32), formatContext.metadata)
+              await readInfo(formatContext.ioReader, static_cast<int64>(size as uint32), formatContext.metadata)
             }
             else if (subTag === 'ncdt') {
               logger.warn('ignore tag ncdt')

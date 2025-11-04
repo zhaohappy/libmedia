@@ -349,7 +349,7 @@ export function getPMTPayload(pmt: PMT, streams: Stream[]) {
     const streamContext = streams[i].privData as MpegtsStreamContext
 
     buffer[pos++] = (7 << 5) | (streamContext.pid >> 8) & 0x1f
-    buffer[pos++] = streamContext.pid  & 0xff
+    buffer[pos++] = streamContext.pid & 0xff
 
     const descLengthPos = pos
     pos += 2
@@ -450,7 +450,7 @@ export function getSDTPayload() {
   buffer[pos++] = 1
 
   /* currently no EIT info */
-  buffer[pos++] =  0xfc | 0x00
+  buffer[pos++] = 0xfc | 0x00
 
   const descListLenPtr = pos
   pos += 2
@@ -697,7 +697,7 @@ export function writePES(
       flags |= 0x40
     }
 
-    let value  = 0x80
+    let value = 0x80
     /* data alignment indicator is required for subtitle and data streams */
     if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_SUBTITLE
       || stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_DATA

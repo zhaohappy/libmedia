@@ -670,7 +670,7 @@ export default class VideoDecodePipeline extends Pipeline {
     logger.fatal('task not found')
   }
 
-  public async open(taskId: string, parameters: AVCodecParametersSerialize | pointer<AVCodecParameters>,  wasmDecoderOptions: Data = {}) {
+  public async open(taskId: string, parameters: AVCodecParametersSerialize | pointer<AVCodecParameters>, wasmDecoderOptions: Data = {}) {
     const task = this.tasks.get(taskId)
     if (task) {
       task.wasmDecoderOptions = wasmDecoderOptions

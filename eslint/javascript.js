@@ -201,6 +201,10 @@ const eslintConfig = {
          */
         'comment-format': 2,
         /**
+         * 禁止多余空格
+         */
+        'no-multi-spaces': 'error',
+        /**
          * 剩余和扩展运算符及其表达式之间禁止空格
          */
         'rest-spread-spacing': [2, 'never'],

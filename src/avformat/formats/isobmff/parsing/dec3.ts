@@ -56,8 +56,8 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   await ioReader.skip(2)
   const eac3info = await ioReader.readUint24()
   const bsmod = (eac3info >> 12) & 0x1f
-  const acmod = (eac3info >>  9) & 0x7
-  const lfeon = (eac3info >>  8) & 0x1
+  const acmod = (eac3info >> 9) & 0x7
+  const lfeon = (eac3info >> 8) & 0x1
 
   let mask = static_cast<uint64>(AC3ChannelLayout[acmod])
   if (lfeon) {

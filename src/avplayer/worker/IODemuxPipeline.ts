@@ -95,17 +95,17 @@ export default class IODemuxPipeline {
         }
         if (task.formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_AUDIO)) {
           data.audioPacketQueueLength = stats.audioPacketQueueLength
-          data.audioPacketCount =  stats.audioPacketCount
-          data.audioPacketBytes =  stats.audioPacketBytes
-          data.audioEncodeFramerate =  stats.audioEncodeFramerate
+          data.audioPacketCount = stats.audioPacketCount
+          data.audioPacketBytes = stats.audioPacketBytes
+          data.audioEncodeFramerate = stats.audioEncodeFramerate
         }
         if (task.formatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_VIDEO)) {
-          data.videoPacketQueueLength =  stats.videoPacketQueueLength
-          data.videoPacketCount =  stats.videoPacketCount
-          data.videoPacketBytes =  stats.videoPacketBytes
-          data.keyFrameCount =  stats.keyFrameCount
-          data.gop =  stats.gop
-          data.keyFrameInterval =  stats.keyFrameInterval
+          data.videoPacketQueueLength = stats.videoPacketQueueLength
+          data.videoPacketCount = stats.videoPacketCount
+          data.videoPacketBytes = stats.videoPacketBytes
+          data.keyFrameCount = stats.keyFrameCount
+          data.gop = stats.gop
+          data.keyFrameInterval = stats.keyFrameInterval
           data.videoEncodeFramerate = stats.videoEncodeFramerate
         }
 

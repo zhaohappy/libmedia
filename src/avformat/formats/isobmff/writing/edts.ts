@@ -83,7 +83,7 @@ export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext
     ioWriter.writeUint32(0x00010000)
   }
   else {
-    startCT  = -Math.min(Number(streamContext.startDts), 0)
+    startCT = -Math.min(Number(streamContext.startDts), 0)
     duration += delay
   }
 

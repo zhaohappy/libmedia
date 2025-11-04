@@ -43,13 +43,13 @@ export default class VideoProgram16 extends VideoProgram {
 
   link(gl: WebGLRenderingContext) {
     super.link(gl)
-    this.offsetLocation =  this.gl.getUniformLocation(this.program, 'offset')
-    this.multiplierLocation =  this.gl.getUniformLocation(this.program, 'multiplier')
-    this.pqTonemapALocation =  this.gl.getUniformLocation(this.program, 'pq_tonemap_a')
-    this.pqTonemapBLocation =  this.gl.getUniformLocation(this.program, 'pq_tonemap_b')
-    this.hlgOOTFGammaMinusOneLocation =  this.gl.getUniformLocation(this.program, 'hlg_ootf_gamma_minus_one')
-    this.nitsToSdrRelativeFactorLocation =  this.gl.getUniformLocation(this.program, 'nits_to_sdr_relative_factor')
-    this.sdrRelativeToNitsFactorLocation =  this.gl.getUniformLocation(this.program, 'sdr_relative_to_nits_factor')
+    this.offsetLocation = this.gl.getUniformLocation(this.program, 'offset')
+    this.multiplierLocation = this.gl.getUniformLocation(this.program, 'multiplier')
+    this.pqTonemapALocation = this.gl.getUniformLocation(this.program, 'pq_tonemap_a')
+    this.pqTonemapBLocation = this.gl.getUniformLocation(this.program, 'pq_tonemap_b')
+    this.hlgOOTFGammaMinusOneLocation = this.gl.getUniformLocation(this.program, 'hlg_ootf_gamma_minus_one')
+    this.nitsToSdrRelativeFactorLocation = this.gl.getUniformLocation(this.program, 'nits_to_sdr_relative_factor')
+    this.sdrRelativeToNitsFactorLocation = this.gl.getUniformLocation(this.program, 'sdr_relative_to_nits_factor')
   }
 
   setMetaData(data: HdrMetadata) {

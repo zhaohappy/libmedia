@@ -86,7 +86,7 @@ export async function readFormatTag(ioReader: IOReader, codecpar: pointer<AVCode
       // TODO parse wave format ex
       await ioReader.skip(22)
       cbSize -= 22
-      size   -= 22
+      size -= 22
     }
 
     if (cbSize > 0) {
@@ -229,7 +229,7 @@ export async function readWavHeader(ioReader: IOReader, stream: AVStream, size: 
       logger.error('WAVEFORMATEX support for RIFX files')
       return errorType.DATA_INVALID
     }
-    size  -= 18
+    size -= 18
     cbSize = Math.min(cbSize, size)
     if (cbSize >= 22 && id == 0xfffe) {
       await readWaveformatex(ioReader, stream)

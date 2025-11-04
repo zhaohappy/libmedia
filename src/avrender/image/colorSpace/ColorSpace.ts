@@ -145,12 +145,12 @@ export default class ColorSpace {
       case AVColorSpace.AVCOL_SPC_YCOCG: {
         return Matrix4.RowMajor([
           // Y
-          0.25,  0.5, 0.25,  0.0,
+          0.25, 0.5, 0.25, 0.0,
           // Cg
           -0.25, 0.5, -0.25, chroma05,
           // Co
-          0.5,   0.0, -0.5,  chroma05,
-          0.0,   0.0, 0.0,   1.0
+          0.5, 0.0, -0.5, chroma05,
+          0.0, 0.0, 0.0, 1.0
         ])
       }
 
@@ -163,12 +163,12 @@ export default class ColorSpace {
         Kb = 0.0593
         return Matrix4.RowMajor([
           // R
-          1.0, 0.0,           0.0, 0.0,
+          1.0, 0.0, 0.0, 0.0,
           // Y
-          Kr,  1.0 - Kr - Kb, Kb, 0.0,
+          Kr, 1.0 - Kr - Kb, Kb, 0.0,
           // B
-          0.0, 0.0,           1.0, 0.0,
-          0.0, 0.0,           0.0, 1.0
+          0.0, 0.0, 1.0, 0.0,
+          0.0, 0.0, 0.0, 1.0
         ])
       }
 
@@ -180,12 +180,12 @@ export default class ColorSpace {
       case AVColorSpace.AVCOL_SPC_SMPTE2085:
         return Matrix4.RowMajor([
           // Y
-          0.0,              1.0,             0.0, 0.0,
+          0.0, 1.0, 0.0, 0.0,
           // DX or DZ
-          0.0,             -0.5, 0.986566 / 2.0, 0.5,
+          0.0, -0.5, 0.986566 / 2.0, 0.5,
           // DZ or DX
-          0.5, -0.991902 / 2.0,             0.0, 0.5,
-          0.0,              0.0,             0.0, 1.0,
+          0.5, -0.991902 / 2.0, 0.0, 0.5,
+          0.0, 0.0, 0.0, 1.0,
         ])
     }
 
@@ -195,12 +195,12 @@ export default class ColorSpace {
 
     return Matrix4.RowMajor([
       // Y
-      Kr,        Kg,                Kb, 0.0,
+      Kr, Kg, Kb, 0.0,
       // U
       um * -Kr, um * -Kg, um * (1.0 - Kb), 0.5,
       // V
-      vm * (1.0 - Kr), vm * -Kg,         vm * -Kb, 0.5,
-      0.0,      0.0,              0.0, 1.0,
+      vm * (1.0 - Kr), vm * -Kg, vm * -Kb, 0.5,
+      0.0, 0.0, 0.0, 1.0,
     ])
   }
 

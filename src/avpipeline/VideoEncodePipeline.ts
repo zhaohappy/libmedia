@@ -228,7 +228,7 @@ export default class VideoEncodePipeline extends Pipeline {
           caches.push(avframe)
         }
         if (caches.length < MAX && !pullPadding && task.firstEncoded) {
-          pullPadding = leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull',  {
+          pullPadding = leftIPCPort.request<pointer<AVFrameRef> | VideoFrame>('pull', {
             preferVideoFrame: task.targetEncoder instanceof WebVideoEncoder && task.firstEncoded
           }).then((avframe) => {
             if (is.number(avframe) && avframe < 0) {

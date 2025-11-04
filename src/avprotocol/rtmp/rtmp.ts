@@ -58,11 +58,11 @@ export const enum RtmpChannel {
   /**
    * channel for video data
    */
-  VIDEO_CHANNEL   = 6,
+  VIDEO_CHANNEL = 6,
   /**
    * channel for a/v invokes
    */
-  SOURCE_CHANNEL  = 8,
+  SOURCE_CHANNEL = 8,
 }
 
 /**
