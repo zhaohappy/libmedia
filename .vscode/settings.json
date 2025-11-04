@@ -1,5 +1,4 @@
 {
-    "makefile.extensionOutputFolder": "./.vscode",
     "files.associations": {
         "context.h": "c",
         "pixfmt.h": "c",
@@ -404,5 +403,12 @@
     "cSpell.enableFiletypes": [
         "wgsl"
     ],
-    "typescript.tsdk": "node_modules/typescript/lib"
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": "explicit"
+	},
+    "eslint.options": {
+        "rulePaths": ["eslint/rules"]
+    }
 }

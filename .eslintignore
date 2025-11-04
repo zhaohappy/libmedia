@@ -1,3 +1,5 @@
 *.d.ts
 *.test.ts
 *.yaml
+eslint
+.eslintrc.cjs
