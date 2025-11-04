@@ -58,7 +58,7 @@ import { AudioCodecString2CodecId, Ext2Format,
 import MuxPipeline from 'avpipeline/MuxPipeline'
 import type IOWriterSync from 'common/io/IOWriterSync'
 import type { AVStreamInterface } from 'avutil/AVStream'
-import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVDiscard, AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import type Stats from 'avpipeline/struct/stats'
 import type { RpcMessage } from 'common/network/IPCPort'
 import IPCPort, { NOTIFY, REQUEST } from 'common/network/IPCPort'
@@ -1161,6 +1161,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
   private async handleAudioStream(stream: AVStreamInterface, task: SelfTask): Promise<number> {
     const audioConfig = task.options.output.audio
     if (audioConfig?.disable) {
+      await this.DemuxerThread.setAVStreamDiscard(task.taskId, stream.index, AVDiscard.AVDISCARD_ALL)
       return 0
     }
     else if (audioConfig?.codec === 'copy' && !(task.options.start || task.options.duration)) {
@@ -1547,6 +1548,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
   private async handleVideoStream(stream: AVStreamInterface, task: SelfTask): Promise<number> {
     const videoConfig = task.options.output.video
     if (videoConfig?.disable) {
+      await this.DemuxerThread.setAVStreamDiscard(task.taskId, stream.index, AVDiscard.AVDISCARD_ALL)
       return 0
     }
     else if (videoConfig?.codec === 'copy' && !(task.options.start || task.options.duration)) {

@@ -1205,6 +1205,16 @@ export default class DemuxPipeline extends Pipeline {
     }
   }
 
+  public async setAVStreamDiscard(taskId: string, streamIndex: int32, discard: int32) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      const stream = task.formatContext.getStreamByIndex(streamIndex)
+      if (stream) {
+        stream.discard = discard
+      }
+    }
+  }
+
   public async stop(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
