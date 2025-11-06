@@ -175,15 +175,7 @@ function writeAudioTagHeader(ioWriter: IOWriter, stream: AVStream, isobmffContex
     ioWriter.writeUint16(-2)
   }
   else {
-    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_FLAC
-      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_ALAC
-      || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_OPUS
-    ) {
-      ioWriter.writeUint16(stream.codecpar.chLayout.nbChannels)
-    }
-    else {
-      ioWriter.writeUint16(2)
-    }
+    ioWriter.writeUint16(stream.codecpar.chLayout.nbChannels)
 
     if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_FLAC
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_ALAC
