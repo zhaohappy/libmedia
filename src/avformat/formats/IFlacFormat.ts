@@ -38,7 +38,7 @@ import { addAVPacketData, createAVPacket } from 'avutil/util/avpacket'
 import { IOError } from 'common/io/error'
 import { MetaDataBlockType } from 'avutil/codecs/flac'
 import type { FlacContext, FrameInfo } from './flac/type'
-import { decodeFrameHeader } from './flac/iflac'
+import { decodeFrameHeader, MAX_FRAME_VERIFY_SIZE } from './flac/iflac'
 import BitReader from 'common/io/BitReader'
 import concatTypeArray from 'common/function/concatTypeArray'
 import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
@@ -105,7 +105,7 @@ export default class IFlacFormat extends IFormat {
 
       cacheBuffer: null,
       cachePos: 0n,
-      bitReader: new BitReader(16),
+      bitReader: new BitReader(MAX_FRAME_VERIFY_SIZE),
       fileSize: 0n,
       firstFramePos: 0n,
       isVarSize: -1
@@ -304,7 +304,7 @@ export default class IFlacFormat extends IFormat {
         this.context.cachePos = formatContext.ioReader.getPos()
         this.context.cacheBuffer = await formatContext.ioReader.readBuffer(Math.min(PACKET_SIZE, static_cast<int32>(this.context.fileSize - formatContext.ioReader.getPos())))
       }
-      else if (this.context.cacheBuffer.length < 17) {
+      else if (this.context.cacheBuffer.length < MAX_FRAME_VERIFY_SIZE + 1) {
         this.context.cacheBuffer = concatTypeArray(
           Uint8Array,
           [
@@ -344,7 +344,7 @@ export default class IFlacFormat extends IFormat {
         continue
       }
 
-      if (this.context.cacheBuffer.length < 16) {
+      if (this.context.cacheBuffer.length < MAX_FRAME_VERIFY_SIZE) {
         this.context.cacheBuffer = concatTypeArray(
           Uint8Array,
           [
@@ -355,17 +355,31 @@ export default class IFlacFormat extends IFormat {
       }
 
       this.context.bitReader.reset()
-      this.context.bitReader.appendBuffer(this.context.cacheBuffer.subarray(0, 16))
+      this.context.bitReader.appendBuffer(this.context.cacheBuffer.subarray(0, MAX_FRAME_VERIFY_SIZE))
 
       const info: Partial<FrameInfo> = {}
+      let ret = 0
       // 检查下一帧的数据是否合法，不合法说明和前面的是同一帧数据
-      if (decodeFrameHeader(this.context.bitReader, info, true) < 0
+      if ((ret = decodeFrameHeader(this.context.bitReader, info, true)) < 0
         // || info.sampleRate !== this.context.frameInfo.sampleRate
         // || info.channels !== this.context.frameInfo.channels
         || ((info.frameOrSampleNum - this.context.frameInfo.frameOrSampleNum !== static_cast<int64>(this.context.frameInfo.blocksize))
           && (info.frameOrSampleNum !== this.context.frameInfo.frameOrSampleNum + 1n)
         )
       ) {
+        // 当出现中间几帧没有导致 frameOrSampleNum 不连续了
+        // 判断其他参数一致则可以作为合法的一帧的开始
+        if (ret >= 0
+          && info.frameOrSampleNum > this.context.frameInfo.frameOrSampleNum
+          && info.sampleRate === this.context.frameInfo.sampleRate
+          && info.channels === this.context.frameInfo.channels
+          && info.isVarSize === this.context.frameInfo.isVarSize
+          && (info.isVarSize
+            || info.blocksize === this.context.frameInfo.blocksize
+          )
+        ) {
+          break
+        }
         buffers.push(this.context.cacheBuffer.subarray(0, 2))
         this.context.cachePos += 2n
         this.context.cacheBuffer = this.context.cacheBuffer.subarray(2)
@@ -398,7 +412,7 @@ export default class IFlacFormat extends IFormat {
 
       if (this.context.cacheBuffer) {
         now = this.context.cachePos
-        if (this.context.cacheBuffer.length < 16) {
+        if (this.context.cacheBuffer.length < MAX_FRAME_VERIFY_SIZE) {
           this.context.cacheBuffer = concatTypeArray(
             Uint8Array,
             [
@@ -407,10 +421,10 @@ export default class IFlacFormat extends IFormat {
             ]
           )
         }
-        this.context.bitReader.appendBuffer(this.context.cacheBuffer.subarray(0, 16))
+        this.context.bitReader.appendBuffer(this.context.cacheBuffer.subarray(0, MAX_FRAME_VERIFY_SIZE))
       }
       else {
-        this.context.bitReader.appendBuffer(await formatContext.ioReader.peekBuffer(16))
+        this.context.bitReader.appendBuffer(await formatContext.ioReader.peekBuffer(MAX_FRAME_VERIFY_SIZE))
       }
 
       if (decodeFrameHeader(this.context.bitReader, this.context.frameInfo) < 0) {
@@ -464,8 +478,12 @@ export default class IFlacFormat extends IFormat {
         if (word === 0xfff9 || word === 0xfff8) {
           pos = formatContext.ioReader.getPos()
           this.context.bitReader.reset()
-          this.context.bitReader.appendBuffer(await formatContext.ioReader.peekBuffer(16))
-          if (!decodeFrameHeader(this.context.bitReader, {}, true)) {
+          this.context.bitReader.appendBuffer(await formatContext.ioReader.peekBuffer(MAX_FRAME_VERIFY_SIZE))
+          const info: Partial<FrameInfo> = {}
+          if (!decodeFrameHeader(this.context.bitReader, info, true)
+            && info.channels === this.context.streamInfo.channels
+            && info.sampleRate === this.context.streamInfo.sampleRate
+          ) {
             break
           }
         }

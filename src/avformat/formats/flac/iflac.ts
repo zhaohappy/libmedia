@@ -30,6 +30,9 @@ import * as logger from 'common/util/logger'
 import { BlockSizeTable, FLAC_MAX_CHANNELS, FlacCHMode, SampleRateTable, SampleSizeTable } from 'avutil/codecs/flac'
 import crc8 from 'common/math/crc8'
 
+export const MAX_FRAME_HEADER_SIZE = 16
+export const MAX_FRAME_VERIFY_SIZE = MAX_FRAME_HEADER_SIZE + 1
+
 export function getUtf8(reader: BitReader) {
   let value = static_cast<int64>(reader.readU(8))
   let top = (value & 128n) >> 1n
@@ -132,6 +135,31 @@ export function decodeFrameHeader(bitReader: BitReader, info: Partial<FrameInfo>
   if (crc !== bitReader.readU(8)) {
     !check && logger.error('header crc mismatch')
     return errorType.DATA_INVALID
+  }
+  const bits = bitReader.remainingLength() * 8 + bitReader.getBitLeft()
+  if (bits > 0) {
+    // subframe zero bit
+    if (bitReader.readU1()) {
+      return errorType.DATA_INVALID
+    }
+    if (bits > 6) {
+      // subframe type
+      // 000000 : SUBFRAME_CONSTANT
+      // 000001 : SUBFRAME_VERBATIM
+      // 00001x : reserved
+      // 0001xx : reserved
+      // 001xxx : if(xxx <= 4) SUBFRAME_FIXED, xxx=order ; else reserved
+      // 01xxxx : reserved
+      // 1xxxxx : SUBFRAME_LPC, xxxxx=order-1
+      const subFrameType = bitReader.readU(6)
+      if (!(subFrameType === 0
+        || subFrameType === 1
+        || ((subFrameType >= 8) && (subFrameType <= 12))
+        || (subFrameType >= 32)
+      )) {
+        return errorType.DATA_INVALID
+      }
+    }
   }
 
   return 0

@@ -45,7 +45,7 @@ import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
 import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
 import BitReader from 'common/io/BitReader'
 import type { FrameInfo } from './flac/type'
-import { decodeFrameHeader } from './flac/iflac'
+import { decodeFrameHeader, MAX_FRAME_VERIFY_SIZE } from './flac/iflac'
 
 export interface OFlacFormatOptions {
 }
@@ -84,7 +84,7 @@ export default class OFlacFormat extends OFormat {
     formatContext.ioWriter.setEndian(true)
     this.seekPoint = []
     this.streamInfo = null
-    this.bitReader = new BitReader(16)
+    this.bitReader = new BitReader(MAX_FRAME_VERIFY_SIZE)
     this.frameInfo = {
       sampleRate: 0,
       channels: 0,
@@ -214,13 +214,13 @@ export default class OFlacFormat extends OFormat {
     if (extradata) {
       this.streamInfo = mapUint8Array(extradata.data, reinterpret_cast<size>(extradata.size)).slice()
     }
-    if (avpacket.size >= 16) {
+    if (avpacket.size >= 7) {
       const pts = avRescaleQ2(avpacket.pts, addressof(avpacket.timeBase), { den: stream.codecpar.sampleRate, num: 1 })
       if (!this.seekPoint.length
         || avRescaleQ(pts - this.seekPoint[this.seekPoint.length - 1].pts, { den: stream.codecpar.sampleRate, num: 1 }, AV_MILLI_TIME_BASE_Q) >= 5000
       ) {
         this.bitReader.reset()
-        this.bitReader.appendBuffer(mapUint8Array(avpacket.data, 16))
+        this.bitReader.appendBuffer(mapUint8Array(avpacket.data, Math.max(avpacket.size, MAX_FRAME_VERIFY_SIZE)))
         if (decodeFrameHeader(this.bitReader, this.frameInfo) >= 0) {
           this.seekPoint.push({
             pos: formatContext.ioWriter.getPos() - this.firstFramePos,
