@@ -27,15 +27,20 @@
 import { $fixFontSize } from 'assjs/src/renderer/font-size'
 import { clear, createResize } from 'assjs/src/internal'
 import { createSVGEl, batchAnimate } from 'assjs/src/utils'
-import generateUUID from 'common/function/generateUUID'
-import type { CompiledASSStyle, Dialogue } from 'ass-compiler'
+import { renderer } from 'assjs/src/renderer/renderer'
+
 import { compile } from 'ass-compiler'
+import type { CompiledASSStyle, Dialogue } from 'ass-compiler'
 import { compileDialogues } from 'ass-compiler/src/compiler/dialogues'
 import { compileStyles } from 'ass-compiler/src/compiler/styles'
-import type { AssEvent } from 'avformat/formats/ass/ass'
-import { AssEventType } from 'avformat/formats/ass/ass'
-import { renderer } from 'assjs/src/renderer/renderer'
-import * as object from 'common/util/object'
+
+
+import {
+  generateUUID,
+  object
+} from '@libmedia/common'
+
+import { type AssEvent, AssEventType } from '@libmedia/avformat/internal'
 
 const GLOBAL_CSS = '.ASS-box{font-family:Arial;overflow:hidden;pointer-events:none;position:absolute}.ASS-dialogue{font-size:0;width:max-content;position:absolute;z-index:0;transform:translate(calc(var(--ass-align-h)*-1),calc(var(--ass-align-v)*-1));span{display:inline-block}[data-text]{display:inline-block;color:var(--ass-fill-color);font-size:calc(var(--ass-scale)*var(--ass-real-fs)*1px);line-height:calc(var(--ass-scale)*var(--ass-tag-fs)*1px);letter-spacing:calc(var(--ass-scale)*var(--ass-tag-fsp)*1px);filter:blur(calc(var(--ass-scale-stroke)*var(--ass-tag-blur)*(1-round(up,sin(var(--ass-tag-xbord))*sin(var(--ass-tag-xbord))))*(1-round(up,sin(var(--ass-tag-ybord))*sin(var(--ass-tag-ybord))))*1px))}[data-is="br"]+[data-is="br"]{height:calc(var(--ass-scale)*var(--ass-tag-fs)*1px/2)}}.ASS-dialogue[data-wrap-style="0"],.ASS-dialogue[data-wrap-style="3"]{text-wrap:balance;white-space:pre-wrap}.ASS-dialogue[data-wrap-style="1"]{word-break:break-word;white-space:pre-wrap}.ASS-dialogue[data-wrap-style="2"]{word-break:normal;white-space:pre}.ASS-dialogue[data-border-style="1"]{position:relative;&::before,&::after{content:attr(data-text);position:absolute;top:0;left:0;z-index:-1;filter:blur(calc(var(--ass-scale-stroke)*var(--ass-tag-blur)*1px))}&::before{color:var(--ass-shadow-color);-webkit-text-stroke:calc(var(--ass-scale-stroke)*var(--ass-border-width)*1px) var(--ass-shadow-color);transform:translate(calc(var(--ass-scale-stroke)*var(--ass-tag-xshad)*1px),calc(var(--ass-scale-stroke)*var(--ass-tag-yshad)*1px))}&::after{color:var(--ass-border-color);-webkit-text-stroke:calc(var(--ass-scale-stroke)*var(--ass-border-width)*1px) var(--ass-border-color)}&[data-stroke="svg"]{color:#000;&::before,&::after{opacity:0}}}@container style(--ass-tag-xbord:0) and style(--ass-tag-ybord:0){.ASS-dialogue[data-border-style="1"]::after{display:none}}@container style(--ass-tag-xshad:0) and style(--ass-tag-yshad:0){.ASS-dialogue[data-border-style="1"]::before{display:none}}.ASS-dialogue[data-border-style="3"]{padding:calc(var(--ass-scale-stroke)*var(--ass-tag-xbord)*1px)calc(var(--ass-scale-stroke)*var(--ass-tag-ybord)*1px);position:relative;filter:blur(calc(var(--ass-scale-stroke)*var(--ass-tag-blur)*1px));&::before,&::after{content:"";width:100%;height:100%;position:absolute;z-index:-1}&::before{background-color:var(--ass-shadow-color);left:calc(var(--ass-scale-stroke)*var(--ass-tag-xshad)*1px);top:calc(var(--ass-scale-stroke)*var(--ass-tag-yshad)*1px)}&::after{background-color:var(--ass-border-color);left:0;top:0}}@container style(--ass-tag-xbord:0) and style(--ass-tag-ybord:0){.ASS-dialogue [data-border-style="3"]::after{background-color:transparent}}@container style(--ass-tag-xshad:0) and style(--ass-tag-yshad:0){.ASS-dialogue [data-border-style="3"]::before{background-color:transparent}}.ASS-dialogue[data-rotate]{transform:perspective(312.5px) rotateY(calc(var(--ass-tag-fry) * 1deg)) rotateX(calc(var(--ass-tag-frx) * 1deg)) rotateZ(calc(var(--ass-tag-frz) * -1deg));&[data-text]{transform-style:preserve-3d;word-break:normal;white-space:nowrap}}.ASS-dialogue[data-scale],.ASS-dialogue[data-skew]{display:inline-block;transform:scale(var(--ass-tag-fscx), var(--ass-tag-fscy)) skew(calc(var(--ass-tag-fax)*1rad),calc(var(--ass-tag-fay) * 1rad));transform-origin:var(--ass-align-h) var(--ass-align-v)}.ASS-fix-font-size{font-family:Arial;line-height:normal;width:0;height:0;position:absolute;visibility:hidden;overflow:hidden;span{position:absolute}}.ASS-clip-area{width:100%;height:100%;position:absolute;top:0;left:0}.ASS-effect-area{position:absolute;display:flex;width:100%;height:fit-content;overflow:hidden;mask-composite:intersect;&[data-effect="banner"]{flex-direction:column;height:100%}.ASS-dialogue{position:static;transform:none}}'
 
@@ -124,7 +129,7 @@ export const defaultStyle = {
   MarginL: '10',
   MarginR: '10',
   MarginV: '10',
-  Encoding: '0',
+  Encoding: '0'
 }
 
 
@@ -231,11 +236,11 @@ export default class AssRender {
       this.store.sbas = /yes/i.test(info.ScaledBorderAndShadow)
       this.store.layoutRes = {
         width: +info.LayoutResX || this.options.videoWidth || this.store.video.clientWidth,
-        height: +info.LayoutResY || this.options.videoHeight || this.store.video.clientHeight,
+        height: +info.LayoutResY || this.options.videoHeight || this.store.video.clientHeight
       }
       this.store.scriptRes = {
         width: width || this.store.layoutRes.width,
-        height: height || this.store.layoutRes.height,
+        height: height || this.store.layoutRes.height
       }
 
       this.store.styles = styles
@@ -265,11 +270,11 @@ export default class AssRender {
       })
       this.store.layoutRes = {
         width: +info.LayoutResX || videoWidth || this.store.video.clientWidth,
-        height: +info.LayoutResY || videoHeight || this.store.video.clientHeight,
+        height: +info.LayoutResY || videoHeight || this.store.video.clientHeight
       }
       this.store.scriptRes = {
         width: width || this.store.layoutRes.width,
-        height: height || this.store.layoutRes.height,
+        height: height || this.store.layoutRes.height
       }
     }
     else {

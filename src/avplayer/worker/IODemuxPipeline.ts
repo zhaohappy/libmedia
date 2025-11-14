@@ -24,20 +24,35 @@
  *
  */
 
-import IOPipeline from 'avpipeline/IOPipeline'
-import DemuxPipeline from 'avpipeline/DemuxPipeline'
-import * as is from 'common/util/is'
 import type { AVPlayerGlobalData } from '../struct'
-import * as logger from 'common/util/logger'
-import type { AVStreamInterface } from 'avutil/AVStream'
-import { serializeAVCodecParameters } from 'avutil/util/serialize'
-import { unrefAVFrame } from 'avutil/util/avframe'
-import { unrefAVPacket } from 'avutil/util/avpacket'
-import * as mutex from 'cheap/thread/mutex'
-import IPCPort from 'common/network/IPCPort'
-import Timer from 'common/timer/Timer'
-import type Stats from 'avpipeline/struct/stats'
-import { AVMediaType } from 'avutil/codec'
+
+import { IOPipeline, DemuxPipeline, type Stats } from '@libmedia/avpipeline'
+
+import {
+  is,
+  logger
+} from '@libmedia/common'
+
+import {
+  Timer
+} from '@libmedia/common/timer'
+
+import {
+  IPCPort
+} from '@libmedia/common/network'
+
+import {
+  mutex
+} from '@libmedia/cheap'
+
+import {
+  unrefAVPacket,
+  unrefAVFrame,
+  AVMediaType,
+  serializeAVCodecParameters,
+  type AVStreamInterface
+} from '@libmedia/avutil'
+
 
 export default class IODemuxPipeline {
 

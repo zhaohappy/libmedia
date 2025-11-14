@@ -23,18 +23,20 @@
  *
  */
 
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type AVPacket from 'avutil/struct/avpacket'
+import {
+  type AVPacket,
+  type AVCodecParameters,
+  type AVSubtitle,
+  AVCodecID,
+  errorType
+} from '@libmedia/avutil'
+
 import type Decoder from './decoder/Decoder'
-import { AVCodecID } from 'avutil/codec'
-import * as errorType from 'avutil/error'
 import WebVttDecoder from './decoder/WebVttDecoder'
-import SubRipDecoder from './decoder/SubRipDecoder'
 import AssDecoder from './decoder/AssDecoder'
 import TtmlDecoder from './decoder/TtmlDecoder'
 import TimedTextDecoder from './decoder/TimedTextDecoder'
 import TextDecoder from './decoder/TextDecoder'
-import type { AVSubtitle } from 'avutil/struct/avsubtitle'
 
 export type SubtitleDecoderOptions = {
   onReceiveSubtitle?: (subtitle: AVSubtitle) => void

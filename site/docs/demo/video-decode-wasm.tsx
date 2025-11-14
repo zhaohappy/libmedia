@@ -1,11 +1,13 @@
-import * as demux from '@libmedia/avformat/demux'
-import { createAVIFormatContext } from '@libmedia/avformat/AVFormatContext'
-import { createAVPacket, destroyAVPacket } from '@libmedia/avutil/util/avpacket'
-import { AVMediaType } from '@libmedia/avutil/codec'
-import compileResource from '@libmedia/avutil/function/compileResource'
-import WasmVideoDecoder from '@libmedia/avcodec/wasmcodec/VideoDecoder'
-import Sleep from '@libmedia/common/timer/Sleep'
-import { destroyAVFrame } from '@libmedia/avutil/util/avframe'
+import { demux, createAVIFormatContext } from '@libmedia/avformat'
+import {
+  createAVPacket,
+  destroyAVPacket,
+  AVMediaType,
+  compileResource,
+  destroyAVFrame
+} from '@libmedia/avutil'
+import { WasmVideoDecoder } from '@libmedia/avcodec'
+import { Sleep } from '@libmedia/common/timer'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
 import { useEffect, useRef, useState } from 'react'
@@ -40,7 +42,7 @@ async function decode(log: (v: string) => void) {
     onReceiveAVFrame: (frame) => {
       log(`got video frame, pts: ${frame.pts}, duration: ${frame.duration}\n`)
       destroyAVFrame(frame)
-    },
+    }
   })
 
   const ret = await decoder.open(addressof(stream.codecpar))
@@ -129,7 +131,7 @@ export default function () {
       &nbsp;
       <input accept={getAccept()} type="file" onChange={onChange}></input>
       <hr />
-      <textarea readOnly ref={textareaRef} value={value} style={{width: '600px', height: '400px'}}></textarea>
+      <textarea readOnly ref={textareaRef} value={value} style={{ width: '600px', height: '400px' }}></textarea>
     </div>
   )
 }

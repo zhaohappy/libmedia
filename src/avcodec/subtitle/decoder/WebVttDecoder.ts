@@ -23,15 +23,20 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
+import {
+  type AVPacket,
+  type AVSubtitle,
+  getAVPacketData,
+  AVSubtitleType,
+  type AVRational
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE
+} from '@libmedia/avutil/internal'
+
+import { text, time } from '@libmedia/common'
 import Decoder from './Decoder'
-import * as text from 'common/util/text'
-import { getAVPacketData } from 'avutil/util/avpacket'
-import type { Rational } from 'avutil/struct/rational'
-import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
-import type { AVSubtitle } from 'avutil/struct/avsubtitle'
-import { AVSubtitleType } from 'avutil/struct/avsubtitle'
-import { AV_MILLI_TIME_BASE } from 'avutil/constant'
 
 export default class WebVttDecoder extends Decoder {
 
@@ -39,7 +44,7 @@ export default class WebVttDecoder extends Decoder {
     pts: int64
     duration: int64
     context: string
-    timeBase: Rational
+    timeBase: AVRational
   }[]
 
   constructor() {
@@ -62,7 +67,7 @@ export default class WebVttDecoder extends Decoder {
     }
     return {
       start: -1,
-      end: -1,
+      end: -1
     }
   }
 
@@ -78,7 +83,7 @@ export default class WebVttDecoder extends Decoder {
       if (start < 0) {
         break
       }
-      const pts = hhColonDDColonSSDotMill2Int64(context.substring(start + 1, end))
+      const pts = time.hhColonDDColonSSDotMill2Int64(context.substring(start + 1, end))
 
       cache.push(context.substring(0, start))
 

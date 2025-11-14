@@ -23,34 +23,61 @@
  *
  */
 
+import {
+  errorType,
+  type AVPacketPool,
+  type AVPacketRef,
+  AVPacketPoolImpl,
+  AVFormat,
+  AVMediaType,
+  avRescaleQ2,
+  AVDisposition,
+  type AVStreamInterface,
+  createAVPacket,
+  refAVPacket,
+  NOPTS_VALUE_BIGINT,
+  type AVStream,
+  copyCodecParameters,
+  type AVCodecParameters
+} from '@libmedia/avutil'
+
+import { AV_MILLI_TIME_BASE_Q } from '@libmedia/avutil/internal'
+
+import {
+  type Mutex,
+  type List
+} from '@libmedia/cheap'
+
+import {
+  array,
+  logger,
+  object
+} from '@libmedia/common'
+
+import {
+  IOError,
+  IOWriterSync
+} from '@libmedia/common/io'
+
+import {
+  LoopTask
+} from '@libmedia/common/timer'
+
+import {
+  IPCPort
+} from '@libmedia/common/network'
+
+import {
+  mux,
+  createAVOFormatContext,
+  type AVChapter,
+  type AVOFormatContext,
+  type OFormat
+} from '@libmedia/avformat'
+
 import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
-import * as errorType from 'avutil/error'
-import IPCPort from 'common/network/IPCPort'
-import type { AVChapter, AVOFormatContext } from 'avformat/AVFormatContext'
-import { createAVOFormatContext } from 'avformat/AVFormatContext'
-import * as mux from 'avformat/mux'
-import { AVFormat } from 'avutil/avformat'
-import type List from 'cheap/std/collection/List'
-import type { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
-import type { Mutex } from 'cheap/thread/mutex'
-import * as logger from 'common/util/logger'
-import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
-import { IOError } from 'common/io/error'
-import LoopTask from 'common/timer/LoopTask'
-import * as array from 'common/util/array'
-import { avRescaleQ2 } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import type OFormat from 'avformat/formats/OFormat'
-import IOWriterSync from 'common/io/IOWriterSync'
-import { AVDisposition, type AVStreamInterface } from 'avutil/AVStream'
-import type AVStream from 'avutil/AVStream'
-import { copyCodecParameters } from 'avutil/util/codecparameters'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { AVMediaType } from 'avutil/codec'
-import type { Data } from 'common/types/type'
-import * as object from 'common/util/object'
-import { createAVPacket, refAVPacket } from 'avutil/util/avpacket'
+import type { Data } from '@libmedia/common'
 
 const MIN_QUEUE_CACHE = 30
 
@@ -134,7 +161,7 @@ export default class MuxPipeline extends Pipeline {
       switch (task.format) {
         case AVFormat.FLV:
           if (defined(ENABLE_MUXER_FLV)) {
-            oformat = new ((await import('avformat/formats/OFlvFormat')).default)(task.formatOptions)
+            oformat = new ((await import('@libmedia/avformat/OFlvFormat')).default)(task.formatOptions)
           }
           else {
             logger.error('flv format not support, maybe you can rebuild avmedia')
@@ -143,7 +170,7 @@ export default class MuxPipeline extends Pipeline {
           break
         case AVFormat.ISOBMFF:
           if (defined(ENABLE_MUXER_ISOBMFF) || defined(ENABLE_PROTOCOL_DASH)) {
-            oformat = new ((await import('avformat/formats/OIsobmffFormat')).default)(task.formatOptions)
+            oformat = new ((await import('@libmedia/avformat/OIsobmffFormat')).default)(task.formatOptions)
           }
           else {
             logger.error('mp4 format not support, maybe you can rebuild avmedia')
@@ -152,7 +179,7 @@ export default class MuxPipeline extends Pipeline {
           break
         case AVFormat.MPEGTS:
           if (defined(ENABLE_MUXER_ISOBMFF) || defined(ENABLE_PROTOCOL_HLS)) {
-            oformat = new ((await import('avformat/formats/OMpegtsFormat')).default)(task.formatOptions)
+            oformat = new ((await import('@libmedia/avformat/OMpegtsFormat')).default)(task.formatOptions)
           }
           else {
             logger.error('mpegts format not support, maybe you can rebuild avmedia')
@@ -161,7 +188,7 @@ export default class MuxPipeline extends Pipeline {
           break
         case AVFormat.IVF:
           if (defined(ENABLE_MUXER_IVF)) {
-            oformat = new ((await import('avformat/formats/OIvfFormat')).default)
+            oformat = new ((await import('@libmedia/avformat/OIvfFormat')).default)
           }
           else {
             logger.error('ivf format not support, maybe you can rebuild avmedia')
@@ -170,7 +197,7 @@ export default class MuxPipeline extends Pipeline {
           break
         case AVFormat.OGG:
           if (defined(ENABLE_MUXER_OGG)) {
-            oformat = new ((await import('avformat/formats/OOggFormat')).default)
+            oformat = new ((await import('@libmedia/avformat/OOggFormat')).default)
           }
           else {
             logger.error('oggs format not support, maybe you can rebuild avmedia')
@@ -179,7 +206,7 @@ export default class MuxPipeline extends Pipeline {
           break
         case AVFormat.MP3:
           if (defined(ENABLE_MUXER_MP3)) {
-            oformat = new ((await import('avformat/formats/OMp3Format')).default)(task.formatOptions)
+            oformat = new ((await import('@libmedia/avformat/OMp3Format')).default)(task.formatOptions)
           }
           else {
             logger.error('mp3 format not support, maybe you can rebuild avmedia')
@@ -188,7 +215,7 @@ export default class MuxPipeline extends Pipeline {
           break
         case AVFormat.WAV:
           if (defined(ENABLE_MUXER_WAV)) {
-            oformat = new ((await import('avformat/formats/OWavFormat')).default)(task.formatOptions)
+            oformat = new ((await import('@libmedia/avformat/OWavFormat')).default)(task.formatOptions)
           }
           else {
             logger.error('wav format not support, maybe you can rebuild avmedia')
@@ -197,7 +224,7 @@ export default class MuxPipeline extends Pipeline {
           break
         case AVFormat.FLAC:
           if (defined(ENABLE_MUXER_FLAC)) {
-            oformat = new ((await import('avformat/formats/OFlacFormat')).default)(task.formatOptions)
+            oformat = new ((await import('@libmedia/avformat/OFlacFormat')).default)(task.formatOptions)
           }
           else {
             logger.error('flac format not support, maybe you can rebuild avmedia')
@@ -206,7 +233,7 @@ export default class MuxPipeline extends Pipeline {
           break
         case AVFormat.AAC:
           if (defined(ENABLE_MUXER_AAC)) {
-            oformat = new ((await import('avformat/formats/OAacFormat')).default)(task.formatOptions)
+            oformat = new ((await import('@libmedia/avformat/OAacFormat')).default)(task.formatOptions)
           }
           else {
             logger.error('aac format not support, maybe you can rebuild avmedia')
@@ -220,7 +247,7 @@ export default class MuxPipeline extends Pipeline {
               isLive: task.isLive,
               docType: task.format === AVFormat.WEBM ? 'webm' : 'matroska'
             }
-            oformat = new (((await import('avformat/formats/OMatroskaFormat')).default))(object.extend(task.formatOptions, options))
+            oformat = new (((await import('@libmedia/avformat/OMatroskaFormat')).default))(object.extend(task.formatOptions, options))
           }
           else {
             logger.error('matroska format not support, maybe you can rebuild avmedia')
@@ -231,7 +258,7 @@ export default class MuxPipeline extends Pipeline {
         case AVFormat.HEVC:
         case AVFormat.VVC:
           if (defined(ENABLE_MUXER_H26X)) {
-            oformat = new (((await import('avformat/formats/OH26XFormat')).default))()
+            oformat = new (((await import('@libmedia/avformat/OH26XFormat')).default))()
           }
           else {
             logger.error('h26x format not support, maybe you can rebuild avmedia')

@@ -113,7 +113,7 @@ export default defineConfig({
 ```javascript
 
 import AVTranscoder from '@libmedia/avtranscoder'
-import { AVCodecID } from '@libmedia/avutil/codec'
+import { AVCodecID } from '@libmedia/avutil'
 
 const player = new AVTranscoder({
   getWasm: (type, codecId, mediaType) => {

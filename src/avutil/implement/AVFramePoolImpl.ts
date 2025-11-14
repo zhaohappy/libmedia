@@ -25,12 +25,15 @@
 
 import type { AVFramePool } from '../struct/avframe'
 import { AVFrameRef } from '../struct/avframe'
-import type List from 'cheap/std/collection/List'
-import type { Mutex } from 'cheap/thread/mutex'
-import * as atomics from 'cheap/thread/atomics'
-import * as mutex from 'cheap/thread/mutex'
 import { avMallocz } from '../util/mem'
 import { getAVFrameDefault, unrefAVFrame } from '../util/avframe'
+
+import {
+  type List,
+  type Mutex,
+  atomics,
+  mutex
+} from '@libmedia/cheap'
 
 export default class AVFramePoolImpl implements AVFramePool {
 

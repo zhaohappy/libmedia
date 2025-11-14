@@ -25,8 +25,8 @@
 
 import type { AVCodecID, AVMediaType, AVPacketSideDataType } from '../codec'
 import type AVPacket from '../struct/avpacket'
-import type { Rational } from '../struct/rational'
-import { mapUint8Array, memcpyFromUint8Array, memset } from 'cheap/std/memory'
+import type { AVRational } from '../struct/rational'
+import { mapUint8Array, memcpyFromUint8Array, memset } from '@libmedia/cheap'
 import { addAVPacketData, addAVPacketSideData, addSideData, createAVPacket, freeAVPacketSideData, getAVPacketData } from './avpacket'
 import { avFree, avMalloc } from './mem'
 import type { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVFieldOrder, AVPixelFormat } from '../pixfmt'
@@ -45,7 +45,7 @@ export interface AVPacketSerialize {
   }[]
   duration: int64
   pos: int64
-  timeBase: Rational
+  timeBase: AVRational
 }
 
 export interface AVCodecParametersSerialize {
@@ -65,8 +65,8 @@ export interface AVCodecParametersSerialize {
   level: int32
   width: int32
   height: int32
-  sampleAspectRatio: Rational
-  framerate: Rational
+  sampleAspectRatio: AVRational
+  framerate: AVRational
   fieldOrder: AVFieldOrder
   colorRange: AVColorRange
   colorPrimaries: AVColorPrimaries

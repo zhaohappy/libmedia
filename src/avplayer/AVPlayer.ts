@@ -23,102 +23,157 @@
  *
  */
 
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import IOPipeline from 'avpipeline/IOPipeline'
-import DemuxPipeline from 'avpipeline/DemuxPipeline'
-import VideoDecodePipeline from 'avpipeline/VideoDecodePipeline'
-import AudioDecodePipeline from 'avpipeline/AudioDecodePipeline'
-import type { Thread } from 'cheap/thread/thread'
-import { closeThread, createThreadFromClass } from 'cheap/thread/thread'
-import type { EmitterOptions } from 'common/event/Emitter'
-import Emitter from 'common/event/Emitter'
-import generateUUID from 'common/function/generateUUID'
-import * as is from 'common/util/is'
-import * as object from 'common/util/object'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import compile from 'cheap/webassembly/compiler'
-import { unrefAVFrame } from 'avutil/util/avframe'
-import { addSideData, getSideData, unrefAVPacket } from 'avutil/util/avpacket'
-import AudioRenderPipeline from 'avpipeline/AudioRenderPipeline'
-import VideoRenderPipeline from 'avpipeline/VideoRenderPipeline'
-import { AVSeekFlags, IOType, IOFlags, AVFormat } from 'avutil/avformat'
-import * as urlUtils from 'common/util/url'
-import * as cheapConfig from 'cheap/config'
-import { AVSampleFormat } from 'avutil/audiosamplefmt'
-import registerProcessor from 'avrender/pcm/audioWorklet/base/registerProcessor'
-import AudioSourceWorkletNode from 'avrender/pcm/AudioSourceWorkletNode'
-import { Memory } from 'cheap/heap'
-import { RenderMode } from 'avrender/image/ImageRender'
+import {
+  IOPipeline,
+  DemuxPipeline,
+  AudioDecodePipeline,
+  VideoDecodePipeline,
+  AudioRenderPipeline,
+  VideoRenderPipeline,
+  Stats
+} from '@libmedia/avpipeline'
+
+import {
+  is,
+  text,
+  logger,
+  bigint,
+  array,
+  object,
+  browser,
+  os,
+  Emitter,
+  type EmitterOptions,
+  generateUUID,
+  url as urlUtils,
+  support,
+  restrain,
+  type Data,
+  type Fn,
+  type PromisePending
+} from '@libmedia/common'
+
+import {
+  Timer,
+  Sleep
+} from '@libmedia/common/timer'
+
+import {
+  IPCPort,
+  REQUEST,
+  type RpcMessage
+} from '@libmedia/common/network'
+
+import {
+  mutex,
+  type Thread,
+  closeThread,
+  createThreadFromClass,
+  type WebAssemblyResource,
+  compileResource as compile,
+  config as cheapConfig,
+  Memory,
+  memset,
+  mapUint8Array,
+  mapSafeUint8Array,
+  memcpyFromUint8Array
+} from '@libmedia/cheap'
+
+import {
+  unrefAVPacket,
+  unrefAVFrame,
+  compileResource,
+  errorType,
+  AVCodecID,
+  AVMediaType,
+  AVPacketSideDataType,
+  addSideData,
+  getSideData,
+  AVSeekFlags,
+  IOType,
+  IOFlags,
+  AVFormat,
+  AVSampleFormat,
+  avQ2D,
+  avRescaleQ,
+  NOPTS_VALUE_BIGINT,
+  getVideoCodec,
+  getAudioCodec,
+  type AVStreamInterface,
+  type AVStreamMetadataEncryption,
+  AVDisposition,
+  AVStreamMetadataKey,
+  isHdr,
+  hasAlphaChannel,
+  serializeAVCodecParameters,
+  analyzeUrlIOLoader,
+  getWasmUrl,
+  encryptionInitInfo2SideData,
+  encryptionSideData2InitInfo,
+  type EncryptionInitInfo,
+  avMalloc,
+  AVCodecParameterFlags,
+  getVideoMimeType,
+  getAudioMimeType
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q,
+  getHardwarePreference,
+  mediaType2AVMediaType,
+  Ext2Format
+} from '@libmedia/avutil/internal'
+
+import {
+  AudioSourceWorkletNode,
+  RenderMode,
+  AudioSourceBufferNode
+} from '@libmedia/avrender'
+
+import {
+  type AVFormatContextInterface,
+  dump,
+  dumpUtils
+} from '@libmedia/avformat'
+
+import { digital2Tag } from '@libmedia/avformat/internal'
+
+import {
+  FetchIOLoader,
+  FileIOLoader,
+  CustomIOLoader,
+  type WebSocketOptions,
+  WebSocketIOLoader,
+  SocketIOLoader,
+  WebTransportIOLoader,
+  type IOLoaderOptions
+} from '@libmedia/avnetwork'
+
+import registerProcessor from '@libmedia/avrender/registerProcessor'
+
 import type { ControllerObserver } from './Controller'
 import Controller from './Controller'
 import * as eventType from './eventType'
 import supportOffscreenCanvas from './function/supportOffscreenCanvas'
-import * as logger from 'common/util/logger'
-import support from 'common/util/support'
-import AudioSourceBufferNode from 'avrender/pcm/AudioSourceBufferNode'
-import restrain from 'common/function/restrain'
-import browser from 'common/util/browser'
-import { avQ2D, avRescaleQ } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import Stats from 'avpipeline/struct/stats'
-import { memset, mapUint8Array, mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import createMessageChannel from './function/createMessageChannel'
-import getVideoCodec from 'avutil/function/getVideoCodec'
-import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
-import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
 import type MSEPipeline from './mse/MSEPipeline'
-import { getHardwarePreference } from 'avutil/function/getHardwarePreference'
-import Sleep from 'common/timer/Sleep'
 import StatsController from './StatsController'
-import * as mutex from 'cheap/thread/mutex'
-import * as bigint from 'common/util/bigint'
 import getMediaSource from './function/getMediaSource'
 import JitterBufferController from './JitterBufferController'
-import getAudioCodec from 'avutil/function/getAudioCodec'
-import { Ext2Format, mediaType2AVMediaType } from 'avutil/stringEnum'
-import type { AVStreamInterface, AVStreamMetadataEncryption } from 'avutil/AVStream'
-import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
-import type { AVFormatContextInterface } from 'avformat/AVFormatContext'
-import dump, { dumpCodecName, dumpKey } from 'avformat/dump'
-import * as array from 'common/util/array'
-import isHdr from 'avutil/function/isHdr'
-import hasAlphaChannel from 'avutil/function/hasAlphaChannel'
 import type SubtitleRender from './subtitle/SubtitleRender'
-import type { Data, Fn, PromisePending } from 'common/types/type'
 import type { playerEventChanged, playerEventChanging, playerEventError, playerEventNoParam,
   playerEventProgress, playerEventSubtitleDelayChange, playerEventTime, playerEventVolumeChange
 } from './type'
-import compileResource from 'avutil/function/compileResource'
-import os from 'common/util/os'
-import type { RpcMessage } from 'common/network/IPCPort'
-import IPCPort, { REQUEST } from 'common/network/IPCPort'
-import * as errorType from 'avutil/error'
-import FetchIOLoader from 'avnetwork/ioLoader/FetchIOLoader'
-import FileIOLoader from 'avnetwork/ioLoader/FileIOLoader'
-import CustomIOLoader from 'avnetwork/ioLoader/CustomIOLoader'
 import type { AVPlayerGlobalData } from './struct'
-import { serializeAVCodecParameters } from 'avutil/util/serialize'
 import IODemuxPipelineProxy from './worker/IODemuxPipelineProxy'
 import AudioPipelineProxy from './worker/AudioPipelineProxy'
 import VideoPipelineProxy from './worker/VideoPipelineProxy'
 import MSEPipelineProxy from './worker/MSEPipelineProxy'
-import analyzeUrlIOLoader from 'avutil/function/analyzeUrlIOLoader'
-import type { WebSocketOptions } from 'avnetwork/ioLoader/WebSocketIOLoader'
-import WebSocketIOLoader from 'avnetwork/ioLoader/WebSocketIOLoader'
-import SocketIOLoader from 'avnetwork/ioLoader/SocketIOLoader'
-import WebTransportIOLoader from 'avnetwork/ioLoader/WebTransportIOLoader'
-import getWasmUrl from 'avutil/function/getWasmUrl'
-import { encryptionInitInfo2SideData, encryptionSideData2InitInfo } from 'avutil/util/encryption'
 import getKeySystemFromSystemId from './drm/getKeySystemFromSystemId'
-import digital2Tag from 'avformat/function/digital2Tag'
-import type { EncryptionInitInfo } from 'avutil/struct/encryption'
-import { avMalloc } from 'avutil/util/mem'
 import { DRMType } from './drm/drm'
 import kid2Base64 from './drm/kid2Base64'
-import * as text from 'common/util/text'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
-import type { IOLoaderOptions } from 'avnetwork/ioLoader/IOLoader'
-import Timer from 'common/timer/Timer'
+
+export const Events = eventType
 
 const ObjectFitMap = {
   [RenderMode.FILL]: 'cover',
@@ -478,6 +533,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     browser,
     os
   }
+
+  static Events = eventType
 
   static IOLoader = {
     CustomIOLoader,
@@ -1414,7 +1471,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         isLive: false,
         flags,
         avpacketList: addressof(this.GlobalData.avpacketList),
-        avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+        avpacketListMutex: addressof(this.GlobalData.avpacketListMutex)
       })
 
     ret = await AVPlayer.DemuxerThread.openStream(taskId)
@@ -1708,7 +1765,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             },
             formatOptions,
             avpacketList: addressof(this.GlobalData.avpacketList),
-            avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+            avpacketListMutex: addressof(this.GlobalData.avpacketListMutex)
           })
         await AVPlayer.DemuxerThread.registerTask({
           taskId: this.subTaskId,
@@ -1722,7 +1779,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           },
           formatOptions,
           avpacketList: addressof(this.GlobalData.avpacketList),
-          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex)
         })
       }
       else if (hasAudio || hasVideo) {
@@ -1742,7 +1799,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             },
             formatOptions,
             avpacketList: addressof(this.GlobalData.avpacketList),
-            avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+            avpacketListMutex: addressof(this.GlobalData.avpacketListMutex)
           })
       }
     }
@@ -1764,7 +1821,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           isLive: this.isLive_,
           flags,
           avpacketList: addressof(this.GlobalData.avpacketList),
-          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex)
         })
     }
 
@@ -1784,7 +1841,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             mediaType: AVMediaType.AVMEDIA_TYPE_SUBTITLE
           },
           avpacketList: addressof(this.GlobalData.avpacketList),
-          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex),
+          avpacketListMutex: addressof(this.GlobalData.avpacketListMutex)
         })
       }
     }
@@ -2198,11 +2255,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
             codec: getVideoCodec(videoStream.codecpar)
           })
           if (!isSupport.supported) {
-            logger.fatal(`${dumpCodecName(videoStream.codecpar.codecType, videoStream.codecpar.codecId)} codecId ${videoStream.codecpar.codecId} not support`)
+            logger.fatal(`${dumpUtils.dumpCodecName(videoStream.codecpar.codecType, videoStream.codecpar.codecId)} codecId ${videoStream.codecpar.codecId} not support`)
           }
         }
         else {
-          logger.fatal(`${dumpCodecName(videoStream.codecpar.codecType, videoStream.codecpar.codecId)} codecId ${videoStream.codecpar.codecId} not support`)
+          logger.fatal(`${dumpUtils.dumpCodecName(videoStream.codecpar.codecType, videoStream.codecpar.codecId)} codecId ${videoStream.codecpar.codecId} not support`)
         }
       }
 
@@ -2236,7 +2293,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       let ret = await this.VideoDecoderThread.open(this.taskId, serializeAVCodecParameters(videoStream.codecpar))
       if (ret < 0) {
-        logger.fatal(`cannot open video ${dumpCodecName(videoStream.codecpar.codecType, videoStream.codecpar.codecId)} decoder`)
+        logger.fatal(`cannot open video ${dumpUtils.dumpCodecName(videoStream.codecpar.codecType, videoStream.codecpar.codecId)} decoder`)
       }
 
       await AVPlayer.DemuxerThread.connectStreamTask
@@ -2279,11 +2336,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           }
           const isSupport = await AudioDecoder.isConfigSupported(config)
           if (!isSupport.supported) {
-            logger.fatal(`${dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} codecId ${audioStream.codecpar.codecId} not support`)
+            logger.fatal(`${dumpUtils.dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} codecId ${audioStream.codecpar.codecId} not support`)
           }
         }
         else {
-          logger.fatal(`${dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} codecId ${audioStream.codecpar.codecId} not support`)
+          logger.fatal(`${dumpUtils.dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} codecId ${audioStream.codecpar.codecId} not support`)
         }
       }
 
@@ -2304,7 +2361,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       let ret = await AVPlayer.AudioDecoderThread.open(this.taskId, serializeAVCodecParameters(audioStream.codecpar))
       if (ret < 0) {
-        logger.fatal(`cannot open audio ${dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} decoder`)
+        logger.fatal(`cannot open audio ${dumpUtils.dumpCodecName(audioStream.codecpar.codecType, audioStream.codecpar.codecId)} decoder`)
       }
 
       await AVPlayer.DemuxerThread.connectStreamTask
@@ -2917,17 +2974,17 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         ])
         await Promise.all([
           AVPlayer.AudioRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp),
-          this.VideoRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp),
+          this.VideoRenderThread?.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp)
         ])
       }
       else {
         await Promise.all([
           AVPlayer.AudioRenderThread?.syncSeekTime(this.taskId, NOPTS_VALUE_BIGINT, maxQueueLength),
-          this.VideoRenderThread?.syncSeekTime(this.taskId, NOPTS_VALUE_BIGINT, maxQueueLength),
+          this.VideoRenderThread?.syncSeekTime(this.taskId, NOPTS_VALUE_BIGINT, maxQueueLength)
         ])
         await Promise.all([
           AVPlayer.AudioRenderThread?.afterSeek(this.taskId, NOPTS_VALUE_BIGINT),
-          this.VideoRenderThread?.afterSeek(this.taskId, NOPTS_VALUE_BIGINT),
+          this.VideoRenderThread?.afterSeek(this.taskId, NOPTS_VALUE_BIGINT)
         ])
       }
       if (this.jitterBufferController) {
@@ -3015,7 +3072,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         /**
          * 媒体类型
          */
-        mediaType: dumpKey(mediaType2AVMediaType, stream.codecpar.codecType),
+        mediaType: dumpUtils.dumpKey(mediaType2AVMediaType, stream.codecpar.codecType),
         codecparProxy: accessof(stream.codecpar)
       }
     })
@@ -4366,7 +4423,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       || !defined(ENABLE_WORKER_PROXY)
     ) {
       this.VideoDecoderThread = await createThreadFromClass(VideoDecodePipeline, {
-        name: 'VideoDecoderThread',
+        name: 'VideoDecoderThread'
       }).run()
       this.VideoDecoderThread.setLogLevel(AVPlayer.level)
       this.VideoRenderThread = AVPlayer.VideoRenderThread
@@ -4430,8 +4487,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           && cheapConfig.USE_THREADS
           && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
           && (!os.ios || browser.checkVersion(os.version, '16.1', true))
-            ? require.resolve('avrender/pcm/AudioSourceWorkletProcessor2')
-            : require.resolve('avrender/pcm/AudioSourceWorkletProcessor')
+            ? require.resolve('../avrender/pcm/AudioSourceWorkletProcessor2')
+            : require.resolve('../avrender/pcm/AudioSourceWorkletProcessor')
         )
       }
       else {
@@ -4439,8 +4496,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           && cheapConfig.USE_THREADS
           && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
           && (!os.ios || browser.checkVersion(os.version, '16.1', true))
-          ? new URL('avrender/dist/AudioSourceWorkletProcessor2Worklet.js', import.meta.url)
-          : new URL('avrender/dist/AudioSourceWorkletProcessorWorklet.js', import.meta.url))
+          ? new URL('../avrender/dist/AudioSourceWorkletProcessor2Worklet.js', import.meta.url)
+          : new URL('../avrender/dist/AudioSourceWorkletProcessorWorklet.js', import.meta.url))
       }
     }
   }
@@ -4459,12 +4516,12 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
       if (cheapConfig.USE_THREADS || !support.worker || !enableWorker || !defined(ENABLE_WORKER_PROXY)) {
         AVPlayer.AudioDecoderThread = await createThreadFromClass(AudioDecodePipeline, {
-          name: 'AudioDecoderThread',
+          name: 'AudioDecoderThread'
         }).run()
         AVPlayer.AudioDecoderThread.setLogLevel(AVPlayer.level)
 
         AVPlayer.AudioRenderThread = await createThreadFromClass(AudioRenderPipeline, {
-          name: 'AudioRenderThread',
+          name: 'AudioRenderThread'
         }).run()
         AVPlayer.AudioRenderThread.setLogLevel(AVPlayer.level)
       }

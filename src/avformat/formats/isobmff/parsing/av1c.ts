@@ -23,16 +23,14 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import type Stream from 'avutil/AVStream'
 import type { Atom, IsobmffContext } from '../type'
-import * as logger from 'common/util/logger'
-import { mapSafeUint8Array } from 'cheap/std/memory'
-import { avFree, avMalloc } from 'avutil/util/mem'
-import * as av1 from 'avutil/codecs/av1'
+import { logger } from '@libmedia/common'
+import { type IOReader } from '@libmedia/common/io'
+import { mapSafeUint8Array } from '@libmedia/cheap'
+import { av1 } from '@libmedia/avutil/internal'
+import { avFree, avMalloc, AVCodecID, AVPacketSideDataType, type AVStream } from '@libmedia/avutil'
 
-export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, isobmffContext: IsobmffContext) {
+export default async function read(ioReader: IOReader, stream: AVStream, atom: Atom, isobmffContext: IsobmffContext) {
 
   const now = ioReader.getPos()
 

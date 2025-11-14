@@ -23,8 +23,8 @@
  *
  */
 
-import type { AVColorPrimaries, AVColorSpace, AVColorTransferCharacteristic } from 'avutil/pixfmt'
-import type { Data } from 'common/types/type'
+import type { AVColorPrimaries, AVColorSpace, AVColorTransferCharacteristic } from '@libmedia/avutil'
+import type { Data } from '@libmedia/common'
 
 export interface FlvMetaData {
   audiocodecid: number

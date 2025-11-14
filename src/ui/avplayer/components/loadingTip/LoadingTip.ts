@@ -1,19 +1,18 @@
 import type { ComponentOptions } from 'yox'
-import type AVPlayer from 'avplayer/AVPlayer'
-import { AVPlayerProgress, AVPlayerStatus } from 'avplayer/AVPlayer'
-import * as eventType from 'avplayer/eventType'
+import type AVPlayer from '@libmedia/avplayer'
+import { AVPlayerProgress, AVPlayerStatus, Events as eventType } from '@libmedia/avplayer'
 
 import template from './LoadingTip.hbs'
 import style from './LoadingTip.styl'
-import type { AVStreamInterface } from 'avutil/AVStream'
-import { dumpCodecName } from 'avformat/dump'
-import IntervalQueueTask from 'common/helper/IntervalQueueTask'
+import type { AVStreamInterface } from '@libmedia/avutil'
+import { dumpUtils } from '@libmedia/avformat'
+import { IntervalQueueTask } from '@libmedia/common'
 
 const info = {
   [AVPlayerProgress.OPEN_FILE]: 'LOADING_MESSAGE_OPEN_FILE',
   [AVPlayerProgress.ANALYZE_FILE]: 'LOADING_MESSAGE_ANALYZE_FILE',
   [AVPlayerProgress.LOAD_AUDIO_DECODER]: 'LOADING_MESSAGE_LOAD_AUDIO_DECODER',
-  [AVPlayerProgress.LOAD_VIDEO_DECODER]: 'LOADING_MESSAGE_LOAD_VIDEO_DECODER',
+  [AVPlayerProgress.LOAD_VIDEO_DECODER]: 'LOADING_MESSAGE_LOAD_VIDEO_DECODER'
 }
 
 const LoadingTip: ComponentOptions = {
@@ -111,7 +110,7 @@ const LoadingTip: ComponentOptions = {
           break
         case AVPlayerProgress.LOAD_AUDIO_DECODER:
         case AVPlayerProgress.LOAD_VIDEO_DECODER:
-          message = message.replace('${decoder}', dumpCodecName((data as AVStreamInterface).codecpar.codecType, (data as AVStreamInterface).codecpar.codecId))
+          message = message.replace('${decoder}', dumpUtils.dumpCodecName((data as AVStreamInterface).codecpar.codecType, (data as AVStreamInterface).codecpar.codecId))
           break
       }
       this.queue.push(() => {

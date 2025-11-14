@@ -3,7 +3,7 @@
  * MIT license 
  */
 
-import getTimestamp from 'common/function/getTimestamp'
+import { getTimestamp } from '@libmedia/common'
 
 type RenditionType = 'AUDIO' | 'VIDEO' | 'SUBTITLES' | 'CLOSED-CAPTIONS'
 

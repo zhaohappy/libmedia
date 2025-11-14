@@ -58,7 +58,7 @@ export const colorSpaceMap: Record<VideoMatrixCoefficients, AVColorSpace> = {
   'bt470bg': AVColorSpace.AVCOL_SPC_BT470BG,
   // @ts-ignore
   'bt2020-ncl': AVColorSpace.AVCOL_SPC_BT2020_NCL,
-  'rgb': AVColorSpace.AVCOL_SPC_RGB,
+  'rgb': AVColorSpace.AVCOL_SPC_RGB
 }
 
 export const colorPrimariesMap: Record<VideoColorPrimaries, AVColorPrimaries> = {

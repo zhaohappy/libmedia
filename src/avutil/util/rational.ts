@@ -24,8 +24,8 @@
  */
 
 import { INT32_MAX } from '../constant'
-import type { Rational } from '../struct/rational'
-import gcd from 'common/math/gcd'
+import type { AVRational } from '../struct/rational'
+import { gcd } from '@libmedia/common/math'
 
 /**
  * 将一个时间戳由一个时间基转换到另一个时间基
@@ -34,7 +34,7 @@ import gcd from 'common/math/gcd'
  * @param bp 待转换时间戳的时间基
  * @param cq 目标时间基
  */
-export function avRescaleQ(a: int64, bq: Rational, cq: Rational) {
+export function avRescaleQ(a: int64, bq: AVRational, cq: AVRational) {
   const b = a * static_cast<int64>(bq.num as unknown as uint32) * static_cast<int64>(cq.den as unknown as uint32)
   const c = static_cast<int64>(bq.den as unknown as uint32) * static_cast<int64>(cq.num as unknown as uint32)
   return b / c
@@ -47,7 +47,7 @@ export function avRescaleQ(a: int64, bq: Rational, cq: Rational) {
  * @param bp 待转换时间戳的时间基
  * @param cq 目标时间基
  */
-export function avRescaleQ2(a: int64, bq: pointer<Rational>, cq: Rational) {
+export function avRescaleQ2(a: int64, bq: pointer<AVRational>, cq: AVRational) {
   const b = a * static_cast<int64>(bq.num as unknown as uint32) * static_cast<int64>(cq.den as unknown as uint32)
   const c = static_cast<int64>(bq.den as unknown as uint32) * static_cast<int64>(cq.num as unknown as uint32)
   return b / c
@@ -60,7 +60,7 @@ export function avRescaleQ2(a: int64, bq: pointer<Rational>, cq: Rational) {
  * @param bp 待转换时间戳的时间基
  * @param cq 目标时间基
  */
-export function avRescaleQ3(a: int64, bq: Rational, cq: pointer<Rational>) {
+export function avRescaleQ3(a: int64, bq: AVRational, cq: pointer<AVRational>) {
   const b = a * static_cast<int64>(bq.num as unknown as uint32) * static_cast<int64>(cq.den as unknown as uint32)
   const c = static_cast<int64>(bq.den as unknown as uint32) * static_cast<int64>(cq.num as unknown as uint32)
   return b / c
@@ -73,7 +73,7 @@ export function avRescaleQ3(a: int64, bq: Rational, cq: pointer<Rational>) {
  * @param bp 待转换时间戳的时间基
  * @param cq 目标时间基
  */
-export function avRescaleQ4(a: int64, bq: pointer<Rational>, cq: pointer<Rational>) {
+export function avRescaleQ4(a: int64, bq: pointer<AVRational>, cq: pointer<AVRational>) {
   const b = a * static_cast<int64>(bq.num as unknown as uint32) * static_cast<int64>(cq.den as unknown as uint32)
   const c = static_cast<int64>(bq.den as unknown as uint32) * static_cast<int64>(cq.num as unknown as uint32)
   return b / c
@@ -84,7 +84,7 @@ export function avRescaleQ4(a: int64, bq: pointer<Rational>, cq: pointer<Rationa
  * 
  * @param a 
  */
-export function avQ2D(a: Rational) {
+export function avQ2D(a: AVRational) {
   return a.num / a.den
 }
 
@@ -93,11 +93,11 @@ export function avQ2D(a: Rational) {
  * 
  * @param a 
  */
-export function avQ2D2(a: pointer<Rational>) {
+export function avQ2D2(a: pointer<AVRational>) {
   return a.num / a.den
 }
 
-export function avD2Q(d: double, max: int32): Rational {
+export function avD2Q(d: double, max: int32): AVRational {
   if (isNaN(double)) {
     return {
       den: 0,
@@ -128,7 +128,7 @@ export function avD2Q(d: double, max: int32): Rational {
  * 
  * @param a 
  */
-export function avReduce(a: Rational) {
+export function avReduce(a: AVRational) {
   const gcdValue = gcd(a.num, a.den)
   if (gcdValue <= 1) {
     return
@@ -142,7 +142,7 @@ export function avReduce(a: Rational) {
  * 
  * @param a 
  */
-export function avReduce2(a: pointer<Rational>) {
+export function avReduce2(a: pointer<AVRational>) {
   const gcdValue = gcd(a.num, a.den)
   if (gcdValue <= 1) {
     return

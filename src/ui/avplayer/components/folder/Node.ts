@@ -1,7 +1,6 @@
 import type { ComponentOptions } from 'yox'
 
-import * as is from 'common/util/is'
-import * as array from 'common/util/array'
+import { array, is } from '@libmedia/common'
 import template from './Node.hbs'
 
 export const musicExt: string[] = ['mp3', 'aac', 'flac', 'ogg', 'ogg', 'wav', 'm4a', 'mka', 'opus']

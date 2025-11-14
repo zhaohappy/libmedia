@@ -1,10 +1,7 @@
-import * as demux from '@libmedia/avformat/demux'
-import * as mux from '@libmedia/avformat/mux'
-import { createAVIFormatContext, createAVOFormatContext } from '@libmedia/avformat/AVFormatContext'
-import { createAVPacket, destroyAVPacket } from '@libmedia/avutil/util/avpacket'
-import IOWriterSync from '@libmedia/common/io/IOWriterSync'
-import OIsobmffFormat from '@libmedia/avformat/formats/OIsobmffFormat'
-import { copyCodecParameters } from '@libmedia/avutil/util/codecparameters'
+import { demux, mux, createAVIFormatContext, createAVOFormatContext } from '@libmedia/avformat'
+import { createAVPacket, destroyAVPacket, copyCodecParameters } from '@libmedia/avutil'
+import OIsobmffFormat from '@libmedia/avformat/OIsobmffFormat'
+import { IOWriterSync } from '@libmedia/common/io'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept } from './utils'
 import { useEffect, useRef, useState } from 'react'
@@ -125,7 +122,7 @@ export default function () {
       &nbsp;
       <input accept={getAccept()} type="file" onChange={onChange}></input>
       <hr />
-      <textarea readOnly ref={textareaRef} value={value} style={{width: '600px', height: '400px'}}></textarea>
+      <textarea readOnly ref={textareaRef} value={value} style={{ width: '600px', height: '400px' }}></textarea>
     </div>
   )
 }

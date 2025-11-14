@@ -23,21 +23,35 @@
  *
  */
 
-import type AVStream from 'avutil/AVStream'
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, addAVPacketSideData } from 'avutil/util/avpacket'
-import { IOError } from 'common/io/error'
-import * as array from 'common/util/array'
-import * as text from 'common/util/text'
-import { hhColonDDColonSSCommaMill2Int64 } from 'common/util/time'
+
+import { memcpyFromUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  addAVPacketData,
+  addAVPacketSideData,
+  AVPacketSideDataType,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  array,
+  logger,
+  text,
+  time
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
 
 
 export default class IWebVttFormat extends IFormat {
@@ -97,8 +111,8 @@ export default class IWebVttFormat extends IFormat {
         let identifier: string = lines.shift().trim()
 
         let times = lines.shift().split(/--?>/)
-        const startTs = hhColonDDColonSSCommaMill2Int64(times[0])
-        const endTs = hhColonDDColonSSCommaMill2Int64(times[1])
+        const startTs = time.hhColonDDColonSSCommaMill2Int64(times[0])
+        const endTs = time.hhColonDDColonSSCommaMill2Int64(times[1])
 
         if (endTs <= startTs) {
           continue

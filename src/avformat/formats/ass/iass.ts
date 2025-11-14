@@ -24,13 +24,13 @@
  *
  */
 
-import * as logger from 'common/util/logger'
 import type { AssEvent } from './ass'
 import { AssEventsFormatList, AssEventType, AssStylesFormatList } from './ass'
-import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
 
 import { parseEffect } from 'ass-compiler/src/parser/effect'
 import { parseText } from 'ass-compiler/src/parser/text'
+
+import { logger, time } from '@libmedia/common'
 
 export function parseFormat(fields: string[], format: string) {
   const items = format.match(/Format\s*:\s*(.*)/i)[1].split(/\s*,\s*/)
@@ -67,8 +67,8 @@ export function getEventLineTime(formats: string[], event: string, startIndex: n
   const [ , , value ] = event.match(/^(\w+?)\s*:\s*(.*)/i)
   const fields = parseEventLine(formats, value)
   return {
-    start: hhColonDDColonSSDotMill2Int64(fields[startIndex]),
-    end: hhColonDDColonSSDotMill2Int64(fields[endIndex])
+    start: time.hhColonDDColonSSDotMill2Int64(fields[startIndex]),
+    end: time.hhColonDDColonSSDotMill2Int64(fields[endIndex])
   }
 }
 
@@ -144,7 +144,7 @@ export function parseEvent(formats: string[], event: string) {
         break
       case 'Start':
       case 'End':
-        result[fmt] = hhColonDDColonSSDotMill2Int64(fld)
+        result[fmt] = time.hhColonDDColonSSDotMill2Int64(fld)
         break
       case 'Effect':
         result[fmt] = parseEffect(fld)

@@ -23,7 +23,7 @@
  *
  */
 
-import type { Rational } from './rational'
+import type { AVRational } from './rational'
 
 export const enum AVSubtitleType {
   SUBTITLE_NONE,
@@ -54,6 +54,6 @@ export interface AVSubtitleRect {
 export interface AVSubtitle {
   pts: int64
   duration: int64
-  timeBase: Rational
+  timeBase: AVRational
   rects: AVSubtitleRect[]
 }

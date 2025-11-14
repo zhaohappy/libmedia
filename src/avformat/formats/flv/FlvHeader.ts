@@ -23,8 +23,7 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import type IOWriter from 'common/io/IOWriterSync'
+import type { IOReader, IOWriterSync } from '@libmedia/common/io'
 
 export default class FlvHeader {
   /**
@@ -78,7 +77,7 @@ export default class FlvHeader {
     this.hasVideo = !!(this.flags & 0x01)
   }
 
-  public write(ioWriter: IOWriter) {
+  public write(ioWriter: IOWriterSync) {
     this.flags = 0
     if (this.hasAudio) {
       this.flags |= 0x04

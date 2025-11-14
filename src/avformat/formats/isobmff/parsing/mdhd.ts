@@ -23,13 +23,12 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import type Stream from 'avutil/AVStream'
 import type { Atom, IsobmffContext } from '../type'
-import * as logger from 'common/util/logger'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { logger } from '@libmedia/common'
+import { type IOReader } from '@libmedia/common/io'
+import { AVStreamMetadataKey, type AVStream } from '@libmedia/avutil'
 
-export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, isobmffContext: IsobmffContext) {
+export default async function read(ioReader: IOReader, stream: AVStream, atom: Atom, isobmffContext: IsobmffContext) {
   const now = ioReader.getPos()
 
   const version = await ioReader.readUint8()

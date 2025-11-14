@@ -23,9 +23,9 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import * as nalu from 'avutil/util/nalu'
-import concatTypeArray from 'common/function/concatTypeArray'
+import { type IOReader } from '@libmedia/common/io'
+import { nalu } from '@libmedia/avutil'
+import { concatTypeArray } from '@libmedia/common'
 
 export default class NaluReader {
 

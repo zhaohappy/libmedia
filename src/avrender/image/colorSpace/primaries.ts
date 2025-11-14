@@ -23,10 +23,7 @@
  *
  */
 
-import Matrix3 from 'common/math/Matrix3'
-import { Vector3 } from 'common/math/Vector3'
-import { concat3x3 } from 'common/math/matrix'
-import { mvMul } from 'common/math/vector'
+import { Matrix3, Vector3, matrix, vector } from '@libmedia/common/math'
 
 // Rec. ITU-R BT.709-6, value 1.
 export const Rec709 = [0.64, 0.33, 0.3, 0.6, 0.15, 0.06, 0.3127, 0.329]
@@ -113,8 +110,8 @@ function adaptToXYZ50(wx: float, wy: float) {
     -0.0085287, 0.0400428, 0.9684867
   ])
 
-  const srcCone = mvMul(xyzToLms, wXYZ)
-  const dstCone = mvMul(xyzToLms, wXYZD50)
+  const srcCone = vector.mvMul(xyzToLms, wXYZ)
+  const dstCone = vector.mvMul(xyzToLms, wXYZD50)
 
   let toXYZD50 = new Matrix3([
     dstCone.x / srcCone.x, 0, 0,
@@ -122,8 +119,8 @@ function adaptToXYZ50(wx: float, wy: float) {
     0, 0, dstCone.z / srcCone.z
   ])
 
-  toXYZD50 = concat3x3(toXYZD50, xyzToLms)
-  toXYZD50 = concat3x3(lmsToXyz, toXYZD50)
+  toXYZD50 = matrix.concat3x3(toXYZD50, xyzToLms)
+  toXYZD50 = matrix.concat3x3(lmsToXyz, toXYZD50)
 
   return toXYZD50
 }
@@ -139,7 +136,7 @@ export function primariesToXYZD50(pri: float[]) {
 
   const wXYZ = new Vector3([pri[6] / pri[7], 1, (1 - pri[6] - pri[7]) / pri[7]])
 
-  const XYZ = mvMul(matrix3Inv, wXYZ)
+  const XYZ = vector.mvMul(matrix3Inv, wXYZ)
 
   let toXYZ = new Matrix3([
     XYZ.x, 0, 0,
@@ -147,9 +144,9 @@ export function primariesToXYZD50(pri: float[]) {
     0, 0, XYZ.z
   ])
 
-  toXYZ = concat3x3(matrix3, toXYZ)
+  toXYZ = matrix.concat3x3(matrix3, toXYZ)
 
   const dxToD50 = adaptToXYZ50(pri[6], pri[7])
 
-  return concat3x3(dxToD50, toXYZ)
+  return matrix.concat3x3(dxToD50, toXYZ)
 }

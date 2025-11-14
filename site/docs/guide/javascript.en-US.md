@@ -15,13 +15,13 @@ In principle, you need to use TypeScript to develop with libmedia. If you must u
 
 ```javascript
 
-import structAccess from '@libmedia/cheap/std/structAccess'
-import AVPacket from '@libmedia/avutil/struct/avpacket'
+import { mapStruct } from '@libmedia/cheap'
+import { AVPacket } from '@libmedia/avutil'
 
 // an avpacket pointer variable
 let avpacket
-// use structAccess to convert the pointer into a proxy
-const avpacketProxy = structAccess(avpacket, AVPacket)
+// use mapStruct to convert the pointer into a proxy
+const avpacketProxy = mapStruct(avpacket, AVPacket)
 // use js to access avpacket properties
 console.log(avpacketProxy.pts)
 
@@ -30,19 +30,19 @@ console.log(avpacketProxy.pts)
 ## Struct instance address
 
 ```javascript
-import { symbolStructAddress } from '@libmedia/cheap/symbol'
+import { addressof } from '@libmedia/cheap'
 
 let stream = iformatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_AUDIO)
 // The instance address can be obtained by accessing the symbolStructAddress attribute of the instance
-let codecpar = stream.codecpar[symbolStructAddress]
+let codecpar = addressof(stream.codecpar)
 
 ```
 
 ## Structural attribute address
 
 ```javascript
-import offsetof from '@libmedia/cheap/std/offsetof'
-import AVPacket from '@libmedia/avutil/struct/avpacket'
+import { offsetof } from '@libmedia/cheap'
+import { AVPacket } from '@libmedia/avutil'
 
 // an avpacket pointer variable
 let avpacket

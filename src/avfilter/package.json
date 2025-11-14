@@ -22,45 +22,10 @@
     "@libmedia/videoscale": "workspace:*"
   },
   "exports": {
-    "./AVFilterNode": {
-      "import": "./dist/esm/AVFilterNode.js",
-      "require": "./dist/cjs/AVFilterNode.js",
-      "types": "./dist/esm/AVFilterNode.d.ts"
-    },
-    "./AVInputNode": {
-      "import": "./dist/esm/AVInputNode.js",
-      "require": "./dist/cjs/AVInputNode.js",
-      "types": "./dist/esm/AVInputNode.d.ts"
-    },
-    "./AVOutputNode": {
-      "import": "./dist/esm/AVOutputNode.js",
-      "require": "./dist/cjs/AVOutputNode.js",
-      "types": "./dist/esm/AVOutputNode.d.ts"
-    },
-    "./RangeFilterNode": {
-      "import": "./dist/esm/RangeFilterNode.js",
-      "require": "./dist/cjs/RangeFilterNode.js",
-      "types": "./dist/esm/RangeFilterNode.d.ts"
-    },
-    "./graph": {
-      "import": "./dist/esm/graph.js",
-      "require": "./dist/cjs/graph.js",
-      "types": "./dist/esm/graph.d.ts"
-    },
-    "./audio/ResampleFilterNode": {
-      "import": "./dist/esm/audio/ResampleFilterNode.js",
-      "require": "./dist/cjs/audio/ResampleFilterNode.js",
-      "types": "./dist/esm/audio/ResampleFilterNode.d.ts"
-    },
-    "./video/FramerateFilterNode": {
-      "import": "./dist/esm/video/FramerateFilterNode.js",
-      "require": "./dist/cjs/video/FramerateFilterNode.js",
-      "types": "./dist/esm/video/FramerateFilterNode.d.ts"
-    },
-    "./video/ScaleFilterNode": {
-      "import": "./dist/esm/video/ScaleFilterNode.js",
-      "require": "./dist/cjs/video/ScaleFilterNode.js",
-      "types": "./dist/esm/video/ScaleFilterNode.d.ts"
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/esm/index.d.ts"
     }
   }
 }

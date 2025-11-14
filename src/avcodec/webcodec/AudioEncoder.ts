@@ -23,22 +23,35 @@
  *
  */
 
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type { AVPacketPool } from 'avutil/struct/avpacket'
-import type AVPacket from 'avutil/struct/avpacket'
-import getAudioCodec from 'avutil/function/getAudioCodec'
-import type { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
-import type AVFrame from 'avutil/struct/avframe'
-import { avframe2AudioData } from 'avutil/function/avframe2AudioData'
-import { createAVPacket } from 'avutil/util/avpacket'
-import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
-import type { Rational } from 'avutil/struct/rational'
-import encodedAudioChunk2AVPacket from 'avutil/function/encodedAudioChunk2AVPacket'
-import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
-import { AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import isPointer from 'cheap/std/function/isPointer'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
+import {
+  type AVCodecParameters,
+  type AVPacket,
+  type AVPacketPool,
+  type AVFrame,
+  createAVPacket,
+  errorType,
+  createAVFrame,
+  destroyAVFrame,
+  refAVFrame,
+  avRescaleQ,
+  avRescaleQ2,
+  NOPTS_VALUE,
+  NOPTS_VALUE_BIGINT,
+  getAudioCodec,
+  type AVFramePool,
+  type AVFrameRef,
+  avframe2AudioData,
+  encodedAudioChunk2AVPacket,
+  type AVRational
+} from '@libmedia/avutil'
+
+import {
+  AV_TIME_BASE_Q
+} from '@libmedia/avutil/internal'
+
+import { isPointer } from '@libmedia/cheap'
+
+import { logger } from '@libmedia/common'
 
 export type WebAudioEncoderOptions = {
   onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
@@ -56,7 +69,7 @@ export default class WebAudioEncoder {
 
   private options: WebAudioEncoderOptions
   private parameters: pointer<AVCodecParameters> = nullptr
-  private timeBase: Rational | undefined
+  private timeBase: AVRational | undefined
 
   private currentError: Error | null = null
 
@@ -84,6 +97,7 @@ export default class WebAudioEncoder {
           buffer = new Uint8Array(metadata.decoderConfig.description)
         }
         else {
+          // @ts-ignore
           buffer = new Uint8Array(metadata.decoderConfig.description.buffer)
         }
         this.extradata = buffer
@@ -120,7 +134,7 @@ export default class WebAudioEncoder {
     this.options.onError(error)
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational): Promise<int32> {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: AVRational): Promise<int32> {
 
     this.currentError = null
 

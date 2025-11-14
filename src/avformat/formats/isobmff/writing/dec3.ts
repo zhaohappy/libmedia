@@ -23,13 +23,12 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext } from '../type'
-import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
-import BitWriter from 'common/io/BitWriter'
+import { type IOWriterSync, BitWriter } from '@libmedia/common/io'
+import { type AVStream } from '@libmedia/avutil'
 
-export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext: IsobmffContext) {
+export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
 
   const info = isobmffContext.ac3Info
 

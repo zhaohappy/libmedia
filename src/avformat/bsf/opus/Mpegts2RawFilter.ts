@@ -23,20 +23,36 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type { Rational } from 'avutil/struct/rational'
-import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { avRescaleQ } from 'avutil/util/rational'
-import * as opus from 'avutil/codecs/opus'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
-import { addAVPacketData, getAVPacketData, unrefAVPacket } from 'avutil/util/avpacket'
-import { avMalloc } from 'avutil/util/mem'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
-import concatTypeArray from 'common/function/concatTypeArray'
+
+import {
+  memcpyFromUint8Array
+} from '@libmedia/cheap'
+
+import {
+  concatTypeArray,
+  logger
+} from '@libmedia/common'
+
+import {
+  type AVPacket,
+  AVPacketFlags,
+  errorType,
+  NOPTS_VALUE_BIGINT,
+  avRescaleQ,
+  avMalloc,
+  type AVCodecParameters,
+  type AVRational,
+  addAVPacketData,
+  unrefAVPacket,
+  getAVPacketData
+} from '@libmedia/avutil'
+
+import {
+  AV_TIME_BASE,
+  AV_TIME_BASE_Q,
+  opus
+} from '@libmedia/avutil/internal'
 
 interface CacheItem {
   duration: number
@@ -54,7 +70,7 @@ export default class Mpegts2RawFilter extends AVBSFilter {
   private caches: CacheItem[]
   private pendingItem: PendingItem
 
-  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<Rational>): number {
+  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<AVRational>): number {
     super.init(codecpar, timeBase)
 
     this.caches = []

@@ -24,9 +24,9 @@
  */
 
 import { BoxType } from '../boxType'
-import type IOWriter from 'common/io/IOWriterSync'
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext } from '../type'
+import { type IOWriterSync } from '@libmedia/common/io'
+import { type AVStream } from '@libmedia/avutil'
 
 import stts from './stts'
 import ctts from './ctts'
@@ -61,7 +61,7 @@ import meta from './meta'
 import chpl from './chpl'
 
 
-const writers: Partial<Record<BoxType, (ioWriter: IOWriter, stream: Stream, isobmffContext: IsobmffContext) => void>> = {
+const writers: Partial<Record<BoxType, (ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) => void>> = {
   [BoxType.STTS]: stts,
   [BoxType.CTTS]: ctts,
   [BoxType.STSS]: stss,

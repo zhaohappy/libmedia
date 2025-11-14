@@ -23,12 +23,21 @@
  *
  */
 
-import isPointer from 'cheap/std/function/isPointer'
 import { RenderMode } from './ImageRender'
 import ImageRender from './ImageRender'
-import type AVFrame from 'avutil/struct/avframe'
-import getTimestamp from 'common/function/getTimestamp'
-import { avframe2VideoFrame } from 'avutil/function/avframe2VideoFrame'
+
+import {
+  type AVFrame,
+  avframe2VideoFrame
+} from '@libmedia/avutil'
+
+import {
+  isPointer
+} from '@libmedia/cheap'
+
+import {
+  getTimestamp
+} from '@libmedia/common'
 
 export default class WritableStreamRender extends ImageRender {
 
@@ -54,13 +63,13 @@ export default class WritableStreamRender extends ImageRender {
         timestamp: getTimestamp() * 1000,
         // 垂直翻转等价于 旋转 180 度 + 水平翻转
         rotation: (this.rotate + (this.flipVertical ? 180 : 0)) % 360,
-        flip: (this.flipHorizontal || this.flipVertical) && !(this.flipHorizontal && this.flipVertical),
+        flip: (this.flipHorizontal || this.flipVertical) && !(this.flipHorizontal && this.flipVertical)
       })
     }
     else {
       frame = avframe2VideoFrame(frame, static_cast<int64>((getTimestamp() * 1000) as uint32), {
         rotation: (this.rotate + (this.flipVertical ? 180 : 0)) % 360,
-        flip: (this.flipHorizontal || this.flipVertical) && !(this.flipHorizontal && this.flipVertical),
+        flip: (this.flipHorizontal || this.flipVertical) && !(this.flipHorizontal && this.flipVertical)
       })
     }
     this.writer.write(frame)

@@ -29,7 +29,7 @@ import type AVPCMBuffer from '../struct/avpcmbuffer'
 import { avFreep, avMalloc } from '../util/mem'
 import * as errorType from '../error'
 import { avbufferCreate } from '../util/avbuffer'
-import { memcpy } from 'cheap/std/memory'
+import { memcpy } from '@libmedia/cheap'
 import { AV_NUM_DATA_POINTERS } from '../constant'
 
 export function avPCMBuffer2AVFrame(pcmBuffer: pointer<AVPCMBuffer>, copy: boolean = false, avframe: pointer<AVFrame> = nullptr) {

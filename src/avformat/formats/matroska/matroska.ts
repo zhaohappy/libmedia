@@ -23,7 +23,7 @@
  *
  */
 
-import { AVCodecID } from 'avutil/codec'
+import { AVCodecID } from '@libmedia/avutil'
 
 export const enum EbmlType {
   NONE,
@@ -451,7 +451,7 @@ export const WebmTag2CodecId: Record<string, AVCodecID> = {
   'D_WEBVTT/SUBTITLES': AVCodecID.AV_CODEC_ID_WEBVTT,
   'D_WEBVTT/CAPTIONS': AVCodecID.AV_CODEC_ID_WEBVTT,
   'D_WEBVTT/DESCRIPTIONS': AVCodecID.AV_CODEC_ID_WEBVTT,
-  'D_WEBVTT/METADATA': AVCodecID.AV_CODEC_ID_WEBVTT,
+  'D_WEBVTT/METADATA': AVCodecID.AV_CODEC_ID_WEBVTT
 }
 
 export const MkvImageMime2CodecId: Record<string, AVCodecID> = {

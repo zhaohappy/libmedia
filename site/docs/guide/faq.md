@@ -18,6 +18,7 @@ order: 2
 
 一切的原因都是因为 vite 和 rollup 使用的 esbuild 或者 babel 等工具链不是一个完整的 Typescript 编译器。libmedia 里面有大量的常量枚举，枚举太多了不使用常量枚举会输出太多无用的代码。可以有以下解决办法：
 
+- 使用 cheap 插件来处理调用 libmedia 接口的模块，具体使用方法参考 [编译配置示例](https://github.com/zhaohappy/libmedia-example)
 - 配置使用官方的 tsc 来编译，如何配置[查看](./quick-start.md#编译配置)
 - 如果只是涉及到枚举的使用可以直接使用枚举值，缺点是维护性变差，面临升级 libmedia 枚举值改变的风险，需要手动对齐。若涉及到一些指针结构体的访问需要使用 transformer 编译则必须使用 tsc 了。
 - 在 ```@libmedia/avutil``` 包下面的 ```enum.js``` 文件中集中导出了 libmedia 中定义的所有常量枚举，并且是以普通枚举进行编译的，你可以在这个文件中导入所需的枚举对象。缺点是会增加项目编译产物大小。

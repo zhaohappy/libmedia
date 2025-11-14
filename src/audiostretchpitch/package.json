@@ -18,10 +18,10 @@
     "@libmedia/cheap": "workspace:*"
   },
   "exports": {
-    "./StretchPitcher": {
-      "import": "./dist/esm/StretchPitcher.js",
-      "require": "./dist/cjs/StretchPitcher.js",
-      "types": "./dist/esm/StretchPitcher.d.ts"
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/esm/index.d.ts"
     }
   }
 }

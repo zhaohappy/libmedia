@@ -23,8 +23,8 @@
  *
  */
 
-import * as cheapConfig from 'cheap/config'
-import FakeMessageChannel from 'common/network/FakeMessageChannel'
+import { FakeMessageChannel } from '@libmedia/common/network'
+import { config as cheapConfig } from '@libmedia/cheap'
 
 export default function createMessageChannel() {
   if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS)) {

@@ -4,21 +4,6 @@
     "outDir": "./dist",
     "sourceMap": true,
     "declarationMap": false,
-    "baseUrl": "./",
-    "paths": {
-      "avcodec/*": ["../avcodec/*"],
-      "avformat/*": ["../avformat/*"],
-      "avnetwork/*": ["../avnetwork/*"],
-      "avprotocol/*": ["../avprotocol/*"],
-      "avrender/*": ["../avrender/*"],
-      "audiostretchpitch/*": ["../audiostretchpitch/*"],
-      "audioresample/*": ["../audioresample/*"],
-      "avpipeline/*": ["../avpipeline/*"],
-      "avutil/*": ["../avutil/*"],
-
-      "cheap/*": ["../cheap/*"],
-      "common/*": ["../common/*"]
-    },
     "allowJs": false
   },
   "include": [

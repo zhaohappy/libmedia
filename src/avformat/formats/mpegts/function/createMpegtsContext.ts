@@ -23,7 +23,7 @@
  *
  */
 
-import { NOPTS_VALUE } from 'avutil/constant'
+import { NOPTS_VALUE } from '@libmedia/avutil'
 import { PAT, PMT } from '../struct'
 import type { MpegtsContext } from '../type'
 

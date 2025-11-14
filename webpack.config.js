@@ -2,6 +2,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const CheapPlugin = require('./src/cheap/build/webpack/plugin/CheapPlugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin')
 
 function getVersion() {
   try {
@@ -156,24 +157,11 @@ module.exports = (env) => {
       modules: [
         'node_modules'
       ],
-      alias: {
-        avcodec: path.resolve(__dirname, 'src/avcodec/'),
-        avformat: path.resolve(__dirname, 'src/avformat/'),
-        avnetwork: path.resolve(__dirname, 'src/avnetwork/'),
-        avplayer: path.resolve(__dirname, 'src/avplayer/'),
-        avprotocol: path.resolve(__dirname, 'src/avprotocol/'),
-        avrender: path.resolve(__dirname, 'src/avrender/'),
-        audiostretchpitch: path.resolve(__dirname, 'src/audiostretchpitch/'),
-        audioresample: path.resolve(__dirname, 'src/audioresample/'),
-        avpipeline: path.resolve(__dirname, 'src/avpipeline/'),
-        avtranscode: path.resolve(__dirname, 'src/avtranscode/'),
-        avutil: path.resolve(__dirname, 'src/avutil/'),
-        videoscale: path.resolve(__dirname, 'src/videoscale/'),
-        avfilter: path.resolve(__dirname, 'src/avfilter/'),
-
-        cheap: path.resolve(__dirname, 'src/cheap/'),
-        common: path.resolve(__dirname, 'src/common/')
-      }
+      plugins: [
+        new TsconfigPathsPlugin({
+          configFile: path.resolve(__dirname, './tsconfig.json'),
+        })
+      ]
     },
     externals: {
       typescript: 'typescript',
@@ -328,8 +316,8 @@ module.exports = (env) => {
       new CheapPlugin({
         name: 'libmedia',
         env: 'browser',
-        cheapPacketName: 'cheap',
         projectPath: __dirname,
+        cheapSourcePath: path.resolve(__dirname, './src/cheap'),
         tmpPath: path.resolve(__dirname, './dist'),
         exclude: /__test__/,
         // 配置线程模块中有动态导入的模块，需要给动态导入的模块重新处理依赖，因为线程模块可能没有动态导入模块的依赖模块

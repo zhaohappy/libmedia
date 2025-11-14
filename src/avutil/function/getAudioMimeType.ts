@@ -23,10 +23,13 @@
  *
  */
 
-import getAudioCodec from 'avutil/function/getAudioCodec'
-import { AVCodecID } from 'avutil/codec'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import browser from 'common/util/browser'
+import {
+  browser
+} from '@libmedia/common'
+
+import getAudioCodec from './getAudioCodec'
+import { AVCodecID } from '../codec'
+import type AVCodecParameters from '../struct/avcodecparameters'
 
 export default function getAudioMimeType(codecpar: pointer<AVCodecParameters>) {
   let mimeType = ''

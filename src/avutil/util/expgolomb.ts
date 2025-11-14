@@ -23,8 +23,10 @@
  *
  */
 
-import type BitReader from 'common/io/BitReader'
-import type BitWriter from 'common/io/BitWriter'
+import {
+  type BitWriter,
+  type BitReader
+} from '@libmedia/common/io'
 
 const UESizeTable = [
   // 0 的二进制所需的比特个数

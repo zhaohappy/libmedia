@@ -1,17 +1,19 @@
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type IOReader from 'common/io/IOReader'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { AMBISONIC_BASE_GUID, BROKEN_BASE_GUID, codecBmpGuid, MEDIASUBTYPE_BASE_GUID, WavTag2CodecId } from './riff'
-import { getPcmCodecId } from 'avutil/util/pcm'
-import { avFree, avMalloc } from 'avutil/util/mem'
-import { mapSafeUint8Array, mapUint8Array } from 'cheap/std/memory'
-import * as intread from 'avutil/util/intread'
-import { AVChannelOrder } from 'avutil/audiosamplefmt'
-import type { Data } from 'common/types/type'
-import type AVStream from 'avutil/AVStream'
-import { setChannelLayoutFromMask, unInitChannelLayout } from 'avutil/util/channel'
+import { mapSafeUint8Array } from '@libmedia/cheap'
+import { type Data, logger } from '@libmedia/common'
+import { type IOReader } from '@libmedia/common/io'
+import { pcm, channel } from '@libmedia/avutil/internal'
+import {
+  AVCodecID,
+  AVMediaType,
+  errorType,
+  avFree,
+  avMalloc,
+  intread,
+  AVChannelOrder,
+  type AVStream,
+  type AVCodecParameters
+} from '@libmedia/avutil'
 
 export function getWavCodecId(tag: int32, bitsPerCodedSample: int32) {
   let codecId: AVCodecID = WavTag2CodecId[tag]
@@ -21,10 +23,10 @@ export function getWavCodecId(tag: int32, bitsPerCodedSample: int32) {
   }
 
   if (codecId === AVCodecID.AV_CODEC_ID_PCM_U8) {
-    codecId = getPcmCodecId(bitsPerCodedSample, false, false, ~1)
+    codecId = pcm.getPcmCodecId(bitsPerCodedSample, false, false, ~1)
   }
   else if (codecId === AVCodecID.AV_CODEC_ID_PCM_F32LE) {
-    codecId = getPcmCodecId(bitsPerCodedSample, true, false, 0)
+    codecId = pcm.getPcmCodecId(bitsPerCodedSample, true, false, 0)
   }
 
   if (codecId === AVCodecID.AV_CODEC_ID_ADPCM_IMA_WAV && bitsPerCodedSample === 8) {
@@ -175,7 +177,7 @@ export async function readWaveformatex(ioReader: IOReader, stream: AVStream) {
     stream.codecpar.bitsPerCodedSample = bsp
   }
   const mask: uint32 = await ioReader.readUint32()
-  setChannelLayoutFromMask(addressof(stream.codecpar.chLayout), static_cast<uint64>(mask))
+  channel.setChannelLayoutFromMask(addressof(stream.codecpar.chLayout), static_cast<uint64>(mask))
   const subFormat = (await ioReader.readHex(16)).toLocaleUpperCase()
   if (subFormat.slice(4) === AMBISONIC_BASE_GUID
     || subFormat.slice(4) === BROKEN_BASE_GUID
@@ -197,7 +199,7 @@ export async function readWavHeader(ioReader: IOReader, stream: AVStream, size: 
     logger.error('wav header size < 14')
     return errorType.DATA_INVALID
   }
-  unInitChannelLayout(addressof(stream.codecpar.chLayout))
+  channel.unInitChannelLayout(addressof(stream.codecpar.chLayout))
   let id: number
   let channels: number
   let bitrate: number
@@ -280,7 +282,7 @@ export async function readWavHeader(ioReader: IOReader, stream: AVStream, size: 
     stream.codecpar.bitsPerCodedSample = static_cast<double>(stream.codecpar.bitrate) / stream.codecpar.sampleRate
   }
   if (channels !== stream.codecpar.chLayout.nbChannels) {
-    unInitChannelLayout(addressof(stream.codecpar.chLayout))
+    channel.unInitChannelLayout(addressof(stream.codecpar.chLayout))
     stream.codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_UNSPEC
     stream.codecpar.chLayout.nbChannels = channels
   }

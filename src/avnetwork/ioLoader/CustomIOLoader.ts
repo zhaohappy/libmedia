@@ -23,8 +23,8 @@
  *
  */
 
-import type { Uint8ArrayInterface } from 'common/io/interface'
-import type { Data } from 'common/types/type'
+import type { Uint8ArrayInterface } from '@libmedia/common/io'
+import type { Data } from '@libmedia/common'
 
 export default abstract class CustomIOLoader {
 

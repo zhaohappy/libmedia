@@ -23,22 +23,32 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import type IOWriter from 'common/io/IOWriter'
 import { RtmpPacket } from './RtmpPacket'
-import * as crypto from 'avutil/util/crypto'
-import getTimestamp from 'common/function/getTimestamp'
-import BufferWriter from 'common/io/BufferWriter'
 import { APP_MAX_LENGTH, RtmpChannel, RtmpPacketType } from './rtmp'
-import * as amf from 'avutil/util/amf'
-import type { Data } from 'common/types/type'
 import { readRtmpPacket, sendRtmpPacket } from './util'
-import BufferReader from 'common/io/BufferReader'
-import * as logger from 'common/util/logger'
-import * as array from 'common/util/array'
-import * as is from 'common/util/is'
-import Sleep from 'common/timer/Sleep'
-import { Sync, lock, unlock } from 'cheap/thread/sync'
+
+import { crypto, amf } from '@libmedia/avutil/internal'
+
+import {
+  is,
+  array,
+  logger,
+  getTimestamp,
+  type Data
+} from '@libmedia/common'
+
+import {
+  Sleep
+} from '@libmedia/common/timer'
+
+import {
+  BufferReader,
+  BufferWriter,
+  type IOReader,
+  type IOWriter
+} from '@libmedia/common/io'
+
+import { Sync, sync } from '@libmedia/cheap'
 
 const enum ClientState {
   /**
@@ -170,10 +180,10 @@ export default class RtmpSession {
   }
 
   private async sendPacket(packet: RtmpPacket) {
-    await lock(this.sendAsync)
+    await sync.lock(this.sendAsync)
     await sendRtmpPacket(this.ioWriter, this.outChunkSize, packet, this.prevWritePacket.get(packet.channelId))
     this.prevWritePacket.set(packet.channelId, packet)
-    unlock(this.sendAsync)
+    sync.unlock(this.sendAsync)
   }
 
   private async readPacket() {

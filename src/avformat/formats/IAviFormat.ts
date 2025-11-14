@@ -23,46 +23,73 @@
  *
  */
 
-import type AVStream from 'avutil/AVStream'
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags, IOFlags } from 'avutil/avformat'
-import { mapSafeUint8Array, mapUint8Array, memcpyFromUint8Array, readCString } from 'cheap/std/memory'
-import { avFree, avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, addAVPacketSideData } from 'avutil/util/avpacket'
-import { IOError } from 'common/io/error'
 import { readInfo, readBmpHeader, readWavHeader } from './riff/iriff'
-import { AV_TIME_BASE_Q, INT32_MAX, INT64_MAX, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import concatTypeArray from 'common/function/concatTypeArray'
-import * as is from 'common/util/is'
 import mktagle from '../function/mktagle'
 import type { AVIMainHeader, AVISample, AVIStreamContext } from './avi/type'
 import { AVFIndexFlags, AVIFlags } from './avi/type'
-import { avReduce, avRescaleQ } from 'avutil/util/rational'
-import * as intread from 'avutil/util/intread'
 import { codecBmpTags } from './riff/riff'
-import * as naluUtil from 'avutil/util/nalu'
-import * as bigint from 'common/util/bigint'
-import * as array from 'common/util/array'
-import * as object from 'common/util/object'
 
-import * as h264 from 'avutil/codecs/h264'
-import * as aac from 'avutil/codecs/aac'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import * as av1 from 'avutil/codecs/av1'
-import * as vp9 from 'avutil/codecs/vp9'
-import * as vp8 from 'avutil/codecs/vp8'
-import * as flac from 'avutil/codecs/flac'
-import * as opus from 'avutil/codecs/opus'
-import { AVPALETTE_SIZE } from 'avutil/pixfmt'
-import { MPEG4AudioObjectTypes } from 'avutil/codecs/aac'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
+import {
+  memcpyFromUint8Array,
+  mapSafeUint8Array,
+  mapUint8Array,
+  readCString
+} from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  IOFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  avFree,
+  addAVPacketData,
+  addAVPacketSideData,
+  AVPacketFlags,
+  NOPTS_VALUE,
+  NOPTS_VALUE_BIGINT,
+  AVPacketSideDataType,
+  avRescaleQ,
+  errorType,
+  avReduce,
+  intread,
+  AVCodecParameterFlags,
+  nalu as naluUtil
+} from '@libmedia/avutil'
+
+import {
+  INT32_MAX,
+  INT64_MAX,
+  AV_TIME_BASE_Q,
+  AVPALETTE_SIZE,
+  h264,
+  hevc,
+  vvc,
+  aac,
+  av1,
+  vp9,
+  vp8,
+  flac,
+  opus
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  object,
+  bigint,
+  concatTypeArray,
+  logger,
+  is
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
 
 const AVI_HEADER = [
   ['R', 'I', 'F', 'F', 'A', 'V', 'I', ' '],
@@ -588,7 +615,7 @@ export default class IAviFormat extends IFormat {
           stream.codecpar.extradata = data
           stream.codecpar.extradataSize = extradata.length
           if (stream.codecpar.profile === NOPTS_VALUE) {
-            stream.codecpar.profile = MPEG4AudioObjectTypes.AAC_LC
+            stream.codecpar.profile = aac.MPEG4AudioObjectTypes.AAC_LC
           }
         }
 

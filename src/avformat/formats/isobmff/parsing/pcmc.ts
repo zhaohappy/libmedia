@@ -23,15 +23,14 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import { AVCodecID } from 'avutil/codec'
-import type Stream from 'avutil/AVStream'
 import type { Atom, IsobmffContext, IsobmffStreamContext } from '../type'
-import * as logger from 'common/util/logger'
 import mktag from '../../../function/mktag'
-import { getBitsPerSample } from 'avutil/util/pcm'
+import { logger } from '@libmedia/common'
+import { type IOReader } from '@libmedia/common/io'
+import { pcm } from '@libmedia/avutil/internal'
+import { AVCodecID, type AVStream } from '@libmedia/avutil'
 
-export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, isobmffContext: IsobmffContext) {
+export default async function read(ioReader: IOReader, stream: AVStream, atom: Atom, isobmffContext: IsobmffContext) {
 
   const now = ioReader.getPos()
 
@@ -77,7 +76,7 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   streamContext.isPcm = true
 
   if (stream.codecpar.codecId !== AVCodecID.AV_CODEC_ID_NONE) {
-    stream.codecpar.bitsPerCodedSample = getBitsPerSample(stream.codecpar.codecId)
+    stream.codecpar.bitsPerCodedSample = pcm.getBitsPerSample(stream.codecpar.codecId)
   }
 
   const remainingLength = atom.size - Number(ioReader.getPos() - now)

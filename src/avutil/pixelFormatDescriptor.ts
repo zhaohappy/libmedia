@@ -305,12 +305,12 @@ const PlaneBGRA8: DescriptorPlane[] = [
 const PlaneBGR8: DescriptorPlane[] = [
   [0, 3, 2, 0, 8],
   [0, 3, 1, 0, 8],
-  [0, 3, 0, 0, 8],
+  [0, 3, 0, 0, 8]
 ]
 const PlaneBGR08: DescriptorPlane[] = [
   [0, 4, 2, 0, 8],
   [0, 4, 1, 0, 8],
-  [0, 4, 0, 0, 8],
+  [0, 4, 0, 0, 8]
 ]
 const PlaneBGRA16: DescriptorPlane[] = [
   [0, 8, 4, 0, 16],

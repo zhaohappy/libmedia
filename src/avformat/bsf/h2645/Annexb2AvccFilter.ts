@@ -23,23 +23,40 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type { Rational } from 'avutil/struct/rational'
-import { addAVPacketData, addAVPacketSideData, copyAVPacketProps, createAVPacket,
-  destroyAVPacket, refAVPacket, unrefAVPacket
-} from 'avutil/util/avpacket'
 
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import { mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import * as errorType from 'avutil/error'
-import { avMalloc } from 'avutil/util/mem'
-import * as logger from 'common/util/logger'
+import {
+  mapSafeUint8Array,
+  memcpyFromUint8Array
+} from '@libmedia/cheap'
+
+import {
+  logger
+} from '@libmedia/common'
+
+import {
+  AVCodecID,
+  AVPacketSideDataType,
+  type AVPacket,
+  AVPacketFlags,
+  errorType,
+  avMalloc,
+  type AVCodecParameters,
+  type AVRational,
+  addAVPacketData,
+  unrefAVPacket,
+  addAVPacketSideData,
+  copyAVPacketProps,
+  createAVPacket,
+  destroyAVPacket,
+  refAVPacket
+} from '@libmedia/avutil'
+
+import {
+  h264,
+  hevc,
+  vvc
+} from '@libmedia/avutil/internal'
 
 export default class Annexb2AvccFilter extends AVBSFilter {
 
@@ -52,7 +69,7 @@ export default class Annexb2AvccFilter extends AVBSFilter {
     this.reverseSps = reverseSps
   }
 
-  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<Rational>): number {
+  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<AVRational>): number {
     super.init(codecpar, timeBase)
     this.cache = createAVPacket()
     this.cached = false

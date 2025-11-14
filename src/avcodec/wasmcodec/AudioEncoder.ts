@@ -23,31 +23,40 @@
  *
  */
 
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type AVFrame from 'avutil/struct/avframe'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
-import type { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
-import type AVPacket from 'avutil/struct/avpacket'
-import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
-import * as logger from 'common/util/logger'
-import { audioData2AVFrame } from 'avutil/function/audioData2AVFrame'
-import { createAVFrame, destroyAVFrame, getAudioBuffer, refAVFrame, unrefAVFrame } from 'avutil/util/avframe'
-import { Rational } from 'avutil/struct/rational'
-import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { getBytesPerSample, sampleFormatIsPlanar, sampleSetSilence } from 'avutil/util/sample'
-import type { AVSampleFormat } from 'avutil/audiosamplefmt'
-import { avRescaleQ2 } from 'avutil/util/rational'
-import support from 'common/util/support'
-import isPointer from 'cheap/std/function/isPointer'
-import { AVDictionary } from 'avutil/struct/avdict'
-import type { Data } from 'common/types/type'
-import * as object from 'common/util/object'
-import * as dict from 'avutil/util/avdict'
-import * as is from 'common/util/is'
-import { avMallocz } from 'avutil/util/mem'
-import * as errorType from 'avutil/error'
-import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import {
+  type AVCodecParameters,
+  type AVPacket,
+  type AVPacketPool,
+  type AVPacketRef,
+  type AVFrame,
+  createAVPacket,
+  destroyAVPacket,
+  AVDictionary,
+  avdict,
+  avMallocz,
+  errorType,
+  audioData2AVFrame,
+  createAVFrame,
+  destroyAVFrame,
+  getAudioBuffer,
+  refAVFrame,
+  unrefAVFrame,
+  AVRational,
+  sample,
+  type AVSampleFormat,
+  avRescaleQ2,
+  NOPTS_VALUE_BIGINT
+} from '@libmedia/avutil'
+
+import {
+  type WebAssemblyResource,
+  WebAssemblyRunner,
+  mapUint8Array,
+  memcpyFromUint8Array,
+  isPointer
+} from '@libmedia/cheap'
+
+import { logger, support, object, is, type Data } from '@libmedia/common'
 
 export type WasmAudioEncoderOptions = {
   resource: WebAssemblyResource
@@ -81,7 +90,7 @@ class AudioFrameResizer {
     this.frameSize = frameSize
     this.copyTs = copyTs
 
-    this.planar = sampleFormatIsPlanar(parameters.format as AVSampleFormat)
+    this.planar = sample.sampleFormatIsPlanar(parameters.format as AVSampleFormat)
     this.planes = this.planar ? parameters.chLayout.nbChannels : 1
     this.channels = parameters.chLayout.nbChannels
 
@@ -92,7 +101,7 @@ class AudioFrameResizer {
     }
     this.pos = 0
     this.posEnd = 0
-    this.bytesPerSample = getBytesPerSample(parameters.format as AVSampleFormat)
+    this.bytesPerSample = sample.getBytesPerSample(parameters.format as AVSampleFormat)
     this.pts = 0n
   }
 
@@ -164,7 +173,7 @@ class AudioFrameResizer {
     const size = this.posEnd - this.pos
     const frameSize = size / (this.bytesPerSample * (this.planar ? 1 : this.channels))
     this.handleData(avframe, size)
-    sampleSetSilence(
+    sample.sampleSetSilence(
       addressof(avframe.data),
       frameSize,
       this.parameters.format as AVSampleFormat,
@@ -181,7 +190,7 @@ export default class WasmAudioEncoder {
 
   private encoder: WebAssemblyRunner
   private parameters: pointer<AVCodecParameters> = nullptr
-  private timeBase: Rational | undefined
+  private timeBase: AVRational | undefined
 
   private avpacket: pointer<AVPacket> = nullptr
 
@@ -226,10 +235,10 @@ export default class WasmAudioEncoder {
     return this.encoder.invoke<int32>('encoder_receive', this.getAVPacket())
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, opts: Data = {}): Promise<int32> {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: AVRational, opts: Data = {}): Promise<int32> {
     await this.encoder.run()
 
-    const timeBaseP = reinterpret_cast<pointer<Rational>>(malloc(sizeof(Rational)))
+    const timeBaseP = reinterpret_cast<pointer<AVRational>>(malloc(sizeof(AVRational)))
     const optsP = reinterpret_cast<pointer<pointer<AVDictionary>>>(malloc(sizeof(pointer)))
 
     timeBaseP.num = timeBase.num
@@ -240,14 +249,14 @@ export default class WasmAudioEncoder {
 
     if (object.keys(opts).length) {
       if (this.encoderOptions) {
-        dict.freeAVDict2(this.encoderOptions)
+        avdict.freeAVDict2(this.encoderOptions)
         free(this.encoderOptions)
         this.encoderOptions = nullptr
       }
       this.encoderOptions = reinterpret_cast<pointer<AVDictionary>>(avMallocz(sizeof(AVDictionary)))
       object.each(opts, (value, key) => {
         if (is.string(value) || is.string(key)) {
-          dict.avDictSet(this.encoderOptions, key, value)
+          avdict.avDictSet(this.encoderOptions, key, value)
         }
       })
       accessof(optsP) <- this.encoderOptions
@@ -396,7 +405,7 @@ export default class WasmAudioEncoder {
       this.avframe = nullptr
     }
     if (this.encoderOptions) {
-      dict.freeAVDict2(this.encoderOptions)
+      avdict.freeAVDict2(this.encoderOptions)
       free(this.encoderOptions)
       this.encoderOptions = nullptr
     }

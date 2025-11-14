@@ -23,7 +23,7 @@
  *
  */
 
-import type { Uint8ArrayInterface } from 'common/io/interface'
+import type { Uint8ArrayInterface } from '@libmedia/common/io'
 
 export default function isRtcp(data: Uint8ArrayInterface) {
   return data.length > 4

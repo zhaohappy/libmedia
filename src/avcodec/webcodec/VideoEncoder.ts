@@ -23,34 +23,50 @@
  *
  */
 
-import type { AVPacketPool } from 'avutil/struct/avpacket'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVCodecID } from 'avutil/codec'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
-import type { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
-import type AVFrame from 'avutil/struct/avframe'
-import getVideoCodec from 'avutil/function/getVideoCodec'
-import { getHardwarePreference } from 'avutil/function/getHardwarePreference'
-import { avQ2D, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
-import { avframe2VideoFrame } from 'avutil/function/avframe2VideoFrame'
-import { createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
-import { getAVPixelFormatDescriptor, AVPixelFormatFlags } from 'avutil/pixelFormatDescriptor'
-import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
-import type { Rational } from 'avutil/struct/rational'
-import encodedVideoChunk2AVPacket from 'avutil/function/encodedVideoChunk2AVPacket'
-import { mapColorPrimaries, mapColorSpace, mapColorTrc } from 'avutil/function/videoFrame2AVFrame'
-import browser from 'common/util/browser'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
+import {
+  type AVCodecParameters,
+  type AVPacket,
+  type AVPacketPool,
+  type AVFrame,
+  createAVPacket,
+  getAVPacketData,
+  errorType,
+  createAVFrame,
+  destroyAVFrame,
+  refAVFrame,
+  type AVRational,
+  avQ2D,
+  avRescaleQ,
+  avRescaleQ2,
+  NOPTS_VALUE_BIGINT,
+  AVPacketFlags,
+  AVCodecParameterFlags,
+  AVCodecID,
+  type AVFramePool,
+  type AVFrameRef,
+  getVideoCodec,
+  avframe2VideoFrame,
+  getAVPixelFormatDescriptor,
+  AVPixelFormatFlags,
+  encodedVideoChunk2AVPacket,
+  type AVPixelFormat
+} from '@libmedia/avutil'
 
-import * as av1 from 'avutil/codecs/av1'
-import * as vp9 from 'avutil/codecs/vp9'
-import isPointer from 'cheap/std/function/isPointer'
-import { AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import type { AVPixelFormat } from 'avutil/pixfmt'
-import * as object from 'common/util/object'
+import {
+  AV_TIME_BASE_Q,
+  av1,
+  vp9,
+  getHardwarePreference,
+  mapColorPrimaries,
+  mapColorSpace,
+  mapColorTrc
+} from '@libmedia/avutil/internal'
+
+import {
+  isPointer
+} from '@libmedia/cheap'
+
+import { logger, browser, object } from '@libmedia/common'
 
 export type WebVideoEncoderOptions = {
   onReceiveAVPacket: (avpacket: pointer<AVPacket>) => void
@@ -81,13 +97,13 @@ export default class WebVideoEncoder {
 
   private options: WebVideoEncoderOptions
   private parameters: pointer<AVCodecParameters> = nullptr
-  private timeBase: Rational | undefined
+  private timeBase: AVRational | undefined
 
   private currentError: Error | null = null
 
   private avframeMap: Map<int64, pointer<AVFrame>>
 
-  private framerateTimebase: Rational | undefined
+  private framerateTimebase: AVRational | undefined
 
   private inputCounter: int64 = 0n
   private outputCounter: int64 = 0n
@@ -125,6 +141,7 @@ export default class WebVideoEncoder {
           buffer = new Uint8Array(metadata.decoderConfig.description)
         }
         else {
+          // @ts-ignore
           buffer = new Uint8Array(metadata.decoderConfig.description.buffer)
         }
         if (browser.chrome
@@ -195,7 +212,7 @@ export default class WebVideoEncoder {
     this.options.onError(error)
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational): Promise<int32> {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: AVRational): Promise<int32> {
     this.currentError = null
 
     const descriptor = getAVPixelFormatDescriptor(parameters.format as AVPixelFormat)
@@ -385,7 +402,7 @@ export default class WebVideoEncoder {
     return {
       colorSpace: this.parameters.colorSpace,
       colorPrimaries: this.parameters.colorPrimaries,
-      colorTrc: this.parameters.colorTrc,
+      colorTrc: this.parameters.colorTrc
     }
   }
 

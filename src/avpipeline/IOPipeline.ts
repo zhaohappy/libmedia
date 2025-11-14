@@ -23,25 +23,42 @@
  *
  */
 
-import type { Data, Range } from 'common/types/type'
+import {
+  mapSafeUint8Array
+} from '@libmedia/cheap'
+
+import {
+  logger
+} from '@libmedia/common'
+
+import {
+  type RpcMessage,
+  IPCPort,
+  REQUEST
+} from '@libmedia/common/network'
+
+import {
+  FetchIOLoader,
+  type IOLoaderOptions,
+  type IOLoader,
+  FileIOLoader,
+  WebSocketIOLoader,
+  WebTransportIOLoader
+} from '@libmedia/avnetwork'
+
+import type DashIOLoader from '@libmedia/avnetwork/DashIOLoader'
+import type HlsIOLoader from '@libmedia/avnetwork/HlsIOLoader'
+
+import {
+  errorType,
+  IOType,
+  type AVMediaType
+} from '@libmedia/avutil'
+
+
 import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
-import FetchIOLoader from 'avnetwork/ioLoader/FetchIOLoader'
-import type { IOLoaderOptions } from 'avnetwork/ioLoader/IOLoader'
-import type IOLoader from 'avnetwork/ioLoader/IOLoader'
-import * as errorType from 'avutil/error'
-import IPCPort from 'common/network/IPCPort'
-import type { RpcMessage } from 'common/network/IPCPort'
-import { REQUEST } from 'common/network/IPCPort'
-import { mapSafeUint8Array } from 'cheap/std/memory'
-import FileIOLoader from 'avnetwork/ioLoader/FileIOLoader'
-import * as logger from 'common/util/logger'
-import type DashIOLoader from 'avnetwork/ioLoader/DashIOLoader'
-import type HlsIOLoader from 'avnetwork/ioLoader/HlsIOLoader'
-import WebSocketIOLoader from 'avnetwork/ioLoader/WebSocketIOLoader'
-import WebTransportIOLoader from 'avnetwork/ioLoader/WebTransportIOLoader'
-import { IOType } from 'avutil/avformat'
-import type { AVMediaType } from 'avutil/codec'
+import type { Data, Range } from '@libmedia/common'
 
 export interface IOTaskOptions extends TaskOptions {
   type: IOType
@@ -81,7 +98,7 @@ export default class IOPipeline extends Pipeline {
         break
       case IOType.HLS:
         if (defined(ENABLE_PROTOCOL_HLS)) {
-          ioLoader = new (await import('avnetwork/ioLoader/HlsIOLoader')).default(options.options)
+          ioLoader = new (await import('@libmedia/avnetwork/HlsIOLoader')).default(options.options)
         }
         else {
           logger.error('hls protocol not support, maybe you can rebuild avmedia')
@@ -90,7 +107,7 @@ export default class IOPipeline extends Pipeline {
         break
       case IOType.DASH:
         if (defined(ENABLE_PROTOCOL_DASH)) {
-          ioLoader = new (await import('avnetwork/ioLoader/DashIOLoader')).default(options.options)
+          ioLoader = new (await import('@libmedia/avnetwork/DashIOLoader')).default(options.options)
         }
         else {
           logger.error('dash protocol not support, maybe you can rebuild avmedia')
@@ -99,7 +116,7 @@ export default class IOPipeline extends Pipeline {
         break
       case IOType.RTMP:
         if (defined(ENABLE_PROTOCOL_RTMP)) {
-          ioLoader = new (await import('avnetwork/ioLoader/RtmpIOLoader')).default(options.options)
+          ioLoader = new (await import('@libmedia/avnetwork/RtmpIOLoader')).default(options.options)
         }
         else {
           logger.error('rtmp protocol not support, maybe you can rebuild avmedia')

@@ -24,45 +24,70 @@
  */
 
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags, AVProducerReferenceTime } from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
-import { IOError } from 'common/io/error'
-import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat } from 'avutil/avformat'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, addAVPacketSideData, createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
-import type AVStream from 'avutil/AVStream'
-import RtspSession from 'avprotocol/rtsp/RtspSession'
-import * as sdp from 'avprotocol/sdp/sdp'
-import * as ntpUtil from 'avutil/util/ntp'
-import * as array from 'common/util/array'
-import * as mpeg4 from 'avutil/codecs/mpeg4'
-import * as mpegvideo from 'avutil/codecs/mpegvideo'
+import RtspSession from '@libmedia/avprotocol/rtsp/RtspSession'
+import * as sdp from '@libmedia/avprotocol/sdp/sdp'
 
-import * as mp3 from 'avutil/codecs/mp3'
-import { RtspStreamingMode } from 'avprotocol/rtsp/rtsp'
-import type { HEVCPayloadContext, Mpeg4PayloadContext } from 'avprotocol/rtp/rtp'
-import { RTPCodecName2AVCodeId, StaticRTPPayloadCodec } from 'avprotocol/rtp/rtp'
-import type { Data } from 'common/types/type'
-import RTPFrameQueue from 'avprotocol/rtp/RTPFrameQueue'
-import * as depacketizer from 'avprotocol/rtp/depacketizer'
-import * as naluUtil from 'avutil/util/nalu'
-import { avRescaleQ } from 'avutil/util/rational'
-import { AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT, NTP_OFFSET_US } from 'avutil/constant'
-import isRtcp from 'avprotocol/rtcp/isRtcp'
-import isRtp from 'avprotocol/rtp/isRtp'
-import { parseRTPPacket } from 'avprotocol/rtp/parser'
-import { RTCPPayloadType } from 'avprotocol/rtcp/rtcp'
-import { parseRTCPSendReport } from 'avprotocol/rtcp/parser'
+import { RtspStreamingMode } from '@libmedia/avprotocol/rtsp/rtsp'
+import type { HEVCPayloadContext, Mpeg4PayloadContext } from '@libmedia/avprotocol/rtp/rtp'
+import { RTPCodecName2AVCodeId, StaticRTPPayloadCodec } from '@libmedia/avprotocol/rtp/rtp'
+import RTPFrameQueue from '@libmedia/avprotocol/rtp/RTPFrameQueue'
+import * as depacketizer from '@libmedia/avprotocol/rtp/depacketizer'
+import isRtcp from '@libmedia/avprotocol/rtcp/isRtcp'
+import isRtp from '@libmedia/avprotocol/rtp/isRtp'
+import { parseRTPPacket } from '@libmedia/avprotocol/rtp/parser'
+import { RTCPPayloadType } from '@libmedia/avprotocol/rtcp/rtcp'
+import { parseRTCPSendReport } from '@libmedia/avprotocol/rtcp/parser'
 import type AVBSFilter from '../bsf/AVBSFilter'
 import Mp32RawFilter from '../bsf/mp3/Mp32RawFilter'
-import { CodecIdFmtpHandler } from 'avprotocol/rtp/fmtp'
+import { CodecIdFmtpHandler } from '@libmedia/avprotocol/rtp/fmtp'
 import Ac32RawFilter from '../bsf/ac3/Ac32RawFilter'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
+
+import { memcpyFromUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  createAVPacket,
+  destroyAVPacket,
+  addAVPacketData,
+  addAVPacketSideData,
+  AVPacketFlags,
+  NOPTS_VALUE,
+  AVProducerReferenceTime,
+  NOPTS_VALUE_BIGINT,
+  AVPacketSideDataType,
+  avRescaleQ,
+  errorType,
+  AVCodecParameterFlags,
+  nalu as naluUtil
+} from '@libmedia/avutil'
+
+import {
+  AV_TIME_BASE_Q,
+  ntp as ntpUtil,
+  mp3,
+  mpeg4,
+  mpegvideo
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  logger,
+  is,
+  type Data
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
+
+const NTP_OFFSET = 2208988800n
+const NTP_OFFSET_US = (NTP_OFFSET * 1000000n)
 
 export interface IRtspFormatOptions {
   uri: string

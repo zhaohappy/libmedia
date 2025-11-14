@@ -23,18 +23,31 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type { Rational } from 'avutil/struct/rational'
-import { mapUint8Array } from 'cheap/std/memory'
-import { addAVPacketData, copyAVPacketProps, createAVPacket,
-  destroyAVPacket, getAVPacketSideData, refAVPacket, unrefAVPacket
-} from 'avutil/util/avpacket'
-import { avMalloc } from 'avutil/util/mem'
-import * as errorType from 'avutil/error'
-import * as opus from 'avutil/codecs/opus'
-import { AVPacketSideDataType } from 'avutil/codec'
+
+import {
+  mapUint8Array
+} from '@libmedia/cheap'
+
+import {
+  type AVPacket,
+  errorType,
+  avMalloc,
+  type AVCodecParameters,
+  AVPacketSideDataType,
+  type AVRational,
+  addAVPacketData,
+  unrefAVPacket,
+  copyAVPacketProps,
+  createAVPacket,
+  destroyAVPacket,
+  getAVPacketSideData,
+  refAVPacket
+} from '@libmedia/avutil'
+
+import {
+  opus
+} from '@libmedia/avutil/internal'
 
 export default class Raw2MpegtsFilter extends AVBSFilter {
 
@@ -44,7 +57,7 @@ export default class Raw2MpegtsFilter extends AVBSFilter {
 
   private opusPendingTrimStart: number
 
-  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<Rational>): number {
+  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<AVRational>): number {
 
     super.init(codecpar, timeBase)
     this.cache = createAVPacket()

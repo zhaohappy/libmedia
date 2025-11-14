@@ -23,9 +23,9 @@
  *
  */
 
-import * as cheapConfig from 'cheap/config'
-import FakeMessageChannel from 'common/network/FakeMessageChannel'
-import support from 'common/util/support'
+import { config as cheapConfig } from '@libmedia/cheap'
+import { FakeMessageChannel } from '@libmedia/common/network'
+import { support } from '@libmedia/common'
 
 export default function createMessageChannel(enableWorker: boolean) {
   if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS) || support.worker && enableWorker) {

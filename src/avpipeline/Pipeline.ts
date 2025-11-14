@@ -24,7 +24,7 @@
  */
 
 import type Stats from './struct/stats'
-import * as logger from 'common/util/logger'
+import { logger } from '@libmedia/common'
 
 export interface TaskOptions {
   leftPort?: MessagePort

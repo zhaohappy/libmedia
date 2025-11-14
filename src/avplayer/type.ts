@@ -1,5 +1,5 @@
 import type { AVPlayerProgress } from './AVPlayer'
-import type { AVMediaType } from 'avutil/codec'
+import type { AVMediaType } from '@libmedia/avutil'
 
 export declare function playerEventNoParam(): void
 

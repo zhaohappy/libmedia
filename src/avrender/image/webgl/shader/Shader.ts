@@ -23,7 +23,7 @@
  *
  */
 
-import * as logger from 'common/util/logger'
+import { logger } from '@libmedia/common'
 
 export const enum ShaderType {
   VERTEX,

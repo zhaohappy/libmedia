@@ -23,10 +23,15 @@
  *
  */
 
-import type { JitterBuffer } from 'avpipeline/struct/stats'
-import type Stats from 'avpipeline/struct/stats'
-import Timer from 'common/timer/Timer'
-import WorkerTimer from 'common/timer/WorkerTimer'
+import {
+  Timer,
+  WorkerTimer
+} from '@libmedia/common/timer'
+
+import type {
+  JitterBuffer,
+  Stats
+} from '@libmedia/avpipeline'
 
 const QUEUE_MAX = 10
 const BUFFER_STEP = 500

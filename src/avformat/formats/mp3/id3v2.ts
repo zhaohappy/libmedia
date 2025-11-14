@@ -23,23 +23,23 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
 import type { ID3V2, Mp3MetaData } from './type'
-import * as logger from 'common/util/logger'
-import * as text from 'common/util/text'
-import IOWriterSync from 'common/io/IOWriterSync'
-import { IOFlags } from 'avutil/avformat'
-import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { type AVOFormatContext, type AVIFormatContext } from '../../AVFormatContext'
-import BufferReader from 'common/io/BufferReader'
-import { addAVPacketData, createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
-import { avMalloc } from 'avutil/util/mem'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
-import * as array from 'common/util/array'
-import * as object from 'common/util/object'
-import concatTypeArray from 'common/function/concatTypeArray'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
+import { memcpyFromUint8Array } from '@libmedia/cheap'
+import {
+  IOFlags,
+  AVDisposition,
+  AVStreamMetadataKey,
+  AVCodecID,
+  AVMediaType,
+  avMalloc,
+  AVPacketFlags,
+  addAVPacketData,
+  createAVPacket,
+  getAVPacketData
+} from '@libmedia/avutil'
+import { object, logger, array, concatTypeArray, text } from '@libmedia/common'
+import { IOWriterSync, BufferReader, type IOReader } from '@libmedia/common/io'
 
 export const enum ID3v2Encoding {
   ISO8859,
@@ -81,7 +81,7 @@ export const ID3v2PictureType: string[] = [
   'A bright coloured fish',
   'Illustration',
   'Band/artist logotype',
-  'Publisher/Studio logotype',
+  'Publisher/Studio logotype'
 ]
 
 async function getSize(ioReader: IOReader, len: number) {

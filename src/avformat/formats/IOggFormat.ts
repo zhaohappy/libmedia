@@ -23,33 +23,47 @@
  *
  */
 
-import type AVStream from 'avutil/AVStream'
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import type { PagePayload } from './ogg/OggPage'
 import { OggPage, OggsCommentPage } from './ogg/OggPage'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
 import { OpusOggsIdPage, OpusOggsCommentPage } from './ogg/opus'
 import { VorbisOggsIdPage, VorbisOggsCommentPage, parseVorbisComment } from './ogg/vorbis'
-import * as errorType from 'avutil/error'
-import concatTypeArray from 'common/function/concatTypeArray'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
-import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData } from 'avutil/util/avpacket'
-import { IOError } from 'common/io/error'
-import IOReaderSync from 'common/io/IOReaderSync'
-import IOWriterSync from 'common/io/IOWriterSync'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import seekInBytes from '../function/seekInBytes'
-import { avRescaleQ } from 'avutil/util/rational'
-import * as array from 'common/util/array'
-import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
-import * as bigint from 'common/util/bigint'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+
+import { memcpyFromUint8Array, mapUint8Array, SafeUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  addAVPacketData,
+  AVStreamMetadataKey,
+  AVPacketFlags,
+  NOPTS_VALUE_BIGINT,
+  avRescaleQ,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q
+} from '@libmedia/avutil/internal'
+
+import {
+  concatTypeArray,
+  logger,
+  bigint
+} from '@libmedia/common'
+
+import {
+  IOError,
+  IOReaderSync,
+  IOWriterSync
+} from '@libmedia/common/io'
 
 interface IOggFormatPrivateData {
   serialNumber: number

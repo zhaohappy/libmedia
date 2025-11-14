@@ -23,7 +23,7 @@
  *
  */
 
-import { AVColorTransferCharacteristic } from 'avutil/pixfmt'
+import { AVColorTransferCharacteristic } from '@libmedia/avutil'
 import type ColorSpace from '../colorSpace/ColorSpace'
 import type { ColorTransformOptions } from './options'
 import { DefaultSDRWhiteLevel, GLType, HLGRefMaxLumNits } from './options'

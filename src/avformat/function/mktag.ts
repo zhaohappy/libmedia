@@ -23,7 +23,8 @@
  *
  */
 
-import * as logger from 'common/util/logger'
+import { logger } from '@libmedia/common'
+
 
 export default function mktag(tag: string): number {
   if (tag.length !== 4) {

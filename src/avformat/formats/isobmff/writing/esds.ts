@@ -23,15 +23,14 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext, IsobmffStreamContext } from '../type'
-import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType, MP4Tag } from '../boxType'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { AVCodecID2Mp4a } from '../isobmff'
-import { mapUint8Array } from 'cheap/std/memory'
+import { type IOWriterSync } from '@libmedia/common/io'
+import { mapUint8Array } from '@libmedia/cheap'
+import { AVCodecID, AVMediaType, type AVStream } from '@libmedia/avutil'
 
-function writeDescriptorLength(ioWriter: IOWriter, tag: MP4Tag, size: number) {
+function writeDescriptorLength(ioWriter: IOWriterSync, tag: MP4Tag, size: number) {
   ioWriter.writeUint8(tag)
   for (let i = 3; i > 0; i--) {
     ioWriter.writeUint8((size >> (7 * i)) | 0x80)
@@ -39,7 +38,7 @@ function writeDescriptorLength(ioWriter: IOWriter, tag: MP4Tag, size: number) {
   ioWriter.writeUint8(size & 0x7F)
 }
 
-export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext: IsobmffContext) {
+export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
 
   const streamContext = stream.privData as IsobmffStreamContext
 

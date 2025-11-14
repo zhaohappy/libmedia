@@ -23,23 +23,41 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
-import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
-import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { avCodecParameters2Extradata } from 'avutil/codecs/aac'
-import { avRescaleQ } from 'avutil/util/rational'
-import { avFree, avMalloc } from 'avutil/util/mem'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type { Rational } from 'avutil/struct/rational'
-import { addAVPacketData, addAVPacketSideData, unrefAVPacket } from 'avutil/util/avpacket'
-import { AVPacketSideDataType } from 'avutil/codec'
-import * as aac from 'avutil/codecs/aac'
-import * as is from 'common/util/is'
-import concatTypeArray from 'common/function/concatTypeArray'
+
+import {
+  mapUint8Array,
+  memcpyFromUint8Array
+} from '@libmedia/cheap'
+
+import {
+  is,
+  concatTypeArray,
+  logger
+} from '@libmedia/common'
+
+import {
+  type AVPacket,
+  AVPacketFlags,
+  errorType,
+  NOPTS_VALUE,
+  NOPTS_VALUE_BIGINT,
+  avRescaleQ,
+  avFree,
+  avMalloc,
+  type AVCodecParameters,
+  type AVRational,
+  AVPacketSideDataType,
+  addAVPacketData,
+  addAVPacketSideData,
+  unrefAVPacket
+} from '@libmedia/avutil'
+
+import {
+  AV_TIME_BASE,
+  AV_TIME_BASE_Q,
+  aac
+} from '@libmedia/avutil/internal'
 
 interface CacheItem {
   duration: number
@@ -64,7 +82,7 @@ export default class ADTS2RawFilter extends AVBSFilter {
   private caches: CacheItem[]
   private pendingItem: PendingItem
 
-  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<Rational>): number {
+  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<AVRational>): number {
     super.init(codecpar, timeBase)
 
     this.caches = []
@@ -142,7 +160,7 @@ export default class ADTS2RawFilter extends AVBSFilter {
         this.inCodecpar.sampleRate = this.streamMuxConfig.sampleRate
         this.inCodecpar.chLayout.nbChannels = this.streamMuxConfig.channels
 
-        const extradata = avCodecParameters2Extradata(accessof(this.inCodecpar))
+        const extradata = aac.avCodecParameters2Extradata(accessof(this.inCodecpar))
 
         if (this.inCodecpar.extradata) {
           avFree(this.inCodecpar.extradata)

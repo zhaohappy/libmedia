@@ -23,25 +23,32 @@
  *
  */
 
-import type AVFrame from 'avutil/struct/avframe'
-import type { AVContentLightMetadata } from 'avutil/struct/avframe'
-import { AVFrameSideDataType } from 'avutil/struct/avframe'
-import type { AVPixelFormat } from 'avutil/pixfmt'
-
 import type { WebGPURenderOptions } from './WebGPURender'
 import WebGPUDefaultRender from './WebGPUDefaultRender'
-import type { AVPixelFormatDescriptor } from 'avutil/pixelFormatDescriptor'
-import { getAVPixelFormatDescriptor, AVPixelFormatFlags } from 'avutil/pixelFormatDescriptor'
-import { mapUint8Array } from 'cheap/std/memory'
 import ColorSpace from './colorSpace/ColorSpace'
 
 import type { ColorTransformOptions } from './colorTransform/options'
 import { DefaultSDRWhiteLevel, GLType } from './colorTransform/options'
 import generateSteps from './colorTransform/generateSteps'
 import HdrMetadata from './struct/HdrMetadata'
-import { getAVFrameSideData } from 'avutil/util/avframe'
-import isPointer from 'cheap/std/function/isPointer'
-import { getHeap } from 'cheap/heap'
+
+import {
+  type AVFrame,
+  type AVPixelFormat,
+  type AVPixelFormatDescriptor,
+  getAVPixelFormatDescriptor,
+  AVPixelFormatFlags,
+  type AVContentLightMetadata,
+  AVFrameSideDataType,
+  getAVFrameSideData
+} from '@libmedia/avutil'
+
+import {
+  isPointer,
+  mapUint8Array
+} from '@libmedia/cheap'
+
+import { getHeap } from '@libmedia/cheap/internal'
 
 export default class WebGPUDefault16Render extends WebGPUDefaultRender {
 
@@ -180,7 +187,7 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
     await super.init()
     this.hdrMetadataBuffer = this.device.createBuffer({
       size: (reinterpret_cast<int32>(sizeof(HdrMetadata)) + 15) & ~15,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
   }
 

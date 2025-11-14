@@ -1,13 +1,12 @@
-import WasmVideoDecoder from 'avcodec/wasmcodec/VideoDecoder'
-import AVStream from 'avutil/AVStream'
-import AVPacket from 'avutil/struct/avpacket'
-import compile from 'cheap/webassembly/compiler'
+import { WasmVideoDecoder } from '@libmedia/avcodec'
+import { type AVPacket, type AVStream } from '@libmedia/avutil'
+import { compileResource } from '@libmedia/cheap'
 
 export async function decodeVideo(stream: AVStream) {
   // 根据 codecId 拿到解码器 wasm 路径
   const wasmUrl = ''
 
-  const resource = await compile({
+  const resource = await compileResource({
     source: wasmUrl
   })
 

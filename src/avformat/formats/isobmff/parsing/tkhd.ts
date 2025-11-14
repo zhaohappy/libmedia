@@ -23,15 +23,13 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import type Stream from 'avutil/AVStream'
-import { AVDisposition } from 'avutil/AVStream'
 import type { Atom, IsobmffContext, IsobmffStreamContext } from '../type'
-import * as logger from 'common/util/logger'
 import { TKHDFlags } from '../boxType'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { logger } from '@libmedia/common'
+import { type IOReader } from '@libmedia/common/io'
+import { AVStreamMetadataKey, AVDisposition, type AVStream } from '@libmedia/avutil'
 
-export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, isobmffContext: IsobmffContext) {
+export default async function read(ioReader: IOReader, stream: AVStream, atom: Atom, isobmffContext: IsobmffContext) {
   const streamContext = stream.privData as IsobmffStreamContext
 
   const now = ioReader.getPos()

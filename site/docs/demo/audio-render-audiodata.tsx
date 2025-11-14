@@ -1,16 +1,19 @@
-import * as demux from '@libmedia/avformat/demux'
-import { createAVIFormatContext } from '@libmedia/avformat/AVFormatContext'
-import { createAVPacket, destroyAVPacket } from '@libmedia/avutil/util/avpacket'
-import { AVCodecID, AVMediaType } from '@libmedia/avutil/codec'
-import compileResource from '@libmedia/avutil/function/compileResource'
-import Resampler from '@libmedia/audioresample/Resampler'
-import { AVSampleFormat } from '@libmedia/avutil/audiosamplefmt'
-import AVPCMBuffer from '@libmedia/avutil/struct/avpcmbuffer'
-import { avFreep } from '@libmedia/avutil/util/mem'
-import { mapFloat32Array } from '@libmedia/cheap/std/memory'
-import { destroyAVFrame } from '@libmedia/avutil/util/avframe'
-import WebAudioDecoder from '@libmedia/avcodec/webcodec/AudioDecoder'
-import { audioData2AVFrame } from '@libmedia/avutil/function/audioData2AVFrame'
+import { demux, createAVIFormatContext } from '@libmedia/avformat'
+import {
+  createAVPacket,
+  destroyAVPacket,
+  type AVCodecID,
+  AVMediaType,
+  compileResource,
+  destroyAVFrame,
+  AVSampleFormat,
+  type AVPCMBuffer,
+  avFreep,
+  audioData2AVFrame
+} from '@libmedia/avutil'
+import { Resampler } from '@libmedia/audioresample'
+import { WebAudioDecoder } from '@libmedia/avcodec'
+import { mapFloat32Array } from '@libmedia/cheap'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
 import { useEffect } from 'react'
@@ -49,7 +52,7 @@ async function render() {
   const stream = iformatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_AUDIO)
   const inChannels = stream.codecpar.chLayout.nbChannels
   const outChannels = Math.min(inChannels, audioContext.destination.maxChannelCount || 1)
-  
+
   const resampler = new Resampler({
     resource: await compileResource(getWasm('resampler'))
   })
@@ -116,7 +119,7 @@ async function render() {
         play(reinterpret_cast<pointer<pointer<float>>>(frame.extendedData), frame.nbSamples, frame.sampleRate)
       }
       destroyAVFrame(frame)
-    },
+    }
   })
 
   let ret = await decoder.open(addressof(stream.codecpar))

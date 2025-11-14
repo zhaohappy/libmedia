@@ -25,7 +25,7 @@ Multi-Threads programming requires you to configure worker processing according 
 First, we need to create a separate ts file ```worker.ts``` as the entry point of the worker
 
 ```javascript
-import DemuxPipeline from '@libmedia/avpipeline/DemuxPipeline'
+import { DemuxPipeline } from '@libmedia/avpipeline'
 import runThread from '@libmedia/cheap/thread/runThread'
 runThread(DemuxPipeline)
 ```
@@ -36,7 +36,7 @@ Then use it in the main file:
 
 ```javascript [vite]
 
-import DemuxPipeline from '@libmedia/avpipeline/DemuxPipeline'
+import { DemuxPipeline } from '@libmedia/avpipeline'
 import DemuxPipelineWorker from './worker?worker'
 
 const pipeline = await createThreadFromClass(
@@ -47,7 +47,7 @@ const pipeline = await createThreadFromClass(
 
 ```javascript [webpack]
 
-import DemuxPipeline from '@libmedia/avpipeline/DemuxPipeline'
+import { DemuxPipeline } from '@libmedia/avpipeline'
 import DemuxPipelineWorker from 'worker-loader!./worker'
 
 const pipeline = await createThreadFromClass(
@@ -59,7 +59,7 @@ const pipeline = await createThreadFromClass(
 
 ```javascript [node]
 
-import DemuxPipeline from '@libmedia/avpipeline/DemuxPipeline'
+import { DemuxPipeline } from '@libmedia/avpipeline'
 import { Worker } from 'worker_threads'
 
 const pipeline = await createThreadFromClass(
@@ -111,7 +111,7 @@ If you are using webpack to build your project, it is recommended to use a webpa
 
 ```javascript
 
-import DemuxPipeline from '@libmedia/avpipeline/DemuxPipeline'
+import { DemuxPipeline } from '@libmedia/avpipeline'
 
 const pipeline = await createThreadFromClass(
   DemuxPipeline

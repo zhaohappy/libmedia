@@ -23,11 +23,18 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import type IOWriter from 'common/io/IOWriter'
-import { TextMessageRequest, TextMessageSession } from 'common/network/textMessage/message'
 import { RtspMethod, RtspStreamingMode } from './rtsp'
-import type { Range } from 'common/types/type'
+import type { Range } from '@libmedia/common'
+
+import type {
+  IOReader,
+  IOWriter
+} from '@libmedia/common/io'
+
+import {
+  TextMessageRequest,
+  TextMessageSession
+} from '@libmedia/common/network'
 
 export interface RtspTransport {
   trackId: number

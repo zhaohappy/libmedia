@@ -23,14 +23,16 @@
  *
  */
 
-import type { Uint8ArrayInterface } from 'common/io/interface'
+
 import AVBSPipe from '../AVBSPipe'
-import AESSoftDecryptor from 'common/crypto/aes/AESSoftDecryptor'
-import AESWebDecryptor from 'common/crypto/aes/AESWebDecryptor'
-import Sleep from 'common/timer/Sleep'
-import { IOError } from 'common/io/error'
-import * as logger from 'common/util/logger'
-import { AesMode } from 'common/crypto/aes/aes'
+import {
+  AESSoftDecryptor,
+  AESWebDecryptor,
+  AesMode,
+  logger
+} from '@libmedia/common'
+import { Sleep } from '@libmedia/common/timer'
+import { type Uint8ArrayInterface, IOError } from '@libmedia/common/io'
 
 const BLOCK_SIZE = 16
 const REMAINING_LENGTH = BLOCK_SIZE * 2
@@ -151,7 +153,7 @@ export default class AESDecryptPipe extends AVBSPipe {
       this.buffer.set(
         (await this.aesWebDecryptor.encryptPadding(
           PaddingBlock,
-          this.buffer.subarray(this.pointer + length - BLOCK_SIZE, this.pointer + length)
+          this.buffer.subarray(this.pointer + length - BLOCK_SIZE, this.pointer + length) as BufferSource
         )).subarray(0, BLOCK_SIZE),
         this.pointer + length
       )

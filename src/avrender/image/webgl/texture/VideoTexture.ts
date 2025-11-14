@@ -24,7 +24,7 @@
  */
 
 import Texture from './Texture'
-import * as logger from 'common/util/logger'
+import { logger } from '@libmedia/common'
 
 export default class VideoTexture extends Texture {
 

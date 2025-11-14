@@ -22,65 +22,25 @@
     "@libmedia/avformat": "workspace:*"
   },
   "exports": {
-    "./bsp/AVBSPipe": {
-      "import": "./dist/esm/bsp/AVBSPipe.js",
-      "require": "./dist/cjs/bsp/AVBSPipe.js",
-      "types": "./dist/esm/bsp/AVBSPipe.d.ts"
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/esm/index.d.ts"
     },
-    "./bsp/aes/AESDecryptPipe": {
-      "import": "./dist/esm/bsp/aes/AESDecryptPipe.js",
-      "require": "./dist/cjs/bsp/aes/AESDecryptPipe.js",
-      "types": "./dist/esm/bsp/aes/AESDecryptPipe.d.ts"
-    },
-    "./ioLoader/CustomIOLoader": {
-      "import": "./dist/esm/ioLoader/CustomIOLoader.js",
-      "require": "./dist/cjs/ioLoader/CustomIOLoader.js",
-      "types": "./dist/esm/ioLoader/CustomIOLoader.d.ts"
-    },
-    "./ioLoader/DashIOLoader": {
+    "./DashIOLoader": {
       "import": "./dist/esm/ioLoader/DashIOLoader.js",
       "require": "./dist/cjs/ioLoader/DashIOLoader.js",
       "types": "./dist/esm/ioLoader/DashIOLoader.d.ts"
     },
-    "./ioLoader/FetchIOLoader": {
-      "import": "./dist/esm/ioLoader/FetchIOLoader.js",
-      "require": "./dist/cjs/ioLoader/FetchIOLoader.js",
-      "types": "./dist/esm/ioLoader/FetchIOLoader.d.ts"
-    },
-    "./ioLoader/FileIOLoader": {
-      "import": "./dist/esm/ioLoader/FileIOLoader.js",
-      "require": "./dist/cjs/ioLoader/FileIOLoader.js",
-      "types": "./dist/esm/ioLoader/FileIOLoader.d.ts"
-    },
-    "./ioLoader/HlsIOLoader": {
+    "./HlsIOLoader": {
       "import": "./dist/esm/ioLoader/HlsIOLoader.js",
       "require": "./dist/cjs/ioLoader/HlsIOLoader.js",
       "types": "./dist/esm/ioLoader/HlsIOLoader.d.ts"
     },
-    "./ioLoader/IOLoader": {
-      "import": "./dist/esm/ioLoader/IOLoader.js",
-      "require": "./dist/cjs/ioLoader/IOLoader.js",
-      "types": "./dist/esm/ioLoader/IOLoader.d.ts"
-    },
-    "./ioLoader/RtmpIOLoader": {
+    "./RtmpIOLoader": {
       "import": "./dist/esm/ioLoader/RtmpIOLoader.js",
       "require": "./dist/cjs/ioLoader/RtmpIOLoader.js",
       "types": "./dist/esm/ioLoader/RtmpIOLoader.d.ts"
-    },
-    "./ioLoader/SocketIOLoader": {
-      "import": "./dist/esm/ioLoader/SocketIOLoader.js",
-      "require": "./dist/cjs/ioLoader/SocketIOLoader.js",
-      "types": "./dist/esm/ioLoader/SocketIOLoader.d.ts"
-    },
-    "./ioLoader/WebSocketIOLoader": {
-      "import": "./dist/esm/ioLoader/WebSocketIOLoader.js",
-      "require": "./dist/cjs/ioLoader/WebSocketIOLoader.js",
-      "types": "./dist/esm/ioLoader/WebSocketIOLoader.d.ts"
-    },
-    "./ioLoader/WebTransportIOLoader": {
-      "import": "./dist/esm/ioLoader/WebTransportIOLoader.js",
-      "require": "./dist/cjs/ioLoader/WebTransportIOLoader.js",
-      "types": "./dist/esm/ioLoader/WebTransportIOLoader.d.ts"
     }
   }
 }

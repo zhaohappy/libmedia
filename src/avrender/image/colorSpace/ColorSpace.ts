@@ -23,9 +23,8 @@
  *
  */
 
-import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from 'avutil/pixfmt'
-import Matrix4 from 'common/math/Matrix4'
-import { Vector3 } from 'common/math/Vector3'
+import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from '@libmedia/avutil'
+import { Matrix4, Vector3 } from '@libmedia/common/math'
 
 import * as transferFns from './transferFns'
 import * as primaries from './primaries'
@@ -185,7 +184,7 @@ export default class ColorSpace {
           0.0, -0.5, 0.986566 / 2.0, 0.5,
           // DZ or DX
           0.5, -0.991902 / 2.0, 0.0, 0.5,
-          0.0, 0.0, 0.0, 1.0,
+          0.0, 0.0, 0.0, 1.0
         ])
     }
 
@@ -200,7 +199,7 @@ export default class ColorSpace {
       um * -Kr, um * -Kg, um * (1.0 - Kb), 0.5,
       // V
       vm * (1.0 - Kr), vm * -Kg, vm * -Kb, 0.5,
-      0.0, 0.0, 0.0, 1.0,
+      0.0, 0.0, 0.0, 1.0
     ])
   }
 

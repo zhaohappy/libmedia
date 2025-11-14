@@ -24,10 +24,8 @@
  */
 
 import type { AVIFormatContext, AVOFormatContext } from '../AVFormatContext'
-import { NOPTS_VALUE } from 'avutil/constant'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import * as array from 'common/util/array'
-import { avQ2D } from 'avutil/util/rational'
+import { array } from '@libmedia/common'
+import { avQ2D, NOPTS_VALUE, AVCodecID, AVMediaType } from '@libmedia/avutil'
 
 export function checkStreamParameters(context: AVIFormatContext | AVOFormatContext) {
   let result = true

@@ -24,7 +24,6 @@
  */
 
 import type AVCodecParameters from '../struct/avcodecparameters'
-import { memcpy, memset } from 'cheap/std/memory'
 import { avFree, avFreep, avMalloc, avMallocz } from './mem'
 import { unInitChannelLayout } from './channel'
 import { freeAVPacketSideData } from './avpacket'
@@ -35,6 +34,11 @@ import { AVChromaLocation, AVColorPrimaries, AVColorRange,
 } from '../pixfmt'
 import { NOPTS_VALUE } from '../constant'
 import { AVPacketSideData } from '../struct/avpacket'
+
+export { default as isHdr } from '../function/isHdr'
+export { default as hasAlphaChannel } from '../function/hasAlphaChannel'
+
+import { memset, memcpy } from '@libmedia/cheap'
 
 function copyCodecParametersSideData(
   pDst: pointer<pointer<AVPacketSideData>>,

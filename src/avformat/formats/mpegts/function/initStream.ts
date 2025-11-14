@@ -26,18 +26,15 @@
 import type { MpegtsContext, MpegtsStreamContext, PID } from '../type'
 import createMpegtsStreamContext from './createMpegtsStreamContext'
 import * as mpegts from '../mpegts'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
+import { opus } from '@libmedia/avutil/internal'
+import { AVCodecID, AVMediaType, type AVStream, avMalloc, AVCodecParameterFlags } from '@libmedia/avutil'
 import type AVBSFilter from '../../../bsf/AVBSFilter'
 import AACADTS2RawFilter from '../../../bsf/aac/ADTS2RawFilter'
 import AACLATM2RawFilter from '../../../bsf/aac/LATM2RawFilter'
 import OpusMpegts2RawFilter from '../../../bsf/opus/Mpegts2RawFilter'
-import type Stream from 'avutil/AVStream'
-import * as opus from 'avutil/codecs/opus'
-import { avMalloc } from 'avutil/util/mem'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
+import { memcpyFromUint8Array } from '@libmedia/cheap'
 
-export default function initStream(pid: PID, stream: Stream, mpegtsContext: MpegtsContext) {
+export default function initStream(pid: PID, stream: AVStream, mpegtsContext: MpegtsContext) {
 
   stream.timeBase.den = 90000
   stream.timeBase.num = 1

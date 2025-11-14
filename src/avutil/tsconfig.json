@@ -3,11 +3,6 @@
   "compilerOptions": {
     "sourceMap": true,
     "declarationMap": false,
-    "baseUrl": "./",
-    "paths": {
-      "cheap/*": ["../cheap/*"],
-      "common/*": ["../common/*"]
-    },
     "allowJs": false
   },
   "include": [

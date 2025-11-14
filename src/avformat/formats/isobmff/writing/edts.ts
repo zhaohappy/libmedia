@@ -23,15 +23,14 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext, IsobmffStreamContext } from '../type'
-import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
-import { INT32_MAX, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { avRescaleQ } from 'avutil/util/rational'
 import getSampleDuration from '../function/getSampleDuration'
+import { type IOWriterSync } from '@libmedia/common/io'
+import { INT32_MAX } from '@libmedia/avutil/internal'
+import { NOPTS_VALUE_BIGINT, type AVStream, avRescaleQ } from '@libmedia/avutil'
 
-export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext: IsobmffContext) {
+export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   const streamContext = stream.privData as IsobmffStreamContext
   let duration = avRescaleQ(
     getSampleDuration(streamContext),

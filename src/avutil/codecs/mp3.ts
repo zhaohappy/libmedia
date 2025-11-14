@@ -23,10 +23,13 @@
  *
  */
 
-import type { Uint8ArrayInterface } from 'common/io/interface'
 import { NOPTS_VALUE } from '../constant'
 import type AVCodecParameters from '../struct/avcodecparameters'
 import type { AVPacketSideDataType } from '../codec'
+
+import {
+  type Uint8ArrayInterface
+} from '@libmedia/common/io'
 
 const MpegAudioV10SampleRateTable = [44100, 48000, 32000, 0]
 

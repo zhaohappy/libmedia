@@ -23,12 +23,12 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext, IsobmffStreamContext } from '../type'
-import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType, TFHDFlags } from '../boxType'
+import { type IOWriterSync } from '@libmedia/common/io'
+import { type AVStream } from '@libmedia/avutil'
 
-export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext: IsobmffContext) {
+export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   const track = isobmffContext.currentFragment.tracks.find((track) => {
     return track.trackId === (stream.privData as IsobmffStreamContext).trackId
   })

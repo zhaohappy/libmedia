@@ -23,7 +23,7 @@
  *
  */
 
-import type { Data } from 'common/types/type'
+import type { Data } from '@libmedia/common'
 
 export interface Segment {
   idx: number

@@ -26,7 +26,6 @@
 import type { AVFrameSideDataType } from '../struct/avframe'
 import AVFrame, { AVFrameSideData } from '../struct/avframe'
 import { avFree, avFreep, avMalloc, avMallocz, avRealloc } from './mem'
-import { memcpy, memset } from 'cheap/std/memory'
 import { INT32_MAX, NOPTS_VALUE_BIGINT, AV_NUM_DATA_POINTERS } from '../constant'
 import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from '../pixfmt'
 import { avbufferAlloc, avbufferRef, avbufferReplace, avbufferUnref } from './avbuffer'
@@ -37,9 +36,17 @@ import { sampleFormatGetLinesize, sampleFormatIsPlanar } from './sample'
 import type { AVBufferRef } from '../struct/avbuffer'
 import * as errorType from '../error'
 import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
-import * as stack from 'cheap/stack'
 import { pixelFillLinesizes, pixelFillPlaneSizes, pixelFillPointer } from './pixel'
-import alignFunc from 'common/math/align'
+
+import {
+  align as alignFunc
+} from '@libmedia/common/math'
+
+import {
+  stack,
+  memcpy,
+  memset
+} from '@libmedia/cheap'
 
 export enum AV_FRAME_SIDE_DATA_FLAG {
   UNIQUE = 1

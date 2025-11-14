@@ -23,11 +23,15 @@
  *
  */
 
-import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
-import BufferReader from 'common/io/BufferReader'
-import BufferWriter from 'common/io/BufferWriter'
-import type { Uint8ArrayInterface } from 'common/io/interface'
-import * as array from 'common/util/array'
+import { SafeUint8Array } from '@libmedia/cheap'
+
+import { array } from '@libmedia/common'
+
+import {
+  BufferWriter,
+  BufferReader,
+  type Uint8ArrayInterface
+} from '@libmedia/common/io'
 
 export function isAnnexb(data: Uint8ArrayInterface) {
   return data.length > 4

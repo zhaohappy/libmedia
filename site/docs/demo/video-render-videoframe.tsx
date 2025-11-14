@@ -1,12 +1,12 @@
-import * as demux from '@libmedia/avformat/demux'
-import { createAVIFormatContext } from '@libmedia/avformat/AVFormatContext'
-import { createAVPacket, destroyAVPacket } from '@libmedia/avutil/util/avpacket'
-import { AVMediaType } from '@libmedia/avutil/codec'
-import CanvasImageRender from '@libmedia/avrender/image/Canvas2dRender'
-import { RenderMode } from '@libmedia/avrender/image/ImageRender'
-import WebVideoDecoder from '@libmedia/avcodec/webcodec/VideoDecoder'
-import Timer from '@libmedia/common/timer/Timer'
-import Sleep from '@libmedia/common/timer/Sleep'
+import { demux, createAVIFormatContext } from '@libmedia/avformat'
+import {
+  createAVPacket,
+  destroyAVPacket,
+  AVMediaType
+} from '@libmedia/avutil'
+import { WebVideoDecoder } from '@libmedia/avcodec'
+import { CanvasImageRender, RenderMode } from '@libmedia/avrender'
+import { Sleep, Timer } from '@libmedia/common/timer'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept } from './utils'
 import { useEffect, useRef } from 'react'
@@ -130,7 +130,7 @@ async function render(canvas: HTMLCanvasElement) {
   destroyAVPacket(avpacket)
 
   decodeEnd = true
-  
+
   stop = true
 
   console.log('render end')
@@ -173,7 +173,7 @@ export default function () {
       &nbsp;
       <input accept={getAccept()} type="file" onChange={onChange}></input>
       <hr />
-      <canvas ref={canvasRef} style={{width: '640px', height: '480px', background: '#000'}}></canvas>
+      <canvas ref={canvasRef} style={{ width: '640px', height: '480px', background: '#000' }}></canvas>
     </div>
   )
 }

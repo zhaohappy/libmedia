@@ -23,18 +23,21 @@
  *
  */
 
-import { AVCodecID } from 'avutil/codec'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import type IOWriterSync from 'common/io/IOWriterSync'
 import type { FlvTag } from './flv'
 import { AudioPacketModExType, AudioPacketType, AVCodecID2FlvCodecTag, AVCodecID2FlvCodecType, AVMultiTrackType, VideoFrameType, VideoPacketModExType, VideoPacketType } from './flv'
 import type { FlvContext, FlvStreamContext } from './type'
-import type { Rational } from 'avutil/struct/rational'
-import { avRescaleQ2 } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q, AV_NANO_TIME_BASE_Q } from 'avutil/constant'
 import mktag from '../../function/mktag'
-import * as is from 'common/util/is'
-import type AVStream from 'avutil/AVStream'
+
+import {
+  AVPacketFlags,
+  AVCodecID,
+  type AVStream,
+  type AVRational,
+  avRescaleQ2
+} from '@libmedia/avutil'
+import { AV_MILLI_TIME_BASE_Q, AV_NANO_TIME_BASE_Q } from '@libmedia/avutil/internal'
+import { is } from '@libmedia/common'
+import { type IOWriterSync } from '@libmedia/common/io'
 
 export function updateSize(ioWriter: IOWriterSync, pos: int64, size: int32) {
   const now = ioWriter.getPos()
@@ -111,7 +114,7 @@ export function writeVideoHeader(
   type: uint8,
   flags: AVPacketFlags,
   timestamp: int64,
-  timeBase: pointer<Rational>,
+  timeBase: pointer<AVRational>,
   ct: int32 = 0
 ) {
 
@@ -170,7 +173,7 @@ export function writeAudioHeader(
   enhanced: boolean,
   type: uint8,
   timestamp: int64,
-  timeBase: pointer<Rational>
+  timeBase: pointer<AVRational>
 ) {
   const streamContext = stream.privData as FlvStreamContext
 

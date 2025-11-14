@@ -25,30 +25,44 @@
 
 import type { AVChapter, AVFormatContextInterface, AVIFormatContext, AVOFormatContext } from './AVFormatContext'
 import { AVFormatContext } from './AVFormatContext'
-import type { AVStreamGroup, AVStreamGroupInterface, AVStreamInterface } from 'avutil/AVStream'
-import type AVStream from 'avutil/AVStream'
-import { AVDisposition, AVStreamGroupParamsType } from 'avutil/AVStream'
-import * as object from 'common/util/object'
-import * as stringEnum from 'avutil/stringEnum'
-import * as is from 'common/util/is'
-import { avQ2D, avReduce, avRescaleQ } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import * as string from 'common/util/string'
-import toString from 'common/function/toString'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
 
-import * as aac from 'avutil/codecs/aac'
-import * as opus from 'avutil/codecs/opus'
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import * as av1 from 'avutil/codecs/av1'
-import * as vp9 from 'avutil/codecs/vp9'
-import * as mp3 from 'avutil/codecs/mp3'
-import type { AVFormat } from 'avutil/avformat'
-import isHdr from 'avutil/function/isHdr'
-import { layoutName2AVChannelLayout } from 'avutil/stringEnum'
-import { AVChannelOrder } from 'avutil/audiosamplefmt'
+import * as stringEnum from '@libmedia/avutil/internal'
+
+import {
+  type AVFormat,
+  AVMediaType,
+  AVCodecID,
+  type AVStream,
+  AVDisposition,
+  AVStreamGroupParamsType,
+  type AVStreamGroup,
+  type AVStreamGroupInterface,
+  type AVStreamInterface,
+  NOPTS_VALUE,
+  NOPTS_VALUE_BIGINT,
+  avQ2D,
+  avReduce,
+  avRescaleQ,
+  AVChannelOrder,
+  isHdr
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q,
+  aac,
+  h264,
+  hevc,
+  av1,
+  vp9,
+  mp3
+} from '@libmedia/avutil/internal'
+
+import {
+  object,
+  is,
+  string,
+  toString
+} from '@libmedia/common'
 
 export interface DumpIOInfo {
   from: string
@@ -225,7 +239,7 @@ function dumpAudioStream(stream: AVStreamInterface, list: string[]) {
   let channel = `${stream.codecpar.chLayout.nbChannels} channels`
 
   if (stream.codecpar.chLayout.order === AVChannelOrder.AV_CHANNEL_ORDER_NATIVE) {
-    const name = dumpKey(layoutName2AVChannelLayout, static_cast<double>(stream.codecpar.chLayout.u.mask), '')
+    const name = dumpKey(stringEnum.layoutName2AVChannelLayout, static_cast<double>(stream.codecpar.chLayout.u.mask), '')
     if (name) {
       channel = name
     }

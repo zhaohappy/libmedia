@@ -23,53 +23,75 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import type { AVIFormatContext } from '../AVFormatContext'
-import * as logger from 'common/util/logger'
 
-import { IOError } from 'common/io/error'
 import type { MpegpsContext, MpegpsSlice, MpegpsStreamContext } from './mpegts/type'
 import * as mpegts from './mpegts/mpegts'
-import * as errorType from 'avutil/error'
 import parsePES from './mpegts/function/parsePES'
 import { PES } from './mpegts/struct'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
-import { addAVPacketData, createAVPacket, deleteAVPacketSideData,
-  destroyAVPacket, getAVPacketData, getAVPacketSideData
-} from 'avutil/util/avpacket'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import type AVStream from 'avutil/AVStream'
 import seekInBytes from '../function/seekInBytes'
-import { avRescaleQ } from 'avutil/util/rational'
-import * as array from 'common/util/array'
-import * as object from 'common/util/object'
-import * as mp3 from 'avutil/codecs/mp3'
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import * as aac from 'avutil/codecs/aac'
-import * as opus from 'avutil/codecs/opus'
-import * as ac3 from 'avutil/codecs/ac3'
-import * as dts from 'avutil/codecs/dts'
-import * as mpegvideo from 'avutil/codecs/mpegvideo'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import { avMalloc } from 'avutil/util/mem'
-import { memcpy, mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
 import * as mpegps from './mpegts/mpegps'
-import { AVChannelLayout, AVChannelOrder } from 'avutil/audiosamplefmt'
-import concatTypeArray from 'common/function/concatTypeArray'
-import * as nalu from 'avutil/util/nalu'
 import Mp32RawFilter from '../bsf/mp3/Mp32RawFilter'
 import { FrameHeader } from './mp3/frameHeader'
 import * as mp3FrameHeader from '../formats/mp3/frameHeader'
-import { IOFlags } from 'avutil/avformat'
-import * as is from 'common/util/is'
 import Ac32RawFilter from '../bsf/ac3/Ac32RawFilter'
 import Dts2RawFilter from '../bsf/dts/Dts2RawFilter'
 import ADTS2RawFilter from '../bsf/aac/ADTS2RawFilter'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
+
+import { memcpyFromUint8Array, mapSafeUint8Array, memcpy } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  IOFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  addAVPacketData,
+  createAVPacket,
+  deleteAVPacketSideData,
+  destroyAVPacket,
+  getAVPacketData,
+  getAVPacketSideData,
+  AVCodecParameterFlags,
+  AVPacketFlags,
+  NOPTS_VALUE,
+  AVChannelLayoutType,
+  AVChannelOrder,
+  NOPTS_VALUE_BIGINT,
+  AVPacketSideDataType,
+  avRescaleQ,
+  errorType,
+  nalu
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q,
+  mp3,
+  h264,
+  hevc,
+  vvc,
+  aac,
+  dts,
+  ac3,
+  opus,
+  mpegvideo
+} from '@libmedia/avutil/internal'
+
+import {
+  object,
+  array,
+  concatTypeArray,
+  logger,
+  is
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
 
 export default class IMpegpsFormat extends IFormat {
 
@@ -344,7 +366,7 @@ export default class IMpegpsFormat extends IFormat {
       stream.codecpar.chLayout.nbChannels = 1
       stream.codecpar.sampleRate = 8000
       stream.codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
-      stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVChannelLayout.AV_CHANNEL_LAYOUT_MONO as uint32)
+      stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVChannelLayoutType.AV_CHANNEL_LAYOUT_MONO as uint32)
     }
     if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
       || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC

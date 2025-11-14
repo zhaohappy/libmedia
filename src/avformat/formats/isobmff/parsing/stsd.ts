@@ -23,14 +23,14 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import type Stream from 'avutil/AVStream'
 import type { Atom, IsobmffContext, IsobmffStreamContext } from '../type'
-import * as logger from 'common/util/logger'
 import mktag from '../../../function/mktag'
 import { BoxType, ContainerBoxs } from '../boxType'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { tag2CodecId } from '../isobmff'
+
+import { logger } from '@libmedia/common'
+import { type IOReader } from '@libmedia/common/io'
+import { AVMediaType, AVCodecID, type AVStream, AVStreamMetadataKey } from '@libmedia/avutil'
 
 import avcc from './avcc'
 import hvcc from './hvcc'
@@ -46,9 +46,8 @@ import pcmc from './pcmc'
 
 import ac3 from './dac3'
 import eac3 from './dec3'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
 
-export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, isobmffContext: IsobmffContext) {
+export default async function read(ioReader: IOReader, stream: AVStream, atom: Atom, isobmffContext: IsobmffContext) {
   const now = ioReader.getPos()
 
   // version

@@ -23,9 +23,15 @@
  *
  */
 
-import type Stats from 'avpipeline/struct/stats'
-import Timer from 'common/timer/Timer'
-import * as bigint from 'common/util/bigint'
+import { bigint } from '@libmedia/common'
+
+import {
+  Timer
+} from '@libmedia/common/timer'
+
+import type {
+  Stats
+} from '@libmedia/avpipeline'
 
 export interface StatsControllerObserver {
   onVideoStutter: () => void

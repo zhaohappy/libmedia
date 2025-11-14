@@ -23,7 +23,7 @@
  *
  */
 
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { AVStreamMetadataKey } from '@libmedia/avutil'
 
 export const iTunesKeyMap: Record<string, string> = {
   '@PRM': 'premiere_version',
@@ -98,5 +98,5 @@ export const iTunesKeyMap: Record<string, string> = {
   '©url': 'url',
   '©wrn': 'warning',
   '©wrt': AVStreamMetadataKey.COMPOSER,
-  '©xyz': 'location',
+  '©xyz': 'location'
 }

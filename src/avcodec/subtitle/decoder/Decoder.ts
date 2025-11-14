@@ -1,5 +1,7 @@
-import type AVPacket from 'avutil/struct/avpacket'
-import type { AVSubtitle } from 'avutil/struct/avsubtitle'
+import {
+  type AVPacket,
+  type AVSubtitle
+} from '@libmedia/avutil'
 
 export default abstract class Decoder {
   public abstract sendAVPacket(avpacket: pointer<AVPacket>): int32

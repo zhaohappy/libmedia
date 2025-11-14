@@ -23,8 +23,7 @@
  *
  */
 
-import type { Rational } from 'avutil/struct/rational'
-import { avQ2D, avReduce } from 'avutil/util/rational'
+import { avQ2D, avReduce, type AVRational } from '@libmedia/avutil'
 
 const MAX_STD_FRAMERATE = 30 * 12 + 30 + 3 + 6
 
@@ -44,7 +43,7 @@ function getStdFramerate(index: number) {
   return [24, 30, 60, 12, 15, 48][index] * 1000 * 12
 }
 
-export default function roundStandardFramerate(framerate: Rational) {
+export default function roundStandardFramerate(framerate: AVRational) {
   let bestFps = 0
   let bestError = 0.01
   for (let i = 0; i < MAX_STD_FRAMERATE; i++) {

@@ -24,14 +24,13 @@
  */
 
 import * as mpegts from './mpegts'
-import { IOError } from 'common/io/error'
+import { IOError, type IOReader } from '@libmedia/common/io'
 import analyzeTSLength from './function/analyzeTSLength'
 import type { MpegtsContext } from './type'
-import * as logger from 'common/util/logger'
+import { logger } from '@libmedia/common'
 import { TSPacket } from './struct'
 import parseAdaptationField from './function/parseAdaptationField'
-import type IOReader from 'common/io/IOReader'
-import median from 'common/math/median'
+import { median } from '@libmedia/common/math'
 
 export async function getPacketSize(ioReader: IOReader): Promise<number> {
   let buffer: Uint8Array

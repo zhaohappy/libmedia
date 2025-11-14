@@ -23,22 +23,37 @@
  *
  */
 
-import type AVStream from 'avutil/AVStream'
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData } from 'avutil/util/avpacket'
-import { IOError } from 'common/io/error'
-import * as array from 'common/util/array'
-import * as text from 'common/util/text'
-import * as ittml from 'avutil/codecs/ttml'
-import { IOFlags } from 'avutil/avformat'
+
+import { memcpyFromUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  IOFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  addAVPacketData,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  ttml
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  logger,
+  text
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
 
 export default class ITtmlFormat extends IFormat {
 
@@ -81,7 +96,7 @@ export default class ITtmlFormat extends IFormat {
     }
 
     if (text) {
-      const result = ittml.parse(xml)
+      const result = ttml.parse(xml)
       this.queue = result.queue
       if (result.head) {
         const header = JSON.stringify(result.head)

@@ -24,32 +24,37 @@
  */
 
 import type { IsobmffContext, IsobmffStreamContext } from './type'
-import type IOWriter from 'common/io/IOWriterSync'
 import mktag from '../../function/mktag'
 import { BoxType, FullBoxs } from './boxType'
-import * as array from 'common/util/array'
 import type { AVOFormatContext } from '../../AVFormatContext'
-import type Stream from 'avutil/AVStream'
-import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import writers from './writing/writers'
 import type { BoxLayout } from './layout'
 import { FragmentTrackBoxLayoutMap, MoofTrafBoxLayout, TrackBoxLayoutMap } from './layout'
 import updatePositionSize from './function/updatePositionSize'
-import { getSideData } from 'avutil/util/avpacket'
-import { AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import { encryptionSideData2InitInfo } from 'avutil/util/encryption'
-import { mapUint8Array } from 'cheap/std/memory'
-import type { EncryptionInitInfo } from 'avutil/struct/encryption'
-import * as text from 'common/util/text'
 
-export function updateSize(ioWriter: IOWriter, pointer: number, size: number) {
+import { text, array } from '@libmedia/common'
+import { type IOWriterSync } from '@libmedia/common/io'
+import { mapUint8Array } from '@libmedia/cheap'
+
+import {
+  type AVStream,
+  AVMediaType,
+  AVStreamMetadataKey,
+  getSideData,
+  AVPacketSideDataType,
+  AVDisposition,
+  type EncryptionInitInfo,
+  encryptionSideData2InitInfo
+} from '@libmedia/avutil'
+
+export function updateSize(ioWriter: IOWriterSync, pointer: number, size: number) {
   const current = ioWriter.getPointer()
   ioWriter.seekInline(pointer)
   ioWriter.writeUint32(size)
   ioWriter.seekInline(current)
 }
 
-export function writeFtyp(ioWriter: IOWriter, context: IsobmffContext) {
+export function writeFtyp(ioWriter: IOWriterSync, context: IsobmffContext) {
   ioWriter.flush()
 
   const pointer = ioWriter.getPointer()
@@ -76,7 +81,7 @@ export function writeFtyp(ioWriter: IOWriter, context: IsobmffContext) {
   }
 }
 
-function writeEmptyBox(ioWriter: IOWriter, tag: BoxType) {
+function writeEmptyBox(ioWriter: IOWriterSync, tag: BoxType) {
   const isFullBox = array.has(FullBoxs, tag)
   ioWriter.writeUint32(isFullBox ? 12 : 8)
   ioWriter.writeUint32(mktag(tag))
@@ -87,7 +92,7 @@ function writeEmptyBox(ioWriter: IOWriter, tag: BoxType) {
   }
 }
 
-function writeLayout(ioWriter: IOWriter, layouts: BoxLayout[], stream: Stream, isobmffContext: IsobmffContext) {
+function writeLayout(ioWriter: IOWriterSync, layouts: BoxLayout[], stream: AVStream, isobmffContext: IsobmffContext) {
   array.each(layouts, (layout) => {
     if (!layout) {
       return true
@@ -112,7 +117,7 @@ function writeLayout(ioWriter: IOWriter, layouts: BoxLayout[], stream: Stream, i
   })
 }
 
-function writePssh(ioWriter: IOWriter, formatContext: AVOFormatContext, isobmffContext: IsobmffContext) {
+function writePssh(ioWriter: IOWriterSync, formatContext: AVOFormatContext, isobmffContext: IsobmffContext) {
   const pssh: EncryptionInitInfo[] = []
 
   function has(info: EncryptionInitInfo) {
@@ -183,7 +188,7 @@ function writePssh(ioWriter: IOWriter, formatContext: AVOFormatContext, isobmffC
   }
 }
 
-export function writeMoov(ioWriter: IOWriter, formatContext: AVOFormatContext, isobmffContext: IsobmffContext) {
+export function writeMoov(ioWriter: IOWriterSync, formatContext: AVOFormatContext, isobmffContext: IsobmffContext) {
   const pos = ioWriter.getPos()
 
   ioWriter.writeUint32(0)
@@ -280,7 +285,7 @@ export function writeMoov(ioWriter: IOWriter, formatContext: AVOFormatContext, i
   updatePositionSize(ioWriter, isobmffContext)
 }
 
-export function writeMoof(ioWriter: IOWriter, formatContext: AVOFormatContext, isobmffContext: IsobmffContext) {
+export function writeMoof(ioWriter: IOWriterSync, formatContext: AVOFormatContext, isobmffContext: IsobmffContext) {
   const pos = ioWriter.getPos()
 
   ioWriter.writeUint32(0)
@@ -327,7 +332,7 @@ export function writeMoof(ioWriter: IOWriter, formatContext: AVOFormatContext, i
   isobmffContext.currentFragment.size = size
 }
 
-export function writeMfra(ioWriter: IOWriter, formatContext: AVOFormatContext, isobmffContext: IsobmffContext) {
+export function writeMfra(ioWriter: IOWriterSync, formatContext: AVOFormatContext, isobmffContext: IsobmffContext) {
   let size = 8 + 16
   array.each(isobmffContext.currentFragment.tracks, (track) => {
     const stream = formatContext.streams.find((stream) => {

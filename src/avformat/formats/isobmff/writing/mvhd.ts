@@ -23,14 +23,14 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext } from '../type'
-import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
-import { UINT32_MAX } from 'avutil/constant'
 import writeMatrix from './function/writeMatrix'
+import { type IOWriterSync } from '@libmedia/common/io'
+import { UINT32_MAX } from '@libmedia/avutil/internal'
+import { type AVStream } from '@libmedia/avutil'
 
-export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext: IsobmffContext) {
+export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
 
   const duration = isobmffContext.duration
   const creationTime = isobmffContext.creationTime || 0

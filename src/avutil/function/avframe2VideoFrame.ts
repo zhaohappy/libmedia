@@ -28,8 +28,8 @@ import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
 import { AVColorRange, type AVPixelFormat } from '../pixfmt'
 import { avRescaleQ2 } from '../util/rational'
 import { AV_TIME_BASE_Q } from '../constant'
-import { getHeap } from 'cheap/heap'
-import * as object from 'common/util/object'
+import { getHeap } from '@libmedia/cheap/internal'
+import { object } from '@libmedia/common'
 import { pixelFormatMap, colorPrimariesMap, colorSpaceMap, colorTrcMap } from './constant/webcodecs'
 
 const pixelFormatMapReverse = object.reverse(pixelFormatMap)

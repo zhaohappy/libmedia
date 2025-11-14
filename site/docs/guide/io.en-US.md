@@ -10,7 +10,7 @@ order: 3
 
 # IO Input & Output
 
-The data input of libmedia is handled by [IOReader](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_io_IOReader.IOReader.html), and the data output is handled by [IOWriterSync](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_io_IOWriterSync.IOWriterSync.html).
+The data input of libmedia is handled by [IOReader](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_io.IOReader.html), and the data output is handled by [IOWriterSync](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_io.IOWriterSync.html).
 
 ## IOReader
 
@@ -20,8 +20,8 @@ The following is an example of reading data from a file
 
 ```typescript
 
-import { IOFlags } from '@libmedia/avutil/avformat'
-import IOReader from '@libmedia/common/io/IOReader'
+import { IOFlags } from '@libmedia/avutil'
+import { IOReader } from '@libmedia/common/io'
 
 const readFile: File
 
@@ -68,7 +68,7 @@ IOWriterSync is synchronous. After creating AVOFormatContext, you need to set th
 
 ```typescript
 
-import IOWriterSync from '@libmedia/common/io/IOWriterSync'
+import { IOWriterSync } from '@libmedia/common/io'
 
 const ioWriter = new IOWriterSync()
 

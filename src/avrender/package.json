@@ -20,127 +20,17 @@
     "@libmedia/avutil": "workspace:*"
   },
   "exports": {
-    "./image/Canvas2dRender": {
-      "import": "./dist/esm/image/Canvas2dRender.js",
-      "require": "./dist/cjs/image/Canvas2dRender.js",
-      "types": "./dist/esm/image/Canvas2dRender.d.ts"
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/esm/index.d.ts"
     },
-    "./image/ImageRender": {
-      "import": "./dist/esm/image/ImageRender.js",
-      "require": "./dist/cjs/image/ImageRender.js",
-      "types": "./dist/esm/image/ImageRender.d.ts"
-    },
-    "./image/WebGLRender": {
-      "import": "./dist/esm/image/WebGLRender.js",
-      "require": "./dist/cjs/image/WebGLRender.js",
-      "types": "./dist/esm/image/WebGLRender.d.ts"
-    },
-    "./image/WebGLDefault16Render": {
-      "import": "./dist/esm/image/WebGLDefault16Render.js",
-      "require": "./dist/cjs/image/WebGLDefault16Render.js",
-      "types": "./dist/esm/image/WebGLDefault16Render.d.ts"
-    },
-    "./image/WebGLDefault8Render": {
-      "import": "./dist/esm/image/WebGLDefault8Render.js",
-      "require": "./dist/cjs/image/WebGLDefault8Render.js",
-      "types": "./dist/esm/image/WebGLDefault8Render.d.ts"
-    },
-    "./image/WebGLDefaultRender": {
-      "import": "./dist/esm/image/WebGLDefaultRender.js",
-      "require": "./dist/cjs/image/WebGLDefaultRender.js",
-      "types": "./dist/esm/image/WebGLDefaultRender.d.ts"
-    },
-    "./image/WebGPUExternalRender": {
-      "import": "./dist/esm/image/WebGPUExternalRender.js",
-      "require": "./dist/cjs/image/WebGPUExternalRender.js",
-      "types": "./dist/esm/image/WebGPUExternalRender.d.ts"
-    },
-    "./image/WritableStreamRender": {
-      "import": "./dist/esm/image/WritableStreamRender.js",
-      "require": "./dist/cjs/image/WritableStreamRender.js",
-      "types": "./dist/esm/image/WritableStreamRender.d.ts"
-    },
-    "./image/WebGPURender": {
-      "import": "./dist/esm/image/WebGPURender.js",
-      "require": "./dist/cjs/image/WebGPURender.js",
-      "types": "./dist/esm/image/WebGPURender.d.ts"
-    },
-    "./image/WebGPUDefault16Render": {
-      "import": "./dist/esm/image/WebGPUDefault16Render.js",
-      "require": "./dist/cjs/image/WebGPUDefault16Render.js",
-      "types": "./dist/esm/image/WebGPUDefault16Render.d.ts"
-    },
-    "./image/WebGPUDefault8Render": {
-      "import": "./dist/esm/image/WebGPUDefault8Render.js",
-      "require": "./dist/cjs/image/WebGPUDefault8Render.js",
-      "types": "./dist/esm/image/WebGPUDefault8Render.d.ts"
-    },
-    "./image/WebGPUDefaultRender": {
-      "import": "./dist/esm/image/WebGPUDefaultRender.js",
-      "require": "./dist/cjs/image/WebGPUDefaultRender.js",
-      "types": "./dist/esm/image/WebGPUDefaultRender.d.ts"
-    },
-    "./pcm/AudioSourceBufferNode": {
-      "import": "./dist/esm/pcm/AudioSourceBufferNode.js",
-      "require": "./dist/cjs/pcm/AudioSourceBufferNode.js",
-      "types": "./dist/esm/pcm/AudioSourceBufferNode.d.ts"
-    },
-    "./pcm/AudioSourceWorkletNode": {
-      "import": "./dist/esm/pcm/AudioSourceWorkletNode.js",
-      "require": "./dist/cjs/pcm/AudioSourceWorkletNode.js",
-      "types": "./dist/esm/pcm/AudioSourceWorkletNode.d.ts"
-    },
-    "./pcm/AudioSourceWorkletProcessor": {
-      "import": "./dist/esm/pcm/AudioSourceWorkletProcessor.js",
-      "require": "./dist/cjs/pcm/AudioSourceWorkletProcessor.js",
-      "types": "./dist/esm/pcm/AudioSourceWorkletProcessor.d.ts"
-    },
-    "./pcm/AudioSourceWorkletProcessor2": {
-      "import": "./dist/esm/pcm/AudioSourceWorkletProcessor2.js",
-      "require": "./dist/cjs/pcm/AudioSourceWorkletProcessor2.js",
-      "types": "./dist/esm/pcm/AudioSourceWorkletProcessor2.d.ts"
-    },
-    "./pcm/audioWorklet/Meter/MeterProcessor": {
-      "import": "./dist/esm/pcm/audioWorklet/Meter/MeterProcessor.js",
-      "require": "./dist/cjs/pcm/audioWorklet/Meter/MeterProcessor.js",
-      "types": "./dist/esm/pcm/audioWorklet/Meter/MeterProcessor.d.ts"
-    },
-    "./pcm/audioWorklet/Meter/MeterWorklet": {
-      "import": "./dist/esm/pcm/audioWorklet/Meter/MeterWorklet.js",
-      "require": "./dist/cjs/pcm/audioWorklet/Meter/MeterWorklet.js",
-      "types": "./dist/esm/pcm/audioWorklet/Meter/MeterWorklet.d.ts"
-    },
-    "./pcm/audioWorklet/base/AudioWorkletNodeBase": {
-      "import": "./dist/esm/pcm/audioWorklet/base/AudioWorkletNodeBase.js",
-      "require": "./dist/cjs/pcm/audioWorklet/base/AudioWorkletNodeBase.js",
-      "types": "./dist/esm/pcm/audioWorklet/base/AudioWorkletNodeBase.d.ts"
-    },
-    "./pcm/audioWorklet/base/AudioWorkletProcessorBase": {
-      "import": "./dist/esm/pcm/audioWorklet/base/AudioWorkletProcessorBase.js",
-      "require": "./dist/cjs/pcm/audioWorklet/base/AudioWorkletProcessorBase.js",
-      "types": "./dist/esm/pcm/audioWorklet/base/AudioWorkletProcessorBase.d.ts"
-    },
-    "./pcm/audioWorklet/base/registerProcessor": {
+    "./registerProcessor": {
       "import": "./dist/esm/pcm/audioWorklet/base/registerProcessor.js",
       "require": "./dist/cjs/pcm/audioWorklet/base/registerProcessor.js",
       "types": "./dist/esm/pcm/audioWorklet/base/registerProcessor.d.ts"
     },
-    "./track/Track": {
-      "import": "./dist/esm/track/Track.js",
-      "require": "./dist/cjs/track/Track.js",
-      "types": "./dist/esm/track/Track.d.ts"
-    },
-    "./track/function/getAudioMimeType": {
-      "import": "./dist/esm/track/function/getAudioMimeType.js",
-      "require": "./dist/cjs/track/function/getAudioMimeType.js",
-      "types": "./dist/esm/track/function/getAudioMimeType.d.ts"
-    },
-    "./track/function/getVideoMimeType": {
-      "import": "./dist/esm/track/function/getVideoMimeType.js",
-      "require": "./dist/cjs/track/function/getVideoMimeType.js",
-      "types": "./dist/esm/track/function/getVideoMimeType.d.ts"
-    },
-    "./pcm/AudioSourceWorkletProcessorWorklet": "./dist/AudioSourceWorkletProcessorWorklet.js",
-    "./pcm/AudioSourceWorkletProcessor2Worklet": "./dist/AudioSourceWorkletProcessor2Worklet.js"
+    "./AudioSourceWorkletProcessorWorklet": "./dist/AudioSourceWorkletProcessorWorklet.js",
+    "./AudioSourceWorkletProcessor2Worklet": "./dist/AudioSourceWorkletProcessor2Worklet.js"
   }
 }

@@ -23,17 +23,14 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import IOWriterSync from 'common/io/IOWriterSync'
-
-import concatTypeArray from 'common/function/concatTypeArray'
-import * as logger from 'common/util/logger'
 import type { FlvMetaData } from './type'
 import { FlvTag } from './flv'
 
 import * as flv from './oflv'
-import * as errorType from 'avutil/error'
-import { parseValue, writeValue } from 'avutil/util/amf'
+import { amf } from '@libmedia/avutil/internal'
+import { errorType } from '@libmedia/avutil'
+import { logger, concatTypeArray } from '@libmedia/common'
+import { type IOReader, IOWriterSync } from '@libmedia/common/io'
 
 export default class FlvScriptTag {
 
@@ -48,8 +45,8 @@ export default class FlvScriptTag {
   public async read(ioReader: IOReader, size: number) {
     const now = ioReader.getPos()
     const endPos = now + static_cast<int64>(size)
-    const key = await parseValue(ioReader, endPos)
-    const value = await parseValue(ioReader, endPos)
+    const key = await amf.parseValue(ioReader, endPos)
+    const value = await amf.parseValue(ioReader, endPos)
     this[key] = value
 
     if (endPos > ioReader.getPos()) {
@@ -75,8 +72,8 @@ export default class FlvScriptTag {
       cache.push(data.slice())
       return 0
     }
-    writeValue(cacheWriter, 'onMetaData')
-    writeValue(cacheWriter, this.onMetaData)
+    amf.writeValue(cacheWriter, 'onMetaData')
+    amf.writeValue(cacheWriter, this.onMetaData)
 
     cacheWriter.flush()
 
@@ -94,8 +91,8 @@ export default class FlvScriptTag {
         return 0
       }
 
-      writeValue(cacheWriter, 'onMetaData')
-      writeValue(cacheWriter, this.onMetaData)
+      amf.writeValue(cacheWriter, 'onMetaData')
+      amf.writeValue(cacheWriter, this.onMetaData)
 
       cacheWriter.flush()
 

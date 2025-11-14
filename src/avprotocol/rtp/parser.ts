@@ -23,7 +23,7 @@
  *
  */
 
-import type { Uint8ArrayInterface } from 'common/io/interface'
+import type { Uint8ArrayInterface } from '@libmedia/common/io'
 import { RTPHeaderExtension, RTPPacket, RTPPacketHeader } from './RTPPacket'
 
 export function parseRTPPacket(data: Uint8ArrayInterface) {

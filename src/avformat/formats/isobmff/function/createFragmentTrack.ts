@@ -23,7 +23,7 @@
  *
  */
 
-import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { NOPTS_VALUE_BIGINT } from '@libmedia/avutil'
 import type { FragmentTrack } from '../type'
 
 export default function createFragmentTrack(): FragmentTrack {

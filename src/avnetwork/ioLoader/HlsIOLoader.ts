@@ -23,30 +23,20 @@
  *
  */
 
-import Sleep from 'common/timer/Sleep'
+import { Sleep } from '@libmedia/common/timer'
+import { AVMediaType, errorType, AVFormat } from '@libmedia/avutil'
+import { object, logger, getTimestamp, url as urlUtil, is, AESWebDecryptor, AesMode, type Data } from '@libmedia/common'
+import { IOError, type Uint8ArrayInterface } from '@libmedia/common/io'
+import { Ext2Format } from '@libmedia/avutil/internal'
+
 import type { IOLoaderAudioStreamInfo, IOLoaderOptions, IOLoaderSubtitleStreamInfo, IOLoaderVideoStreamInfo } from './IOLoader'
 import IOLoader, { IOLoaderStatus } from './IOLoader'
-import * as object from 'common/util/object'
-import { IOError } from 'common/io/error'
-import type { Uint8ArrayInterface } from 'common/io/interface'
-import { buildAbsoluteURL } from 'common/util/url'
 
-import hlsParser from 'avprotocol/m3u8/parser'
-import type { MasterPlaylist, MediaPlaylist, Playlist, Segment } from 'avprotocol/m3u8/types'
+import hlsParser from '@libmedia/avprotocol/m3u8/parser'
+import type { MasterPlaylist, MediaPlaylist, Playlist, Segment } from '@libmedia/avprotocol/m3u8/types'
 import type { FetchInfo } from './FetchIOLoader'
 import FetchIOLoader from './FetchIOLoader'
-import getTimestamp from 'common/function/getTimestamp'
-import * as logger from 'common/util/logger'
-import * as urlUtil from 'common/util/url'
 import AESDecryptPipe from '../bsp/aes/AESDecryptPipe'
-import * as is from 'common/util/is'
-import type { Data } from 'common/types/type'
-import * as errorType from 'avutil/error'
-import { AVMediaType } from 'avutil/codec'
-import AESWebDecryptor from 'common/crypto/aes/AESWebDecryptor'
-import { AesMode } from 'common/crypto/aes/aes'
-import { Ext2Format } from 'avutil/stringEnum'
-import { AVFormat } from 'avutil/avformat'
 
 const FETCHED_HISTORY_LIST_MAX = 10
 
@@ -292,7 +282,7 @@ class MediaLoader {
       this.currentKey = this.keyMap.get(keyUrl)
     }
     else {
-      this.currentKey = await (await fetch(buildAbsoluteURL(this.mediaListUrl, keyUrl), getFetchParams(this.info))).arrayBuffer()
+      this.currentKey = await (await fetch(urlUtil.buildAbsoluteURL(this.mediaListUrl, keyUrl), getFetchParams(this.info))).arrayBuffer()
       this.keyMap.set(keyUrl, this.currentKey)
     }
 
@@ -422,7 +412,7 @@ class MediaLoader {
 
       this.loader = new FetchIOLoader(object.extend({}, this.options, { disableSegment: true, loop: false }))
 
-      const url = buildAbsoluteURL(this.mediaListUrl, this.isInitLoader ? segments[0].map.uri : this.currentUri)
+      const url = urlUtil.buildAbsoluteURL(this.mediaListUrl, this.isInitLoader ? segments[0].map.uri : this.currentUri)
       const range = {
         from: 0,
         to: -1
@@ -435,7 +425,7 @@ class MediaLoader {
 
       await this.loader.open(
         object.extend({}, this.info, {
-          url,
+          url
         }),
         range
       )
@@ -462,7 +452,7 @@ class MediaLoader {
         await this.checkNeedDecrypt(segment.map.key, segment.map.uri, this.segmentIndex + (this.mediaPlayList.mediaSequenceBase || 0))
       }
 
-      const url = buildAbsoluteURL(this.mediaListUrl, this.isInitLoader ? segment.map.uri : segment.uri)
+      const url = urlUtil.buildAbsoluteURL(this.mediaListUrl, this.isInitLoader ? segment.map.uri : segment.uri)
       const range = {
         from: 0,
         to: -1
@@ -475,7 +465,7 @@ class MediaLoader {
 
       await this.loader.open(
         object.extend({}, this.info, {
-          url,
+          url
         }),
         range
       )

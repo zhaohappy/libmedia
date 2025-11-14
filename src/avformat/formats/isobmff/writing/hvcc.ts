@@ -23,16 +23,14 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext } from '../type'
-import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
-import { AVPacketSideDataType } from 'avutil/codec'
-import { mapUint8Array } from 'cheap/std/memory'
-import * as naluUtil from 'avutil/util/nalu'
-import * as hevc from 'avutil/codecs/hevc'
+import { type IOWriterSync } from '@libmedia/common/io'
+import { mapUint8Array } from '@libmedia/cheap'
+import { hevc } from '@libmedia/avutil/internal'
+import { AVPacketSideDataType, type AVStream, nalu as naluUtil } from '@libmedia/avutil'
 
-export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext: IsobmffContext) {
+export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   let extradata: Uint8Array
 
   if (isobmffContext.fragment) {

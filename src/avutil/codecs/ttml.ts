@@ -1,8 +1,10 @@
 
-import xml2Json from 'common/util/xml2Json'
-import * as is from 'common/util/is'
-import * as array from 'common/util/array'
-import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
+import {
+  array,
+  is,
+  xml2Json,
+  time
+} from '@libmedia/common'
 
 interface Span {
   context: string | (string | { tagName: string, context?: string } )[]
@@ -59,7 +61,7 @@ export function parse(text: string) {
   }
 
   function add(p: P, start: string, end: string) {
-    let pts = hhColonDDColonSSDotMill2Int64(start || p.begin)
+    let pts = time.hhColonDDColonSSDotMill2Int64(start || p.begin)
 
     let context = p.context || ''
     let region = p.region || 'Default'
@@ -72,7 +74,7 @@ export function parse(text: string) {
       array.each(p.span, (span) => {
         if (span.context) {
           if (pts === -1n && span.begin) {
-            pts = hhColonDDColonSSDotMill2Int64(span.begin)
+            pts = time.hhColonDDColonSSDotMill2Int64(span.begin)
           }
           if (!region && span.region) {
             region = span.region
@@ -98,7 +100,7 @@ export function parse(text: string) {
     else if (p.span) {
       if (p.span.context) {
         if (pts === -1n && p.span.begin) {
-          pts = hhColonDDColonSSDotMill2Int64(p.span.begin)
+          pts = time.hhColonDDColonSSDotMill2Int64(p.span.begin)
         }
         if (!region && p.span.region) {
           region = p.span.region
@@ -118,7 +120,7 @@ export function parse(text: string) {
       context,
       pts,
       region: region,
-      duration: p.dur ? hhColonDDColonSSDotMill2Int64(p.dur) : (hhColonDDColonSSDotMill2Int64(end || p.end || spanEnd) - pts)
+      duration: p.dur ? time.hhColonDDColonSSDotMill2Int64(p.dur) : (time.hhColonDDColonSSDotMill2Int64(end || p.end || spanEnd) - pts)
     })
   }
 

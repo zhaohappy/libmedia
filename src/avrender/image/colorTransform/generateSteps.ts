@@ -30,7 +30,7 @@
  * 将来可以直接使用 webgl/webgpu 渲染 HDR 视频
  */
 
-import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from 'avutil/pixfmt'
+import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from '@libmedia/avutil'
 import ColorSpace from '../colorSpace/ColorSpace'
 import type { ColorTransformOptions } from './options'
 import { DefaultSDRWhiteLevel, HLGRefMaxLumNits, PQRefMaxLumNits } from './options'

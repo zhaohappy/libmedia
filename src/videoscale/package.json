@@ -20,10 +20,10 @@
     "@libmedia/avutil": "workspace:*"
   },
   "exports": {
-    "./VideoScaler": {
-      "import": "./dist/esm/VideoScaler.js",
-      "require": "./dist/cjs/VideoScaler.js",
-      "types": "./dist/esm/VideoScaler.d.ts"
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/esm/index.d.ts"
     }
   }
 }

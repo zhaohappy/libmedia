@@ -23,12 +23,13 @@
  *
  */
 
-import { memset } from 'cheap/std/memory'
+import { memset } from '@libmedia/cheap'
 import { AVSampleFormat } from '../audiosamplefmt'
 import { INT32_MAX } from '../constant'
-import alignFunc from 'common/math/align'
 import { avFree, avMalloc } from '../util/mem'
 import { AVSampleFormatDescriptors } from '../sampleFormatDescriptor'
+
+import { align as alignFunc } from '@libmedia/common/math'
 
 export function getBytesPerSample(format: AVSampleFormat) {
   return (format < 0 || format >= AVSampleFormat.AV_SAMPLE_FMT_NB)

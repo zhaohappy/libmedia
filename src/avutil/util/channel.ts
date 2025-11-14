@@ -27,8 +27,9 @@ import type { AVChannelCustom, AVChannelLayout } from '../struct/audiosample'
 import { popCount64 } from './common'
 import { AVChannel, AVChannelOrder } from '../audiosamplefmt'
 import { avFreep, avMallocz } from './mem'
-import { memset } from 'cheap/std/memory'
 import * as error from '../error'
+
+import { memset } from '@libmedia/cheap'
 
 export function getChannelLayoutNBChannels(layout: uint64) {
   return popCount64(layout)

@@ -23,23 +23,30 @@
  *
  */
 
-import type AVFrame from 'avutil/struct/avframe'
-import type { AVContentLightMetadata } from 'avutil/struct/avframe'
-import { AVFrameSideDataType } from 'avutil/struct/avframe'
-import type { AVPixelFormat } from 'avutil/pixfmt'
-import { mapUint16Array } from 'cheap/std/memory'
 import type { WebGLRenderOptions } from './WebGLRender'
-import type { AVPixelFormatDescriptor } from 'avutil/pixelFormatDescriptor'
-import { getAVPixelFormatDescriptor, AVPixelFormatFlags } from 'avutil/pixelFormatDescriptor'
 import WebGLDefaultRender from './WebGLDefaultRender'
 import generateSteps from './colorTransform/generateSteps'
 import type { ColorTransformOptions } from './colorTransform/options'
 import { DefaultSDRWhiteLevel, GLType } from './colorTransform/options'
 import ColorSpace from './colorSpace/ColorSpace'
 import type HdrMetadata from './struct/HdrMetadata'
-import { getAVFrameSideData } from 'avutil/util/avframe'
 import VideoProgram16 from './webgl/program/VideoProgram16'
-import isPointer from 'cheap/std/function/isPointer'
+
+import {
+  type AVFrame,
+  type AVPixelFormat,
+  type AVPixelFormatDescriptor,
+  getAVPixelFormatDescriptor,
+  AVPixelFormatFlags,
+  type AVContentLightMetadata,
+  AVFrameSideDataType,
+  getAVFrameSideData
+} from '@libmedia/avutil'
+
+import {
+  mapUint16Array,
+  isPointer
+} from '@libmedia/cheap'
 
 export default class WebGLDefault16Render extends WebGLDefaultRender {
 

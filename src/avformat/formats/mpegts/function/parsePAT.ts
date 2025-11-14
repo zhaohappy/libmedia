@@ -23,12 +23,11 @@
  *
  */
 
-import BufferReader from 'common/io/BufferReader'
+import { BufferReader } from '@libmedia/common/io'
 import type { TSSliceQueue } from '../struct'
 import { PAT } from '../struct'
 import type { MpegtsContext } from '../type'
-import concatTypeArray from 'common/function/concatTypeArray'
-import * as logger from 'common/util/logger'
+import { logger, concatTypeArray } from '@libmedia/common'
 
 export default function parsePAT(queue: TSSliceQueue, mpegtsContext: MpegtsContext) {
 

@@ -23,16 +23,13 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext } from '../type'
-import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
-import * as is from 'common/util/is'
-import { avRescaleQ } from 'avutil/util/rational'
-import * as text from 'common/util/text'
+import { is, text } from '@libmedia/common'
+import { type IOWriterSync } from '@libmedia/common/io'
+import { AVStreamMetadataKey, type AVStream, avRescaleQ } from '@libmedia/avutil'
 
-export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext: IsobmffContext) {
+export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
 
   const pos = ioWriter.getPos()
 

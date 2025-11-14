@@ -23,31 +23,52 @@
  *
  */
 
-import type AVStream from 'avutil/AVStream'
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
-import { mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, createAVPacket } from 'avutil/util/avpacket'
-import { IOError } from 'common/io/error'
-import { MetaDataBlockType } from 'avutil/codecs/flac'
 import type { FlacContext, FrameInfo } from './flac/type'
 import { decodeFrameHeader, MAX_FRAME_VERIFY_SIZE } from './flac/iflac'
-import BitReader from 'common/io/BitReader'
-import concatTypeArray from 'common/function/concatTypeArray'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import seekInBytes from '../function/seekInBytes'
-import * as array from 'common/util/array'
-import { avRescaleQ } from 'avutil/util/rational'
-import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import { parseVorbisComment } from './ogg/vorbis'
 import { ID3v2Mime2CodecId, ID3v2PictureType } from './mp3/id3v2'
+
+import {
+  memcpyFromUint8Array,
+  mapSafeUint8Array
+} from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  AVDisposition,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  addAVPacketData,
+  createAVPacket,
+  AVPacketFlags,
+  AVStreamMetadataKey,
+  NOPTS_VALUE_BIGINT,
+  avRescaleQ,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q,
+  flac
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  concatTypeArray,
+  logger
+} from '@libmedia/common'
+
+import {
+  IOError,
+  BitReader
+} from '@libmedia/common/io'
 
 const PACKET_SIZE = 1024
 
@@ -132,7 +153,7 @@ export default class IFlacFormat extends IFormat {
       const blockLen = await formatContext.ioReader.readUint24()
       const blockType = blockHeader & (~0x80)
 
-      if (blockType === MetaDataBlockType.STREAMINFO) {
+      if (blockType === flac.MetaDataBlockType.STREAMINFO) {
         stream.codecpar.extradata = avMalloc(blockLen)
         stream.codecpar.extradataSize = blockLen
         memcpyFromUint8Array(stream.codecpar.extradata, blockLen, await formatContext.ioReader.peekBuffer(blockLen))
@@ -167,7 +188,7 @@ export default class IFlacFormat extends IFormat {
 
         this.context.streamInfo.md5 = await formatContext.ioReader.readString(16)
       }
-      else if (blockType === MetaDataBlockType.APPLICATION) {
+      else if (blockType === flac.MetaDataBlockType.APPLICATION) {
         const stream = formatContext.createStream()
         stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_DATA
         stream.codecpar.codecTag = await formatContext.ioReader.readUint32()
@@ -175,7 +196,7 @@ export default class IFlacFormat extends IFormat {
         stream.codecpar.extradataSize = blockLen - 4
         await formatContext.ioReader.readBuffer(blockLen - 4, mapSafeUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)))
       }
-      else if (blockType === MetaDataBlockType.SEEKTABLE) {
+      else if (blockType === flac.MetaDataBlockType.SEEKTABLE) {
         for (let i = 0; i < blockLen / 18; i++) {
           const pts = await formatContext.ioReader.readUint64()
           const pos = await formatContext.ioReader.readUint64()
@@ -187,7 +208,7 @@ export default class IFlacFormat extends IFormat {
           })
         }
       }
-      else if (blockType === MetaDataBlockType.VORBIS_COMMENT) {
+      else if (blockType === flac.MetaDataBlockType.VORBIS_COMMENT) {
         formatContext.ioReader.setEndian(false)
         const vendorStringLength = await formatContext.ioReader.readUint32()
         const vendorString = await formatContext.ioReader.readString(vendorStringLength)
@@ -201,7 +222,7 @@ export default class IFlacFormat extends IFormat {
         parseVorbisComment(comments, formatContext.metadata)
         formatContext.ioReader.setEndian(true)
       }
-      else if (blockType === MetaDataBlockType.CUESHEET) {
+      else if (blockType === flac.MetaDataBlockType.CUESHEET) {
         this.context.cueSheet.catalogNumber = await formatContext.ioReader.readString(128)
         this.context.cueSheet.leadInSamples = await formatContext.ioReader.readUint64()
         this.context.cueSheet.compactDisc = !!((await formatContext.ioReader.readUint8()) >>> 7)
@@ -235,7 +256,7 @@ export default class IFlacFormat extends IFormat {
           })
         }
       }
-      else if (blockType === MetaDataBlockType.PICTURE) {
+      else if (blockType === flac.MetaDataBlockType.PICTURE) {
         this.context.picture.type = await formatContext.ioReader.readUint32()
         let len = await formatContext.ioReader.readUint32()
         this.context.picture.mimeType = await formatContext.ioReader.readString(len)

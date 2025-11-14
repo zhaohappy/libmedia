@@ -158,7 +158,7 @@ export const BasicBoxs = [
   BoxType.FREE,
   BoxType.SKIP,
   BoxType.MECO,
-  BoxType.STRK,
+  BoxType.STRK
 ]
 
 export const FullBoxs = [

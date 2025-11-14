@@ -1,16 +1,27 @@
+import {
+  type AVFrame,
+  type AVFrameRef,
+  createAVFrame,
+  refAVFrame,
+  destroyAVFrame,
+  avRescaleQ,
+  avRescaleQ2,
+  type AVRational
+} from '@libmedia/avutil'
+
+import {
+  AV_TIME_BASE_Q
+} from '@libmedia/avutil/internal'
+
+import { isPointer } from '@libmedia/cheap'
+
+import { is } from '@libmedia/common'
+
 import type { AVFilterNodeOptions } from '../AVFilterNode'
 import AVFilterNode from '../AVFilterNode'
-import type { AVFrameRef } from 'avutil/struct/avframe'
-import type AVFrame from 'avutil/struct/avframe'
-import * as is from 'common/util/is'
-import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
-import type { Rational } from 'avutil/struct/rational'
-import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
-import { AV_TIME_BASE_Q } from 'avutil/constant'
-import isPointer from 'cheap/std/function/isPointer'
 
 export interface FramerateFilterNodeOptions extends AVFilterNodeOptions {
-  framerate: Rational
+  framerate: AVRational
 }
 
 export default class FramerateFilterNode extends AVFilterNode {
@@ -20,7 +31,7 @@ export default class FramerateFilterNode extends AVFilterNode {
 
   private delta: int64 = 0n
 
-  private timeBase: Rational = AV_TIME_BASE_Q
+  private timeBase: AVRational = AV_TIME_BASE_Q
   private step: int64 = 0n
 
   constructor(options: FramerateFilterNodeOptions) {

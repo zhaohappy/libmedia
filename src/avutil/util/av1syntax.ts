@@ -23,7 +23,9 @@
  *
  */
 
-import type BitReader from 'common/io/BitReader'
+import {
+  type BitReader
+} from '@libmedia/common/io'
 
 export function f(bitReader: BitReader, n: number) {
   let x = 0

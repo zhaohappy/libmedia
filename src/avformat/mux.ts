@@ -23,18 +23,25 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
 import type { AVOFormatContext } from './AVFormatContext'
-import * as object from 'common/util/object'
-import * as logger from 'common/util/logger'
-import * as array from 'common/util/array'
-import { AVFormat } from 'avutil/avformat'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import * as errorType from 'avutil/error'
 import { dumpCodecName, dumpFormatName } from './dump'
-import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import * as bigint from 'common/util/bigint'
-import { AVDisposition } from 'avutil/AVStream'
+
+import {
+  AVFormat,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  AVDisposition,
+  NOPTS_VALUE_BIGINT,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  object,
+  array,
+  logger,
+  bigint
+} from '@libmedia/common'
 
 export type MuxOptions = {
   zeroStart?: boolean

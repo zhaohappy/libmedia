@@ -23,36 +23,57 @@
  *
  */
 
+import {
+  type RpcMessage,
+  IPCPort,
+  REQUEST
+} from '@libmedia/common/network'
+
+import {
+  type AVFrameRef,
+  compileResource,
+  type AVCodecParametersSerialize,
+  type AVPacketSerialize,
+  unserializeAVCodecParameters,
+  unserializeAVPacket,
+  avMallocz,
+  copyCodecParameters,
+  freeCodecParameters,
+  errorType,
+  audioData2AVFrame,
+  AVCodecParameters,
+  type AVPacketPool,
+  type AVPacketRef,
+  AVPacketPoolImpl,
+  AVFramePoolImpl
+} from '@libmedia/avutil'
+
+import {
+  isPointer,
+  type WebAssemblyResource,
+  type Mutex,
+  type List
+} from '@libmedia/cheap'
+
+import {
+  is,
+  array,
+  logger,
+  getTimestamp
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
+
+import {
+  WebAudioDecoder,
+  WasmAudioDecoder
+} from '@libmedia/avcodec'
+
 import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
-import * as error from 'avutil/error'
-import IPCPort from 'common/network/IPCPort'
-import type { RpcMessage } from 'common/network/IPCPort'
-import { REQUEST } from 'common/network/IPCPort'
-import type List from 'cheap/std/collection/List'
-import type { AVFrameRef } from 'avutil/struct/avframe'
-import type { Mutex } from 'cheap/thread/mutex'
-import WasmAudioDecoder from 'avcodec/wasmcodec/AudioDecoder'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import * as logger from 'common/util/logger'
-import AVFramePoolImpl from 'avutil/implement/AVFramePoolImpl'
-import { IOError } from 'common/io/error'
-import type { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import WebAudioDecoder from 'avcodec/webcodec/AudioDecoder'
-import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
-import * as array from 'common/util/array'
-import getTimestamp from 'common/function/getTimestamp'
-import { audioData2AVFrame } from 'avutil/function/audioData2AVFrame'
-import * as errorType from 'avutil/error'
-import type { Data } from 'common/types/type'
-import compileResource from 'avutil/function/compileResource'
-import isPointer from 'cheap/std/function/isPointer'
-import type { AVCodecParametersSerialize, AVPacketSerialize } from 'avutil/util/serialize'
-import { unserializeAVCodecParameters, unserializeAVPacket } from 'avutil/util/serialize'
-import { avMallocz } from 'avutil/util/mem'
-import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
-import * as is from 'common/util/is'
+import type { Data } from '@libmedia/common'
 
 export interface AudioDecodeTaskOptions extends TaskOptions {
   resource: ArrayBuffer | WebAssemblyResource
@@ -154,7 +175,7 @@ export default class AudioDecodePipeline extends Pipeline {
       lastDecodeTimestamp: 0,
 
       avframePool,
-      avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex),
+      avpacketPool: new AVPacketPoolImpl(accessof(options.avpacketList), options.avpacketListMutex)
     }
 
     if (task.resource) {
@@ -345,7 +366,7 @@ export default class AudioDecodePipeline extends Pipeline {
 
   public async registerTask(options: AudioDecodeTaskOptions): Promise<number> {
     if (this.tasks.has(options.taskId)) {
-      return error.INVALID_OPERATE
+      return errorType.INVALID_OPERATE
     }
     return this.createTask(options)
   }

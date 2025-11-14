@@ -5,8 +5,11 @@
  */
 
 import * as utils from './utils'
+
 import type {
-  Byterange } from './types'
+  Byterange
+} from './types'
+
 import {
   Rendition,
   Variant,
@@ -22,9 +25,8 @@ import {
   PrefetchSegment,
   RenditionReport
 } from './types'
-import type { Data } from 'common/types/type'
 
-import * as logger from 'common/util/logger'
+import { logger, type Data } from '@libmedia/common'
 
 function unquote(str: string | undefined) {
   return utils.trim(str, '"')

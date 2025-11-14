@@ -24,18 +24,30 @@
  */
 
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
-import { IOError } from 'common/io/error'
-import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
-import { mapSafeUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData } from 'avutil/util/avpacket'
-import type AVStream from 'avutil/AVStream'
-import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
+
+import { mapSafeUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  addAVPacketData,
+  NOPTS_VALUE_BIGINT,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  logger
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
 
 export const enum IVFCodec {
   VP8 = 'VP80',
@@ -45,7 +57,7 @@ export const enum IVFCodec {
 
 const IVFCodec2CodecId = {
   [IVFCodec.VP8]: AVCodecID.AV_CODEC_ID_VP8,
-  [IVFCodec.VP9]: AVCodecID.AV_CODEC_ID_VP9,
+  [IVFCodec.VP9]: AVCodecID.AV_CODEC_ID_VP9
 }
 
 export class IVFHeader {

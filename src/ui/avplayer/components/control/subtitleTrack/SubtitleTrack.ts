@@ -1,13 +1,11 @@
 import type { ComponentOptions } from 'yox'
-import type AVPlayer from 'avplayer/AVPlayer'
-import { AVPlayerStatus } from 'avplayer/AVPlayer'
-import * as eventType from 'avplayer/eventType'
+import type AVPlayer from '@libmedia/avplayer'
+import { AVPlayerStatus, Events as eventType } from '@libmedia/avplayer'
 
 import template from './SubtitleTrack.hbs'
 import style from './SubtitleTrack.styl'
-import type { AVStreamInterface } from 'avutil/AVStream'
-import { AVMediaType } from 'avutil/codec'
-import type { IOLoaderSubtitleStreamInfo } from 'avnetwork/ioLoader/IOLoader'
+import { AVMediaType, type AVStreamInterface } from '@libmedia/avutil'
+import type { IOLoaderSubtitleStreamInfo } from '@libmedia/avnetwork'
 import { subtitleExt } from '../../folder/Node'
 
 const SubtitleTrack: ComponentOptions = {
@@ -100,7 +98,7 @@ const SubtitleTrack: ComponentOptions = {
               'application/octet-stream': subtitleExt.map((ext) => {
                 return '.' + ext
               })
-            },
+            }
           }
         ],
         excludeAcceptAllOption: true,

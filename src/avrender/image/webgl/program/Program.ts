@@ -26,7 +26,7 @@
 
 import type VertexShader from '../shader/VertexShader'
 import type FragmentShader from '../shader/FragmentShader'
-import * as logger from 'common/util/logger'
+import { logger } from '@libmedia/common'
 
 export default class Program {
 

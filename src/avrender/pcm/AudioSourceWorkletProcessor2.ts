@@ -23,14 +23,25 @@
  *
  */
 
-import type { RpcMessage } from 'common/network/IPCPort'
-import IPCPort, { REQUEST } from 'common/network/IPCPort'
 import AudioWorkletProcessorBase from './audioWorklet/base/AudioWorkletProcessorBase'
-import { initThread, getHeap } from 'cheap/heap'
-import AVPCMBuffer from 'avutil/struct/avpcmbuffer'
-import { avFree, avFreep, avMallocz } from 'avutil/util/mem'
-import * as logger from 'common/util/logger'
-import os from 'common/util/os'
+
+import {
+  logger,
+  os
+} from '@libmedia/common'
+
+import {
+  IPCPort,
+  REQUEST,
+  type RpcMessage
+} from '@libmedia/common/network'
+
+import {
+  initThread,
+  getHeap
+} from '@libmedia/cheap/internal'
+
+import { avFree, avFreep, avMallocz, AVPCMBuffer } from '@libmedia/avutil'
 
 let BUFFER_LENGTH = (os.windows || os.mac || os.linux) ? 10 : 20
 

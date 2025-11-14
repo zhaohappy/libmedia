@@ -23,14 +23,20 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
+import {
+  type AVPacket,
+  type AVSubtitle,
+  getAVPacketData,
+  AVSubtitleType
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE,
+  ttml
+} from '@libmedia/avutil/internal'
+
+import { text } from '@libmedia/common'
 import Decoder from './Decoder'
-import * as text from 'common/util/text'
-import { getAVPacketData } from 'avutil/util/avpacket'
-import { AV_MILLI_TIME_BASE } from 'avutil/constant'
-import type { AVSubtitle } from 'avutil/struct/avsubtitle'
-import { AVSubtitleType } from 'avutil/struct/avsubtitle'
-import * as ittml from 'avutil/codecs/ttml'
 
 export default class TtmlDecoder extends Decoder {
 
@@ -54,7 +60,7 @@ export default class TtmlDecoder extends Decoder {
     }
 
     if (/<tt/.test(context.trim())) {
-      this.queue = this.queue.concat(ittml.parse(context).queue)
+      this.queue = this.queue.concat(ttml.parse(context).queue)
     }
     else {
       this.queue.push({

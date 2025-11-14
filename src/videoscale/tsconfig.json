@@ -5,12 +5,6 @@
     "sourceMap": true,
     "declarationMap": false,
     "strict": true,
-    "baseUrl": "./",
-    "paths": {
-      "avutil/*": ["../avutil/*"],
-      "cheap/*": ["../cheap/*"],
-      "common/*": ["../common/*"]
-    },
     "allowJs": false
   },
   "include": [

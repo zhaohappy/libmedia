@@ -23,14 +23,12 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import type Stream from 'avutil/AVStream'
 import type { Atom, IsobmffContext } from '../type'
-import * as logger from 'common/util/logger'
-import * as is from 'common/util/is'
 import { iTunesKeyMap } from '../iTunes'
 import digital2Tag from '../../../function/digital2Tag'
-import type { Data } from 'common/types/type'
+import { logger, is, type Data } from '@libmedia/common'
+import { type IOReader } from '@libmedia/common/io'
+import { type AVStream } from '@libmedia/avutil'
 
 export async function readITunesTagValue(ioReader: IOReader, tagSize: int32, params: Data) {
   const data: (string | Uint8Array | number)[] = []
@@ -137,7 +135,7 @@ export async function readITunesTagValue(ioReader: IOReader, tagSize: int32, par
   return data
 }
 
-export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, isobmffContext: IsobmffContext) {
+export default async function read(ioReader: IOReader, stream: AVStream, atom: Atom, isobmffContext: IsobmffContext) {
 
   const now = ioReader.getPos()
 

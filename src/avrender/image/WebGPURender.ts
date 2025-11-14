@@ -23,12 +23,15 @@
  *
  */
 
-import * as logger from 'common/util/logger'
 import type { ImageRenderOptions } from './ImageRender'
 import ImageRender from './ImageRender'
 import { RenderMode } from './ImageRender'
-import * as array from 'common/util/array'
 import flipVertex from './function/flipVertex'
+
+import {
+  logger,
+  array
+} from '@libmedia/common'
 
 export interface WebGPURenderOptions extends ImageRenderOptions {
   powerPreference?: GPUPowerPreference
@@ -132,7 +135,7 @@ export default abstract class WebGPURender extends ImageRender {
     })
     this.rotateMatrixBuffer = this.device.createBuffer({
       size: Float32Array.BYTES_PER_ELEMENT * 16,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     })
 
     this.setRotateMatrix(this.getRotateMatrix(0))

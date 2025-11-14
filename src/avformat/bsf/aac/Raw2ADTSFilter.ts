@@ -23,25 +23,39 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type { Rational } from 'avutil/struct/rational'
-import { getAVCodecParameters, MPEG4SamplingFrequencyIndex } from 'avutil/codecs/aac'
-import { mapUint8Array } from 'cheap/std/memory'
-import { addAVPacketData, copyAVPacketProps, createAVPacket,
-  destroyAVPacket, getAVPacketSideData, refAVPacket, unrefAVPacket
-} from 'avutil/util/avpacket'
-import { avMalloc } from 'avutil/util/mem'
-import * as errorType from 'avutil/error'
-import { AVPacketSideDataType } from 'avutil/codec'
+
+import {
+  mapUint8Array
+} from '@libmedia/cheap'
+
+
+import {
+  type AVPacket,
+  errorType,
+  avMalloc,
+  type AVCodecParameters,
+  type AVRational,
+  AVPacketSideDataType,
+  addAVPacketData,
+  unrefAVPacket,
+  copyAVPacketProps,
+  createAVPacket,
+  destroyAVPacket,
+  getAVPacketSideData,
+  refAVPacket
+} from '@libmedia/avutil'
+
+import {
+  aac
+} from '@libmedia/avutil/internal'
 
 export default class Raw2ADTSFilter extends AVBSFilter {
 
   private cache: pointer<AVPacket>
   private cached: boolean
 
-  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<Rational>): number {
+  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<AVRational>): number {
     super.init(codecpar, timeBase)
     this.cache = createAVPacket()
 
@@ -62,7 +76,7 @@ export default class Raw2ADTSFilter extends AVBSFilter {
 
     const element = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
     if (element) {
-      const { profile, sampleRate, channels } = getAVCodecParameters(mapUint8Array(element.data, element.size))
+      const { profile, sampleRate, channels } = aac.getAVCodecParameters(mapUint8Array(element.data, element.size))
       this.inCodecpar.profile = profile
       this.inCodecpar.sampleRate = sampleRate
       this.inCodecpar.chLayout.nbChannels = channels
@@ -86,7 +100,7 @@ export default class Raw2ADTSFilter extends AVBSFilter {
     buffer[2] = ((this.inCodecpar.profile - 1) & 0x03) << 6
 
     // Sampling Frequency Index
-    buffer[2] |= (MPEG4SamplingFrequencyIndex[this.inCodecpar.sampleRate] & 0x0f) << 2
+    buffer[2] |= (aac.MPEG4SamplingFrequencyIndex[this.inCodecpar.sampleRate] & 0x0f) << 2
 
     // Channel Configuration 第三位
     buffer[2] |= (this.inCodecpar.chLayout.nbChannels & 0x04) >> 2

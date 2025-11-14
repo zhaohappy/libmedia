@@ -23,17 +23,20 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext, IsobmffStreamContext, Sample } from '../type'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVMediaType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
-import { avRescaleQ } from 'avutil/util/rational'
-import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { logger } from '@libmedia/common'
+
+import {
+  type AVStream,
+  AVPacketFlags,
+  avRescaleQ,
+  AVMediaType,
+  NOPTS_VALUE_BIGINT,
+  AVStreamMetadataKey
+} from '@libmedia/avutil'
 
 
-export function buildIndex(stream: Stream, isobmffContext: IsobmffContext) {
+export function buildIndex(stream: AVStream, isobmffContext: IsobmffContext) {
   const context = stream.privData as IsobmffStreamContext
 
   const chunkOffsets = context.chunkOffsets

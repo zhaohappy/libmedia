@@ -1,7 +1,7 @@
 import type { ComponentOptions } from 'yox'
 
 import template from './Slider.hbs'
-import type CustomEvent from 'common/event/CustomEvent'
+import type { CustomEvent } from '@libmedia/common'
 
 const Slider: ComponentOptions = {
 

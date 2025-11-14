@@ -23,21 +23,38 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
-import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
-import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { avRescaleQ } from 'avutil/util/rational'
-import { avMalloc } from 'avutil/util/mem'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type { Rational } from 'avutil/struct/rational'
-import { addAVPacketData, unrefAVPacket } from 'avutil/util/avpacket'
-import * as dts from 'avutil/codecs/dts'
-import concatTypeArray from 'common/function/concatTypeArray'
-import * as is from 'common/util/is'
+
+import {
+  mapUint8Array,
+  memcpyFromUint8Array
+} from '@libmedia/cheap'
+
+import {
+  is,
+  concatTypeArray,
+  logger
+} from '@libmedia/common'
+
+import {
+  type AVPacket,
+  AVPacketFlags,
+  errorType,
+  NOPTS_VALUE,
+  NOPTS_VALUE_BIGINT,
+  avRescaleQ,
+  avMalloc,
+  type AVCodecParameters,
+  type AVRational,
+  addAVPacketData,
+  unrefAVPacket
+} from '@libmedia/avutil'
+
+import {
+  AV_TIME_BASE,
+  AV_TIME_BASE_Q,
+  dts
+} from '@libmedia/avutil/internal'
 
 export default class Dts2RawFilter extends AVBSFilter {
 
@@ -51,7 +68,7 @@ export default class Dts2RawFilter extends AVBSFilter {
   private cache: Uint8Array
   private lastDts: int64
 
-  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<Rational>): number {
+  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<AVRational>): number {
     super.init(codecpar, timeBase)
 
     this.caches = []

@@ -23,13 +23,10 @@
  *
  */
 
-import type { AVSampleFormat } from 'avutil/audiosamplefmt'
-import type { AVChannelLayout } from 'avutil/struct/audiosample'
-import type AVPCMBuffer from 'avutil/struct/avpcmbuffer'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
+import type { AVSampleFormat, AVChannelLayout, AVPCMBuffer } from '@libmedia/avutil'
+import { errorType } from '@libmedia/avutil'
+import { type WebAssemblyResource, WebAssemblyRunner } from '@libmedia/cheap'
+import { logger } from '@libmedia/common'
 
 export interface PCMParameters {
   channels: int32

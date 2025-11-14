@@ -1,19 +1,13 @@
 import type { ComponentOptions } from 'yox'
-import type { ExternalSubtitle } from 'avplayer/AVPlayer'
-import type AVPlayer from 'avplayer/AVPlayer'
-import { AVPlayerStatus } from 'avplayer/AVPlayer'
-import * as eventType from 'avplayer/eventType'
+import type { ExternalSubtitle } from '@libmedia/avplayer'
+import type AVPlayer from '@libmedia/avplayer'
+import { AVPlayerStatus, Events as eventType } from '@libmedia/avplayer'
 
 import template from './Folder.hbs'
 import style from './Folder.styl'
 import Node, { movExt, musicExt, subtitleExt } from './Node'
-import * as array from 'common/util/array'
 import * as indexDB from '../../../util/db'
-import generateUUID from 'common/function/generateUUID'
-import * as logger from 'common/util/logger'
-import * as urlUtil from 'common/util/url'
-import * as is from 'common/util/is'
-import type CustomEvent from 'common/event/CustomEvent'
+import { array, generateUUID, logger, url as urlUtil, is, type CustomEvent } from '@libmedia/common'
 
 interface FileNode {
   id: string
@@ -192,7 +186,7 @@ const Folder: ComponentOptions = {
       // @ts-ignore
       showDirectoryPicker({
         mode: 'read',
-        startIn: 'videos',
+        startIn: 'videos'
       }).then(async (dir: DirectoryHandle) => {
         this.addDir(dir)
         this.root.push(dir)
@@ -212,7 +206,7 @@ const Folder: ComponentOptions = {
               }).concat(movExt.map((ext) => {
                 return '.' + ext
               }))
-            },
+            }
           }
         ],
         excludeAcceptAllOption: true,

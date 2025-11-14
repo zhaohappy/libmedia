@@ -3,13 +3,16 @@
  * MIT license 
  */
 
-import xml2Json from 'common/util/xml2Json'
 import type { MPD, MPDMediaList, Period, Protection, SegmentTemplate } from './type'
-import type { Data } from 'common/types/type'
-import * as is from 'common/util/is'
-import * as object from 'common/util/object'
-import toString from 'common/function/toString'
-import getTimestamp from 'common/function/getTimestamp'
+
+import {
+  xml2Json,
+  is,
+  object,
+  toString,
+  getTimestamp,
+  type Data
+} from '@libmedia/common'
 
 function parseMPD(xmlString: string) {
   if (!xmlString) {

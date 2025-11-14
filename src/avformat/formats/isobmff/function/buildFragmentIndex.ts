@@ -23,14 +23,17 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { FragmentTrack, IsobmffContext, IsobmffStreamContext, Sample } from '../type'
 import { SampleFlags } from '../boxType'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { IOFlags } from 'avutil/avformat'
+
+import {
+  type AVStream,
+  AVPacketFlags,
+  IOFlags
+} from '@libmedia/avutil'
 
 
-export function buildFragmentIndex(stream: Stream, track: FragmentTrack, isobmffContext: IsobmffContext, pos: int64, ioFlag: int32 = 0) {
+export function buildFragmentIndex(stream: AVStream, track: FragmentTrack, isobmffContext: IsobmffContext, pos: int64, ioFlag: int32 = 0) {
   const context = stream.privData as IsobmffStreamContext
 
   let currentOffset = track.baseDataOffset + static_cast<int64>(track.dataOffset)

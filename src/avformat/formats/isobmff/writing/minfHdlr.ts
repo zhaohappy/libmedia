@@ -23,11 +23,11 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext } from '../type'
-import type IOWriter from 'common/io/IOWriterSync'
 import hdlr from './hdlr'
+import { type IOWriterSync } from '@libmedia/common/io'
+import { type AVStream } from '@libmedia/avutil'
 
-export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext: IsobmffContext) {
+export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   hdlr(ioWriter, null, isobmffContext)
 }

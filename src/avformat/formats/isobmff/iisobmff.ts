@@ -23,33 +23,41 @@
  *
  */
 
-import type AVStream from 'avutil/AVStream'
-import { AVDisposition, AVStreamGroupParamsType, AVStreamGroupTileGrid, AVStreamMetadataKey } from 'avutil/AVStream'
-import type { Atom, FragmentTrack, HEIFGrid, HEIFItem, IsobmffContext, IsobmffStreamContext, Sample } from './type'
-import IOReader from 'common/io/IOReader'
+import type { Atom, FragmentTrack, HEIFGrid, IsobmffContext, IsobmffStreamContext, Sample } from './type'
 import mktag from '../../function/mktag'
 import { BoxType, ContainerBoxs } from './boxType'
 import type { AVIFormatContext } from '../../AVFormatContext'
 import parsers from './parsing/parsers'
-import * as logger from 'common/util/logger'
 import { buildFragmentIndex } from './function/buildFragmentIndex'
 import { buildIndex } from './function/buildIndex'
 import createFragmentTrack from './function/createFragmentTrack'
 import createIsobmffStreamContext from './function/createIsobmffStreamContext'
-import { AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import { avFree, avMalloc } from 'avutil/util/mem'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
-import { NOPTS_VALUE } from 'avutil/constant'
-import { encryptionInitInfo2SideData } from 'avutil/util/encryption'
-import { addSideData } from 'avutil/util/avpacket'
 import digital2Tag from '../../function/digital2Tag'
 import { iTunesKeyMap } from './iTunes'
 import { readITunesTagValue } from './parsing/meta'
 import { tag2CodecId } from './isobmff'
-import * as object from 'common/util/object'
-import * as errorType from 'avutil/error'
-import { IOFlags } from 'avutil/avformat'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
+
+import { logger, object } from '@libmedia/common'
+import { IOReader } from '@libmedia/common/io'
+import { memcpyFromUint8Array } from '@libmedia/cheap'
+
+import {
+  type AVStream,
+  AVPacketFlags,
+  errorType,
+  AVMediaType,
+  IOFlags,
+  AVStreamMetadataKey,
+  addSideData,
+  encryptionInitInfo2SideData,
+  NOPTS_VALUE,
+  AVPacketSideDataType,
+  AVDisposition,
+  AVStreamGroupParamsType,
+  AVStreamGroupTileGrid,
+  avFree,
+  avMalloc
+} from '@libmedia/avutil'
 
 
 export async function readFtyp(ioReader: IOReader, context: IsobmffContext, atom: Atom) {

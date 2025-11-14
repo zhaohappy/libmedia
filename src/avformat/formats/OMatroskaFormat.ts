@@ -24,40 +24,61 @@
  */
 
 import type { AVOFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import { AVFormat } from 'avutil/avformat'
-import * as logger from 'common/util/logger'
-import { avRescaleQ2 } from 'avutil/util/rational'
-import { createAVPacket, destroyAVPacket, getAVPacketData, getAVPacketSideData, hasAVPacketSideData } from 'avutil/util/avpacket'
-import * as object from 'common/util/object'
 import type { Attachment, ChapterAtom, OMatroskaContext, TrackEntry } from './matroska/type'
-import IOWriterSync from 'common/io/IOWriterSync'
 import * as omatroska from './matroska/omatroska'
 import { EBMLId, MATROSKABlockAddIdType, MATROSKATrackType, MkvImageMime2CodecId, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
-import * as crypto from 'avutil/util/crypto'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { mapUint8Array } from 'cheap/std/memory'
-import { chromaLocation2Pos } from 'avutil/util/pixel'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import * as string from 'common/util/string'
-import type AVStream from 'avutil/AVStream'
-import concatTypeArray from 'common/function/concatTypeArray'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
-import * as naluUtil from 'avutil/util/nalu'
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import * as intread from 'avutil/util/intread'
-import type { Uint8ArrayInterface } from 'common/io/interface'
-import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
-import * as errorType from 'avutil/error'
-import * as is from 'common/util/is'
-import getTimestamp from 'common/function/getTimestamp'
-import * as text from 'common/util/text'
-import toString from 'common/function/toString'
+
+import { mapUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  type AVCodecParameters,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avRescaleQ2,
+  createAVPacket,
+  destroyAVPacket,
+  getAVPacketData,
+  getAVPacketSideData,
+  hasAVPacketSideData,
+  AVPacketFlags,
+  AVDisposition,
+  AVStreamMetadataKey,
+  NOPTS_VALUE_BIGINT,
+  AVPacketSideDataType,
+  errorType,
+  intread,
+  nalu as naluUtil,
+  pixel
+} from '@libmedia/avutil'
+
+import {
+  crypto,
+  AV_MILLI_TIME_BASE_Q,
+  h264,
+  hevc,
+  vvc
+} from '@libmedia/avutil/internal'
+
+import {
+  concatTypeArray,
+  logger,
+  is,
+  object,
+  string,
+  text,
+  getTimestamp,
+  toString
+} from '@libmedia/common'
+
+import {
+  IOWriterSync,
+  type Uint8ArrayInterface
+} from '@libmedia/common/io'
 
 export interface OMatroskaFormatOptions {
   /**
@@ -340,7 +361,7 @@ export default class OMatroskaFormat extends OFormat {
                 range: stream.codecpar.colorRange
               }
             }
-            const result = chromaLocation2Pos(stream.codecpar.chromaLocation)
+            const result = pixel.chromaLocation2Pos(stream.codecpar.chromaLocation)
             if (result) {
               track.video.color.chromaSitingVert = (result.x >>> 7) + 1
               track.video.color.chromaSitingHorz = (result.y >>> 7) + 1
@@ -418,7 +439,7 @@ export default class OMatroskaFormat extends OFormat {
       const atom: ChapterAtom = {
         uid: chapter.id,
         start: chapter.start,
-        end: chapter.end,
+        end: chapter.end
       }
       if (chapter.metadata) {
         atom.display = {}

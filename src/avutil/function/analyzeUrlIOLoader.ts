@@ -24,12 +24,24 @@
 
 import { IOType } from '../avformat'
 import { Ext2IOLoader } from '../stringEnum'
-import concatTypeArray from 'common/function/concatTypeArray'
-import type { Data, HttpOptions } from 'common/types/type'
-import * as object from 'common/util/object'
-import * as text from 'common/util/text'
-import * as urlUtils from 'common/util/url'
-import * as array from 'common/util/array'
+
+
+import {
+  type Data,
+  type HttpOptions,
+  array,
+  object,
+  text,
+  url as urlUtils,
+  concatTypeArray
+} from '@libmedia/common'
+
+import {
+  BitReader,
+  BufferReader,
+  BufferWriter,
+  type Uint8ArrayInterface
+} from '@libmedia/common/io'
 
 const RestExt = ['php', 'asp', 'aspx', 'jsp', 'do', 'pl']
 

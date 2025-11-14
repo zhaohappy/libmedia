@@ -23,7 +23,7 @@
  *
  */
 
-import type Matrix4 from 'common/math/Matrix4'
+import type { Matrix4 } from '@libmedia/common/math'
 import type { ColorTransformOptions } from './options'
 import { GLType } from './options'
 

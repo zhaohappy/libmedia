@@ -21,85 +21,10 @@
     "@libmedia/avformat": "workspace:*"
   },
   "exports": {
-    "./subtitle/SubtitleDecoder": {
-      "import": "./dist/esm/subtitle/SubtitleDecoder.js",
-      "require": "./dist/cjs/subtitle/SubtitleDecoder.js",
-      "types": "./dist/esm/subtitle/SubtitleDecoder.d.ts"
-    },
-    "./subtitle/decoder/AssDecoder": {
-      "import": "./dist/esm/subtitle/decoder/AssDecoder.js",
-      "require": "./dist/cjs/subtitle/decoder/AssDecoder.js",
-      "types": "./dist/esm/subtitle/decoder/AssDecoder.d.ts"
-    },
-    "./subtitle/decoder/Decoder": {
-      "import": "./dist/esm/subtitle/decoder/Decoder.js",
-      "require": "./dist/cjs/subtitle/decoder/Decoder.js",
-      "types": "./dist/esm/subtitle/decoder/Decoder.d.ts"
-    },
-    "./subtitle/decoder/SubRipDecoder": {
-      "import": "./dist/esm/subtitle/decoder/SubRipDecoder.js",
-      "require": "./dist/cjs/subtitle/decoder/SubRipDecoder.js",
-      "types": "./dist/esm/subtitle/decoder/SubRipDecoder.d.ts"
-    },
-    "./subtitle/decoder/TextDecoder": {
-      "import": "./dist/esm/subtitle/decoder/TextDecoder.js",
-      "require": "./dist/cjs/subtitle/decoder/TextDecoder.js",
-      "types": "./dist/esm/subtitle/decoder/TextDecoder.d.ts"
-    },
-    "./subtitle/decoder/TimedTextDecoder": {
-      "import": "./dist/esm/subtitle/decoder/TimedTextDecoder.js",
-      "require": "./dist/cjs/subtitle/decoder/TimedTextDecoder.js",
-      "types": "./dist/esm/subtitle/decoder/TimedTextDecoder.d.ts"
-    },
-    "./subtitle/decoder/TtmlDecoder": {
-      "import": "./dist/esm/subtitle/decoder/TtmlDecoder.js",
-      "require": "./dist/cjs/subtitle/decoder/TtmlDecoder.js",
-      "types": "./dist/esm/subtitle/decoder/TtmlDecoder.d.ts"
-    },
-    "./subtitle/decoder/WebVttDecoder": {
-      "import": "./dist/esm/subtitle/decoder/WebVttDecoder.js",
-      "require": "./dist/cjs/subtitle/decoder/WebVttDecoder.js",
-      "types": "./dist/esm/subtitle/decoder/WebVttDecoder.d.ts"
-    },
-    "./wasmcodec/AudioDecoder": {
-      "import": "./dist/esm/wasmcodec/AudioDecoder.js",
-      "require": "./dist/cjs/wasmcodec/AudioDecoder.js",
-      "types": "./dist/esm/wasmcodec/AudioDecoder.d.ts"
-    },
-    "./wasmcodec/AudioEncoder": {
-      "import": "./dist/esm/wasmcodec/AudioEncoder.js",
-      "require": "./dist/cjs/wasmcodec/AudioEncoder.js",
-      "types": "./dist/esm/wasmcodec/AudioEncoder.d.ts"
-    },
-    "./wasmcodec/VideoDecoder": {
-      "import": "./dist/esm/wasmcodec/VideoDecoder.js",
-      "require": "./dist/cjs/wasmcodec/VideoDecoder.js",
-      "types": "./dist/esm/wasmcodec/VideoDecoder.d.ts"
-    },
-    "./wasmcodec/VideoEncoder": {
-      "import": "./dist/esm/wasmcodec/VideoEncoder.js",
-      "require": "./dist/cjs/wasmcodec/VideoEncoder.js",
-      "types": "./dist/esm/wasmcodec/VideoEncoder.d.ts"
-    },
-    "./webcodec/AudioDecoder": {
-      "import": "./dist/esm/webcodec/AudioDecoder.js",
-      "require": "./dist/cjs/webcodec/AudioDecoder.js",
-      "types": "./dist/esm/webcodec/AudioDecoder.d.ts"
-    },
-    "./webcodec/AudioEncoder": {
-      "import": "./dist/esm/webcodec/AudioEncoder.js",
-      "require": "./dist/cjs/webcodec/AudioEncoder.js",
-      "types": "./dist/esm/webcodec/AudioEncoder.d.ts"
-    },
-    "./webcodec/VideoDecoder": {
-      "import": "./dist/esm/webcodec/VideoDecoder.js",
-      "require": "./dist/cjs/webcodec/VideoDecoder.js",
-      "types": "./dist/esm/webcodec/VideoDecoder.d.ts"
-    },
-    "./webcodec/VideoEncoder": {
-      "import": "./dist/esm/webcodec/VideoEncoder.js",
-      "require": "./dist/cjs/webcodec/VideoEncoder.js",
-      "types": "./dist/esm/webcodec/VideoEncoder.d.ts"
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/esm/index.d.ts"
     }
   }
 }

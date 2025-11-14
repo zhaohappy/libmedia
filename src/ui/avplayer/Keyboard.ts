@@ -1,13 +1,7 @@
 
-import { AVPlayerStatus } from 'avplayer/AVPlayer'
-import * as keyboard from 'common/util/keyboard'
+import { AVPlayerStatus } from '@libmedia/avplayer'
 import type AVPlayerUI from './AVPlayer'
-import * as object from 'common/util/object'
-import * as array from 'common/util/array'
-import CommandQueue from 'common/helper/CommandQueue'
-import * as bigint from 'common/util/bigint'
-import type { Timeout } from 'common/types/type'
-import * as is from 'common/util/is'
+import { is, bigint, type Timeout, CommandQueue, array, object, keyboard } from '@libmedia/common'
 
 export const enum KeyboardPlayerActionKey {
   PLAY_OR_PAUSE = 1,
@@ -52,7 +46,7 @@ const DefaultKeyboardMap: Record<KeyboardPlayerActionKey, KeyboardPlayerAction |
       with: [keyboard.combinationKey.ctrl, keyboard.combinationKey.shift],
       action: 'up',
       playerStatus: [AVPlayerStatus.PLAYED, AVPlayerStatus.PAUSED]
-    },
+    }
   ],
   [KeyboardPlayerActionKey.SUBTITLE_DELAY_SUB]: [
     {
@@ -66,7 +60,7 @@ const DefaultKeyboardMap: Record<KeyboardPlayerActionKey, KeyboardPlayerAction |
       with: [keyboard.combinationKey.ctrl, keyboard.combinationKey.shift],
       action: 'up',
       playerStatus: [AVPlayerStatus.PLAYED, AVPlayerStatus.PAUSED]
-    },
+    }
   ],
   [KeyboardPlayerActionKey.PLAY_OR_PAUSE]: {
     keyCode: keyboard.charKey.space,
@@ -102,12 +96,12 @@ const DefaultKeyboardMap: Record<KeyboardPlayerActionKey, KeyboardPlayerAction |
   [KeyboardPlayerActionKey.NEXT_FILE]: {
     keyCode: keyboard.charKey.n,
     with: [keyboard.combinationKey.ctrl],
-    action: 'up',
+    action: 'up'
   },
   [KeyboardPlayerActionKey.PREV_FILE]: {
     keyCode: keyboard.charKey.p,
     with: [keyboard.combinationKey.ctrl],
-    action: 'up',
+    action: 'up'
   },
   [KeyboardPlayerActionKey.NEXT_FRAME]: {
     keyCode: keyboard.functionKey.right,

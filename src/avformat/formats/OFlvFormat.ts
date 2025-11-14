@@ -26,34 +26,60 @@
 import OFormat from './OFormat'
 import FlvHeader from './flv/FlvHeader'
 import FlvScriptTag from './flv/FlvScriptTag'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import type { AVOFormatContext } from '../AVFormatContext'
-import * as array from 'common/util/array'
-import { AVPacketSideDataType, AVCodecID, AVMediaType } from 'avutil/codec'
 import { AACPacketType, AVCPacketType, AVCodecID2FlvCodecTag, AVCodecID2FlvCodecType, AudioChannelOrder, AudioPacketType, FlvTag, VideoPacketType } from './flv/flv'
 import type { FlvColorInfo, FlvContext, FlvStreamContext } from './flv/type'
-import concatTypeArray from 'common/function/concatTypeArray'
-import { AVFormat } from 'avutil/avformat'
-import { mapUint8Array } from 'cheap/std/memory'
-import * as logger from 'common/util/logger'
-import { createAVPacket, destroyAVPacket, getAVPacketSideData, getSideData } from 'avutil/util/avpacket'
-import { avQ2D, avRescaleQ2 } from 'avutil/util/rational'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import type AVStream from 'avutil/AVStream'
-import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import mktag from '../function/mktag'
-import { AVColorPrimaries, AVColorSpace, AVColorTransferCharacteristic } from 'avutil/pixfmt'
-import type { AVContentLightMetadata, AVMasteringDisplayMetadata } from 'avutil/struct/avframe'
-import * as amf from 'avutil/util/amf'
-import { AVChannelOrder, AVChannel } from 'avutil/audiosamplefmt'
 import * as oflv from './flv/oflv'
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import * as naluUtil from 'avutil/util/nalu'
-import IOWriterSync from 'common/io/IOWriterSync'
+
+import { mapUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVDisposition,
+  AVStreamMetadataKey,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  AVChannelOrder,
+  AVChannel,
+  AVColorPrimaries,
+  AVColorSpace,
+  AVColorTransferCharacteristic,
+  AVPacketFlags,
+  avQ2D,
+  avRescaleQ2,
+  type AVContentLightMetadata,
+  type AVMasteringDisplayMetadata,
+  NOPTS_VALUE_BIGINT,
+  AVPacketSideDataType,
+  createAVPacket,
+  destroyAVPacket,
+  getAVPacketSideData,
+  getSideData,
+  nalu as naluUtil
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q,
+  amf,
+  h264,
+  hevc,
+  vvc
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  concatTypeArray,
+  logger,
+  is
+} from '@libmedia/common'
+
+import {
+  IOWriterSync
+} from '@libmedia/common/io'
 export interface OFlvFormatOptions {
   addKeyframePositions?: boolean
   live?: boolean

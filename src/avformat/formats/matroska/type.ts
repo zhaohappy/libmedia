@@ -23,7 +23,7 @@
  *
  */
 
-import type IOWriterSync from 'common/io/IOWriterSync'
+import type { IOWriterSync } from '@libmedia/common/io'
 
 export interface Header {
   version: int32

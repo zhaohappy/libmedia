@@ -29,15 +29,12 @@
  * https://datatracker.ietf.org/doc/html/rfc7845
  */
 
-import type IOWriter from 'common/io/IOWriterSync'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
 import type { PagePayload } from './OggPage'
 import { OggsCommentPage } from './OggPage'
-import type IOReaderSync from 'common/io/IOReaderSync'
-import type { Data } from 'common/types/type'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
-import * as object from 'common/util/object'
-import isDef from 'common/function/isDef'
+
+import { type Data, object, isDef } from '@libmedia/common'
+import { type AVCodecParameters, AVStreamMetadataKey } from '@libmedia/avutil'
+import { type IOWriterSync, type IOReaderSync } from '@libmedia/common/io'
 
 const CommentKeyMap = {
   'album': AVStreamMetadataKey.ALBUM,
@@ -182,7 +179,7 @@ export class VorbisOggsIdPage implements PagePayload {
     this.framingFlag = ioReader.readUint8()
   }
 
-  public write(ioWriter: IOWriter) {
+  public write(ioWriter: IOWriterSync) {
     ioWriter.writeUint8(0x01)
     ioWriter.writeString(this.signature)
     ioWriter.writeUint32(this.version)
@@ -230,7 +227,7 @@ export class VorbisOggsCommentPage extends OggsCommentPage {
     }
   }
 
-  public write(ioWriter: IOWriter) {
+  public write(ioWriter: IOWriterSync) {
     ioWriter.writeUint8(this.packetType)
     ioWriter.writeString(this.signature)
     super.write(ioWriter)

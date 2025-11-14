@@ -23,7 +23,7 @@
  *
  */
 
-import { AVCodecID, AVMediaType } from 'avutil/codec'
+import { AVCodecID, AVMediaType } from '@libmedia/avutil'
 
 export const TS_FEC_PACKET_SIZE = 204
 

@@ -28,10 +28,10 @@ import { getAVPixelFormatDescriptor, AVPixelFormatFlags } from '../pixelFormatDe
 import { AVChromaLocation, AVPixelFormat } from '../pixfmt'
 import * as errorType from '../error'
 import { INT32_MAX } from '../constant'
-import { memset } from 'cheap/std/memory'
-import * as stack from 'cheap/stack'
 import { avFree, avMalloc } from './mem'
-import alignFunc from 'common/math/align'
+
+import { memset, stack } from '@libmedia/cheap'
+import { align as alignFunc } from '@libmedia/common/math'
 
 export function chromaLocation2Pos(pos: AVChromaLocation) {
   if (pos <= AVChromaLocation.AVCHROMA_LOC_UNSPECIFIED || pos >= AVChromaLocation.AVCHROMA_LOC_NB) {

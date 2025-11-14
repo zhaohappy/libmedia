@@ -23,8 +23,8 @@
  *
  */
 
-import { memset } from 'cheap/std/memory'
-import * as logger from 'common/util/logger'
+import { memset } from '@libmedia/cheap'
+import { logger } from '@libmedia/common'
 
 export function avMalloc<T = void>(len: size): pointer<T> {
   const p = malloc(len)

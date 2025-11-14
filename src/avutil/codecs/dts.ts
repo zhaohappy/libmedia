@@ -23,9 +23,12 @@
  *
  */
 
-import BitReader from 'common/io/BitReader'
-import type { Uint8ArrayInterface } from 'common/io/interface'
-import align from 'common/math/align'
+import { align } from '@libmedia/common/math'
+
+import {
+  BitReader,
+  type Uint8ArrayInterface
+} from '@libmedia/common/io'
 
 const DTSChannelTab = [1, 2, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6, 6, 7, 8, 8]
 

@@ -1,8 +1,6 @@
-import * as demux from '@libmedia/avformat/demux'
-import { AVPacketFlags } from '@libmedia/avutil/struct/avpacket'
-import { createAVIFormatContext } from '@libmedia/avformat/AVFormatContext'
-import { createAVPacket, destroyAVPacket } from '@libmedia/avutil/util/avpacket'
-import Sleep from '@libmedia/common/timer/Sleep'
+import { demux, createAVIFormatContext } from '@libmedia/avformat'
+import { AVPacketFlags, createAVPacket, destroyAVPacket } from '@libmedia/avutil'
+import { Sleep } from '@libmedia/common/timer'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept } from './utils'
 import { useEffect, useRef, useState } from 'react'
@@ -101,7 +99,7 @@ export default function () {
       &nbsp;
       <input accept={getAccept()} type="file" onChange={onChange}></input>
       <hr />
-      <textarea readOnly ref={textareaRef} value={value} style={{width: '600px', height: '400px'}}></textarea>
+      <textarea readOnly ref={textareaRef} value={value} style={{ width: '600px', height: '400px' }}></textarea>
     </div>
   )
 }

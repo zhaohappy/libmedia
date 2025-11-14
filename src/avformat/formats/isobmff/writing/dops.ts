@@ -23,15 +23,13 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext } from '../type'
-import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
-import { AVPacketSideDataType } from 'avutil/codec'
-import { mapUint8Array } from 'cheap/std/memory'
-import BufferReader from 'common/io/BufferReader'
+import { type IOWriterSync, BufferReader } from '@libmedia/common/io'
+import { mapUint8Array } from '@libmedia/cheap'
+import { AVPacketSideDataType, type AVStream } from '@libmedia/avutil'
 
-export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext: IsobmffContext) {
+export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
 
   let extradata: Uint8Array
 

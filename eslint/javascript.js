@@ -51,6 +51,14 @@ const eslintConfig = {
 		'no-empty': [0, {
             allowEmptyCatch: true
         }],
+        // 禁止多余逗号
+        'comma-dangle': [2, {
+            arrays: 'never',
+            objects: 'never',
+            imports: 'never',
+            exports: 'never',
+            functions: 'never'
+        }],
         /**
          * 禁止在正则表达式中使用空字符集
          */

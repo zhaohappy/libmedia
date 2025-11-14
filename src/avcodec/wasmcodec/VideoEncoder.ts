@@ -23,36 +23,49 @@
  *
  */
 
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
-import type AVFrame from 'avutil/struct/avframe'
-import { AVPictureType } from 'avutil/struct/avframe'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
-import type { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { createAVPacket, destroyAVPacket, getAVPacketData, getAVPacketSideData } from 'avutil/util/avpacket'
-import * as logger from 'common/util/logger'
-import * as stack from 'cheap/stack'
-import { Rational } from 'avutil/struct/rational'
-import { createAVFrame, destroyAVFrame, refAVFrame, unrefAVFrame } from 'avutil/util/avframe'
-import { mapUint8Array } from 'cheap/std/memory'
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import type AVBSFilter from 'avformat/bsf/AVBSFilter'
-import Annexb2AvccFilter from 'avformat/bsf/h2645/Annexb2AvccFilter'
-import support from 'common/util/support'
-import * as av1 from 'avutil/codecs/av1'
-import * as vp9 from 'avutil/codecs/vp9'
-import { AVDictionary } from 'avutil/struct/avdict'
-import type { Data } from 'common/types/type'
-import * as object from 'common/util/object'
-import * as dict from 'avutil/util/avdict'
-import * as is from 'common/util/is'
-import { avMallocz } from 'avutil/util/mem'
-import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
-import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import * as errorType from 'avutil/error'
+import {
+  type AVCodecParameters,
+  type AVPacket,
+  type AVPacketPool,
+  type AVPacketRef,
+  type AVFrame,
+  createAVPacket,
+  destroyAVPacket,
+  getAVPacketData,
+  getAVPacketSideData,
+  AVDictionary,
+  avdict,
+  avMallocz,
+  errorType,
+  createAVFrame,
+  destroyAVFrame,
+  refAVFrame,
+  unrefAVFrame,
+  AVRational,
+  avRescaleQ,
+  avRescaleQ2,
+  NOPTS_VALUE_BIGINT,
+  AVPacketFlags,
+  AVCodecParameterFlags,
+  AVPictureType,
+  AVCodecID,
+  AVPacketSideDataType
+} from '@libmedia/avutil'
+
+import {
+  av1,
+  vp9
+} from '@libmedia/avutil/internal'
+
+import {
+  type WebAssemblyResource,
+  WebAssemblyRunner,
+  mapUint8Array,
+  stack
+} from '@libmedia/cheap'
+
+import { logger, support, object, is, type Data } from '@libmedia/common'
+import { type AVBSFilter, Annexb2AvccFilter } from '@libmedia/avformat/internal'
 
 export type WasmVideoEncoderOptions = {
   resource: WebAssemblyResource
@@ -67,8 +80,8 @@ export default class WasmVideoEncoder {
 
   private encoder: WebAssemblyRunner
   private parameters: pointer<AVCodecParameters> = nullptr
-  private timeBase: Rational | undefined
-  private framerateTimebase: Rational | undefined
+  private timeBase: AVRational | undefined
+  private framerateTimebase: AVRational | undefined
   private inputCounter: int64 = 0n
 
   private avpacket: pointer<AVPacket> = nullptr
@@ -106,11 +119,11 @@ export default class WasmVideoEncoder {
         if (!(this.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB)) {
           if (!this.bitrateFilter) {
             this.bitrateFilter = new Annexb2AvccFilter()
-            const timeBaseP = reinterpret_cast<pointer<Rational>>(stack.malloc(sizeof(Rational)))
+            const timeBaseP = reinterpret_cast<pointer<AVRational>>(stack.malloc(sizeof(AVRational)))
             timeBaseP.num = this.timeBase!.num
             timeBaseP.den = this.timeBase!.den
             this.bitrateFilter.init(this.parameters, timeBaseP)
-            stack.free(sizeof(Rational))
+            stack.free(sizeof(AVRational))
           }
           this.bitrateFilter.sendAVPacket(this.avpacket)
           this.bitrateFilter.receiveAVPacket(this.avpacket)
@@ -148,10 +161,10 @@ export default class WasmVideoEncoder {
     return this.encoder.invoke<int32>('encoder_receive', this.getAVPacket())
   }
 
-  public async open(parameters: pointer<AVCodecParameters>, timeBase: Rational, threadCount: number = 1, opts: Data = {}): Promise<int32> {
+  public async open(parameters: pointer<AVCodecParameters>, timeBase: AVRational, threadCount: number = 1, opts: Data = {}): Promise<int32> {
     await this.encoder.run(undefined, threadCount)
 
-    const timeBaseP = reinterpret_cast<pointer<Rational>>(malloc(sizeof(Rational)))
+    const timeBaseP = reinterpret_cast<pointer<AVRational>>(malloc(sizeof(AVRational)))
     const optsP = reinterpret_cast<pointer<pointer<AVDictionary>>>(malloc(sizeof(pointer)))
 
     timeBaseP.num = timeBase.num
@@ -165,14 +178,14 @@ export default class WasmVideoEncoder {
 
     if (object.keys(opts).length) {
       if (this.encoderOptions) {
-        dict.freeAVDict2(this.encoderOptions)
+        avdict.freeAVDict2(this.encoderOptions)
         free(this.encoderOptions)
         this.encoderOptions = nullptr
       }
       this.encoderOptions = reinterpret_cast<pointer<AVDictionary>>(avMallocz(sizeof(AVDictionary)))
       object.each(opts, (value, key) => {
         if (is.string(value) || is.string(key)) {
-          dict.avDictSet(this.encoderOptions, key, value)
+          avdict.avDictSet(this.encoderOptions, key, value)
         }
       })
       accessof(optsP) <- this.encoderOptions
@@ -332,7 +345,7 @@ export default class WasmVideoEncoder {
       this.bitrateFilter = undefined
     }
     if (this.encoderOptions) {
-      dict.freeAVDict2(this.encoderOptions)
+      avdict.freeAVDict2(this.encoderOptions)
       free(this.encoderOptions)
       this.encoderOptions = nullptr
     }

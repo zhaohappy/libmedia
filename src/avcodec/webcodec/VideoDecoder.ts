@@ -23,27 +23,37 @@
  *
  */
 
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import browser from 'common/util/browser'
-import getVideoCodec from 'avutil/function/getVideoCodec'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { mapUint8Array } from 'cheap/std/memory'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
-import { addAVPacketData, getAVPacketData, getAVPacketSideData } from 'avutil/util/avpacket'
-import { getHardwarePreference } from 'avutil/function/getHardwarePreference'
-import avpacket2EncodedVideoChunk from 'avutil/function/avpacket2EncodedVideoChunk'
-import * as logger from 'common/util/logger'
-import os from 'common/util/os'
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import * as errorType from 'avutil/error'
-import * as array from 'common/util/array'
-import { AV_TIME_BASE_Q, NOPTS_VALUE } from 'avutil/constant'
-import { avRescaleQ2 } from 'avutil/util/rational'
-import * as intread from 'avutil/util/intread'
+import {
+  type AVCodecParameters,
+  type AVPacket,
+  errorType,
+  AVCodecParameterFlags,
+  AVCodecID,
+  AVPacketSideDataType,
+  getVideoCodec,
+  AVPacketFlags,
+  addAVPacketData,
+  getAVPacketData,
+  getAVPacketSideData,
+  avpacket2EncodedVideoChunk,
+  NOPTS_VALUE,
+  avRescaleQ2,
+  intread
+} from '@libmedia/avutil'
+
+import {
+  mapUint8Array
+} from '@libmedia/cheap'
+
+import {
+  AV_TIME_BASE_Q,
+  h264,
+  hevc,
+  vvc,
+  getHardwarePreference
+} from '@libmedia/avutil/internal'
+
+import { logger, browser, os, array } from '@libmedia/common'
 
 export type WebVideoDecoderOptions = {
   onReceiveVideoFrame: (frame: VideoFrame, alpha?: VideoFrame) => void

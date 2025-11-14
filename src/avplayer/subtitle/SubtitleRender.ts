@@ -23,28 +23,51 @@
  *
  */
 
-import SubtitleDecoder from 'avcodec/subtitle/SubtitleDecoder'
-import IPCPort from 'common/network/IPCPort'
-import LoopTask from 'common/timer/LoopTask'
-import * as logger from 'common/util/logger'
 import AssRender from './AssRender'
-import { AVSubtitleType } from 'avutil/struct/avsubtitle'
-import type { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
-import { IOError } from 'common/io/error'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { AVCodecID } from 'avutil/codec'
-import * as text from 'common/util/text'
-import { mapUint8Array } from 'cheap/std/memory'
-import type { AssEvent } from 'avformat/formats/ass/ass'
-import { AssEventType } from 'avformat/formats/ass/ass'
-import * as iass from 'avformat/formats/ass/iass'
-import type List from 'cheap/std/collection/List'
-import type { Mutex } from 'cheap/thread/mutex'
-import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
-import { avRescaleQ2 } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
-import * as object from 'common/util/object'
-import { destroyAVPacket } from 'avutil/util/avpacket'
+import { type AssEvent, AssEventType, ass } from '@libmedia/avformat/internal'
+
+import {
+  SubtitleDecoder
+} from '@libmedia/avcodec'
+
+import {
+  AVSubtitleType,
+  AVCodecID,
+  type AVPacketPool,
+  type AVPacketRef,
+  type AVCodecParameters,
+  AVPacketPoolImpl,
+  avRescaleQ2,
+  destroyAVPacket
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q
+} from '@libmedia/avutil/internal'
+
+import {
+  logger,
+  text,
+  object
+} from '@libmedia/common'
+
+import {
+  LoopTask
+} from '@libmedia/common/timer'
+
+import {
+  IOError
+} from '@libmedia/common/io'
+
+import {
+  mapUint8Array,
+  type List,
+  type Mutex
+} from '@libmedia/cheap'
+
+import {
+  IPCPort
+} from '@libmedia/common/network'
 
 export interface SubtitleRenderOptions {
   delay?: int64
@@ -210,7 +233,7 @@ export default class SubtitleRender {
           hasEvent = true
         }
         if (/^Format:/.test(line) && hasEvent) {
-          this.formats = iass.parseEventFormat(line.trim())
+          this.formats = ass.parseEventFormat(line.trim())
         }
       }
     }
@@ -226,7 +249,7 @@ export default class SubtitleRender {
         for (let i = 0; i < subtitle.rects.length; i++) {
           const rect = subtitle.rects[i]
           if (rect.type === AVSubtitleType.SUBTITLE_ASS) {
-            const event = iass.parseEvent(this.formats, rect.text)
+            const event = ass.parseEvent(this.formats, rect.text)
             if (event.Start == null) {
               event.Start = subtitle.pts
             }

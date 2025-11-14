@@ -23,13 +23,9 @@
  *
  */
 
-import type { AVPixelFormat } from 'avutil/pixfmt'
-import { AVColorRange, AVColorSpace } from 'avutil/pixfmt'
-import type AVFrame from 'avutil/struct/avframe'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
+import { WebAssemblyRunner, type WebAssemblyResource } from '@libmedia/cheap'
+import { logger } from '@libmedia/common'
+import { errorType, type AVFrame, type AVPixelFormat, AVColorRange, AVColorSpace } from '@libmedia/avutil'
 
 export const enum ScaleAlgorithm {
   FAST_BILINEAR = 1,
@@ -94,13 +90,13 @@ export default class VideoScaler {
     this.scaler.invoke(
       'scale_set_input_color',
       input.colorSpace ?? AVColorSpace.AVCOL_SPC_UNSPECIFIED,
-      input.colorRange ?? AVColorRange.AVCOL_RANGE_UNSPECIFIED,
+      input.colorRange ?? AVColorRange.AVCOL_RANGE_UNSPECIFIED
     )
 
     this.scaler.invoke(
       'scale_set_output_color',
       output.colorSpace ?? AVColorSpace.AVCOL_SPC_UNSPECIFIED,
-      output.colorRange ?? AVColorRange.AVCOL_RANGE_UNSPECIFIED,
+      output.colorRange ?? AVColorRange.AVCOL_RANGE_UNSPECIFIED
     )
 
     let ret = 0

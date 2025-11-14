@@ -23,25 +23,33 @@
  *
  */
 
-import type { Uint8ArrayInterface } from 'common/io/interface'
+import { url, isDef } from '@libmedia/common'
+import {
+  type Uint8ArrayInterface,
+  IOError,
+  IOReader,
+  IOWriter,
+  IOWriterSync,
+  BufferReader
+} from '@libmedia/common/io'
+
+import {
+  IOType
+} from '@libmedia/avutil'
+
+import {
+  amf
+} from '@libmedia/avutil/internal'
+
+import RtmpSession from '@libmedia/avprotocol/rtmp/RtmpSession'
+import type { RtmpPacket } from '@libmedia/avprotocol/rtmp/RtmpPacket'
+import { RtmpPacketType } from '@libmedia/avprotocol/rtmp/rtmp'
+import { FlvHeader, FlvScriptTag } from '@libmedia/avformat/internal'
+
 import { IOLoaderStatus } from './IOLoader'
-import { IOError } from 'common/io/error'
 import SocketIOLoader from './SocketIOLoader'
 import WebSocketIOLoader from './WebSocketIOLoader'
 import WebTransportIOLoader from './WebTransportIOLoader'
-import RtmpSession from 'avprotocol/rtmp/RtmpSession'
-import IOReader from 'common/io/IOReader'
-import IOWriter from 'common/io/IOWriter'
-import * as url from 'common/util/url'
-import type { RtmpPacket } from 'avprotocol/rtmp/RtmpPacket'
-import IOWriterSync from 'common/io/IOWriterSync'
-import FlvHeader from 'avformat/formats/flv/FlvHeader'
-import { RtmpPacketType } from 'avprotocol/rtmp/rtmp'
-import FlvScriptTag from 'avformat/formats/flv/FlvScriptTag'
-import BufferReader from 'common/io/BufferReader'
-import * as amf from 'avutil/util/amf'
-import isDef from 'common/function/isDef'
-import { IOType } from 'avutil/avformat'
 
 export interface RtmpIOInfo {
   url: string

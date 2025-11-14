@@ -1,8 +1,8 @@
 import type { ComponentOptions } from 'yox'
-import type AVPlayer from 'avplayer/AVPlayer'
+import type AVPlayer from '@libmedia/avplayer'
 import * as storage from '../../../../util/storage'
 import Slider from '../../../../components/slider/Slider'
-import * as eventType from 'avplayer/eventType'
+import { Events as eventType } from '@libmedia/avplayer'
 
 import template from './Volume.hbs'
 import style from './Volume.styl'
@@ -39,7 +39,7 @@ const Volume: ComponentOptions = {
       if (!(player.isSuspended() && volume === 0)) {
         storage.set(storage.LOCAL_STORAGE_KEY_VOLUME, volume)
       }
-    },
+    }
   },
 
   methods: {

@@ -24,33 +24,50 @@
  */
 
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import { IOError } from 'common/io/error'
-import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, createAVPacket, destroyAVPacket, refAVPacket } from 'avutil/util/avpacket'
-import type AVStream from 'avutil/AVStream'
-import type { Rational } from 'avutil/struct/rational'
-import * as object from 'common/util/object'
-import concatTypeArray from 'common/function/concatTypeArray'
-import * as h264 from 'avutil/codecs/h264'
-import { AV_TIME_BASE } from 'avutil/constant'
-import BitReader from 'common/io/BitReader'
-import * as expgolomb from 'avutil/util/expgolomb'
 import NaluReader from './nalu/NaluReader'
-import * as naluUtil from 'avutil/util/nalu'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
+
+import { memcpyFromUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  type AVRational,
+  avMalloc,
+  addAVPacketData,
+  createAVPacket,
+  destroyAVPacket,
+  refAVPacket,
+  AVCodecParameterFlags,
+  AVPacketFlags,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  AV_TIME_BASE,
+  h264,
+  expgolomb
+} from '@libmedia/avutil/internal'
+
+import {
+  concatTypeArray,
+  object
+} from '@libmedia/common'
+
+import {
+  IOError,
+  BitReader
+} from '@libmedia/common/io'
 
 export interface IH264FormatOptions {
   /**
    * 显示帧率
    */
-  framerate?: Rational
+  framerate?: AVRational
 }
 
 const DefaultIH264FormatOptions: IH264FormatOptions = {

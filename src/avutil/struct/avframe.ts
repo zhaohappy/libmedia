@@ -28,8 +28,7 @@ import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColor
 import type { AVBufferRef } from './avbuffer'
 import { unrefAVFrame } from '../util/avframe'
 import type { AVDictionary } from './avdict'
-import { Rational } from './rational'
-import { symbolStructAddress } from 'cheap/symbol'
+import { AVRational } from './rational'
 import type { AVChannelLayout } from './audiosample'
 
 export const enum AVFrameFlags {
@@ -270,19 +269,19 @@ export class AVMasteringDisplayMetadata {
   /**
    * CIE 1931 xy chromaticity coords of color primaries (r, g, b order).
    */
-  displayPrimaries: array<array<Rational, 2>, 3>
+  displayPrimaries: array<array<AVRational, 2>, 3>
   /**
    * CIE 1931 xy chromaticity coords of white point.
    */
-  whitePoint: array<Rational, 2>
+  whitePoint: array<AVRational, 2>
   /**
    * Min luminance of mastering display (cd/m^2).
    */
-  minLuminance: Rational
+  minLuminance: AVRational
   /**
    * Max luminance of mastering display (cd/m^2).
    */
-  maxLuminance: Rational
+  maxLuminance: AVRational
   /**
    * Flag indicating whether the display primaries (and white point) are set.
    */
@@ -397,7 +396,7 @@ export default class AVFrame {
   /**
    * Sample aspect ratio for the video frame, 0/1 if unknown/unspecified.
    */
-  sampleAspectRatio: Rational = new Rational({ den: 1, num: 0 })
+  sampleAspectRatio: AVRational = new AVRational({ den: 1, num: 0 })
 
   /**
    * Presentation timestamp in time_base units (time when frame should be shown to user).
@@ -417,7 +416,7 @@ export default class AVFrame {
    * filters, but its value will be by default ignored on input to encoders
    * or filters.
    */
-  timeBase: Rational
+  timeBase: AVRational
 
   /**
    * quality (between 1 (good) and FF_LAMBDA_MAX (bad))
@@ -648,7 +647,7 @@ export default class AVFrame {
   duration: int64 = 0n
 
   public close() {
-    unrefAVFrame(this[symbolStructAddress])
+    unrefAVFrame(addressof(this))
     unmake(this)
   }
 }

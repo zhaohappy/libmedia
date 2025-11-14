@@ -1,6 +1,5 @@
-import { AVStreamMetadataKey } from 'avutil/AVStream'
 import mktagle from '../../function/mktagle'
-import { AVCodecID } from 'avutil/codec'
+import { AVCodecID, AVStreamMetadataKey } from '@libmedia/avutil'
 
 export const WavTag2CodecId = {
   0x0001: AVCodecID.AV_CODEC_ID_PCM_U8,

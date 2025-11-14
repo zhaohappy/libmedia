@@ -23,16 +23,14 @@
  *
  */
 
-import Sleep from 'common/timer/Sleep'
+import { Sleep } from '@libmedia/common/timer'
+import { errorType } from '@libmedia/avutil'
+import { object, logger, getTimestamp } from '@libmedia/common'
+import { IOError, type Uint8ArrayInterface } from '@libmedia/common/io'
+
 import type { IOLoaderOptions } from './IOLoader'
 import IOLoader, { IOLoaderStatus } from './IOLoader'
-import * as object from 'common/util/object'
-import { IOError } from 'common/io/error'
-import type { Uint8ArrayInterface } from 'common/io/interface'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
-import type { Data, HttpOptions, Range } from 'common/types/type'
-import getTimestamp from 'common/function/getTimestamp'
+import type { Data, HttpOptions, Range } from '@libmedia/common'
 
 export interface FetchInfo {
   url: string

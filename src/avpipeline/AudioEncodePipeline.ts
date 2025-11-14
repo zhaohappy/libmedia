@@ -23,30 +23,52 @@
  *
  */
 
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
+import {
+  type RpcMessage,
+  IPCPort,
+  REQUEST
+} from '@libmedia/common/network'
+
+import {
+  type AVFrameRef,
+  compileResource,
+  errorType,
+  type AVCodecParameters,
+  type AVPacketPool,
+  type AVPacketRef,
+  AVPacketPoolImpl,
+  AVFramePoolImpl,
+  type AVRational
+} from '@libmedia/avutil'
+
+import {
+  isPointer,
+  type WebAssemblyResource,
+  type Mutex,
+  type List
+} from '@libmedia/cheap'
+
+import {
+  array,
+  logger
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
+
+import {
+  Sleep
+} from '@libmedia/common/timer'
+
+import {
+  WasmAudioEncoder,
+  WebAudioEncoder
+} from '@libmedia/avcodec'
+
 import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
-import type List from 'cheap/std/collection/List'
-import type { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
-import type { Mutex } from 'cheap/thread/mutex'
-import type { AVFrameRef } from 'avutil/struct/avframe'
-import WasmAudioEncoder from 'avcodec/wasmcodec/AudioEncoder'
-import WebAudioEncoder from 'avcodec/webcodec/AudioEncoder'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import AVFramePoolImpl from 'avutil/implement/AVFramePoolImpl'
-import type { RpcMessage } from 'common/network/IPCPort'
-import IPCPort, { REQUEST } from 'common/network/IPCPort'
-import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
-import * as logger from 'common/util/logger'
-import { IOError } from 'common/io/error'
-import * as array from 'common/util/array'
-import * as error from 'avutil/error'
-import Sleep from 'common/timer/Sleep'
-import type { Rational } from 'avutil/struct/rational'
-import * as errorType from 'avutil/error'
-import isPointer from 'cheap/std/function/isPointer'
-import type { Data } from 'common/types/type'
-import compileResource from 'avutil/function/compileResource'
+import type { Data } from '@libmedia/common'
 
 export interface AudioEncodeTaskOptions extends TaskOptions {
   resource: ArrayBuffer | WebAssemblyResource
@@ -205,7 +227,7 @@ export default class AudioEncodePipeline extends Pipeline {
     return 0
   }
 
-  public async open(taskId: string, parameters: pointer<AVCodecParameters>, timeBase: Rational, wasmEncoderOptions: Data = {}) {
+  public async open(taskId: string, parameters: pointer<AVCodecParameters>, timeBase: AVRational, wasmEncoderOptions: Data = {}) {
     const task = this.tasks.get(taskId)
     if (task) {
       task.wasmEncoderOptions = wasmEncoderOptions
@@ -249,7 +271,7 @@ export default class AudioEncodePipeline extends Pipeline {
 
   public async registerTask(options: AudioEncodeTaskOptions): Promise<number> {
     if (this.tasks.has(options.taskId)) {
-      return error.INVALID_OPERATE
+      return errorType.INVALID_OPERATE
     }
     return this.createTask(options)
   }

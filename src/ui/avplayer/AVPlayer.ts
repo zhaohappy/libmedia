@@ -1,14 +1,9 @@
 
-import type { AVPlayerOptions } from 'avplayer/AVPlayer'
-import AVPlayer, { AVPlayerStatus, AVPlayerSupportedCodecs } from 'avplayer/AVPlayer'
+import type { AVPlayerOptions } from '@libmedia/avplayer'
+import AVPlayer, { AVPlayerStatus, AVPlayerSupportedCodecs, Events as eventType } from '@libmedia/avplayer'
 import type { Component, ComponentOptions } from 'yox'
 import Yox from 'yox/dist/standard/runtime/yox'
-import * as object from 'common/util/object'
-import * as eventType from 'avplayer/eventType'
-import * as is from 'common/util/is'
-import * as array from 'common/util/array'
-import * as url from 'common/util/url'
-import os from 'common/util/os'
+import { os, object, is, array, url, debounce } from '@libmedia/common'
 
 import Progress from './components/progress/Progress'
 import Play from './components/control/play/Play'
@@ -32,9 +27,7 @@ import Settings from './components/settings/Settings'
 import template from './AVPlayer.hbs'
 import style from './AVPlayer.styl'
 import getLanguage from './i18n/getLanguage'
-import debounce from 'common/function/debounce'
-import { AVMediaType } from 'avutil/codec'
-import { AVDisposition, type AVStreamInterface } from 'avutil/AVStream'
+import { AVDisposition, type AVStreamInterface, AVMediaType } from '@libmedia/avutil'
 import Keyboard from './Keyboard'
 import * as eventTypeUI from './eventType'
 
@@ -56,10 +49,10 @@ const AVPlayerUIComponentOptions: ComponentOptions = {
       required: true
     },
     indicatorUrl: {
-      type: 'string',
+      type: 'string'
     },
     pauseStateUrl: {
-      type: 'string',
+      type: 'string'
     },
     errorStateUrl: {
       type: 'string'
@@ -426,7 +419,7 @@ export default class AVPlayerUI extends AVPlayer {
         hasFolder: options.ui?.hasFolder,
         hasHeader: options.ui?.hasHeader,
         hasFooter: options.ui?.hasFooter,
-        folderFolded: options.ui?.folderFolded,
+        folderFolded: options.ui?.folderFolded
       }
     }, AVPlayerUIComponentOptions))
 

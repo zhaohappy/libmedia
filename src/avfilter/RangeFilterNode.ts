@@ -1,13 +1,23 @@
-import { AV_TIME_BASE_Q } from 'avutil/constant'
+
+import {
+  type AVFrameRef,
+  type AVFrame,
+  refAVFrame,
+  createAVFrame,
+  destroyAVFrame,
+  avRescaleQ2
+} from '@libmedia/avutil'
+
+import {
+  AV_TIME_BASE_Q
+} from '@libmedia/avutil/internal'
+
+import { IOError } from '@libmedia/common/io'
+import { is } from '@libmedia/common'
+import { isPointer } from '@libmedia/cheap'
+
 import type { AVFilterNodeOptions } from './AVFilterNode'
 import AVFilterNode from './AVFilterNode'
-import type { AVFrameRef } from 'avutil/struct/avframe'
-import type AVFrame from 'avutil/struct/avframe'
-import { createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
-import { avRescaleQ2 } from 'avutil/util/rational'
-import isPointer from 'cheap/std/function/isPointer'
-import { IOError } from 'common/io/error'
-import * as is from 'common/util/is'
 
 export interface RangeFilterNodeOptions extends AVFilterNodeOptions {
   /**

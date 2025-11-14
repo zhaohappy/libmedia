@@ -23,8 +23,13 @@
  *
  */
 
-import IPCPort from 'common/network/IPCPort'
-import type { Data } from 'common/types/type'
+import {
+  type Data
+} from '@libmedia/common'
+
+import {
+  IPCPort
+} from '@libmedia/common/network'
 
 export default abstract class AudioWorkletProcessorBase extends AudioWorkletProcessor {
 

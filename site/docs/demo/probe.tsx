@@ -1,8 +1,9 @@
-import * as demux from '@libmedia/avformat/demux'
-import { createAVIFormatContext } from '@libmedia/avformat/AVFormatContext'
-import dump from '@libmedia/avformat/dump'
-import { AVCodecID, AVMediaType } from '@libmedia/avutil/codec'
-import compileResource from '@libmedia/avutil/function/compileResource'
+import { demux, dump, createAVIFormatContext } from '@libmedia/avformat'
+import {
+  type AVCodecID,
+  AVMediaType,
+  compileResource
+} from '@libmedia/avutil'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
 import { useEffect, useRef, useState } from 'react'
@@ -33,7 +34,7 @@ async function probe(log: (v: string) => void) {
     from: file ? file.name : formatUrl('video/test.mp4'),
     tag: 'Input'
   }]))
-  
+
   iformatContext.destroy()
 }
 
@@ -70,7 +71,7 @@ export default function () {
       &nbsp;
       <input accept={getAccept()} type="file" onChange={onChange}></input>
       <hr />
-      <textarea readOnly ref={textareaRef} value={value} style={{width: '800px', height: '400px'}}></textarea>
+      <textarea readOnly ref={textareaRef} value={value} style={{ width: '800px', height: '400px' }}></textarea>
     </div>
   )
 }

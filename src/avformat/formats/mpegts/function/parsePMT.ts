@@ -23,12 +23,11 @@
  *
  */
 
-import BufferReader from 'common/io/BufferReader'
 import type { TSSliceQueue } from '../struct'
 import { ESDescriptor, PMT } from '../struct'
 import type { MpegtsContext } from '../type'
-import concatTypeArray from 'common/function/concatTypeArray'
-import * as logger from 'common/util/logger'
+import { BufferReader } from '@libmedia/common/io'
+import { logger, concatTypeArray } from '@libmedia/common'
 
 export default function parsePMT(queue: TSSliceQueue, mpegtsContext: MpegtsContext) {
 

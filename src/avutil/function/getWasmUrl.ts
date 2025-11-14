@@ -1,8 +1,8 @@
-import { base64ToUint8Array } from 'common/util/base64'
+import { base64 } from '@libmedia/common'
 import { AVCodecID } from '../codec'
 
-let supportAtomic = WebAssembly.validate(base64ToUint8Array('AGFzbQEAAAABBgFgAX8BfwISAQNlbnYGbWVtb3J5AgMBgIACAwIBAAcJAQVsb2FkOAAACgoBCAAgAP4SAAAL'))
-let supportSimd = WebAssembly.validate(base64ToUint8Array('AGFzbQEAAAABBQFgAAF7AhIBA2VudgZtZW1vcnkCAwGAgAIDAgEACgoBCABBAP0ABAAL'))
+let supportAtomic = WebAssembly.validate(base64.base64ToUint8Array('AGFzbQEAAAABBgFgAX8BfwISAQNlbnYGbWVtb3J5AgMBgIACAwIBAAcJAQVsb2FkOAAACgoBCAAgAP4SAAAL'))
+let supportSimd = WebAssembly.validate(base64.base64ToUint8Array('AGFzbQEAAAABBQFgAAF7AhIBA2VudgZtZW1vcnkCAwGAgAIDAgEACgoBCABBAP0ABAAL'))
 
 export default function getWasmUrl(baseUrl: string, type: 'decoder' | 'encoder' | 'resampler' | 'scaler' | 'stretchpitcher', codecId?: AVCodecID): string {
 

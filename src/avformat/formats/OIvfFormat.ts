@@ -24,15 +24,22 @@
  */
 
 import type { AVOFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import { AVFormat } from 'avutil/avformat'
-import * as logger from 'common/util/logger'
-import { avRescaleQ2 } from 'avutil/util/rational'
-import { getAVPacketData } from 'avutil/util/avpacket'
-import * as errorType from 'avutil/error'
-import { AVDisposition } from 'avutil/AVStream'
+
+import {
+  AVFormat,
+  AVDisposition,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  getAVPacketData,
+  avRescaleQ2,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  logger
+} from '@libmedia/common'
 
 export const enum IVFCodec {
   VP8 = 'VP80',

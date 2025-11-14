@@ -31,11 +31,11 @@ import { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace,
   AVColorTransferCharacteristic, AVFieldOrder
 } from '../pixfmt'
 import type { AVSampleFormat } from '../audiosamplefmt'
-import { Rational } from './rational'
+import { AVRational } from './rational'
 import type { AVPacketSideData } from './avpacket'
 import type { AVChannelLayout } from './audiosample'
 import { freeCodecParameters } from '../util/codecparameters'
-import { symbolStructAddress } from 'cheap/symbol'
+import { nullptrof } from '@libmedia/cheap'
 
 export const enum AVCodecParameterFlags {
   /**
@@ -156,7 +156,7 @@ export default class AVCodecParameters {
    * When the aspect ratio is unknown / undefined, the numerator should be
    * set to 0 (the denominator may have any value).
    */
-  sampleAspectRatio: Rational = new Rational({ den: 1, num: 1 })
+  sampleAspectRatio: AVRational = new AVRational({ den: 1, num: 1 })
 
   /**
    * Video only. Number of frames per second, for streams with constant frame
@@ -168,7 +168,7 @@ export default class AVCodecParameters {
    * timestamps, when available. It should thus be used only as a last resort,
    * when no higher-level timing information is available.
    */
-  framerate: Rational = new Rational({ den: 1, num: 0 })
+  framerate: AVRational = new AVRational({ den: 1, num: 0 })
 
   /**
    * Video only. The order of the fields in interlaced video.
@@ -238,6 +238,6 @@ export default class AVCodecParameters {
 
   destroy() {
     freeCodecParameters(addressof(this as AVCodecParameters))
-    this[symbolStructAddress] = nullptr
+    nullptrof(this as AVCodecParameters)
   }
 }

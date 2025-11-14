@@ -24,9 +24,9 @@
  */
 
 import { BoxType } from '../boxType'
-import type IOReader from 'common/io/IOReader'
-import type Stream from 'avutil/AVStream'
 import type { Atom, IsobmffContext } from '../type'
+import { type IOReader } from '@libmedia/common/io'
+import { type AVStream } from '@libmedia/avutil'
 
 import stts from './stts'
 import ctts from './ctts'
@@ -77,7 +77,7 @@ import mktag from '../../../function/mktag'
 
 const parsers: Partial<Record<
 number,
-(ioReader: IOReader, stream: Stream, atom: Atom, isobmffContext: IsobmffContext) => Promise<void>>
+(ioReader: IOReader, stream: AVStream, atom: Atom, isobmffContext: IsobmffContext) => Promise<void>>
 > = {
   [mktag(BoxType.STTS)]: stts,
   [mktag(BoxType.CTTS)]: ctts,

@@ -1,11 +1,8 @@
-import IOReader from 'common/io/IOReader'
-import { IOError } from 'common/io/error'
-import * as demux from 'avformat/demux'
-import IFlvFormat from 'avformat/formats/IFlvFormat'
-import { createAVIFormatContext } from 'avformat/AVFormatContext'
-import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
-import { AVMediaType } from 'avutil/codec'
-import WebVideoDecoder from 'avcodec/webcodec/VideoDecoder'
+import { WebVideoDecoder } from '@libmedia/avcodec'
+import { IOReader, IOError } from '@libmedia/common/io'
+import { AVMediaType, destroyAVPacket, createAVPacket } from '@libmedia/avutil'
+import { createAVIFormatContext, demux } from '@libmedia/avformat'
+import IFlvFormat from '@libmedia/avformat/IFlvFormat'
 
 export async function demuxFile(readFile: File) {
 
@@ -52,7 +49,7 @@ export async function demuxFile(readFile: File) {
 
   const decoder = new WebVideoDecoder({
     onError: (error) => {
-      
+
     },
     onReceiveVideoFrame(frame) {
       // 这里拿到解码出的帧

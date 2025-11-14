@@ -23,25 +23,36 @@
  *
  */
 
-import IOWriter from 'common/io/IOWriterSync'
-import type Stream from 'avutil/AVStream'
 import type { AVOFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
 import type { PagePayload } from './ogg/OggPage'
 import { OggPage, OggsCommentPage } from './ogg/OggPage'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import { AVFormat } from 'avutil/avformat'
-import * as logger from 'common/util/logger'
-import { getAVPacketData } from 'avutil/util/avpacket'
-import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { OpusOggsCommentPage, OpusOggsIdPage } from './ogg/opus'
 import { addVorbisComment, VorbisOggsCommentPage, VorbisOggsIdPage } from './ogg/vorbis'
-import { mapUint8Array } from 'cheap/std/memory'
-import IOReaderSync from 'common/io/IOReaderSync'
-import * as errorType from 'avutil/error'
-import { AVDisposition } from 'avutil/AVStream'
-import { avRescaleQ2 } from 'avutil/util/rational'
+
+import { mapUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avRescaleQ2,
+  AVDisposition,
+  getAVPacketData,
+  NOPTS_VALUE_BIGINT,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  logger
+} from '@libmedia/common'
+
+import {
+  IOWriterSync,
+  IOReaderSync
+} from '@libmedia/common/io'
 
 const PAGE_MAX = 255 * 255
 
@@ -67,7 +78,7 @@ export default class OOggFormat extends OFormat {
 
   public headerPagesPayload: PagePayload[]
 
-  private cacheWriter: IOWriter
+  private cacheWriter: IOWriterSync
 
   private page: OggPage
 
@@ -101,7 +112,7 @@ export default class OOggFormat extends OFormat {
 
     this.initChecksumTab()
 
-    this.cacheWriter = new IOWriter(PAGE_MAX, false)
+    this.cacheWriter = new IOWriterSync(PAGE_MAX, false)
 
     if (this.headerPagesPayload) {
       for (let i = 0; i < this.headerPagesPayload.length; i++) {
@@ -120,7 +131,7 @@ export default class OOggFormat extends OFormat {
     return 0
   }
 
-  private writePage(stream: Stream, ioWriter: IOWriter, buffer: Uint8Array, headerTypeFlag: number) {
+  private writePage(stream: AVStream, ioWriter: IOWriterSync, buffer: Uint8Array, headerTypeFlag: number) {
     let length = buffer.length
     let realLength = length
     let offset = 0

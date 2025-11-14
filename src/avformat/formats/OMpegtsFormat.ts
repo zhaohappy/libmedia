@@ -24,36 +24,58 @@
  */
 
 import type { AVOFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import createMpegtsContext from './mpegts/function/createMpegtsContext'
 import { PAT, PES, PMT, SectionPacket, TSPacket } from './mpegts/struct'
 import type { MpegtsContext, MpegtsStreamContext } from './mpegts/type'
 import OFormat from './OFormat'
 import * as mpegts from './mpegts/mpegts'
 import * as ompegts from './mpegts/ompegts'
-import * as array from 'common/util/array'
-import * as object from 'common/util/object'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import createMpegtsStreamContext from './mpegts/function/createMpegtsStreamContext'
 import type AVBSFilter from '../bsf/AVBSFilter'
 import AACRaw2ADTSFilter from '../bsf/aac/Raw2ADTSFilter'
 import AACRaw2LATMFilter from '../bsf/aac/Raw2LATMFilter'
 import OpusRaw2MpegtsFilter from '../bsf/opus/Raw2MpegtsFilter'
 import Avcc2AnnexbFilter from '../bsf/h2645/Avcc2AnnexbFilter'
-import { AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { AVFormat } from 'avutil/avformat'
-import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { avRescaleQ2 } from 'avutil/util/rational'
-import { addAVPacketData, addAVPacketSideData, createAVPacket, destroyAVPacket, getAVPacketData, hasAVPacketSideData } from 'avutil/util/avpacket'
-import { avMalloc } from 'avutil/util/mem'
-import * as logger from 'common/util/logger'
-import * as naluUtil from 'avutil/util/nalu'
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import type { Uint8ArrayInterface } from 'common/io/interface'
-import { AVDisposition } from 'avutil/AVStream'
+
+import { memcpyFromUint8Array, mapUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  avMalloc,
+  addAVPacketData,
+  addAVPacketSideData,
+  createAVPacket,
+  destroyAVPacket,
+  getAVPacketData,
+  hasAVPacketSideData,
+  AVPacketFlags,
+  avRescaleQ2,
+  NOPTS_VALUE_BIGINT,
+  AVPacketSideDataType,
+  AVDisposition,
+  nalu as naluUtil
+} from '@libmedia/avutil'
+
+import {
+  AV_TIME_BASE,
+  AV_TIME_BASE_Q,
+  h264,
+  hevc,
+  vvc
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  object,
+  logger
+} from '@libmedia/common'
+
+import {
+  type Uint8ArrayInterface
+} from '@libmedia/common/io'
 
 export interface OMpegtsFormatOptions {
   pesMaxSize?: number

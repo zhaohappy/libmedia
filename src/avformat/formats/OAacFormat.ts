@@ -24,19 +24,26 @@
  */
 
 import type { AVOFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import { AVFormat } from 'avutil/avformat'
-import * as logger from 'common/util/logger'
-import * as object from 'common/util/object'
-import type AVStream from 'avutil/AVStream'
-import { AVDisposition } from 'avutil/AVStream'
-import * as errorType from 'avutil/error'
 import type AVBSFilter from '../bsf/AVBSFilter'
 import Raw2ADTSFilter from '../bsf/aac/Raw2ADTSFilter'
 import Raw2LATMFilter from '../bsf/aac/Raw2LATMFilter'
-import { getAVPacketData } from 'avutil/util/avpacket'
+
+import {
+  AVFormat,
+  getAVPacketData,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  AVDisposition,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  object,
+  logger
+} from '@libmedia/common'
 
 export interface OAacFormatOptions {
   frameType?: 'adts' | 'latm'

@@ -23,18 +23,13 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import type { AVIFormatContext } from '../AVFormatContext'
-import * as logger from 'common/util/logger'
 
-import { IOError } from 'common/io/error'
 import type { MpegtsContext, MpegtsStreamContext } from './mpegts/type'
 import createMpegtsContext from './mpegts/function/createMpegtsContext'
 import * as impegts from './mpegts/impegts'
 import * as mpegts from './mpegts/mpegts'
 import handleSectionSlice from './mpegts/function/handleSectionSlice'
-import * as errorType from 'avutil/error'
 import parsePES from './mpegts/function/parsePES'
 import parsePESSlice from './mpegts/function/parsePESSlice'
 import clearTSSliceQueue from './mpegts/function/clearTSSliceQueue'
@@ -42,29 +37,55 @@ import type { PES } from './mpegts/struct'
 import { TSSliceQueue } from './mpegts/struct'
 import IFormat from './IFormat'
 import initStream from './mpegts/function/initStream'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
-import { addAVPacketData, createAVPacket, deleteAVPacketSideData,
-  destroyAVPacket, getAVPacketData, getAVPacketSideData
-} from 'avutil/util/avpacket'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import type AVStream from 'avutil/AVStream'
 import seekInBytes from '../function/seekInBytes'
-import { avRescaleQ } from 'avutil/util/rational'
-import * as array from 'common/util/array'
-import * as mp3 from 'avutil/codecs/mp3'
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import * as aac from 'avutil/codecs/aac'
-import * as opus from 'avutil/codecs/opus'
-import * as ac3 from 'avutil/codecs/ac3'
-import * as dts from 'avutil/codecs/dts'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import { avMalloc } from 'avutil/util/mem'
-import { memcpy, mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import * as is from 'common/util/is'
-import * as nalusUtil from 'avutil/util/nalu'
-import concatTypeArray from 'common/function/concatTypeArray'
+
+import { memcpyFromUint8Array, mapSafeUint8Array, memcpy } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  addAVPacketData,
+  createAVPacket,
+  AVPacketFlags,
+  destroyAVPacket,
+  getAVPacketData,
+  getAVPacketSideData,
+  NOPTS_VALUE,
+  NOPTS_VALUE_BIGINT,
+  AVPacketSideDataType,
+  deleteAVPacketSideData,
+  avRescaleQ,
+  errorType,
+  nalu as nalusUtil
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q,
+  aac,
+  mp3,
+  h264,
+  hevc,
+  vvc,
+  opus,
+  ac3,
+  dts
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  concatTypeArray,
+  logger,
+  is
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
 
 export default class IMpegtsFormat extends IFormat {
 

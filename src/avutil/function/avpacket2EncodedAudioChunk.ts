@@ -25,7 +25,7 @@
 import { avRescaleQ2 } from '../util/rational'
 import type AVPacket from '../struct/avpacket'
 import { AVPacketFlags } from '../struct/avpacket'
-import { mapUint8Array } from 'cheap/std/memory'
+import { mapUint8Array } from '@libmedia/cheap'
 import { AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from '../constant'
 
 export default function avpacket2EncodedAudioChunk(avpacket: pointer<AVPacket>) {

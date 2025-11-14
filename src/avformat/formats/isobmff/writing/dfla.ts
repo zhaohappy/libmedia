@@ -23,17 +23,15 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext } from '../type'
-import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
-import { mapUint8Array } from 'cheap/std/memory'
-import { AVPacketSideDataType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
-import { FlacMetadataType } from 'avutil/codecs/flac'
-import { FLAC_STREAMINFO_SIZE } from 'avutil/codecs/flac'
+import { logger } from '@libmedia/common'
+import { type IOWriterSync } from '@libmedia/common/io'
+import { mapUint8Array } from '@libmedia/cheap'
+import { flac } from '@libmedia/avutil/internal'
+import { AVPacketSideDataType, type AVStream } from '@libmedia/avutil'
 
-export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext: IsobmffContext) {
+export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   let extradata: Uint8Array
 
   if (isobmffContext.fragment) {
@@ -53,7 +51,7 @@ export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext
     }
   }
 
-  if (!extradata || extradata.length !== FLAC_STREAMINFO_SIZE) {
+  if (!extradata || extradata.length !== flac.FLAC_STREAMINFO_SIZE) {
     logger.error('invalid extradata')
   }
   else {
@@ -66,7 +64,7 @@ export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext
     // flags
     ioWriter.writeUint24(0)
 
-    ioWriter.writeUint8((1 << 7) | FlacMetadataType.FLAC_METADATA_TYPE_STREAMINFO)
+    ioWriter.writeUint8((1 << 7) | flac.FlacMetadataType.FLAC_METADATA_TYPE_STREAMINFO)
     ioWriter.writeUint24(extradata.length)
     ioWriter.writeBuffer(extradata)
   }

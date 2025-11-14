@@ -26,8 +26,11 @@
 import type AVCodecParameters from '../struct/avcodecparameters'
 import { AVPacketSideDataType } from '../codec'
 import type AVPacket from '../struct/avpacket'
-import BitReader from 'common/io/BitReader'
-import type { Uint8ArrayInterface } from 'common/io/interface'
+
+import {
+  BitReader,
+  type Uint8ArrayInterface
+} from '@libmedia/common/io'
 
 export function parseAVCodecParameters(
   stream: {

@@ -24,23 +24,35 @@
  */
 
 import type { AVOFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import { AVFormat } from 'avutil/avformat'
-import * as logger from 'common/util/logger'
-import type AVStream from 'avutil/AVStream'
-import { AVDisposition } from 'avutil/AVStream'
 import Avcc2AnnexbFilter from '../bsf/h2645/Avcc2AnnexbFilter'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
-import * as errorType from 'avutil/error'
-import { addAVPacketSideData, getAVPacketData, getAVPacketSideData } from 'avutil/util/avpacket'
 
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
+import { memcpyFromUint8Array, mapUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVDisposition,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  getAVPacketData,
+  getAVPacketSideData,
+  addAVPacketSideData,
+  AVCodecParameterFlags,
+  AVPacketSideDataType,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  h264,
+  hevc,
+  vvc
+} from '@libmedia/avutil/internal'
+
+import {
+  logger
+} from '@libmedia/common'
 
 export default class OH26XFormat extends OFormat {
 

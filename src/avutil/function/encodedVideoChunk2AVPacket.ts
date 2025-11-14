@@ -26,7 +26,7 @@ import { addAVPacketData, addAVPacketSideData, createAVPacket } from '../util/av
 import type AVPacket from '../struct/avpacket'
 import { AVPacketFlags } from '../struct/avpacket'
 import { avMalloc } from '../util/mem'
-import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
+import { mapUint8Array, memcpyFromUint8Array } from '@libmedia/cheap'
 import { AV_TIME_BASE, NOPTS_VALUE_BIGINT } from '../constant'
 import { AVPacketSideDataType } from '../codec'
 import * as intwrite from '../util/intwrite'
@@ -57,6 +57,7 @@ export default function encodedVideoChunk2AVPacket(chunk: EncodedVideoChunk, avp
         buffer = new Uint8Array(metadata.decoderConfig.description)
       }
       else {
+        // @ts-ignore
         buffer = new Uint8Array(metadata.decoderConfig.description.buffer)
       }
       const extradata = avMalloc(buffer.length)

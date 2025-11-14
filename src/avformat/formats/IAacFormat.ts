@@ -23,28 +23,50 @@
  *
  */
 
-import type AVStream from 'avutil/AVStream'
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags, IOFlags } from 'avutil/avformat'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, addAVPacketSideData } from 'avutil/util/avpacket'
-import { IOError } from 'common/io/error'
-import { avRescaleQ } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import * as array from 'common/util/array'
-import { avCodecParameters2Extradata, parseLATMHeader, parseADTSHeader, MPEG4SamplingFrequencies, MPEG4Channels } from 'avutil/codecs/aac'
-import * as is from 'common/util/is'
 import LATM2RawFilter from '../bsf/aac/LATM2RawFilter'
 import * as id3v2 from './mp3/id3v2'
-import BitReader from 'common/io/BitReader'
-import concatTypeArray from 'common/function/concatTypeArray'
+
+import { memcpyFromUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  IOFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  addAVPacketData,
+  addAVPacketSideData,
+  AVPacketFlags,
+  NOPTS_VALUE,
+  NOPTS_VALUE_BIGINT,
+  AVPacketSideDataType,
+  avRescaleQ,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q,
+  AV_TIME_BASE,
+  AV_TIME_BASE_Q,
+  aac
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  concatTypeArray,
+  logger,
+  is
+} from '@libmedia/common'
+
+import {
+  IOError,
+  BitReader
+} from '@libmedia/common/io'
 
 const enum FrameType {
   ADIF,
@@ -245,8 +267,8 @@ export default class IAacFormat extends IFormat {
         if (!i) {
           stream.codecpar.profile = profile
           stream.codecpar.chLayout.nbChannels = channels
-          stream.codecpar.sampleRate = MPEG4SamplingFrequencies[samplingFreqIndex]
-          const extradata = avCodecParameters2Extradata(stream.codecpar)
+          stream.codecpar.sampleRate = aac.MPEG4SamplingFrequencies[samplingFreqIndex]
+          const extradata = aac.avCodecParameters2Extradata(stream.codecpar)
           stream.codecpar.extradata = avMalloc(extradata.length)
           memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
           stream.codecpar.extradataSize = extradata.length
@@ -266,7 +288,7 @@ export default class IAacFormat extends IFormat {
       stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_AAC
       stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
 
-      const info = parseADTSHeader(await formatContext.ioReader.peekBuffer(20))
+      const info = aac.parseADTSHeader(await formatContext.ioReader.peekBuffer(20))
 
       if (is.number(info)) {
         return errorType.DATA_INVALID
@@ -275,7 +297,7 @@ export default class IAacFormat extends IFormat {
       stream.codecpar.profile = info.profile
       stream.codecpar.sampleRate = info.sampleRate
       stream.codecpar.chLayout.nbChannels = info.channels
-      const extradata = avCodecParameters2Extradata(stream.codecpar)
+      const extradata = aac.avCodecParameters2Extradata(stream.codecpar)
       stream.codecpar.extradata = avMalloc(extradata.length)
       memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
       stream.codecpar.extradataSize = extradata.length
@@ -312,7 +334,7 @@ export default class IAacFormat extends IFormat {
       stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_AAC
       stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
 
-      const info = parseLATMHeader(await formatContext.ioReader.peekBuffer(20))
+      const info = aac.parseLATMHeader(await formatContext.ioReader.peekBuffer(20))
 
       if (is.number(info)) {
         return errorType.DATA_INVALID
@@ -321,7 +343,7 @@ export default class IAacFormat extends IFormat {
       stream.codecpar.profile = info.profile
       stream.codecpar.sampleRate = info.sampleRate
       stream.codecpar.chLayout.nbChannels = info.channels
-      const extradata = avCodecParameters2Extradata(stream.codecpar)
+      const extradata = aac.avCodecParameters2Extradata(stream.codecpar)
       stream.codecpar.extradata = avMalloc(extradata.length)
       memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
       stream.codecpar.extradataSize = extradata.length
@@ -409,8 +431,8 @@ export default class IAacFormat extends IFormat {
         const samplingFrequencyIndex = (header[2] & 0x3C) >>> 2
         const channelConfiguration = ((header[2] & 0x01) << 2) | ((header[3] & 0xC0) >>> 6)
 
-        const sampleRate = MPEG4SamplingFrequencies[samplingFrequencyIndex]
-        const channels = MPEG4Channels[channelConfiguration]
+        const sampleRate = aac.MPEG4SamplingFrequencies[samplingFrequencyIndex]
+        const channels = aac.MPEG4Channels[channelConfiguration]
 
         if (this.streamMuxConfig.profile !== profile
           || this.streamMuxConfig.sampleRate !== sampleRate
@@ -420,7 +442,7 @@ export default class IAacFormat extends IFormat {
           this.streamMuxConfig.sampleRate = sampleRate
           this.streamMuxConfig.channels = channels
 
-          const extradata = avCodecParameters2Extradata({
+          const extradata = aac.avCodecParameters2Extradata({
             profile,
             sampleRate,
             chLayout: {
@@ -533,8 +555,8 @@ export default class IAacFormat extends IFormat {
           const word = (await formatContext.ioReader.peekUint16()) >>> shift
           if (word === syncWord) {
             const info = this.frameType === FrameType.ADTS
-              ? parseADTSHeader(await formatContext.ioReader.peekBuffer(9))
-              : parseLATMHeader(await formatContext.ioReader.peekBuffer(20))
+              ? aac.parseADTSHeader(await formatContext.ioReader.peekBuffer(9))
+              : aac.parseLATMHeader(await formatContext.ioReader.peekBuffer(20))
             if (!is.number(info)) {
               count++
               await formatContext.ioReader.skip(info.headerLength + info.framePayloadLength)

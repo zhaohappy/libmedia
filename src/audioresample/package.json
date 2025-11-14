@@ -20,10 +20,10 @@
     "@libmedia/avutil": "workspace:*"
   },
   "exports": {
-    "./Resampler": {
-      "import": "./dist/esm/Resampler.js",
-      "require": "./dist/cjs/Resampler.js",
-      "types": "./dist/esm/Resampler.d.ts"
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/esm/index.d.ts"
     }
   }
 }

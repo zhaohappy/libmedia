@@ -24,32 +24,51 @@
  */
 
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import { IOError } from 'common/io/error'
-import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, createAVPacket, destroyAVPacket, refAVPacket } from 'avutil/util/avpacket'
-import type AVStream from 'avutil/AVStream'
-import type { Rational } from 'avutil/struct/rational'
-import * as object from 'common/util/object'
-import concatTypeArray from 'common/function/concatTypeArray'
-import * as vvc from 'avutil/codecs/vvc'
-import { AV_TIME_BASE } from 'avutil/constant'
-import BitReader from 'common/io/BitReader'
-import * as expgolomb from 'avutil/util/expgolomb'
 import NaluReader from './nalu/NaluReader'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
+
+import { memcpyFromUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  IOFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  type AVRational,
+  avMalloc,
+  addAVPacketData,
+  createAVPacket,
+  destroyAVPacket,
+  refAVPacket,
+  AVPacketFlags,
+  AVCodecParameterFlags,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  AV_TIME_BASE,
+  vvc,
+  expgolomb
+} from '@libmedia/avutil/internal'
+
+import {
+  concatTypeArray,
+  object
+} from '@libmedia/common'
+
+import {
+  IOError,
+  BitReader
+} from '@libmedia/common/io'
 
 export interface IVvcFormatOptions {
   /**
    * 显示帧率
    */
-  framerate?: Rational
+  framerate?: AVRational
 }
 
 const DefaultIVvcFormatOptions: IVvcFormatOptions = {

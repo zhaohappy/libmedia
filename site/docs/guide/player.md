@@ -139,7 +139,7 @@ AVPlayerUI 配置也同上。
 ```javascript
 
 import AVPlayer from '@libmedia/avplayer'
-import { AVCodecID } from '@libmedia/avutil/codec'
+import { AVCodecID } from '@libmedia/avutil'
 
 const player = new AVPlayer({
   container: document.querySelector('#player'),

@@ -23,7 +23,7 @@
  *
  */
 
-import { Rational } from './struct/rational'
+import { AVRational } from './struct/rational'
 
 export const NOPTS_VALUE_BIGINT: int64 = -1n
 
@@ -35,28 +35,25 @@ export const AV_MILLI_TIME_BASE: int32 = 1000
 
 export const AV_NANO_TIME_BASE: int32 = 1000000000
 
-export const NTP_OFFSET = 2208988800n
-export const NTP_OFFSET_US = (NTP_OFFSET * 1000000n)
-
 /**
  * 微秒时间基
  */
-export const AV_TIME_BASE_Q = new Rational({ den: AV_TIME_BASE, num: 1 })
+export const AV_TIME_BASE_Q = new AVRational({ den: AV_TIME_BASE, num: 1 })
 
 /**
  * 毫秒时间基
  */
-export const AV_MILLI_TIME_BASE_Q = new Rational({ den: AV_MILLI_TIME_BASE, num: 1 })
+export const AV_MILLI_TIME_BASE_Q = new AVRational({ den: AV_MILLI_TIME_BASE, num: 1 })
 
 /**
  * 纳秒时间基
  */
-export const AV_NANO_TIME_BASE_Q = new Rational({ den: AV_NANO_TIME_BASE, num: 1 })
+export const AV_NANO_TIME_BASE_Q = new AVRational({ den: AV_NANO_TIME_BASE, num: 1 })
 
 /**
  * 秒时间基
  */
-export const AV_TIME_BASE1_Q = new Rational({ den: 1, num: 1 })
+export const AV_TIME_BASE1_Q = new AVRational({ den: 1, num: 1 })
 
 export const INT8_MAX: int8 = 127
 export const INT16_MAX: int16 = 32767

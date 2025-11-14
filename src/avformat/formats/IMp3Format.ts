@@ -24,32 +24,49 @@
  */
 
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
-import { mapSafeUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData } from 'avutil/util/avpacket'
-import type AVStream from 'avutil/AVStream'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import * as text from 'common/util/text'
-import { IOFlags } from 'avutil/avformat'
-import * as mp3 from 'avutil/codecs/mp3'
-import { avRescaleQ } from 'avutil/util/rational'
 import type { ID3V2, Mp3MetaData, Mp3StreamContext } from './mp3/type'
 import { ID3V1_SIZE, XING_TOC_COUNT, XingFlag } from './mp3/mp3'
-import * as bigint from 'common/util/bigint'
-import * as array from 'common/util/array'
 import * as id3v2 from './mp3/id3v2'
 import * as frameHeader from './mp3/frameHeader'
-import { IOError } from 'common/io/error'
 import { FrameHeader } from './mp3/frameHeader'
-import * as errorType from 'avutil/error'
-import * as is from 'common/util/is'
+
+import { mapSafeUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  IOFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  addAVPacketData,
+  AVStreamMetadataKey,
+  AVPacketFlags,
+  NOPTS_VALUE,
+  NOPTS_VALUE_BIGINT,
+  avRescaleQ,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q,
+  mp3
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  logger,
+  is,
+  text,
+  bigint
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
 
 interface Mp3Context {
   firstFramePos: int64
@@ -259,7 +276,7 @@ export default class IMp3Format extends IFormat {
           const dts = stream.duration / static_cast<int64>(XING_TOC_COUNT) * static_cast<int64>(i)
           const sample = {
             dts,
-            pos,
+            pos
           }
           mp3Context.tocIndexes.push(sample)
         }

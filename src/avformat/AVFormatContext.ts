@@ -23,24 +23,32 @@
  *
  */
 
-import { type AVCodecID, AVMediaType } from 'avutil/codec'
-
-import type { AVStreamGroupInterface, AVStreamGroupParamsType, AVStreamInterface } from 'avutil/AVStream'
-import AVStream, { AVDisposition, AVStreamGroup } from 'avutil/AVStream'
-import type AVPacket from 'avutil/struct/avpacket'
-
 import type OFormat from './formats/OFormat'
 import type IFormat from './formats/IFormat'
 
-import type IOWriterSync from 'common/io/IOWriterSync'
-import type IOReader from 'common/io/IOReader'
-import type IOWriter from 'common/io/IOWriter'
-import type IOReaderSync from 'common/io/IOReaderSync'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import { AVFormat } from 'avutil/avformat'
-import { destroyAVPacket } from 'avutil/util/avpacket'
-import type { Rational } from 'avutil/struct/rational'
-import getUniqueCounter32 from 'cheap/std/function/getUniqueCounter32'
+import {
+  AVFormat,
+  AVMediaType,
+  type AVCodecID,
+  type AVPacket,
+  type AVStreamGroupInterface,
+  type AVStreamGroupParamsType,
+  type AVStreamInterface,
+  AVStream,
+  AVDisposition,
+  AVStreamGroup,
+  type AVRational,
+  destroyAVPacket
+} from '@libmedia/avutil'
+
+import type {
+  IOWriterSync,
+  IOReader,
+  IOWriter,
+  IOReaderSync
+} from '@libmedia/common/io'
+
+import { type WebAssemblyResource, getUniqueCounter32 } from '@libmedia/cheap'
 
 export interface AVChapter {
   /**
@@ -50,7 +58,7 @@ export interface AVChapter {
   /**
    * 时间基
    */
-  timeBase: Rational
+  timeBase: AVRational
   /**
    * 开始时间
    */

@@ -24,7 +24,10 @@
  */
 
 import { AVFormat } from '../avformat'
-import type IOReader from 'common/io/IOReader'
+
+import {
+  type IOReader
+} from '@libmedia/common/io'
 
 export default async function analyzeAVFormat(ioReader: IOReader, defaultFormat: AVFormat = AVFormat.UNKNOWN): Promise<AVFormat> {
   let magic = await ioReader.peekString(8)

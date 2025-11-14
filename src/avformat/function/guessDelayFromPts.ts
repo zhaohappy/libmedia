@@ -23,7 +23,7 @@
  *
  */
 
-import * as array from 'common/util/array'
+import { array } from '@libmedia/common'
 
 export default function guessDelayFromPts(ptsList: int64[]) {
   if (ptsList.length < 2) {

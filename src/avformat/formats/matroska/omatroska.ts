@@ -23,18 +23,14 @@
  *
  */
 
-import type { BytesWriterSync, Uint8ArrayInterface } from 'common/io/interface'
 import { EBMLId } from './matroska'
-import * as is from 'common/util/is'
-import type IOWriterSync from 'common/io/IOWriterSync'
-import * as text from 'common/util/text'
 import type { Attachment, Attachments, AudioTrack, Chapter, ChapterAtom, ChapterDisplay,
   Chapters, CuePoint, CuePointPos, Cues, ElePositionInfo, Header, Info, OMatroskaContext,
   SeekHead, SeekHeadEntry, SimpleTag, Tag, TagTargets, Tags, TrackEntry, Tracks, VideoColor, VideoTrack
 } from './type'
-import concatTypeArray from 'common/function/concatTypeArray'
-import * as array from 'common/util/array'
-import * as object from 'common/util/object'
+
+import { object, is, array, concatTypeArray, text } from '@libmedia/common'
+import type { IOWriterSync, BytesWriterSync, Uint8ArrayInterface } from '@libmedia/common/io'
 
 export function ebmlIdSize(id: EBMLId) {
   return Math.floor((Math.log2(id) + 7) / 8)

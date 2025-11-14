@@ -1,17 +1,18 @@
-import * as demux from '@libmedia/avformat/demux'
-import { createAVIFormatContext } from '@libmedia/avformat/AVFormatContext'
-import { createAVPacket, destroyAVPacket } from '@libmedia/avutil/util/avpacket'
-import { AVMediaType } from '@libmedia/avutil/codec'
-import { RenderMode } from '@libmedia/avrender/image/ImageRender'
-import Timer from '@libmedia/common/timer/Timer'
-import WebGLDefault8Render from '@libmedia/avrender/image/WebGLDefault8Render'
-import AVFrame from '@libmedia/avutil/struct/avframe'
-import WasmVideoDecoder from '@libmedia/avcodec/wasmcodec/VideoDecoder'
-import compileResource from '@libmedia/avutil/function/compileResource'
-import { destroyAVFrame } from '@libmedia/avutil/util/avframe'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from '@libmedia/avutil/constant'
-import { avRescaleQ } from '@libmedia/avutil/util/rational'
-import { AVSeekFlags } from '@libmedia/avutil/avformat'
+import { demux, createAVIFormatContext } from '@libmedia/avformat'
+import {
+  type AVFrame,
+  createAVPacket,
+  destroyAVPacket,
+  AVMediaType,
+  compileResource,
+  destroyAVFrame,
+  avRescaleQ,
+  AVSeekFlags,
+  NOPTS_VALUE_BIGINT
+} from '@libmedia/avutil'
+import { WasmVideoDecoder } from '@libmedia/avcodec'
+import { RenderMode, WebGLDefault8Render } from '@libmedia/avrender'
+import { Timer } from '@libmedia/common/timer'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
 import { useEffect, useRef } from 'react'
@@ -45,7 +46,7 @@ async function render(canvas: HTMLCanvasElement) {
 
   let seekTime = stream.duration === NOPTS_VALUE_BIGINT
     ? 10000n
-    : (avRescaleQ(stream.duration, stream.timeBase, AV_MILLI_TIME_BASE_Q) >> 1n)
+    : (avRescaleQ(stream.duration, stream.timeBase, { num: 1, den: 1000 }) >> 1n)
 
   {
     // seek 到指定时间前最近的关键帧处
@@ -71,14 +72,14 @@ async function render(canvas: HTMLCanvasElement) {
     onReceiveAVFrame(frame) {
       if (seekTime > 0) {
         // 忽略 seek 时间点之前从关键帧到 seek 时间点之间的视频帧
-        if (avRescaleQ(frame.pts, frame.timeBase, AV_MILLI_TIME_BASE_Q) < seekTime) {
+        if (avRescaleQ(frame.pts, frame.timeBase, { num: 1, den: 1000 }) < seekTime) {
           destroyAVFrame(frame)
           return
         }
         seekTime = 0n
       }
       queue.push(frame)
-    },
+    }
   })
 
   const timer = new Timer(() => {
@@ -145,7 +146,7 @@ async function render(canvas: HTMLCanvasElement) {
   destroyAVPacket(avpacket)
 
   decodeEnd = true
-  
+
   stop = true
 
   console.log('render end')
@@ -188,7 +189,7 @@ export default function () {
       &nbsp;
       <input accept={getAccept()} type="file" onChange={onChange}></input>
       <hr />
-      <canvas ref={canvasRef} style={{width: '640px', height: '480px', background: '#000'}}></canvas>
+      <canvas ref={canvasRef} style={{ width: '640px', height: '480px', background: '#000' }}></canvas>
     </div>
   )
 }

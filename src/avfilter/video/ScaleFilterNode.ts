@@ -1,20 +1,32 @@
-import type { AVFilterNodeOptions } from '../AVFilterNode'
+import {
+  type AVFrame,
+  type AVFrameRef,
+  createAVFrame,
+  refAVFrame,
+  destroyAVFrame,
+  copyAVFrameProps,
+  errorType,
+  NOPTS_VALUE,
+  compileResource,
+  AVPixelFormat,
+  videoFrame2AVFrame
+} from '@libmedia/avutil'
+
+import {
+  mapPixelFormat
+} from '@libmedia/avutil/internal'
+
+import { logger, is, type Data } from '@libmedia/common'
+
+import {
+  type WebAssemblyResource,
+  isPointer
+} from '@libmedia/cheap'
+
+import { type ScaleParameters, VideoScaler } from '@libmedia/videoscale'
+
 import AVFilterNode from '../AVFilterNode'
-import type { AVFrameRef } from 'avutil/struct/avframe'
-import type AVFrame from 'avutil/struct/avframe'
-import { copyAVFrameProps, createAVFrame, destroyAVFrame, refAVFrame } from 'avutil/util/avframe'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import type { ScaleParameters } from 'videoscale/VideoScaler'
-import VideoScaler from 'videoscale/VideoScaler'
-import * as is from 'common/util/is'
-import { mapFormat, videoFrame2AVFrame } from 'avutil/function/videoFrame2AVFrame'
-import { NOPTS_VALUE } from 'avutil/constant'
-import { AVPixelFormat } from 'avutil/pixfmt'
-import * as errorType from 'avutil/error'
-import * as logger from 'common/util/logger'
-import isPointer from 'cheap/std/function/isPointer'
-import compileResource from 'avutil/function/compileResource'
-import type { Data } from 'common/types/type'
+import type { AVFilterNodeOptions } from '../AVFilterNode'
 
 export interface ScaleFilterNodeOptions extends AVFilterNodeOptions {
   resource: WebAssemblyResource | ArrayBuffer
@@ -51,7 +63,7 @@ export default class ScaleFilterNode extends AVFilterNode {
 
     const width = isPointer(avframe) ? avframe.width : (avframe as VideoFrame).displayWidth
     const height = isPointer(avframe) ? avframe.height : (avframe as VideoFrame).displayHeight
-    const format = isPointer(avframe) ? avframe.format : mapFormat((avframe as VideoFrame).format!)
+    const format = isPointer(avframe) ? avframe.format : mapPixelFormat((avframe as VideoFrame).format!)
 
     if (width !== this.options.output.width
       || height !== this.options.output.height

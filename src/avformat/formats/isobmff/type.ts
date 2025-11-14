@@ -23,13 +23,17 @@
  *
  */
 
-import type IOWriter from 'common/io/IOWriterSync'
 import type { BoxType } from './boxType'
-import type { EncryptionInitInfo, EncryptionInfo } from 'avutil/struct/encryption'
-import type IOReader from 'common/io/IOReader'
-import type AVStream from 'avutil/AVStream'
-import type { Data } from 'common/types/type'
 import type { AVChapter } from '../../AVFormatContext'
+
+import { type Data } from '@libmedia/common'
+import { type IOReader, type IOWriterSync } from '@libmedia/common/io'
+
+import {
+  type AVStream,
+  type EncryptionInitInfo,
+  type EncryptionInfo
+} from '@libmedia/avutil'
 
 export interface BoxsPositionSizeInfo {
   pos: bigint
@@ -60,7 +64,7 @@ export interface FragmentTrack {
   sampleFlags: number[]
   sampleCompositionTimeOffset: number[]
   baseIsMoof: boolean
-  ioWriter: IOWriter
+  ioWriter: IOWriterSync
   buffers: Uint8Array[]
   streamIndex?: number
 

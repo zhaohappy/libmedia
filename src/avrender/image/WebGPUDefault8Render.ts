@@ -23,17 +23,22 @@
  *
  */
 
-import type AVFrame from 'avutil/struct/avframe'
-import type { AVPixelFormat } from 'avutil/pixfmt'
 import type { WebGPURenderOptions } from './WebGPURender'
 import WebGPUDefaultRender from './WebGPUDefaultRender'
-import type { AVPixelFormatDescriptor } from 'avutil/pixelFormatDescriptor'
-import { AVPixelFormatFlags, getAVPixelFormatDescriptor } from 'avutil/pixelFormatDescriptor'
 import ColorSpace from './colorSpace/ColorSpace'
 import generateSteps from './colorTransform/generateSteps'
 import { GLType } from './colorTransform/options'
-import isPointer from 'cheap/std/function/isPointer'
-import { getHeap } from 'cheap/heap'
+
+import {
+  type AVFrame,
+  type AVPixelFormat,
+  type AVPixelFormatDescriptor,
+  getAVPixelFormatDescriptor,
+  AVPixelFormatFlags
+} from '@libmedia/avutil'
+
+import { isPointer } from '@libmedia/cheap'
+import { getHeap } from '@libmedia/cheap/internal'
 
 export default class WebGPUDefault8Render extends WebGPUDefaultRender {
 

@@ -23,24 +23,33 @@
  *
  */
 
-import * as array from 'common/util/array'
 import type AVPacket from '../struct/avpacket'
 import { AVPacketFlags } from '../struct/avpacket'
-import BufferWriter from 'common/io/BufferWriter'
-import BufferReader from 'common/io/BufferReader'
 import { AVPacketSideDataType } from '../codec'
-import BitReader from 'common/io/BitReader'
-import * as logger from 'common/util/logger'
-import { mapUint8Array } from 'cheap/std/memory'
 import * as naluUtil from '../util/nalu'
 import { avMalloc } from '../util/mem'
 import * as expgolomb from '../util/expgolomb'
-import type { Uint8ArrayInterface } from 'common/io/interface'
 import * as intread from '../util/intread'
 import * as intwrite from '../util/intwrite'
 import { AVPixelFormat } from '../pixfmt'
 import type AVCodecParameters from '../struct/avcodecparameters'
-import type { Data } from 'common/types/type'
+
+import {
+  mapUint8Array
+} from '@libmedia/cheap'
+
+import {
+  type Data,
+  array,
+  logger
+} from '@libmedia/common'
+
+import {
+  BitReader,
+  BufferReader,
+  BufferWriter,
+  type Uint8ArrayInterface
+} from '@libmedia/common/io'
 
 export const H264_MAX_DPB_FRAMES = 16
 
@@ -484,7 +493,7 @@ export function nalus2Annexb(
 
   return {
     bufferPointer,
-    length: length + 6,
+    length: length + 6
   }
 }
 

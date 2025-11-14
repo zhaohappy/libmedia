@@ -23,17 +23,31 @@
  *
  */
 
-import type List from 'cheap/std/collection/List'
-import type { Mutex } from 'cheap/thread/mutex'
-import type { AVFrameRef } from 'avutil/struct/avframe'
-import AVFramePoolImpl from 'avutil/implement/AVFramePoolImpl'
-import * as error from 'avutil/error'
-import type { TaskOptions } from 'avpipeline/Pipeline'
-import Pipeline from 'avpipeline/Pipeline'
-import type { FilterGraph, FilterGraphDes, FilterGraphPortDes } from 'avfilter/graph'
-import { checkFilterGraphInvalid, createFilterGraph } from 'avfilter/graph'
-import AVInputNode from 'avfilter/AVInputNode'
-import AVOutputNode from 'avfilter/AVOutputNode'
+import {
+  type List,
+  type Mutex
+} from '@libmedia/cheap'
+
+import {
+  type AVFrameRef,
+  AVFramePoolImpl,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  type TaskOptions,
+  Pipeline
+} from '@libmedia/avpipeline'
+
+import {
+  type FilterGraph,
+  type FilterGraphDes,
+  type FilterGraphPortDes,
+  checkFilterGraphInvalid,
+  createFilterGraph,
+  AVInputNode,
+  AVOutputNode
+} from '@libmedia/avfilter'
 
 
 export interface AVFilterTaskOptions extends TaskOptions {
@@ -65,7 +79,7 @@ export default class AVFilterPipeline extends Pipeline {
 
     const filterGraph = createFilterGraph(options.graph, avframePool)
     if (!checkFilterGraphInvalid(filterGraph, options.inputPorts, options.outputPorts)) {
-      return error.INVALID_OPERATE
+      return errorType.INVALID_OPERATE
     }
 
     const inputNodes: AVInputNode[] = []
@@ -105,7 +119,7 @@ export default class AVFilterPipeline extends Pipeline {
 
   public async registerTask(options: AVFilterTaskOptions): Promise<number> {
     if (this.tasks.has(options.taskId)) {
-      return error.INVALID_OPERATE
+      return errorType.INVALID_OPERATE
     }
     return this.createTask(options)
   }

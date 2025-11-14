@@ -24,25 +24,39 @@
  */
 
 import type { AVOFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
-import { AVCodecID } from 'avutil/codec'
-import { AVFormat } from 'avutil/avformat'
-import * as logger from 'common/util/logger'
 import type { Mp3FormatOptions, Mp3MetaData } from './mp3/type'
-import * as errorType from 'avutil/error'
-import * as mp3 from 'avutil/codecs/mp3'
-import { INT32_MAX } from 'avutil/constant'
-import * as bigint from 'common/util/bigint'
 import { FrameHeader } from './mp3/frameHeader'
 import * as frameHeader from './mp3/frameHeader'
 import { ID3V1_SIZE, XING_SIZE, XING_TOC_COUNT } from './mp3/mp3'
-import BufferWriter from 'common/io/BufferWriter'
 import * as id3v2 from './mp3/id3v2'
-import { mapUint8Array } from 'cheap/std/memory'
-import * as text from 'common/util/text'
-import * as object from 'common/util/object'
-import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
+
+import { mapUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVCodecID,
+  type AVPacket,
+  AVDisposition,
+  AVStreamMetadataKey,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  INT32_MAX,
+  mp3
+} from '@libmedia/avutil/internal'
+
+import {
+  bigint,
+  logger,
+  object,
+  text
+} from '@libmedia/common'
+
+import {
+  BufferWriter
+} from '@libmedia/common/io'
 
 const XING_NUM_BAGS = 400
 
@@ -74,6 +88,8 @@ const defaultMp3FormatOptions: Mp3FormatOptions = {
   hasID3v1: false,
   hasXing: true
 }
+
+export type { Mp3FormatOptions as OMp3FormatOptions } from './mp3/type'
 
 export default class OMp3Format extends OFormat {
 

@@ -23,12 +23,19 @@
  *
  */
 
-import { readCString, writeCString } from 'cheap/std/memory'
 import type { AVDictionary } from '../struct/avdict'
 import { AVDictFlags, AVDictionaryEntry } from '../struct/avdict'
 import { avFreep, avMallocz } from './mem'
-import * as is from 'common/util/is'
-import toString from 'common/function/toString'
+
+import {
+  is,
+  toString
+} from '@libmedia/common'
+
+import {
+  readCString,
+  writeCString
+} from '@libmedia/cheap'
 
 export function freeAVDict(pm: pointer<pointer<AVDictionary>>) {
   freeAVDict2(accessof(pm))

@@ -23,16 +23,19 @@
  *
  */
 
-import { AVPacketSideDataType } from 'avutil/codec'
-import getAudioCodec from 'avutil/function/getAudioCodec'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { mapUint8Array } from 'cheap/std/memory'
-import type AVPacket from 'avutil/struct/avpacket'
-import { getAVPacketSideData } from 'avutil/util/avpacket'
-import avpacket2EncodedAudioChunk from 'avutil/function/avpacket2EncodedAudioChunk'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
-import * as array from 'common/util/array'
+import {
+  type AVCodecParameters,
+  type AVPacket,
+  errorType,
+  AVPacketSideDataType,
+  getAudioCodec,
+  getAVPacketSideData,
+  avpacket2EncodedAudioChunk
+} from '@libmedia/avutil'
+
+import { mapUint8Array } from '@libmedia/cheap'
+
+import { logger, array } from '@libmedia/common'
 
 export type WebAudioDecoderOptions = {
   onReceiveAudioData: (frame: AudioData) => void

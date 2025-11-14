@@ -23,11 +23,11 @@
  *
  */
 
-import type { Data } from 'common/types/type'
+import type { Data } from '@libmedia/common'
 import AVCodecParameters from './struct/avcodecparameters'
 import type { AVPacketSideDataType } from './codec'
 import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from './constant'
-import type { Rational } from './struct/rational'
+import type { AVRational } from './struct/rational'
 import type AVPacket from './struct/avpacket'
 import { destroyAVPacket } from './util/avpacket'
 
@@ -425,7 +425,7 @@ export default class AVStream {
    *           written into the file (which may or may not be related to the
    *           user-provided one, depending on the format).
    */
-  timeBase: Rational = make<Rational>()
+  timeBase: AVRational = make<AVRational>()
 
   /**
    * 帧索引，可用于 seek
@@ -651,7 +651,7 @@ export interface AVStreamInterface {
   duration: int64
   startTime: int64
   disposition: int32
-  timeBase: Rational
+  timeBase: AVRational
   attachedPic: pointer<AVPacket>
 }
 

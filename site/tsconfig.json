@@ -5,43 +5,7 @@
     "types": [
       "node",
       "jest"
-    ],
-    "baseUrl": "./",
-    "paths": {
-      "@libmedia/avcodec/*": ["../src/avcodec/*"],
-      "@libmedia/avformat/*": ["../src/avformat/*"],
-      "@libmedia/avnetwork/*": ["../src/avnetwork/*"],
-      "@libmedia/avplayer/*": ["../src/avplayer/*"],
-      "@libmedia/avprotocol/*": ["../src/avprotocol/*"],
-      "@libmedia/avrender/*": ["../src/avrender/*"],
-      "@libmedia/audiostretchpitch/*": ["../src/audiostretchpitch/*"],
-      "@libmedia/audioresample/*": ["../src/audioresample/*"],
-      "@libmedia/avpipeline/*": ["../src/avpipeline/*"],
-      "@libmedia/avtranscode/*": ["../src/avtranscode/*"],
-      "@libmedia/avutil/*": ["../src/avutil/*"],
-      "@libmedia/videoscale/*": ["../src/videoscale/*"],
-      "@libmedia/avfilter/*": ["../src/avfilter/*"],
-
-      "@libmedia/cheap/*": ["../src/cheap/*"],
-      "@libmedia/common/*": ["../src/common/*"],
-
-      "avcodec/*": ["../src/avcodec/*"],
-      "avformat/*": ["../src/avformat/*"],
-      "avnetwork/*": ["../src/avnetwork/*"],
-      "avplayer/*": ["../src/avplayer/*"],
-      "avprotocol/*": ["../src/avprotocol/*"],
-      "avrender/*": ["../src/avrender/*"],
-      "audiostretchpitch/*": ["../src/audiostretchpitch/*"],
-      "audioresample/*": ["../src/audioresample/*"],
-      "avpipeline/*": ["../src/avpipeline/*"],
-      "avtranscode/*": ["../src/avtranscode/*"],
-      "avutil/*": ["../src/avutil/*"],
-      "videoscale/*": ["../src/videoscale/*"],
-      "avfilter/*": ["../src/avfilter/*"],
-
-      "cheap/*": ["../src/cheap/*"],
-      "common/*": ["../src/common/*"]
-    }
+    ]
   },
   "include": [".dumirc.ts", "docs/**/*", "../src/**/*.ts"],
   "exclude": [
@@ -51,10 +15,15 @@
     "/dist/",
     "*.d.ts",
     "../src/cheap/dist/**",
-    "../src/common/dist/**"
+    "../src/common/dist/**",
+    "../src/avplayer/**/*.ts",
+    "../src/avtranscoder/**/*.ts",
+    "../src/ui/**/*.ts",
+    "../src/avutil/enum.ts"
   ],
   "files": [
     "../@types/index.d.ts",
-    "../src/cheap/@types/index.d.ts"
+    "../src/cheap/@types/index.d.ts",
+    "../src/cheap/cheapdef.ts"
   ]
 }

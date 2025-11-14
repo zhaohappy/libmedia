@@ -23,11 +23,11 @@
  *
  */
 
-import type IOWriter from 'common/io/IOWriterSync'
 import type { BoxsPositionSizeInfo, IsobmffContext } from '../type'
-import * as array from 'common/util/array'
+import { array } from '@libmedia/common'
+import { type IOWriterSync } from '@libmedia/common/io'
 
-export default function updatePositionSize(ioWriter: IOWriter, isobmffContext: IsobmffContext) {
+export default function updatePositionSize(ioWriter: IOWriterSync, isobmffContext: IsobmffContext) {
   const pos = ioWriter.getPos()
   const pointer = ioWriter.getPointer()
   const minPos = pos - static_cast<int64>(pointer)

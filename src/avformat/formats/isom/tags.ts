@@ -24,7 +24,7 @@
  */
 
 import mktagle from '../../function/mktagle'
-import { AVCodecID } from 'avutil/codec'
+import { AVCodecID } from '@libmedia/avutil'
 
 export const codecIsobmffVideoTags: Record<uint32, AVCodecID> = {
   [mktagle('mp4v')]: AVCodecID.AV_CODEC_ID_MPEG4,
@@ -64,7 +64,7 @@ export const codecIsobmffVideoTags: Record<uint32, AVCodecID> = {
 
   [mktagle('vp08')]: AVCodecID.AV_CODEC_ID_VP8,
   [mktagle('vp09')]: AVCodecID.AV_CODEC_ID_VP9,
-  [mktagle('av01')]: AVCodecID.AV_CODEC_ID_AV1,
+  [mktagle('av01')]: AVCodecID.AV_CODEC_ID_AV1
 }
 
 export const codecIsobmffAudioTags: Record<uint32, AVCodecID> = {

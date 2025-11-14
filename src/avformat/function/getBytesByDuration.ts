@@ -23,13 +23,11 @@
  *
  */
 
-import type { Rational } from 'avutil/struct/rational'
-import type AVStream from 'avutil/AVStream'
-import * as array from 'common/util/array'
-import { avRescaleQ } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
+import { array } from '@libmedia/common'
+import { AV_MILLI_TIME_BASE_Q } from '@libmedia/avutil/internal'
+import { avRescaleQ, type AVStream, type AVRational } from '@libmedia/avutil'
 
-export function getBytesByDuration(streams: AVStream[], duration: int64, timeBase: Rational) {
+export function getBytesByDuration(streams: AVStream[], duration: int64, timeBase: AVRational) {
   let bytes = 0n
   array.each(streams, (st) => {
     bytes += st.codecpar.bitrate * avRescaleQ(duration, timeBase, AV_MILLI_TIME_BASE_Q) / 8000n

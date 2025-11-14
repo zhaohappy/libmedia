@@ -23,7 +23,7 @@
  *
  */
 
-import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { NOPTS_VALUE_BIGINT } from '@libmedia/avutil'
 import type { IsobmffStreamContext } from '../type'
 
 export default function getSampleDuration(context: IsobmffStreamContext) {

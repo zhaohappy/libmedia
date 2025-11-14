@@ -24,8 +24,7 @@
  */
 
 import mktag from '../../function/mktag'
-import { AVCodecID } from 'avutil/codec'
-import { AVMediaType } from 'avutil/codec'
+import { AVCodecID, AVMediaType } from '@libmedia/avutil'
 import { BoxType } from './boxType'
 
 export const AVCodecID2Mp4a = {

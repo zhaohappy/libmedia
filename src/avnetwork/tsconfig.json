@@ -4,16 +4,6 @@
     "outDir": "./dist",
     "sourceMap": true,
     "declarationMap": false,
-    "baseUrl": "./",
-    "paths": {
-      "avprotocol/*": ["../avprotocol/*"],
-      "avutil/*": ["../avutil/*"],
-      "avformat/*": ["../avformat/*"],
-      "avcodec/*": ["../avcodec/*"],
-
-      "cheap/*": ["../cheap/*"],
-      "common/*": ["../common/*"]
-    },
     "allowJs": false
   },
   "include": [

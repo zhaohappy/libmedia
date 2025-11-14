@@ -23,18 +23,25 @@
  *
  */
 
-import type AVFrame from 'avutil/struct/avframe'
-import type { AVPixelFormat } from 'avutil/pixfmt'
-import { mapUint8Array } from 'cheap/std/memory'
 import type { WebGLRenderOptions } from './WebGLRender'
-import type { AVPixelFormatDescriptor } from 'avutil/pixelFormatDescriptor'
-import { getAVPixelFormatDescriptor, AVPixelFormatFlags } from 'avutil/pixelFormatDescriptor'
 import WebGLDefaultRender from './WebGLDefaultRender'
 import VideoProgram8 from './webgl/program/VideoProgram8'
 import generateSteps from './colorTransform/generateSteps'
 import { GLType } from './colorTransform/options'
 import ColorSpace from './colorSpace/ColorSpace'
-import isPointer from 'cheap/std/function/isPointer'
+
+import {
+  type AVFrame,
+  type AVPixelFormat,
+  type AVPixelFormatDescriptor,
+  getAVPixelFormatDescriptor,
+  AVPixelFormatFlags
+} from '@libmedia/avutil'
+
+import {
+  mapUint8Array,
+  isPointer
+} from '@libmedia/cheap'
 
 export default class WebGLDefault8Render extends WebGLDefaultRender {
 

@@ -1,12 +1,10 @@
 import type { ComponentOptions } from 'yox'
-import AVPlayer, { AVPlayerStatus } from 'avplayer/AVPlayer'
-import * as eventType from 'avplayer/eventType'
+import AVPlayer, { AVPlayerStatus, Events as eventType } from '@libmedia/avplayer'
 
 import template from './PcmVisualization.hbs'
 import style from './PcmVisualization.styl'
-import debounce from 'common/function/debounce'
-import getTimestamp from 'common/function/getTimestamp'
-import { AVDisposition } from 'avutil/AVStream'
+import { debounce, getTimestamp } from '@libmedia/common'
+import { AVDisposition } from '@libmedia/avutil'
 
 // 将 RGB 转换为 HSL
 function rgbToHsl(r: number, g: number, b: number) {
@@ -139,20 +137,20 @@ class Drawer {
 
       outerPoints.push({
         x: width / 2 + (radius + this.OUTER_MAX_HEIGHT * minRadius * outerFactor) * Math.cos(i * delta * -1),
-        y: height / 2 + (radius + this.OUTER_MAX_HEIGHT * minRadius * outerFactor) * Math.sin(i * delta * -1),
+        y: height / 2 + (radius + this.OUTER_MAX_HEIGHT * minRadius * outerFactor) * Math.sin(i * delta * -1)
       })
       innerPoints.push({
         x: width / 2 + (radius - this.INNER_MAX_HEIGHT * minRadius * innerFactor) * Math.cos(i * delta * -1),
-        y: height / 2 + (radius - this.INNER_MAX_HEIGHT * minRadius * innerFactor) * Math.sin(i * delta * -1),
+        y: height / 2 + (radius - this.INNER_MAX_HEIGHT * minRadius * innerFactor) * Math.sin(i * delta * -1)
       })
       lines.push({
         start: {
           x: width / 2 + radius * Math.cos(i * delta * -1),
-          y: height / 2 + radius * Math.sin(i * delta * -1),
+          y: height / 2 + radius * Math.sin(i * delta * -1)
         },
         end: {
           x: width / 2 + (radius + this.MIDDLE_MAX_HEIGHT * minRadius * lineFactor) * Math.cos(i * delta * -1),
-          y: height / 2 + (radius + this.MIDDLE_MAX_HEIGHT * minRadius * lineFactor) * Math.sin(i * delta * -1),
+          y: height / 2 + (radius + this.MIDDLE_MAX_HEIGHT * minRadius * lineFactor) * Math.sin(i * delta * -1)
         }
       })
 
@@ -226,7 +224,7 @@ const PcmVisualization: ComponentOptions = {
 
   data: function () {
     return {
-      style,
+      style
     }
   },
 

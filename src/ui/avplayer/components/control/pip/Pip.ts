@@ -1,5 +1,5 @@
 import type { ComponentOptions } from 'yox'
-import type AVPlayer from 'avplayer/AVPlayer'
+import type AVPlayer from '@libmedia/avplayer'
 
 import template from './Pip.hbs'
 import style from './Pip.styl'

@@ -23,38 +23,55 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
-import type { Rational } from 'avutil/struct/rational'
-import { addAVPacketData, copyAVPacketProps, createAVPacket, destroyAVPacket,
-  getAVPacketSideData,
-  refAVPacket, unrefAVPacket
-} from 'avutil/util/avpacket'
 
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import * as errorType from 'avutil/error'
-import { isAnnexb } from 'avutil/util/nalu'
-import * as logger from 'common/util/logger'
-import { mapSafeUint8Array, mapUint8Array } from 'cheap/std/memory'
+import {
+  mapSafeUint8Array,
+  mapUint8Array
+} from '@libmedia/cheap'
+
+import {
+  logger
+} from '@libmedia/common'
+
+import {
+  AVCodecID,
+  AVPacketSideDataType,
+  type AVPacket,
+  AVPacketFlags,
+  errorType,
+  avMalloc,
+  type AVCodecParameters,
+  type AVRational,
+  addAVPacketData,
+  unrefAVPacket,
+  addAVPacketSideData,
+  copyAVPacketProps,
+  createAVPacket,
+  destroyAVPacket,
+  refAVPacket,
+  getAVPacketSideData,
+  nalu
+} from '@libmedia/avutil'
+
+import {
+  h264,
+  hevc,
+  vvc
+} from '@libmedia/avutil/internal'
 
 export default class Avcc2AnnexbFilter extends AVBSFilter {
   private cache: pointer<AVPacket>
   private cached: boolean
   private naluLengthSizeMinusOne: number
 
-  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<Rational>): number {
+  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<AVRational>): number {
     super.init(codecpar, timeBase)
     this.cache = createAVPacket()
     this.cached = false
     if (codecpar.extradata) {
       const extradata = mapUint8Array(codecpar.extradata, reinterpret_cast<size>(codecpar.extradataSize))
-      if (!isAnnexb(extradata)) {
+      if (!nalu.isAnnexb(extradata)) {
         if (codecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
           this.naluLengthSizeMinusOne = extradata[4] & 0x03
         }
@@ -93,7 +110,7 @@ export default class Avcc2AnnexbFilter extends AVBSFilter {
       if (element) {
         extradata = mapSafeUint8Array(element.data, element.size)
 
-        if (!isAnnexb(extradata)) {
+        if (!nalu.isAnnexb(extradata)) {
           if (this.inCodecpar.codecId === AVCodecID.AV_CODEC_ID_H264) {
             this.naluLengthSizeMinusOne = extradata[4] & 0x03
           }

@@ -23,12 +23,23 @@
  *
  */
 
-import type { AVCodecID } from 'avutil/codec'
-import { AVMediaType } from 'avutil/codec'
-import type { RpcMessage } from 'common/network/IPCPort'
-import IPCPort, { NOTIFY, REQUEST } from 'common/network/IPCPort'
 import createMessageChannel from './function/createMessageChannel'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
+
+import {
+  IPCPort,
+  NOTIFY,
+  REQUEST,
+  type RpcMessage
+} from '@libmedia/common/network'
+
+import {
+  type AVCodecID,
+  AVMediaType
+} from '@libmedia/avutil'
+
+import {
+  type WebAssemblyResource
+} from '@libmedia/cheap'
 
 export interface ControllerObserver {
   onVideoEnded: () => void

@@ -23,10 +23,13 @@
  *
  */
 
-import type { AVCodecID } from 'avutil/codec'
-import { AVFormat } from 'avutil/avformat'
 import type { AVOFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
+
+import {
+  AVFormat,
+  type AVPacket,
+  type AVCodecID
+} from '@libmedia/avutil'
 
 export default abstract class OFormat {
 

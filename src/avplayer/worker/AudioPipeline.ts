@@ -24,18 +24,34 @@
  *
  */
 
-import * as is from 'common/util/is'
 import type { AVPlayerGlobalData } from '../struct'
-import * as logger from 'common/util/logger'
-import AudioDecodePipeline from 'avpipeline/AudioDecodePipeline'
-import AudioRenderPipeline from 'avpipeline/AudioRenderPipeline'
-import { unrefAVFrame } from 'avutil/util/avframe'
-import { unrefAVPacket } from 'avutil/util/avpacket'
-import * as mutex from 'cheap/thread/mutex'
-import type { RpcMessage } from 'common/network/IPCPort'
-import IPCPort, { NOTIFY } from 'common/network/IPCPort'
-import Timer from 'common/timer/Timer'
-import * as object from 'common/util/object'
+
+import { AudioDecodePipeline, AudioRenderPipeline } from '@libmedia/avpipeline'
+
+import {
+  is,
+  logger,
+  object
+} from '@libmedia/common'
+
+import {
+  Timer
+} from '@libmedia/common/timer'
+
+import {
+  IPCPort,
+  NOTIFY,
+  type RpcMessage
+} from '@libmedia/common/network'
+
+import {
+  mutex
+} from '@libmedia/cheap'
+
+import {
+  unrefAVPacket,
+  unrefAVFrame
+} from '@libmedia/avutil'
 
 export default class AudioPipeline {
 

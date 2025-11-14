@@ -24,16 +24,24 @@
  *
  */
 
-import type { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
-import type AVFrame from 'avutil/struct/avframe'
-import { destroyAVFrame } from 'avutil/util/avframe'
-import type { RpcMessage } from 'common/network/IPCPort'
-import IPCPort, { NOTIFY, REQUEST } from 'common/network/IPCPort'
-import * as array from 'common/util/array'
-import isPointer from 'cheap/std/function/isPointer'
-import * as is from 'common/util/is'
+import {
+  type AVFramePool,
+  type AVFrameRef,
+  type AVFrame,
+  destroyAVFrame
+} from '@libmedia/avutil'
+
+import {
+  type RpcMessage,
+  IPCPort,
+  NOTIFY,
+  REQUEST
+} from '@libmedia/common/network'
+
+import { array, is, type Data } from '@libmedia/common'
+import { isPointer } from '@libmedia/cheap'
+
 import type AVOutputNode from './AVOutputNode'
-import type { Data } from 'common/types/type'
 
 export interface AVFilterNodeOptions {
   avframePool?: AVFramePool

@@ -23,14 +23,21 @@
  *
  */
 
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { UINT16_MAX } from 'avutil/constant'
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import type { Data } from 'common/types/type'
+import type { Data } from '@libmedia/common'
 import type { RTPPacket } from './RTPPacket'
 import { RTP_HEVC_DOND_FIELD_SIZE, RTP_HEVC_DONL_FIELD_SIZE, RTP_HEVC_PAYLOAD_HEADER_SIZE } from './rtp'
+
+import {
+  AVCodecID,
+  AVMediaType,
+  type AVCodecParameters
+} from '@libmedia/avutil'
+
+import {
+  UINT16_MAX,
+  h264,
+  hevc
+} from '@libmedia/avutil/internal'
 
 const UINT16_MID = UINT16_MAX >>> 1
 

@@ -23,7 +23,7 @@
  *
  */
 
-import * as mp3 from 'avutil/codecs/mp3'
+import { mp3 } from '@libmedia/avutil/internal'
 
 export class FrameHeader {
   version: uint32

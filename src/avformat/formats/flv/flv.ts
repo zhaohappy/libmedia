@@ -23,7 +23,7 @@
  *
  */
 
-import { AVCodecID } from 'avutil/codec'
+import { AVCodecID } from '@libmedia/avutil'
 
 export const enum FlvTag {
   AUDIO = 8,

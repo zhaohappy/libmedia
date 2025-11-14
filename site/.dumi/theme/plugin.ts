@@ -14,6 +14,7 @@ export default function (api) {
     const path = require('path')
     const os = require('os')
     const transformer = require('../../../src/cheap/build/transformer');
+    const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
     memo.module
       .rule('typescript')
@@ -26,12 +27,10 @@ export default function (api) {
           const before = transformer.before(program, {
             tmpPath: path.resolve(__dirname, '../../dist/'),
             projectPath: path.resolve(__dirname, '../../../'),
+            cheapSourcePath: path.resolve(__dirname, '../../../src/cheap'),
             exclude: /__test__/,
             reportError: (message) => {
               console.error(message)
-            },
-            defined: {
-              ENV_WEBPACK: true
             }
           }); 
           return {
@@ -67,5 +66,10 @@ export default function (api) {
       .set('./libc.asm', path.resolve(__dirname, './hook/libc.asm.ts'))
       .set('./atomics.asm', path.resolve(__dirname, './hook/atomics.asm.ts'))
       .set('./thread.asm', path.resolve(__dirname, './hook/thread.asm.ts'))
+
+    memo.resolve.plugin('tsconfig-paths')
+      .use(new TsconfigPathsPlugin({
+        configFile: path.resolve(__dirname, '../../../tsconfig.json'),
+      }))
   })
 }

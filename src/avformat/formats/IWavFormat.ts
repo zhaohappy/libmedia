@@ -23,22 +23,36 @@
  *
  */
 
-import type AVStream from 'avutil/AVStream'
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVMediaType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
-import { mapSafeUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData } from 'avutil/util/avpacket'
-import { IOError } from 'common/io/error'
 import { readFormatTag } from './riff/iriff'
-import { getBitsPerSample } from 'avutil/util/pcm'
 import type { ID3V2 } from './mp3/type'
 import * as id3v2 from './mp3/id3v2'
+
+import { mapSafeUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  AVMediaType,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  addAVPacketData,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  pcm
+} from '@libmedia/avutil/internal'
+
+import {
+  logger
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
 
 const PACKET_SAMPLE_COUNT = 1024
 
@@ -180,7 +194,7 @@ export default class IWavFormat extends IFormat {
     }
 
     if (!this.sampleCount) {
-      this.sampleCount = (this.dataSize << 3n) / BigInt(stream.codecpar.chLayout.nbChannels * getBitsPerSample(stream.codecpar.codecId))
+      this.sampleCount = (this.dataSize << 3n) / BigInt(stream.codecpar.chLayout.nbChannels * pcm.getBitsPerSample(stream.codecpar.codecId))
     }
 
     stream.timeBase.den = stream.codecpar.sampleRate
@@ -209,7 +223,7 @@ export default class IWavFormat extends IFormat {
 
     try {
 
-      let length = (PACKET_SAMPLE_COUNT * stream.codecpar.chLayout.nbChannels * getBitsPerSample(stream.codecpar.codecId)) >>> 3
+      let length = (PACKET_SAMPLE_COUNT * stream.codecpar.chLayout.nbChannels * pcm.getBitsPerSample(stream.codecpar.codecId)) >>> 3
       const remainingLength = (this.pcmStartPos + this.dataSize) - formatContext.ioReader.getPos()
       if (length > remainingLength) {
         length = static_cast<double>(remainingLength as uint64)
@@ -223,7 +237,7 @@ export default class IWavFormat extends IFormat {
       avpacket.streamIndex = stream.index
       avpacket.timeBase.den = stream.timeBase.den
       avpacket.timeBase.num = stream.timeBase.num
-      const sampleCount = ((length << 3) / stream.codecpar.chLayout.nbChannels / getBitsPerSample(stream.codecpar.codecId)) >>> 0
+      const sampleCount = ((length << 3) / stream.codecpar.chLayout.nbChannels / pcm.getBitsPerSample(stream.codecpar.codecId)) >>> 0
       avpacket.duration = static_cast<int64>(sampleCount as uint32)
 
       this.currentPts += avpacket.duration
@@ -258,12 +272,12 @@ export default class IWavFormat extends IFormat {
       await formatContext.ioReader.seek(timestamp)
 
       if (!(flags & AVSeekFlags.ANY)) {
-        this.currentPts = ((timestamp - this.pcmStartPos) << 3n) / BigInt( stream.codecpar.chLayout.nbChannels * getBitsPerSample(stream.codecpar.codecId))
+        this.currentPts = ((timestamp - this.pcmStartPos) << 3n) / BigInt( stream.codecpar.chLayout.nbChannels * pcm.getBitsPerSample(stream.codecpar.codecId))
       }
       return now
     }
     else {
-      const pos = this.pcmStartPos + (timestamp * BigInt(stream.codecpar.chLayout.nbChannels * getBitsPerSample(stream.codecpar.codecId)) >> 3n)
+      const pos = this.pcmStartPos + (timestamp * BigInt(stream.codecpar.chLayout.nbChannels * pcm.getBitsPerSample(stream.codecpar.codecId)) >> 3n)
       await formatContext.ioReader.seek(pos)
       this.currentPts = timestamp
       return now

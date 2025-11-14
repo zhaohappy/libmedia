@@ -10,7 +10,7 @@ order: 3
 
 # IO 输入输出
 
-libmedia 的数据输入由 [IOReader](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_io_IOReader.IOReader.html) 代理，数据输出由 [IOWriterSync](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_io_IOWriterSync.IOWriterSync.html) 代理。
+libmedia 的数据输入由 [IOReader](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_io.IOReader.html) 代理，数据输出由 [IOWriterSync](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_io.IOWriterSync.html) 代理。
 
 ## IOReader
 
@@ -20,8 +20,8 @@ IOReader 是异步的，可以用来读取任何来源的流数据。当创建 A
 
 ```typescript
 
-import { IOFlags } from '@libmedia/avutil/avformat'
-import IOReader from '@libmedia/common/io/IOReader'
+import { IOFlags } from '@libmedia/avutil'
+import { IOReader } from '@libmedia/common/io'
 
 const readFile: File
 
@@ -69,7 +69,7 @@ IOWriterSync 是同步的。当创建 AVOFormatContext 之后需要设置 ioWrit
 
 ```typescript
 
-import IOWriterSync from '@libmedia/common/io/IOWriterSync'
+import { IOWriterSync } from '@libmedia/common/io'
 
 const ioWriter = new IOWriterSync()
 

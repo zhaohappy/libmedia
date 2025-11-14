@@ -23,8 +23,10 @@
  *
  */
 
-import * as object from 'common/util/object'
-import * as logger from 'common/util/logger'
+import {
+  object,
+  logger
+} from '@libmedia/common'
 
 enum Operator {
   ADD,
@@ -130,7 +132,7 @@ export default class Track {
       const operator = this.operatorQueue.shift()
       if (operator.operator === Operator.ADD) {
         try {
-          this.sourceBuffer.appendBuffer(operator.buffer)
+          this.sourceBuffer.appendBuffer(operator.buffer as BufferSource)
           this.updating = true
           if (operator.callback) {
             this.paddingCallback = operator.callback

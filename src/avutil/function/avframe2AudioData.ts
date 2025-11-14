@@ -23,7 +23,7 @@
  *
  */
 
-import { mapFloat32Array, mapInt16Array, mapInt32Array, mapUint8Array } from 'cheap/std/memory'
+import { mapFloat32Array, mapInt16Array, mapInt32Array, mapUint8Array } from '@libmedia/cheap'
 import type AVFrame from '../struct/avframe'
 import { AVSampleFormat } from '../audiosamplefmt'
 import { getBytesPerSample, sampleFormatIsPlanar } from '../util/sample'
@@ -115,7 +115,7 @@ export function avframe2AudioData(avframe: pointer<AVFrame>, pts?: int64) {
   }
 
   const audioData = new AudioData({
-    data,
+    data: data as BufferSource,
     format: mapFormat(avframe),
     sampleRate: avframe.sampleRate,
     numberOfFrames: avframe.nbSamples,

@@ -1,8 +1,7 @@
 import type { ComponentOptions } from 'yox'
-import type AVPlayer from 'avplayer/AVPlayer'
-import { AVPlayerStatus } from 'avplayer/AVPlayer'
-import * as eventType from 'avplayer/eventType'
-import * as string from 'common/util/string'
+import type AVPlayer from '@libmedia/avplayer'
+import { AVPlayerStatus, Events as eventType } from '@libmedia/avplayer'
+import { string } from '@libmedia/common'
 
 import template from './Timer.hbs'
 import style from './Timer.styl'

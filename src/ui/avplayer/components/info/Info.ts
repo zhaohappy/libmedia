@@ -1,12 +1,11 @@
 import type { ComponentOptions } from 'yox'
-import type AVPlayer from 'avplayer/AVPlayer'
-import { AVPlayerStatus } from 'avplayer/AVPlayer'
-import * as eventType from 'avplayer/eventType'
-import * as is from 'common/util/is'
+import type AVPlayer from '@libmedia/avplayer'
+import { AVPlayerStatus, Events as eventType } from '@libmedia/avplayer'
+import { is } from '@libmedia/common'
 
 import template from './Info.hbs'
 import style from './Info.styl'
-import dump from 'avformat/dump'
+import { dump } from '@libmedia/avformat'
 
 const statsKeys = [
   'jitter',
@@ -19,7 +18,7 @@ const audioStatsKeys = [
   'audioDecodeFramerate',
   'audioRenderFramerate',
   'audioFrameDecodeIntervalMax',
-  'audioFrameRenderIntervalMax',
+  'audioFrameRenderIntervalMax'
 ]
 const videoStatsKeys = [
   'videoStutter',
@@ -29,7 +28,7 @@ const videoStatsKeys = [
   'videoRenderFramerate',
   'keyFrameInterval',
   'videoFrameDecodeIntervalMax',
-  'videoFrameRenderIntervalMax',
+  'videoFrameRenderIntervalMax'
 ]
 
 const Info: ComponentOptions = {

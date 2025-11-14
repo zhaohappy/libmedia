@@ -23,13 +23,15 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
+import {
+  type AVPacket,
+  getAVPacketData,
+  type AVRational,
+  type AVSubtitle,
+  AVSubtitleType
+} from '@libmedia/avutil'
 import Decoder from './Decoder'
-import { getAVPacketData } from 'avutil/util/avpacket'
-import type { Rational } from 'avutil/struct/rational'
-import type { AVSubtitle } from 'avutil/struct/avsubtitle'
-import { AVSubtitleType } from 'avutil/struct/avsubtitle'
-import * as text from 'common/util/text'
+import { text } from '@libmedia/common'
 
 export default class TextDecoder extends Decoder {
 
@@ -37,7 +39,7 @@ export default class TextDecoder extends Decoder {
     pts: int64
     duration: int64
     data: Uint8Array
-    timeBase: Rational
+    timeBase: AVRational
   }[]
 
   constructor() {

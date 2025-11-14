@@ -24,13 +24,16 @@
  */
 
 import { AVPacketSideDataType } from '../codec'
-import BitReader from 'common/io/BitReader'
 import * as av1syntax from '../util/av1syntax'
-import type { Uint8ArrayInterface } from 'common/io/interface'
 import type AVCodecParameters from '../struct/avcodecparameters'
-import BitWriter from 'common/io/BitWriter'
 import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
 import type { AVPixelFormat } from '../pixfmt'
+
+import {
+  BitReader,
+  BitWriter,
+  type Uint8ArrayInterface
+} from '@libmedia/common/io'
 
 export const enum AV1Profile {
   Main,

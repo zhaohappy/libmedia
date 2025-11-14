@@ -23,11 +23,15 @@
  *
  */
 
-import { AVCodecID, AVMediaType } from 'avutil/codec'
 import { BoxType } from './boxType'
 import type { FragmentTrack, IsobmffContext, IsobmffStreamContext } from './type'
-import type AVStream from 'avutil/AVStream'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
+
+import {
+  type AVStream,
+  AVCodecParameterFlags,
+  AVCodecID,
+  AVMediaType
+} from '@libmedia/avutil'
 
 export interface BoxLayout {
   type: BoxType,

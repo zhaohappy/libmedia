@@ -23,38 +23,64 @@
  *
  */
 
+import {
+  type RpcMessage,
+  IPCPort,
+  REQUEST
+} from '@libmedia/common/network'
+
+import {
+  compileResource,
+  errorType,
+  AVPacketPoolImpl,
+  AVFramePoolImpl,
+  avQ2D,
+  videoFrame2AVFrame,
+  type AVFrameRef,
+  type AVPacketPool,
+  type AVPacketRef,
+  type AVRational,
+  type AVFrame,
+  type AVCodecParameters,
+  type AVCodecID
+} from '@libmedia/avutil'
+
+import {
+  mapPixelFormat
+} from '@libmedia/avutil/internal'
+
+import {
+  isPointer,
+  type WebAssemblyResource,
+  type Mutex,
+  type List
+} from '@libmedia/cheap'
+
+import {
+  is,
+  array,
+  logger,
+  object,
+  support,
+  isWorker
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
+
+import {
+  Sleep
+} from '@libmedia/common/timer'
+
+import {
+  WasmVideoEncoder,
+  WebVideoEncoder
+} from '@libmedia/avcodec'
+
 import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
-import * as errorType from 'avutil/error'
-import IPCPort from 'common/network/IPCPort'
-import type { RpcMessage } from 'common/network/IPCPort'
-import { REQUEST } from 'common/network/IPCPort'
-import type List from 'cheap/std/collection/List'
-import type { AVFrameRef } from 'avutil/struct/avframe'
-import type AVFrame from 'avutil/struct/avframe'
-import type { Mutex } from 'cheap/thread/mutex'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import * as logger from 'common/util/logger'
-import AVFramePoolImpl from 'avutil/implement/AVFramePoolImpl'
-import { IOError } from 'common/io/error'
-import type { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
-import * as is from 'common/util/is'
-import * as array from 'common/util/array'
-import * as object from 'common/util/object'
-import Sleep from 'common/timer/Sleep'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
-import isWorker from 'common/function/isWorker'
-import type { AVCodecID } from 'avutil/codec'
-import { avQ2D } from 'avutil/util/rational'
-import support from 'common/util/support'
-import WasmVideoEncoder from 'avcodec/wasmcodec/VideoEncoder'
-import WebVideoEncoder from 'avcodec/webcodec/VideoEncoder'
-import type { Rational } from 'avutil/struct/rational'
-import isPointer from 'cheap/std/function/isPointer'
-import type { Data } from 'common/types/type'
-import compileResource from 'avutil/function/compileResource'
-import { mapFormat, videoFrame2AVFrame } from 'avutil/function/videoFrame2AVFrame'
+import type { Data } from '@libmedia/common'
 
 export interface VideoEncodeTaskOptions extends TaskOptions {
   resource: ArrayBuffer | WebAssemblyResource
@@ -85,7 +111,7 @@ type SelfTask = Omit<VideoEncodeTaskOptions, 'resource'> & {
   encodeEnd: boolean
 
   parameters: pointer<AVCodecParameters>
-  timeBase: Rational
+  timeBase: AVRational
 
   encoderFallbackReady: Promise<number>
 
@@ -306,7 +332,7 @@ export default class VideoEncodePipeline extends Pipeline {
                       task.firstEncoded = false
                       while (caches.length) {
                         if (caches[0] instanceof VideoFrame
-                          && mapFormat(caches[0].format) !== task.parameters.format
+                          && mapPixelFormat(caches[0].format) !== task.parameters.format
                         ) {
                           caches.shift().close()
                         }
@@ -480,7 +506,7 @@ export default class VideoEncodePipeline extends Pipeline {
     return 0
   }
 
-  public async open(taskId: string, codecpar: pointer<AVCodecParameters>, timeBase: Rational, wasmEncoderOptions: Data = {}) {
+  public async open(taskId: string, codecpar: pointer<AVCodecParameters>, timeBase: AVRational, wasmEncoderOptions: Data = {}) {
     const task = this.tasks.get(taskId)
     if (task) {
       task.wasmEncoderOptions = wasmEncoderOptions

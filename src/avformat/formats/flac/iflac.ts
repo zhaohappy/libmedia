@@ -23,12 +23,12 @@
  *
  */
 
-import type BitReader from 'common/io/BitReader'
 import type { FrameInfo } from './type'
-import * as errorType from 'avutil/error'
-import * as logger from 'common/util/logger'
-import { BlockSizeTable, FLAC_MAX_CHANNELS, FlacCHMode, SampleRateTable, SampleSizeTable } from 'avutil/codecs/flac'
-import crc8 from 'common/math/crc8'
+import { logger } from '@libmedia/common'
+import { crc8 } from '@libmedia/common/math'
+import type { BitReader } from '@libmedia/common/io'
+import { errorType } from '@libmedia/avutil'
+import { flac } from '@libmedia/avutil/internal'
 
 export const MAX_FRAME_HEADER_SIZE = 16
 export const MAX_FRAME_VERIFY_SIZE = MAX_FRAME_HEADER_SIZE + 1
@@ -67,13 +67,13 @@ export function decodeFrameHeader(bitReader: BitReader, info: Partial<FrameInfo>
 
   info.chMode = bitReader.readU(4)
 
-  if (info.chMode < FLAC_MAX_CHANNELS) {
+  if (info.chMode < flac.FLAC_MAX_CHANNELS) {
     info.channels = info.chMode + 1
-    info.chMode = FlacCHMode.INDEPENDENT
+    info.chMode = flac.FlacCHMode.INDEPENDENT
   }
-  else if (info.chMode < FLAC_MAX_CHANNELS + FlacCHMode.MID_SIDE) {
+  else if (info.chMode < flac.FLAC_MAX_CHANNELS + flac.FlacCHMode.MID_SIDE) {
     info.channels = 2
-    info.chMode -= FLAC_MAX_CHANNELS - 1
+    info.chMode -= flac.FLAC_MAX_CHANNELS - 1
   }
   else {
     !check && logger.error(`invalid channel mode: ${info.chMode}`)
@@ -85,7 +85,7 @@ export function decodeFrameHeader(bitReader: BitReader, info: Partial<FrameInfo>
     !check && logger.error(`invalid sample size code: ${bpsCode}`)
     return errorType.DATA_INVALID
   }
-  info.bps = SampleSizeTable[bpsCode]
+  info.bps = flac.SampleSizeTable[bpsCode]
 
   if (bitReader.readU1()) {
     !check && logger.error('broken stream, invalid padding')
@@ -110,11 +110,11 @@ export function decodeFrameHeader(bitReader: BitReader, info: Partial<FrameInfo>
     info.blocksize = bitReader.readU(16) + 1
   }
   else {
-    info.blocksize = BlockSizeTable[bsCode]
+    info.blocksize = flac.BlockSizeTable[bsCode]
   }
 
   if (srCode < 12) {
-    info.sampleRate = SampleRateTable[srCode]
+    info.sampleRate = flac.SampleRateTable[srCode]
   }
   else if (srCode === 12) {
     info.sampleRate = bitReader.readU(8) * 1000

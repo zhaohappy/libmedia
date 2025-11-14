@@ -23,91 +23,152 @@
  *
  */
 
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import IOPipeline from 'avpipeline/IOPipeline'
-import DemuxPipeline from 'avpipeline/DemuxPipeline'
-import VideoDecodePipeline from 'avpipeline/VideoDecodePipeline'
-import AudioDecodePipeline from 'avpipeline/AudioDecodePipeline'
-import type { Thread } from 'cheap/thread/thread'
-import { closeThread, createThreadFromClass } from 'cheap/thread/thread'
-import generateUUID from 'common/function/generateUUID'
-import * as is from 'common/util/is'
-import * as object from 'common/util/object'
-import * as array from 'common/util/array'
-import type { AVPacketRef } from 'avutil/struct/avpacket'
-import type List from 'cheap/std/collection/List'
-import type { AVFrameRef } from 'avutil/struct/avframe'
-import type { Mutex } from 'cheap/thread/mutex'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import compile from 'cheap/webassembly/compiler'
-import { AVFormat, AVSeekFlags, IOType, IOFlags } from 'avutil/avformat'
-import * as logger from 'common/util/logger'
-import support from 'common/util/support'
-import browser from 'common/util/browser'
-import { avQ2D, avRescaleQ } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE_Q, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { mapSafeUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import getVideoCodec from 'avutil/function/getVideoCodec'
-import * as mutex from 'cheap/thread/mutex'
-import AudioEncodePipeline from 'avpipeline/AudioEncodePipeline'
-import VideoEncodePipeline from 'avpipeline/VideoEncodePipeline'
+import {
+  IOPipeline,
+  DemuxPipeline,
+  MuxPipeline,
+  AudioDecodePipeline,
+  VideoDecodePipeline,
+  AudioEncodePipeline,
+  VideoEncodePipeline,
+  type Stats
+} from '@libmedia/avpipeline'
+
+import {
+  is,
+  logger,
+  bigint,
+  object,
+  browser,
+  os,
+  Emitter,
+  generateUUID,
+  support,
+  type Data,
+  getTimestamp
+} from '@libmedia/common'
+
+import {
+  Timer,
+  Sleep
+} from '@libmedia/common/timer'
+
+import {
+  IPCPort,
+  REQUEST,
+  NOTIFY,
+  type RpcMessage
+} from '@libmedia/common/network'
+
+import {
+  mutex,
+  type Thread,
+  closeThread,
+  createThreadFromClass,
+  type WebAssemblyResource,
+  compileResource as compile,
+  mapSafeUint8Array,
+  memcpyFromUint8Array,
+  type List,
+  type Mutex
+} from '@libmedia/cheap'
+
+import {
+  unrefAVPacket,
+  unrefAVFrame,
+  compileResource,
+  errorType,
+  AVCodecID,
+  AVMediaType,
+  AVSeekFlags,
+  IOType,
+  IOFlags,
+  AVFormat,
+  AVSampleFormat,
+  avQ2D,
+  avRescaleQ,
+  NOPTS_VALUE,
+  NOPTS_VALUE_BIGINT,
+  getVideoCodec,
+  getAudioCodec,
+  type AVStreamInterface,
+  AVDisposition,
+  AVStreamMetadataKey,
+  isHdr,
+  hasAlphaChannel,
+  analyzeUrlIOLoader,
+  getWasmUrl,
+  avMalloc,
+  AVCodecParameterFlags,
+  type AVPacketRef,
+  type AVFrameRef,
+  AVDiscard,
+  avFree,
+  avMallocz,
+  AVCodecParameters,
+  copyCodecParameters,
+  freeCodecParameters,
+  createAVPacket,
+  destroyAVPacket,
+  refAVPacket,
+  type AVRational,
+  getAVPixelFormatDescriptor,
+  type AVPixelFormat
+} from '@libmedia/avutil'
+
+import {
+  AV_TIME_BASE_Q,
+  AV_MILLI_TIME_BASE_Q,
+  aac,
+  opus,
+  h264,
+  hevc,
+  av1,
+  vp9,
+  pcm
+} from '@libmedia/avutil/internal'
+
+import {
+  type AVFormatContextInterface,
+  dump,
+  dumpUtils,
+  type AVChapter
+} from '@libmedia/avformat'
+
+import {
+  FetchIOLoader,
+  FileIOLoader,
+  CustomIOLoader
+} from '@libmedia/avnetwork'
+
+import {
+  type IOWriterSync,
+  SafeFileWriter
+} from '@libmedia/common/io'
+
+import {
+  align
+} from '@libmedia/common/math'
+
+import {
+  type AVFilterGraphDesVertex,
+  type FilterGraphPortDes,
+  type GraphNodeType,
+  createGraphDesVertex
+} from '@libmedia/avfilter'
+
 import { AudioCodecString2CodecId, Ext2Format,
   Format2AVFormat, PixfmtString2AVPixelFormat, SampleFmtString2SampleFormat,
   VideoCodecString2CodecId
-} from 'avutil/stringEnum'
-import MuxPipeline from 'avpipeline/MuxPipeline'
-import type IOWriterSync from 'common/io/IOWriterSync'
-import type { AVStreamInterface } from 'avutil/AVStream'
-import { AVDiscard, AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
-import type Stats from 'avpipeline/struct/stats'
-import type { RpcMessage } from 'common/network/IPCPort'
-import IPCPort, { NOTIFY, REQUEST } from 'common/network/IPCPort'
-import * as errorType from 'avutil/error'
-import getAudioCodec from 'avutil/function/getAudioCodec'
-import { avFree, avMalloc, avMallocz } from 'avutil/util/mem'
-import AVCodecParameters, { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
-import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
-import SafeFileIO from 'common/io/SafeFileIO'
-import Emitter from 'common/event/Emitter'
-import * as eventType from './eventType'
-import { unrefAVFrame } from 'avutil/util/avframe'
-import { createAVPacket, destroyAVPacket, refAVPacket, unrefAVPacket } from 'avutil/util/avpacket'
+} from '@libmedia/avutil/internal'
 
-import * as aac from 'avutil/codecs/aac'
-import * as opus from 'avutil/codecs/opus'
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import * as av1 from 'avutil/codecs/av1'
-import * as vp9 from 'avutil/codecs/vp9'
-import * as pcm from 'avutil/util/pcm'
-import Sleep from 'common/timer/Sleep'
+import * as eventType from './eventType'
 import AVFilterPipeline from './filter/AVFilterPipeline'
-import type { AVFilterGraphDesVertex, FilterGraphPortDes, GraphNodeType } from 'avfilter/graph'
-import { createGraphDesVertex } from 'avfilter/graph'
-import { AVSampleFormat } from 'avutil/audiosamplefmt'
-import type { AVPixelFormat } from 'avutil/pixfmt'
-import getTimestamp from 'common/function/getTimestamp'
-import Timer from 'common/timer/Timer'
 import createMessageChannel from './function/createMessageChannel'
 import type { ControllerObserver } from './Controller'
 import Controller from './Controller'
-import type { AVChapter, AVFormatContextInterface } from 'avformat/AVFormatContext'
-import dump, { dumpCodecName, dumpTime } from 'avformat/dump'
-import type { Data } from 'common/types/type'
-import os from 'common/util/os'
-import compileResource from 'avutil/function/compileResource'
-import CustomIOLoader from 'avnetwork/ioLoader/CustomIOLoader'
-import FetchIOLoader from 'avnetwork/ioLoader/FetchIOLoader'
-import FileIOLoader from 'avnetwork/ioLoader/FileIOLoader'
-import analyzeUrlIOLoader from 'avutil/function/analyzeUrlIOLoader'
-import getWasmUrl from 'avutil/function/getWasmUrl'
-import * as bigint from 'common/util/bigint'
-import align from 'common/math/align'
-import type { Rational } from 'avutil/struct/rational'
-import { getAVPixelFormatDescriptor } from 'avutil/pixelFormatDescriptor'
-import isHdr from 'avutil/function/isHdr'
-import hasAlphaChannel from 'avutil/function/hasAlphaChannel'
+
+export const Events = eventType
 
 export interface AVTranscoderOptions {
   /**
@@ -307,7 +368,7 @@ interface SelfTask {
   stats: Stats
   inputIPCPort?: IPCPort
   outputIPCPort?: IPCPort
-  safeFileIO?: SafeFileIO
+  safeFileIO?: SafeFileWriter
   iformat: AVFormat
   oformat: AVFormat
   formatContext: AVFormatContextInterface
@@ -337,6 +398,8 @@ const defaultAVTranscoderOptions: Partial<AVTranscoderOptions> = {
 }
 
 export default class AVTranscoder extends Emitter implements ControllerObserver {
+
+  static Events = eventType
 
   static Util = {
     compile,
@@ -490,7 +553,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           progress = 100
         }
 
-        logger.info(`[${task.taskId}] frame=${frameCount} fps=${fps.toFixed(2)} size=${size}kB time=${dumpTime(dts)} bitrate=${bitrate.toFixed(2)}kbps speed=${speed.toFixed(2)}x progress=${progress.toFixed(2)}%`)
+        logger.info(`[${task.taskId}] frame=${frameCount} fps=${fps.toFixed(2)} size=${size}kB time=${dumpUtils.dumpTime(dts)} bitrate=${bitrate.toFixed(2)}kbps speed=${speed.toFixed(2)}x progress=${progress.toFixed(2)}%`)
 
         if (this.options.onprogress) {
           this.options.onprogress(task.taskId, progress)
@@ -638,7 +701,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
   /**
    * @hidden
    */
-  private changeAVStreamTimebase(stream: AVStreamInterface, timeBase: Rational) {
+  private changeAVStreamTimebase(stream: AVStreamInterface, timeBase: AVRational) {
     let startTime = stream.startTime
     let duration = stream.duration
 
@@ -934,7 +997,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     }
 
     if (task.options.output.file instanceof FileSystemFileHandle) {
-      ioWriter = task.safeFileIO = new SafeFileIO(task.options.output.file)
+      ioWriter = task.safeFileIO = new SafeFileWriter(task.options.output.file)
       await task.safeFileIO.ready()
     }
     else {
@@ -1001,7 +1064,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           await ioWriter.close()
           await this.clearTask(task)
           this.fire(eventType.TASK_ENDED, [task.taskId])
-          logger.info(`transcode ended, taskId: ${task.taskId}, cost: ${dumpTime(static_cast<int64>(getTimestamp() - task.startTime))}`)
+          logger.info(`transcode ended, taskId: ${task.taskId}, cost: ${dumpUtils.dumpTime(static_cast<int64>(getTimestamp() - task.startTime))}`)
           break
         }
 
@@ -1408,7 +1471,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       ret = await this.AudioDecoderThread.open(taskId, stream.codecpar)
 
       if (ret < 0) {
-        logger.error(`cannot open audio ${dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} decoder`)
+        logger.error(`cannot open audio ${dumpUtils.dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} decoder`)
         this.freeAVStreamInterface(newStream)
         return ret
       }
@@ -1474,7 +1537,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           outputPorts: [output],
           stats: addressof(task.stats),
           avframeList: addressof(this.GlobalData.avframeList),
-          avframeListMutex: addressof(this.GlobalData.avframeListMutex),
+          avframeListMutex: addressof(this.GlobalData.avframeListMutex)
         })
 
       let encoderResource = await this.getResource('encoder', newStream.codecpar.codecId, newStream.codecpar.codecType)
@@ -1488,13 +1551,13 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             bitrateMode: 'constant'
           })
           if (!isSupport.supported) {
-            logger.error(`AudioEncoder ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} codecId ${newStream.codecpar.codecId} not support`)
+            logger.error(`AudioEncoder ${dumpUtils.dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} codecId ${newStream.codecpar.codecId} not support`)
             this.freeAVStreamInterface(newStream)
             return errorType.OPERATE_NOT_SUPPORT
           }
         }
         else {
-          logger.error(`${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder codecId ${newStream.codecpar.codecId} not support`)
+          logger.error(`${dumpUtils.dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder codecId ${newStream.codecpar.codecId} not support`)
           this.freeAVStreamInterface(newStream)
           return errorType.OPERATE_NOT_SUPPORT
         }
@@ -1519,7 +1582,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       ret = await this.AudioEncoderThread.open(taskId, newStream.codecpar, { num: newStream.timeBase.num, den: newStream.timeBase.den })
 
       if (ret < 0) {
-        logger.error(`cannot open audio ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder`)
+        logger.error(`cannot open audio ${dumpUtils.dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder`)
         this.freeAVStreamInterface(newStream)
         return ret
       }
@@ -1763,7 +1826,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       ret = await this.VideoDecoderThread.open(taskId, stream.codecpar)
 
       if (ret < 0) {
-        logger.error(`cannot open video ${dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} decoder`)
+        logger.error(`cannot open video ${dumpUtils.dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)} decoder`)
         this.freeAVStreamInterface(newStream)
         return ret
       }
@@ -1863,7 +1926,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
           outputPorts: [output],
           stats: addressof(task.stats),
           avframeList: addressof(this.GlobalData.avframeList),
-          avframeListMutex: addressof(this.GlobalData.avframeListMutex),
+          avframeListMutex: addressof(this.GlobalData.avframeListMutex)
         })
 
       let encoderResource = await this.getResource('encoder', newStream.codecpar.codecId, newStream.codecpar.codecType)
@@ -1875,13 +1938,13 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
             height: newStream.codecpar.height
           })
           if (!isSupport.supported) {
-            logger.error(`VideoEncoder ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} codecId ${newStream.codecpar.codecId} not support`)
+            logger.error(`VideoEncoder ${dumpUtils.dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} codecId ${newStream.codecpar.codecId} not support`)
             this.freeAVStreamInterface(newStream)
             return errorType.OPERATE_NOT_SUPPORT
           }
         }
         else {
-          logger.error(`${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder codecId ${newStream.codecpar.codecId} not support`)
+          logger.error(`${dumpUtils.dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder codecId ${newStream.codecpar.codecId} not support`)
           this.freeAVStreamInterface(newStream)
           return errorType.OPERATE_NOT_SUPPORT
         }
@@ -1929,7 +1992,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       ret = await this.VideoEncoderThread.open(taskId, newStream.codecpar, { num: newStream.timeBase.num, den: newStream.timeBase.den }, wasmEncoderOptions)
 
       if (ret < 0) {
-        logger.error(`cannot open video ${dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder`)
+        logger.error(`cannot open video ${dumpUtils.dumpCodecName(newStream.codecpar.codecType, newStream.codecpar.codecId)} encoder`)
         this.freeAVStreamInterface(newStream)
         return ret
       }
@@ -2109,13 +2172,13 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
         if (stream.output) {
           oformatContext.streams.push(stream.output)
           mappingDump += `  Stream #0:${stream.input.index} -> #0:${stream.output.index} (${
-            dumpCodecName(stream.input.codecpar.codecType, stream.input.codecpar.codecId)
-          } -> ${dumpCodecName(stream.output.codecpar.codecType, stream.output.codecpar.codecId)})\n`
+            dumpUtils.dumpCodecName(stream.input.codecpar.codecType, stream.input.codecpar.codecId)
+          } -> ${dumpUtils.dumpCodecName(stream.output.codecpar.codecType, stream.output.codecpar.codecId)})\n`
         }
         else {
           oformatContext.streams.push(stream.input)
           mappingDump += `  Stream #0:${stream.input.index} -> #0:${stream.input.index} (${
-            dumpCodecName(stream.input.codecpar.codecType, stream.input.codecpar.codecId)} -> copy)\n`
+            dumpUtils.dumpCodecName(stream.input.codecpar.codecType, stream.input.codecpar.codecId)} -> copy)\n`
         }
       })
       logger.info(`\nAVTranscoder version ${defined(VERSION)} Copyright (c) 2024-present the libmedia developers\n`

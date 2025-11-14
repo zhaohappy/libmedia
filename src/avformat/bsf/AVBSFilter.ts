@@ -23,20 +23,23 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type { Rational } from 'avutil/struct/rational'
-import { avMallocz } from 'avutil/util/mem'
-import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
+import {
+  type AVPacket,
+  AVCodecParameters,
+  type AVRational,
+  avMallocz,
+  copyCodecParameters,
+  freeCodecParameters
+} from '@libmedia/avutil'
 
 export default abstract class AVBSFilter {
 
   inCodecpar: pointer<AVCodecParameters>
-  inTimeBase: Rational
+  inTimeBase: AVRational
 
   outCodecpar: pointer<AVCodecParameters>
 
-  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<Rational>): number {
+  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<AVRational>): number {
     this.inCodecpar = reinterpret_cast<pointer<AVCodecParameters>>(avMallocz(sizeof(AVCodecParameters)))
     copyCodecParameters(this.inCodecpar, codecpar)
 

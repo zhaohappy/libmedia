@@ -23,34 +23,63 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import type { AVIFormatContext } from './AVFormatContext'
-import * as object from 'common/util/object'
-import * as array from 'common/util/array'
-import { AV_MILLI_TIME_BASE_Q, INT32_MAX, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { AVPacketSideDataType, AVCodecID, AVMediaType } from 'avutil/codec'
-import { AVFormat, AVSeekFlags, IOFlags } from 'avutil/avformat'
 import { checkStreamParameters } from './function/checkStreamParameters'
-import { avD2Q, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
-import { copyAVPacketData, createAVPacket, destroyAVPacket,
-  getAVPacketSideData,
-  hasAVPacketSideData, refAVPacket, unrefAVPacket
-} from 'avutil/util/avpacket'
 import { DURATION_MAX_READ_SIZE, SAMPLE_INDEX_STEP } from './config'
-import * as errorType from 'avutil/error'
-import type AVStream from 'avutil/AVStream'
-import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
-import * as logger from 'common/util/logger'
-import { IOError } from 'common/io/error'
-import WasmVideoDecoder from 'avcodec/wasmcodec/VideoDecoder'
-import WasmAudioDecoder from 'avcodec/wasmcodec/AudioDecoder'
-import { destroyAVFrame } from 'avutil/util/avframe'
-import { mapUint8Array } from 'cheap/std/memory'
 import roundStandardFramerate from './function/roundStandardFramerate'
 import guessDelayFromPts from './function/guessDelayFromPts'
 import guessDtsFromPts from './function/guessDtsFromPts'
-import { AVChannelLayout, AVChannelOrder } from 'avutil/audiosamplefmt'
+
+import { mapUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  IOFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  AVDisposition,
+  AVStreamMetadataKey,
+  destroyAVPacket,
+  AVPacketFlags,
+  NOPTS_VALUE_BIGINT,
+  AVPacketSideDataType,
+  avD2Q,
+  avRescaleQ,
+  avRescaleQ2,
+  copyAVPacketData,
+  createAVPacket,
+  getAVPacketSideData,
+  hasAVPacketSideData,
+  refAVPacket,
+  unrefAVPacket,
+  errorType,
+  destroyAVFrame,
+  AVChannelLayoutType,
+  AVChannelOrder
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q,
+  INT32_MAX
+} from '@libmedia/avutil/internal'
+
+import {
+  object,
+  array,
+  logger
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
+
+import {
+  WasmVideoDecoder,
+  WasmAudioDecoder
+} from '@libmedia/avcodec'
 
 const MIN_ANALYZE_SAMPLES = 16
 
@@ -70,7 +99,7 @@ interface StreamDemuxPrivateData {
   dtsQueue?: int64[]
 }
 
-export const DefaultDemuxOptions = {
+const DefaultDemuxOptions = {
   fastOpen: false,
   maxAnalyzeDuration: 15000
 }
@@ -333,11 +362,11 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
         calculate(stream, true)
         if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
           if (stream.codecpar.chLayout.nbChannels === 1) {
-            stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVChannelLayout.AV_CHANNEL_LAYOUT_MONO as uint32)
+            stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVChannelLayoutType.AV_CHANNEL_LAYOUT_MONO as uint32)
             stream.codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
           }
           else if (stream.codecpar.chLayout.nbChannels === 2) {
-            stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVChannelLayout.AV_CHANNEL_LAYOUT_STEREO as uint32)
+            stream.codecpar.chLayout.u.mask = static_cast<uint64>(AVChannelLayoutType.AV_CHANNEL_LAYOUT_STEREO as uint32)
             stream.codecpar.chLayout.order = AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
           }
         }
@@ -426,7 +455,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
                   stream.codecpar.chLayout = avframe.chLayout
                   destroyAVFrame(avframe)
                   pictureGot[stream.index] = true
-                },
+                }
               })
             }
             else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {

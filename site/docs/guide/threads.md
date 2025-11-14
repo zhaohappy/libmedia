@@ -25,8 +25,8 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 首先我们需要单独建一个 ts 文件 ```worker.ts``` 作为 worker 的入口
 
 ```javascript
-import DemuxPipeline from '@libmedia/avpipeline/DemuxPipeline'
-import runThread from '@libmedia/cheap/thread/runThread'
+import { DemuxPipeline } from '@libmedia/avpipeline'
+import runThread from '@libmedia/cheap/runThread'
 runThread(DemuxPipeline)
 ```
 
@@ -36,7 +36,7 @@ runThread(DemuxPipeline)
 
 ```javascript [vite]
 
-import DemuxPipeline from '@libmedia/avpipeline/DemuxPipeline'
+import { DemuxPipeline } from '@libmedia/DemuxPipeline'
 import DemuxPipelineWorker from './worker?worker'
 
 const pipeline = await createThreadFromClass(
@@ -47,7 +47,7 @@ const pipeline = await createThreadFromClass(
 
 ```javascript [webpack]
 
-import DemuxPipeline from '@libmedia/avpipeline/DemuxPipeline'
+import { DemuxPipeline } from '@libmedia/avpipeline'
 import DemuxPipelineWorker from 'worker-loader!./worker'
 
 const pipeline = await createThreadFromClass(
@@ -59,7 +59,7 @@ const pipeline = await createThreadFromClass(
 
 ```javascript [node]
 
-import DemuxPipeline from '@libmedia/avpipeline/DemuxPipeline'
+import { DemuxPipeline } from '@libmedia/avpipeline'
 import { Worker } from 'worker_threads'
 
 const pipeline = await createThreadFromClass(
@@ -111,7 +111,7 @@ export default defineConfig({
 
 ```javascript
 
-import DemuxPipeline from '@libmedia/avpipeline/DemuxPipeline'
+import { DemuxPipeline } from '@libmedia/avpipeline'
 
 const pipeline = await createThreadFromClass(
   DemuxPipeline

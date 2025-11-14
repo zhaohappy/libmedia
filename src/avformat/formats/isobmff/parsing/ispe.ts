@@ -23,11 +23,10 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import AVStream from 'avutil/AVStream'
 import type { Atom, IsobmffContext } from '../type'
-import * as logger from 'common/util/logger'
-import { type AVStreamGroupTileGrid } from 'avutil/AVStream'
+import { logger } from '@libmedia/common'
+import { type IOReader } from '@libmedia/common/io'
+import { AVStream, type AVStreamGroupTileGrid } from '@libmedia/avutil'
 
 export default async function read(ioReader: IOReader, stream: AVStream | AVStreamGroupTileGrid, atom: Atom, isobmffContext: IsobmffContext) {
   const now = ioReader.getPos()

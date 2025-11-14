@@ -23,10 +23,16 @@
  *
  */
 
-import type { RpcMessage } from 'common/network/IPCPort'
-import IPCPort, { NOTIFY } from 'common/network/IPCPort'
-import type { Data } from 'common/types/type'
-import * as is from 'common/util/is'
+import {
+  type Data,
+  is
+} from '@libmedia/common'
+
+import {
+  type RpcMessage,
+  IPCPort,
+  NOTIFY
+} from '@libmedia/common/network'
 
 export interface AudioWorkletNodeObserver {
   onEnded: () => void

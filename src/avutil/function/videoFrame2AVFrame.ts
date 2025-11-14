@@ -26,11 +26,11 @@ import { createAVFrame, getVideoBuffer, unrefAVFrame } from '../util/avframe'
 import type AVFrame from '../struct/avframe'
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVPixelFormat } from '../pixfmt'
 import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
-import { getHeap } from 'cheap/heap'
+import { getHeap } from '@libmedia/cheap/internal'
 import { AV_TIME_BASE } from '../constant'
 import { pixelFormatMap, colorPrimariesMap, colorSpaceMap, colorTrcMap } from './constant/webcodecs'
 
-export function mapFormat(format: VideoPixelFormat) {
+export function mapPixelFormat(format: VideoPixelFormat) {
   return pixelFormatMap[format] ?? AVPixelFormat.AV_PIX_FMT_NONE
 }
 
@@ -54,7 +54,7 @@ export async function videoFrame2AVFrame(videoFrame: VideoFrame, avframe: pointe
     unrefAVFrame(avframe)
   }
 
-  avframe.format = mapFormat(videoFrame.format)
+  avframe.format = mapPixelFormat(videoFrame.format)
   avframe.pts = static_cast<int64>(videoFrame.timestamp)
   avframe.bestEffortTimestamp = avframe.pts
   avframe.width = videoFrame.codedWidth

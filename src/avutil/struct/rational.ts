@@ -24,7 +24,7 @@
  */
 
 @struct
-export class Rational {
+export class AVRational {
   /**
    * 分子
    */

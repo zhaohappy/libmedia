@@ -23,17 +23,16 @@
  *
  */
 
-import type IOWriter from 'common/io/IOWriterSync'
 import type { PAT, PES, PMT, SectionPacket, TSPacket } from './struct'
 import type { MpegtsContext, MpegtsStreamContext } from './type'
 import * as mpegts from './mpegts'
-import * as logger from 'common/util/logger'
-import type Stream from 'avutil/AVStream'
 import mktag from '../../function/mktag'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import concatTypeArray from 'common/function/concatTypeArray'
-import { NOPTS_VALUE_BIGINT, UINT16_MAX } from 'avutil/constant'
 import { calculateCRC32 } from './function/crc32'
+
+import { UINT16_MAX } from '@libmedia/avutil/internal'
+import { type AVStream, AVCodecID, AVMediaType, NOPTS_VALUE_BIGINT } from '@libmedia/avutil'
+import { logger, concatTypeArray } from '@libmedia/common'
+import { type IOWriterSync } from '@libmedia/common/io'
 
 function getAdaptationFieldLength(tsPacket: TSPacket) {
   if (tsPacket.adaptationFieldControl !== 0x02 && tsPacket.adaptationFieldControl !== 0x03) {
@@ -99,10 +98,10 @@ function getPESHeaderLength(pes: PES) {
 }
 
 function writePESPayload(
-  ioWriter: IOWriter,
+  ioWriter: IOWriterSync,
   pes: PES,
   payload: Uint8Array,
-  stream: Stream,
+  stream: AVStream,
   mpegtsContext: MpegtsContext
 ) {
 
@@ -173,7 +172,7 @@ function writePESPayload(
   streamContext.continuityCounter = continuityCounter % 16
 }
 
-export function getStreamType(stream: Stream) {
+export function getStreamType(stream: AVStream) {
 
   const context = stream.privData as MpegtsStreamContext || {} as any
 
@@ -228,7 +227,7 @@ export function getStreamType(stream: Stream) {
   }
 }
 
-export function getStreamId(stream: Stream) {
+export function getStreamId(stream: AVStream) {
   if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
     if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_DIRAC) {
       return mpegts.TSStreamId.EXTENDED_STREAM_ID
@@ -309,7 +308,7 @@ export function getPATPayload(pat: PAT) {
   return buffer.slice(0, mpegts.TS_PACKET_SIZE - 4)
 }
 
-export function getPMTPayload(pmt: PMT, streams: Stream[]) {
+export function getPMTPayload(pmt: PMT, streams: AVStream[]) {
   const buffer = new Uint8Array(1024)
 
   buffer[1] = 0x02
@@ -507,7 +506,7 @@ export function getSDTPayload() {
   return buffer.slice(0, mpegts.TS_PACKET_SIZE - 4)
 }
 
-export function writeTSPacket(ioWriter: IOWriter, tsPacket: TSPacket, mpegtsContext: MpegtsContext) {
+export function writeTSPacket(ioWriter: IOWriterSync, tsPacket: TSPacket, mpegtsContext: MpegtsContext) {
   // TODO
   if (mpegtsContext.tsPacketSize === mpegts.TS_DVHS_PACKET_SIZE) {
     // skip ATS field (2-bits copy-control + 30-bits timestamp) for m2ts
@@ -660,13 +659,13 @@ function writePts(buffer: Uint8Array, pos: number, fourBits: number, pts: bigint
 }
 
 export function writePES(
-  ioWriter: IOWriter,
+  ioWriter: IOWriterSync,
   pes: PES,
   pesSlices: {
     total: number
     buffers: Uint8Array[]
   },
-  stream: Stream,
+  stream: AVStream,
   mpegtsContext: MpegtsContext
 ) {
   const streamId = pes.streamId
@@ -726,7 +725,7 @@ export function writePES(
   writePESPayload(ioWriter, pes, concatTypeArray(Uint8Array, [header, ...pesSlices.buffers]), stream, mpegtsContext)
 }
 
-export function writeSection(ioWriter: IOWriter, packet: SectionPacket, mpegtsContext: MpegtsContext) {
+export function writeSection(ioWriter: IOWriterSync, packet: SectionPacket, mpegtsContext: MpegtsContext) {
   const adaptationFieldLength = getAdaptationFieldLength(packet)
 
   let continuityCounter = packet.continuityCounter

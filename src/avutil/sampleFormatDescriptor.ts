@@ -53,5 +53,5 @@ export const AVSampleFormatDescriptors: Partial<Record<AVSampleFormat, AVSampleF
   [AVSampleFormat.AV_SAMPLE_FMT_DBLP]: {
     bits: 64,
     planar: true
-  },
+  }
 }

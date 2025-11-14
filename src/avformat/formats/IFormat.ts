@@ -23,10 +23,13 @@
  *
  */
 
-import type AVStream from 'avutil/AVStream'
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVFormat } from 'avutil/avformat'
+
+import {
+  AVFormat,
+  type AVPacket,
+  type AVStream
+} from '@libmedia/avutil'
 
 export default abstract class IFormat {
 

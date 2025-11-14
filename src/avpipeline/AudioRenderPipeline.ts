@@ -23,37 +23,71 @@
  *
  */
 
+import {
+  type RpcMessage,
+  IPCPort,
+  REQUEST
+} from '@libmedia/common/network'
+
+import {
+  type AVFrameRef,
+  compileResource,
+  errorType,
+  AVFramePoolImpl,
+  NOPTS_VALUE_BIGINT,
+  avRescaleQ2,
+  avFreep,
+  avMalloc,
+  avMallocz,
+  AVPCMBufferPoolImpl,
+  type AVPCMBuffer,
+  type AVPCMBufferPool,
+  type AVPCMBufferRef,
+  type AVSampleFormat
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q
+} from '@libmedia/avutil/internal'
+
+import {
+  type WebAssemblyResource,
+  type Mutex,
+  type List,
+  memcpy,
+  memset,
+  mapUint8Array
+} from '@libmedia/cheap'
+
+import {
+  logger,
+  isWorker,
+  bigint,
+  getTimestamp
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
+
+import {
+  Sleep,
+  WorkerSetTimeout,
+  MasterTimer
+} from '@libmedia/common/timer'
+
+import {
+  Resampler
+} from '@libmedia/audioresample'
+
+import {
+  StretchPitcher
+} from '@libmedia/audiostretchpitch'
+
 import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
-import * as error from 'avutil/error'
-import IPCPort from 'common/network/IPCPort'
-import type { AVFrameRef } from 'avutil/struct/avframe'
-import * as logger from 'common/util/logger'
-import type List from 'cheap/std/collection/List'
-import type { Mutex } from 'cheap/thread/mutex'
-import AVFramePoolImpl from 'avutil/implement/AVFramePoolImpl'
-import Resampler from 'audioresample/Resampler'
-import type { AVSampleFormat } from 'avutil/audiosamplefmt'
-import type { AVPCMBufferPool, AVPCMBufferRef } from 'avutil/struct/avpcmbuffer'
-import type AVPCMBuffer from 'avutil/struct/avpcmbuffer'
-import AVPCMBufferPoolImpl from 'avutil/implement/AVPCMBufferPoolImpl'
-import { avFreep, avMalloc, avMallocz } from 'avutil/util/mem'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import StretchPitcher from 'audiostretchpitch/StretchPitcher'
-import type { RpcMessage } from 'common/network/IPCPort'
-import { REQUEST } from 'common/network/IPCPort'
-import { IOError } from 'common/io/error'
-import { memcpy, memset, mapUint8Array } from 'cheap/std/memory'
-import { avRescaleQ2 } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import getTimestamp from 'common/function/getTimestamp'
-import type { Timeout } from 'common/types/type'
-import Sleep from 'common/timer/Sleep'
-import * as bigint from 'common/util/bigint'
-import compileResource from 'avutil/function/compileResource'
-import WorkerSetTimeout from 'common/timer/WorkerSetTimeout'
-import isWorker from 'common/function/isWorker'
-import MasterTimer from 'common/timer/MasterTimer'
+
+import type { Timeout } from '@libmedia/common'
 
 const MASTER_SYNC_THRESHOLD = 400n
 
@@ -1026,7 +1060,7 @@ export default class AudioRenderPipeline extends Pipeline {
 
   public async registerTask(options: AudioRenderTaskOptions): Promise<number> {
     if (this.tasks.has(options.taskId)) {
-      return error.INVALID_OPERATE
+      return errorType.INVALID_OPERATE
     }
     return this.createTask(options)
   }

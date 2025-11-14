@@ -23,7 +23,7 @@
  *
  */
 
-import type AVStream from 'avutil/AVStream'
+import type { AVStream } from '@libmedia/avutil'
 import type { TrackEntry } from '../type'
 
 export default function findStreamByTrackUid(streams: AVStream[], uid: uint64) {

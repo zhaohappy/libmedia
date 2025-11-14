@@ -26,7 +26,10 @@
 import vertexSource from './webgpu/wgsl/vertex.wgsl'
 import type { WebGPURenderOptions } from './WebGPURender'
 import WebGPURender from './WebGPURender'
-import type AVFrame from 'avutil/struct/avframe'
+
+import {
+  type AVFrame
+} from '@libmedia/avutil'
 
 const HDRPrimaries = ['bt2020', 'bt2100', 'st2048', 'p3-dcl', 'hlg']
 export default class WebGPUExternalRender extends WebGPURender {
@@ -166,7 +169,7 @@ export default class WebGPUExternalRender extends WebGPURender {
           loadOp: 'clear',
           storeOp: 'store'
         }
-      ],
+      ]
     }
 
     const renderPass = commandEncoder.beginRenderPass(renderPassDescriptor)

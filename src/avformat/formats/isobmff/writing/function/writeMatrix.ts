@@ -23,7 +23,7 @@
  *
  */
 
-import type IOWriter from 'common/io/IOWriterSync'
+import type { IOWriterSync } from '@libmedia/common/io'
 
 /**
  * transformation matrix
@@ -32,7 +32,7 @@ import type IOWriter from 'common/io/IOWriterSync'
  *  |tx ty w|
  */
 export default function writeMatrix(
-  ioWriter: IOWriter,
+  ioWriter: IOWriterSync,
   a: number,
   b: number,
   c: number,

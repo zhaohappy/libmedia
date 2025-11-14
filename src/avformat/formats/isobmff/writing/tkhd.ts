@@ -23,18 +23,15 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext, IsobmffStreamContext } from '../type'
-import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType, TKHDFlags } from '../boxType'
-import { UINT16_MAX, UINT32_MAX } from 'avutil/constant'
 import writeMatrix from './function/writeMatrix'
-import { AVMediaType } from 'avutil/codec'
-import { avQ2D, avRescaleQ } from 'avutil/util/rational'
 import getSampleDuration from '../function/getSampleDuration'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+import { type IOWriterSync } from '@libmedia/common/io'
+import { UINT32_MAX, UINT16_MAX } from '@libmedia/avutil/internal'
+import { AVMediaType, avQ2D, avRescaleQ, type AVStream, AVStreamMetadataKey } from '@libmedia/avutil'
 
-export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext: IsobmffContext) {
+export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
 
   const streamContext = stream.privData as IsobmffStreamContext
 

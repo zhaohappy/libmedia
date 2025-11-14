@@ -24,20 +24,36 @@
  */
 
 import type { AVOFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import { AVFormat } from 'avutil/avformat'
-import * as logger from 'common/util/logger'
-import * as object from 'common/util/object'
 import { WavTag2CodecId } from './riff/riff'
-import { mapUint8Array } from 'cheap/std/memory'
-import * as pcmUtil from 'avutil/util/pcm'
-import gcd from 'common/math/gcd'
-import { NOPTS_VALUE_BIGINT, UINT32_MAX, UINT64_MAX } from 'avutil/constant'
-import { avRescaleQ } from 'avutil/util/rational'
 import * as id3v2 from './mp3/id3v2'
-import { AVDisposition } from 'avutil/AVStream'
+
+import { mapUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  AVDisposition,
+  NOPTS_VALUE_BIGINT,
+  avRescaleQ
+} from '@libmedia/avutil'
+
+import {
+  UINT32_MAX,
+  UINT64_MAX,
+  pcm as pcmUtil
+} from '@libmedia/avutil/internal'
+
+import {
+  object,
+  logger
+} from '@libmedia/common'
+
+import {
+  gcd
+} from '@libmedia/common/math'
 
 export interface OWavFormatOptions {
   forceRF64?: boolean

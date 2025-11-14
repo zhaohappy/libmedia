@@ -24,28 +24,46 @@
  */
 
 import type { AVOFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
 import OFormat from './OFormat'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import { AVFormat } from 'avutil/avformat'
-import * as logger from 'common/util/logger'
-import * as object from 'common/util/object'
-import type AVStream from 'avutil/AVStream'
-import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
-import * as errorType from 'avutil/error'
-import { FLAC_STREAMINFO_SIZE, MetaDataBlockType } from 'avutil/codecs/flac'
-import { mapUint8Array } from 'cheap/std/memory'
 import { addVorbisComment } from './ogg/vorbis'
-import * as text from 'common/util/text'
 import { ID3v2Mime2CodecId, ID3v2PictureType } from './mp3/id3v2'
-import { getBitsPerPixel } from 'avutil/pixelFormatDescriptor'
-import type { AVPixelFormat } from 'avutil/pixfmt'
-import { getAVPacketData, getAVPacketSideData } from 'avutil/util/avpacket'
-import { avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
-import BitReader from 'common/io/BitReader'
 import type { FrameInfo } from './flac/type'
 import { decodeFrameHeader, MAX_FRAME_VERIFY_SIZE } from './flac/iflac'
+
+import { mapUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  type AVPixelFormat,
+  AVDisposition,
+  AVStreamMetadataKey,
+  getAVPacketData,
+  getAVPacketSideData,
+  AVPacketSideDataType,
+  avRescaleQ,
+  avRescaleQ2,
+  errorType,
+  getBitsPerPixel
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q,
+  flac
+} from '@libmedia/avutil/internal'
+
+import {
+  text,
+  logger,
+  object
+} from '@libmedia/common'
+
+import {
+  BitReader
+} from '@libmedia/common/io'
 
 export interface OFlacFormatOptions {
 }
@@ -117,17 +135,17 @@ export default class OFlacFormat extends OFormat {
 
     formatContext.ioWriter.writeString('fLaC')
 
-    formatContext.ioWriter.writeUint8(MetaDataBlockType.STREAMINFO)
-    formatContext.ioWriter.writeUint24(FLAC_STREAMINFO_SIZE)
-    if (stream.codecpar.extradata && stream.codecpar.extradataSize >= FLAC_STREAMINFO_SIZE) {
-      formatContext.ioWriter.writeBuffer(mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)).subarray(0, FLAC_STREAMINFO_SIZE))
+    formatContext.ioWriter.writeUint8(flac.MetaDataBlockType.STREAMINFO)
+    formatContext.ioWriter.writeUint24(flac.FLAC_STREAMINFO_SIZE)
+    if (stream.codecpar.extradata && stream.codecpar.extradataSize >= flac.FLAC_STREAMINFO_SIZE) {
+      formatContext.ioWriter.writeBuffer(mapUint8Array(stream.codecpar.extradata, reinterpret_cast<size>(stream.codecpar.extradataSize)).subarray(0, flac.FLAC_STREAMINFO_SIZE))
     }
     else {
-      formatContext.ioWriter.skip(FLAC_STREAMINFO_SIZE)
+      formatContext.ioWriter.skip(flac.FLAC_STREAMINFO_SIZE)
     }
 
     const list = addVorbisComment(formatContext.metadata)
-    formatContext.ioWriter.writeUint8(MetaDataBlockType.VORBIS_COMMENT)
+    formatContext.ioWriter.writeUint8(flac.MetaDataBlockType.VORBIS_COMMENT)
     const commentLenPos = formatContext.ioWriter.getPos()
     formatContext.ioWriter.writeUint24(0)
     formatContext.ioWriter.setEndian(false)
@@ -155,7 +173,7 @@ export default class OFlacFormat extends OFormat {
             descriptionLen = text.encode(stream.metadata[AVStreamMetadataKey.DESCRIPTION]).length
           }
 
-          formatContext.ioWriter.writeUint8(MetaDataBlockType.PICTURE)
+          formatContext.ioWriter.writeUint8(flac.MetaDataBlockType.PICTURE)
           formatContext.ioWriter.writeUint24(4 + 4 + mimeType.length + 4 + descriptionLen + 4 + 4 + 4 + 4 + 4 + stream.attachedPic.size)
 
           let type = 0
@@ -188,7 +206,7 @@ export default class OFlacFormat extends OFormat {
     })
 
     this.paddingPos = formatContext.ioWriter.getPos()
-    formatContext.ioWriter.writeUint8(MetaDataBlockType.PADDING | 0x80)
+    formatContext.ioWriter.writeUint8(flac.MetaDataBlockType.PADDING | 0x80)
     formatContext.ioWriter.writeUint24(this.paddingLen)
     formatContext.ioWriter.skip(this.paddingLen)
 
@@ -240,14 +258,14 @@ export default class OFlacFormat extends OFormat {
 
     if (this.streamInfo) {
       formatContext.ioWriter.seek(8n)
-      formatContext.ioWriter.writeBuffer(this.streamInfo.subarray(0, FLAC_STREAMINFO_SIZE))
+      formatContext.ioWriter.writeBuffer(this.streamInfo.subarray(0, flac.FLAC_STREAMINFO_SIZE))
     }
 
     if (this.seekPoint.length) {
       formatContext.ioWriter.seek(this.paddingPos)
       const paddingLen = this.paddingLen
       const max = Math.min(this.seekPoint.length, Math.floor((paddingLen - 4) / 18))
-      formatContext.ioWriter.writeUint8(MetaDataBlockType.SEEKTABLE)
+      formatContext.ioWriter.writeUint8(flac.MetaDataBlockType.SEEKTABLE)
       formatContext.ioWriter.writeUint24(max * 18)
       let step = 1
       if (max < this.seekPoint.length) {
@@ -259,7 +277,7 @@ export default class OFlacFormat extends OFormat {
         formatContext.ioWriter.writeUint64(point.pos)
         formatContext.ioWriter.writeUint16(point.samples)
       }
-      formatContext.ioWriter.writeUint8(MetaDataBlockType.PADDING | 0x80)
+      formatContext.ioWriter.writeUint8(flac.MetaDataBlockType.PADDING | 0x80)
       formatContext.ioWriter.writeUint24(paddingLen - 4 - max * 18)
     }
 

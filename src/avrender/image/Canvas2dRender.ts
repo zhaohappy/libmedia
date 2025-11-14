@@ -26,10 +26,16 @@
 import { RenderMode } from './ImageRender'
 import type { ImageRenderOptions } from './ImageRender'
 import ImageRender from './ImageRender'
-import type AVFrame from 'avutil/struct/avframe'
-import * as logger from 'common/util/logger'
 import AlphaMask from './webgl/postprocess/AlphaMask'
-import support from 'common/util/support'
+
+import {
+  logger,
+  support
+} from '@libmedia/common'
+
+import {
+  type AVFrame
+} from '@libmedia/avutil'
 
 export interface CanvasImageRenderOptions extends ImageRenderOptions {
   colorSpace?: 'rec2100-pq' | 'rec2100-hlg'

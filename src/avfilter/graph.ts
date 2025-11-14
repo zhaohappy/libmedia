@@ -2,8 +2,8 @@ import RangeFilterNode from './RangeFilterNode'
 import ResampleFilterNode from './audio/ResampleFilterNode'
 import FramerateFilterNode from './video/FramerateFilterNode'
 import ScaleFilterNode from './video/ScaleFilterNode'
-import type { AVFramePool } from 'avutil/struct/avframe'
-import * as logger from 'common/util/logger'
+import type { AVFramePool } from '@libmedia/avutil'
+import { logger } from '@libmedia/common'
 
 type ConstructorParameters<T extends abstract new (...args: any) => any> =
   T extends new (...args: infer P) => any ? P : never

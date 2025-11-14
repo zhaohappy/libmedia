@@ -23,13 +23,25 @@
  *
  */
 
-import type { Thread } from 'cheap/thread/thread'
-import { createThreadFromClass, joinThread } from 'cheap/thread/thread'
-import type { RpcMessage } from 'common/network/IPCPort'
-import IPCPort, { NOTIFY } from 'common/network/IPCPort'
-import type Stats from 'avpipeline/struct/stats'
-import * as object from 'common/util/object'
 import MSEPipeline from './MSEPipeline'
+
+import { type Stats } from '@libmedia/avpipeline'
+
+import {
+  object
+} from '@libmedia/common'
+
+import {
+  IPCPort,
+  NOTIFY,
+  type RpcMessage
+} from '@libmedia/common/network'
+
+import {
+  type Thread,
+  createThreadFromClass,
+  joinThread
+} from '@libmedia/cheap'
 
 export default class MSEPipelineProxy {
 
@@ -71,7 +83,7 @@ export default class MSEPipelineProxy {
                   videoEncodeFramerate: stats.videoEncodeFramerate,
                   videoPacketQueueLength: stats.videoPacketQueueLength,
                   audioPacketQueueLength: stats.audioPacketQueueLength,
-                  audioEncodeFramerate: stats.audioEncodeFramerate,
+                  audioEncodeFramerate: stats.audioEncodeFramerate
                 },
                 jitterBuffer: {
                   min: stats.jitterBuffer.min,

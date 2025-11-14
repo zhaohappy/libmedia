@@ -23,10 +23,13 @@
  *
  */
 
-import type { Uint8ArrayInterface } from 'common/io/interface'
 import type { EncryptionInfo, EncryptionInitInfo } from '../struct/encryption'
-import BufferReader from 'common/io/BufferReader'
-import BufferWriter from 'common/io/BufferWriter'
+
+import {
+  BufferReader,
+  BufferWriter,
+  type Uint8ArrayInterface
+} from '@libmedia/common/io'
 
 // The format of the AVEncryptionInfo side data:
 // u32be scheme

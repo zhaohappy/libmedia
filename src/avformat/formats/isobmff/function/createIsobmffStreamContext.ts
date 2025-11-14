@@ -24,7 +24,7 @@
  */
 
 import type { IsobmffStreamContext } from '../type'
-import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
+import { NOPTS_VALUE, NOPTS_VALUE_BIGINT } from '@libmedia/avutil'
 
 export default function createIsobmffStreamContext(): IsobmffStreamContext {
   return {

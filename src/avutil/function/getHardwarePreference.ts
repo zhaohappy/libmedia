@@ -23,7 +23,7 @@
  *
  */
 
-import browser from 'common/util/browser'
+import { browser } from '@libmedia/common'
 
 export function getHardwarePreference(enable: boolean): HardwareAcceleration {
   if (enable) {

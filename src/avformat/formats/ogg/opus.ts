@@ -29,12 +29,11 @@
  * https://datatracker.ietf.org/doc/html/rfc7845
  */
 
-import type IOWriter from 'common/io/IOWriterSync'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
 import type { PagePayload } from './OggPage'
 import { OggsCommentPage } from './OggPage'
-import type IOReaderSync from 'common/io/IOReaderSync'
-import * as text from 'common/util/text'
+
+import { type AVCodecParameters } from '@libmedia/avutil'
+import { type IOWriterSync, type IOReaderSync } from '@libmedia/common/io'
 
 class ChannelMapping {
 
@@ -69,7 +68,7 @@ class ChannelMapping {
     this.mapping = ioReader.readBuffer(this.streamCount + this.coupledStreamCount)
   }
 
-  public write(ioWriter: IOWriter) {
+  public write(ioWriter: IOWriterSync) {
     ioWriter.writeUint8(this.streamCount)
     ioWriter.writeUint8(this.coupledStreamCount)
     ioWriter.writeBuffer(this.mapping)
@@ -146,7 +145,7 @@ export class OpusOggsIdPage implements PagePayload {
     }
   }
 
-  public write(ioWriter: IOWriter) {
+  public write(ioWriter: IOWriterSync) {
     ioWriter.writeString(this.signature)
     ioWriter.writeUint8(this.version)
     ioWriter.writeUint8(this.channels)
@@ -179,7 +178,7 @@ export class OpusOggsCommentPage extends OggsCommentPage {
     super.read(ioReader)
   }
 
-  public write(ioWriter: IOWriter) {
+  public write(ioWriter: IOWriterSync) {
     ioWriter.writeString(this.signature)
     super.write(ioWriter)
   }

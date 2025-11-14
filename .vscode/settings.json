@@ -253,6 +253,7 @@
         "NONKEY",
         "NONREF",
         "NOPTS",
+        "nullptrof",
         "OETF",
         "offscreencanvas",
         "offsetof",

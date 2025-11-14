@@ -23,12 +23,18 @@
  *
  */
 
-import type IOWriter from 'common/io/IOWriter'
 import { RtmpPacket } from './RtmpPacket'
 import { RtmpPacketHeaderSize } from './rtmp'
-import type IOReader from 'common/io/IOReader'
-import concatTypeArray from 'common/function/concatTypeArray'
-import * as logger from 'common/util/logger'
+
+import {
+  type IOReader,
+  type IOWriter
+} from '@libmedia/common/io'
+
+import {
+  logger,
+  concatTypeArray
+} from '@libmedia/common'
 
 async function writeChannelId(ioWriter: IOWriter, channelId: int32, mode: int32) {
   if (channelId < 64) {

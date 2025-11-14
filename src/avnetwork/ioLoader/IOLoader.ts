@@ -23,9 +23,9 @@
  *
  */
 
-import type { Uint8ArrayInterface } from 'common/io/interface'
-import type { Data, Timeout, Range } from 'common/types/type'
-import * as object from 'common/util/object'
+import { object } from '@libmedia/common'
+import type { Uint8ArrayInterface } from '@libmedia/common/io'
+import type { Data, Timeout, Range } from '@libmedia/common'
 
 export const enum IOLoaderStatus {
   IDLE,

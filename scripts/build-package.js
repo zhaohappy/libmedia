@@ -104,28 +104,7 @@ function reportTSError(
 
 function replacePath(importPath, file, node) {
   let path = importPath
-  path = path.replace(/^(\.\.\/)*cheap\//, '@libmedia/cheap/')
-  path = path.replace(/^(\.\.\/)*common\//, '@libmedia/common/')
-
-  path = path.replace(/^(\.\.\/)*avcodec\//, '@libmedia/avcodec/')
-  path = path.replace(/^(\.\.\/)*avformat\//, '@libmedia/avformat/')
-  path = path.replace(/^(\.\.\/)*avnetwork\//, '@libmedia/avnetwork/')
-  path = path.replace(/^(\.\.\/)*avplayer\//, '@libmedia/avplayer/')
-  path = path.replace(/^(\.\.\/)*avprotocol\//, '@libmedia/avprotocol/')
-  path = path.replace(/^(\.\.\/)*audiostretchpitch\//, '@libmedia/audiostretchpitch/')
-  path = path.replace(/^(\.\.\/)*audioresample\//, '@libmedia/audioresample/')
-  path = path.replace(/^(\.\.\/)*avpipeline\//, '@libmedia/avpipeline/')
-  path = path.replace(/^(\.\.\/)*avtranscode\//, '@libmedia/avtranscode/')
-  path = path.replace(/^(\.\.\/)*avutil\//, '@libmedia/avutil/')
-  path = path.replace(/^(\.\.\/)*videoscale\//, '@libmedia/videoscale/')
-  path = path.replace(/^(\.\.\/)*avfilter\//, '@libmedia/avfilter/')
-  path = path.replace(/^(\.\.\/)*avrender\//, '@libmedia/avrender/')
-  path = path.replace(/^(\.\.\/)*avplayer\/AVPlayer/, '@libmedia/avplayer')
-  path = path.replace(/^(\.\.\/)*avtranscoder\/AVTranscoder/, '@libmedia/avtranscoder')
-  path = path.replace(/^@libmedia\/avplayer\/AVPlayer/, '@libmedia/avplayer')
-  path = path.replace(/^@libmedia\/avtranscoder\/AVTranscoder/, '@libmedia/avtranscoder')
-
-  if (file && path !== importPath) {
+  if (file && path.indexOf('@libmedia/') === 0) {
     const fileName = file.fileName.replace(rootPath + '/', '')
     const packageDir = fileName.split('/')[0]
     const packageName = path.split('/')[1]
@@ -226,6 +205,7 @@ function compile(fileNames, options, writeCallback, cjs = false, defined = {}) {
       packageMapTransformer(),
       transformer.before(program, {
         tmpPath: path.join(__dirname, '../dist'),
+        cheapSourcePath: path.resolve(__dirname, '../src/cheap'),
         cheapPacketName: '@libmedia/cheap',
         defined: Object.assign({
           ENV_NODE: cjs,

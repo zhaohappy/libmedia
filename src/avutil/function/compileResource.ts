@@ -22,10 +22,13 @@
  *
  */
 
-import * as cheapConfig from 'cheap/config'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import compile from 'cheap/webassembly/compiler'
-import * as is from 'common/util/is'
+import { is } from '@libmedia/common'
+
+import {
+  config as cheapConfig,
+  type WebAssemblyResource,
+  compileResource as compile
+} from '@libmedia/cheap'
 
 export default async function compileResource(wasmUrl: string | ArrayBuffer | WebAssemblyResource, thread: boolean = false) {
   let resource: WebAssemblyResource

@@ -23,13 +23,18 @@
  *
  */
 
-import type BufferReader from 'common/io/BufferReader'
-import type IOReader from 'common/io/IOReader'
-import type BufferWriter from 'common/io/BufferWriter'
-import type IOWriterSync from 'common/io/IOWriterSync'
-import * as is from 'common/util/is'
-import * as array from 'common/util/array'
-import * as object from 'common/util/object'
+import {
+  is,
+  array,
+  object
+} from '@libmedia/common'
+
+import {
+  type IOReader,
+  type BufferReader,
+  type BufferWriter,
+  type IOWriterSync
+} from '@libmedia/common/io'
 
 export async function parseObject(ioReader: IOReader | BufferReader, endPos: bigint) {
   const key = await ioReader.readString(await ioReader.readUint16())

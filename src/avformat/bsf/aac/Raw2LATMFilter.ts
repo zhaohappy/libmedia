@@ -23,20 +23,34 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
 import AVBSFilter from '../AVBSFilter'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type { Rational } from 'avutil/struct/rational'
-import { MPEG4SamplingFrequencyIndex, getAVCodecParameters } from 'avutil/codecs/aac'
-import { mapUint8Array } from 'cheap/std/memory'
-import { addAVPacketData, copyAVPacketProps, createAVPacket,
-  destroyAVPacket, getAVPacketSideData, refAVPacket, unrefAVPacket
-} from 'avutil/util/avpacket'
-import { avMalloc } from 'avutil/util/mem'
-import * as errorType from 'avutil/error'
-import * as object from 'common/util/object'
-import BitWriter from 'common/io/BitWriter'
-import { AVPacketSideDataType } from 'avutil/codec'
+import { object } from '@libmedia/common'
+import { BitWriter } from '@libmedia/common/io'
+
+import {
+  mapUint8Array
+} from '@libmedia/cheap'
+
+
+import {
+  type AVPacket,
+  errorType,
+  avMalloc,
+  type AVCodecParameters,
+  type AVRational,
+  AVPacketSideDataType,
+  addAVPacketData,
+  unrefAVPacket,
+  copyAVPacketProps,
+  createAVPacket,
+  destroyAVPacket,
+  getAVPacketSideData,
+  refAVPacket
+} from '@libmedia/avutil'
+
+import {
+  aac
+} from '@libmedia/avutil/internal'
 
 export interface AACRaw2LATMFilterOptions {
   mod?: number
@@ -61,7 +75,7 @@ export default class Raw2LATMFilter extends AVBSFilter {
     this.options = object.extend({}, defaultAACRaw2LATMFilterOptions, options)
   }
 
-  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<Rational>): number {
+  public init(codecpar: pointer<AVCodecParameters>, timeBase: pointer<AVRational>): number {
     super.init(codecpar, timeBase)
     this.cache = createAVPacket()
     this.cached = false
@@ -97,7 +111,7 @@ export default class Raw2LATMFilter extends AVBSFilter {
       // profile
       this.bitWriter.writeU(5, (this.inCodecpar.profile - 1) & 0x1f)
       // samplingFreqIndex
-      this.bitWriter.writeU(4, MPEG4SamplingFrequencyIndex[this.inCodecpar.sampleRate] & 0x0f)
+      this.bitWriter.writeU(4, aac.MPEG4SamplingFrequencyIndex[this.inCodecpar.sampleRate] & 0x0f)
       // channelConfig
       this.bitWriter.writeU(4, this.inCodecpar.chLayout.nbChannels & 0x0f)
       // padding
@@ -136,7 +150,7 @@ export default class Raw2LATMFilter extends AVBSFilter {
 
     const element = getAVPacketSideData(avpacket, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA)
     if (element) {
-      const { profile, sampleRate, channels } = getAVCodecParameters(mapUint8Array(element.data, element.size))
+      const { profile, sampleRate, channels } = aac.getAVCodecParameters(mapUint8Array(element.data, element.size))
       this.inCodecpar.profile = profile
       this.inCodecpar.sampleRate = sampleRate
       this.inCodecpar.chLayout.nbChannels = channels

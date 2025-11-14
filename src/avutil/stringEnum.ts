@@ -209,7 +209,7 @@ export const SampleFmtString2SampleFormat = {
   'float': AVSampleFormat.AV_SAMPLE_FMT_FLT,
   'float-planar': AVSampleFormat.AV_SAMPLE_FMT_FLTP,
   'double': AVSampleFormat.AV_SAMPLE_FMT_DBL,
-  'double-planar': AVSampleFormat.AV_SAMPLE_FMT_DBLP,
+  'double-planar': AVSampleFormat.AV_SAMPLE_FMT_DBLP
 }
 
 export const Format2AVFormat: Record<string, AVFormat> = {

@@ -23,38 +23,59 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import type { AVIFormatContext } from '../AVFormatContext'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
 
-import { IOError } from 'common/io/error'
 import type { IsobmffContext, IsobmffStreamContext } from './isobmff/type'
 import mktag from '../function/mktag'
 import { BoxType } from './isobmff/boxType'
 import * as iisobmff from './isobmff/iisobmff'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import IFormat from './IFormat'
 import { getNextSample } from './isobmff/function/getNextSample'
 import createIsobmffContext from './isobmff/function/createIsobmffContext'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
-import * as array from 'common/util/array'
-import { mapSafeUint8Array, memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc, avMallocz } from 'avutil/util/mem'
-import { addAVPacketData, addAVPacketSideData, createAVPacket } from 'avutil/util/avpacket'
-import { avRescaleQ } from 'avutil/util/rational'
-import type AVStream from 'avutil/AVStream'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { IOFlags } from 'avutil/avformat'
-import * as intread from 'avutil/util/intread'
-import { encryptionInfo2SideData } from 'avutil/util/encryption'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
-import * as object from 'common/util/object'
-import { AVDiscard, AVDisposition } from 'avutil/AVStream'
 import createIsobmffStreamContext from './isobmff/function/createIsobmffStreamContext'
-import * as text from 'common/util/text'
 import digital2Tag from '../function/digital2Tag'
+
+import { memcpyFromUint8Array, mapSafeUint8Array, memcpy } from '@libmedia/cheap'
+
+import {
+  AVDiscard,
+  AVDisposition,
+  AVFormat,
+  AVSeekFlags,
+  IOFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  avMallocz,
+  createAVPacket,
+  addAVPacketData,
+  addAVPacketSideData,
+  AVPacketFlags,
+  NOPTS_VALUE_BIGINT,
+  AVPacketSideDataType,
+  avRescaleQ,
+  errorType,
+  intread,
+  encryptionInfo2SideData,
+  AVCodecParameterFlags
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  text,
+  logger,
+  object
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
 
 export interface IIsobmffFormatOptions {
   /**
@@ -241,7 +262,7 @@ export default class IIsobmffFormat extends IFormat {
           this.context.chapters[i - 1].end = avRescaleQ(
             this.context.chapters[i].start,
             this.context.chapters[i].timeBase,
-            this.context.chapters[i - 1].timeBase,
+            this.context.chapters[i - 1].timeBase
           )
         }
         const lastChapter = this.context.chapters[this.context.chapters.length - 1]

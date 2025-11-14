@@ -23,9 +23,7 @@
  *
  */
 
-import support from 'common/util/support'
-import browser from 'common/util/browser'
-import os from 'common/util/os'
+import { support, browser, os } from '@libmedia/common'
 
 export default function supportOffscreenCanvas() {
   let result = support.offscreenCanvas

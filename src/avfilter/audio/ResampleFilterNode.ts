@@ -1,19 +1,34 @@
-import type { PCMParameters } from 'audioresample/Resampler'
-import Resampler from 'audioresample/Resampler'
+import {
+  type AVFrame,
+  AVPCMBuffer,
+  createAVFrame,
+  refAVFrame,
+  unrefAVFrame,
+  avFree,
+  avFreep,
+  avMalloc,
+  avMallocz,
+  sample,
+  errorType,
+  avbufferCreate,
+  NOPTS_VALUE,
+  compileResource
+} from '@libmedia/avutil'
+
+import {
+  AV_NUM_DATA_POINTERS
+} from '@libmedia/avutil/internal'
+
+import { type PCMParameters, Resampler } from '@libmedia/audioresample'
+
 import type { AVFilterNodeOptions } from '../AVFilterNode'
 import AVFilterNode from '../AVFilterNode'
-import type AVFrame from 'avutil/struct/avframe'
-import AVPCMBuffer from 'avutil/struct/avpcmbuffer'
-import { createAVFrame, refAVFrame, unrefAVFrame } from 'avutil/util/avframe'
-import { avFree, avFreep, avMalloc, avMallocz } from 'avutil/util/mem'
-import { sampleFormatIsPlanar } from 'avutil/util/sample'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import * as errorType from 'avutil/error'
-import { avbufferCreate } from 'avutil/util/avbuffer'
-import { NOPTS_VALUE, AV_NUM_DATA_POINTERS } from 'avutil/constant'
-import * as logger from 'common/util/logger'
-import * as is from 'common/util/is'
-import compileResource from 'avutil/function/compileResource'
+
+import {
+  type WebAssemblyResource
+} from '@libmedia/cheap'
+
+import { logger, is } from '@libmedia/common'
 
 export interface ResampleFilterNodeOptions extends AVFilterNodeOptions {
   resource: WebAssemblyResource | ArrayBuffer
@@ -113,7 +128,7 @@ export default class ResampleFilterNode extends AVFilterNode {
       out.pktDts = avframe.pktDts
       out.timeBase = avframe.timeBase
 
-      const planar = sampleFormatIsPlanar(out.format)
+      const planar = sample.sampleFormatIsPlanar(out.format)
       const planes = planar ? out.chLayout.nbChannels : 1
 
       if (planes > AV_NUM_DATA_POINTERS) {

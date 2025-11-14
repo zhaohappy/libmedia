@@ -1,16 +1,21 @@
 
-import AVStream from 'avutil/AVStream'
-import { AVCodecID } from 'avutil/codec'
-import BufferReader from 'common/io/BufferReader'
-import AVPacket, { AVPacketFlags } from 'avutil/struct/avpacket'
+import { mapUint8Array } from '@libmedia/cheap'
+import { BufferReader } from '@libmedia/common/io'
+import {
+  type AVStream,
+  AVCodecID,
+  type AVPacket,
+  AVPacketFlags,
+  avMalloc,
+  addAVPacketData,
+  getAVPacketData,
+  nalu as naluUtil
+} from '@libmedia/avutil'
 
-import { avMalloc } from 'avutil/util/mem'
-import { mapUint8Array } from 'cheap/std/memory'
-import { addAVPacketData, getAVPacketData } from 'avutil/util/avpacket'
-
-import * as hevc from 'avutil/codecs/hevc'
-import * as h264 from 'avutil/codecs/h264'
-import * as naluUtil from 'avutil/util/nalu'
+import {
+  hevc,
+  h264
+} from '@libmedia/avutil/internal'
 
 export function readSEI(avpacket: pointer<AVPacket>, stream: AVStream) {
 
@@ -101,7 +106,7 @@ export function writeSEI(avpacket: pointer<AVPacket>, stream: AVStream, payloadT
     : nalus.reduce((prev, nalu) => {
       return prev + (stream.metadata.naluLengthSizeMinusOne || 3) + 1 + nalu.length
     }, 0)
-  
+
   const data: pointer<uint8> = avMalloc(length)
 
   ;(avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)

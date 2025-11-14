@@ -1,9 +1,7 @@
-import IOWriterSync from 'common/io/IOWriterSync'
-import * as mux from 'avformat/mux'
-import AVPacket from 'avutil/struct/avpacket'
-import { createAVOFormatContext } from 'avformat/AVFormatContext'
-import OIsobmffFormat from 'avformat/formats/OIsobmffFormat'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
+import { IOWriterSync } from '@libmedia/common/io'
+import { type AVPacket, AVCodecID, AVMediaType } from '@libmedia/avutil'
+import { createAVOFormatContext, mux } from '@libmedia/avformat'
+import OIsobmffFormat from '@libmedia/avformat/OIsobmffFormat'
 
 /**
  * 将 avpacket 封装进文件，avpacket 可以来自于解封装模块，可以来自于编码模块

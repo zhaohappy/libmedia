@@ -23,7 +23,7 @@
  *
  */
 
-import type BitReader from 'common/io/BitReader'
+import type { BitReader } from '@libmedia/common/io'
 
 export interface StreamInfo {
   minimumBlockSize: int16

@@ -23,20 +23,36 @@
  *
  */
 
-import { AVCodecID } from 'avutil/codec'
 import type { H264PayloadContext, HEVCPayloadContext, Mpeg4PayloadContext } from './rtp'
-import { avMalloc } from 'avutil/util/mem'
-import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import * as base64 from 'common/util/base64'
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as aac from 'avutil/codecs/aac'
-import * as naluUtil from 'avutil/util/nalu'
-import type { Data } from 'common/types/type'
-import type AVStream from 'avutil/AVStream'
-import BitReader from 'common/io/BitReader'
-import * as logger from 'common/util/logger'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
+
+import {
+  logger,
+  base64,
+  type Data
+} from '@libmedia/common'
+
+import {
+  BitReader
+} from '@libmedia/common/io'
+
+import {
+  nalu as naluUtil,
+  AVCodecID,
+  avMalloc,
+  type AVStream,
+  AVCodecParameterFlags
+} from '@libmedia/avutil'
+
+import {
+  h264,
+  hevc,
+  aac
+} from '@libmedia/avutil/internal'
+
+import {
+  mapUint8Array,
+  memcpyFromUint8Array
+} from '@libmedia/cheap'
 
 function eachConfig(config: string, callback: (key: string, value: string) => void) {
   const list = config.split(';')

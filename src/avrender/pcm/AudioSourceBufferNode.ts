@@ -22,19 +22,28 @@
  * Lesser General Public License for more details.
  *
  */
-
-import AVPCMBuffer from 'avutil/struct/avpcmbuffer'
-import { avFree, avFreep, avMallocz } from 'avutil/util/mem'
-import { getHeapU8 } from 'cheap/heap'
 import type { AudioWorkletNodeObserver } from './audioWorklet/base/AudioWorkletNodeBase'
-import IPCPort from 'common/network/IPCPort'
-import type { Data } from 'common/types/type'
-import * as logger from 'common/util/logger'
-import * as cheapConfig from 'cheap/config'
-import os from 'common/util/os'
-import * as is from 'common/util/is'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
-import getTimestamp from 'common/function/getTimestamp'
+
+import {
+  type Data,
+  is,
+  getTimestamp,
+  logger,
+  os
+} from '@libmedia/common'
+
+import {
+  IPCPort
+} from '@libmedia/common/network'
+
+import {
+  memcpyFromUint8Array,
+  config as cheapConfig
+} from '@libmedia/cheap'
+
+import { getHeapU8 } from '@libmedia/cheap/internal'
+
+import { avFree, avFreep, avMallocz, AVPCMBuffer } from '@libmedia/avutil'
 
 const BUFFER_LENGTH = (os.windows || os.mac || os.linux) ? 20 : 30
 
@@ -258,7 +267,7 @@ export default class AudioSourceBufferNode {
         let pos = this.buffer.data[i] >>> 2
         if (audioBuffer.copyToChannel && !cheapConfig.USE_THREADS) {
           audioBuffer.copyToChannel(
-            this.float32.subarray(pos, pos + BUFFER_LENGTH * 128),
+            this.float32.subarray(pos, pos + BUFFER_LENGTH * 128) as Float32Array<ArrayBuffer>,
             i,
             0
           )

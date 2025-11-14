@@ -23,20 +23,35 @@
  *
  */
 
-import type { Thread } from 'cheap/thread/thread'
-import { createThreadFromClass, joinThread } from 'cheap/thread/thread'
 import IODemuxPipeline from './IODemuxPipeline'
-import type { AVStreamInterface } from 'avutil/AVStream'
-import type { AVCodecParametersSerialize } from 'avutil/util/serialize'
-import { unserializeAVCodecParameters } from 'avutil/util/serialize'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import * as is from 'common/util/is'
-import isPointer from 'cheap/std/function/isPointer'
-import { freeCodecParameters } from 'avutil/util/codecparameters'
-import type { RpcMessage } from 'common/network/IPCPort'
-import IPCPort, { NOTIFY } from 'common/network/IPCPort'
-import type Stats from 'avpipeline/struct/stats'
-import * as object from 'common/util/object'
+
+import { type Stats } from '@libmedia/avpipeline'
+
+import {
+  is,
+  object
+} from '@libmedia/common'
+
+import {
+  IPCPort,
+  NOTIFY,
+  type RpcMessage
+} from '@libmedia/common/network'
+
+import {
+  isPointer,
+  type Thread,
+  createThreadFromClass,
+  joinThread
+} from '@libmedia/cheap'
+
+import {
+  type AVStreamInterface,
+  type AVCodecParametersSerialize,
+  type AVCodecParameters,
+  unserializeAVCodecParameters,
+  freeCodecParameters
+} from '@libmedia/avutil'
 
 export default class IODemuxPipelineProxy {
 

@@ -26,7 +26,7 @@
 import { AVPacketSideDataType } from '../codec'
 import { AV_TIME_BASE, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from '../constant'
 import type { AVBufferRef } from './avbuffer'
-import { Rational } from './rational'
+import { AVRational } from './rational'
 
 export const enum AVPacketType {
   AUDIO,
@@ -163,7 +163,7 @@ export default class AVPacket {
   /**
    * Time base of the packet's timestamps.
    */
-  timeBase: Rational = new Rational({ den: AV_TIME_BASE, num: 1 })
+  timeBase: AVRational = new AVRational({ den: AV_TIME_BASE, num: 1 })
 
 }
 

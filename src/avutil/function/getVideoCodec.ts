@@ -31,11 +31,10 @@ import * as vp8 from '../codecs/vp8'
 import * as vp9 from '../codecs/vp9'
 import * as vvc from '../codecs/vvc'
 import * as hevc from '../codecs/hevc'
-import * as string from 'common/util/string'
 import { NOPTS_VALUE } from '../constant'
 import type AVCodecParameters from '../struct/avcodecparameters'
-import { mapUint8Array } from 'cheap/std/memory'
-import * as base32 from 'common/util/base32'
+import { mapUint8Array } from '@libmedia/cheap'
+import { base32, string } from '@libmedia/common'
 import * as naluUtil from '../util/nalu'
 
 export default function getVideoCodec(codecpar: pointer<AVCodecParameters>, extradata?: Uint8Array) {

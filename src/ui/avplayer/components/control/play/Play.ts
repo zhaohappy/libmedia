@@ -1,7 +1,6 @@
 import type { ComponentOptions } from 'yox'
-import type AVPlayer from 'avplayer/AVPlayer'
-import { AVPlayerStatus } from 'avplayer/AVPlayer'
-import * as eventType from 'avplayer/eventType'
+import type AVPlayer from '@libmedia/avplayer'
+import { AVPlayerStatus } from '@libmedia/avplayer'
 
 import template from './Play.hbs'
 import style from './Play.styl'
@@ -61,8 +60,8 @@ const Play: ComponentOptions = {
         }
       }
       this.set('played', !this.get('played'))
-    },
-  },
+    }
+  }
 }
 
 export default Play

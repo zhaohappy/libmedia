@@ -23,59 +23,98 @@
  *
  */
 
-import type { Data, Task } from 'common/types/type'
+import {
+  compileResource,
+  errorType,
+  type AVPacketPool,
+  type AVPacketRef,
+  AVPacketPoolImpl,
+  AVFormat,
+  IOFlags,
+  avFree,
+  avMalloc,
+  AVPacketFlags,
+  AVCodecID,
+  AVMediaType,
+  AVPacketSideDataType,
+  avRescaleQ2,
+  NOPTS_VALUE,
+  type AVStreamGroup,
+  type AVStreamGroupInterface,
+  AVDisposition,
+  type AVStreamInterface,
+  addAVPacketSideData,
+  getAVPacketData,
+  getAVPacketSideData,
+  refAVPacket,
+  serializeAVPacket,
+  analyzeAVFormat
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q,
+  h264,
+  hevc,
+  vvc
+} from '@libmedia/avutil/internal'
+
+import {
+  isPointer,
+  type WebAssemblyResource,
+  type Mutex,
+  type List,
+  SafeUint8Array,
+  mapUint8Array,
+  memcpy,
+  memcpyFromUint8Array,
+  config as cheapConfig
+} from '@libmedia/cheap'
+
+import {
+  is,
+  array,
+  logger,
+  bigint,
+  isWorker,
+  support
+} from '@libmedia/common'
+
+import {
+  IOError,
+  IOReader,
+  IOWriter
+} from '@libmedia/common/io'
+
+import {
+  LoopTask
+} from '@libmedia/common/timer'
+
+import {
+  type RpcMessage,
+  IPCPort,
+  REQUEST
+} from '@libmedia/common/network'
+
+import {
+  demux,
+  type AVFormatContextInterface,
+  type AVIFormatContext,
+  createAVIFormatContext,
+  type IFormat
+} from '@libmedia/avformat'
+
+import type { IRtspFormatOptions } from '@libmedia/avformat/IRtspFormat'
+import type { IFlvFormatOptions } from '@libmedia/avformat/IFlvFormat'
+import type { IIsobmffFormatOptions } from '@libmedia/avformat/IIsobmffFormat'
+import type { IH264FormatOptions } from '@libmedia/avformat/IH264Format'
+import type { IHevcFormatOptions } from '@libmedia/avformat/IHevcFormat'
+import type { IVvcFormatOptions } from '@libmedia/avformat/IVvcFormat'
+import type { IAviFormatOptions } from '@libmedia/avformat/IAviFormat'
+
 import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
-import * as errorType from 'avutil/error'
-import IPCPort from 'common/network/IPCPort'
-import type { RpcMessage } from 'common/network/IPCPort'
-import { REQUEST } from 'common/network/IPCPort'
-import type { AVFormatContextInterface, AVIFormatContext } from 'avformat/AVFormatContext'
-import { createAVIFormatContext } from 'avformat/AVFormatContext'
-import IOReader from 'common/io/IOReader'
-import IOWriter from 'common/io/IOWriter'
-import type IFormat from 'avformat/formats/IFormat'
-import * as demux from 'avformat/demux'
-import { AVFormat, IOFlags } from 'avutil/avformat'
-import { avFree, avMalloc } from 'avutil/util/mem'
-import SafeUint8Array from 'cheap/std/buffer/SafeUint8Array'
-import type List from 'cheap/std/collection/List'
-import type { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import type { Mutex } from 'cheap/thread/mutex'
-import * as logger from 'common/util/logger'
-import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
-import { IOError } from 'common/io/error'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import LoopTask from 'common/timer/LoopTask'
-import * as array from 'common/util/array'
-import { avRescaleQ2 } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE } from 'avutil/constant'
-import * as bigint from 'common/util/bigint'
-import type { AVStreamGroup, AVStreamGroupInterface } from 'avutil/AVStream'
-import { AVDisposition, type AVStreamInterface } from 'avutil/AVStream'
-import { addAVPacketSideData, getAVPacketData, getAVPacketSideData, refAVPacket } from 'avutil/util/avpacket'
-import { mapUint8Array, memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
-import analyzeAVFormat from 'avutil/function/analyzeAVFormat'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import compileResource from 'avutil/function/compileResource'
-import isWorker from 'common/function/isWorker'
-import * as cheapConfig from 'cheap/config'
-import { serializeAVPacket } from 'avutil/util/serialize'
-import isPointer from 'cheap/std/function/isPointer'
-import * as is from 'common/util/is'
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import support from 'common/util/support'
 
-import { type IRtspFormatOptions } from 'avformat/formats/IRtspFormat'
-import { type IFlvFormatOptions } from 'avformat/formats/IFlvFormat'
-import { type IIsobmffFormatOptions } from 'avformat/formats/IIsobmffFormat'
-import { type IH264FormatOptions } from 'avformat/formats/IH264Format'
-import { type IHevcFormatOptions } from 'avformat/formats/IHevcFormat'
-import { type IVvcFormatOptions } from 'avformat/formats/IVvcFormat'
-import { type IAviFormatOptions } from 'avformat/formats/IAviFormat'
+import type { Data } from '@libmedia/common'
 
 export const STREAM_INDEX_ALL = -1
 const MAX_QUEUE_LENGTH_DEFAULT = 5000
@@ -325,7 +364,7 @@ export default class DemuxPipeline extends Pipeline {
       switch (format) {
         case AVFormat.FLV:
           if (defined(ENABLE_DEMUXER_FLV)) {
-            iformat = new ((await import('avformat/formats/IFlvFormat')).default)(task.formatOptions as IFlvFormatOptions)
+            iformat = new ((await import('@libmedia/avformat/IFlvFormat')).default)(task.formatOptions as IFlvFormatOptions)
           }
           else {
             logger.error('flv format not support, maybe you can rebuild avmedia')
@@ -334,7 +373,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.ISOBMFF:
           if (defined(ENABLE_DEMUXER_ISOBMFF) || defined(ENABLE_PROTOCOL_DASH)) {
-            iformat = new ((await import('avformat/formats/IIsobmffFormat')).default)(task.formatOptions as IIsobmffFormatOptions)
+            iformat = new ((await import('@libmedia/avformat/IIsobmffFormat')).default)(task.formatOptions as IIsobmffFormatOptions)
           }
           else {
             logger.error('mp4 format not support, maybe you can rebuild avmedia')
@@ -343,7 +382,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.MPEGTS:
           if (defined(ENABLE_DEMUXER_MPEGPS) || defined(ENABLE_PROTOCOL_HLS)) {
-            iformat = new ((await import('avformat/formats/IMpegtsFormat')).default)
+            iformat = new ((await import('@libmedia/avformat/IMpegtsFormat')).default)
           }
           else {
             logger.error('mpegts format not support, maybe you can rebuild avmedia')
@@ -352,7 +391,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.MPEGPS:
           if (defined(ENABLE_DEMUXER_MPEGPS)) {
-            iformat = new ((await import('avformat/formats/IMpegpsFormat')).default)
+            iformat = new ((await import('@libmedia/avformat/IMpegpsFormat')).default)
           }
           else {
             logger.error('mpegps format not support, maybe you can rebuild avmedia')
@@ -361,7 +400,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.IVF:
           if (defined(ENABLE_DEMUXER_IVF)) {
-            iformat = new ((await import('avformat/formats/IIvfFormat')).default)
+            iformat = new ((await import('@libmedia/avformat/IIvfFormat')).default)
           }
           else {
             logger.error('ivf format not support, maybe you can rebuild avmedia')
@@ -370,7 +409,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.OGG:
           if (defined(ENABLE_DEMUXER_OGG)) {
-            iformat = new ((await import('avformat/formats/IOggFormat')).default)
+            iformat = new ((await import('@libmedia/avformat/IOggFormat')).default)
           }
           else {
             logger.error('oggs format not support, maybe you can rebuild avmedia')
@@ -379,7 +418,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.MP3:
           if (defined(ENABLE_DEMUXER_MP3)) {
-            iformat = new ((await import('avformat/formats/IMp3Format')).default)
+            iformat = new ((await import('@libmedia/avformat/IMp3Format')).default)
           }
           else {
             logger.error('mp3 format not support, maybe you can rebuild avmedia')
@@ -389,7 +428,7 @@ export default class DemuxPipeline extends Pipeline {
         case AVFormat.MATROSKA:
         case AVFormat.WEBM:
           if (defined(ENABLE_DEMUXER_MATROSKA)) {
-            iformat = new (((await import('avformat/formats/IMatroskaFormat')).default))
+            iformat = new (((await import('@libmedia/avformat/IMatroskaFormat')).default))
           }
           else {
             logger.error('matroska format not support, maybe you can rebuild avmedia')
@@ -398,7 +437,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.AAC:
           if (defined(ENABLE_DEMUXER_AAC)) {
-            iformat = new (((await import('avformat/formats/IAacFormat')).default))
+            iformat = new (((await import('@libmedia/avformat/IAacFormat')).default))
           }
           else {
             logger.error('aac format not support, maybe you can rebuild avmedia')
@@ -407,7 +446,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.FLAC:
           if (defined(ENABLE_DEMUXER_FLAC)) {
-            iformat = new (((await import('avformat/formats/IFlacFormat')).default))
+            iformat = new (((await import('@libmedia/avformat/IFlacFormat')).default))
           }
           else {
             logger.error('flac format not support, maybe you can rebuild avmedia')
@@ -416,7 +455,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.WAV:
           if (defined(ENABLE_DEMUXER_WAV)) {
-            iformat = new (((await import('avformat/formats/IWavFormat')).default))
+            iformat = new (((await import('@libmedia/avformat/IWavFormat')).default))
           }
           else {
             logger.error('wav format not support, maybe you can rebuild avmedia')
@@ -425,7 +464,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.WEBVTT:
           if (defined(ENABLE_DEMUXER_WEBVTT)) {
-            iformat = new (((await import('avformat/formats/IWebVttFormat')).default))
+            iformat = new (((await import('@libmedia/avformat/IWebVttFormat')).default))
           }
           else {
             logger.error('webvtt format not support, maybe you can rebuild avmedia')
@@ -434,7 +473,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.SUBRIP:
           if (defined(ENABLE_DEMUXER_SUBRIP)) {
-            iformat = new (((await import('avformat/formats/ISubRipFormat')).default))
+            iformat = new (((await import('@libmedia/avformat/ISubRipFormat')).default))
           }
           else {
             logger.error('subrip format not support, maybe you can rebuild avmedia')
@@ -443,7 +482,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.ASS:
           if (defined(ENABLE_DEMUXER_ASS)) {
-            iformat = new (((await import('avformat/formats/IAssFormat')).default))
+            iformat = new (((await import('@libmedia/avformat/IAssFormat')).default))
           }
           else {
             logger.error('ass format not support, maybe you can rebuild avmedia')
@@ -452,7 +491,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.TTML:
           if (defined(ENABLE_DEMUXER_TTML)) {
-            iformat = new (((await import('avformat/formats/ITtmlFormat')).default))
+            iformat = new (((await import('@libmedia/avformat/ITtmlFormat')).default))
           }
           else {
             logger.error('ttml format not support, maybe you can rebuild avmedia')
@@ -461,7 +500,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.H264:
           if (defined(ENABLE_DEMUXER_H264)) {
-            iformat = new (((await import('avformat/formats/IH264Format')).default))(task.formatOptions as IH264FormatOptions)
+            iformat = new (((await import('@libmedia/avformat/IH264Format')).default))(task.formatOptions as IH264FormatOptions)
           }
           else {
             logger.error('h264 format not support, maybe you can rebuild avmedia')
@@ -470,7 +509,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.HEVC:
           if (defined(ENABLE_DEMUXER_HEVC)) {
-            iformat = new (((await import('avformat/formats/IHevcFormat')).default))(task.formatOptions as IHevcFormatOptions)
+            iformat = new (((await import('@libmedia/avformat/IHevcFormat')).default))(task.formatOptions as IHevcFormatOptions)
           }
           else {
             logger.error('hevc format not support, maybe you can rebuild avmedia')
@@ -479,7 +518,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.VVC:
           if (defined(ENABLE_DEMUXER_VVC)) {
-            iformat = new (((await import('avformat/formats/IVvcFormat')).default))(task.formatOptions as IVvcFormatOptions)
+            iformat = new (((await import('@libmedia/avformat/IVvcFormat')).default))(task.formatOptions as IVvcFormatOptions)
           }
           else {
             logger.error('vvc format not support, maybe you can rebuild avmedia')
@@ -488,7 +527,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.RTSP:
           if (defined(ENABLE_PROTOCOL_RTSP)) {
-            iformat = new (((await import('avformat/formats/IRtspFormat')).default))(task.formatOptions as IRtspFormatOptions)
+            iformat = new (((await import('@libmedia/avformat/IRtspFormat')).default))(task.formatOptions as IRtspFormatOptions)
           }
           else {
             logger.error('vvc format not support, maybe you can rebuild avmedia')
@@ -497,7 +536,7 @@ export default class DemuxPipeline extends Pipeline {
           break
         case AVFormat.AVI:
           if (defined(ENABLE_DEMUXER_AVI)) {
-            iformat = new (((await import('avformat/formats/IAviFormat')).default))(task.formatOptions as IAviFormatOptions)
+            iformat = new (((await import('@libmedia/avformat/IAviFormat')).default))(task.formatOptions as IAviFormatOptions)
           }
           else {
             logger.error('avi format not support, maybe you can rebuild avmedia')

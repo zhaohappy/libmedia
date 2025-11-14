@@ -23,24 +23,42 @@
  *
  */
 
-import type AVStream from 'avutil/AVStream'
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags, IOFlags } from 'avutil/avformat'
-import { memcpyFromUint8Array } from 'cheap/std/memory'
-import { avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, addAVPacketSideData } from 'avutil/util/avpacket'
-import { IOError } from 'common/io/error'
-import * as array from 'common/util/array'
-import * as text from 'common/util/text'
-import { hhColonDDColonSSDotMill2Int64 } from 'common/util/time'
-import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
-import { avRescaleQ } from 'avutil/util/rational'
+
+import { memcpyFromUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVSeekFlags,
+  IOFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  addAVPacketData,
+  addAVPacketSideData,
+  AVStreamMetadataKey,
+  AVPacketSideDataType,
+  avRescaleQ,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  logger,
+  time,
+  text
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
 
 export default class IWebVttFormat extends IFormat {
 
@@ -103,7 +121,7 @@ export default class IWebVttFormat extends IFormat {
           const l = t.split(':')
           if (l[0] === 'LOCAL') {
             l.shift()
-            local = hhColonDDColonSSDotMill2Int64(l.join(':').trim())
+            local = time.hhColonDDColonSSDotMill2Int64(l.join(':').trim())
           }
           else if (l[0] === 'MPEGTS') {
             ts = BigInt(+l[1]) * 1000n / 90000n
@@ -124,11 +142,11 @@ export default class IWebVttFormat extends IFormat {
       }
 
       let times = lines.shift().split('-->')
-      const startTs = hhColonDDColonSSDotMill2Int64(times.shift()) + this.baseTs
+      const startTs = time.hhColonDDColonSSDotMill2Int64(times.shift()) + this.baseTs
 
       times = times.shift().trim().split(' ')
 
-      const endTs = hhColonDDColonSSDotMill2Int64(times.shift()) + this.baseTs
+      const endTs = time.hhColonDDColonSSDotMill2Int64(times.shift()) + this.baseTs
 
       if (endTs <= startTs) {
         continue

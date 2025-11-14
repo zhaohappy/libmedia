@@ -25,11 +25,7 @@
 
 import FlvHeader from './flv/FlvHeader'
 import FlvScriptTag from './flv/FlvScriptTag'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import type { AVIFormatContext } from '../AVFormatContext'
-import * as logger from 'common/util/logger'
-import { AVPacketSideDataType, AVCodecID, AVMediaType } from 'avutil/codec'
 import { FlvAudioCodecType2AVCodecID,
   FlvVideoCodecType2AVCodecID, FlvTag,
   AVCPacketType,
@@ -43,41 +39,80 @@ import { FlvAudioCodecType2AVCodecID,
   AACPacketType
 } from './flv/flv'
 
-import * as h264 from 'avutil/codecs/h264'
-import * as aac from 'avutil/codecs/aac'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import * as av1 from 'avutil/codecs/av1'
-import * as vp9 from 'avutil/codecs/vp9'
-import * as vp8 from 'avutil/codecs/vp8'
-import * as flac from 'avutil/codecs/flac'
-import * as opus from 'avutil/codecs/opus'
-import * as ac3 from 'avutil/codecs/ac3'
-import * as mp3 from 'avutil/codecs/mp3'
-
-import * as errorType from 'avutil/error'
-import { IOError } from 'common/io/error'
-import type AVStream from 'avutil/AVStream'
-import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags, IOFlags } from 'avutil/avformat'
-import { mapSafeUint8Array, mapUint8Array } from 'cheap/std/memory'
-import { avMalloc, avMallocz } from 'avutil/util/mem'
-import { addAVPacketData, addAVPacketSideData, addSideData, createAVPacket, getAVPacketData, hasAVPacketSideData, hasSideData } from 'avutil/util/avpacket'
 import mktag from '../function/mktag'
-import { avD2Q, avRescaleQ, avRescaleQ3 } from 'avutil/util/rational'
-import { AV_MILLI_TIME_BASE, AV_MILLI_TIME_BASE_Q, AV_NANO_TIME_BASE, AV_NANO_TIME_BASE_Q, INT32_MAX, NOPTS_VALUE, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import * as array from 'common/util/array'
 import seekInBytes from '../function/seekInBytes'
-import isDef from 'common/function/isDef'
 import type { FlvColorInfo, FlvStreamContext } from './flv/type'
-import * as amf from 'avutil/util/amf'
-import { AVColorPrimaries, AVColorSpace, AVColorTransferCharacteristic } from 'avutil/pixfmt'
-import { AVContentLightMetadata, AVMasteringDisplayMetadata } from 'avutil/struct/avframe'
-import type { Rational } from 'avutil/struct/rational'
-import { initCustomChannelLayout, setChannelLayoutFromMask, unInitChannelLayout } from 'avutil/util/channel'
-import { AVChannel } from 'avutil/audiosamplefmt'
-import * as is from 'common/util/is'
+
+import { mapSafeUint8Array, mapUint8Array } from '@libmedia/cheap'
+
+import {
+  AVChannel,
+  AVFormat,
+  AVSeekFlags,
+  IOFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  type AVRational,
+  avMalloc,
+  avMallocz,
+  addSideData,
+  createAVPacket,
+  getAVPacketData,
+  hasAVPacketSideData,
+  hasSideData,
+  addAVPacketData,
+  addAVPacketSideData,
+  AVPacketFlags,
+  NOPTS_VALUE,
+  AVDisposition,
+  AVColorSpace,
+  AVColorPrimaries,
+  AVColorTransferCharacteristic,
+  AVStreamMetadataKey,
+  NOPTS_VALUE_BIGINT,
+  AVPacketSideDataType,
+  AVContentLightMetadata,
+  AVMasteringDisplayMetadata,
+  avD2Q,
+  avRescaleQ,
+  avRescaleQ3,
+  errorType
+} from '@libmedia/avutil'
+
+import {
+  INT32_MAX,
+  AV_NANO_TIME_BASE,
+  AV_MILLI_TIME_BASE,
+  AV_NANO_TIME_BASE_Q,
+  AV_MILLI_TIME_BASE_Q,
+  h264,
+  hevc,
+  vvc,
+  aac,
+  av1,
+  vp9,
+  vp8,
+  flac,
+  opus,
+  ac3,
+  mp3,
+  amf,
+  channel
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  isDef,
+  logger,
+  is
+} from '@libmedia/common'
+
+import {
+  IOError
+} from '@libmedia/common/io'
 
 export interface IFlvFormatOptions {
   /**
@@ -286,7 +321,7 @@ export default class IFlvFormat extends IFormat {
     if (hasMasteringLuminance || hasMasteringPrimaries) {
       const metadata: pointer<AVMasteringDisplayMetadata> = avMallocz(sizeof(AVMasteringDisplayMetadata))
 
-      function setQ(q: pointer<Rational>, d: double) {
+      function setQ(q: pointer<AVRational>, d: double) {
         const s = avD2Q(d, INT32_MAX)
         q.den = s.den
         q.num = s.num
@@ -519,10 +554,10 @@ export default class IFlvFormat extends IFormat {
             const channelOrder = await formatContext.ioReader.readUint8()
             const channelCount = await formatContext.ioReader.readUint8()
             trackSize -= 2
-            unInitChannelLayout(addressof(stream.codecpar.chLayout))
+            channel.unInitChannelLayout(addressof(stream.codecpar.chLayout))
 
             if (channelOrder === AudioChannelOrder.Custom) {
-              initCustomChannelLayout(addressof(stream.codecpar.chLayout), channelCount)
+              channel.initCustomChannelLayout(addressof(stream.codecpar.chLayout), channelCount)
               for (let i = 0; i < channelCount; i++) {
                 const id = await formatContext.ioReader.readUint8()
                 trackSize--
@@ -544,7 +579,7 @@ export default class IFlvFormat extends IFormat {
               let mask = static_cast<uint64>((await formatContext.ioReader.readUint32()) as uint32)
               trackSize -= 4
               mask = (mask & 0x3FFFFn) | ((mask & 0xFC0000n) << (BigInt(AVChannel.AV_CHANNEL_LOW_FREQUENCY_2) - 18n))
-              setChannelLayoutFromMask(addressof(stream.codecpar.chLayout), mask)
+              channel.setChannelLayoutFromMask(addressof(stream.codecpar.chLayout), mask)
             }
             needRedo = true
           }

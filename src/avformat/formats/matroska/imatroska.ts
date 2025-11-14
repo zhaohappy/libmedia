@@ -33,11 +33,9 @@ import type { Addition, Additions, Attachment, Attachments, AudioTrack,
   TrackOperation, TrackPlane, Tracks, VideoColor, VideoProjection, VideoTrack
 } from './type'
 
-import * as logger from 'common/util/logger'
-import * as errorType from 'avutil/error'
-import * as is from 'common/util/is'
-import * as array from 'common/util/array'
-import type { BytesReader, BytesReaderSync } from 'common/io/interface'
+import { logger, is, array } from '@libmedia/common'
+import { errorType } from '@libmedia/avutil'
+import type { BytesReader, BytesReaderSync } from '@libmedia/common/io'
 
 const MAX_ATTACHMENT_READ_SIZE = static_cast<int64>(20 * 1024 * 1024)
 
@@ -96,7 +94,7 @@ export const EbmlSyntaxInfo: Partial<Record<EBMLId, EbmlSyntax<Info>>> = {
   [EBMLId.DATE_UTC]: {
     type: EbmlType.BUFFER,
     filedName: 'dateUTC'
-  },
+  }
 }
 
 export const EbmlSyntaxTrackAudio: Partial<Record<EBMLId, EbmlSyntax<AudioTrack>>> = {
@@ -115,7 +113,7 @@ export const EbmlSyntaxTrackAudio: Partial<Record<EBMLId, EbmlSyntax<AudioTrack>
   [EBMLId.AUDIO_CHANNELS]: {
     type: EbmlType.UINT,
     filedName: 'channels'
-  },
+  }
 }
 
 export const EbmlSyntaxMasteringMeta: Partial<Record<EBMLId, EbmlSyntax<MasteringMeta>>> = {
@@ -219,7 +217,7 @@ export const EbmlSyntaxVideoColor: Partial<Record<EBMLId, EbmlSyntax<VideoColor>
     type: EbmlType.OBJECT,
     filedName: 'masteringMeta',
     child: EbmlSyntaxMasteringMeta
-  },
+  }
 }
 
 export const EbmlSyntaxVideoProjection: Partial<Record<EBMLId, EbmlSyntax<VideoProjection>>> = {
@@ -242,7 +240,7 @@ export const EbmlSyntaxVideoProjection: Partial<Record<EBMLId, EbmlSyntax<VideoP
   [EBMLId.VIDEO_PROJECTION_POSE_ROLL]: {
     type: EbmlType.FLOAT,
     filedName: 'roll'
-  },
+  }
 }
 
 export const EbmlSyntaxTrackVideo: Partial<Record<EBMLId, EbmlSyntax<VideoTrack>>> = {
@@ -375,7 +373,7 @@ export const EbmlSyntaxTrackEncoding: Partial<Record<EBMLId, EbmlSyntax<TrackEnc
     type: EbmlType.OBJECT,
     filedName: 'encryption',
     child: EbmlSyntaxTrackEncodingEncryption
-  },
+  }
 }
 
 export const EbmlSyntaxTrackEncodings: Partial<Record<EBMLId, EbmlSyntax<TrackEncodings>>> = {
@@ -597,7 +595,7 @@ export const EbmlSyntaxTagTargets: Partial<Record<EBMLId, EbmlSyntax<TagTargets>
   [EBMLId.TAG_TARGETS_ATTACH_UID]: {
     type: EbmlType.UINT,
     filedName: 'attachUid'
-  },
+  }
 }
 
 export const EbmlSyntaxSimpleTag: Partial<Record<EBMLId, EbmlSyntax<SimpleTag>>> = {

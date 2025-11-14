@@ -23,11 +23,10 @@
  *
  */
 
+import { is, type Range } from '@libmedia/common'
+import { IOError, type Uint8ArrayInterface } from '@libmedia/common/io'
+
 import IOLoader, { IOLoaderStatus } from './IOLoader'
-import { IOError } from 'common/io/error'
-import type { Uint8ArrayInterface } from 'common/io/interface'
-import * as is from 'common/util/is'
-import type { Range } from 'common/types/type'
 
 export interface FileInfo {
   file: Blob

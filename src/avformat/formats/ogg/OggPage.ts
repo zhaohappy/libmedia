@@ -23,17 +23,15 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import type IOWriter from 'common/io/IOWriterSync'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type IOReaderSync from 'common/io/IOReaderSync'
-import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import * as text from 'common/util/text'
+import { NOPTS_VALUE_BIGINT, type AVCodecParameters } from '@libmedia/avutil'
+
+import { text } from '@libmedia/common'
+import { type IOReader, type IOWriterSync, type IOReaderSync } from '@libmedia/common/io'
 
 export interface PagePayload {
   signature: string
   read(ioReader: IOReaderSync): void
-  write(ioWriter: IOWriter): void
+  write(ioWriter: IOWriterSync): void
   setCodec(codecpar: AVCodecParameters): void
   streamIndex: number
 }
@@ -53,7 +51,7 @@ class UserComment {
     }
   }
 
-  public write(ioWriter: IOWriter) {
+  public write(ioWriter: IOWriterSync) {
     for (let i = 0; i < this.list.length; i++) {
       const buffer = text.encode(this.list[i])
       ioWriter.writeUint32(buffer.length)
@@ -175,7 +173,7 @@ export class OggPage {
     }
   }
 
-  public write(ioWriter: IOWriter) {
+  public write(ioWriter: IOWriterSync) {
     this.pos = ioWriter.getPos()
     ioWriter.writeString(this.capturePattern)
     ioWriter.writeUint8(this.streamStructureVersion)
@@ -246,7 +244,7 @@ export class OggsCommentPage implements PagePayload {
     }
   }
 
-  public write(ioWriter: IOWriter) {
+  public write(ioWriter: IOWriterSync) {
     const buffer = text.encode(this.vendorString)
     ioWriter.writeUint32(buffer.length)
     ioWriter.writeBuffer(buffer)

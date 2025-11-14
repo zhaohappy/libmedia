@@ -23,8 +23,7 @@
  *
  */
 
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
+import { type WebAssemblyResource, WebAssemblyRunner } from '@libmedia/cheap'
 
 export interface StretchPitchParameters {
   channels: int32

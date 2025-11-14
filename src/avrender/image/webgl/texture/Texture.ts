@@ -23,7 +23,7 @@
  *
  */
 
-import * as is from 'common/util/is'
+import { is } from '@libmedia/common'
 
 export default abstract class Texture {
 

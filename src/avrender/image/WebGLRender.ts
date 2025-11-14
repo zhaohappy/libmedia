@@ -23,15 +23,21 @@
  *
  */
 
-import * as logger from 'common/util/logger'
 import type { ImageRenderOptions } from './ImageRender'
 import ImageRender from './ImageRender'
 
-import type AVFrame from 'avutil/struct/avframe'
 import { RenderMode } from './ImageRender'
 import type VideoProgram from './webgl/program/VideoProgram'
 import flipVertex from './function/flipVertex'
-import type { Timeout } from 'common/types/type'
+
+import {
+  type AVFrame
+} from '@libmedia/avutil'
+
+import {
+  logger,
+  type Timeout
+} from '@libmedia/common'
 
 export interface WebGLRenderOptions extends ImageRenderOptions {
 }

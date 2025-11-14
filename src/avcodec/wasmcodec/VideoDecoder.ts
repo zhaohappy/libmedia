@@ -23,24 +23,28 @@
  *
  */
 
-import type AVPacket from 'avutil/struct/avpacket'
-import type { AVFramePool, AVFrameRef } from 'avutil/struct/avframe'
-import type AVFrame from 'avutil/struct/avframe'
-import type { WebAssemblyResource } from 'cheap/webassembly/compiler'
-import WebAssemblyRunner from 'cheap/webassembly/WebAssemblyRunner'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
-import { createAVFrame, destroyAVFrame } from 'avutil/util/avframe'
-import * as logger from 'common/util/logger'
-import support from 'common/util/support'
-import { AVDictionary } from 'avutil/struct/avdict'
-import type { Data } from 'common/types/type'
-import * as object from 'common/util/object'
-import * as dict from 'avutil/util/avdict'
-import * as is from 'common/util/is'
-import { avMallocz } from 'avutil/util/mem'
-import type { Rational } from 'avutil/struct/rational'
-import * as errorType from 'avutil/error'
+import {
+  type AVCodecParameters,
+  type AVPacket,
+  type AVFramePool,
+  type AVFrameRef,
+  type AVFrame,
+  createAVFrame,
+  destroyAVFrame,
+  AVDictionary,
+  avdict,
+  avMallocz,
+  errorType,
+  type AVRational,
+  AVCodecParameterFlags
+} from '@libmedia/avutil'
+
+import {
+  type WebAssemblyResource,
+  WebAssemblyRunner
+} from '@libmedia/cheap'
+
+import { logger, support, object, is, type Data } from '@libmedia/common'
 
 export type WasmVideoDecoderOptions = {
   resource: WebAssemblyResource
@@ -95,7 +99,7 @@ export default class WasmVideoDecoder {
 
   private decoderOptions: pointer<AVDictionary> = nullptr
 
-  private timeBase: Rational | undefined
+  private timeBase: AVRational | undefined
 
   private dtsQueue: int64[] = []
 
@@ -144,14 +148,14 @@ export default class WasmVideoDecoder {
 
     if (object.keys(opts).length) {
       if (this.decoderOptions) {
-        dict.freeAVDict2(this.decoderOptions)
+        avdict.freeAVDict2(this.decoderOptions)
         free(this.decoderOptions)
         this.decoderOptions = nullptr
       }
       this.decoderOptions = reinterpret_cast<pointer<AVDictionary>>(avMallocz(sizeof(AVDictionary)))
       object.each(opts, (value, key) => {
         if (is.string(value) || is.string(key)) {
-          dict.avDictSet(this.decoderOptions, key, value)
+          avdict.avDictSet(this.decoderOptions, key, value)
         }
       })
       accessof(optsP) <- this.decoderOptions
@@ -237,7 +241,7 @@ export default class WasmVideoDecoder {
     this.parameters = nullptr
 
     if (this.decoderOptions) {
-      dict.freeAVDict2(this.decoderOptions)
+      avdict.freeAVDict2(this.decoderOptions)
       free(this.decoderOptions)
       this.decoderOptions = nullptr
     }

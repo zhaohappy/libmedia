@@ -25,10 +25,13 @@
 
 import { AVPacketSideDataType } from '../codec'
 import type AVCodecParameters from '../struct/avcodecparameters'
-import BufferReader from 'common/io/BufferReader'
-import BufferWriter from 'common/io/BufferWriter'
 import { avRescaleQ } from '../util/rational'
-import type { Uint8ArrayInterface } from 'common/io/interface'
+
+import {
+  BufferReader,
+  BufferWriter,
+  type Uint8ArrayInterface
+} from '@libmedia/common/io'
 
 export const durations = [
   /* Silk NB */

@@ -5,8 +5,7 @@
 import type { SessionDescription, Media } from './type'
 import type { SdpGrammar } from './grammars'
 import { grammars } from './grammars'
-import type { Data } from 'common/types/type'
-import * as is from 'common/util/is'
+import { is, type Data } from '@libmedia/common'
 
 /*
  * RFC specified order

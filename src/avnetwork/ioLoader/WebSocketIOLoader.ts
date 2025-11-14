@@ -23,11 +23,12 @@
  *
  */
 
-import type { Uint8ArrayInterface } from 'common/io/interface'
+import { type Uint8ArrayInterface, IOError } from '@libmedia/common/io'
+
 import { IOLoaderStatus } from './IOLoader'
-import { IOError } from 'common/io/error'
 import SocketIOLoader from './SocketIOLoader'
-import type { Data } from 'common/types/type'
+
+import type { Data } from '@libmedia/common'
 
 export interface WebSocketOptions {
   protocols?: string | string[]

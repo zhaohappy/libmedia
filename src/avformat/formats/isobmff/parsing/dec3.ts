@@ -23,17 +23,20 @@
  *
  */
 
-import type IOReader from 'common/io/IOReader'
-import { AVCodecID, AVPacketSideDataType } from 'avutil/codec'
-import type Stream from 'avutil/AVStream'
 import type { Atom, IsobmffContext } from '../type'
-import * as logger from 'common/util/logger'
-import { newSideData } from 'avutil/util/avpacket'
-import { AVChannelLayout, AVAudioServiceType } from 'avutil/audiosamplefmt'
-import { AC3ChannelLayout } from 'avutil/codecs/ac3'
-import * as avChannel from 'avutil/util/channel'
+import { logger } from '@libmedia/common'
+import { type IOReader } from '@libmedia/common/io'
+import { ac3, channel as avChannel } from '@libmedia/avutil/internal'
+import {
+  newSideData,
+  AVCodecID,
+  AVPacketSideDataType,
+  type AVStream,
+  AVAudioServiceType,
+  AVChannelLayoutType
+} from '@libmedia/avutil'
 
-export default async function read(ioReader: IOReader, stream: Stream, atom: Atom, isobmffContext: IsobmffContext) {
+export default async function read(ioReader: IOReader, stream: AVStream, atom: Atom, isobmffContext: IsobmffContext) {
 
   const now = ioReader.getPos()
 
@@ -59,9 +62,9 @@ export default async function read(ioReader: IOReader, stream: Stream, atom: Ato
   const acmod = (eac3info >> 9) & 0x7
   const lfeon = (eac3info >> 8) & 0x1
 
-  let mask = static_cast<uint64>(AC3ChannelLayout[acmod])
+  let mask = static_cast<uint64>(ac3.AC3ChannelLayout[acmod])
   if (lfeon) {
-    mask |= static_cast<uint64>(AVChannelLayout.AV_CHANNEL_LAYOUT_LOW_FREQUENCY as uint32)
+    mask |= static_cast<uint64>(AVChannelLayoutType.AV_CHANNEL_LAYOUT_LOW_FREQUENCY as uint32)
   }
 
   avChannel.unInitChannelLayout(addressof(stream.codecpar.chLayout))

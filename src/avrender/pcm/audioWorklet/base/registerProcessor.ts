@@ -23,7 +23,7 @@
  *
  */
 
-import sourceLoad from 'common/function/sourceLoad'
+import sourceLoad from '@libmedia/common/sourceLoad'
 
 export default async function registerProcessor(audioContext: AudioContext, moduleId: string) {
   const source = sourceLoad(moduleId, {

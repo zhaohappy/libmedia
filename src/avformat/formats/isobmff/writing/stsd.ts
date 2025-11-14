@@ -23,13 +23,11 @@
  *
  */
 
-import type AVStream from 'avutil/AVStream'
 import type { IsobmffContext, IsobmffStreamContext } from '../type'
 import { BoxType } from '../boxType'
-import { AVCodecID, AVMediaType } from 'avutil/codec'
-import type IOWriter from 'common/io/IOWriterSync'
-import type AVCodecParameters from 'avutil/struct/avcodecparameters'
-import { AVPixelFormat } from 'avutil/pixfmt'
+import { type IOWriterSync } from '@libmedia/common/io'
+import { mapUint8Array } from '@libmedia/cheap'
+import { AVCodecID, AVMediaType, AVPixelFormat, type AVStream, type AVCodecParameters } from '@libmedia/avutil'
 
 import avcc from './avcc'
 import hvcc from './hvcc'
@@ -45,7 +43,6 @@ import btrt from './btrt'
 import wave from './wave'
 import dac3 from './dac3'
 import dec3 from './dec3'
-import { mapUint8Array } from 'cheap/std/memory'
 import digital2Tag from '../../../function/digital2Tag'
 import mktag from '../../../function/mktag'
 
@@ -92,7 +89,7 @@ function getTag(codecpar: AVCodecParameters): BoxType {
   return tag
 }
 
-function writeSinf(ioWriter: IOWriter, stream: AVStream, isobmffContext: IsobmffContext) {
+function writeSinf(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
 
   const streamContext = stream.privData as IsobmffStreamContext
   const cenc = isobmffContext.cencs[streamContext.trackId]
@@ -142,7 +139,7 @@ function writeSinf(ioWriter: IOWriter, stream: AVStream, isobmffContext: Isobmff
   })
 }
 
-function writeAudioTagHeader(ioWriter: IOWriter, stream: AVStream, isobmffContext: IsobmffContext) {
+function writeAudioTagHeader(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   const version = isobmffContext.isom ? 1 : 0
   // Reserved
   ioWriter.writeUint32(0)
@@ -219,7 +216,7 @@ function writeAudioTagHeader(ioWriter: IOWriter, stream: AVStream, isobmffContex
   }
 }
 
-function writeAudioTagCodecpar(ioWriter: IOWriter, stream: AVStream, isobmffContext: IsobmffContext) {
+function writeAudioTagCodecpar(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   const tag = getTag(stream.codecpar)
 
   if (isobmffContext.isom
@@ -253,7 +250,7 @@ function writeAudioTagCodecpar(ioWriter: IOWriter, stream: AVStream, isobmffCont
   }
 }
 
-function writeAudioTag(ioWriter: IOWriter, stream: AVStream, isobmffContext: IsobmffContext) {
+function writeAudioTag(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   const pos = ioWriter.getPos()
   const tag = getTag(stream.codecpar)
 
@@ -275,7 +272,7 @@ function writeAudioTag(ioWriter: IOWriter, stream: AVStream, isobmffContext: Iso
   })
 }
 
-function writeEncaTag(ioWriter: IOWriter, stream: AVStream, isobmffContext: IsobmffContext) {
+function writeEncaTag(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   const pos = ioWriter.getPos()
   // size
   ioWriter.writeUint32(0)
@@ -292,7 +289,7 @@ function writeEncaTag(ioWriter: IOWriter, stream: AVStream, isobmffContext: Isob
   })
 }
 
-function writeVideoTagHeader(ioWriter: IOWriter, stream: AVStream, isobmffContext: IsobmffContext) {
+function writeVideoTagHeader(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   const uncompressedYcbcr = ((stream.codecpar.codecId == AVCodecID.AV_CODEC_ID_RAWVIDEO
       && stream.codecpar.format == AVPixelFormat.AV_PIX_FMT_UYVY422
   )
@@ -372,7 +369,7 @@ function writeVideoTagHeader(ioWriter: IOWriter, stream: AVStream, isobmffContex
   ioWriter.writeUint16(0xffff)
 }
 
-function writeVideoTagCodecpar(ioWriter: IOWriter, stream: AVStream, isobmffContext: IsobmffContext) {
+function writeVideoTagCodecpar(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   const tag = getTag(stream.codecpar)
 
   if (tag === BoxType.MP4V) {
@@ -395,7 +392,7 @@ function writeVideoTagCodecpar(ioWriter: IOWriter, stream: AVStream, isobmffCont
   }
 }
 
-function writeEncvTag(ioWriter: IOWriter, stream: AVStream, isobmffContext: IsobmffContext) {
+function writeEncvTag(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   const pos = ioWriter.getPos()
   // size
   ioWriter.writeUint32(0)
@@ -412,7 +409,7 @@ function writeEncvTag(ioWriter: IOWriter, stream: AVStream, isobmffContext: Isob
   })
 }
 
-function writeVideoTag(ioWriter: IOWriter, stream: AVStream, isobmffContext: IsobmffContext) {
+function writeVideoTag(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   const pos = ioWriter.getPos()
   const tag = getTag(stream.codecpar)
 
@@ -437,7 +434,7 @@ function writeVideoTag(ioWriter: IOWriter, stream: AVStream, isobmffContext: Iso
   })
 }
 
-function writeSubtitleTag(ioWriter: IOWriter, stream: AVStream, isobmffContext: IsobmffContext) {
+function writeSubtitleTag(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   const pos = ioWriter.getPos()
   const tag = getTag(stream.codecpar)
 
@@ -471,7 +468,7 @@ function writeSubtitleTag(ioWriter: IOWriter, stream: AVStream, isobmffContext: 
 }
 
 
-export default function write(ioWriter: IOWriter, stream: AVStream, isobmffContext: IsobmffContext) {
+export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
   const pos = ioWriter.getPos()
   // size
   ioWriter.writeUint32(0)

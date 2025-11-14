@@ -24,11 +24,9 @@
  */
 
 import type { PES } from '../struct'
-import { NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import * as logger from 'common/util/logger'
+import { NOPTS_VALUE_BIGINT, AVPacketFlags, errorType } from '@libmedia/avutil'
+import { logger } from '@libmedia/common'
 import { TSStreamId, TSStreamType } from '../mpegts'
-import * as errorType from 'avutil/error'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 
 export default function parsePES(pes: PES) {
 

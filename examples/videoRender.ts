@@ -1,15 +1,10 @@
-import IOReader from 'common/io/IOReader'
-import { IOError } from 'common/io/error'
-import * as demux from 'avformat/demux'
-import IFlvFormat from 'avformat/formats/IFlvFormat'
-import { createAVIFormatContext } from 'avformat/AVFormatContext'
-import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
-import { AVMediaType } from 'avutil/codec'
-import WebVideoDecoder from 'avcodec/webcodec/VideoDecoder'
-import CanvasImageRender from 'avrender/image/Canvas2dRender'
-import { RenderMode } from 'avrender/image/ImageRender'
-import Sleep from 'common/timer/Sleep'
-import Timer from 'common/timer/Timer'
+import { WebVideoDecoder } from '@libmedia/avcodec'
+import { IOReader, IOError } from '@libmedia/common/io'
+import { AVMediaType, destroyAVPacket, createAVPacket } from '@libmedia/avutil'
+import { createAVIFormatContext, demux } from '@libmedia/avformat'
+import { Sleep, Timer } from '@libmedia/common/timer'
+import { RenderMode, CanvasImageRender } from '@libmedia/avrender'
+import IFlvFormat from '@libmedia/avformat/IFlvFormat'
 
 export async function run(readFile: File, canvas: HTMLCanvasElement) {
 
@@ -69,7 +64,7 @@ export async function run(readFile: File, canvas: HTMLCanvasElement) {
 
   const decoder = new WebVideoDecoder({
     onError: (error) => {
-      
+
     },
     onReceiveVideoFrame(frame) {
       queue.push(frame)

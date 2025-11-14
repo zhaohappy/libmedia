@@ -24,55 +24,78 @@
  */
 
 import type { AVIFormatContext } from '../AVFormatContext'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import * as logger from 'common/util/logger'
-import { IOError } from 'common/io/error'
-import * as errorType from 'avutil/error'
 import IFormat from './IFormat'
-import { AVFormat, AVSeekFlags } from 'avutil/avformat'
-import { mapUint8Array, memcpyFromUint8Array } from 'cheap/std/memory'
-import { avFree, avMalloc } from 'avutil/util/mem'
-import { addAVPacketData, addAVPacketSideData, createAVPacket, getAVPacketData } from 'avutil/util/avpacket'
-import type AVStream from 'avutil/AVStream'
-import { AVDisposition } from 'avutil/AVStream'
-import { AV_MILLI_TIME_BASE, AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
 import { EBMLId, MATROSKABlockAddIdType, MATROSKALacingMode, MATROSKATrackEncodingComp, MATROSKATrackType, MkvImageMime2CodecId, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
-import { IOFlags } from 'avutil/avformat'
 import type { Additions, ClusterIndex, MatroskaContext, TrackEntry } from './matroska/type'
 import { EbmlSyntaxAttachments, EbmlSyntaxBlockGroup, EbmlSyntaxChapters, EbmlSyntaxCluster, EbmlSyntaxCues, EbmlSyntaxHeadSeek,
   EbmlSyntaxHeader, EbmlSyntaxInfo, EbmlSyntaxTags, EbmlSyntaxTracks, parseEbmlSyntax, readEbmlId, readVInt, readVInt64,
   readVSint
 } from './matroska/imatroska'
 
-import * as array from 'common/util/array'
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import * as vvc from 'avutil/codecs/vvc'
-import * as vp8 from 'avutil/codecs/vp8'
-import * as vp9 from 'avutil/codecs/vp9'
-import * as av1 from 'avutil/codecs/av1'
-import * as mp3 from 'avutil/codecs/mp3'
-import * as opus from 'avutil/codecs/opus'
-import * as aac from 'avutil/codecs/aac'
-import * as flac from 'avutil/codecs/flac'
-import { avRescaleQ } from 'avutil/util/rational'
-import BufferReader from 'common/io/BufferReader'
 import findStreamByTrackUid from './matroska/function/findStreamByTrackUid'
 import findStreamByTrackNumber from './matroska/function/findStreamByTrackNumber'
-import * as intwrite from 'avutil/util/intwrite'
-import * as is from 'common/util/is'
-import * as object from 'common/util/object'
 import * as riff from './riff/riff'
 import * as isomTags from './isom/tags'
-import concatTypeArray from 'common/function/concatTypeArray'
-import * as text from 'common/util/text'
-import isDef from 'common/function/isDef'
-import * as naluUtil from 'avutil/util/nalu'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
-import { AVCodecParameterFlags } from 'avutil/struct/avcodecparameters'
-import * as string from 'common/util/string'
+
+import { memcpyFromUint8Array, mapUint8Array } from '@libmedia/cheap'
+
+import {
+  AVDisposition,
+  AVFormat,
+  AVSeekFlags,
+  IOFlags,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  avMalloc,
+  avFree,
+  createAVPacket,
+  getAVPacketData,
+  addAVPacketData,
+  addAVPacketSideData,
+  AVPacketFlags,
+  AVStreamMetadataKey,
+  AVCodecParameterFlags,
+  NOPTS_VALUE_BIGINT,
+  AVPacketSideDataType,
+  avRescaleQ,
+  errorType,
+  nalu as naluUtil,
+  intwrite
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q,
+  AV_TIME_BASE,
+  AV_TIME_BASE_Q,
+  mp3,
+  h264,
+  hevc,
+  vvc,
+  aac,
+  av1,
+  vp9,
+  vp8,
+  flac,
+  opus
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  concatTypeArray,
+  logger,
+  is,
+  object,
+  text,
+  isDef,
+  string
+} from '@libmedia/common'
+
+import {
+  IOError,
+  BufferReader
+} from '@libmedia/common/io'
 
 /**
  * 毫秒时间戳转 hh:mm:ss.mill

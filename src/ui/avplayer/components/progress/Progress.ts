@@ -1,14 +1,11 @@
 import type { ComponentOptions } from 'yox'
 import template from './Progress.hbs'
 import style from './Progress.styl'
-import type CustomEvent from 'common/event/CustomEvent'
-import * as eventType from 'avplayer/eventType'
-import type AVPlayer from 'avplayer/AVPlayer'
-import { AVPlayerStatus } from 'avplayer/AVPlayer'
-import { avRescaleQ } from 'avutil/util/rational'
-import * as string from 'common/util/string'
-import * as is from 'common/util/is'
-import { AV_MILLI_TIME_BASE_Q } from 'avutil/constant'
+import type AVPlayer from '@libmedia/avplayer'
+import { AVPlayerStatus, Events as eventType } from '@libmedia/avplayer'
+import { is, string, type CustomEvent } from '@libmedia/common'
+import { avRescaleQ } from '@libmedia/avutil'
+import { AV_MILLI_TIME_BASE_Q } from '@libmedia/avutil/internal'
 
 const Progress: ComponentOptions = {
 
@@ -22,7 +19,7 @@ const Progress: ComponentOptions = {
       required: true
     },
     indicatorUrl: {
-      type: 'string',
+      type: 'string'
     }
   },
 

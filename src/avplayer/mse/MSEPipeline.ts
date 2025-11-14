@@ -23,60 +23,109 @@
  *
  */
 
-import type { AVOFormatContext } from 'avformat/AVFormatContext'
-import { createAVOFormatContext } from 'avformat/AVFormatContext'
-import type { TaskOptions } from 'avpipeline/Pipeline'
-import Pipeline from 'avpipeline/Pipeline'
-import * as errorType from 'avutil/error'
-import type { RpcMessage } from 'common/network/IPCPort'
-import IPCPort, { NOTIFY } from 'common/network/IPCPort'
-import * as logger from 'common/util/logger'
-import type OFormat from 'avformat/formats/OFormat'
-import IOWriter from 'common/io/IOWriterSync'
-import * as mux from 'avformat/mux'
-import OIsobmffFormat, { Mp4FragmentMode, Mp4Mode } from 'avformat/formats/OIsobmffFormat'
-import AVCodecParameters from 'avutil/struct/avcodecparameters'
-import type { Rational } from 'avutil/struct/rational'
-import { copyCodecParameters, freeCodecParameters } from 'avutil/util/codecparameters'
-import LoopTask from 'common/timer/LoopTask'
-import Track from 'avrender/track/Track'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
-import type { AVPacketPool, AVPacketRef } from 'avutil/struct/avpacket'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import type List from 'cheap/std/collection/List'
-import type { Mutex } from 'cheap/thread/mutex'
-import AVPacketPoolImpl from 'avutil/implement/AVPacketPoolImpl'
-import { AV_MILLI_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from 'avutil/constant'
-import { avQ2D, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
-import getTimestamp from 'common/function/getTimestamp'
-import getAudioMimeType from 'avrender/track/function/getAudioMimeType'
-import getVideoMimeType from 'avrender/track/function/getVideoMimeType'
-import SeekableWriteBuffer from 'common/io/SeekableWriteBuffer'
-import { addAVPacketData, addAVPacketSideData, getAVPacketSideData, hasAVPacketSideData, refAVPacket } from 'avutil/util/avpacket'
-import { mapUint8Array, memcpy, memcpyFromUint8Array } from 'cheap/std/memory'
-import { avFree, avMalloc, avMallocz } from 'avutil/util/mem'
-import browser from 'common/util/browser'
-import { milliSecond2Second } from 'avutil/util/common'
-import Sleep from 'common/timer/Sleep'
-import { IOError } from 'common/io/error'
-import * as bigint from 'common/util/bigint'
-import mktag from 'avformat/function/mktag'
-import getMediaSource from '../function/getMediaSource'
-import * as intread from 'avutil/util/intread'
-import * as h264 from 'avutil/codecs/h264'
-import * as hevc from 'avutil/codecs/hevc'
-import type { AVCodecParametersSerialize, AVPacketSerialize } from 'avutil/util/serialize'
 import {
-  unserializeAVCodecParameters, unserializeAVPacket
-} from 'avutil/util/serialize'
-import isPointer from 'cheap/std/function/isPointer'
-import * as is from 'common/util/is'
-import os from 'common/util/os'
-import { MPEG4AudioObjectTypes } from 'avutil/codecs/aac'
-import WorkerTimer from 'common/timer/WorkerTimer'
-import type { Data } from 'common/types/type'
-import { AVStreamMetadataKey } from 'avutil/AVStream'
+  errorType,
+  type AVPacketPool,
+  type AVPacketRef,
+  AVPacketPoolImpl,
+  AVMediaType,
+  avQ2D,
+  avRescaleQ,
+  avRescaleQ2,
+  refAVPacket,
+  NOPTS_VALUE_BIGINT,
+  copyCodecParameters,
+  freeCodecParameters,
+  AVCodecParameters,
+  AVCodecID,
+  AVPacketSideDataType,
+  type AVPacket,
+  AVPacketFlags,
+  type AVRational,
+  intread,
+  type AVCodecParametersSerialize,
+  type AVPacketSerialize,
+  unserializeAVCodecParameters,
+  unserializeAVPacket,
+  addAVPacketData,
+  addAVPacketSideData,
+  getAVPacketSideData,
+  hasAVPacketSideData,
+  AVStreamMetadataKey,
+  avFree,
+  avMalloc,
+  avMallocz,
+  getAudioMimeType,
+  getVideoMimeType
+} from '@libmedia/avutil'
+
+import {
+  AV_MILLI_TIME_BASE_Q,
+  aac,
+  h264,
+  hevc,
+  common
+} from '@libmedia/avutil/internal'
+
+import {
+  type Mutex,
+  type List,
+  isPointer,
+  mapUint8Array,
+  memcpy,
+  memcpyFromUint8Array
+} from '@libmedia/cheap'
+
+import {
+  is,
+  os,
+  logger,
+  browser,
+  bigint,
+  getTimestamp,
+  type Data
+} from '@libmedia/common'
+
+import {
+  IOError,
+  IOWriterSync as IOWriter,
+  SeekableWriteBuffer
+} from '@libmedia/common/io'
+
+import {
+  LoopTask,
+  Sleep,
+  WorkerTimer
+} from '@libmedia/common/timer'
+
+import {
+  IPCPort,
+  NOTIFY,
+  type RpcMessage
+} from '@libmedia/common/network'
+
+import {
+  mux,
+  createAVOFormatContext,
+  type AVOFormatContext,
+  type OFormat
+} from '@libmedia/avformat'
+
+import {
+  default as OIsobmffFormat,
+  Mp4FragmentMode,
+  Mp4Mode
+} from '@libmedia/avformat/OIsobmffFormat'
+
+import { mktag } from '@libmedia/avformat/internal'
+
+import {
+  Track
+} from '@libmedia/avrender'
+
+import { type TaskOptions, Pipeline } from '@libmedia/avpipeline'
+
+import getMediaSource from '../function/getMediaSource'
 
 export interface MSETaskOptions extends TaskOptions {
   isLive: boolean
@@ -295,7 +344,7 @@ export default class MSEPipeline extends Pipeline {
         }
         else if (audioStartTimestamp > videoStartTimestamp
           && task.audio.oformatContext.streams[0].codecpar.codecId === AVCodecID.AV_CODEC_ID_AAC
-          && task.audio.oformatContext.streams[0].codecpar.profile === MPEG4AudioObjectTypes.AAC_LC
+          && task.audio.oformatContext.streams[0].codecpar.profile === aac.MPEG4AudioObjectTypes.AAC_LC
           && task.audio.oformatContext.streams[0].codecpar.chLayout.nbChannels < 3
         ) {
           const avpacket = task.avpacketPool.alloc()
@@ -435,7 +484,7 @@ export default class MSEPipeline extends Pipeline {
       task.currentTimeNTP = getTimestamp()
 
       if (startTimestamp > 0n) {
-        task.currentTime = milliSecond2Second(startTimestamp)
+        task.currentTime = common.milliSecond2Second(startTimestamp)
         task.controlIPCPort.notify('seek', {
           time: task.currentTime
         })
@@ -981,7 +1030,7 @@ export default class MSEPipeline extends Pipeline {
     taskId: string,
     streamIndex: int32,
     parameters: pointer<AVCodecParameters> | AVCodecParametersSerialize,
-    timeBase: Rational,
+    timeBase: AVRational,
     metadata: Data,
     startPTS: int64,
     pullIPCPort: MessagePort
@@ -1121,7 +1170,7 @@ export default class MSEPipeline extends Pipeline {
     taskId: string,
     streamIndex: int32,
     parameters: pointer<AVCodecParameters> | AVCodecParametersSerialize,
-    timeBase: Rational,
+    timeBase: AVRational,
     metadata: Data,
     startPTS: int64
   ) {
@@ -1608,7 +1657,7 @@ export default class MSEPipeline extends Pipeline {
         max = task.video.track.getBufferedEnd()
       }
 
-      let seekTime = milliSecond2Second(realTimestamp)
+      let seekTime = common.milliSecond2Second(realTimestamp)
 
       if (!(seekTime >= min && seekTime <= max)) {
         seekTime = Math.abs(seekTime - min) > Math.abs(seekTime - max) ? max : min

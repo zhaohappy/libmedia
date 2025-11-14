@@ -1,10 +1,8 @@
-import * as demux from '@libmedia/avformat/demux'
-import { createAVIFormatContext } from '@libmedia/avformat/AVFormatContext'
-import { createAVPacket, destroyAVPacket } from '@libmedia/avutil/util/avpacket'
-import { AVMediaType } from '@libmedia/avutil/codec'
-import support from '@libmedia/common/util/support'
-import WebAudioDecoder from '@libmedia/avcodec/webcodec/AudioDecoder'
-import Sleep from '@libmedia/common/timer/Sleep'
+import { demux, createAVIFormatContext } from '@libmedia/avformat'
+import { createAVPacket, destroyAVPacket, AVMediaType } from '@libmedia/avutil'
+import { WebAudioDecoder } from '@libmedia/avcodec'
+import { Sleep } from '@libmedia/common/timer'
+import { support } from '@libmedia/common'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept } from './utils'
 import { useEffect, useRef, useState } from 'react'
@@ -40,7 +38,7 @@ async function decode(log: (v: string) => void) {
     },
     onReceiveAudioData: (audioData) => {
       log(`got audio audioData, pts: ${audioData.timestamp}, duration: ${audioData.duration}\n`)
-    },
+    }
   })
 
   const ret = await decoder.open(addressof(stream.codecpar))
@@ -140,7 +138,7 @@ export default function () {
       &nbsp;
       <input accept={getAccept()} type="file" onChange={onChange}></input>
       <hr />
-      <textarea readOnly ref={textareaRef} value={value} style={{width: '600px', height: '400px'}}></textarea>
+      <textarea readOnly ref={textareaRef} value={value} style={{ width: '600px', height: '400px' }}></textarea>
     </div>
   )
 }

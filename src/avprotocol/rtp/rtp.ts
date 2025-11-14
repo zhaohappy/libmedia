@@ -23,7 +23,7 @@
  *
  */
 
-import { AVCodecID, AVMediaType } from 'avutil/codec'
+import { AVCodecID, AVMediaType } from '@libmedia/avutil'
 
 export const RTP_MAX_PACKET_LENGTH = 8192
 export const RTP_HEVC_PAYLOAD_HEADER_SIZE = 2

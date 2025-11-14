@@ -2,7 +2,7 @@
 import * as chinese from './chinese'
 import * as english from './english'
 
-import * as url from 'common/util/url'
+import { url } from '@libmedia/common'
 
 import * as storage from '../../util/storage'
 
@@ -16,7 +16,7 @@ export const enum Language {
 const map = {
   [Language.CHINESE]: 1,
   [Language.CHINESE_TRADITIONAL]: 1,
-  [Language.ENGLISH]: 1,
+  [Language.ENGLISH]: 1
 }
 
 function getSystemLanguage() {

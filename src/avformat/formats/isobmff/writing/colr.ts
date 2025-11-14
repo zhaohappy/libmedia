@@ -23,14 +23,12 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { IsobmffContext } from '../type'
-import type IOWriter from 'common/io/IOWriterSync'
 import { BoxType } from '../boxType'
-import { AVColorRange } from 'avutil/pixfmt'
-import { AVPacketSideDataType } from 'avutil/codec'
+import { type IOWriterSync } from '@libmedia/common/io'
+import { AVPacketSideDataType, type AVStream, AVColorRange } from '@libmedia/avutil'
 
-export default function write(ioWriter: IOWriter, stream: Stream, isobmffContext: IsobmffContext) {
+export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
 
   const icc = stream.sideData[AVPacketSideDataType.AV_PKT_DATA_ICC_PROFILE]
 

@@ -24,8 +24,11 @@
  */
 
 import { AVChannelLayout } from '../audiosamplefmt'
-import BitReader from 'common/io/BitReader'
-import type { Uint8ArrayInterface } from 'common/io/interface'
+
+import {
+  BitReader,
+  type Uint8ArrayInterface
+} from '@libmedia/common/io'
 
 export const enum AC3DeltaStrategy {
   DBA_REUSE = 0,
@@ -154,7 +157,7 @@ const AC3FrameSizeTab = [
   [ 1152, 1253, 1728 ],
   [ 1152, 1254, 1728 ],
   [ 1280, 1393, 1920 ],
-  [ 1280, 1394, 1920 ],
+  [ 1280, 1394, 1920 ]
 ]
 
 const CenterLevelsTab = [4, 5, 6, 5]

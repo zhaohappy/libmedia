@@ -1,14 +1,15 @@
-import * as demux from '@libmedia/avformat/demux'
-import { createAVIFormatContext } from '@libmedia/avformat/AVFormatContext'
-import { createAVPacket, destroyAVPacket } from '@libmedia/avutil/util/avpacket'
-import { AVMediaType } from '@libmedia/avutil/codec'
-import { RenderMode } from '@libmedia/avrender/image/ImageRender'
-import Timer from '@libmedia/common/timer/Timer'
-import WebGLDefault8Render from '@libmedia/avrender/image/WebGLDefault8Render'
-import AVFrame from '@libmedia/avutil/struct/avframe'
-import WasmVideoDecoder from '@libmedia/avcodec/wasmcodec/VideoDecoder'
-import compileResource from '@libmedia/avutil/function/compileResource'
-import { destroyAVFrame } from '@libmedia/avutil/util/avframe'
+import { demux, createAVIFormatContext } from '@libmedia/avformat'
+import {
+  createAVPacket,
+  destroyAVPacket,
+  AVMediaType,
+  compileResource,
+  destroyAVFrame,
+  type AVFrame
+} from '@libmedia/avutil'
+import { WasmVideoDecoder } from '@libmedia/avcodec'
+import { WebGLDefault8Render, RenderMode } from '@libmedia/avrender'
+import { Timer } from '@libmedia/common/timer'
 
 import { formatUrl, getIOReader, getAVFormat, getAccept, getWasm } from './utils'
 import { useEffect, useRef } from 'react'
@@ -54,7 +55,7 @@ async function render(canvas: HTMLCanvasElement) {
     resource: await compileResource(getWasm('decoder', stream.codecpar.codecId), true),
     onReceiveAVFrame(frame) {
       queue.push(frame)
-    },
+    }
   })
 
   const timer = new Timer(() => {
@@ -121,7 +122,7 @@ async function render(canvas: HTMLCanvasElement) {
   destroyAVPacket(avpacket)
 
   decodeEnd = true
-  
+
   stop = true
 
   console.log('render end')
@@ -164,7 +165,7 @@ export default function () {
       &nbsp;
       <input accept={getAccept()} type="file" onChange={onChange}></input>
       <hr />
-      <canvas ref={canvasRef} style={{width: '640px', height: '480px', background: '#000'}}></canvas>
+      <canvas ref={canvasRef} style={{ width: '640px', height: '480px', background: '#000' }}></canvas>
     </div>
   )
 }

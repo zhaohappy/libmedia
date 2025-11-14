@@ -1,10 +1,7 @@
-import IOReader from 'common/io/IOReader'
-import { IOError } from 'common/io/error'
-import * as demux from 'avformat/demux'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
-import IFlvFormat from 'avformat/formats/IFlvFormat'
-import { createAVIFormatContext } from 'avformat/AVFormatContext'
-import { createAVPacket, destroyAVPacket } from 'avutil/util/avpacket'
+import { IOReader, IOError } from '@libmedia/common/io'
+import { AVPacketFlags, destroyAVPacket, createAVPacket } from '@libmedia/avutil'
+import { createAVIFormatContext, demux } from '@libmedia/avformat'
+import IFlvFormat from '@libmedia/avformat/IFlvFormat'
 
 export async function demuxFile(readFile: File) {
 

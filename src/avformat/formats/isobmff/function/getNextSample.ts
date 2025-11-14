@@ -23,28 +23,34 @@
  *
  */
 
-import type Stream from 'avutil/AVStream'
 import type { AVIFormatContext } from '../../../AVFormatContext'
 import type { IsobmffContext, IsobmffStreamContext, Sample } from '../type'
-import { AV_TIME_BASE_Q } from 'avutil/constant'
-import { avRescaleQ } from 'avutil/util/rational'
-import { IOFlags } from 'avutil/avformat'
-import type { EncryptionInfo } from 'avutil/struct/encryption'
-import { AVDiscard } from 'avutil/AVStream'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
+
+import {
+  type AVStream,
+  AVPacketFlags,
+  IOFlags,
+  AVDiscard,
+  type EncryptionInfo,
+  avRescaleQ
+} from '@libmedia/avutil'
+
+import {
+  AV_TIME_BASE_Q
+} from '@libmedia/avutil/internal'
 
 export function getNextSample(context: AVIFormatContext, isobmffContext: IsobmffContext, ioFlags: int32) {
   let sample: Sample
-  let stream: Stream
+  let stream: AVStream
   let encryption: EncryptionInfo
 
   let bestDts = 0n
 
   let posSample: Sample
-  let posStream: Stream
+  let posStream: AVStream
 
   let dtsSample: Sample
-  let dtsStream: Stream
+  let dtsStream: AVStream
 
   context.streams.forEach((s) => {
     const context = s.privData as IsobmffStreamContext

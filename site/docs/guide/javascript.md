@@ -15,13 +15,13 @@ order: 10
 
 ```javascript
 
-import structAccess from '@libmedia/cheap/std/structAccess'
-import AVPacket from '@libmedia/avutil/struct/avpacket'
+import { mapStruct } from '@libmedia/cheap'
+import { AVPacket } from '@libmedia/avutil'
 
 // 一个 avpacket 指针变量
 let avpacket
-// 使用 structAccess 将指针转成 proxy 代理
-const avpacketProxy = structAccess(avpacket, AVPacket)
+// 使用 mapStruct 将指针转成 proxy 代理
+const avpacketProxy = mapStruct(avpacket, AVPacket)
 // 使用 js 访问 avpacket 的属性
 console.log(avpacketProxy.pts)
 
@@ -30,19 +30,19 @@ console.log(avpacketProxy.pts)
 ## 结构体实例取地址
 
 ```javascript
-import { symbolStructAddress } from '@libmedia/cheap/symbol'
+import { addressof } from '@libmedia/cheap'
 
 let stream = iformatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_AUDIO)
 // 可以通过访问实例的 symbolStructAddress 属性得到实例地址
-let codecpar = stream.codecpar[symbolStructAddress]
+let codecpar = addressof(stream.codecpar)
 
 ```
 
 ## 结构体属性取地址
 
 ```javascript
-import offsetof from '@libmedia/cheap/std/offsetof'
-import AVPacket from '@libmedia/avutil/struct/avpacket'
+import { offsetof } from '@libmedia/cheap'
+import { AVPacket } from '@libmedia/avutil'
 
 // 一个 avpacket 指针变量
 let avpacket

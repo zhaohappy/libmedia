@@ -24,43 +24,69 @@
  */
 
 import OFormat from './OFormat'
-import type AVPacket from 'avutil/struct/avpacket'
-import { AVPacketFlags } from 'avutil/struct/avpacket'
 import type { AVOFormatContext } from '../AVFormatContext'
 
 import type { IsobmffContext, IsobmffStreamContext } from './isobmff/type'
 import createIsobmffContext from './isobmff/function/createIsobmffContext'
 import mktag from '../function/mktag'
-import { AVCodecID, AVMediaType, AVPacketSideDataType } from 'avutil/codec'
 import * as oisobmff from './isobmff/oisobmff'
 import { BoxType, SampleFlags, TKHDFlags } from './isobmff/boxType'
 import createIsobmffStreamContext from './isobmff/function/createIsobmffStreamContext'
 import createFragmentTrack from './isobmff/function/createFragmentTrack'
-import IOWriter from 'common/io/IOWriterSync'
-import * as array from 'common/util/array'
-import * as logger from 'common/util/logger'
-import concatTypeArray from 'common/function/concatTypeArray'
 import updatePositionSize from './isobmff/function/updatePositionSize'
-import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE, AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT, UINT32_MAX } from 'avutil/constant'
 import { Mp4FragmentMode, Mp4Mode } from './isobmff/isobmff'
-import * as object from 'common/util/object'
 import rewriteIO from '../function/rewriteIO'
 
 import arrayItemSame from '../function/arrayItemSame'
-import type { AVStreamMetadataEncryption } from 'avutil/AVStream'
-import type AVStream from 'avutil/AVStream'
-import { AVDisposition, AVStreamMetadataKey } from 'avutil/AVStream'
-import { AVFormat } from 'avutil/avformat'
-import { avQ2D, avRescaleQ, avRescaleQ2 } from 'avutil/util/rational'
-import { createAVPacket, destroyAVPacket, getAVPacketData, getAVPacketSideData, getSideData } from 'avutil/util/avpacket'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
-import * as is from 'common/util/is'
-import * as bigint from 'common/util/bigint'
 
-import * as ac3 from 'avutil/codecs/ac3'
-import { mapUint8Array } from 'cheap/std/memory'
 import getSampleDuration from './isobmff/function/getSampleDuration'
-import { encryptionSideData2Info } from 'avutil/util/encryption'
+
+import { mapUint8Array } from '@libmedia/cheap'
+
+import {
+  AVFormat,
+  AVMediaType,
+  AVCodecID,
+  type AVPacket,
+  type AVStream,
+  type AVStreamMetadataEncryption,
+  AVDisposition,
+  AVStreamMetadataKey,
+  createAVPacket,
+  destroyAVPacket,
+  getAVPacketData,
+  getAVPacketSideData,
+  getSideData,
+  avQ2D,
+  avRescaleQ2,
+  AVPacketFlags,
+  NOPTS_VALUE_BIGINT,
+  AVPacketSideDataType,
+  avRescaleQ,
+  encryptionSideData2Info
+} from '@libmedia/avutil'
+
+import {
+  UINT32_MAX,
+  AV_MILLI_TIME_BASE_Q,
+  AV_TIME_BASE,
+  AV_TIME_BASE_Q,
+  ac3
+} from '@libmedia/avutil/internal'
+
+import {
+  array,
+  concatTypeArray,
+  logger,
+  is,
+  object,
+  bigint
+} from '@libmedia/common'
+
+import {
+  IOWriterSync as IOWriter
+} from '@libmedia/common/io'
 
 export {
   Mp4FragmentMode,
