@@ -7,23 +7,23 @@
       "jest"
     ]
   },
-  "include": [".dumirc.ts", "docs/**/*", "../src/**/*.ts"],
+  "include": [".dumirc.ts", "docs/**/*", "../packages/**/*.ts"],
   "exclude": [
     "*.test.ts",
     "__test__",
     "/node_modules/**",
     "/dist/",
     "*.d.ts",
-    "../src/cheap/dist/**",
-    "../src/common/dist/**",
-    "../src/avplayer/**/*.ts",
-    "../src/avtranscoder/**/*.ts",
-    "../src/ui/**/*.ts",
-    "../src/avutil/src/enum.ts"
+    "../packages/cheap/dist/**",
+    "../packages/common/dist/**",
+    "../packages/avplayer/**/*.ts",
+    "../packages/avtranscoder/**/*.ts",
+    "../packages/ui/**/*.ts",
+    "../packages/avutil/src/enum.ts"
   ],
   "files": [
     "../@types/index.d.ts",
-    "../src/cheap/@types/index.d.ts",
-    "../src/cheap/src/cheapdef.ts"
+    "../packages/cheap/@types/index.d.ts",
+    "../packages/cheap/src/cheapdef.ts"
   ]
 }

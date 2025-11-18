@@ -20,4 +20,4 @@ test/material
 media/*
 media
 
-src/**/dist/
+packages/**/dist/

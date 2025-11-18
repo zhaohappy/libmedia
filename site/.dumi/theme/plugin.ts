@@ -13,7 +13,7 @@ export default function (api) {
   api.chainWebpack(( memo, { webpack, env}) => {
     const path = require('path')
     const os = require('os')
-    const transformer = require('../../../src/cheap/build/transformer.cjs');
+    const transformer = require('../../../packages/cheap/build/transformer.cjs');
     const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
     memo.module
@@ -27,7 +27,7 @@ export default function (api) {
           const before = transformer.before(program, {
             tmpPath: path.resolve(__dirname, '../../dist/'),
             projectPath: path.resolve(__dirname, '../../../'),
-            cheapSourcePath: path.resolve(__dirname, '../../../src/cheap/src'),
+            cheapSourcePath: path.resolve(__dirname, '../../../packages/cheap/src'),
             exclude: /__test__/,
             reportError: (message) => {
               console.error(message)
@@ -41,19 +41,19 @@ export default function (api) {
         }
       })
 
-    let wat2wasmPath = path.resolve(__dirname, '../../../src/cheap/build/asm/ubuntu') + '/wat2wasm'
+    let wat2wasmPath = path.resolve(__dirname, '../../../packages/cheap/build/asm/ubuntu') + '/wat2wasm'
     if (os.platform() === 'win32') {
-      wat2wasmPath = path.resolve(__dirname, '../../../src/cheap/build/asm/win') + '/wat2wasm.exe'
+      wat2wasmPath = path.resolve(__dirname, '../../../packages/cheap/build/asm/win') + '/wat2wasm.exe'
     }
     else if (os.platform() === 'darwin') {
-      wat2wasmPath = path.resolve(__dirname, '../../../src/cheap/build/asm/macos') + '/wat2wasm'
+      wat2wasmPath = path.resolve(__dirname, '../../../packages/cheap/build/asm/macos') + '/wat2wasm'
     }
 
     memo.module
       .rule('asm')
       .test(/\.asm$/)
-      .use(path.resolve(__dirname, '../../../src/cheap/build/asm/process-loader.js'))
-      .loader(path.resolve(__dirname, '../../../src/cheap/build/asm/process-loader.js'))
+      .use(path.resolve(__dirname, '../../../packages/cheap/build/asm/process-loader.js'))
+      .loader(path.resolve(__dirname, '../../../packages/cheap/build/asm/process-loader.js'))
       .options({
         tmpPath: path.resolve(__dirname, '../../dist'),
         wat2wasm: wat2wasmPath

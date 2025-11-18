@@ -1,7 +1,6 @@
 const ts = require('typescript');
 const path = require('path');
 const fs = require('fs');
-const transformer = require('../src/cheap/build/transformer.cjs');
 const argv = require('yargs').argv;
 const { spawnSync, execSync } = require('child_process');
 const terser = require('terser');
@@ -9,19 +8,19 @@ const terser = require('terser');
 const rootPath = path.resolve(__dirname, '../src')
 
 const files = {
-  audioresample: path.resolve(__dirname, '../src/audioresample/package.json'),
-  audiostretchpitch: path.resolve(__dirname, '../src/audiostretchpitch/package.json'),
-  avcodec: path.resolve(__dirname, '../src/avcodec/package.json'),
-  avfilter: path.resolve(__dirname, '../src/avfilter/package.json'),
-  avformat: path.resolve(__dirname, '../src/avformat/package.json'),
-  avnetwork: path.resolve(__dirname, '../src/avnetwork/package.json'),
-  avpipeline: path.resolve(__dirname, '../src/avpipeline/package.json'),
-  avprotocol: path.resolve(__dirname, '../src/avprotocol/package.json'),
-  avrender: path.resolve(__dirname, '../src/avrender/package.json'),
-  avutil: path.resolve(__dirname, '../src/avutil/package.json'),
-  cheap: path.resolve(__dirname, '../src/cheap/package.json'),
-  common: path.resolve(__dirname, '../src/common/package.json'),
-  videoscale: path.resolve(__dirname, '../src/videoscale/package.json')
+  audioresample: path.resolve(__dirname, '../packages/audioresample/package.json'),
+  audiostretchpitch: path.resolve(__dirname, '../packages/audiostretchpitch/package.json'),
+  avcodec: path.resolve(__dirname, '../packages/avcodec/package.json'),
+  avfilter: path.resolve(__dirname, '../packages/avfilter/package.json'),
+  avformat: path.resolve(__dirname, '../packages/avformat/package.json'),
+  avnetwork: path.resolve(__dirname, '../packages/avnetwork/package.json'),
+  avpipeline: path.resolve(__dirname, '../packages/avpipeline/package.json'),
+  avprotocol: path.resolve(__dirname, '../packages/avprotocol/package.json'),
+  avrender: path.resolve(__dirname, '../packages/avrender/package.json'),
+  avutil: path.resolve(__dirname, '../packages/avutil/package.json'),
+  cheap: path.resolve(__dirname, '../packages/cheap/package.json'),
+  common: path.resolve(__dirname, '../packages/common/package.json'),
+  videoscale: path.resolve(__dirname, '../packages/videoscale/package.json')
 }
 
 const packages = {
@@ -192,7 +191,7 @@ function getVersion() {
   }
 }
 
-function compile(fileNames, options, writeCallback, cjs = false, defined = {}) {
+function compile(fileNames, options, writeCallback, cjs = false, defined = {}, disableTransformer = false) {
   if (options.outDir) {
     fs.rmSync(options.outDir, { recursive: true, force: true })
   }
@@ -203,9 +202,9 @@ function compile(fileNames, options, writeCallback, cjs = false, defined = {}) {
   const emitResult = program.emit(undefined, writeCallback, undefined, undefined, {
     before: [
       packageMapTransformer(),
-      transformer.before(program, {
+      ...(disableTransformer ? [] : [require('../packages/cheap/build/transformer.cjs').before(program, {
         tmpPath: path.join(__dirname, '../dist'),
-        cheapSourcePath: path.resolve(__dirname, '../src/cheap/src'),
+        cheapSourcePath: path.resolve(__dirname, '../packages/cheap/src'),
         cheapPacketName: '@libmedia/cheap',
         defined: Object.assign({
           ENV_NODE: cjs,
@@ -261,12 +260,12 @@ function compile(fileNames, options, writeCallback, cjs = false, defined = {}) {
         importPath: (p) => {
           return replacePath(p)
         }
-      })
+      })])
     ],
     afterDeclarations: [
       packageMapTransformer(),
-      transformer.afterDeclarations(program, {
-      })
+      ...(disableTransformer ? [] : [require('../packages/cheap/build/transformer.cjs').afterDeclarations(program, {
+      })])
     ]
   });
 
@@ -312,12 +311,12 @@ function buildASM(file, to, sourcePath, cjs) {
   const input = '__cheap__transformer_tmp.wat'
   const output = '__cheap__transformer_tmp.wasm'
 
-  let wat2wasmPath = path.resolve(__dirname, '../src/cheap/build/asm/ubuntu') + '/wat2wasm';
+  let wat2wasmPath = path.resolve(__dirname, '../packages/cheap/build/asm/ubuntu') + '/wat2wasm';
   if (os.platform() === 'win32') {
-    wat2wasmPath = path.resolve(__dirname, '../src/cheap/build/asm/win') + '/wat2wasm.exe';
+    wat2wasmPath = path.resolve(__dirname, '../packages/cheap/build/asm/win') + '/wat2wasm.exe';
   }
   else if (os.platform() === 'darwin') {
-    wat2wasmPath = path.resolve(__dirname, '../src/cheap/build/asm/macos') + '/wat2wasm';
+    wat2wasmPath = path.resolve(__dirname, '../packages/cheap/build/asm/macos') + '/wat2wasm';
   }
 
   const inputPath = `${path.resolve(__dirname, '../dist')}/${input}`
@@ -426,7 +425,7 @@ function generateEnum(fileName) {
       }
     ]
   });
-  fs.writeFileSync(path.resolve(__dirname, `../src/avutil/src/${fileName}.ts`), source)
+  fs.writeFileSync(path.resolve(__dirname, `../packages/avutil/src/${fileName}.ts`), source)
 }
 
 function formatESMFileImport(data) {
@@ -503,7 +502,7 @@ function buildPackage(packageName, taskLevel = 1, fileNamesFilter) {
     }
   }
 
-  let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${packageName}/tsconfig.esm.json`))
+  let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../packages/${packageName}/tsconfig.esm.json`))
 
   const esmReg = new RegExp(`dist\/esm\/${packageName}\/src\/?`)
   const cjsReg = new RegExp(`dist\/cjs\/${packageName}\/src\/?`)
@@ -556,7 +555,7 @@ function buildPackage(packageName, taskLevel = 1, fileNamesFilter) {
 
   printTaskLog(taskLevel, packageName, 'START', `starting built ${packageName} cjs package`);
 
-  parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${packageName}/tsconfig.cjs.json`))
+  parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../packages/${packageName}/tsconfig.cjs.json`))
   compile(fileNamesFilter ? parsedCommandLine.fileNames.filter(fileNamesFilter) : parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     let dir = path.dirname(fileName);
     if (cjsReg.test(dir)) {
@@ -605,7 +604,7 @@ function buildCheapCode(taskLevel = 1, fileNamesFilter) {
     }
   }
 
-  let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${packageName}/tsconfig.mjs.json`))
+  let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../packages/${packageName}/tsconfig.mjs.json`))
 
   const mjsReg = new RegExp(`dist\/mjs\/${packageName}\/src\/?`)
 
@@ -653,7 +652,7 @@ function buildCommon() {
   printTaskLog(0, 'common', 'START', `starting built common`);
 
   printTaskLog(1, 'common', 'START', `starting built common esm package`);
-  let parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/common/tsconfig.esm.json'))
+  let parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../packages/common/tsconfig.esm.json'))
   compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     if (/\.js$/.test(fileName)) {
       data = formatESMFileImport(data);
@@ -663,11 +662,11 @@ function buildCommon() {
     }
     fs.mkdirSync(path.dirname(fileName), { recursive: true });
     fs.writeFileSync(fileName, data);
-  });
+  }, false, {}, true);
   printTaskLog(1, 'common', 'SUCCESS', `built common esm package completed`);
 
   printTaskLog(1, 'common', 'START', `starting built common cjs package`);
-  parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/common/tsconfig.cjs.json'))
+  parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../packages/common/tsconfig.cjs.json'))
   compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     if (/\.js$/.test(fileName)) {
       fileName = fileName.replace(/\.js$/, '.cjs');
@@ -675,7 +674,7 @@ function buildCommon() {
     }
     fs.mkdirSync(path.dirname(fileName), { recursive: true });
     fs.writeFileSync(fileName, data);
-  }, true);
+  }, true, {}, true);
   printTaskLog(1, 'common', 'SUCCESS', `built common cjs package completed`);
 
   printTaskLog(0, 'common', 'SUCCESS', `built common completed`);
@@ -704,9 +703,9 @@ function buildCheap() {
 
   buildCheapCode()
 
-  fs.copyFileSync(path.resolve(__dirname, '../dist/cheap-polyfill.js'), path.resolve(__dirname, '../src/cheap/dist/cheap-polyfill.js'));
-  fs.copyFileSync(path.resolve(__dirname, '../src/cheap/src/webassembly/WebAssemblyRunnerWorker.js'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/WebAssemblyRunnerWorker.js'));
-  fs.copyFileSync(path.resolve(__dirname, '../src/cheap/src/webassembly/threadEntry.js'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/threadEntry.js'));
+  fs.copyFileSync(path.resolve(__dirname, '../dist/cheap-polyfill.js'), path.resolve(__dirname, '../packages/cheap/dist/cheap-polyfill.js'));
+  fs.copyFileSync(path.resolve(__dirname, '../packages/cheap/src/webassembly/WebAssemblyRunnerWorker.js'), path.resolve(__dirname, '../packages/cheap/dist/esm/webassembly/WebAssemblyRunnerWorker.js'));
+  fs.copyFileSync(path.resolve(__dirname, '../packages/cheap/src/webassembly/threadEntry.js'), path.resolve(__dirname, '../packages/cheap/dist/esm/webassembly/threadEntry.js'));
   printTaskLog(1, 'cheap', 'SUCCESS', `copy cheap-polyfill.js WebAssemblyRunnerWorker.js threadEntry.js completed`);
 
   printTaskLog(0, 'cheap', 'SUCCESS', `built cheap completed`);
@@ -740,14 +739,14 @@ function buildAvutil() {
   buildPackage('avutil')
 
   process.on('exit', (code) => {
-    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/esm/${enumFileName}.js`), path.resolve(__dirname, `../src/avutil/dist/esm/enum.js`))
-    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/cjs/${enumFileName}.cjs`), path.resolve(__dirname, `../src/avutil/dist/cjs/enum.cjs`))
-    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/esm/${enumFileName}.js.map`), path.resolve(__dirname, `../src/avutil/dist/esm/enum.js.map`))
-    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/cjs/${enumFileName}.js.map`), path.resolve(__dirname, `../src/avutil/dist/cjs/enum.js.map`))
-    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/esm/${enumFileName}.d.ts`), path.resolve(__dirname, `../src/avutil/dist/esm/enum.d.ts`))
+    fs.renameSync(path.resolve(__dirname, `../packages/avutil/dist/esm/${enumFileName}.js`), path.resolve(__dirname, `../packages/avutil/dist/esm/enum.js`))
+    fs.renameSync(path.resolve(__dirname, `../packages/avutil/dist/cjs/${enumFileName}.cjs`), path.resolve(__dirname, `../packages/avutil/dist/cjs/enum.cjs`))
+    fs.renameSync(path.resolve(__dirname, `../packages/avutil/dist/esm/${enumFileName}.js.map`), path.resolve(__dirname, `../packages/avutil/dist/esm/enum.js.map`))
+    fs.renameSync(path.resolve(__dirname, `../packages/avutil/dist/cjs/${enumFileName}.js.map`), path.resolve(__dirname, `../packages/avutil/dist/cjs/enum.js.map`))
+    fs.renameSync(path.resolve(__dirname, `../packages/avutil/dist/esm/${enumFileName}.d.ts`), path.resolve(__dirname, `../packages/avutil/dist/esm/enum.d.ts`))
   });
 
-  fs.unlinkSync(path.resolve(__dirname, `../src/avutil/src/${enumFileName}.ts`))
+  fs.unlinkSync(path.resolve(__dirname, `../packages/avutil/src/${enumFileName}.ts`))
 
   printTaskLog(0, 'avutil', 'SUCCESS', `built avutil completed`);
 }
@@ -797,30 +796,30 @@ function buildAvrender() {
   })
   printTaskLog(1, 'avrender', 'SUCCESS', `built pcm worklet processor completed`);
 
-  fs.mkdirSync(path.resolve(__dirname, '../src/avrender/dist'), { recursive: true });
-  fs.copyFileSync(path.resolve(__dirname, '../dist/AudioSourceWorkletProcessor.js'), path.resolve(__dirname, '../src/avrender/dist/AudioSourceWorkletProcessorWorklet.js'));
-  fs.copyFileSync(path.resolve(__dirname, '../dist/AudioSourceWorkletProcessor2.js'), path.resolve(__dirname, '../src/avrender/dist/AudioSourceWorkletProcessor2Worklet.js'));
+  fs.mkdirSync(path.resolve(__dirname, '../packages/avrender/dist'), { recursive: true });
+  fs.copyFileSync(path.resolve(__dirname, '../dist/AudioSourceWorkletProcessor.js'), path.resolve(__dirname, '../packages/avrender/dist/AudioSourceWorkletProcessorWorklet.js'));
+  fs.copyFileSync(path.resolve(__dirname, '../dist/AudioSourceWorkletProcessor2.js'), path.resolve(__dirname, '../packages/avrender/dist/AudioSourceWorkletProcessor2Worklet.js'));
 
   printTaskLog(1, 'avrender', 'SUCCESS', `copy AudioSourceWorkletProcessor AudioSourceWorkletProcessor2 completed`);
 
   buildPackage('avrender')
 
-  buildGlsl(path.resolve(__dirname, '../src/avrender/src/image/webgl/glsl/vertex.vert'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgl/glsl/vertex.vert.js'), '../../../../../image/webgl/glsl/')
-  buildGlsl(path.resolve(__dirname, '../src/avrender/src/image/webgl/glsl/vertex.vert'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgl/glsl/vertex.vert.js'), '../../../../../image/webgl/glsl/', true)
+  buildGlsl(path.resolve(__dirname, '../packages/avrender/src/image/webgl/glsl/vertex.vert'), path.resolve(__dirname, '../packages/avrender/dist/esm/image/webgl/glsl/vertex.vert.js'), '../../../../../image/webgl/glsl/')
+  buildGlsl(path.resolve(__dirname, '../packages/avrender/src/image/webgl/glsl/vertex.vert'), path.resolve(__dirname, '../packages/avrender/dist/cjs/image/webgl/glsl/vertex.vert.js'), '../../../../../image/webgl/glsl/', true)
 
   printTaskLog(1, 'avrender', 'SUCCESS', `built glsl completed`);
 
-  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/vertex.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/vertex.wgsl.js'), '../../../../../image/webgpu/wgsl/')
-  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/vertex.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/vertex.wgsl.js'), '../../../../../image/webgpu/wgsl/', true)
+  buildWgsl(path.resolve(__dirname, '../packages/avrender/src/image/webgpu/wgsl/vertex.wgsl'), path.resolve(__dirname, '../packages/avrender/dist/esm/image/webgpu/wgsl/vertex.wgsl.js'), '../../../../../image/webgpu/wgsl/')
+  buildWgsl(path.resolve(__dirname, '../packages/avrender/src/image/webgpu/wgsl/vertex.wgsl'), path.resolve(__dirname, '../packages/avrender/dist/cjs/image/webgpu/wgsl/vertex.wgsl.js'), '../../../../../image/webgpu/wgsl/', true)
   
-  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/compute/uint2FloatBE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/compute/uint2FloatBE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/')
-  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/compute/uint2FloatBE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/compute/uint2FloatBE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/', true)
+  buildWgsl(path.resolve(__dirname, '../packages/avrender/src/image/webgpu/wgsl/compute/uint2FloatBE.wgsl'), path.resolve(__dirname, '../packages/avrender/dist/esm/image/webgpu/wgsl/compute/uint2FloatBE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/')
+  buildWgsl(path.resolve(__dirname, '../packages/avrender/src/image/webgpu/wgsl/compute/uint2FloatBE.wgsl'), path.resolve(__dirname, '../packages/avrender/dist/cjs/image/webgpu/wgsl/compute/uint2FloatBE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/', true)
   
-  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/compute/uint2FloatLE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/compute/uint2FloatLE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/')
-  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/compute/uint2FloatLE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/compute/uint2FloatLE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/', true)
+  buildWgsl(path.resolve(__dirname, '../packages/avrender/src/image/webgpu/wgsl/compute/uint2FloatLE.wgsl'), path.resolve(__dirname, '../packages/avrender/dist/esm/image/webgpu/wgsl/compute/uint2FloatLE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/')
+  buildWgsl(path.resolve(__dirname, '../packages/avrender/src/image/webgpu/wgsl/compute/uint2FloatLE.wgsl'), path.resolve(__dirname, '../packages/avrender/dist/cjs/image/webgpu/wgsl/compute/uint2FloatLE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/', true)
   
-  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/fragment/external.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/fragment/external.wgsl.js'), '../../../../../image/webgpu/wgsl/fragment/')
-  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/fragment/external.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/fragment/external.wgsl.js'), '../../../../../image/webgpu/wgsl/fragment/', true)
+  buildWgsl(path.resolve(__dirname, '../packages/avrender/src/image/webgpu/wgsl/fragment/external.wgsl'), path.resolve(__dirname, '../packages/avrender/dist/esm/image/webgpu/wgsl/fragment/external.wgsl.js'), '../../../../../image/webgpu/wgsl/fragment/')
+  buildWgsl(path.resolve(__dirname, '../packages/avrender/src/image/webgpu/wgsl/fragment/external.wgsl'), path.resolve(__dirname, '../packages/avrender/dist/cjs/image/webgpu/wgsl/fragment/external.wgsl.js'), '../../../../../image/webgpu/wgsl/fragment/', true)
 
   printTaskLog(1, 'avrender', 'SUCCESS', `built wgsl completed`);
 
@@ -829,23 +828,23 @@ function buildAvrender() {
 
 function buildAvplayer() {
   printTaskLog(0, 'AVPlayer', 'START', `starting built AVPlayer`);
-  fs.rmSync(path.resolve(__dirname, '../src/avplayer/dist'), { recursive: true, force: true });
+  fs.rmSync(path.resolve(__dirname, '../packages/avplayer/dist'), { recursive: true, force: true });
   process.env.NODE_ENV = 'production';
 
   printTaskLog(1, 'AVPlayer', 'START', `built umd AVPlayer starting`);
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'release=1', `dist=${path.resolve(__dirname, '../src/avplayer/dist/umd')}`], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'release=1', `dist=${path.resolve(__dirname, '../packages/avplayer/dist/umd')}`], {
     stdio: 'ignore'
   })
   printTaskLog(1, 'AVPlayer', 'SUCCESS', `built umd AVPlayer completed`);
 
   printTaskLog(1, 'AVPlayer', 'START', `built esm AVPlayer starting`);
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'release=1', 'esm=1', `dist=${path.resolve(__dirname, '../src/avplayer/dist/esm')}`], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'release=1', 'esm=1', `dist=${path.resolve(__dirname, '../packages/avplayer/dist/esm')}`], {
     stdio: 'ignore'
   })
   printTaskLog(1, 'AVPlayer', 'SUCCESS', `built esm AVPlayer completed`);
 
   printTaskLog(1, 'AVPlayer', 'START', `built AVPlayer.d.ts starting`);
-  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/avplayer/tsconfig.d.json'))
+  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../packages/avplayer/tsconfig.d.json'))
   compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     let dir = path.dirname(fileName);
     if (/dist\/types\/avplayer\/?/.test(dir)) {
@@ -862,21 +861,21 @@ function buildAvplayer() {
 
 function buildAvtranscoder() {
   printTaskLog(0, 'AVTranscoder', 'START', `starting built AVTranscoder`);
-  fs.rmSync(path.resolve(__dirname, '../src/avtranscoder/dist'), { recursive: true, force: true });
+  fs.rmSync(path.resolve(__dirname, '../packages/avtranscoder/dist'), { recursive: true, force: true });
   printTaskLog(1, 'AVTranscoder', 'START', `built umd AVTranscoder starting`);
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avtranscoder=1', 'release=1', `dist=${path.resolve(__dirname, '../src/avtranscoder/dist/umd')}`], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avtranscoder=1', 'release=1', `dist=${path.resolve(__dirname, '../packages/avtranscoder/dist/umd')}`], {
     stdio: 'ignore'
   })
   printTaskLog(1, 'AVTranscoder', 'SUCCESS', `built umd AVTranscoder completed`);
 
   printTaskLog(1, 'AVTranscoder', 'START', `built esm AVTranscoder starting`);
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avtranscoder=1', 'release=1', 'esm=1', `dist=${path.resolve(__dirname, '../src/avtranscoder/dist/esm')}`], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avtranscoder=1', 'release=1', 'esm=1', `dist=${path.resolve(__dirname, '../packages/avtranscoder/dist/esm')}`], {
     stdio: 'ignore'
   })
   printTaskLog(1, 'AVTranscoder', 'SUCCESS', `built esm AVTranscoder completed`);
 
   printTaskLog(1, 'AVTranscoder', 'START', `built AVTranscoder.d.ts starting`);
-  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/avtranscoder/tsconfig.d.json'))
+  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../packages/avtranscoder/tsconfig.d.json'))
   compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     let dir = path.dirname(fileName);
     if (/dist\/types\/avtranscoder\/?/.test(dir)) {
@@ -893,22 +892,22 @@ function buildAvtranscoder() {
 
 function buildAvplayerUI() {
   printTaskLog(0, 'AVPlayerUI', 'START', `starting built AVPlayerUI`);
-  fs.rmSync(path.resolve(__dirname, '../src/ui/avplayer/dist'), { recursive: true, force: true });
+  fs.rmSync(path.resolve(__dirname, '../packages/ui/avplayer/dist'), { recursive: true, force: true });
 
   printTaskLog(1, 'AVPlayerUI', 'START', `built umd AVPlayerUI starting`);
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'ui=1', 'release=1', `dist=${path.resolve(__dirname, '../src/ui/avplayer/dist/umd')}`], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'ui=1', 'release=1', `dist=${path.resolve(__dirname, '../packages/ui/avplayer/dist/umd')}`], {
     stdio: 'ignore'
   })
   printTaskLog(1, 'AVPlayerUI', 'SUCCESS', `built umd AVPlayerUI completed`);
 
   printTaskLog(1, 'AVPlayerUI', 'START', `built esm AVPlayerUI starting`);
-  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'ui=1', 'release=1', 'esm=1', `dist=${path.resolve(__dirname, '../src/ui/avplayer/dist/esm')}`], {
+  spawnSync('node', [`${path.resolve(__dirname, '../')}/node_modules/webpack/bin/webpack.js`, '--progress', '--env', 'avplayer=1', 'ui=1', 'release=1', 'esm=1', `dist=${path.resolve(__dirname, '../packages/ui/avplayer/dist/esm')}`], {
     stdio: 'ignore'
   })
   printTaskLog(1, 'AVPlayerUI', 'SUCCESS', `built esm AVPlayerUI completed`);
 
   printTaskLog(1, 'AVPlayerUI', 'START', `built AVPlayerUI.d.ts starting`);
-  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/ui/avplayer/tsconfig.d.json'))
+  const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../packages/ui/avplayer/tsconfig.d.json'))
   compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     let dir = path.dirname(fileName);
     if (/dist\/types\/ui\/avplayer\/?/.test(dir)) {

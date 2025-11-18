@@ -1,6 +1,6 @@
-[submodule "src/cheap"]
-	path = src/cheap
+[submodule "packages/cheap"]
+	path = packages/cheap
 	url = https://github.com/zhaohappy/cheap.git
-[submodule "src/common"]
-	path = src/common
+[submodule "packages/common"]
+	path = packages/common
 	url = https://github.com/zhaohappy/common.git

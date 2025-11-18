@@ -41,7 +41,7 @@ module.exports = (env) => {
 
   if (env.avplayer) {
     if (env.ui) {
-      entry = path.resolve(__dirname, './src/ui/avplayer/src/AVPlayer.ts');
+      entry = path.resolve(__dirname, './packages/ui/avplayer/src/AVPlayer.ts');
       output = `avplayer.js`;
       library = 'AVPlayer';
       libraryExport = 'default';
@@ -53,7 +53,7 @@ module.exports = (env) => {
       }
     }
     else {
-      entry = path.resolve(__dirname, './src/avplayer/src/AVPlayer.ts');
+      entry = path.resolve(__dirname, './packages/avplayer/src/AVPlayer.ts');
       output = `avplayer.js`;
       library = 'AVPlayer';
       libraryExport = 'default';
@@ -67,7 +67,7 @@ module.exports = (env) => {
     
   }
   else if (env.avtranscoder) {
-    entry = path.resolve(__dirname, './src/avtranscoder/src/AVTranscoder.ts');
+    entry = path.resolve(__dirname, './packages/avtranscoder/src/AVTranscoder.ts');
     output = `avtranscoder.js`;
     library = 'AVTranscoder';
     libraryExport = 'default';
@@ -80,22 +80,22 @@ module.exports = (env) => {
     }
   }
   else if (env.polyfill) {
-    entry = path.resolve(__dirname, './src/cheap/src/polyfill/index.ts');
+    entry = path.resolve(__dirname, './packages/cheap/src/polyfill/index.ts');
     output = 'cheap-polyfill.js';
     library = 'CheapPolyfill';
     libraryTarget = 'var';
   }
   else if (env.webassembly_runner) {
-    entry = path.resolve(__dirname, './src/cheap/src/webassembly/WebAssemblyRunner.ts');
-    outputPath = path.resolve(__dirname, './src/cheap/src/webassembly');
+    entry = path.resolve(__dirname, './packages/cheap/src/webassembly/WebAssemblyRunner.ts');
+    outputPath = path.resolve(__dirname, './packages/cheap/src/webassembly');
     output = 'WebAssemblyRunnerWorker.js'
     library = '__CHeap_WebAssemblyRunner__';
     libraryTarget = 'var';
   }
   else if (env.pcm_worklet_processor) {
     entry = {
-      'AudioSourceWorkletProcessor': path.resolve(__dirname, './src/avrender/src/pcm/AudioSourceWorkletProcessor.ts'),
-      'AudioSourceWorkletProcessor2': path.resolve(__dirname, './src/avrender/src/pcm/AudioSourceWorkletProcessor2.ts')
+      'AudioSourceWorkletProcessor': path.resolve(__dirname, './packages/avrender/src/pcm/AudioSourceWorkletProcessor.ts'),
+      'AudioSourceWorkletProcessor2': path.resolve(__dirname, './packages/avrender/src/pcm/AudioSourceWorkletProcessor2.ts')
     };
     output = '[name].js';
     library = 'processor';
@@ -103,9 +103,9 @@ module.exports = (env) => {
   }
   else if (env.thread_entry) {
     entry = {
-      'threadEntry': path.resolve(__dirname, './src/cheap/src/webassembly/runThread.ts'),
+      'threadEntry': path.resolve(__dirname, './packages/cheap/src/webassembly/runThread.ts'),
     };
-    outputPath = path.resolve(__dirname, './src/cheap/src/webassembly');
+    outputPath = path.resolve(__dirname, './packages/cheap/src/webassembly');
     output = '[name].js';
     library = '__CHeap_ThreadEntry__';
     libraryTarget = 'var';
@@ -286,7 +286,7 @@ module.exports = (env) => {
 
   if (!env.transformer) {
 
-    const CheapPlugin = require('./src/cheap/build/webpack/plugin/CheapPlugin');
+    const CheapPlugin = require('./packages/cheap/build/webpack/plugin/CheapPlugin');
 
     const defined = {
       VERSION: getVersion()
@@ -306,19 +306,19 @@ module.exports = (env) => {
         name: 'libmedia',
         env: 'browser',
         projectPath: __dirname,
-        cheapSourcePath: path.resolve(__dirname, './src/cheap/src'),
+        cheapSourcePath: path.resolve(__dirname, './packages/cheap/src'),
         tmpPath: path.resolve(__dirname, './dist'),
         exclude: /__test__/,
         // 配置线程模块中有动态导入的模块，需要给动态导入的模块重新处理依赖，因为线程模块可能没有动态导入模块的依赖模块
         threadFiles: [
           {
-            file: path.resolve(__dirname, 'src/avpipeline/DemuxPipeline.ts')
+            file: path.resolve(__dirname, 'packages/avpipeline/DemuxPipeline.ts')
           },
           {
-            file: path.resolve(__dirname, 'src/avpipeline/MuxPipeline.ts')
+            file: path.resolve(__dirname, 'packages/avpipeline/MuxPipeline.ts')
           },
           {
-            file: path.resolve(__dirname, 'src/avpipeline/IOPipeline.ts')
+            file: path.resolve(__dirname, 'packages/avpipeline/IOPipeline.ts')
           }
         ],
         defined
