@@ -34,14 +34,14 @@ export { AVPacketType, AVPacketFlags } from './struct/avpacket'
 
 export { AVSubtitleType } from './struct/avsubtitle'
 
-export { IOError } from '../common/io/error'
+export { IOError } from '../../common/src/io/error'
 
-export { RenderMode } from '../avrender/image/ImageRender'
+export { RenderMode } from '../../avrender/src/image/ImageRender'
 
-export { AVDiscard } from '../avcodec/wasmcodec/VideoDecoder'
+export { AVDiscard } from '../../avcodec/src/wasmcodec/VideoDecoder'
 
-export { AVPlayerStatus, AVPlayerProgress } from '../avplayer/AVPlayer'
+export { AVPlayerStatus, AVPlayerProgress } from '../../avplayer/src/AVPlayer'
 
-export { IOLoaderStatus } from '../avnetwork/ioLoader/IOLoader'
+export { IOLoaderStatus } from '../../avnetwork/src/ioLoader/IOLoader'
 
-export { Mp4FragmentMode, Mp4Mode } from '../avformat/formats/OIsobmffFormat'
+export { Mp4FragmentMode, Mp4Mode } from '../../avformat/src/formats/OIsobmffFormat'

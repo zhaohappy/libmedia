@@ -1,6 +1,6 @@
 import type { ComponentOptions } from 'yox'
 import type AVPlayer from '@libmedia/avplayer'
-import * as storage from '../../../../util/storage'
+import * as storage from '../../../../../util/storage'
 
 import template from './Loop.hbs'
 import style from './Loop.styl'

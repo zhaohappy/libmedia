@@ -7,9 +7,13 @@
     "allowJs": false
   },
   "include": [
-    "./**/*.ts",
-    "../cheap/**/*.ts",
-    "../common/types/*.ts",
+    "./src/**/*.ts",
+    "../cheap/src/**/*.ts",
+    "../cheap/@types/index.d.ts",
+    "../common/src/types/*.ts",
     "../../@types/index.d.ts"
+  ],
+  "exclude": [
+    "../cheap/src/transformer/**/*.ts"
   ]
 }

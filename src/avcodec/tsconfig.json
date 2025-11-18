@@ -8,12 +8,16 @@
     "allowJs": false
   },
   "include": [
-    "./**/*.ts",
-    "../cheap/**/*.ts",
-    "../common/types/*.ts",
+    "./src/**/*.ts",
+    "../cheap/src/**/*.ts",
+    "../common/src/types/*.ts",
     "../../@types/index.d.ts",
-    "../avformat/**/*.ts",
-    "../avutil/**/*.ts",
-    "../avprotocol/**/*.ts"
+    "../avformat/src/**/*.ts",
+    "../avutil/src/**/*.ts",
+    "../avprotocol/src/**/*.ts",
+    "../cheap/@types/index.d.ts"
+  ],
+  "exclude": [
+    "../cheap/src/transformer/**/*.ts"
   ]
 }

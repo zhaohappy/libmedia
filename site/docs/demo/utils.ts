@@ -35,7 +35,7 @@ import IAviFormat from '@libmedia/avformat/IAviFormat'
 
 
 const BASE_URL = 'https://zhaohappy.github.io/libmedia'
-const BASE_CDN = 'https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist'
+const BASE_CDN = 'https://fastly.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist'
 
 const Ext2Format: Record<string, AVFormat> = {
   'flv': AVFormat.FLV,

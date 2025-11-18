@@ -1,7 +1,7 @@
 import type { ComponentOptions } from 'yox'
 import type AVPlayer from '@libmedia/avplayer'
-import * as storage from '../../../../util/storage'
-import Slider from '../../../../components/slider/Slider'
+import * as storage from '../../../../../util/storage'
+import Slider from '../../../../../components/slider/Slider'
 import { Events as eventType } from '@libmedia/avplayer'
 
 import template from './Volume.hbs'

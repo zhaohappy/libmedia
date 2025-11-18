@@ -375,17 +375,6 @@ function buildGlsl(file, to, sourcePath, cjs) {
     : `
     export default ${code};
   `, 'utf8');
-
-  // const map = {
-  //   "version": 3,
-  //   "sources": [sourcePath + path.basename(file)],
-  //   "names": [],
-  //   "mappings": "",
-  //   "sourcesContent": [
-  //     source
-  //   ]
-  // }
-  // fs.writeFileSync(to + '.map', JSON.stringify(map))
 }
 
 function buildWgsl(file, to, sourcePath, cjs) {
@@ -402,17 +391,6 @@ function buildWgsl(file, to, sourcePath, cjs) {
     :`
     export default ${code};
   `, 'utf8');
-
-  // const map = {
-  //   "version": 3,
-  //   "sources": [sourcePath + path.basename(file)],
-  //   "names": [],
-  //   "mappings": "",
-  //   "sourcesContent": [
-  //     source
-  //   ]
-  // }
-  // fs.writeFileSync(to + '.map', JSON.stringify(map))
 }
 
 function generateEnum(fileName) {
@@ -427,7 +405,7 @@ function generateEnum(fileName) {
     before: [
       function (context) {
         return (sourceFile) => {
-          if (/avutil\/enum\.ts$/.test(sourceFile.fileName)) {
+          if (/avutil\/src\/enum\.ts$/.test(sourceFile.fileName)) {
             function visitor(node) {
               if (ts.isNamedExports(node)) {
                 node.elements.forEach((element) => {
@@ -448,21 +426,87 @@ function generateEnum(fileName) {
       }
     ]
   });
-  fs.writeFileSync(path.resolve(__dirname, `../src/avutil/${fileName}.ts`), source)
+  fs.writeFileSync(path.resolve(__dirname, `../src/avutil/src/${fileName}.ts`), source)
+}
+
+function formatESMFileImport(data) {
+  data = data.replace(
+    /(\s+from\s+['"])(\.[^'"]*)(['"])/g,
+    (s0, s1, s2, s3) => {
+      if (/\.js$/.test(s2)) {
+        return s1 + s2 + s3
+      }
+      return s1 + s2 + '.js' + s3
+    }
+  );
+  // This matches dynamic imports
+  data = data.replace(
+    /(import\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
+    (s0, s1, s2, s3) => {
+      if (/\.js$/.test(s2)) {
+        return s1 + s2 + s3
+      }
+      return s1 + s2 + '.js' + s3
+    }
+  )
+  return data
+}
+
+function formatCJSFileImport(data) {
+  data = data.replace(
+    /(require\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
+    (s0, s1, s2, s3) => {
+      if (/\.js$/.test(s2)) {
+        return s1 + s2.replace(/\.js$/, '.cjs') + s3
+      }
+      return s1 + s2 + '.cjs' + s3
+    }
+  );
+  return data
+}
+
+function formatDeclarationFileImport(data) {
+  // This matches static imports
+  data = data.replace(
+    /(\s+from\s+['"])(\.[^'"]*)(['"])/g,
+    (s0, s1, s2, s3) => {
+      if (/\.js$/.test(s2)) {
+        return s1 + s2.replace(/\.js$/, '.d.ts') + s3
+      }
+      return s1 + s2 + '.d.ts' + s3
+    }
+  );
+  // This matches dynamic imports
+  data = data.replace(
+    /(import\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
+    (s0, s1, s2, s3) => {
+      if (/\.js$/.test(s2)) {
+        return s1 + s2.replace(/\.js$/, '.d.ts') + s3
+      }
+      return s1 + s2 + '.d.ts' + s3
+    }
+  );
+  return data
+}
+
+function formatSourcemapPath(data) {
+  const json = JSON.parse(data)
+  json.sources[0] = json.sources[0].replace(/^(\.\.\/\.\.\/)/, '')
+  return JSON.stringify(json)
 }
 
 function buildPackage(packageName, taskLevel = 1, fileNamesFilter) {
 
   if (!fileNamesFilter) {
     fileNamesFilter = (name) => {
-      return !/avutil\/enum\.ts$/.test(name)
+      return !/avutil\/src\/enum\.ts$/.test(name)
     }
   }
 
   let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${packageName}/tsconfig.esm.json`))
 
-  const esmReg = new RegExp(`dist\/esm\/${packageName}\/?`)
-  const cjsReg = new RegExp(`dist\/cjs\/${packageName}\/?`)
+  const esmReg = new RegExp(`dist\/esm\/${packageName}\/src\/?`)
+  const cjsReg = new RegExp(`dist\/cjs\/${packageName}\/src\/?`)
 
   printTaskLog(taskLevel, packageName, 'START', `starting built ${packageName} esm package`);
 
@@ -487,62 +531,21 @@ function buildPackage(packageName, taskLevel = 1, fileNamesFilter) {
             beautify: true
           }
         }).then((result) => {
-          let code = result.code
-          // This matches static imports
-          code = code.replace(
-            /(\s+from\s+['"])(\.[^'"]*)(['"])/g,
-            (s0, s1, s2, s3) => {
-              if (/\.js$/.test(s2)) {
-                return s1 + s2 + s3
-              }
-              return s1 + s2 + '.js' + s3
-            }
-          );
-          // This matches dynamic imports
-          code = code.replace(
-            /(import\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
-            (s0, s1, s2, s3) => {
-              if (/\.js$/.test(s2)) {
-                return s1 + s2 + s3
-              }
-              return s1 + s2 + '.js' + s3
-            }
-          );
+          let code = formatESMFileImport(result.code);
           fs.writeFileSync(path.resolve(dir, path.basename(fileName)), code);
           fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), result.map);
         })
       }
       else {
         if (/\.map$/.test(fileName)) {
-          const json = JSON.parse(data)
-          json.sources[0] = json.sources[0].replace(/^(\.\.\/)/, '')
-          data = JSON.stringify(json)
+          data = formatSourcemapPath(data);
         }
         if (/\.d\.ts$/.test(fileName)) {
-          // This matches static imports
-          data = data.replace(
-            /(\s+from\s+['"])(\.[^'"]*)(['"])/g,
-            (s0, s1, s2, s3) => {
-              if (/\.js$/.test(s2)) {
-                return s1 + s2.replace(/\.js$/, '.d.ts') + s3
-              }
-              return s1 + s2 + '.d.ts' + s3
-            }
-          );
-          // This matches dynamic imports
-          data = data.replace(
-            /(import\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
-            (s0, s1, s2, s3) => {
-              if (/\.js$/.test(s2)) {
-                return s1 + s2.replace(/\.js$/, '.d.ts') + s3
-              }
-              return s1 + s2 + '.d.ts' + s3
-            }
-          );
+          data = formatDeclarationFileImport(data);
         }
         if (packageName === 'cheap' && /cheap\/index\.d\.ts$/.test(fileName)) {
           // data = 'import "./cheapdef.d.ts"\n\n' + data
-          data = '/// <reference path="./cheapdef.d.ts" />\n\n' + data
+          data = '/// <reference path="./cheapdef.d.ts" />\n\n' + data;
         }
         fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
       }
@@ -575,25 +578,14 @@ function buildPackage(packageName, taskLevel = 1, fileNamesFilter) {
             beautify: true
           }
         }).then((result) => {
-          let code = result.code
-          code = code.replace(
-            /(require\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
-            (s0, s1, s2, s3) => {
-              if (/\.js$/.test(s2)) {
-                return s1 + s2.replace(/\.js$/, '.cjs') + s3
-              }
-              return s1 + s2 + '.cjs' + s3
-            }
-          );
+          let code = formatCJSFileImport(result.code);
           fs.writeFileSync(path.resolve(dir, path.basename(fileName.replace(/\.js$/, '.cjs'))), code);
           fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), result.map);
         })
       }
       else {
         if (/\.map$/.test(fileName)) {
-          const json = JSON.parse(data)
-          json.sources[0] = json.sources[0].replace(/^(\.\.\/)/, '')
-          data = JSON.stringify(json)
+          data = formatSourcemapPath(data);
         }
         fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
       }
@@ -640,36 +632,14 @@ function buildCheapCode(taskLevel = 1, fileNamesFilter) {
             beautify: true
           }
         }).then((result) => {
-          let code = result.code
-          // This matches static imports
-          code = code.replace(
-            /(\s+from\s+['"])(\.[^'"]*)(['"])/g,
-            (s0, s1, s2, s3) => {
-              if (/\.js$/.test(s2)) {
-                return s1 + s2 + s3
-              }
-              return s1 + s2 + '.js' + s3
-            }
-          );
-          // This matches dynamic imports
-          code = code.replace(
-            /(import\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
-            (s0, s1, s2, s3) => {
-              if (/\.js$/.test(s2)) {
-                return s1 + s2 + s3
-              }
-              return s1 + s2 + '.js' + s3
-            }
-          );
+          let code = formatESMFileImport(result.code);
           fs.writeFileSync(path.resolve(dir, path.basename(fileName)), code);
           fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), result.map);
         })
       }
       else {
         if (/\.map$/.test(fileName)) {
-          const json = JSON.parse(data)
-          json.sources[0] = json.sources[0].replace(/^(\.\.\/)/, '')
-          data = JSON.stringify(json)
+          data = formatSourcemapPath(data);
         }
         fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
       }
@@ -686,47 +656,10 @@ function buildCommon() {
   let parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/common/tsconfig.esm.json'))
   compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     if (/\.js$/.test(fileName)) {
-      data = data.replace(
-        /(\s+from\s+['"])(\.[^'"]*)(['"])/g,
-        (s0, s1, s2, s3) => {
-          if (/\.js$/.test(s2)) {
-            return s1 + s2 + s3
-          }
-          return s1 + s2 + '.js' + s3
-        }
-      );
-      // This matches dynamic imports
-      data = data.replace(
-        /(import\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
-        (s0, s1, s2, s3) => {
-          if (/\.js$/.test(s2)) {
-            return s1 + s2 + s3
-          }
-          return s1 + s2 + '.js' + s3
-        }
-      );
+      data = formatESMFileImport(data);
     }
     if (/\.d\.ts$/.test(fileName)) {
-      // This matches static imports
-      data = data.replace(
-        /(\s+from\s+['"])(\.[^'"]*)(['"])/g,
-        (s0, s1, s2, s3) => {
-          if (/\.js$/.test(s2)) {
-            return s1 + s2.replace(/\.js$/, '.d.ts') + s3
-          }
-          return s1 + s2 + '.d.ts' + s3
-        }
-      );
-      // This matches dynamic imports
-      data = data.replace(
-        /(import\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
-        (s0, s1, s2, s3) => {
-          if (/\.js$/.test(s2)) {
-            return s1 + s2.replace(/\.js$/, '.d.ts') + s3
-          }
-          return s1 + s2 + '.d.ts' + s3
-        }
-      );
+      data = formatDeclarationFileImport(data);
     }
     fs.mkdirSync(path.dirname(fileName), { recursive: true });
     fs.writeFileSync(fileName, data);
@@ -737,16 +670,8 @@ function buildCommon() {
   parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/common/tsconfig.cjs.json'))
   compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     if (/\.js$/.test(fileName)) {
-      fileName = fileName.replace(/\.js$/, '.cjs')
-      data = data.replace(
-        /(require\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
-        (s0, s1, s2, s3) => {
-          if (/\.js$/.test(s2)) {
-            return s1 + s2.replace(/\.js$/, '.cjs') + s3
-          }
-          return s1 + s2 + '.cjs' + s3
-        }
-      );
+      fileName = fileName.replace(/\.js$/, '.cjs');
+      data = formatCJSFileImport(data);
     }
     fs.mkdirSync(path.dirname(fileName), { recursive: true });
     fs.writeFileSync(fileName, data);
@@ -780,8 +705,8 @@ function buildCheap() {
   buildCheapCode()
 
   fs.copyFileSync(path.resolve(__dirname, '../dist/cheap-polyfill.js'), path.resolve(__dirname, '../src/cheap/dist/cheap-polyfill.js'));
-  fs.copyFileSync(path.resolve(__dirname, '../src/cheap/webassembly/WebAssemblyRunnerWorker.js'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/WebAssemblyRunnerWorker.js'));
-  fs.copyFileSync(path.resolve(__dirname, '../src/cheap/webassembly/threadEntry.js'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/threadEntry.js'));
+  fs.copyFileSync(path.resolve(__dirname, '../src/cheap/src/webassembly/WebAssemblyRunnerWorker.js'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/WebAssemblyRunnerWorker.js'));
+  fs.copyFileSync(path.resolve(__dirname, '../src/cheap/src/webassembly/threadEntry.js'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/threadEntry.js'));
   printTaskLog(1, 'cheap', 'SUCCESS', `copy cheap-polyfill.js WebAssemblyRunnerWorker.js threadEntry.js completed`);
 
   printTaskLog(0, 'cheap', 'SUCCESS', `built cheap completed`);
@@ -820,10 +745,9 @@ function buildAvutil() {
     fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/esm/${enumFileName}.js.map`), path.resolve(__dirname, `../src/avutil/dist/esm/enum.js.map`))
     fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/cjs/${enumFileName}.js.map`), path.resolve(__dirname, `../src/avutil/dist/cjs/enum.js.map`))
     fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/esm/${enumFileName}.d.ts`), path.resolve(__dirname, `../src/avutil/dist/esm/enum.d.ts`))
-    // fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/cjs/${enumFileName}.d.ts`), path.resolve(__dirname, `../src/avutil/dist/cjs/enum.d.ts`))
   });
 
-  fs.unlinkSync(path.resolve(__dirname, `../src/avutil/${enumFileName}.ts`))
+  fs.unlinkSync(path.resolve(__dirname, `../src/avutil/src/${enumFileName}.ts`))
 
   printTaskLog(0, 'avutil', 'SUCCESS', `built avutil completed`);
 }
@@ -881,22 +805,22 @@ function buildAvrender() {
 
   buildPackage('avrender')
 
-  buildGlsl(path.resolve(__dirname, '../src/avrender/image/webgl/glsl/vertex.vert'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgl/glsl/vertex.vert.js'), '../../../../../image/webgl/glsl/')
-  buildGlsl(path.resolve(__dirname, '../src/avrender/image/webgl/glsl/vertex.vert'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgl/glsl/vertex.vert.js'), '../../../../../image/webgl/glsl/', true)
+  buildGlsl(path.resolve(__dirname, '../src/avrender/src/image/webgl/glsl/vertex.vert'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgl/glsl/vertex.vert.js'), '../../../../../image/webgl/glsl/')
+  buildGlsl(path.resolve(__dirname, '../src/avrender/src/image/webgl/glsl/vertex.vert'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgl/glsl/vertex.vert.js'), '../../../../../image/webgl/glsl/', true)
 
   printTaskLog(1, 'avrender', 'SUCCESS', `built glsl completed`);
 
-  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/vertex.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/vertex.wgsl.js'), '../../../../../image/webgpu/wgsl/')
-  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/vertex.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/vertex.wgsl.js'), '../../../../../image/webgpu/wgsl/', true)
+  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/vertex.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/vertex.wgsl.js'), '../../../../../image/webgpu/wgsl/')
+  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/vertex.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/vertex.wgsl.js'), '../../../../../image/webgpu/wgsl/', true)
   
-  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/compute/uint2FloatBE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/compute/uint2FloatBE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/')
-  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/compute/uint2FloatBE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/compute/uint2FloatBE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/', true)
+  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/compute/uint2FloatBE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/compute/uint2FloatBE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/')
+  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/compute/uint2FloatBE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/compute/uint2FloatBE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/', true)
   
-  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/compute/uint2FloatLE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/compute/uint2FloatLE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/')
-  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/compute/uint2FloatLE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/compute/uint2FloatLE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/', true)
+  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/compute/uint2FloatLE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/compute/uint2FloatLE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/')
+  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/compute/uint2FloatLE.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/compute/uint2FloatLE.wgsl.js'), '../../../../../../image/webgpu/wgsl/compute/', true)
   
-  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/fragment/external.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/fragment/external.wgsl.js'), '../../../../../image/webgpu/wgsl/fragment/')
-  buildWgsl(path.resolve(__dirname, '../src/avrender/image/webgpu/wgsl/fragment/external.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/fragment/external.wgsl.js'), '../../../../../image/webgpu/wgsl/fragment/', true)
+  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/fragment/external.wgsl'), path.resolve(__dirname, '../src/avrender/dist/esm/image/webgpu/wgsl/fragment/external.wgsl.js'), '../../../../../image/webgpu/wgsl/fragment/')
+  buildWgsl(path.resolve(__dirname, '../src/avrender/src/image/webgpu/wgsl/fragment/external.wgsl'), path.resolve(__dirname, '../src/avrender/dist/cjs/image/webgpu/wgsl/fragment/external.wgsl.js'), '../../../../../image/webgpu/wgsl/fragment/', true)
 
   printTaskLog(1, 'avrender', 'SUCCESS', `built wgsl completed`);
 
@@ -926,6 +850,7 @@ function buildAvplayer() {
     let dir = path.dirname(fileName);
     if (/dist\/types\/avplayer\/?/.test(dir)) {
       dir = dir.replace(/dist\/types\/avplayer\/?/, 'dist/types/')
+      data = formatDeclarationFileImport(data);
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
     }
@@ -956,6 +881,7 @@ function buildAvtranscoder() {
     let dir = path.dirname(fileName);
     if (/dist\/types\/avtranscoder\/?/.test(dir)) {
       dir = dir.replace(/dist\/types\/avtranscoder\/?/, 'dist/types/')
+      data = formatDeclarationFileImport(data);
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
     }
@@ -987,6 +913,7 @@ function buildAvplayerUI() {
     let dir = path.dirname(fileName);
     if (/dist\/types\/ui\/avplayer\/?/.test(dir)) {
       dir = dir.replace(/dist\/types\/ui\/avplayer\/?/, 'dist/types/')
+      data = formatDeclarationFileImport(data);
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
     }

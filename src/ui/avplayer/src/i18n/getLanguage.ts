@@ -4,7 +4,7 @@ import * as english from './english'
 
 import { url } from '@libmedia/common'
 
-import * as storage from '../../util/storage'
+import * as storage from '../../../util/storage'
 
 
 export const enum Language {

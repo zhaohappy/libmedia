@@ -11,7 +11,8 @@
   },
   "files": [
     "dist",
-    "include"
+    "include",
+    "src"
   ],
   "author": "Gaoxing Zhao",
   "license": "LGPL-3.0-or-later",

@@ -13,7 +13,7 @@ export default function (api) {
   api.chainWebpack(( memo, { webpack, env}) => {
     const path = require('path')
     const os = require('os')
-    const transformer = require('../../../src/cheap/build/transformer');
+    const transformer = require('../../../src/cheap/build/transformer.cjs');
     const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
     memo.module
@@ -27,7 +27,7 @@ export default function (api) {
           const before = transformer.before(program, {
             tmpPath: path.resolve(__dirname, '../../dist/'),
             projectPath: path.resolve(__dirname, '../../../'),
-            cheapSourcePath: path.resolve(__dirname, '../../../src/cheap'),
+            cheapSourcePath: path.resolve(__dirname, '../../../src/cheap/src'),
             exclude: /__test__/,
             reportError: (message) => {
               console.error(message)

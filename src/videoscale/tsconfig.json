@@ -8,10 +8,14 @@
     "allowJs": false
   },
   "include": [
-    "./**/*.ts",
-    "../cheap/**/*.ts",
-    "../common/types/*.ts",
-    "../avutil/**/*.ts",
-    "../../@types/index.d.ts"
+    "./src/**/*.ts",
+    "../cheap/src/**/*.ts",
+    "../common/src/types/*.ts",
+    "../avutil/src/**/*.ts",
+    "../../@types/index.d.ts",
+    "../cheap/@types/index.d.ts"
+  ],
+  "exclude": [
+    "../cheap/src/transformer/**/*.ts"
   ]
 }

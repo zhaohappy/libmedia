@@ -19,11 +19,11 @@
     "../src/avplayer/**/*.ts",
     "../src/avtranscoder/**/*.ts",
     "../src/ui/**/*.ts",
-    "../src/avutil/enum.ts"
+    "../src/avutil/src/enum.ts"
   ],
   "files": [
     "../@types/index.d.ts",
     "../src/cheap/@types/index.d.ts",
-    "../src/cheap/cheapdef.ts"
+    "../src/cheap/src/cheapdef.ts"
   ]
 }

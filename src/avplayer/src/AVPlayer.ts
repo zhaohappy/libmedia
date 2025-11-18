@@ -4487,8 +4487,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           && cheapConfig.USE_THREADS
           && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
           && (!os.ios || browser.checkVersion(os.version, '16.1', true))
-            ? require.resolve('../avrender/pcm/AudioSourceWorkletProcessor2')
-            : require.resolve('../avrender/pcm/AudioSourceWorkletProcessor')
+            ? require.resolve('../../avrender/src/pcm/AudioSourceWorkletProcessor2')
+            : require.resolve('../../avrender/src/pcm/AudioSourceWorkletProcessor')
         )
       }
       else {
@@ -4496,8 +4496,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           && cheapConfig.USE_THREADS
           && (!browser.safari || browser.checkVersion(browser.version, '16.1', true))
           && (!os.ios || browser.checkVersion(os.version, '16.1', true))
-          ? new URL('../avrender/dist/AudioSourceWorkletProcessor2Worklet.js', import.meta.url)
-          : new URL('../avrender/dist/AudioSourceWorkletProcessorWorklet.js', import.meta.url))
+          ? new URL('../../avrender/dist/AudioSourceWorkletProcessor2Worklet.js', import.meta.url)
+          : new URL('../../avrender/dist/AudioSourceWorkletProcessorWorklet.js', import.meta.url))
       }
     }
   }

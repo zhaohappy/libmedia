@@ -1,7 +1,7 @@
 import type { ComponentOptions } from 'yox'
 import type AVPlayer from '@libmedia/avplayer'
 import { array } from '@libmedia/common'
-import * as storage from '../../../../util/storage'
+import * as storage from '../../../../../util/storage'
 
 import template from './Playrate.hbs'
 import style from './Playrate.styl'

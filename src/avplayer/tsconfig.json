@@ -7,18 +7,22 @@
     "allowJs": false
   },
   "include": [
-    "./**/*.ts",
-    "../cheap/**/*.ts",
-    "../common/types/*.ts",
-    "../avprotocol/**/*.ts",
-    "../avutil/**/*.ts",
-    "../avformat/**/*.ts",
-    "../avcodec/**/*.ts",
-    "../avnetwork/**/*.ts",
-    "../avrender/**/*.ts",
-    "../audiostretchpitch/**/*.ts",
-    "../audioresample/**/*.ts",
-    "../avpipeline/**/*.ts",
-    "../../@types/index.d.ts"
+    "./src/**/*.ts",
+    "../cheap/src/**/*.ts",
+    "../common/src/types/*.ts",
+    "../avprotocol/src/**/*.ts",
+    "../avutil/src/**/*.ts",
+    "../avformat/src/**/*.ts",
+    "../avcodec/src/**/*.ts",
+    "../avnetwork/src/**/*.ts",
+    "../avrender/src/**/*.ts",
+    "../audiostretchpitch/src/**/*.ts",
+    "../audioresample/src/**/*.ts",
+    "../avpipeline/src/**/*.ts",
+    "../../@types/index.d.ts",
+    "../cheap/@types/index.d.ts"
+  ],
+  "exclude": [
+    "../cheap/src/transformer/**/*.ts"
   ]
 }

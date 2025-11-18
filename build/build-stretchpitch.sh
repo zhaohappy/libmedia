@@ -14,7 +14,7 @@ PROJECT_SRC_PATH=$PROJECT_ROOT_PATH/src
 
 PROJECT_OUTPUT_PATH=$PROJECT_ROOT_PATH/dist/stretchpitch
 
-CLIB_PATH=$PROJECT_SRC_PATH/audiostretchpitch/clib
+CLIB_PATH=$PROJECT_SRC_PATH/audiostretchpitch/src/clib
 EMSDK_PATH=$PROJECT_ROOT_PATH/../emsdk
 
 source $EMSDK_PATH/emsdk_env.sh

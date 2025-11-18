@@ -7,13 +7,17 @@
     "allowJs": false
   },
   "include": [
-    "./**/*.ts",
-    "../cheap/**/*.ts",
-    "../common/types/*.ts",
-    "../avprotocol/**/*.ts",
-    "../avutil/**/*.ts",
-    "../avformat/**/*.ts",
-    "../avcodec/**/*.ts",
-    "../../@types/index.d.ts"
+    "./src/**/*.ts",
+    "../cheap/src/**/*.ts",
+    "../common/src/types/*.ts",
+    "../avprotocol/src/**/*.ts",
+    "../avutil/src/**/*.ts",
+    "../avformat/src/**/*.ts",
+    "../avcodec/src/**/*.ts",
+    "../../@types/index.d.ts",
+    "../cheap/@types/index.d.ts"
+  ],
+  "exclude": [
+    "../cheap/src/transformer/**/*.ts"
   ]
 }

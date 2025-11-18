@@ -31,7 +31,7 @@ import { AVDisposition, type AVStreamInterface, AVMediaType } from '@libmedia/av
 import Keyboard from './Keyboard'
 import * as eventTypeUI from './eventType'
 
-import outside from '../util/outside'
+import outside from '../../util/outside'
 
 export const enum MenuAction {
   STATS

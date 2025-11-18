@@ -10,7 +10,8 @@
     "prepublishOnly": "node ../../scripts/check-publish-status.js --package=avcodec"
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "author": "Gaoxing Zhao",
   "license": "LGPL-3.0-or-later",

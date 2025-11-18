@@ -39,31 +39,9 @@ module.exports = (env) => {
   let libraryExport;
   let outputPath = path.resolve(__dirname, './dist');
 
-  if (env.transformer) {
-    entry = path.resolve(__dirname, './src/cheap/transformer/index.ts');
-    output = 'transformer.cjs';
-    libraryTarget = 'commonjs2';
-    if (env.esm) {
-      output = 'transformer.mjs';
-      libraryTarget = 'module';
-    }
-    library = undefined;
-    outputPath = path.resolve(__dirname, './src/cheap/build');
-  }
-  else if (env.wasm_opt) {
-    entry = path.resolve(__dirname, './src/cheap/webassembly/wasm-opt.ts');
-    output = 'wasm-opt.cjs';
-    libraryTarget = 'commonjs2';
-    if (env.esm) {
-      output = 'wasm-opt.mjs';
-      libraryTarget = 'module';
-    }
-    library = undefined;
-    outputPath = path.resolve(__dirname, './src/cheap/build');
-  }
-  else if (env.avplayer) {
+  if (env.avplayer) {
     if (env.ui) {
-      entry = path.resolve(__dirname, './src/ui/avplayer/AVPlayer.ts');
+      entry = path.resolve(__dirname, './src/ui/avplayer/src/AVPlayer.ts');
       output = `avplayer.js`;
       library = 'AVPlayer';
       libraryExport = 'default';
@@ -75,7 +53,7 @@ module.exports = (env) => {
       }
     }
     else {
-      entry = path.resolve(__dirname, './src/avplayer/AVPlayer.ts');
+      entry = path.resolve(__dirname, './src/avplayer/src/AVPlayer.ts');
       output = `avplayer.js`;
       library = 'AVPlayer';
       libraryExport = 'default';
@@ -89,7 +67,7 @@ module.exports = (env) => {
     
   }
   else if (env.avtranscoder) {
-    entry = path.resolve(__dirname, './src/avtranscoder/AVTranscoder.ts');
+    entry = path.resolve(__dirname, './src/avtranscoder/src/AVTranscoder.ts');
     output = `avtranscoder.js`;
     library = 'AVTranscoder';
     libraryExport = 'default';
@@ -102,22 +80,22 @@ module.exports = (env) => {
     }
   }
   else if (env.polyfill) {
-    entry = path.resolve(__dirname, './src/cheap/polyfill/index.ts');
+    entry = path.resolve(__dirname, './src/cheap/src/polyfill/index.ts');
     output = 'cheap-polyfill.js';
     library = 'CheapPolyfill';
     libraryTarget = 'var';
   }
   else if (env.webassembly_runner) {
-    entry = path.resolve(__dirname, './src/cheap/webassembly/WebAssemblyRunner.ts');
-    outputPath = path.resolve(__dirname, './src/cheap/webassembly');
+    entry = path.resolve(__dirname, './src/cheap/src/webassembly/WebAssemblyRunner.ts');
+    outputPath = path.resolve(__dirname, './src/cheap/src/webassembly');
     output = 'WebAssemblyRunnerWorker.js'
     library = '__CHeap_WebAssemblyRunner__';
     libraryTarget = 'var';
   }
   else if (env.pcm_worklet_processor) {
     entry = {
-      'AudioSourceWorkletProcessor': path.resolve(__dirname, './src/avrender/pcm/AudioSourceWorkletProcessor.ts'),
-      'AudioSourceWorkletProcessor2': path.resolve(__dirname, './src/avrender/pcm/AudioSourceWorkletProcessor2.ts')
+      'AudioSourceWorkletProcessor': path.resolve(__dirname, './src/avrender/src/pcm/AudioSourceWorkletProcessor.ts'),
+      'AudioSourceWorkletProcessor2': path.resolve(__dirname, './src/avrender/src/pcm/AudioSourceWorkletProcessor2.ts')
     };
     output = '[name].js';
     library = 'processor';
@@ -125,9 +103,9 @@ module.exports = (env) => {
   }
   else if (env.thread_entry) {
     entry = {
-      'threadEntry': path.resolve(__dirname, './src/cheap/webassembly/runThread.ts'),
+      'threadEntry': path.resolve(__dirname, './src/cheap/src/webassembly/runThread.ts'),
     };
-    outputPath = path.resolve(__dirname, './src/cheap/webassembly');
+    outputPath = path.resolve(__dirname, './src/cheap/src/webassembly');
     output = '[name].js';
     library = '__CHeap_ThreadEntry__';
     libraryTarget = 'var';
@@ -328,7 +306,7 @@ module.exports = (env) => {
         name: 'libmedia',
         env: 'browser',
         projectPath: __dirname,
-        cheapSourcePath: path.resolve(__dirname, './src/cheap'),
+        cheapSourcePath: path.resolve(__dirname, './src/cheap/src'),
         tmpPath: path.resolve(__dirname, './dist'),
         exclude: /__test__/,
         // 配置线程模块中有动态导入的模块，需要给动态导入的模块重新处理依赖，因为线程模块可能没有动态导入模块的依赖模块

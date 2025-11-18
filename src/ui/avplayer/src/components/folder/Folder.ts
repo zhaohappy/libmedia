@@ -6,7 +6,7 @@ import { AVPlayerStatus, Events as eventType } from '@libmedia/avplayer'
 import template from './Folder.hbs'
 import style from './Folder.styl'
 import Node, { movExt, musicExt, subtitleExt } from './Node'
-import * as indexDB from '../../../util/db'
+import * as indexDB from '../../../../util/db'
 import { array, generateUUID, logger, url as urlUtil, is, type CustomEvent } from '@libmedia/common'
 
 interface FileNode {
