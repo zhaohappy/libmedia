@@ -14,7 +14,9 @@
   ],
   "scripts": {
     "build-transformer": "cross-env NODE_ENV=production webpack --progress --env transformer=1 release=1",
+    "build-transformer-esm": "cross-env NODE_ENV=production webpack --progress --env transformer=1 release=1 esm=1",
     "build-wasm-opt": "cross-env NODE_ENV=production webpack --progress --env wasm_opt=1 release=1",
+    "build-wasm-opt-esm": "cross-env NODE_ENV=production webpack --progress --env wasm_opt=1 release=1 esm=1",
     "build-cheap-polyfill": "cross-env NODE_ENV=production webpack --progress --env polyfill=1 release=1",
     "build-webassembly-runner": "cross-env NODE_ENV=production webpack --progress --env webassembly_runner=1 release=1",
     "build-pcm-worklet-processor": "cross-env NODE_ENV=production webpack --progress --env pcm_worklet_processor=1 release=1",
@@ -98,6 +100,7 @@
   "dependencies": {
     "ass-compiler": "^0.1.15",
     "assjs": "0.1.4",
-    "yox": "^1.0.0-alpha.408"
+    "yox": "^1.0.0-alpha.408",
+    "commander": "^13.1.0"
   }
 }

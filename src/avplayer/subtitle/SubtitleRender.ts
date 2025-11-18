@@ -25,6 +25,8 @@
 
 import AssRender from './AssRender'
 import { type AssEvent, AssEventType, ass } from '@libmedia/avformat/internal'
+import { parseEffect } from 'ass-compiler/src/parser/effect'
+import { parseText } from 'ass-compiler/src/parser/text'
 
 import {
   SubtitleDecoder
@@ -48,7 +50,8 @@ import {
 import {
   logger,
   text,
-  object
+  object,
+  time
 } from '@libmedia/common'
 
 import {
@@ -143,6 +146,67 @@ const WebVttReplace = [
     value: '\\N'
   }
 ]
+
+export function parseEvent(formats: string[], event: string) {
+  const [ , key, value ] = event.match(/^(\w+?)\s*:\s*(.*)/i)
+
+  let type: AssEventType = AssEventType.NONE
+
+  switch (key) {
+    case 'Comment':
+      type = AssEventType.Comment
+      break
+    case 'Dialogue':
+      type = AssEventType.Dialogue
+      break
+    case 'Command':
+      type = AssEventType.Command
+      break
+    case 'Movie':
+      type = AssEventType.Movie
+      break
+    case 'Picture':
+      type = AssEventType.Picture
+      break
+    case 'Sound':
+      type = AssEventType.Sound
+      break
+  }
+
+  const fields = ass.parseEventLine(formats, value)
+
+  const result: Partial<AssEvent> = {
+    type
+  }
+  for (let i = 0; i < fields.length; i++) {
+    result[formats[i]] = fields[i]
+
+    const fmt = formats[i]
+    const fld = fields[i].trim()
+    switch (fmt) {
+      case 'Layer':
+      case 'MarginL':
+      case 'MarginR':
+      case 'MarginV':
+        result[fmt] = +fld
+        break
+      case 'Start':
+      case 'End':
+        result[fmt] = time.hhColonDDColonSSDotMill2Int64(fld)
+        break
+      case 'Effect':
+        result[fmt] = parseEffect(fld)
+        break
+      case 'Text':
+        result[fmt] = parseText(fld)
+        break
+      default:
+        result[fmt] = fld
+    }
+  }
+  return result as AssEvent
+}
+
 
 export default class SubtitleRender {
 
@@ -249,7 +313,7 @@ export default class SubtitleRender {
         for (let i = 0; i < subtitle.rects.length; i++) {
           const rect = subtitle.rects[i]
           if (rect.type === AVSubtitleType.SUBTITLE_ASS) {
-            const event = ass.parseEvent(this.formats, rect.text)
+            const event = parseEvent(this.formats, rect.text)
             if (event.Start == null) {
               event.Start = subtitle.pts
             }

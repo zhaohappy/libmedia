@@ -19,20 +19,27 @@
     "@libmedia/common": "workspace:*",
     "@libmedia/cheap": "workspace:*"
   },
+  "type": "module",
+  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
+      "require": "./dist/cjs/index.cjs",
+      "default": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
     },
     "./internal": {
       "import": "./dist/esm/internal.js",
-      "require": "./dist/cjs/internal.js",
+      "require": "./dist/cjs/internal.cjs",
+      "default": "./dist/esm/internal.js",
       "types": "./dist/esm/internal.d.ts"
     },
     "./enum": {
       "import": "./dist/esm/enum.js",
-      "require": "./dist/cjs/enum.js",
+      "require": "./dist/cjs/enum.cjs",
+      "default": "./dist/esm/enum.js",
       "types": "./dist/esm/enum.d.ts"
     }
   }

@@ -1,6 +1,5 @@
 const path = require('path');
 const { execSync } = require('child_process');
-const CheapPlugin = require('./src/cheap/build/webpack/plugin/CheapPlugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin')
 
@@ -42,15 +41,23 @@ module.exports = (env) => {
 
   if (env.transformer) {
     entry = path.resolve(__dirname, './src/cheap/transformer/index.ts');
-    output = 'transformer.js';
+    output = 'transformer.cjs';
     libraryTarget = 'commonjs2';
+    if (env.esm) {
+      output = 'transformer.mjs';
+      libraryTarget = 'module';
+    }
     library = undefined;
     outputPath = path.resolve(__dirname, './src/cheap/build');
   }
   else if (env.wasm_opt) {
     entry = path.resolve(__dirname, './src/cheap/webassembly/wasm-opt.ts');
-    output = 'wasm-opt.js';
+    output = 'wasm-opt.cjs';
     libraryTarget = 'commonjs2';
+    if (env.esm) {
+      output = 'wasm-opt.mjs';
+      libraryTarget = 'module';
+    }
     library = undefined;
     outputPath = path.resolve(__dirname, './src/cheap/build');
   }
@@ -168,7 +175,9 @@ module.exports = (env) => {
       'child_process': 'child_process',
       'fs': 'fs',
       'path': 'path',
-      'os': 'os'
+      'os': 'os',
+      'commander': 'commander',
+      'url': 'url'
     },
     devtool: +env.release ? false : 'source-map',
     mode: +env.release ? 'production' : 'development',
@@ -298,6 +307,8 @@ module.exports = (env) => {
   };
 
   if (!env.transformer) {
+
+    const CheapPlugin = require('./src/cheap/build/webpack/plugin/CheapPlugin');
 
     const defined = {
       VERSION: getVersion()

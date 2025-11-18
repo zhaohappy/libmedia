@@ -19,15 +19,20 @@
     "@libmedia/cheap": "workspace:*",
     "@libmedia/avutil": "workspace:*"
   },
+  "type": "module",
+  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
+      "require": "./dist/cjs/index.cjs",
+      "default": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
     },
     "./registerProcessor": {
       "import": "./dist/esm/pcm/audioWorklet/base/registerProcessor.js",
-      "require": "./dist/cjs/pcm/audioWorklet/base/registerProcessor.js",
+      "default": "./dist/esm/pcm/audioWorklet/base/registerProcessor.js",
       "types": "./dist/esm/pcm/audioWorklet/base/registerProcessor.d.ts"
     },
     "./AudioSourceWorkletProcessorWorklet": "./dist/AudioSourceWorkletProcessorWorklet.js",

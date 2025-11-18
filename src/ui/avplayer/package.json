@@ -16,6 +16,7 @@
     ".": {
       "import": "./dist/esm/avplayer.js",
       "require": "./dist/umd/avplayer.js",
+      "default": "./dist/esm/avplayer.js",
       "types": "./dist/types/AVPlayer.d.ts"
     },
     "./AVPlayer": {

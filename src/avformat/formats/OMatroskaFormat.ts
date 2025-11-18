@@ -30,7 +30,7 @@ import * as omatroska from './matroska/omatroska'
 import { EBMLId, MATROSKABlockAddIdType, MATROSKATrackType, MkvImageMime2CodecId, MkvTag2CodecId, WebmTag2CodecId } from './matroska/matroska'
 import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
 
-import { mapUint8Array } from '@libmedia/cheap'
+import { mapUint8Array, getRandomValues } from '@libmedia/cheap'
 
 import {
   AVFormat,
@@ -57,7 +57,6 @@ import {
 } from '@libmedia/avutil'
 
 import {
-  crypto,
   AV_MILLI_TIME_BASE_Q,
   h264,
   hevc,
@@ -215,7 +214,7 @@ export default class OMatroskaFormat extends OFormat {
       return 0
     }
 
-    crypto.random(this.random)
+    getRandomValues(this.random)
     context.info.segmentUUID = this.randomView.getBigUint64(0)
 
     formatContext.privateData = this.context = context
@@ -256,7 +255,7 @@ export default class OMatroskaFormat extends OFormat {
       if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_ATTACHMENT
         || stream.disposition & AVDisposition.ATTACHED_PIC
       ) {
-        crypto.random(this.random)
+        getRandomValues(this.random)
         const attachment: Attachment = {
           uid: this.randomView.getBigUint64(0),
           name: stream.metadata[AVStreamMetadataKey.TITLE],
@@ -296,7 +295,7 @@ export default class OMatroskaFormat extends OFormat {
       }
       else {
         const track: TrackEntry = {}
-        crypto.random(this.random)
+        getRandomValues(this.random)
         track.uid = this.randomView.getBigUint64(0)
         track.codecId = codecId2Tag(stream.codecpar)
         if (!track.codecId) {

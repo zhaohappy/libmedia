@@ -24,11 +24,7 @@
  *
  */
 
-import type { AssEvent } from './ass'
-import { AssEventsFormatList, AssEventType, AssStylesFormatList } from './ass'
-
-import { parseEffect } from 'ass-compiler/src/parser/effect'
-import { parseText } from 'ass-compiler/src/parser/text'
+import { AssEventsFormatList, AssStylesFormatList } from './ass'
 
 import { logger, time } from '@libmedia/common'
 
@@ -98,65 +94,4 @@ export function parseStyle(styleFormat: string[], style: string) {
   }
   return result
 }
-
-export function parseEvent(formats: string[], event: string) {
-  const [ , key, value ] = event.match(/^(\w+?)\s*:\s*(.*)/i)
-
-  let type: AssEventType = AssEventType.NONE
-
-  switch (key) {
-    case 'Comment':
-      type = AssEventType.Comment
-      break
-    case 'Dialogue':
-      type = AssEventType.Dialogue
-      break
-    case 'Command':
-      type = AssEventType.Command
-      break
-    case 'Movie':
-      type = AssEventType.Movie
-      break
-    case 'Picture':
-      type = AssEventType.Picture
-      break
-    case 'Sound':
-      type = AssEventType.Sound
-      break
-  }
-
-  const fields = parseEventLine(formats, value)
-
-  const result: Partial<AssEvent> = {
-    type
-  }
-  for (let i = 0; i < fields.length; i++) {
-    result[formats[i]] = fields[i]
-
-    const fmt = formats[i]
-    const fld = fields[i].trim()
-    switch (fmt) {
-      case 'Layer':
-      case 'MarginL':
-      case 'MarginR':
-      case 'MarginV':
-        result[fmt] = +fld
-        break
-      case 'Start':
-      case 'End':
-        result[fmt] = time.hhColonDDColonSSDotMill2Int64(fld)
-        break
-      case 'Effect':
-        result[fmt] = parseEffect(fld)
-        break
-      case 'Text':
-        result[fmt] = parseText(fld)
-        break
-      default:
-        result[fmt] = fld
-    }
-  }
-  return result as AssEvent
-}
-
 

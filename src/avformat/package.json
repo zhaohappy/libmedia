@@ -21,170 +21,207 @@
     "@libmedia/avprotocol": "workspace:*",
     "@libmedia/avcodec": "workspace:*"
   },
+  "type": "module",
+  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
+      "require": "./dist/cjs/index.cjs",
+      "default": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
     },
     "./internal": {
       "import": "./dist/esm/internal.js",
-      "require": "./dist/cjs/internal.js",
+      "require": "./dist/cjs/internal.cjs",
+      "default": "./dist/esm/internal.js",
       "types": "./dist/esm/internal.d.ts"
     },
     "./IAacFormat": {
       "import": "./dist/esm/formats/IAacFormat.js",
-      "require": "./dist/cjs/formats/IAacFormat.js",
+      "require": "./dist/cjs/formats/IAacFormat.cjs",
+      "default": "./dist/esm/formats/IAacFormat.js",
       "types": "./dist/esm/formats/IAacFormat.d.ts"
     },
     "./IAssFormat": {
       "import": "./dist/esm/formats/IAssFormat.js",
-      "require": "./dist/cjs/formats/IAssFormat.js",
+      "require": "./dist/cjs/formats/IAssFormat.cjs",
+      "default": "./dist/esm/formats/IAssFormat.js",
       "types": "./dist/esm/formats/IAssFormat.d.ts"
     },
     "./IFlacFormat": {
       "import": "./dist/esm/formats/IFlacFormat.js",
-      "require": "./dist/cjs/formats/IFlacFormat.js",
+      "require": "./dist/cjs/formats/IFlacFormat.cjs",
+      "default": "./dist/esm/formats/IFlacFormat.js",
       "types": "./dist/esm/formats/IFlacFormat.d.ts"
     },
     "./IFlvFormat": {
       "import": "./dist/esm/formats/IFlvFormat.js",
-      "require": "./dist/cjs/formats/IFlvFormat.js",
+      "require": "./dist/cjs/formats/IFlvFormat.cjs",
+      "default": "./dist/esm/formats/IFlvFormat.js",
       "types": "./dist/esm/formats/IFlvFormat.d.ts"
     },
     "./IH264Format": {
       "import": "./dist/esm/formats/IH264Format.js",
-      "require": "./dist/cjs/formats/IH264Format.js",
+      "require": "./dist/cjs/formats/IH264Format.cjs",
+      "default": "./dist/esm/formats/IH264Format.js",
       "types": "./dist/esm/formats/IH264Format.d.ts"
     },
     "./IHevcFormat": {
       "import": "./dist/esm/formats/IHevcFormat.js",
-      "require": "./dist/cjs/formats/IHevcFormat.js",
+      "require": "./dist/cjs/formats/IHevcFormat.cjs",
+      "default": "./dist/esm/formats/IHevcFormat.js",
       "types": "./dist/esm/formats/IHevcFormat.d.ts"
     },
     "./IIvfFormat": {
       "import": "./dist/esm/formats/IIvfFormat.js",
-      "require": "./dist/cjs/formats/IIvfFormat.js",
+      "require": "./dist/cjs/formats/IIvfFormat.cjs",
+      "default": "./dist/esm/formats/IIvfFormat.js",
       "types": "./dist/esm/formats/IIvfFormat.d.ts"
     },
     "./IMatroskaFormat": {
       "import": "./dist/esm/formats/IMatroskaFormat.js",
-      "require": "./dist/cjs/formats/IMatroskaFormat.js",
+      "require": "./dist/cjs/formats/IMatroskaFormat.cjs",
+      "default": "./dist/esm/formats/IMatroskaFormat.js",
       "types": "./dist/esm/formats/IMatroskaFormat.d.ts"
     },
     "./IIsobmffFormat": {
       "import": "./dist/esm/formats/IIsobmffFormat.js",
-      "require": "./dist/cjs/formats/IIsobmffFormat.js",
+      "require": "./dist/cjs/formats/IIsobmffFormat.cjs",
+      "default": "./dist/esm/formats/IIsobmffFormat.js",
       "types": "./dist/esm/formats/IIsobmffFormat.d.ts"
     },
     "./IMp3Format": {
       "import": "./dist/esm/formats/IMp3Format.js",
-      "require": "./dist/cjs/formats/IMp3Format.js",
+      "require": "./dist/cjs/formats/IMp3Format.cjs",
+      "default": "./dist/esm/formats/IMp3Format.js",
       "types": "./dist/esm/formats/IMp3Format.d.ts"
     },
     "./IMpegpsFormat": {
       "import": "./dist/esm/formats/IMpegpsFormat.js",
-      "require": "./dist/cjs/formats/IMpegpsFormat.js",
+      "require": "./dist/cjs/formats/IMpegpsFormat.cjs",
+      "default": "./dist/esm/formats/IMpegpsFormat.js",
       "types": "./dist/esm/formats/IMpegpsFormat.d.ts"
     },
     "./IMpegtsFormat": {
       "import": "./dist/esm/formats/IMpegtsFormat.js",
-      "require": "./dist/cjs/formats/IMpegtsFormat.js",
+      "require": "./dist/cjs/formats/IMpegtsFormat.cjs",
+      "default": "./dist/esm/formats/IMpegtsFormat.js",
       "types": "./dist/esm/formats/IMpegtsFormat.d.ts"
     },
     "./IAviFormat": {
       "import": "./dist/esm/formats/IAviFormat.js",
-      "require": "./dist/cjs/formats/IAviFormat.js",
+      "require": "./dist/cjs/formats/IAviFormat.cjs",
+      "default": "./dist/esm/formats/IAviFormat.js",
       "types": "./dist/esm/formats/IAviFormat.d.ts"
     },
     "./IOggFormat": {
       "import": "./dist/esm/formats/IOggFormat.js",
-      "require": "./dist/cjs/formats/IOggFormat.js",
+      "require": "./dist/cjs/formats/IOggFormat.cjs",
+      "default": "./dist/esm/formats/IOggFormat.js",
       "types": "./dist/esm/formats/IOggFormat.d.ts"
     },
     "./IRtspFormat": {
       "import": "./dist/esm/formats/IRtspFormat.js",
-      "require": "./dist/cjs/formats/IRtspFormat.js",
+      "require": "./dist/cjs/formats/IRtspFormat.cjs",
+      "default": "./dist/esm/formats/IRtspFormat.js",
       "types": "./dist/esm/formats/IRtspFormat.d.ts"
     },
     "./ISubRipFormat": {
       "import": "./dist/esm/formats/ISubRipFormat.js",
-      "require": "./dist/cjs/formats/ISubRipFormat.js",
+      "require": "./dist/cjs/formats/ISubRipFormat.cjs",
+      "default": "./dist/esm/formats/ISubRipFormat.js",
       "types": "./dist/esm/formats/ISubRipFormat.d.ts"
     },
     "./ITtmlFormat": {
       "import": "./dist/esm/formats/ITtmlFormat.js",
-      "require": "./dist/cjs/formats/ITtmlFormat.js",
+      "require": "./dist/cjs/formats/ITtmlFormat.cjs",
+      "default": "./dist/esm/formats/ITtmlFormat.js",
       "types": "./dist/esm/formats/ITtmlFormat.d.ts"
     },
     "./IVvcFormat": {
       "import": "./dist/esm/formats/IVvcFormat.js",
-      "require": "./dist/cjs/formats/IVvcFormat.js",
+      "require": "./dist/cjs/formats/IVvcFormat.cjs",
+      "default": "./dist/esm/formats/IVvcFormat.js",
       "types": "./dist/esm/formats/IVvcFormat.d.ts"
     },
     "./IWavFormat": {
       "import": "./dist/esm/formats/IWavFormat.js",
-      "require": "./dist/cjs/formats/IWavFormat.js",
+      "require": "./dist/cjs/formats/IWavFormat.cjs",
+      "default": "./dist/esm/formats/IWavFormat.js",
       "types": "./dist/esm/formats/IWavFormat.d.ts"
     },
     "./IWebVttFormat": {
       "import": "./dist/esm/formats/IWebVttFormat.js",
-      "require": "./dist/cjs/formats/IWebVttFormat.js",
+      "require": "./dist/cjs/formats/IWebVttFormat.cjs",
+      "default": "./dist/esm/formats/IWebVttFormat.js",
       "types": "./dist/esm/formats/IWebVttFormat.d.ts"
     },
     "./OFlvFormat": {
       "import": "./dist/esm/formats/OFlvFormat.js",
-      "require": "./dist/cjs/formats/OFlvFormat.js",
+      "require": "./dist/cjs/formats/OFlvFormat.cjs",
+      "default": "./dist/esm/formats/OFlvFormat.js",
       "types": "./dist/esm/formats/OFlvFormat.d.ts"
     },
     "./OIvfFormat": {
       "import": "./dist/esm/formats/OIvfFormat.js",
-      "require": "./dist/cjs/formats/OIvfFormat.js",
+      "require": "./dist/cjs/formats/OIvfFormat.cjs",
+      "default": "./dist/esm/formats/OIvfFormat.js",
       "types": "./dist/esm/formats/OIvfFormat.d.ts"
     },
     "./OMatroskaFormat": {
       "import": "./dist/esm/formats/OMatroskaFormat.js",
-      "require": "./dist/cjs/formats/OMatroskaFormat.js",
+      "require": "./dist/cjs/formats/OMatroskaFormat.cjs",
+      "default": "./dist/esm/formats/OMatroskaFormat.js",
       "types": "./dist/esm/formats/OMatroskaFormat.d.ts"
     },
     "./OIsobmffFormat": {
       "import": "./dist/esm/formats/OIsobmffFormat.js",
-      "require": "./dist/cjs/formats/OIsobmffFormat.js",
+      "require": "./dist/cjs/formats/OIsobmffFormat.cjs",
+      "default": "./dist/esm/formats/OIsobmffFormat.js",
       "types": "./dist/esm/formats/OIsobmffFormat.d.ts"
     },
     "./OMp3Format": {
       "import": "./dist/esm/formats/OMp3Format.js",
-      "require": "./dist/cjs/formats/OMp3Format.js",
+      "require": "./dist/cjs/formats/OMp3Format.cjs",
+      "default": "./dist/esm/formats/OMp3Format.js",
       "types": "./dist/esm/formats/OMp3Format.d.ts"
     },
     "./OMpegtsFormat": {
       "import": "./dist/esm/formats/OMpegtsFormat.js",
-      "require": "./dist/cjs/formats/OMpegtsFormat.js",
+      "require": "./dist/cjs/formats/OMpegtsFormat.cjs",
+      "default": "./dist/esm/formats/OMpegtsFormat.js",
       "types": "./dist/esm/formats/OMpegtsFormat.d.ts"
     },
     "./OOggFormat": {
       "import": "./dist/esm/formats/OOggFormat.js",
-      "require": "./dist/cjs/formats/OOggFormat.js",
+      "require": "./dist/cjs/formats/OOggFormat.cjs",
+      "default": "./dist/esm/formats/OOggFormat.js",
       "types": "./dist/esm/formats/OOggFormat.d.ts"
     },
     "./OWavFormat": {
       "import": "./dist/esm/formats/OWavFormat.js",
-      "require": "./dist/cjs/formats/OWavFormat.js",
+      "require": "./dist/cjs/formats/OWavFormat.cjs",
+      "default": "./dist/esm/formats/OWavFormat.js",
       "types": "./dist/esm/formats/OWavFormat.d.ts"
     },
     "./OFlacFormat": {
       "import": "./dist/esm/formats/OFlacFormat.js",
-      "require": "./dist/cjs/formats/OFlacFormat.js",
+      "require": "./dist/cjs/formats/OFlacFormat.cjs",
+      "default": "./dist/esm/formats/OFlacFormat.js",
       "types": "./dist/esm/formats/OFlacFormat.d.ts"
     },
     "./OAacFormat": {
       "import": "./dist/esm/formats/OAacFormat.js",
-      "require": "./dist/cjs/formats/OAacFormat.js",
+      "require": "./dist/cjs/formats/OAacFormat.cjs",
+      "default": "./dist/esm/formats/OAacFormat.js",
       "types": "./dist/esm/formats/OAacFormat.d.ts"
     },
     "./OH26XFormat": {
       "import": "./dist/esm/formats/OH26XFormat.js",
-      "require": "./dist/cjs/formats/OH26XFormat.js",
+      "require": "./dist/cjs/formats/OH26XFormat.cjs",
+      "default": "./dist/esm/formats/OH26XFormat.js",
       "types": "./dist/esm/formats/OH26XFormat.d.ts"
     }
   }

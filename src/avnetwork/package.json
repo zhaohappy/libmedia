@@ -21,25 +21,33 @@
     "@libmedia/avprotocol": "workspace:*",
     "@libmedia/avformat": "workspace:*"
   },
+  "type": "module",
+  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
+      "require": "./dist/cjs/index.cjs",
+      "default": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
     },
     "./DashIOLoader": {
       "import": "./dist/esm/ioLoader/DashIOLoader.js",
-      "require": "./dist/cjs/ioLoader/DashIOLoader.js",
+      "require": "./dist/cjs/ioLoader/DashIOLoader.cjs",
+      "default": "./dist/esm/ioLoader/DashIOLoader.js",
       "types": "./dist/esm/ioLoader/DashIOLoader.d.ts"
     },
     "./HlsIOLoader": {
       "import": "./dist/esm/ioLoader/HlsIOLoader.js",
-      "require": "./dist/cjs/ioLoader/HlsIOLoader.js",
+      "require": "./dist/cjs/ioLoader/HlsIOLoader.cjs",
+      "default": "./dist/esm/ioLoader/HlsIOLoader.js",
       "types": "./dist/esm/ioLoader/HlsIOLoader.d.ts"
     },
     "./RtmpIOLoader": {
       "import": "./dist/esm/ioLoader/RtmpIOLoader.js",
-      "require": "./dist/cjs/ioLoader/RtmpIOLoader.js",
+      "require": "./dist/cjs/ioLoader/RtmpIOLoader.cjs",
+      "default": "./dist/esm/ioLoader/RtmpIOLoader.js",
       "types": "./dist/esm/ioLoader/RtmpIOLoader.d.ts"
     }
   }

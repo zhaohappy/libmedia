@@ -1,7 +1,7 @@
 const ts = require('typescript');
 const path = require('path');
 const fs = require('fs');
-const transformer = require('../src/cheap/build/transformer');
+const transformer = require('../src/cheap/build/transformer.cjs');
 const argv = require('yargs').argv;
 const { spawnSync, execSync } = require('child_process');
 const terser = require('terser');
@@ -305,47 +305,6 @@ function parseCommandLine(configPath) {
   return parsedCommandLine
 }
 
-function addPackageExport(p, extra = {}) {
-  if (!argv.export) {
-    return
-  }
-  let parsedCommandLine = parseCommandLine(path.resolve(p, 'tsconfig.esm.json'))
-
-  const json = fs.readFileSync(path.resolve(p, './package.json'), 'utf8');
-  const config = JSON.parse(json);
-
-  const exports = {}
-
-  parsedCommandLine.fileNames.forEach((name) => {
-
-    if (/__test__/.test(name)
-      || /\.test\.ts$/.test(name)
-      || /\.d\.ts$/.test(name)
-    ) {
-      return
-    }
-
-    const relativePath = path.relative(p, name)
-    if (!relativePath.startsWith('..')) {
-
-      let fileName = relativePath.split('.')
-      fileName.pop()
-      fileName = fileName.join('.')
-
-      exports['./' + fileName] = {
-        "import": './' + path.join('dist/esm', fileName + '.js'),
-        "require": './' + path.join('dist/cjs', fileName + '.js'),
-        "types": './' + path.join('dist/esm', fileName + '.d.ts')
-      }
-    }
-  })
-
-  Object.assign(exports, extra)
-
-  config.exports = exports
-  fs.writeFileSync(path.resolve(p, './package.json'), JSON.stringify(config, null, 2), 'utf8');
-}
-
 function buildASM(file, to, sourcePath, cjs) {
 
   const os = require('os');
@@ -528,7 +487,28 @@ function buildPackage(packageName, taskLevel = 1, fileNamesFilter) {
             beautify: true
           }
         }).then((result) => {
-          fs.writeFileSync(path.resolve(dir, path.basename(fileName)), result.code);
+          let code = result.code
+          // This matches static imports
+          code = code.replace(
+            /(\s+from\s+['"])(\.[^'"]*)(['"])/g,
+            (s0, s1, s2, s3) => {
+              if (/\.js$/.test(s2)) {
+                return s1 + s2 + s3
+              }
+              return s1 + s2 + '.js' + s3
+            }
+          );
+          // This matches dynamic imports
+          code = code.replace(
+            /(import\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
+            (s0, s1, s2, s3) => {
+              if (/\.js$/.test(s2)) {
+                return s1 + s2 + s3
+              }
+              return s1 + s2 + '.js' + s3
+            }
+          );
+          fs.writeFileSync(path.resolve(dir, path.basename(fileName)), code);
           fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), result.map);
         })
       }
@@ -537,6 +517,32 @@ function buildPackage(packageName, taskLevel = 1, fileNamesFilter) {
           const json = JSON.parse(data)
           json.sources[0] = json.sources[0].replace(/^(\.\.\/)/, '')
           data = JSON.stringify(json)
+        }
+        if (/\.d\.ts$/.test(fileName)) {
+          // This matches static imports
+          data = data.replace(
+            /(\s+from\s+['"])(\.[^'"]*)(['"])/g,
+            (s0, s1, s2, s3) => {
+              if (/\.js$/.test(s2)) {
+                return s1 + s2.replace(/\.js$/, '.d.ts') + s3
+              }
+              return s1 + s2 + '.d.ts' + s3
+            }
+          );
+          // This matches dynamic imports
+          data = data.replace(
+            /(import\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
+            (s0, s1, s2, s3) => {
+              if (/\.js$/.test(s2)) {
+                return s1 + s2.replace(/\.js$/, '.d.ts') + s3
+              }
+              return s1 + s2 + '.d.ts' + s3
+            }
+          );
+        }
+        if (packageName === 'cheap' && /cheap\/index\.d\.ts$/.test(fileName)) {
+          // data = 'import "./cheapdef.d.ts"\n\n' + data
+          data = '/// <reference path="./cheapdef.d.ts" />\n\n' + data
         }
         fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
       }
@@ -569,7 +575,17 @@ function buildPackage(packageName, taskLevel = 1, fileNamesFilter) {
             beautify: true
           }
         }).then((result) => {
-          fs.writeFileSync(path.resolve(dir, path.basename(fileName)), result.code);
+          let code = result.code
+          code = code.replace(
+            /(require\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
+            (s0, s1, s2, s3) => {
+              if (/\.js$/.test(s2)) {
+                return s1 + s2.replace(/\.js$/, '.cjs') + s3
+              }
+              return s1 + s2 + '.cjs' + s3
+            }
+          );
+          fs.writeFileSync(path.resolve(dir, path.basename(fileName.replace(/\.js$/, '.cjs'))), code);
           fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), result.map);
         })
       }
@@ -582,9 +598,85 @@ function buildPackage(packageName, taskLevel = 1, fileNamesFilter) {
         fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
       }
     }
-  }, true);
+  }, true, { ENV_CJS: true });
 
   printTaskLog(taskLevel, packageName, 'SUCCESS', `built ${packageName} cjs package completed`);
+}
+
+function buildCheapCode(taskLevel = 1, fileNamesFilter) {
+  const packageName = 'cheap'
+  buildPackage(packageName, taskLevel, fileNamesFilter)
+
+  if (!fileNamesFilter) {
+    fileNamesFilter = (name) => {
+      return !/avutil\/enum\.ts$/.test(name)
+    }
+  }
+
+  let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${packageName}/tsconfig.mjs.json`))
+
+  const mjsReg = new RegExp(`dist\/mjs\/${packageName}\/?`)
+
+  printTaskLog(taskLevel, packageName, 'START', `starting built ${packageName} mjs package`);
+
+  compile(fileNamesFilter ? parsedCommandLine.fileNames.filter(fileNamesFilter) : parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
+    let dir = path.dirname(fileName);
+    if (mjsReg.test(dir)) {
+      dir = dir.replace(mjsReg, 'dist/mjs/')
+      fs.mkdirSync(dir, { recursive: true });
+      if (/\.js$/.test(fileName)) {
+        terser.minify(data, {
+          compress: {
+            unused: true,
+            dead_code: true,
+            toplevel: true
+          },
+          sourceMap: {
+            content: fs.readFileSync(path.resolve(dir, path.basename(fileName) + '.map'), 'utf8'),
+            url: path.basename(fileName) + '.map'
+          },
+          mangle: false,
+          output: {
+            beautify: true
+          }
+        }).then((result) => {
+          let code = result.code
+          // This matches static imports
+          code = code.replace(
+            /(\s+from\s+['"])(\.[^'"]*)(['"])/g,
+            (s0, s1, s2, s3) => {
+              if (/\.js$/.test(s2)) {
+                return s1 + s2 + s3
+              }
+              return s1 + s2 + '.js' + s3
+            }
+          );
+          // This matches dynamic imports
+          code = code.replace(
+            /(import\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
+            (s0, s1, s2, s3) => {
+              if (/\.js$/.test(s2)) {
+                return s1 + s2 + s3
+              }
+              return s1 + s2 + '.js' + s3
+            }
+          );
+          fs.writeFileSync(path.resolve(dir, path.basename(fileName)), code);
+          fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), result.map);
+        })
+      }
+      else {
+        if (/\.map$/.test(fileName)) {
+          const json = JSON.parse(data)
+          json.sources[0] = json.sources[0].replace(/^(\.\.\/)/, '')
+          data = JSON.stringify(json)
+        }
+        fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data);
+      }
+    }
+  }, false, { ENV_NODE: true });
+
+  printTaskLog(taskLevel, packageName, 'SUCCESS', `built ${packageName} mjs package completed`);
 }
 
 function buildCommon() {
@@ -592,15 +684,74 @@ function buildCommon() {
 
   printTaskLog(1, 'common', 'START', `starting built common esm package`);
   let parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/common/tsconfig.esm.json'))
-  compile(parsedCommandLine.fileNames, parsedCommandLine.options);
+  compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
+    if (/\.js$/.test(fileName)) {
+      data = data.replace(
+        /(\s+from\s+['"])(\.[^'"]*)(['"])/g,
+        (s0, s1, s2, s3) => {
+          if (/\.js$/.test(s2)) {
+            return s1 + s2 + s3
+          }
+          return s1 + s2 + '.js' + s3
+        }
+      );
+      // This matches dynamic imports
+      data = data.replace(
+        /(import\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
+        (s0, s1, s2, s3) => {
+          if (/\.js$/.test(s2)) {
+            return s1 + s2 + s3
+          }
+          return s1 + s2 + '.js' + s3
+        }
+      );
+    }
+    if (/\.d\.ts$/.test(fileName)) {
+      // This matches static imports
+      data = data.replace(
+        /(\s+from\s+['"])(\.[^'"]*)(['"])/g,
+        (s0, s1, s2, s3) => {
+          if (/\.js$/.test(s2)) {
+            return s1 + s2.replace(/\.js$/, '.d.ts') + s3
+          }
+          return s1 + s2 + '.d.ts' + s3
+        }
+      );
+      // This matches dynamic imports
+      data = data.replace(
+        /(import\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
+        (s0, s1, s2, s3) => {
+          if (/\.js$/.test(s2)) {
+            return s1 + s2.replace(/\.js$/, '.d.ts') + s3
+          }
+          return s1 + s2 + '.d.ts' + s3
+        }
+      );
+    }
+    fs.mkdirSync(path.dirname(fileName), { recursive: true });
+    fs.writeFileSync(fileName, data);
+  });
   printTaskLog(1, 'common', 'SUCCESS', `built common esm package completed`);
 
   printTaskLog(1, 'common', 'START', `starting built common cjs package`);
   parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../src/common/tsconfig.cjs.json'))
-  compile(parsedCommandLine.fileNames, parsedCommandLine.options, undefined, true);
+  compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
+    if (/\.js$/.test(fileName)) {
+      fileName = fileName.replace(/\.js$/, '.cjs')
+      data = data.replace(
+        /(require\s*\(\s*['"])(\.[^'"]*)(['"]\s*\))/g,
+        (s0, s1, s2, s3) => {
+          if (/\.js$/.test(s2)) {
+            return s1 + s2.replace(/\.js$/, '.cjs') + s3
+          }
+          return s1 + s2 + '.cjs' + s3
+        }
+      );
+    }
+    fs.mkdirSync(path.dirname(fileName), { recursive: true });
+    fs.writeFileSync(fileName, data);
+  }, true);
   printTaskLog(1, 'common', 'SUCCESS', `built common cjs package completed`);
-
-  addPackageExport(path.resolve(__dirname, '../src/common/'))
 
   printTaskLog(0, 'common', 'SUCCESS', `built common completed`);
 }
@@ -626,19 +777,12 @@ function buildCheap() {
   })
   printTaskLog(1, 'cheap', 'SUCCESS', `built cheap thread entry completed`);
 
-  buildPackage('cheap')
+  buildCheapCode()
 
   fs.copyFileSync(path.resolve(__dirname, '../dist/cheap-polyfill.js'), path.resolve(__dirname, '../src/cheap/dist/cheap-polyfill.js'));
   fs.copyFileSync(path.resolve(__dirname, '../src/cheap/webassembly/WebAssemblyRunnerWorker.js'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/WebAssemblyRunnerWorker.js'));
   fs.copyFileSync(path.resolve(__dirname, '../src/cheap/webassembly/threadEntry.js'), path.resolve(__dirname, '../src/cheap/dist/esm/webassembly/threadEntry.js'));
-  fs.copyFileSync(path.resolve(__dirname, '../src/cheap/webassembly/WebAssemblyRunnerWorker.js'), path.resolve(__dirname, '../src/cheap/dist/cjs/webassembly/WebAssemblyRunnerWorker.js'));
   printTaskLog(1, 'cheap', 'SUCCESS', `copy cheap-polyfill.js WebAssemblyRunnerWorker.js threadEntry.js completed`);
-
-  addPackageExport(path.resolve(__dirname, '../src/cheap/'), {
-    "./build/webpack/CheapPlugin": "./build/webpack/plugin/CheapPlugin.js",
-    "./build/transformer": "./build/transformer.js",
-    "./build/wasm-opt": "./build/wasm-opt.js"
-  })
 
   printTaskLog(0, 'cheap', 'SUCCESS', `built cheap completed`);
 }
@@ -647,7 +791,6 @@ function buildAudioresample() {
   printTaskLog(0, 'audioresample', 'START', `starting built audioresample`);
 
   buildPackage('audioresample')
-  addPackageExport(path.resolve(__dirname, '../src/audioresample/'))
 
   printTaskLog(0, 'audioresample', 'SUCCESS', `built audioresample completed`);
 }
@@ -655,14 +798,12 @@ function buildAudioresample() {
 function buildAudiostretchpitch() {
   printTaskLog(0, 'audiostretchpitch', 'START', `starting built audiostretchpitch`);
   buildPackage('audiostretchpitch')
-  addPackageExport(path.resolve(__dirname, '../src/audiostretchpitch/'))
   printTaskLog(0, 'audiostretchpitch', 'SUCCESS', `built audiostretchpitch completed`);
 }
 
 function buildVideoscale() {
   printTaskLog(0, 'videoscale', 'START', `starting built videoscale`);
   buildPackage('videoscale')
-  addPackageExport(path.resolve(__dirname, '../src/videoscale/'))
   printTaskLog(0, 'videoscale', 'SUCCESS', `built videoscale completed`);
 }
 
@@ -675,58 +816,51 @@ function buildAvutil() {
 
   process.on('exit', (code) => {
     fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/esm/${enumFileName}.js`), path.resolve(__dirname, `../src/avutil/dist/esm/enum.js`))
-    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/cjs/${enumFileName}.js`), path.resolve(__dirname, `../src/avutil/dist/cjs/enum.js`))
+    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/cjs/${enumFileName}.cjs`), path.resolve(__dirname, `../src/avutil/dist/cjs/enum.cjs`))
     fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/esm/${enumFileName}.js.map`), path.resolve(__dirname, `../src/avutil/dist/esm/enum.js.map`))
     fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/cjs/${enumFileName}.js.map`), path.resolve(__dirname, `../src/avutil/dist/cjs/enum.js.map`))
     fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/esm/${enumFileName}.d.ts`), path.resolve(__dirname, `../src/avutil/dist/esm/enum.d.ts`))
-    fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/cjs/${enumFileName}.d.ts`), path.resolve(__dirname, `../src/avutil/dist/cjs/enum.d.ts`))
+    // fs.renameSync(path.resolve(__dirname, `../src/avutil/dist/cjs/${enumFileName}.d.ts`), path.resolve(__dirname, `../src/avutil/dist/cjs/enum.d.ts`))
   });
 
   fs.unlinkSync(path.resolve(__dirname, `../src/avutil/${enumFileName}.ts`))
 
-  addPackageExport(path.resolve(__dirname, '../src/avutil/'))
   printTaskLog(0, 'avutil', 'SUCCESS', `built avutil completed`);
 }
 
 function buildAvcodec() {
   printTaskLog(0, 'avcodec', 'START', `starting built avcodec`);
   buildPackage('avcodec')
-  addPackageExport(path.resolve(__dirname, '../src/avcodec/'))
   printTaskLog(0, 'avcodec', 'SUCCESS', `built avcodec completed`);
 }
 
 function buildAvfilter() {
   printTaskLog(0, 'avfilter', 'START', `starting built avfilter`);
   buildPackage('avfilter')
-  addPackageExport(path.resolve(__dirname, '../src/avfilter/'))
   printTaskLog(0, 'avfilter', 'SUCCESS', `built avfilter completed`);
 }
 
 function buildAvformat() {
   printTaskLog(0, 'avformat', 'START', `starting built avformat`);
   buildPackage('avformat')
-  addPackageExport(path.resolve(__dirname, '../src/avformat/'))
   printTaskLog(0, 'avformat', 'SUCCESS', `built avformat completed`);
 }
 
 function buildAvnetwork() {
   printTaskLog(0, 'avnetwork', 'START', `starting built avnetwork`);
   buildPackage('avnetwork')
-  addPackageExport(path.resolve(__dirname, '../src/avnetwork/'))
   printTaskLog(0, 'avnetwork', 'SUCCESS', `built avnetwork completed`);
 }
 
 function buildAvpipeline() {
   printTaskLog(0, 'avpipeline', 'START', `starting built avpipeline`);
   buildPackage('avpipeline')
-  addPackageExport(path.resolve(__dirname, '../src/avpipeline/'))
   printTaskLog(0, 'avpipeline', 'SUCCESS', `built avpipeline completed`);
 }
 
 function buildAvprotocol() {
   printTaskLog(0, 'avprotocol', 'START', `starting built avprotocol`);
   buildPackage('avprotocol')
-  addPackageExport(path.resolve(__dirname, '../src/avprotocol/'))
   printTaskLog(0, 'avprotocol', 'SUCCESS', `built avprotocol completed`);
 }
 
@@ -766,7 +900,6 @@ function buildAvrender() {
 
   printTaskLog(1, 'avrender', 'SUCCESS', `built wgsl completed`);
 
-  addPackageExport(path.resolve(__dirname, '../src/avrender/'))
   printTaskLog(0, 'avrender', 'SUCCESS', `built avrender completed`);
 }
 

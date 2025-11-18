@@ -16,6 +16,7 @@
     ".": {
       "import": "./dist/esm/avtranscoder.js",
       "require": "./dist/umd/avtranscoder.js",
+      "default": "./dist/esm/avtranscoder.js",
       "types": "./dist/types/AVTranscoder.d.ts"
     },
     "./AVTranscoder": {

@@ -22,122 +22,146 @@
   "exports": {
     "./dash/parser": {
       "import": "./dist/esm/dash/parser.js",
-      "require": "./dist/cjs/dash/parser.js",
+      "require": "./dist/cjs/dash/parser.cjs",
+      "default": "./dist/esm/dash/parser.js",
       "types": "./dist/esm/dash/parser.d.ts"
     },
     "./dash/type": {
       "import": "./dist/esm/dash/type.js",
-      "require": "./dist/cjs/dash/type.js",
+      "require": "./dist/cjs/dash/type.cjs",
+      "default": "./dist/esm/dash/type.js",
       "types": "./dist/esm/dash/type.d.ts"
     },
     "./m3u8/parser": {
       "import": "./dist/esm/m3u8/parser.js",
-      "require": "./dist/cjs/m3u8/parser.js",
+      "require": "./dist/cjs/m3u8/parser.cjs",
+      "default": "./dist/esm/m3u8/parser.js",
       "types": "./dist/esm/m3u8/parser.d.ts"
     },
     "./m3u8/types": {
       "import": "./dist/esm/m3u8/types.js",
-      "require": "./dist/cjs/m3u8/types.js",
+      "require": "./dist/cjs/m3u8/types.cjs",
+      "default": "./dist/esm/m3u8/types.js",
       "types": "./dist/esm/m3u8/types.d.ts"
     },
     "./m3u8/utils": {
       "import": "./dist/esm/m3u8/utils.js",
-      "require": "./dist/cjs/m3u8/utils.js",
+      "require": "./dist/cjs/m3u8/utils.cjs",
+      "default": "./dist/esm/m3u8/utils.js",
       "types": "./dist/esm/m3u8/utils.d.ts"
     },
     "./rtcp/RTCPPacket": {
       "import": "./dist/esm/rtcp/RTCPPacket.js",
-      "require": "./dist/cjs/rtcp/RTCPPacket.js",
+      "require": "./dist/cjs/rtcp/RTCPPacket.cjs",
+      "default": "./dist/esm/rtcp/RTCPPacket.js",
       "types": "./dist/esm/rtcp/RTCPPacket.d.ts"
     },
     "./rtcp/isRtcp": {
       "import": "./dist/esm/rtcp/isRtcp.js",
-      "require": "./dist/cjs/rtcp/isRtcp.js",
+      "require": "./dist/cjs/rtcp/isRtcp.cjs",
+      "default": "./dist/esm/rtcp/isRtcp.js",
       "types": "./dist/esm/rtcp/isRtcp.d.ts"
     },
     "./rtcp/parser": {
       "import": "./dist/esm/rtcp/parser.js",
-      "require": "./dist/cjs/rtcp/parser.js",
+      "require": "./dist/cjs/rtcp/parser.cjs",
+      "default": "./dist/esm/rtcp/parser.js",
       "types": "./dist/esm/rtcp/parser.d.ts"
     },
     "./rtcp/rtcp": {
       "import": "./dist/esm/rtcp/rtcp.js",
-      "require": "./dist/cjs/rtcp/rtcp.js",
+      "require": "./dist/cjs/rtcp/rtcp.cjs",
+      "default": "./dist/esm/rtcp/rtcp.js",
       "types": "./dist/esm/rtcp/rtcp.d.ts"
     },
     "./rtmp/RtmpPacket": {
       "import": "./dist/esm/rtmp/RtmpPacket.js",
-      "require": "./dist/cjs/rtmp/RtmpPacket.js",
+      "require": "./dist/cjs/rtmp/RtmpPacket.cjs",
+      "default": "./dist/esm/rtmp/RtmpPacket.js",
       "types": "./dist/esm/rtmp/RtmpPacket.d.ts"
     },
     "./rtmp/RtmpSession": {
       "import": "./dist/esm/rtmp/RtmpSession.js",
-      "require": "./dist/cjs/rtmp/RtmpSession.js",
+      "require": "./dist/cjs/rtmp/RtmpSession.cjs",
+      "default": "./dist/esm/rtmp/RtmpSession.js",
       "types": "./dist/esm/rtmp/RtmpSession.d.ts"
     },
     "./rtmp/rtmp": {
       "import": "./dist/esm/rtmp/rtmp.js",
-      "require": "./dist/cjs/rtmp/rtmp.js",
+      "require": "./dist/cjs/rtmp/rtmp.cjs",
+      "default": "./dist/esm/rtmp/rtmp.js",
       "types": "./dist/esm/rtmp/rtmp.d.ts"
     },
     "./rtmp/util": {
       "import": "./dist/esm/rtmp/util.js",
-      "require": "./dist/cjs/rtmp/util.js",
+      "require": "./dist/cjs/rtmp/util.cjs",
+      "default": "./dist/esm/rtmp/util.js",
       "types": "./dist/esm/rtmp/util.d.ts"
     },
     "./rtp/RTPFrameQueue": {
       "import": "./dist/esm/rtp/RTPFrameQueue.js",
-      "require": "./dist/cjs/rtp/RTPFrameQueue.js",
+      "require": "./dist/cjs/rtp/RTPFrameQueue.cjs",
+      "default": "./dist/esm/rtp/RTPFrameQueue.js",
       "types": "./dist/esm/rtp/RTPFrameQueue.d.ts"
     },
     "./rtp/RTPPacket": {
       "import": "./dist/esm/rtp/RTPPacket.js",
-      "require": "./dist/cjs/rtp/RTPPacket.js",
+      "require": "./dist/cjs/rtp/RTPPacket.cjs",
+      "default": "./dist/esm/rtp/RTPPacket.js",
       "types": "./dist/esm/rtp/RTPPacket.d.ts"
     },
     "./rtp/depacketizer": {
       "import": "./dist/esm/rtp/depacketizer.js",
-      "require": "./dist/cjs/rtp/depacketizer.js",
+      "require": "./dist/cjs/rtp/depacketizer.cjs",
+      "default": "./dist/esm/rtp/depacketizer.js",
       "types": "./dist/esm/rtp/depacketizer.d.ts"
     },
     "./rtp/fmtp": {
       "import": "./dist/esm/rtp/fmtp.js",
-      "require": "./dist/cjs/rtp/fmtp.js",
+      "require": "./dist/cjs/rtp/fmtp.cjs",
+      "default": "./dist/esm/rtp/fmtp.js",
       "types": "./dist/esm/rtp/fmtp.d.ts"
     },
     "./rtp/isRtp": {
       "import": "./dist/esm/rtp/isRtp.js",
-      "require": "./dist/cjs/rtp/isRtp.js",
+      "require": "./dist/cjs/rtp/isRtp.cjs",
+      "default": "./dist/esm/rtp/isRtp.js",
       "types": "./dist/esm/rtp/isRtp.d.ts"
     },
     "./rtp/parser": {
       "import": "./dist/esm/rtp/parser.js",
-      "require": "./dist/cjs/rtp/parser.js",
+      "require": "./dist/cjs/rtp/parser.cjs",
+      "default": "./dist/esm/rtp/parser.js",
       "types": "./dist/esm/rtp/parser.d.ts"
     },
     "./rtp/rtp": {
       "import": "./dist/esm/rtp/rtp.js",
-      "require": "./dist/cjs/rtp/rtp.js",
+      "require": "./dist/cjs/rtp/rtp.cjs",
+      "default": "./dist/esm/rtp/rtp.js",
       "types": "./dist/esm/rtp/rtp.d.ts"
     },
     "./rtsp/RtspSession": {
       "import": "./dist/esm/rtsp/RtspSession.js",
-      "require": "./dist/cjs/rtsp/RtspSession.js",
+      "require": "./dist/cjs/rtsp/RtspSession.cjs",
+      "default": "./dist/esm/rtsp/RtspSession.js",
       "types": "./dist/esm/rtsp/RtspSession.d.ts"
     },
     "./rtsp/rtsp": {
       "import": "./dist/esm/rtsp/rtsp.js",
-      "require": "./dist/cjs/rtsp/rtsp.js",
+      "require": "./dist/cjs/rtsp/rtsp.cjs",
+      "default": "./dist/esm/rtsp/rtsp.js",
       "types": "./dist/esm/rtsp/rtsp.d.ts"
     },
     "./sdp/sdp": {
       "import": "./dist/esm/sdp/sdp.js",
-      "require": "./dist/cjs/sdp/sdp.js",
+      "require": "./dist/cjs/sdp/sdp.cjs",
+      "default": "./dist/esm/sdp/sdp.js",
       "types": "./dist/esm/sdp/sdp.d.ts"
     },
     "./sdp/type": {
       "import": "./dist/esm/sdp/type.js",
-      "require": "./dist/cjs/sdp/type.js",
+      "require": "./dist/cjs/sdp/type.cjs",
+      "default": "./dist/esm/sdp/type.js",
       "types": "./dist/esm/sdp/type.d.ts"
     }
   }

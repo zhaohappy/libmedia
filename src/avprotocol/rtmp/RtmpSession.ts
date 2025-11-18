@@ -27,7 +27,7 @@ import { RtmpPacket } from './RtmpPacket'
 import { APP_MAX_LENGTH, RtmpChannel, RtmpPacketType } from './rtmp'
 import { readRtmpPacket, sendRtmpPacket } from './util'
 
-import { crypto, amf } from '@libmedia/avutil/internal'
+import { amf } from '@libmedia/avutil/internal'
 
 import {
   is,
@@ -48,7 +48,7 @@ import {
   type IOWriter
 } from '@libmedia/common/io'
 
-import { Sync, sync } from '@libmedia/cheap'
+import { Sync, sync, getRandomValues } from '@libmedia/cheap'
 
 const enum ClientState {
   /**
@@ -156,7 +156,7 @@ export default class RtmpSession {
     await this.ioWriter.writeUint32(0)
     // random
     const random = new Uint8Array(1528)
-    crypto.random(random)
+    getRandomValues(random)
     await this.ioWriter.writeBuffer(random)
     await this.ioWriter.flush()
 
