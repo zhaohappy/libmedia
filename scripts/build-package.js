@@ -205,7 +205,7 @@ function compile(fileNames, options, writeCallback, cjs = false, defined = {}) {
       packageMapTransformer(),
       transformer.before(program, {
         tmpPath: path.join(__dirname, '../dist'),
-        cheapSourcePath: path.resolve(__dirname, '../src/cheap'),
+        cheapSourcePath: path.resolve(__dirname, '../src/cheap/src'),
         cheapPacketName: '@libmedia/cheap',
         defined: Object.assign({
           ENV_NODE: cjs,
@@ -543,7 +543,7 @@ function buildPackage(packageName, taskLevel = 1, fileNamesFilter) {
         if (/\.d\.ts$/.test(fileName)) {
           data = formatDeclarationFileImport(data);
         }
-        if (packageName === 'cheap' && /cheap\/index\.d\.ts$/.test(fileName)) {
+        if (packageName === 'cheap' && /cheap\/src\/index\.d\.ts$/.test(fileName)) {
           // data = 'import "./cheapdef.d.ts"\n\n' + data
           data = '/// <reference path="./cheapdef.d.ts" />\n\n' + data;
         }
@@ -607,7 +607,7 @@ function buildCheapCode(taskLevel = 1, fileNamesFilter) {
 
   let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../src/${packageName}/tsconfig.mjs.json`))
 
-  const mjsReg = new RegExp(`dist\/mjs\/${packageName}\/?`)
+  const mjsReg = new RegExp(`dist\/mjs\/${packageName}\/src\/?`)
 
   printTaskLog(taskLevel, packageName, 'START', `starting built ${packageName} mjs package`);
 
