@@ -505,7 +505,8 @@ async function buildPackage(packageName: string, taskLevel = 1, fileNamesFilter?
         }).then((result) => {
           let code = formatESMFileImport(result.code!)
           fs.writeFileSync(path.resolve(dir, path.basename(fileName)), code)
-          fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), JSON.stringify(result.map))
+          // @ts-ignore
+          fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), result.map)
         })
       }
       else {
@@ -553,7 +554,8 @@ async function buildPackage(packageName: string, taskLevel = 1, fileNamesFilter?
         }).then((result) => {
           let code = formatCJSFileImport(result.code!)
           fs.writeFileSync(path.resolve(dir, path.basename(fileName.replace(/\.js$/, '.cjs'))), code)
-          fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), JSON.stringify(result.map))
+          // @ts-ignore
+          fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), result.map)
         })
       }
       else {
@@ -608,7 +610,8 @@ async function buildCheapCode(taskLevel = 1, fileNamesFilter?: (f: string) => bo
         }).then((result) => {
           let code = formatESMFileImport(result.code!)
           fs.writeFileSync(path.resolve(dir, path.basename(fileName)), code)
-          fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), JSON.stringify(result.map))
+          // @ts-ignore
+          fs.writeFileSync(path.resolve(dir, path.basename(fileName) + '.map'), result.map)
         })
       }
       else {
