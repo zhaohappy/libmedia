@@ -3,4 +3,4 @@
 	url = https://github.com/zhaohappy/common.git
 [submodule "packages/cheap"]
 	path = packages/cheap
-	url = https://github.com/zhaohappy/common.git
+	url = https://github.com/zhaohappy/cheap.git
