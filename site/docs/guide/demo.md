@@ -12,7 +12,7 @@ order: 3
 ```shell
 
 # 克隆项目以及所有子模块
-git clone https://github.com/zhaohappy/libmedia.git --recursive
+git clone https://github.com/zhaohappy/libmedia.git
 
 # 进入 libmedia 目录
 cd libmedia

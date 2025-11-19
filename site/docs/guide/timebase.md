@@ -10,7 +10,7 @@ order: 2
 
 # 时间基
 
-时间基是一个贯穿 libmedia 的基础概念，所以必须要掌握，时间基就是时间的单位。时间基的数据结构是 [AVRational](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/avutil.AVRational.html) 它表示一个分数，其中 den 是分母，num 是分子。表示一个单位是秒的多少。举个例子，我们现在有一个时间戳 100，它在不同的时间基下表示的时间如下:
+时间基是一个贯穿 libmedia 的基础概念，所以必须要掌握，时间基就是时间的单位。时间基的数据结构是 [AVRational](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/avutil_src.AVRational.html) 它表示一个分数，其中 den 是分母，num 是分子。表示一个单位是秒的多少。举个例子，我们现在有一个时间戳 100，它在不同的时间基下表示的时间如下:
 
 - ```{num: 1, den: 1000}``` 这个时间基表示一个单位是 1/1000 秒，也就是 1 毫秒，所以 100 是 100*1/1000 秒也就是 100 毫秒；flv 就是用的这个时间基。
 - ```{num: 1, den: 90000}``` 这个时间基表示一个单位是 1/90000 秒，所以 100 是 100*1/90000 秒大约是 1.111 毫秒；ts 流就是用的这个时间基。

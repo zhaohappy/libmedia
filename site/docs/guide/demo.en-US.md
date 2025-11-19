@@ -12,7 +12,7 @@ order: 3
 ```shell
 
 # Clone the project and all submodules
-git clone https://github.com/zhaohappy/libmedia.git --recursive
+git clone https://github.com/zhaohappy/libmedia.git
 
 # Enter the libmedia directory
 cd libmedia

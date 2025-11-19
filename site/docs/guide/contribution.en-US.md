@@ -17,7 +17,7 @@ libmedia welcomes contributions of features, bugfixes, documentation, test cases
 ```shell
 
 # Clone the project and all submodules
-git clone git@github.com:zhaohappy/libmedia.git --recursive
+git clone git@github.com:zhaohappy/libmedia.git
 
 # enter libmedia directory
 cd libmedia

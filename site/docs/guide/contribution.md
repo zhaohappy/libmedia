@@ -17,7 +17,7 @@ libmedia 欢迎你对功能、bugfix、文档、测试用例等作出贡献。
 ```shell
 
 # 克隆项目以及所有子模块
-git clone https://github.com/zhaohappy/libmedia.git --recursive
+git clone https://github.com/zhaohappy/libmedia.git
 
 # 进入 libmedia 目录
 cd libmedia
