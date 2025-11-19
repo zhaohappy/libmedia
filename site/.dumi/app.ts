@@ -24,9 +24,6 @@ function createTemplate(memo: { files: IFiles } | Project, props: any, isStackBl
       return;
     }
     if (name !== 'index.html' && name !== 'package.json') {
-      if (isStackBlitz && name === 'App.tsx') {
-        content = `import '@libmedia/cheap/cheapdef'\n` + content;
-      }
       memo.files[`src/${name}`] = content;
     }
     delete memo.files[name];
@@ -72,31 +69,11 @@ const template = {
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "baseUrl": "./",
-    "paths": {
-      "@libmedia/common/*": ["node_modules/@libmedia/common/dist/esm/*"],
-      "@libmedia/cheap/*": ["node_modules/@libmedia/cheap/dist/esm/*"],
-      "@libmedia/avcodec/*": ["node_modules/@libmedia/avcodec/dist/esm/*"],
-      "@libmedia/avformat/*": ["node_modules/@libmedia/avformat/dist/esm/*"],
-      "@libmedia/avnetwork/*": ["node_modules/@libmedia/avnetwork/dist/esm/*"],
-      "@libmedia/avplayer/*": ["node_modules/@libmedia/avplayer/dist/esm/*"],
-      "@libmedia/avprotocol/*": ["node_modules/@libmedia/avprotocol/dist/esm/*"],
-      "@libmedia/avrender/*": ["node_modules/@libmedia/avrender/dist/esm/*"],
-      "@libmedia/audiostretchpitch/*": ["node_modules/@libmedia/audiostretchpitch/dist/esm/*"],
-      "@libmedia/audioresample/*": ["node_modules/@libmedia/audioresample/dist/esm/*"],
-      "@libmedia/avpipeline/*": ["node_modules/@libmedia/avpipeline/dist/esm/*"],
-      "@libmedia/avtranscode/*": ["node_modules/@libmedia/avtranscode/dist/esm/*"],
-      "@libmedia/avutil/*": ["node_modules/@libmedia/avutil/dist/esm/*"],
-      "@libmedia/videoscale/*": ["node_modules/@libmedia/videoscale/dist/esm/*"],
-      "@libmedia/avfilter/*": ["node_modules/@libmedia/avfilter/dist/esm/*"]
-    },
     "types": [
       "node"
     ]
   },
   "include": ["src"],
-  "files": [
-    "node_modules/@libmedia/cheap/dist/esm/cheapdef.d.ts"
-  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
 `,
@@ -117,7 +94,7 @@ const template = {
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import typescript from '@rollup/plugin-typescript';
-import transformer from '@libmedia/cheap/build/transformer';
+import * as transformer from '@libmedia/cheap/build/transformer';
 
 // https://vitejs.dev/config/
 export default defineConfig({
