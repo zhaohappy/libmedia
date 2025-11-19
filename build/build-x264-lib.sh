@@ -14,7 +14,7 @@ LIB_OUTPUT_PATH=$PROJECT_ROOT_PATH/lib/x264
 LIB_BUILD_PATH=$PROJECT_ROOT_PATH/dist/x264
 
 CFLAG=""
-EXTRA_CFLAGS="-I$PROJECT_ROOT_PATH/src/cheap/include -O3"
+EXTRA_CFLAGS="-I$PROJECT_ROOT_PATH/packages/cheap/include -O3"
 
 if [[ $wasm64 == "1" ]]; then
   EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory -msimd128 -fvectorize -fslp-vectorize"

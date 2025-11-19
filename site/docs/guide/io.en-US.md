@@ -10,7 +10,7 @@ order: 3
 
 # IO Input & Output
 
-The data input of libmedia is handled by [IOReader](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_io.IOReader.html), and the data output is handled by [IOWriterSync](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_io.IOWriterSync.html).
+The data input of libmedia is handled by [IOReader](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_src_io.IOReader.html), and the data output is handled by [IOWriterSync](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_src_io.IOWriterSync.html).
 
 ## IOReader
 

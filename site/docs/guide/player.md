@@ -19,7 +19,7 @@ AVPlayer 是 libmedia 的音视频播放器实现，支持软解、硬解、MSE�
 
 [在线本地播放器](https://zhaohappy.github.io/libmedia/product/player/player.html)
 
-[API](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/avplayer_AVPlayer.AVPlayer.html)
+[API](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/avplayer_src_AVPlayer.AVPlayer.html)
 
 ## 安装
 

@@ -1,5 +1,5 @@
 export {
   default as Resampler,
-  ResamplerOptions,
-  PCMParameters
+  type ResamplerOptions,
+  type PCMParameters
 } from './Resampler'

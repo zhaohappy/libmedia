@@ -7,7 +7,7 @@
     "url": "git+https://github.com/zhaohappy/libmedia.git"
   },
   "scripts": {
-    "prepublishOnly": "node ../../scripts/check-publish-status.js --package=avcodec"
+    "prepublishOnly": "tsx ../../scripts/check-publish-status.ts --package=avcodec"
   },
   "files": [
     "dist",

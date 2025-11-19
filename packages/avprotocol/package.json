@@ -7,7 +7,7 @@
     "url": "git+https://github.com/zhaohappy/libmedia.git"
   },
   "scripts": {
-    "prepublishOnly": "node ../../scripts/check-publish-status.js --package=avprotocol"
+    "prepublishOnly": "tsx ../../scripts/check-publish-status.ts --package=avprotocol"
   },
   "files": [
     "dist",

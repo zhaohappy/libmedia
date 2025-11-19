@@ -1,6 +1,6 @@
 export {
   default as VideoScaler,
-  VideoScalerOptions,
+  type VideoScalerOptions,
   ScaleAlgorithm,
-  ScaleParameters
+  type ScaleParameters
 } from './VideoScaler'

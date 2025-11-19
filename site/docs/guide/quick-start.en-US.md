@@ -43,41 +43,6 @@ Check [package](./package.md) to get the packages under ```@libmedia```. You can
 
 Each package has both es6 modules and commonjs modules; es6 modules are used for browser environments, and commonjs modules are used for Node environments. When you use import to import es6 modules, use require to import commonjs modules. If your running environment is Node environment and the source code is developed using es6 modules, you need to compile it into commonjs module code to run in Node.
 
-## Set tsconfig.json
-
-If the project is developed using TypeScript, set tsconfig.json as follows:
-
-```json
-{
-  "baseUrl": "./",
-  "paths": {
-    ...
-    "@libmedia/common/*": ["node_modules/@libmedia/common/dist/esm/*"],
-    "@libmedia/cheap/*": ["node_modules/@libmedia/cheap/dist/esm/*"],
-    "@libmedia/avcodec/*": ["node_modules/@libmedia/avcodec/dist/esm/*"],
-    "@libmedia/avformat/*": ["node_modules/@libmedia/avformat/dist/esm/*"],
-    "@libmedia/avnetwork/*": ["node_modules/@libmedia/avnetwork/dist/esm/*"],
-    "@libmedia/avplayer/*": ["node_modules/@libmedia/avplayer/dist/esm/*"],
-    "@libmedia/avprotocol/*": ["node_modules/@libmedia/avprotocol/dist/esm/*"],
-    "@libmedia/avrender/*": ["node_modules/@libmedia/avrender/dist/esm/*"],
-    "@libmedia/audiostretchpitch/*": ["node_modules/@libmedia/audiostretchpitch/dist/esm/*"],
-    "@libmedia/audioresample/*": ["node_modules/@libmedia/audioresample/dist/esm/*"],
-    "@libmedia/avpipeline/*": ["node_modules/@libmedia/avpipeline/dist/esm/*"],
-    "@libmedia/avtranscode/*": ["node_modules/@libmedia/avtranscode/dist/esm/*"],
-    "@libmedia/avutil/*": ["node_modules/@libmedia/avutil/dist/esm/*"],
-    "@libmedia/videoscale/*": ["node_modules/@libmedia/videoscale/dist/esm/*"],
-    "@libmedia/avfilter/*": ["node_modules/@libmedia/avfilter/dist/esm/*"]
-  },
-  "files": [
-    "node_modules/@libmedia/cheap/dist/esm/cheapdef.d.ts"
-  ]
-}
-```
-
-set the ```paths``` settings and ```files``` settings. ```paths``` can be configured according to your own usage, and no need to configure all of them.
-
-**```isolatedModules``` cannot be set to true, there are many const enum types under libmedia**
-
 ## Compilation Configuration
 
 Libmedia is recommended to use TypeScript for development; if the project is developed using JavaScript, the pointer type in libmedia cannot be accessed. At this time, you need to use some [tricks](./javascript.md) to access the pointer data.
@@ -120,7 +85,7 @@ module.exports = (env) => {
 
 import { defineConfig } from 'vite';
 import typescript from '@rollup/plugin-typescript';
-import transformer from '@libmedia/cheap/build/transformer';
+import * as transformer from '@libmedia/cheap/build/transformer';
 
 export default defineConfig({
   ...
@@ -149,7 +114,7 @@ export default defineConfig({
 ```javascript [rollup]
 
 import typescript from '@rollup/plugin-typescript';
-import transformer from '@libmedia/cheap/build/transformer'
+import * as transformer from '@libmedia/cheap/build/transformer'
 
 export default {
   ...

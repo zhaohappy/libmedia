@@ -1,8 +1,21 @@
-const path = require('path')
-const fs = require('fs')
-const argv = require('yargs').argv
+import path from 'path'
+import fs from 'fs'
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
 
-const files = {
+interface MyArgs {
+  pubVersion?: string
+  feature?: boolean
+}
+
+const argv = yargs(hideBin(process.argv))
+  .options({
+    pubVersion: { type: 'string', demandOption: true },
+    feature: { type: 'boolean', demandOption: false }
+  })
+  .parseSync() as MyArgs
+
+const files: Record<string, string> = {
   audioresample: path.resolve(__dirname, '../packages/audioresample/package.json'),
   audiostretchpitch: path.resolve(__dirname, '../packages/audiostretchpitch/package.json'),
   avcodec: path.resolve(__dirname, '../packages/avcodec/package.json'),
@@ -19,7 +32,7 @@ const files = {
   videoscale: path.resolve(__dirname, '../packages/videoscale/package.json')
 }
 
-const packages = {
+const packages: Record<string, Record<string, any>> = {
   audioresample: JSON.parse(fs.readFileSync(files['audioresample'], 'utf8')),
   audiostretchpitch: JSON.parse(fs.readFileSync(files['audiostretchpitch'], 'utf8')),
   avcodec: JSON.parse(fs.readFileSync(files['avcodec'], 'utf8')),
@@ -33,10 +46,10 @@ const packages = {
   avtranscoder: JSON.parse(fs.readFileSync(files['avtranscoder'], 'utf8')),
   avutil: JSON.parse(fs.readFileSync(files['avutil'], 'utf8')),
   'avplayer-ui': JSON.parse(fs.readFileSync(files['avplayer-ui'], 'utf8')),
-  videoscale: JSON.parse(fs.readFileSync(files['videoscale'], 'utf8')),
+  videoscale: JSON.parse(fs.readFileSync(files['videoscale'], 'utf8'))
 }
 
-function update(name) {
+function update(name: string) {
   const file = files[name]
   const json = packages[name]
   if (argv.pubVersion) {

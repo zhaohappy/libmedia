@@ -1,8 +1,19 @@
-const path = require('path')
-const fs = require('fs')
-const argv = require('yargs').argv
+import path from 'path'
+import fs from 'fs'
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
 
-const files = {
+interface MyArgs {
+  package: string
+}
+
+const argv = yargs(hideBin(process.argv))
+  .options({
+    package: { type: 'string', demandOption: true }
+  })
+  .parseSync() as MyArgs
+
+const files: Record<string, string> = {
   audioresample: path.resolve(__dirname, '../packages/audioresample/package.json'),
   audiostretchpitch: path.resolve(__dirname, '../packages/audiostretchpitch/package.json'),
   avcodec: path.resolve(__dirname, '../packages/avcodec/package.json'),

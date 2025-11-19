@@ -4,7 +4,7 @@ NOW_PATH=$(cd $(dirname $0); pwd)
 
 PROJECT_ROOT_PATH=$(cd $NOW_PATH/../; pwd)
 
-node $PROJECT_ROOT_PATH/scripts/update-dependencies.js
+npx tsx $PROJECT_ROOT_PATH/scripts/update-dependencies.ts
 
 cd $PROJECT_ROOT_PATH/packages/common
 npm publish --access=public

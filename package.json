@@ -12,34 +12,31 @@
     "./src/cheap/thread/initModule.ts",
     "./src/cheap/webassembly/runThread.ts"
   ],
-  "workspaces": [
-    "src/*"
-  ],
   "scripts": {
-    "build-cheap-polyfill": "cross-env NODE_ENV=production webpack --progress --env polyfill=1 release=1",
-    "build-webassembly-runner": "cross-env NODE_ENV=production webpack --progress --env webassembly_runner=1 release=1",
-    "build-pcm-worklet-processor": "cross-env NODE_ENV=production webpack --progress --env pcm_worklet_processor=1 release=1",
-    "build-thread-entry": "cross-env NODE_ENV=production webpack --progress --env thread_entry=1 release=1",
-    "build-avplayer": "cross-env NODE_ENV=production webpack --progress --env avplayer=1 release=1",
-    "build-avplayer-legacy": "cross-env NODE_ENV=production webpack --progress --env avplayer=1 release=1 legacy=1",
-    "build-avplayer-dev": "cross-env NODE_ENV=development node --max-old-space-size=8192 ./node_modules/webpack/bin/webpack.js --progress --env avplayer=1 release=0",
-    "build-avplayer-watch": "cross-env NODE_ENV=development node --max-old-space-size=8192 ./node_modules/webpack/bin/webpack.js --watch --progress --env avplayer=1 release=0",
-    "build-avplayer-ui": "cross-env NODE_ENV=development webpack --progress --env avplayer=1 ui=1 release=1",
-    "build-avplayer-ui-dev": "cross-env NODE_ENV=development webpack --progress --env avplayer=1 ui=1 release=0",
-    "build-avtranscoder": "cross-env NODE_ENV=production webpack --progress --env avtranscoder=1 release=1",
-    "build-avtranscoder-dev": "cross-env NODE_ENV=development webpack --progress --env avtranscoder=1 release=0",
-    "build-avtranscoder-watch": "cross-env NODE_ENV=development webpack --watch --progress --env avtranscoder=1 release=0",
+    "build-cheap-polyfill": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --progress --env polyfill=1 release=1",
+    "build-webassembly-runner": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --progress --env webassembly_runner=1 release=1",
+    "build-pcm-worklet-processor": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --progress --env pcm_worklet_processor=1 release=1",
+    "build-thread-entry": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --progress --env thread_entry=1 release=1",
+    "build-avplayer": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --progress --env avplayer=1 release=1",
+    "build-avplayer-legacy": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --progress --env avplayer=1 release=1 legacy=1",
+    "build-avplayer-dev": "cross-env NODE_ENV=development tsx --max-old-space-size=8192 ./node_modules/webpack/bin/webpack.js --progress --env avplayer=1 release=0",
+    "build-avplayer-watch": "cross-env NODE_ENV=development tsx --max-old-space-size=8192 ./node_modules/webpack/bin/webpack.js --watch --progress --env avplayer=1 release=0",
+    "build-avplayer-ui": "cross-env NODE_ENV=development tsx ./node_modules/webpack/bin/webpack.js --progress --env avplayer=1 ui=1 release=1",
+    "build-avplayer-ui-dev": "cross-env NODE_ENV=development tsx ./node_modules/webpack/bin/webpack.js --progress --env avplayer=1 ui=1 release=0",
+    "build-avtranscoder": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --progress --env avtranscoder=1 release=1",
+    "build-avtranscoder-dev": "cross-env NODE_ENV=development tsx ./node_modules/webpack/bin/webpack.js --progress --env avtranscoder=1 release=0",
+    "build-avtranscoder-watch": "cross-env NODE_ENV=development tsx ./node_modules/webpack/bin/webpack.js --watch --progress --env avtranscoder=1 release=0",
     "doc": "typedoc --options ./typedoc.json",
     "server": "serve -p 8000 --cors --config ./test/serve.json",
     "eslint": "./node_modules/.bin/eslint -o=report.json -f=json './src/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore",
     "eslint-fix": "./node_modules/.bin/eslint './src/**/*.ts' './site/**/*.ts' './site/**/*.tsx' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore --fix",
     "eslint-check": "./node_modules/.bin/eslint './src/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore",
     "build-debug": "cross-env NODE_ENV=development node --inspect-brk ./node_modules/webpack/bin/webpack.js --progress --env avplayer=1 release=0",
-    "postinstall": "simple-git-hooks"
+    "postinstall": "tsx scripts/postinstall.ts && simple-git-hooks"
   },
   "simple-git-hooks": {
-    "commit-msg": "node scripts/verify-commit.js",
-    "pre-commit": "node scripts/pre-commit.js"
+    "commit-msg": "tsx scripts/verify-commit.ts",
+    "pre-commit": "tsx scripts/pre-commit.ts"
   },
   "author": "Gaoxing Zhao",
   "license": "LGPL-3.0-or-later",
@@ -56,6 +53,8 @@
     "@types/loader-utils": "^2.0.6",
     "@types/node": "^22.10.1",
     "@types/path-browserify": "^1.0.0",
+    "@types/webpack-bundle-analyzer": "^4.7.0",
+    "@types/yargs": "^17.0.35",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "@typescript-eslint/typescript-estree": "^7.18.0",
@@ -87,6 +86,7 @@
     "ts-jest": "^23.10.5",
     "ts-loader": "^9.4.4",
     "tsconfig-paths-webpack-plugin": "^4.2.0",
+    "tsx": "^4.20.6",
     "typedoc": "^0.28.14",
     "typedoc-plugin-rename-defaults": "^0.7.3",
     "typescript": "^5.9.3",
@@ -94,12 +94,12 @@
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
     "worker-loader": "^3.0.8",
-    "yargs": "^13.3.0"
+    "yargs": "^18.0.0"
   },
   "dependencies": {
     "ass-compiler": "^0.1.15",
     "assjs": "0.1.4",
-    "yox": "^1.0.0-alpha.408",
-    "commander": "^13.1.0"
+    "commander": "^13.1.0",
+    "yox": "^1.0.0-alpha.408"
   }
 }

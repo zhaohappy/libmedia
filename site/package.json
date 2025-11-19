@@ -4,8 +4,8 @@
   "description": "libmedia 文档网站",
   "private": true,
   "scripts": {
-    "dev": "dumi dev",
-    "build": "dumi build"
+    "dev": "tsx ./node_modules/dumi/bin/dumi.js dev",
+    "build": "tsx ./node_modules/dumi/bin/dumi.js build"
   },
   "author": "Gaoxing Zhao",
   "license": "MIT",
@@ -14,14 +14,15 @@
     "@commitlint/config-conventional": "^17.1.0",
     "@types/node": "^22.7.6",
     "@types/react": "^18.3.1",
-    "@umijs/plugins": "^4.1.2",
-    "dumi": "^2.2.13",
+    "@umijs/plugins": "^4.5.3",
+    "dumi": "^2.4.21",
     "dumi-theme-antd-style": "^0.31.1",
     "gh-pages": "^6.1.0",
     "husky": "^8.0.1",
     "lint-staged": "^13.0.3",
     "tailwindcss": "^3.4.1",
-    "tsconfig-paths-webpack-plugin": "^4.2.0"
+    "tsconfig-paths-webpack-plugin": "^4.2.0",
+    "tsx": "^4.20.6"
   },
   "dependencies": {
     "antd": "^5.11.5"

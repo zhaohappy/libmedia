@@ -7,10 +7,10 @@ export { default as dump } from './dump'
 export {
   createAVIFormatContext,
   createAVOFormatContext,
-  AVChapter,
-  AVIFormatContext,
-  AVOFormatContext,
-  AVFormatContextInterface
+  type AVChapter,
+  type AVIFormatContext,
+  type AVOFormatContext,
+  type AVFormatContextInterface
 } from './AVFormatContext'
 
 export { default as IFormat } from './formats/IFormat'

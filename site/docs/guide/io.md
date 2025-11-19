@@ -10,7 +10,7 @@ order: 3
 
 # IO 输入输出
 
-libmedia 的数据输入由 [IOReader](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_io.IOReader.html) 代理，数据输出由 [IOWriterSync](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_io.IOWriterSync.html) 代理。
+libmedia 的数据输入由 [IOReader](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_src_io.IOReader.html) 代理，数据输出由 [IOWriterSync](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/common_src_io.IOWriterSync.html) 代理。
 
 ## IOReader
 

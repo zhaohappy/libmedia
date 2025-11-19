@@ -13,7 +13,7 @@ SOURCE_PATH=$(cd $PROJECT_ROOT_PATH/../libogg; pwd)
 LIB_OUTPUT_PATH=$PROJECT_ROOT_PATH/lib/libogg
 LIB_BUILD_PATH=$PROJECT_ROOT_PATH/dist/libogg
 
-EXTRA_CFLAGS="-I$PROJECT_ROOT_PATH/src/cheap/include -O3"
+EXTRA_CFLAGS="-I$PROJECT_ROOT_PATH/packages/cheap/include -O3"
 EXTRA_LDFLAGS="-sERROR_ON_UNDEFINED_SYMBOLS=0"
 
 if [[ $wasm64 == "1" ]]; then

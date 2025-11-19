@@ -23,7 +23,7 @@ git clone git@github.com:zhaohappy/libmedia.git --recursive
 cd libmedia
 
 # Install dependencies
-npm install
+pnpm install
 
 # Compile AVPlayer with development mode
 npm run build-avplayer-dev

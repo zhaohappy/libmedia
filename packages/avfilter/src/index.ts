@@ -8,33 +8,33 @@ export { default as AVInputNode } from './AVInputNode'
 export { default as AVOutputNode } from './AVOutputNode'
 
 export {
-  GraphNodeType,
-  AVFilterGraphDesVertex,
-  AVFilterGraphVertex,
-  FilterGraphDes,
-  FilterGraph,
-  FilterGraphPortDes,
+  type GraphNodeType,
+  type AVFilterGraphDesVertex,
+  type AVFilterGraphVertex,
+  type FilterGraphDes,
+  type FilterGraph,
+  type FilterGraphPortDes,
   createGraphDesVertex,
   createFilterGraph,
   checkFilterGraphInvalid
 } from './graph'
 
 export {
-  RangeFilterNodeOptions,
+  type RangeFilterNodeOptions,
   default as RangeFilterNode
 } from './RangeFilterNode'
 
 export {
-  ResampleFilterNodeOptions,
+  type ResampleFilterNodeOptions,
   default as ResampleFilterNode
 } from './audio/ResampleFilterNode'
 
 export {
-  FramerateFilterNodeOptions,
+  type FramerateFilterNodeOptions,
   default as FramerateFilterNode
 } from './video/FramerateFilterNode'
 
 export {
-  ScaleFilterNodeOptions,
+  type ScaleFilterNodeOptions,
   default as ScaleFilterNode
 } from './video/ScaleFilterNode'

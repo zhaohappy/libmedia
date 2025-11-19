@@ -15,7 +15,7 @@ AVTranscoder 是 libmedia 的转码工具实现。
 
 [在线 demo](https://zhaohappy.github.io/libmedia/test/avtranscoder.html)
 
-[API](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/avtranscoder_AVTranscoder.AVTranscoder.html)
+[API](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/avtranscoder_src_AVTranscoder.AVTranscoder.html)
 
 ## 安装
 

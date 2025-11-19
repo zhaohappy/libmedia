@@ -19,7 +19,7 @@ The player has [AVPlayer](./package.md#libmediaavplayer) without UI and [AVPlaye
 
 [Online local player](https://zhaohappy.github.io/libmedia/product/player/player.html)
 
-[API](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/avplayer_AVPlayer.AVPlayer.html)
+[API](https://zhaohappy.github.io/libmedia/docs/libmedia_api/classes/avplayer_src_AVPlayer.AVPlayer.html)
 
 ## Installation
 

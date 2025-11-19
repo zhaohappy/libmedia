@@ -91,7 +91,7 @@ fi
 
 emcc $CFLAG --no-entry -Wl,--no-check-features $CLIB_PATH/scale.c $FFMPEG_AVUTIL_PATH/libavutil.a $FFMPEG_SCALE_PATH/libswscale.a \
   -I "$FFMPEG_PATH/include" \
-  -I "$PROJECT_ROOT_PATH/src/cheap/include" \
+  -I "$PROJECT_ROOT_PATH/packages/cheap/include" \
   -s WASM=1 \
   -s FILESYSTEM=0 \
   -s FETCH=0 \
@@ -111,6 +111,6 @@ if [ $ENABLE_SIMD != "1" ] && [ $ENABLE_ATOMIC != "1" ] && [ $ENABLE_WASM64 != "
   $EMSDK_PATH/upstream/bin/wasm-opt $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm -o $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm --signext-lowering
 fi
 
-node $PROJECT_SRC_PATH/cheap/build/wasm-opt.cjs $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm --bss -o $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm
+npx tsx $PROJECT_SRC_PATH/cheap/build/wasm-opt.cjs -i $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm --bss -o $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm
 
 echo "===== build scale finished  ====="

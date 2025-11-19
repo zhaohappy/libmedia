@@ -1,57 +1,57 @@
 export {
-  AudioDecodeTaskOptions,
+  type AudioDecodeTaskOptions,
   default as AudioDecodePipeline
 } from './AudioDecodePipeline'
 
 export {
-  AudioEncodeTaskOptions,
+  type AudioEncodeTaskOptions,
   default as AudioEncodePipeline
 } from './AudioEncodePipeline'
 
 export {
-  AudioRenderTaskOptions,
+  type AudioRenderTaskOptions,
   default as AudioRenderPipeline
 } from './AudioRenderPipeline'
 
 export {
-  DemuxTaskOptions,
+  type DemuxTaskOptions,
   default as DemuxPipeline
 } from './DemuxPipeline'
 
 export {
-  IOTaskOptions,
+  type IOTaskOptions,
   default as IOPipeline
 } from './IOPipeline'
 
 export {
-  MuxTaskOptions,
+  type MuxTaskOptions,
   default as MuxPipeline
 } from './MuxPipeline'
 
 export {
-  TaskOptions,
+  type TaskOptions,
   default as Pipeline
 } from './Pipeline'
 
 export {
-  VideoDecodeTaskInfo,
-  VideoDecodeTaskOptions,
+  type VideoDecodeTaskInfo,
+  type VideoDecodeTaskOptions,
   default as VideoDecodePipeline
 } from './VideoDecodePipeline'
 
 export {
-  VideoEncodeTaskInfo,
-  VideoEncodeTaskOptions,
+  type VideoEncodeTaskInfo,
+  type VideoEncodeTaskOptions,
   default as VideoEncodePipeline
 } from './VideoEncodePipeline'
 
 
 export {
-  VideoRenderTaskOptions,
+  type VideoRenderTaskOptions,
   default as VideoRenderPipeline
 } from './VideoRenderPipeline'
 
-export { AlphaVideoFrame } from './struct/type'
+export { type AlphaVideoFrame } from './struct/type'
 export {
   JitterBuffer,
   default as Stats

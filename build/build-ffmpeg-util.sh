@@ -17,7 +17,7 @@ source $EMSDK_PATH/emsdk_env.sh
 
 dir=$PROJECT_ROOT_PATH/lib/ffmpeg
 
-EXTRA_CFLAGS="-I$PROJECT_ROOT_PATH/src/cheap/include -O3"
+EXTRA_CFLAGS="-I$PROJECT_ROOT_PATH/packages/cheap/include -O3"
 
 COMPONENTS=""
 

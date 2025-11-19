@@ -1,10 +1,10 @@
-const { execSync, spawnSync } = require('child_process');
+import { execSync, spawnSync } from 'child_process'
 
 const modifiedList = execSync('git diff --cached --name-only --diff-filter=ACMR')
   .toString()
   .trim()
   .split('\n')
-  .filter(file => {
+  .filter((file) => {
     return /^src\/\S*\.[j|t]s$/.test(file)
   })
 

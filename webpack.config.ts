@@ -1,120 +1,142 @@
-const path = require('path');
-const { execSync } = require('child_process');
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin')
+import type { Configuration } from 'webpack'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { execSync } from 'child_process'
+import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
+import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin'
+import ts from 'typescript'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+interface Argv {
+  mode?: 'development' | 'production'
+  [k: string]: any;
+}
+
+interface Env {
+  esm: boolean
+  avplayer: boolean
+  ui: boolean
+  legacy: boolean
+  avtranscoder: boolean
+  polyfill: boolean
+  webassembly_runner: boolean
+  pcm_worklet_processor: boolean
+  thread_entry: boolean
+  transformer: boolean
+  release: boolean
+  dist: string
+}
 
 function getVersion() {
   try {
-    return execSync('git describe --tags').toString().trim();
+    return execSync('git describe --tags').toString().trim()
   }
   catch (error) {
-    return 'n0.0.1';
+    return 'n0.0.1'
   }
 }
 
-function deDefined() {
-  const ts = require('typescript');
+function deDefined(): ts.TransformerFactory<ts.SourceFile> {
   return (context) => {
     return (sourceFile) => {
-      function visitor(node) {
+      function visitor(node: ts.Node) {
         if (ts.isCallExpression(node)
           && ts.isIdentifier(node.expression)
           && node.expression.escapedText === 'defined'
         ) {
-          return context.factory.createNumericLiteral(0);
+          return context.factory.createNumericLiteral(0)
         }
-        return ts.visitEachChild(node, visitor, context);
+        return ts.visitEachChild(node, visitor, context)
       }
-      return ts.visitNode(sourceFile, visitor);
-    };
-  };
+      return ts.visitNode(sourceFile, visitor) as ts.SourceFile
+    }
+  }
 }
 
-module.exports = (env) => {
+export default async (env: Env, argv: Argv): Promise<Configuration> => {
 
-  let entry = '';
-  let output = '';
-  let libraryTarget = env.esm ? 'module' : 'umd';
-  let library = '';
-  let libraryExport;
-  let outputPath = path.resolve(__dirname, './dist');
+  let entry: string | Record<string, string> = ''
+  let output = ''
+  let libraryTarget = env.esm ? 'module' : 'umd'
+  let library = ''
+  let libraryExport
+  let outputPath = path.resolve(__dirname, './dist')
 
   if (env.avplayer) {
     if (env.ui) {
-      entry = path.resolve(__dirname, './packages/ui/avplayer/src/AVPlayer.ts');
-      output = `avplayer.js`;
-      library = 'AVPlayer';
-      libraryExport = 'default';
+      entry = path.resolve(__dirname, './packages/ui/avplayer/src/AVPlayer.ts')
+      output = 'avplayer.js'
+      library = 'AVPlayer'
+      libraryExport = 'default'
       if (env.legacy) {
-        outputPath += '/avplayer-ui-legacy';
+        outputPath += '/avplayer-ui-legacy'
       }
       else {
-        outputPath += '/avplayer-ui';
+        outputPath += '/avplayer-ui'
       }
     }
     else {
-      entry = path.resolve(__dirname, './packages/avplayer/src/AVPlayer.ts');
-      output = `avplayer.js`;
-      library = 'AVPlayer';
-      libraryExport = 'default';
+      entry = path.resolve(__dirname, './packages/avplayer/src/AVPlayer.ts')
+      output = 'avplayer.js'
+      library = 'AVPlayer'
+      libraryExport = 'default'
       if (env.legacy) {
-        outputPath += '/avplayer-legacy';
+        outputPath += '/avplayer-legacy'
       }
       else {
-        outputPath += '/avplayer';
+        outputPath += '/avplayer'
       }
     }
-    
+
   }
   else if (env.avtranscoder) {
-    entry = path.resolve(__dirname, './packages/avtranscoder/src/AVTranscoder.ts');
-    output = `avtranscoder.js`;
-    library = 'AVTranscoder';
-    libraryExport = 'default';
+    entry = path.resolve(__dirname, './packages/avtranscoder/src/AVTranscoder.ts')
+    output = 'avtranscoder.js'
+    library = 'AVTranscoder'
+    libraryExport = 'default'
 
     if (env.legacy) {
-      outputPath += '/avtranscoder-legacy';
+      outputPath += '/avtranscoder-legacy'
     }
     else {
-      outputPath += '/avtranscoder';
+      outputPath += '/avtranscoder'
     }
   }
   else if (env.polyfill) {
-    entry = path.resolve(__dirname, './packages/cheap/src/polyfill/index.ts');
-    output = 'cheap-polyfill.js';
-    library = 'CheapPolyfill';
-    libraryTarget = 'var';
+    entry = path.resolve(__dirname, './packages/cheap/src/polyfill/index.ts')
+    output = 'cheap-polyfill.js'
+    library = 'CheapPolyfill'
+    libraryTarget = 'var'
   }
   else if (env.webassembly_runner) {
-    entry = path.resolve(__dirname, './packages/cheap/src/webassembly/WebAssemblyRunner.ts');
-    outputPath = path.resolve(__dirname, './packages/cheap/src/webassembly');
+    entry = path.resolve(__dirname, './packages/cheap/src/webassembly/WebAssemblyRunner.ts')
+    outputPath = path.resolve(__dirname, './packages/cheap/src/webassembly')
     output = 'WebAssemblyRunnerWorker.js'
-    library = '__CHeap_WebAssemblyRunner__';
-    libraryTarget = 'var';
+    library = '__CHeap_WebAssemblyRunner__'
+    libraryTarget = 'var'
   }
   else if (env.pcm_worklet_processor) {
     entry = {
       'AudioSourceWorkletProcessor': path.resolve(__dirname, './packages/avrender/src/pcm/AudioSourceWorkletProcessor.ts'),
       'AudioSourceWorkletProcessor2': path.resolve(__dirname, './packages/avrender/src/pcm/AudioSourceWorkletProcessor2.ts')
-    };
-    output = '[name].js';
-    library = 'processor';
-    libraryTarget = 'var';
+    }
+    output = '[name].js'
+    library = 'processor'
+    libraryTarget = 'var'
   }
   else if (env.thread_entry) {
-    entry = {
-      'threadEntry': path.resolve(__dirname, './packages/cheap/src/webassembly/runThread.ts'),
-    };
-    outputPath = path.resolve(__dirname, './packages/cheap/src/webassembly');
-    output = '[name].js';
-    library = '__CHeap_ThreadEntry__';
-    libraryTarget = 'var';
+    entry = path.resolve(__dirname, './packages/cheap/src/webassembly/runThread.ts')
+    outputPath = path.resolve(__dirname, './packages/cheap/src/webassembly')
+    output = 'threadEntry.js'
+    library = '__CHeap_ThreadEntry__'
+    libraryTarget = 'var'
   }
   else {
-    return;
+    return {}
   }
 
-  const config = {
+  const config: Configuration = {
     stats: {
       assets: false,
       builtAt: true,
@@ -126,7 +148,7 @@ module.exports = (env) => {
       children: true
     },
     experiments: {
-      outputModule: env.esm ? true : undefined,
+      outputModule: env.esm ? true : undefined
     },
     watchOptions: {
       aggregateTimeout: 1000,
@@ -144,7 +166,7 @@ module.exports = (env) => {
       ],
       plugins: [
         new TsconfigPathsPlugin({
-          configFile: path.resolve(__dirname, './tsconfig.json'),
+          configFile: path.resolve(__dirname, './tsconfig.json')
         })
       ]
     },
@@ -227,7 +249,7 @@ module.exports = (env) => {
               loader: 'ts-loader',
               options: {
                 configFile: path.resolve(__dirname, './tsconfig.json'),
-                getCustomTransformers: env.transformer ? function() {
+                getCustomTransformers: env.transformer ? function () {
                   return {
                     before: [deDefined()]
                   }
@@ -239,7 +261,7 @@ module.exports = (env) => {
         {
           test: /\.(glsl|vert|frag)$/,
           use: [
-            'raw-loader',
+            'raw-loader'
           ]
         },
         {
@@ -276,19 +298,19 @@ module.exports = (env) => {
               loader: path.resolve(__dirname, './build/webpack/loader/hbs-loader.js')
             }
           ]
-        },
-      ],
+        }
+      ]
     },
     plugins: [
       // new BundleAnalyzerPlugin()
     ]
-  };
+  }
 
   if (!env.transformer) {
 
-    const CheapPlugin = require('./packages/cheap/build/webpack/plugin/CheapPlugin');
+    const CheapPlugin = (await import('./packages/cheap/build/webpack/plugin/CheapPlugin')).default
 
-    const defined = {
+    const defined: Record<string, any> = {
       VERSION: getVersion()
     }
 
@@ -301,29 +323,27 @@ module.exports = (env) => {
       defined.ENV_CSP = false
     }
 
-    config.plugins.push(
-      new CheapPlugin({
-        name: 'libmedia',
-        env: 'browser',
-        projectPath: __dirname,
-        cheapSourcePath: path.resolve(__dirname, './packages/cheap/src'),
-        tmpPath: path.resolve(__dirname, './dist'),
-        exclude: /__test__/,
-        // 配置线程模块中有动态导入的模块，需要给动态导入的模块重新处理依赖，因为线程模块可能没有动态导入模块的依赖模块
-        threadFiles: [
-          {
-            file: path.resolve(__dirname, 'packages/avpipeline/DemuxPipeline.ts')
-          },
-          {
-            file: path.resolve(__dirname, 'packages/avpipeline/MuxPipeline.ts')
-          },
-          {
-            file: path.resolve(__dirname, 'packages/avpipeline/IOPipeline.ts')
-          }
-        ],
-        defined
-      })
-    );
+    (config.plugins as any[]).push(new CheapPlugin({
+      name: 'libmedia',
+      env: 'browser',
+      projectPath: __dirname,
+      cheapSourcePath: path.resolve(__dirname, './packages/cheap/src'),
+      tmpPath: path.resolve(__dirname, './dist'),
+      exclude: /__test__/,
+      // 配置线程模块中有动态导入的模块，需要给动态导入的模块重新处理依赖，因为线程模块可能没有动态导入模块的依赖模块
+      threadFiles: [
+        {
+          file: path.resolve(__dirname, 'packages/avpipeline/DemuxPipeline.ts')
+        },
+        {
+          file: path.resolve(__dirname, 'packages/avpipeline/MuxPipeline.ts')
+        },
+        {
+          file: path.resolve(__dirname, 'packages/avpipeline/IOPipeline.ts')
+        }
+      ],
+      defined
+    }))
   }
-  return config;
-};
+  return config
+}

@@ -1,7 +1,7 @@
-const path = require('path')
-const fs = require('fs')
+import path from 'path'
+import fs from 'fs'
 
-const files = {
+const files: Record<string, string> = {
   audioresample: path.resolve(__dirname, '../packages/audioresample/package.json'),
   audiostretchpitch: path.resolve(__dirname, '../packages/audiostretchpitch/package.json'),
   avcodec: path.resolve(__dirname, '../packages/avcodec/package.json'),
@@ -20,7 +20,7 @@ const files = {
   videoscale: path.resolve(__dirname, '../packages/videoscale/package.json')
 }
 
-const packages = {
+const packages: Record<string, Record<string, any>> = {
   audioresample: JSON.parse(fs.readFileSync(files['audioresample'], 'utf8')),
   audiostretchpitch: JSON.parse(fs.readFileSync(files['audiostretchpitch'], 'utf8')),
   avcodec: JSON.parse(fs.readFileSync(files['avcodec'], 'utf8')),
@@ -36,10 +36,10 @@ const packages = {
   cheap: JSON.parse(fs.readFileSync(files['cheap'], 'utf8')),
   common: JSON.parse(fs.readFileSync(files['common'], 'utf8')),
   'avplayer-ui': JSON.parse(fs.readFileSync(files['avplayer-ui'], 'utf8')),
-  videoscale: JSON.parse(fs.readFileSync(files['videoscale'], 'utf8')),
+  videoscale: JSON.parse(fs.readFileSync(files['videoscale'], 'utf8'))
 }
 
-function update(name) {
+function update(name: string) {
   const file = files[name]
   const json = packages[name]
   if (json.dependencies) {

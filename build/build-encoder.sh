@@ -290,7 +290,7 @@ emcc $CFLAG $CLIB_PATH/encode.c $CLIB_PATH/logger/log.c \
   $FFMPEG_AVUTIL_PATH/libavutil.a $FFMPEG_ENCODE_PATH/$encode$DIR_SUBFIX/libavcodec.a $ENCODER_LIB --no-entry \
   --js-library $PROJECT_ROOT_PATH/dist/jsLib.js  \
   -I "$FFMPEG_PATH/include" \
-  -I "$PROJECT_ROOT_PATH/src/cheap/include" \
+  -I "$PROJECT_ROOT_PATH/packages/cheap/include" \
   -I "$INCLUDE_PATH" \
   -s WASM=1 \
   -s FILESYSTEM=0 \
@@ -312,6 +312,6 @@ if [ $ENABLE_SIMD != "1" ] && [ $ENABLE_ATOMIC != "1" ] && [ $ENABLE_WASM64 != "
   $EMSDK_PATH/upstream/bin/wasm-opt $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm -o $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm --signext-lowering
 fi
 
-node $PROJECT_SRC_PATH/cheap/build/wasm-opt.cjs $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm --bss -o $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm
+npx tsx $PROJECT_SRC_PATH/cheap/build/wasm-opt.cjs -i $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm --bss -o $PROJECT_OUTPUT_PATH/$FILE_NAME.wasm
 
 echo "===== build encoder $encode finished  ====="

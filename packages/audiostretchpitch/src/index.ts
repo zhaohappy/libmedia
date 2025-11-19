@@ -1,5 +1,5 @@
 export {
   default as StretchPitcher,
-  StretchPitchOptions,
-  StretchPitchParameters
+  type StretchPitchOptions,
+  type StretchPitchParameters
 } from './StretchPitcher'

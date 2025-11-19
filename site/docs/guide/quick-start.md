@@ -43,40 +43,6 @@ yarn add @libmedia/avcodec
 
 每个包都同时拥有 es6 模块和 commonjs 模块；es6 模块给浏览器环境使用，commonjs 模块给 Node 环境使用。当你使用 import 导入的是 es6 模块，使用 require 导入的是 commonjs 模块。若你的运行环境是 Node 环境而源码使用的是 es6 模块开发，需要编译成 commonjs 模块代码在 Node 中运行。
 
-## 设置 tsconfig.json
-
-如果项目使用 TypeScript 开发设置 tsconfig.json 如下:
-
-```json
-{
-  "baseUrl": "./",
-  "paths": {
-    ...
-    "@libmedia/common/*": ["node_modules/@libmedia/common/dist/esm/*"],
-    "@libmedia/cheap/*": ["node_modules/@libmedia/cheap/dist/esm/*"],
-    "@libmedia/avcodec/*": ["node_modules/@libmedia/avcodec/dist/esm/*"],
-    "@libmedia/avformat/*": ["node_modules/@libmedia/avformat/dist/esm/*"],
-    "@libmedia/avnetwork/*": ["node_modules/@libmedia/avnetwork/dist/esm/*"],
-    "@libmedia/avplayer/*": ["node_modules/@libmedia/avplayer/dist/esm/*"],
-    "@libmedia/avprotocol/*": ["node_modules/@libmedia/avprotocol/dist/esm/*"],
-    "@libmedia/avrender/*": ["node_modules/@libmedia/avrender/dist/esm/*"],
-    "@libmedia/audiostretchpitch/*": ["node_modules/@libmedia/audiostretchpitch/dist/esm/*"],
-    "@libmedia/audioresample/*": ["node_modules/@libmedia/audioresample/dist/esm/*"],
-    "@libmedia/avpipeline/*": ["node_modules/@libmedia/avpipeline/dist/esm/*"],
-    "@libmedia/avtranscode/*": ["node_modules/@libmedia/avtranscode/dist/esm/*"],
-    "@libmedia/avutil/*": ["node_modules/@libmedia/avutil/dist/esm/*"],
-    "@libmedia/videoscale/*": ["node_modules/@libmedia/videoscale/dist/esm/*"],
-    "@libmedia/avfilter/*": ["node_modules/@libmedia/avfilter/dist/esm/*"]
-  },
-  "files": [
-    "node_modules/@libmedia/cheap/dist/esm/cheapdef.d.ts"
-  ]
-}
-```
-
-主要是 ```paths``` 设置和 ```files``` 设置。```paths``` 根据自己的使用情况配置无需全部配置；
-
-**```isolatedModules``` 不能设置为 true, libmedia 下面有很多 const enum 类型**
 
 ## 编译配置
 
@@ -120,7 +86,7 @@ module.exports = (env) => {
 
 import { defineConfig } from 'vite';
 import typescript from '@rollup/plugin-typescript';
-import transformer from '@libmedia/cheap/build/transformer';
+import * as transformer from '@libmedia/cheap/build/transformer';
 
 export default defineConfig({
   ...
@@ -149,7 +115,7 @@ export default defineConfig({
 ```javascript [rollup]
 
 import typescript from '@rollup/plugin-typescript';
-import transformer from '@libmedia/cheap/build/transformer'
+import * as transformer from '@libmedia/cheap/build/transformer'
 
 export default {
   ...

@@ -18,7 +18,7 @@ git clone https://github.com/zhaohappy/libmedia.git --recursive
 cd libmedia
 
 # 安装依赖
-npm install
+pnpm install
 
 # 编译 AVPlayer 开发版
 npm run build-avplayer-dev
