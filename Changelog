@@ -1,3 +1,23 @@
+version 1.0.0:
+
+feat:
+  - refactor(avformat): 各 OFormat 的 Capabilities 放到各自下面
+  - feat(avformat): 支持 h264、h265、h266 裸流输出
+  - feat(avformat): 支持 aac format 输出
+  - feat: 支持 CSP 环境
+  - feat(avplayer): mse 模块和字幕渲染模块优化为动态加载模块
+  - feat(avtranscoder): 支持设置 AVStreamDiscard
+  - feat(avformat): 增强对 flac 帧头的合法性判断
+  - refactor: 各模式使用聚合模块导出，限制内部 api 对外开放
+
+
+bugfix:
+  - fix(avformat): 兼容处理 startCode 为 0x000001 的 sps 和 pps
+  - fix(avformat): 处理 aac adif 头
+  - fix(avformat): dump duration 没有显示 N/A
+  - fix(avformat): 修复批量更新 box size 会丢失部分数据的问题
+  - fix(avformat): flv previousTagSize 不正确打印警告日志不抛错
+
 version 0.12.0:
 
 feat:
