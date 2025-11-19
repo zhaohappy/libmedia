@@ -1,4 +1,4 @@
-version 1.0.0:
+version 1.0.1:
 
 feat:
   - refactor(avformat): 各 OFormat 的 Capabilities 放到各自下面

@@ -10,7 +10,7 @@ interface MyArgs {
 
 const argv = yargs(hideBin(process.argv))
   .options({
-    pubVersion: { type: 'string', demandOption: true },
+    pubVersion: { type: 'string', demandOption: false },
     feature: { type: 'boolean', demandOption: false }
   })
   .parseSync() as MyArgs
