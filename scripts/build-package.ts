@@ -230,6 +230,18 @@ async function compile(
     fs.rmSync(options.declarationDir, { recursive: true, force: true })
   }
   const program = ts.createProgram(fileNames, options)
+  const defineds = {}
+  Object.assign(defineds, configFile.config?.cheap?.defined ?? {})
+  Object.assign(defineds, {
+    ENV_NODE: cjs,
+    ENV_WEBPACK: false,
+    DEBUG: false,
+    ENABLE_LOG_TRACE: false,
+    ENABLE_THREADS: true,
+    ENABLE_THREADS_SPLIT: false,
+    VERSION: getVersion()
+  })
+  Object.assign(defineds, defined)
   const emitResult = program.emit(undefined, writeCallback, undefined, undefined, {
     before: [
       packageMapTransformer(),
@@ -237,15 +249,7 @@ async function compile(
         tmpPath: path.join(__dirname, '../dist'),
         cheapSourcePath: path.resolve(__dirname, '../packages/cheap/src'),
         cheapPacketName: '@libmedia/cheap',
-        defined: Object.assign({}, configFile.config?.cheap?.defined ?? {}, {
-          ENV_NODE: cjs,
-          ENV_WEBPACK: false,
-          DEBUG: false,
-          ENABLE_LOG_TRACE: false,
-          ENABLE_THREADS: true,
-          ENABLE_THREADS_SPLIT: false,
-          VERSION: getVersion()
-        }, defined),
+        defined: defineds,
         importPath: (p: string) => {
           return replacePath(p)
         }
@@ -566,7 +570,7 @@ async function buildPackage(packageName: string, taskLevel = 1, fileNamesFilter?
 
 async function buildCheapCode(taskLevel = 1, fileNamesFilter?: (f: string) => boolean) {
   const packageName = 'cheap'
-  buildPackage(packageName, taskLevel, fileNamesFilter)
+  await buildPackage(packageName, taskLevel, fileNamesFilter)
 
   if (!fileNamesFilter) {
     fileNamesFilter = (name) => {
