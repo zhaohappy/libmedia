@@ -2,6 +2,7 @@
   "name": "@libmedia/avfilter",
   "version": "1.0.1",
   "description": "libmedia filter 模块",
+  "sideEffects": false,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zhaohappy/libmedia.git"

@@ -2,6 +2,12 @@
   "name": "@libmedia/avrender",
   "version": "1.0.1",
   "description": "libmedia 渲染模块",
+  "sideEffects": [
+    "./src/pcm/AudioSourceWorkletProcessor.ts",
+    "./src/pcm/AudioSourceWorkletProcessor2.ts",
+    "./dist/AudioSourceWorkletProcessorWorklet.js",
+    "./dist/AudioSourceWorkletProcessor2Worklet.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zhaohappy/libmedia.git"

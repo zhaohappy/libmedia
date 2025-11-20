@@ -314,13 +314,19 @@ export default async (env: Env, argv: Argv): Promise<Configuration> => {
       VERSION: getVersion()
     }
 
+    const exclude = [/__test__/]
+
     if (env.thread_entry) {
       defined.ENV_NODE = false
       defined.ENV_CSP = true
     }
     if (env.webassembly_runner) {
       defined.ENV_NODE = false
-      defined.ENV_CSP = false
+      defined.ENV_CSP = false,
+      defined.ENV_WEBPACK = false
+      defined.USE_WORKER_SELF_URL = true
+      exclude.push(/packages\/avplayer/)
+      exclude.push(/packages\/avtranscoder/)
     }
 
     (config.plugins as any[]).push(new CheapPlugin({
@@ -329,17 +335,17 @@ export default async (env: Env, argv: Argv): Promise<Configuration> => {
       projectPath: __dirname,
       cheapSourcePath: path.resolve(__dirname, './packages/cheap/src'),
       tmpPath: path.resolve(__dirname, './dist'),
-      exclude: /__test__/,
+      exclude,
       // 配置线程模块中有动态导入的模块，需要给动态导入的模块重新处理依赖，因为线程模块可能没有动态导入模块的依赖模块
       threadFiles: [
         {
-          file: path.resolve(__dirname, 'packages/avpipeline/DemuxPipeline.ts')
+          file: path.resolve(__dirname, 'packages/avpipeline/src/DemuxPipeline.ts')
         },
         {
-          file: path.resolve(__dirname, 'packages/avpipeline/MuxPipeline.ts')
+          file: path.resolve(__dirname, 'packages/avpipeline/src/MuxPipeline.ts')
         },
         {
-          file: path.resolve(__dirname, 'packages/avpipeline/IOPipeline.ts')
+          file: path.resolve(__dirname, 'packages/avpipeline/src/IOPipeline.ts')
         }
       ],
       defined

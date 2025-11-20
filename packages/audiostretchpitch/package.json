@@ -2,6 +2,7 @@
   "name": "@libmedia/audiostretchpitch",
   "version": "1.0.1",
   "description": "libmedia 音频变调变速",
+  "sideEffects": false,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zhaohappy/libmedia.git"

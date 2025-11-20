@@ -5,3 +5,4 @@ eslint
 .eslintrc.cjs
 dist/
 *.js
+build
