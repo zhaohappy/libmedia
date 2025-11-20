@@ -161,6 +161,19 @@ export default class WasmVideoEncoder {
     return this.encoder.invoke<int32>('encoder_receive', this.getAVPacket())
   }
 
+  private receiveAVPacketAsync() {
+    return this.encoder.invokeAsync<int32>('encoder_receive', this.getAVPacket())
+  }
+
+  /**
+   * 打开编码器
+   * 
+   * @param parameters 
+   * @param timeBase 
+   * @param threadCount 
+   * @param opts 
+   * @returns 
+   */
   public async open(parameters: pointer<AVCodecParameters>, timeBase: AVRational, threadCount: number = 1, opts: Data = {}): Promise<int32> {
     await this.encoder.run(undefined, threadCount)
 
@@ -254,7 +267,22 @@ export default class WasmVideoEncoder {
     return frame
   }
 
-  private postEncode() {
+  /**
+   * 同步编码
+   * 
+   * 多线程解码时可能会阻塞当前线程，若在浏览器环境请保证在 worker 中调用
+   * 
+   * @param frame 
+   * @param key 
+   * @returns 
+   */
+  public encode(frame: pointer<AVFrame>, key: boolean): int32 {
+    frame = this.preEncode(frame, key)
+
+    let ret = this.encoder.invoke<int32>('encoder_encode', frame)
+    if (ret) {
+      return ret
+    }
     this.encodeQueueSize++
     while (true) {
       let ret = this.receiveAVPacket()
@@ -271,6 +299,15 @@ export default class WasmVideoEncoder {
     return 0
   }
 
+  /**
+   * 异步编码
+   * 
+   * 支持在浏览器主线程中进行多线程编码，需要支持 JSPI 和 Atomics.waitAsync
+   * 
+   * @param frame 
+   * @param key 
+   * @returns 
+   */
   public async encodeAsync(frame: pointer<AVFrame>, key: boolean): Promise<int32> {
     frame = this.preEncode(frame, key)
 
@@ -278,24 +315,50 @@ export default class WasmVideoEncoder {
     if (ret) {
       return ret
     }
-    return this.postEncode()
-  }
-
-  public encode(frame: pointer<AVFrame>, key: boolean): int32 {
-    frame = this.preEncode(frame, key)
-
-    let ret = this.encoder.invoke<int32>('encoder_encode', frame)
-    if (ret) {
-      return ret
+    this.encodeQueueSize++
+    while (true) {
+      let ret = await this.receiveAVPacketAsync()
+      if (ret === 1) {
+        this.outputAVPacket()
+      }
+      else if (ret < 0) {
+        return ret
+      }
+      else {
+        break
+      }
     }
-
-    return this.postEncode()
+    return 0
   }
 
+  /**
+   * 刷出编码队列中所有缓存的包
+   * 
+   * @returns 
+   */
   public async flush(): Promise<int32> {
     this.encoder.invoke('encoder_flush')
     while (1) {
       const ret = this.receiveAVPacket()
+      if (ret < 1) {
+        return ret
+      }
+      this.outputAVPacket()
+    }
+    return 0
+  }
+
+  /**
+   * 刷出编码队列中所有缓存的包
+   * 
+   * 在浏览器环境主线程做多线程编码使用此方法，需要支持 JSPI 和 Atomics.waitAsync
+   * 
+   * @returns 
+   */
+  public async flushAsync(): Promise<int32> {
+    await this.encoder.invokeAsync('encoder_flush')
+    while (1) {
+      const ret = await this.receiveAVPacketAsync()
       if (ret < 1) {
         return ret
       }

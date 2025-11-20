@@ -139,6 +139,18 @@ export default class WasmVideoDecoder {
     return this.decoder.invoke<int32>('decoder_receive', this.getAVFrame())
   }
 
+  private async receiveAVFrameAsync() {
+    return this.decoder.invokeAsync<int32>('decoder_receive', this.getAVFrame())
+  }
+
+  /**
+   * 打开解码器
+   * 
+   * @param parameters 
+   * @param threadCount 
+   * @param opts 
+   * @returns 
+   */
   public async open(parameters: pointer<AVCodecParameters>, threadCount: number = 1, opts: Data = {}): Promise<int32> {
     await this.decoder.run(undefined, threadCount)
     let ret = 0
@@ -183,6 +195,14 @@ export default class WasmVideoDecoder {
     return 0
   }
 
+  /**
+   * 同步解码
+   * 
+   * 多线程解码时可能会阻塞当前线程，若在浏览器环境请保证在 worker 中调用
+   * 
+   * @param avpacket 
+   * @returns 
+   */
   public decode(avpacket: pointer<AVPacket>): int32 {
 
     if (!this.timeBase) {
@@ -217,6 +237,52 @@ export default class WasmVideoDecoder {
     return 0
   }
 
+  /**
+   * 异步解码
+   * 
+   * 支持在浏览器主线程中进行多线程解码，需要支持 JSPI 和 Atomics.waitAsync
+   * 
+   * @param avpacket 
+   * @returns 
+   */
+  public async decodeAsync(avpacket: pointer<AVPacket>): Promise<int32> {
+    if (!this.timeBase) {
+      this.timeBase = {
+        den: avpacket.timeBase.den,
+        num: avpacket.timeBase.num
+      }
+    }
+
+    let ret = await this.decoder.invokeAsync<int32>('decoder_decode', avpacket)
+
+    if (ret) {
+      return ret
+    }
+
+    if (this.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS) {
+      this.dtsQueue.push(avpacket.dts)
+    }
+
+    while (true) {
+      ret = await this.receiveAVFrameAsync()
+      if (ret === 1) {
+        this.outputAVFrame()
+      }
+      else if (ret < 0) {
+        return ret
+      }
+      else {
+        break
+      }
+    }
+    return 0
+  }
+
+  /**
+   * 刷出解码队列中所有缓存的帧
+   * 
+   * @returns 
+   */
   public async flush(): Promise<int32> {
     this.decoder.invoke('decoder_flush')
     while (1) {
@@ -229,6 +295,28 @@ export default class WasmVideoDecoder {
     return 0
   }
 
+  /**
+   * 刷出解码队列中所有缓存的帧
+   * 
+   * 在浏览器环境主线程做多线程解码使用此方法，需要支持 JSPI 和 Atomics.waitAsync
+   * 
+   * @returns 
+   */
+  public async flushAsync(): Promise<int32> {
+    await this.decoder.invokeAsync('decoder_flush')
+    while (1) {
+      const ret = await this.receiveAVFrameAsync()
+      if (ret < 1) {
+        return ret
+      }
+      this.outputAVFrame()
+    }
+    return 0
+  }
+
+  /**
+   * 关闭解码器
+   */
   public close() {
     this.decoder.invoke('decoder_close')
     this.decoder.destroy()
@@ -247,10 +335,20 @@ export default class WasmVideoDecoder {
     }
   }
 
+  /**
+   * 设置忽略解码帧类型
+   * 
+   * @param discard 
+   */
   public setSkipFrameDiscard(discard: AVDiscard) {
     this.decoder.invoke('decoder_discard', discard)
   }
 
+  /**
+   * 获取子线程数量
+   * 
+   * @returns 
+   */
   public getChildThreadCount() {
     if (this.decoder) {
       return this.decoder.getChildThreadCount()
