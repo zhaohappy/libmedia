@@ -1,3 +1,9 @@
+version 1.1.0:
+
+feat:
+  - feat(avcodec): wasm 编解码器支持在浏览器主线程进行多线程解码
+  - feat: package 设置无副作用，对 tree-shake 更友好
+
 version 1.0.1:
 
 feat:

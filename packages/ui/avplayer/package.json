@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avplayer-ui",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "libmedia avplayer ui",
   "sideEffects": false,
   "repository": {

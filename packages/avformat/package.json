@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avformat",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "libmedia avformat",
   "sideEffects": false,
   "repository": {
