@@ -931,10 +931,55 @@ function buildAll() {
   spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avnetwork'], {
     stdio: 'inherit'
   })
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avprotocol'], {
+    stdio: 'inherit'
+  })
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avrender'], {
+    stdio: 'inherit'
+  })
   spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avpipeline'], {
     stdio: 'inherit'
   })
   spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avplayer'], {
+    stdio: 'inherit'
+  })
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avtranscoder'], {
+    stdio: 'inherit'
+  })
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avplayer_ui'], {
+    stdio: 'inherit'
+  })
+}
+
+function buildDocDeps() {
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=cheap'], {
+    stdio: 'inherit'
+  })
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=common'], {
+    stdio: 'inherit'
+  })
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=audioresample'], {
+    stdio: 'inherit'
+  })
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=audiostretchpitch'], {
+    stdio: 'inherit'
+  })
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=videoscale'], {
+    stdio: 'inherit'
+  })
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avutil'], {
+    stdio: 'inherit'
+  })
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avcodec'], {
+    stdio: 'inherit'
+  })
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avfilter'], {
+    stdio: 'inherit'
+  })
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avformat'], {
+    stdio: 'inherit'
+  })
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avnetwork'], {
     stdio: 'inherit'
   })
   spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avprotocol'], {
@@ -943,10 +988,7 @@ function buildAll() {
   spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avrender'], {
     stdio: 'inherit'
   })
-  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avtranscoder'], {
-    stdio: 'inherit'
-  })
-  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avplayer_ui'], {
+  spawnSync('npx', ['tsx', `${path.resolve(__dirname, '../')}/scripts/build-package.ts`, '--package=avpipeline'], {
     stdio: 'inherit'
   })
 }
@@ -1002,5 +1044,8 @@ switch (argv.package) {
     break
   case 'all':
     buildAll()
+    break
+  case 'docs':
+    buildDocDeps()
     break
 }

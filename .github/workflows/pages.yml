@@ -50,6 +50,8 @@ jobs:
         run:  npm run build-avtranscoder
       - name: Build docs
         run:  npm run doc
+      - name: Build doc deps
+        run:  npx tsx ./scripts/build-package.ts --package=docs
       - name: Build site
         run: | 
           cd site
