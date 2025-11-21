@@ -33,7 +33,6 @@ console.log(avpacketProxy.pts)
 import { addressof } from '@libmedia/cheap'
 
 let stream = iformatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_AUDIO)
-// The instance address can be obtained by accessing the symbolStructAddress attribute of the instance
 let codecpar = addressof(stream.codecpar)
 
 ```
@@ -49,4 +48,23 @@ let avpacket
 // get the data address under the avpacket pointer, base address + offset
 const data = avpacket + offsetof(AVPacket, 'data')
 
+```
+
+## create struct pointer
+
+```javascript
+import { sizeof } from '@libmedia/cheap'
+import { AVPacket, avMalloc, avFree } from '@libmedia/avutil'
+let avpacket = avMalloc(sizeof(AVPacket))
+avFree(avpacket)
+
+```
+
+## create struct instance
+
+```javascript
+import { make, unmake } from '@libmedia/cheap'
+import { AVPacket } from '@libmedia/avutil'
+let avpacket = make(new AVPacket(), AVPacket)
+unmake(avpacket)
 ```

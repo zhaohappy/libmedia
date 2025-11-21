@@ -33,7 +33,6 @@ console.log(avpacketProxy.pts)
 import { addressof } from '@libmedia/cheap'
 
 let stream = iformatContext.getStreamByMediaType(AVMediaType.AVMEDIA_TYPE_AUDIO)
-// 可以通过访问实例的 symbolStructAddress 属性得到实例地址
 let codecpar = addressof(stream.codecpar)
 
 ```
@@ -49,4 +48,23 @@ let avpacket
 // 获取 avpacket 指针下的 data 地址，基址 + 偏移
 const data = avpacket + offsetof(AVPacket, 'data')
 
+```
+
+## 创建结构体指针
+
+```javascript
+import { sizeof } from '@libmedia/cheap'
+import { AVPacket, avMalloc, avFree } from '@libmedia/avutil'
+let avpacket = avMalloc(sizeof(AVPacket))
+avFree(avpacket)
+
+```
+
+## 创建结构体实例
+
+```javascript
+import { make, unmake } from '@libmedia/cheap'
+import { AVPacket } from '@libmedia/avutil'
+let avpacket = make(new AVPacket(), AVPacket)
+unmake(avpacket)
 ```
