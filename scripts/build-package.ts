@@ -520,7 +520,9 @@ async function buildPackage(packageName: string, taskLevel = 1, fileNamesFilter?
           // data = 'import "./cheapdef.d.ts"\n\n' + data
           data = '/// <reference path="./cheapdef.d.ts" />\n\n' + data
         }
-        fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data)
+        if (!/internal\.d\.ts$/.test(fileName)) {
+          fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data)
+        }
       }
     }
   })
