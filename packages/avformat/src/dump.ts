@@ -297,7 +297,7 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
     object.each(stream.metadata, (value, key) => {
       if (!is.object(value) && !is.array(value) && !is.arrayBuffer(value) && !ArrayBuffer.isView(value)) {
         if (is.string(value)) {
-          value = value.replaceAll('\n', '\n' + ' '.repeat(6 + key.length))
+          value = string.replaceAll(value, '\n', '\n' + ' '.repeat(6 + key.length))
         }
         dump += `${prefix}    ${key}: ${value}\n`
       }
@@ -359,7 +359,7 @@ export function dumpChapter(chapter: AVChapter, index: number, cheapIndex: numbe
     object.each(chapter.metadata, (value, key) => {
       if (!is.object(value) && !is.array(value) && !is.arrayBuffer(value) && !ArrayBuffer.isView(value)) {
         if (is.string(value)) {
-          value = value.replaceAll('\n', '\n' + ' '.repeat(6 + key.length))
+          value = string.replaceAll(value, '\n', '\n' + ' '.repeat(6 + key.length))
         }
         dump += `${prefix}    ${key}: ${value}\n`
       }
@@ -375,7 +375,7 @@ export function dumpAVFormatContextInterface(formatContext: AVFormatContextInter
     object.each(formatContext.metadata, (value, key) => {
       if (!is.object(value) && !is.array(value) && !is.arrayBuffer(value) && !ArrayBuffer.isView(value)) {
         if (is.string(value)) {
-          value = value.replaceAll('\n', '\n' + ' '.repeat(6 + key.length))
+          value = string.replaceAll(value, '\n', '\n' + ' '.repeat(6 + key.length))
         }
         dump += `    ${key}: ${value}\n`
       }

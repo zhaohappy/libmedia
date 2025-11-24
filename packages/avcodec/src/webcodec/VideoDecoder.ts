@@ -53,7 +53,7 @@ import {
   getHardwarePreference
 } from '@libmedia/avutil/internal'
 
-import { logger, browser, os, array } from '@libmedia/common'
+import { logger, browser, os, array, withResolvers } from '@libmedia/common'
 
 export type WebVideoDecoderOptions = {
   onReceiveVideoFrame: (frame: VideoFrame, alpha?: VideoFrame) => void
@@ -477,7 +477,7 @@ export default class WebVideoDecoder {
                 data: mapUint8Array(sideData.data + 8, reinterpret_cast<size>((sideData.size - 8) as uint32))
               }))
 
-              let { promise, resolve } = Promise.withResolvers<void>()
+              let { promise, resolve } = withResolvers<void>()
 
               this.alphaPending.set(videoChunk.timestamp, {
                 promise,
