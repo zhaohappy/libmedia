@@ -1,10 +1,23 @@
 import type { ExecSyncOptionsWithBufferEncoding } from 'node:child_process'
 import { execSync } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 function run(cmd: string, options: ExecSyncOptionsWithBufferEncoding = { stdio: 'inherit' }) {
   return execSync(cmd, options)
+}
+
+function checkPnpm() {
+  try {
+    execSync('pnpm --version', { encoding: 'utf-8' })
+    return true
+  }
+  catch (error) {
+    return false
+  }
 }
 
 function getSubmodulePaths(): string[] {
@@ -61,8 +74,40 @@ function checkSubmodule() {
   }
 }
 
+function checkCommon() {
+  if (!existsSync(join(__dirname, '../packages/common/node_modules'))) {
+    console.log('[common-check] install dep...')
+    run('npm install --no-save', {
+      stdio: 'inherit',
+      cwd: join(__dirname, '../packages/common')
+    })
+    console.log('[common-check] install dep ok')
+  }
+}
+
+function checkCheap() {
+  if (!existsSync(join(__dirname, '../packages/cheap/node_modules'))) {
+    console.log('[cheap-check] install dep...')
+    if (checkPnpm()) {
+      run('pnpm install', {
+        stdio: 'inherit',
+        cwd: join(__dirname, '../packages/cheap')
+      })
+    }
+    else {
+      run('npm install --no-save', {
+        stdio: 'inherit',
+        cwd: join(__dirname, '../packages/cheap')
+      })
+    }
+    console.log('[cheap-check] install dep ok')
+  }
+}
+
 function main() {
   checkSubmodule()
+  checkCommon()
+  checkCheap()
 }
 
 main()

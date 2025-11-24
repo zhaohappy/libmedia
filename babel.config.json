@@ -5,30 +5,20 @@
       {
         "modules": false,
         "targets": {
-          "browsers": [
-            "last 2 versions",
-            "ie >= 10"
-          ]
+          "chrome": "74"
         }
       }
-    ],
+    ]
   ],
   "plugins": [
     [
       "@babel/plugin-transform-runtime",
       {
-        "corejs": 3,
+        "corejs": false,
         "helpers": true,
         "regenerator": true,
-        "useESModules": true
-      }
-    ],
-    "@babel/plugin-syntax-dynamic-import",
-    "@babel/plugin-syntax-import-meta",
-    [
-      "@babel/plugin-proposal-decorators",
-      {
-        "legacy": true 
+        "useESModules": true,
+        "version": "^7.28.4"
       }
     ]
   ]

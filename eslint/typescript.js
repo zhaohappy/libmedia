@@ -58,13 +58,13 @@ const eslintConfig = {
     extends: ['./javascript.js'],
 	settings: {},
 	parserOptions: {
-		ecmaVersion: 2019,
+		ecmaVersion: 'latest',
 		sourceType: 'module',
 		ecmaFeatures: {
 			impliedStrict: true,
 			jsx: true
 		},
-		lib: ['es2019']
+		lib: ['ESNext']
 	},
 	globals: {
 		NodeJS: 'readonly'

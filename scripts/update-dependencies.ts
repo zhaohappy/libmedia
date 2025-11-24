@@ -14,8 +14,6 @@ const files: Record<string, string> = {
   avrender: path.resolve(__dirname, '../packages/avrender/package.json'),
   avtranscoder: path.resolve(__dirname, '../packages/avtranscoder/package.json'),
   avutil: path.resolve(__dirname, '../packages/avutil/package.json'),
-  cheap: path.resolve(__dirname, '../packages/cheap/package.json'),
-  common: path.resolve(__dirname, '../packages/common/package.json'),
   'avplayer-ui': path.resolve(__dirname, '../packages/ui/avplayer/package.json'),
   videoscale: path.resolve(__dirname, '../packages/videoscale/package.json')
 }
@@ -33,8 +31,6 @@ const packages: Record<string, Record<string, any>> = {
   avrender: JSON.parse(fs.readFileSync(files['avrender'], 'utf8')),
   avtranscoder: JSON.parse(fs.readFileSync(files['avtranscoder'], 'utf8')),
   avutil: JSON.parse(fs.readFileSync(files['avutil'], 'utf8')),
-  cheap: JSON.parse(fs.readFileSync(files['cheap'], 'utf8')),
-  common: JSON.parse(fs.readFileSync(files['common'], 'utf8')),
   'avplayer-ui': JSON.parse(fs.readFileSync(files['avplayer-ui'], 'utf8')),
   videoscale: JSON.parse(fs.readFileSync(files['videoscale'], 'utf8'))
 }
