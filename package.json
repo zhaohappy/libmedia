@@ -2,16 +2,6 @@
   "name": "libmedia",
   "version": "0.0.1",
   "description": "Web 平台音视频媒体处理库",
-  "sideEffects": [
-    "./src/avrender/pcm/AudioSourceWorkletProcessor.ts",
-    "./src/avrender/pcm/AudioSourceWorkletProcessor2.ts",
-    "./src/common/timer/workerSetTimeoutTask.ts",
-    "./src/cheap/heap.ts",
-    "./src/cheap/thread/initClass.ts",
-    "./src/cheap/thread/initFunction.ts",
-    "./src/cheap/thread/initModule.ts",
-    "./src/cheap/webassembly/runThread.ts"
-  ],
   "scripts": {
     "build-cheap-polyfill": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --progress --env polyfill=1 release=1",
     "build-webassembly-runner": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --progress --env webassembly_runner=1 release=1",
