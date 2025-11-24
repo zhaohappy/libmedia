@@ -119,6 +119,10 @@ export default class VideoScaler {
     return this.scaler.invoke<int32>('scale_process', src, dst)
   }
 
+  public async scaleAsync(src: pointer<AVFrame>, dst: pointer<AVFrame>) {
+    return this.scaler.invokeAsync<int32>('scale_process', src, dst)
+  }
+
   public close() {
     this.scaler.invoke('scale_destroy')
     this.scaler.destroy()
