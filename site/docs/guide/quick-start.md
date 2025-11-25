@@ -256,3 +256,7 @@ allDiagnostics.forEach((diagnostic) => {
   }
 })
 ```
+
+## babel
+
+libmedia 所有包中的代码的编译目标是 esnext，如果你需要兼容旧浏览器需要自己设置 babel 类似工具进行转换。一般只需要做语法转换，libmedia 中没有使用特殊的 ES API。

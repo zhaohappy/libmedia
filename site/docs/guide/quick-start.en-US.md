@@ -254,3 +254,7 @@ allDiagnostics.forEach((diagnostic) => {
   }
 })
 ```
+
+## babel
+
+The compilation target of all packages in libmedia is esnext. If you need to support older browsers, you’ll need to apply your own transformation using tools like Babel. In most cases, only syntax transformation is necessary, as libmedia does not use any special ES APIs.
