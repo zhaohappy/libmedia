@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avcodec",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "libmedia 编解码模块",
   "sideEffects": false,
   "repository": {

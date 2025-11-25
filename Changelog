@@ -1,3 +1,11 @@
+version 1.2.0:
+
+feat:
+  - feat(videoscale): 新增 scaleAsync 可以在主线程进行多线程调用
+
+bugfix:
+  - fix: 修复包中的 .d.ts 会包错的问题
+
 version 1.1.0:
 
 feat:
