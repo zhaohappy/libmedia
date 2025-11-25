@@ -17,7 +17,7 @@ interface FileNode {
   children?: FileNode[]
   source?: string | File
   opened?: boolean
-  handle?: FileHandle | DirectoryHandle
+  handle?: FileSystemFileHandle | FileSystemDirectoryHandle
   played: boolean
   paused?: boolean
   parent?: FileNode
@@ -73,7 +73,7 @@ const Folder: ComponentOptions = {
       return null
     },
 
-    async addDir(dir: DirectoryHandle) {
+    async addDir(dir: FileSystemDirectoryHandle) {
       let depth = 0
 
       const stack: FileNode[] = []
@@ -83,7 +83,7 @@ const Folder: ComponentOptions = {
         depth--
       }
 
-      async function addFile(handle: FileHandle) {
+      async function addFile(handle: FileSystemFileHandle) {
         const file = await handle.getFile()
         const ext = file.name.split('.').pop()
         if (array.has(movExt, ext) || array.has(musicExt, ext)) {
@@ -101,7 +101,7 @@ const Folder: ComponentOptions = {
         }
       }
 
-      async function addDir(dir: DirectoryHandle) {
+      async function addDir(dir: FileSystemDirectoryHandle) {
         const node: FileNode = {
           id: generateUUID(),
           type: 'folder',
@@ -135,7 +135,7 @@ const Folder: ComponentOptions = {
 
     },
 
-    async addFile(file: File, handle?: FileHandle) {
+    async addFile(file: File, handle?: FileSystemFileHandle) {
       if (this.findRootNodeBySource(file, false)) {
         return
       }
@@ -177,7 +177,7 @@ const Folder: ComponentOptions = {
       }
     },
 
-    async addFileHandle(handle: FileHandle) {
+    async addFileHandle(handle: FileSystemFileHandle) {
       const file = await handle.getFile()
       await this.addFile(file, handle)
     },
@@ -187,7 +187,7 @@ const Folder: ComponentOptions = {
       showDirectoryPicker({
         mode: 'read',
         startIn: 'videos'
-      }).then(async (dir: DirectoryHandle) => {
+      }).then(async (dir: FileSystemDirectoryHandle) => {
         this.addDir(dir)
         this.root.push(dir)
         indexDB.store(indexDB.KEY_FOLDER_ROOT, this.root)
@@ -264,7 +264,7 @@ const Folder: ComponentOptions = {
 
     async findSubtitle(node: FileNode) {
       const parent: FileNode = node.parent
-      const handle: FileHandle = node.handle as FileHandle
+      const handle: FileSystemFileHandle = node.handle as FileSystemFileHandle
 
       const subtitle: ExternalSubtitle[] = []
 

@@ -22,7 +22,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const argv = yargs(hideBin(process.argv))
   .options({
-    package: { type: 'string', demandOption: true }
+    package: {
+      type: 'string',
+      demandOption: true,
+      desc: 'build package name'
+    }
   })
   .parseSync() as MyArgs
 
@@ -436,15 +440,105 @@ function formatCJSFileImport(data: string) {
   return data
 }
 
+// function importToType(s: string) {
+//   const list = []
+//   let pos = 0
+
+//   function skipSpace() {
+//     while (pos < s.length) {
+//       if (!/\s/.test(s[pos])) {
+//         break
+//       }
+//       pos++
+//     }
+//   }
+
+//   function readIdentity() {
+//     skipSpace()
+//     let key = ''
+//     while (pos < s.length) {
+//       if (!/[0-9A-Za-z_$]/.test(s[pos])) {
+//         break
+//       }
+//       key += s[pos]
+//       pos++
+//     }
+//     return key
+//   }
+
+//   skipSpace()
+
+//   let identifier = ''
+//   if (s[pos] === '*') {
+//     return `type ${s.substring(pos)}`
+//   }
+//   else if (s[pos] !== '{') {
+//     identifier = readIdentity()
+//     skipSpace()
+//     if (s[pos] !== '{' && identifier === 'type') {
+//       identifier = readIdentity()
+//     }
+//     skipSpace()
+//     if (s[pos] === ',') {
+//       pos++
+//       list.push(`default as ${identifier}`)
+//       skipSpace()
+//     }
+//     if (pos === s.length) {
+//       list.push(`default as ${identifier}`)
+//     }
+//   }
+//   identifier = ''
+//   if (s[pos] === '{') {
+//     pos++
+//     while (pos < s.length) {
+//       skipSpace()
+//       const ident = readIdentity()
+//       if (identifier === 'type') {
+//         identifier = ident
+//       }
+//       else {
+//         identifier += identifier ? ` ${ident}` : ident
+//       }
+//       skipSpace()
+//       if (s[pos] === ',') {
+//         list.push(identifier)
+//         identifier = ''
+//         pos++
+//         continue
+//       }
+//       if (s[pos] === '}') {
+//         list.push(identifier)
+//         pos++
+//         break
+//       }
+//     }
+//   }
+
+//   skipSpace()
+//   if (s[pos] === ',') {
+//     pos++
+//     skipSpace()
+//     identifier = readIdentity()
+//     skipSpace()
+//     if (identifier === 'type' && pos < s.length) {
+//       identifier = readIdentity()
+//     }
+//     list.push(`default as ${identifier}`)
+//   }
+
+//   return `type { ${list.join(', ')} }`
+// }
+
 function formatDeclarationFileImport(data: string) {
   // This matches static imports
   data = data.replace(
     /(\s+from\s+['"])(\.[^'"]*)(['"])/g,
     (s0, s1, s2, s3) => {
       if (/\.js$/.test(s2)) {
-        return s1 + s2.replace(/\.js$/, '.d.ts') + s3
+        return s1 + s2.replace(/\.js$/, '.ts') + s3
       }
-      return s1 + s2 + '.d.ts' + s3
+      return s1 + s2 + '.ts' + s3
     }
   )
   // This matches dynamic imports
@@ -457,6 +551,18 @@ function formatDeclarationFileImport(data: string) {
       return s1 + s2 + '.d.ts' + s3
     }
   )
+  // data = data.replace(
+  //   /(\bimport\s)(.+)(\sfrom\s)/g,
+  //   (s0, s1, s2, s3) => {
+  //     return s1 + importToType(s2) + s3
+  //   }
+  // )
+  // data = data.replace(
+  //   /(\bexport\s)(.+)(\sfrom\s)/g,
+  //   (s0, s1, s2, s3) => {
+  //     return s1 + importToType(s2) + s3
+  //   }
+  // )
   return data
 }
 

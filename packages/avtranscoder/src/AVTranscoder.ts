@@ -248,7 +248,12 @@ export interface TaskOptions {
    */
   nonnegative?: boolean
   output: {
-    file: FileSystemFileHandle | IOWriterSync
+    file: FileSystemFileHandle | {
+      write: (buffer: Uint8Array<ArrayBuffer>) => void
+      appendBufferByPosition: (buffer: Uint8Array<ArrayBuffer>, pos: number) => void
+      seek: (pos: number) => void
+      close: () => void | Promise<void>
+    }
     format?: keyof (typeof Format2AVFormat)
     formatOptions?: Data
     metadata?: Data
@@ -990,8 +995,8 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
     }
 
     let ioWriter: {
-      write: (buffer: Uint8Array) => void
-      appendBufferByPosition: (buffer: Uint8Array, pos: number) => void
+      write: (buffer: Uint8Array<ArrayBuffer>) => void
+      appendBufferByPosition: (buffer: Uint8Array<ArrayBuffer>, pos: number) => void
       seek: (pos: number) => void
       close: () => void | Promise<void>
     }
@@ -1001,22 +1006,7 @@ export default class AVTranscoder extends Emitter implements ControllerObserver 
       await task.safeFileIO.ready()
     }
     else {
-      ioWriter = {
-        write: (buffer) => {
-          (task.options.output.file as IOWriterSync).writeBuffer(buffer)
-        },
-        appendBufferByPosition: (buffer, pos) => {
-          (task.options.output.file as IOWriterSync).flush()
-          ;(task.options.output.file as IOWriterSync).writeBuffer(buffer)
-          ;(task.options.output.file as IOWriterSync).flushToPos(static_cast<int64>(pos))
-        },
-        seek: (pos) => {
-          (task.options.output.file as IOWriterSync).seek(static_cast<int64>(pos))
-        },
-        close: () => {
-          (task.options.output.file as IOWriterSync).flush()
-        }
-      }
+      ioWriter = task.options.output.file
     }
 
     ipcPort.on(NOTIFY, async (request: RpcMessage) => {
