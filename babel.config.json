@@ -5,7 +5,9 @@
       {
         "modules": false,
         "targets": {
-          "chrome": "74"
+          "chrome": "74",
+          "safari": "13.4",
+          "firefox": "61"
         }
       }
     ]

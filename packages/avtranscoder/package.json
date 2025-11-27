@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avtranscoder",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "libmedia avtranscoder",
   "sideEffects": false,
   "repository": {
@@ -10,7 +10,8 @@
   "scripts": {
     "prepublishOnly": "tsx ../../scripts/check-publish-status.ts --package=avtranscoder"
   },
-  "types": "./dist/types/AVTranscoder.d.ts",
+  "type": "module",
+  "types": "./dist/types/src/AVTranscoder.d.ts",
   "module": "./dist/esm/avtranscoder.js",
   "main": "./dist/umd/avtranscoder.js",
   "exports": {
@@ -18,10 +19,10 @@
       "import": "./dist/esm/avtranscoder.js",
       "require": "./dist/umd/avtranscoder.js",
       "default": "./dist/esm/avtranscoder.js",
-      "types": "./dist/types/AVTranscoder.d.ts"
+      "types": "./dist/types/src/AVTranscoder.d.ts"
     },
     "./AVTranscoder": {
-      "types": "./dist/types/AVTranscoder.d.ts"
+      "types": "./dist/types/src/AVTranscoder.d.ts"
     }
   },
   "files": [

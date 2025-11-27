@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avplayer",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "libmedia avplayer",
   "sideEffects": false,
   "repository": {
@@ -10,7 +10,8 @@
   "scripts": {
     "prepublishOnly": "tsx ../../scripts/check-publish-status.ts --package=avplayer"
   },
-  "types": "./dist/types/AVPlayer.d.ts",
+  "type": "module",
+  "types": "./dist/types/src/AVPlayer.d.ts",
   "module": "./dist/esm/avplayer.js",
   "main": "./dist/umd/avplayer.js",
   "exports": {
@@ -18,10 +19,10 @@
       "import": "./dist/esm/avplayer.js",
       "require": "./dist/umd/avplayer.js",
       "default": "./dist/esm/avplayer.js",
-      "types": "./dist/types/AVPlayer.d.ts"
+      "types": "./dist/types/src/AVPlayer.d.ts"
     },
     "./AVPlayer": {
-      "types": "./dist/types/AVPlayer.d.ts"
+      "types": "./dist/types/src/AVPlayer.d.ts"
     }
   },
   "files": [
