@@ -271,7 +271,7 @@ export default class MSEPipeline extends Pipeline {
         }
         if ((task.video.backPacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
           || (task.video.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-            && h264.isIDR(
+            && h264.isRAP(
               task.video.backPacket,
               task.video.codecpar.extradata
                 ? ((intread.r8(task.video.codecpar.extradata + 4) & 0x03) + 1)
@@ -279,7 +279,7 @@ export default class MSEPipeline extends Pipeline {
             )
           )
           || (task.video.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
-              && hevc.isIDR(
+              && hevc.isRAP(
                 task.video.backPacket,
                 task.video.codecpar.extradata
                   ? ((intread.r8(task.video.codecpar.extradata + 21) & 0x03) + 1)
@@ -643,7 +643,7 @@ export default class MSEPipeline extends Pipeline {
       if ((avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
         && (
           (task.video.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
-            && h264.isIDR(
+            && h264.isRAP(
               avpacket,
               task.video.codecpar.extradata
                 ? ((intread.r8(task.video.codecpar.extradata + 4) & 0x03) + 1)
@@ -651,7 +651,7 @@ export default class MSEPipeline extends Pipeline {
             )
           )
           || (task.video.codecpar.codecId === AVCodecID.AV_CODEC_ID_HEVC
-              && hevc.isIDR(
+              && hevc.isRAP(
                 avpacket,
                 task.video.codecpar.extradata
                   ? ((intread.r8(task.video.codecpar.extradata + 21) & 0x03) + 1)

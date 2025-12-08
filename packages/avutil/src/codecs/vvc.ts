@@ -807,12 +807,21 @@ export function parseAVCodecParameters(
   }
 }
 
-export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
+/**
+ * 判断是否是随机访问点
+ * 
+ * @param avpacket 
+ * @param naluLengthSize 
+ * @returns 
+ */
+export function isRAP(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
   if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB) {
     let nalus = naluUtil.splitNaluByStartCode(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)))
     return nalus.some((nalu) => {
       const type = (nalu[1] >>> 3) & 0x1f
-      return type === VVCNaluType.kIDR_N_LP || type === VVCNaluType.kIDR_W_RADL
+      return type === VVCNaluType.kIDR_N_LP
+        || type === VVCNaluType.kIDR_W_RADL
+        || type === VVCNaluType.kCRA_NUT
     })
   }
   else {
@@ -820,7 +829,10 @@ export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
     let i = 0
     while (i < (size - naluLengthSize)) {
       const type = (intread.r8(avpacket.data + (i + naluLengthSize + 1)) >>> 3) & 0x1f
-      if (type === VVCNaluType.kIDR_N_LP || type === VVCNaluType.kIDR_W_RADL) {
+      if (type === VVCNaluType.kIDR_N_LP
+        || type === VVCNaluType.kIDR_W_RADL
+        || type === VVCNaluType.kCRA_NUT
+      ) {
         return true
       }
       if (naluLengthSize === 4) {

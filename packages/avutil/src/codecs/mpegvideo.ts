@@ -32,7 +32,13 @@ export const enum MpegVideoPictureType {
   B
 }
 
-export function isIDR(avpacket: pointer<AVPacket>) {
+/**
+ * 判断是否是随机访问点
+ * 
+ * @param avpacket 
+ * @returns 
+ */
+export function isRAP(avpacket: pointer<AVPacket>) {
   const data = getAVPacketData(avpacket)
 
   for (let i = 0; i < data.length - 6; i++) {

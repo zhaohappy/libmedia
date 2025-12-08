@@ -31,7 +31,13 @@ export const enum Mpeg4PictureType {
   B
 }
 
-export function isIDR(avpacket: pointer<AVPacket>) {
+/**
+ * 判断是否是随机访问点
+ * 
+ * @param avpacket 
+ * @returns 
+ */
+export function isRAP(avpacket: pointer<AVPacket>) {
   const byte = accessof(reinterpret_cast<pointer<uint8>>(avpacket.data + 4))
   return (byte >>> 6) === Mpeg4PictureType.I
 }

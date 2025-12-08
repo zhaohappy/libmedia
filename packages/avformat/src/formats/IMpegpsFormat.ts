@@ -583,7 +583,7 @@ export default class IMpegpsFormat extends IFormat {
     }
     else {
       if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG2VIDEO) {
-        if (mpegvideo.isIDR(avpacket)) {
+        if (mpegvideo.isRAP(avpacket)) {
           avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
         }
       }
@@ -597,7 +597,7 @@ export default class IMpegpsFormat extends IFormat {
             h264.parseAVCodecParameters(stream, extradata)
           }
         }
-        if (h264.isIDR(avpacket)) {
+        if (h264.isRAP(avpacket)) {
           avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
         }
       }
@@ -611,7 +611,7 @@ export default class IMpegpsFormat extends IFormat {
             hevc.parseAVCodecParameters(stream, extradata)
           }
         }
-        if (hevc.isIDR(avpacket)) {
+        if (hevc.isRAP(avpacket)) {
           avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
         }
       }
@@ -625,7 +625,7 @@ export default class IMpegpsFormat extends IFormat {
             vvc.parseAVCodecParameters(stream, extradata)
           }
         }
-        if (vvc.isIDR(avpacket)) {
+        if (vvc.isRAP(avpacket)) {
           avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
         }
       }

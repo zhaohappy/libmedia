@@ -662,12 +662,22 @@ export function parseAVCodecParameters(
   }
 }
 
-export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
+/**
+ * 判断是否是随机访问点
+ * 
+ * @param avpacket 
+ * @param naluLengthSize 
+ * @returns 
+ */
+export function isRAP(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
   if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB) {
     let nalus = naluUtil.splitNaluByStartCode(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)))
     return nalus.some((nalu) => {
       const type = nalu[0] & 0x1f
       return type === H264NaluType.kSliceIDR
+        // H.264 Recovery Point SEI
+        || type === H264NaluType.kSliceSEI
+          && nalu[1] === 6
     })
   }
   else {
@@ -676,6 +686,12 @@ export function isIDR(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
     while (i < (size - naluLengthSize)) {
       const type = intread.r8(avpacket.data + (i + naluLengthSize)) & 0x1f
       if (type === H264NaluType.kSliceIDR) {
+        return true
+      }
+      // H.264 Recovery Point SEI
+      if (type === H264NaluType.kSliceSEI
+        && intread.r8(avpacket.data + (i + naluLengthSize) + 1) === 6
+      ) {
         return true
       }
       if (naluLengthSize === 4) {

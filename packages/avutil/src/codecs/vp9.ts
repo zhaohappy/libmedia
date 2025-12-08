@@ -196,7 +196,13 @@ export function generateExtradata(codecpar: pointer<AVCodecParameters>) {
   return ioWriter.getWroteBuffer()
 }
 
-export function isIDR(avpacket: pointer<AVPacket>) {
+/**
+ * 判断是否是随机访问点
+ * 
+ * @param avpacket 
+ * @returns 
+ */
+export function isRAP(avpacket: pointer<AVPacket>) {
   const first = accessof(avpacket.data)
 
   const version = (first >>> 5) & 0x01

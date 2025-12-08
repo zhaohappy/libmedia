@@ -385,21 +385,21 @@ export default class VideoDecodePipeline extends Pipeline {
                       // h264 强制判断 nalu type 某些码流封装层的关键帧标志是错误的 
                       && task.parameters.codecId !== AVCodecID.AV_CODEC_ID_H264
                     || task.parameters.codecId === AVCodecID.AV_CODEC_ID_H264
-                      && h264.isIDR(
+                      && h264.isRAP(
                         avpacket,
                         task.parameters.extradata
                           ? ((intread.r8(task.parameters.extradata + 4) & 0x03) + 1)
                           : 4
                       )
                     || task.parameters.codecId === AVCodecID.AV_CODEC_ID_HEVC
-                      && hevc.isIDR(
+                      && hevc.isRAP(
                         avpacket,
                         task.parameters.extradata
                           ? ((intread.r8(task.parameters.extradata + 21) & 0x03) + 1)
                           : 4
                       )
                     || task.parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
-                      && vvc.isIDR(
+                      && vvc.isRAP(
                         avpacket,
                         task.parameters.extradata
                           ? (((intread.r8(task.parameters.extradata) >>> 1) & 0x03) + 1)
