@@ -24,8 +24,8 @@
     "postinstall": "tsx scripts/postinstall.ts && simple-git-hooks"
   },
   "simple-git-hooks": {
-    "commit-msg": "tsx scripts/verify-commit.ts",
-    "pre-commit": "tsx scripts/pre-commit.ts"
+    "commit-msg": "npx tsx scripts/verify-commit.ts",
+    "pre-commit": "npx tsx scripts/pre-commit.ts"
   },
   "author": "Gaoxing Zhao",
   "license": "LGPL-3.0-or-later",
