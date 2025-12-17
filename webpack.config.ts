@@ -5,6 +5,7 @@ import { execSync } from 'child_process'
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin'
 import ts from 'typescript'
+import { sources, type Compiler, Compilation, RuntimeModule, RuntimeGlobals } from 'webpack'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -51,6 +52,93 @@ function deDefined(): ts.TransformerFactory<ts.SourceFile> {
       }
       return ts.visitNode(sourceFile, visitor) as ts.SourceFile
     }
+  }
+}
+
+class CustomPublicPathRuntime extends RuntimeModule {
+  constructor() {
+    super('publicPath', RuntimeModule.STAGE_BASIC)
+  }
+
+  generate() {
+    return `var scriptUrl;
+if (typeof import.meta.url === "string") scriptUrl = import.meta.url
+if (!scriptUrl) throw new Error("Automatic publicPath is not supported in this browser");
+scriptUrl = scriptUrl.replace(/^blob:/, "").replace(/#.*$/, "").replace(/\\?.*$/, "").replace(/\\/[^\\/]+$/, "/");
+${RuntimeGlobals.publicPath} = scriptUrl;`
+  }
+}
+class ToESMPlugin {
+  apply(compiler: Compiler) {
+    compiler.hooks.compilation.tap(
+      'ToESMPlugin',
+      (compilation) => {
+        compilation.hooks.processAssets.tap(
+          {
+            name: 'ToESMPlugin',
+            stage: Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE
+          },
+          (assets) => {
+            for (const chunk of compilation.chunks) {
+              if (!chunk.canBeInitial()) {
+                continue
+              }
+              if (!chunk.hasRuntime()) {
+                continue
+              }
+
+              for (const file of chunk.files) {
+                if (!file.endsWith('.js')) {
+                  continue
+                }
+
+                const asset = compilation.getAsset(file)
+                let source = asset!.source.source().toString()
+
+                const original = source
+
+                // 去掉开头的 IIFE
+                // 支持 (()=>{ ... })();
+                // 支持 (function(){ ... })();
+                source = source
+                  // 开头
+                  .replace(
+                    /^(?:\s|\/\*[\s\S]*?\*\/|\/\/[^\n]*\n)*\(\s*(?:function\s*\(\)|\(\)\s*=>)\s*\{\s*/,
+                    ''
+                  )
+                  // 结尾
+                  .replace(
+                    /\s*\}\s*\)\s*\(\s*\)\s*;\s*$/,
+                    ''
+                  )
+
+                if (source !== original) {
+                  compilation.updateAsset(
+                    file,
+                    new sources.RawSource(source)
+                  )
+                }
+              }
+            }
+          }
+        )
+        compilation.hooks.runtimeRequirementInTree
+          .for(RuntimeGlobals.publicPath)
+          .tap(
+            'ToESMPlugin',
+            (chunk) => {
+              if (!chunk.canBeInitial()) {
+                return
+              }
+              compilation.addRuntimeModule(
+                chunk,
+                new CustomPublicPathRuntime()
+              )
+              return false
+            }
+          )
+      }
+    )
   }
 }
 
@@ -192,6 +280,7 @@ export default async (env: Env, argv: Argv): Promise<Configuration> => {
     output: {
       filename: output,
       path: env.dist || outputPath,
+      module: false,
       library: {
         name: env.esm ? undefined : library,
         type: libraryTarget,
@@ -295,7 +384,7 @@ export default async (env: Env, argv: Argv): Promise<Configuration> => {
       exclude.push(/packages\/avtranscoder/)
     }
 
-    (config.plugins as any[]).push(new CheapPlugin({
+    config.plugins!.push(new CheapPlugin({
       name: 'libmedia',
       env: 'browser',
       projectPath: __dirname,
@@ -316,6 +405,9 @@ export default async (env: Env, argv: Argv): Promise<Configuration> => {
       ],
       defined
     }))
+  }
+  if (env.esm) {
+    config.plugins!.push(new ToESMPlugin())
   }
   return config
 }
