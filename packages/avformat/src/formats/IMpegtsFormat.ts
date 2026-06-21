@@ -383,19 +383,27 @@ export default class IMpegtsFormat extends IFormat {
         while (true) {
           const next = nalusUtil.getNextNaluStart(pes.payload, offset)
           if (next.offset >= 0) {
+            offset = next.offset
             if (next.startCode === 4
               || next.startCode === 3
                 && ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H265
                     && (next.offset + 3 < pes.payload.length)
-                    && ((pes.payload[next.offset + 3] >>> 1) & 0x3f) === hevc.HEVCNaluType.kSliceSEI_PREFIX
+                    && (((pes.payload[next.offset + 3] >>> 1) & 0x3f) === hevc.HEVCNaluType.kSliceSEI_PREFIX
+                      || ((pes.payload[next.offset + 3] >>> 1) & 0x3f) === hevc.HEVCNaluType.kSliceAUD
+                    )
                 )
                   || (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_VVC
                     && (next.offset + 4 < pes.payload.length)
-                    && ((pes.payload[next.offset + 4] >>> 3) & 0x1f) === vvc.VVCNaluType.kPREFIX_SEI_NUT
+                    && (((pes.payload[next.offset + 4] >>> 3) & 0x1f) === vvc.VVCNaluType.kPREFIX_SEI_NUT
+                      || ((pes.payload[next.offset + 4] >>> 3) & 0x1f) === vvc.VVCNaluType.kAUD_NUT
+                    )
+                  )
+                  || (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264
+                    && (next.offset + 3 < pes.payload.length)
+                    && (pes.payload[next.offset + 3] & 0x1f) === h264.H264NaluType.kSliceAUD
                   )
                 )
             ) {
-              offset = next.offset
               break
             }
             offset += 3
