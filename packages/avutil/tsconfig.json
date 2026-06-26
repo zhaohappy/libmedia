@@ -3,7 +3,8 @@
   "compilerOptions": {
     "sourceMap": true,
     "declarationMap": false,
-    "allowJs": false
+    "allowJs": false,
+    "strict": false
   },
   "include": [
     "./src/**/*.ts",

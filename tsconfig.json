@@ -8,7 +8,6 @@
     "noUnusedParameters": false,
     "moduleResolution": "node",
     "declaration": true,
-    "downlevelIteration": true,
     "declarationMap": false,
     "module": "esnext",
     "target": "esnext",
