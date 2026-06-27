@@ -6,13 +6,14 @@
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "declaration": true,
     "declarationMap": false,
     "module": "esnext",
     "target": "esnext",
     "esModuleInterop": true,
-    "baseUrl": "./",
+    "strict": false,
+    "rootDir": "./",
     "paths": {
       "@libmedia/avcodec": ["./packages/avcodec/src"],
       "@libmedia/avformat": ["./packages/avformat/src"],
@@ -93,7 +94,8 @@
   "include": [
     "packages/**/*.ts",
     "@types/index.d.ts",
-    "examples/**/*.ts"
+    "examples/**/*.ts",
+    "scripts/*.ts"
   ],
   "exclude": [
     "*.test.ts",

@@ -4,6 +4,7 @@
     "strict": false,
     "outDir": "./dist/cjs",
     "declaration": false,
+    "moduleResolution": "node",
     "module": "CommonJS"
   }
 }

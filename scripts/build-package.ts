@@ -582,8 +582,8 @@ async function buildPackage(packageName: string, taskLevel = 1, fileNamesFilter?
 
   let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../packages/${packageName}/tsconfig.esm.json`))
 
-  const esmReg = new RegExp(`dist\/esm\/${packageName}\/src\/?`)
-  const cjsReg = new RegExp(`dist\/cjs\/${packageName}\/src\/?`)
+  const esmReg = new RegExp(`dist\/esm(\/packages)?\/${packageName}\/src\/?`)
+  const cjsReg = new RegExp(`dist\/cjs(\/packages)?\/${packageName}\/src\/?`)
 
   printTaskLog(taskLevel, packageName, 'START', `starting built ${packageName} esm package`)
 
@@ -688,7 +688,7 @@ async function buildCheapCode(taskLevel = 1, fileNamesFilter?: (f: string) => bo
 
   let parsedCommandLine = parseCommandLine(path.resolve(__dirname, `../packages/${packageName}/tsconfig.mjs.json`))
 
-  const mjsReg = new RegExp(`dist\/mjs\/${packageName}\/src\/?`)
+  const mjsReg = new RegExp(`dist\/mjs(\/packages)?\/${packageName}\/src\/?`)
 
   printTaskLog(taskLevel, packageName, 'START', `starting built ${packageName} mjs package`)
 
@@ -931,8 +931,8 @@ async function buildAvplayer() {
   const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../packages/avplayer/tsconfig.d.json'))
   await compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     let dir = path.dirname(fileName)
-    if (/dist\/types\/avplayer\/?/.test(dir)) {
-      dir = dir.replace(/dist\/types\/avplayer\/?/, 'dist/types/')
+    if (/dist\/types(\/packages)?\/avplayer\/?/.test(dir)) {
+      dir = dir.replace(/dist\/types(\/packages)?\/avplayer\/?/, 'dist/types/')
       data = formatDeclarationFileImport(data)
       fs.mkdirSync(dir, { recursive: true })
       fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data)
@@ -962,8 +962,8 @@ async function buildAvtranscoder() {
   const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../packages/avtranscoder/tsconfig.d.json'))
   await compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     let dir = path.dirname(fileName)
-    if (/dist\/types\/avtranscoder\/?/.test(dir)) {
-      dir = dir.replace(/dist\/types\/avtranscoder\/?/, 'dist/types/')
+    if (/dist\/types(\/packages)?\/avtranscoder\/?/.test(dir)) {
+      dir = dir.replace(/dist\/types(\/packages)?\/avtranscoder\/?/, 'dist/types/')
       data = formatDeclarationFileImport(data)
       fs.mkdirSync(dir, { recursive: true })
       fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data)
@@ -994,8 +994,8 @@ async function buildAvplayerUI() {
   const parsedCommandLine = parseCommandLine(path.resolve(__dirname, '../packages/ui/avplayer/tsconfig.d.json'))
   await compile(parsedCommandLine.fileNames, parsedCommandLine.options, (fileName, data) => {
     let dir = path.dirname(fileName)
-    if (/dist\/types\/ui\/avplayer\/?/.test(dir)) {
-      dir = dir.replace(/dist\/types\/ui\/avplayer\/?/, 'dist/types/')
+    if (/dist\/types(\/packages)?\/ui\/avplayer\/?/.test(dir)) {
+      dir = dir.replace(/dist\/types(\/packages)?\/ui\/avplayer\/?/, 'dist/types/')
       data = formatDeclarationFileImport(data)
       fs.mkdirSync(dir, { recursive: true })
       fs.writeFileSync(path.resolve(dir, path.basename(fileName)), data)

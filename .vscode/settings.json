@@ -411,6 +411,5 @@
 	},
     "eslint.options": {
         "rulePaths": ["eslint/rules"]
-    },
-    "js/ts.tsdk.path": "node_modules/typescript/lib"
+    }
 }
