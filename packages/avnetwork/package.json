@@ -1,6 +1,6 @@
 {
   "name": "@libmedia/avnetwork",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "libmedia 网络模块",
   "sideEffects": false,
   "repository": {
