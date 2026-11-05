@@ -33,6 +33,7 @@ import AACADTS2RawFilter from '../../../bsf/aac/ADTS2RawFilter'
 import AACLATM2RawFilter from '../../../bsf/aac/LATM2RawFilter'
 import OpusMpegts2RawFilter from '../../../bsf/opus/Mpegts2RawFilter'
 import { memcpyFromUint8Array } from '@libmedia/cheap'
+import { TSDescriptor } from '../mpegts'
 
 export default function initStream(pid: PID, stream: AVStream, mpegtsContext: MpegtsContext) {
 
@@ -46,75 +47,93 @@ export default function initStream(pid: PID, stream: AVStream, mpegtsContext: Mp
 
   const streamType = mpegtsContext.pmt.pid2StreamType.get(pid)
 
-  if (streamType === mpegts.TSStreamType.PRIVATE_DATA) {
-    const descriptorList = mpegtsContext.pmt.pid2ESDescriptor.get(pid)
+  let info: [AVMediaType, AVCodecID]
+  if (mpegts.StreamType2AVCodecId[streamType]) {
+    info = mpegts.StreamType2AVCodecId[streamType]
+  }
+  else if (mpegts.MISCType2AVCodecId[streamType]) {
+    info = mpegts.MISCType2AVCodecId[streamType]
+  }
+  else if (mpegts.HLSSampleEncType2AVCodecId[streamType]) {
+    info = mpegts.HLSSampleEncType2AVCodecId[streamType]
+  }
+  if (info) {
+    stream.codecpar.codecType = info[0]
+    stream.codecpar.codecId = info[1]
+  }
+  else {
     stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_DATA
+  }
 
-    if (descriptorList) {
-      const regDescriptor = descriptorList.find((descriptor) => {
-        return descriptor.tag === 0x05
-      })
+  const descriptorList = mpegtsContext.pmt.pid2ESDescriptor.get(pid)
+  if (descriptorList) {
+    descriptorList.forEach((descriptor) => {
+      if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_NONE) {
+        const info = mpegts.DESCType2AVCodecId[descriptor.tag]
+        if (info) {
+          stream.codecpar.codecType = info[0]
+          stream.codecpar.codecId = info[1]
+        }
+      }
 
-      if (regDescriptor && regDescriptor.buffer?.length >= 4) {
-        if (String.fromCharCode(regDescriptor.buffer[0]) === 'O'
-          || String.fromCharCode(regDescriptor.buffer[1]) === 'p'
-          || String.fromCharCode(regDescriptor.buffer[2]) === 'u'
-          || String.fromCharCode(regDescriptor.buffer[3]) === 's'
-        ) {
-          stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_AUDIO
-          stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_OPUS
-          stream.codecpar.sampleRate = 48000
-
-          const extDescriptor = descriptorList.find((descriptor) => {
-            return descriptor.tag === 0x7f
-          })
-
-          if (extDescriptor) {
-            const extDescTag = extDescriptor.buffer[0]
-
-            if (extDescTag === 0x80) {
-              stream.codecpar.chLayout.nbChannels = ((extDescriptor.buffer[1] & 0x0F) === 0 )
-                ? 2
-                : (extDescriptor.buffer[1] & 0x0F)
-
-
-              const buffer = opus.avCodecParameters2Extradata(stream.codecpar)
-              if (buffer) {
-                stream.codecpar.extradata = avMalloc(buffer.length)
-                memcpyFromUint8Array(stream.codecpar.extradata, buffer.length, buffer)
-                stream.codecpar.extradataSize = buffer.length
+      switch (descriptor.tag) {
+        // REGISTRATION_DESCRIPTOR
+        case TSDescriptor.REGISTRATION: {
+          if (descriptor.buffer?.length >= 4) {
+            const tag = String.fromCharCode(descriptor.buffer[0])
+              + String.fromCharCode(descriptor.buffer[1])
+              + String.fromCharCode(descriptor.buffer[2])
+              + String.fromCharCode(descriptor.buffer[3])
+            const info = mpegts.REGDType2AVCodecId[tag]
+            if (info) {
+              stream.codecpar.codecType = info[0]
+              stream.codecpar.codecId = info[1]
+              if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_OPUS) {
+                stream.codecpar.sampleRate = 48000
+              }
+            }
+            else if ((tag === 'HDMV' || tag === 'HDPR')
+              && stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_NONE
+            ) {
+              const info = mpegts.HDMVType2AVCodecId[streamType]
+              if (info) {
+                stream.codecpar.codecType = info[0]
+                stream.codecpar.codecId = info[1]
               }
             }
           }
+          break
         }
-        else if (String.fromCharCode(regDescriptor.buffer[0]) === 'A'
-          || String.fromCharCode(regDescriptor.buffer[1]) === 'V'
-          || String.fromCharCode(regDescriptor.buffer[2]) === '0'
-          || String.fromCharCode(regDescriptor.buffer[3]) === '1'
-        ) {
-          stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_VIDEO
-          stream.codecpar.codecId = AVCodecID.AV_CODEC_ID_AV1
-          const extDescriptor = descriptorList.find((descriptor) => {
-            return descriptor.tag === 0x80
-          })
-          if (extDescriptor) {
-            stream.codecpar.extradata = avMalloc(extDescriptor.buffer.length)
-            memcpyFromUint8Array(stream.codecpar.extradata, extDescriptor.buffer.length, extDescriptor.buffer)
-            stream.codecpar.extradataSize = extDescriptor.buffer.length
+        // DVB extension descriptor
+        case 0x7f: {
+          const extDescTag = descriptor.buffer[0]
+          if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_OPUS
+            && extDescTag === 0x80
+          ) {
+            stream.codecpar.chLayout.nbChannels = ((descriptor.buffer[1] & 0x0F) === 0 )
+              ? 2
+              : (descriptor.buffer[1] & 0x0F)
+
+            const buffer = opus.avCodecParameters2Extradata(stream.codecpar)
+            if (buffer) {
+              stream.codecpar.extradata = avMalloc(buffer.length)
+              memcpyFromUint8Array(stream.codecpar.extradata, buffer.length, buffer)
+              stream.codecpar.extradataSize = buffer.length
+            }
           }
+          break
+        }
+        // extradata
+        case 0x80: {
+          if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1) {
+            stream.codecpar.extradata = avMalloc(descriptor.buffer.length)
+            memcpyFromUint8Array(stream.codecpar.extradata, descriptor.buffer.length, descriptor.buffer)
+            stream.codecpar.extradataSize = descriptor.buffer.length
+          }
+          break
         }
       }
-    }
-  }
-  else {
-    const info = mpegts.StreamType2AVCodecId[streamType]
-    if (info) {
-      stream.codecpar.codecType = info[0]
-      stream.codecpar.codecId = info[1]
-    }
-    else {
-      stream.codecpar.codecType = AVMediaType.AVMEDIA_TYPE_DATA
-    }
+    })
   }
 
   let filter: AVBSFilter
