@@ -288,6 +288,8 @@ export default class WasmVideoDecoder {
     while (1) {
       const ret = this.receiveAVFrame()
       if (ret < 1) {
+        // Packets that produce no frame can leave DTS entries after draining.
+        this.dtsQueue.length = 0
         return ret
       }
       this.outputAVFrame()
@@ -307,6 +309,7 @@ export default class WasmVideoDecoder {
     while (1) {
       const ret = await this.receiveAVFrameAsync()
       if (ret < 1) {
+        this.dtsQueue.length = 0
         return ret
       }
       this.outputAVFrame()
