@@ -16,6 +16,7 @@ The `cheap` submodule currently has a package/lock mismatch. Its install command
 
 ```sh
 npm run test:regression
+npm run lint:tests
 npm run test:regression -- avi-index.mjs read-at.mjs
 npm run build:avplayer:single
 npm run build-avplayer
@@ -30,6 +31,8 @@ The runner executes the checkout's implementation. Prefer direct imports for ord
 - Each test supplies its own decoder, renderer or I/O boundary mocks. These checks do not replace compilation or real Worker/WASM browser validation.
 
 Synthetic inputs cover framing, buffer padding, timestamp resets, seek cancellation, EOF replay, independent range I/O, partial AVI indexes and paused PCM requests. No application checkout or private media is needed. To compare another checkout, set `LIBMEDIA_TEST_SOURCE` to that checkout; positional arguments to `test:regression` select test filenames only.
+
+`eslint-check` also runs `lint:tests`. The dedicated `lint:tests` command checks regression cases, helpers, fixtures, browser diagnostics, the runner and its lint configuration. It inherits the repository's JavaScript rules with ES2022 syntax enabled and rejects warnings. Use `npm run lint:tests -- --fix` for formatting; do not suppress rules to accommodate a new test.
 
 The single-file command writes an ESM AVPlayer to `dist/avplayer-single/avplayer.js`. The default AVPlayer build remains available separately. Both use the existing decoder WASM files. Keep the upstream release tag reachable: the build uses `git describe --tags` to select the default decoder URL. For this branch, fetch upstream's `v1.3.1` tag if the fork clone did not include it.
 

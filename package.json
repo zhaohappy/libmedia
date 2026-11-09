@@ -20,12 +20,13 @@
     "server": "serve -p 8000 --cors --config ./test/serve.json",
     "eslint": "./node_modules/.bin/eslint -o=report.json -f=json './packages/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore",
     "eslint-fix": "./node_modules/.bin/eslint './packages/**/*.ts' './site/**/*.ts' './site/**/*.tsx' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore --fix",
-    "eslint-check": "./node_modules/.bin/eslint './packages/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore",
+    "eslint-check": "./node_modules/.bin/eslint './packages/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore && npm run lint:tests",
     "postinstall": "tsx scripts/postinstall.ts && simple-git-hooks",
     "test:regression": "node scripts/test-regression.mjs",
     "build:avplayer:single": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --env avplayer=1 release=1 esm=1 single=1 dist=./dist/avplayer-single",
     "test:avi:browser": "node test/avi-browser/server.mjs",
-    "watch:avplayer:single": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --watch --env avplayer=1 release=1 esm=1 single=1 dist=./dist/avplayer-single"
+    "watch:avplayer:single": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --watch --env avplayer=1 release=1 esm=1 single=1 dist=./dist/avplayer-single",
+    "lint:tests": "eslint \"test/regression/**/*.mjs\" \"test/avi-browser/*.mjs\" scripts/test-regression.mjs \"scripts/lib/*.mjs\" eslint/tests.cjs -c eslint/tests.cjs --no-eslintrc --rulesdir eslint/rules --no-ignore --max-warnings 0"
   },
   "simple-git-hooks": {
     "commit-msg": "npx tsx scripts/verify-commit.ts",
