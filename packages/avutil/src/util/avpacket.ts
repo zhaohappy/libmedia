@@ -298,6 +298,12 @@ export function copyAVPacketData(dst: pointer<AVPacket>, src: pointer<AVPacket>)
   dst.size = src.size
 }
 
+export function allocAVPacketData(length: size) {
+  const data = avMalloc<uint8>(length + static_cast<size>(AV_INPUT_BUFFER_PADDING_SIZE as uint32))
+  memset(data + length, 0, AV_INPUT_BUFFER_PADDING_SIZE)
+  return data
+}
+
 export function addAVPacketData(avpacket: pointer<AVPacket>, data: pointer<uint8>, size: int32) {
 
   if (avpacket.buf) {

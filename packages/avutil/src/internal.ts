@@ -46,6 +46,7 @@ export * as pcm from './util/pcm'
 export * as amf from './util/amf'
 export * as channel from './util/channel'
 export * as expgolomb from './util/expgolomb'
+export { allocAVPacketData } from './util/avpacket'
 export { getHardwarePreference } from './function/getHardwarePreference'
 export { mapColorPrimaries, mapColorSpace, mapColorTrc, mapPixelFormat } from './function/videoFrame2AVFrame'
 
