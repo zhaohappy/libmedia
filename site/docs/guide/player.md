@@ -157,6 +157,17 @@ const player = new AVPlayer({
             return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/h264-simd.wasm`
           case AVCodecID.AV_CODEC_ID_HEVC:
             return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/hevc-simd.wasm`
+          case AVCodecID.AV_CODEC_ID_WMV1:
+          case AVCodecID.AV_CODEC_ID_WMV2:
+          case AVCodecID.AV_CODEC_ID_WMV3:
+          case AVCodecID.AV_CODEC_ID_VC1:
+            return `/dist/decode/wmv-simd.wasm`
+          case AVCodecID.AV_CODEC_ID_WMAV1:
+          case AVCodecID.AV_CODEC_ID_WMAV2:
+          case AVCodecID.AV_CODEC_ID_WMAPRO:
+          case AVCodecID.AV_CODEC_ID_WMALOSSLESS:
+          case AVCodecID.AV_CODEC_ID_WMAVOICE:
+            return `/dist/decode/wma-simd.wasm`
         }
       }
       case 'resampler':
@@ -170,6 +181,31 @@ await player.load('https://xxxxxxx')
 await player.play()
 
 ```
+
+## WMV / ASF 播放
+
+未加密的 `.wmv`、`.asf` 和 `.wma` 使用现有 `load`、`play`、`pause`、`seek` 接口，
+通过 Wasm 解码 WMV1/2/3、VC-1 和 WMA。支持本地 `File` 和 HTTP 输入；HTTP seek
+需要服务器支持 Range，不可寻址输入仅支持顺序播放。不支持 DRM、MMS、WMV Image 或 ASF 输出。
+从源码裁剪构建时，保留默认开启的 `ENABLE_DEMUXER_ASF`。
+
+将更新后的 Wasm 资源部署到站点的 `/dist`，包括 `decode/wmv*.wasm`、`decode/wma*.wasm`
+以及所需的重采样、变速组件。可以使用内置映射自动选择兼容版本：
+
+```javascript
+const player = new AVPlayer({
+  container: document.querySelector('#player'),
+  wasmBaseUrl: '/dist'
+})
+await player.load('/media/example.wmv') // 也可以传入文件选择器返回的 File
+await player.play()
+```
+
+`wasmBaseUrl` 指向 `decode` 的父目录，不是 `/dist/decode`。如果配置了 `getWasm`，
+播放器使用该回调而不使用 `wasmBaseUrl`，返回空值也不会自动回退。上面的自定义回调示例中，
+WMV/VC-1 和 WMA 分别加载本地的 `wmv-simd.wasm` 和 `wma-simd.wasm`；需先部署这些文件，
+并按运行环境选择对应版本。VC-1 没有单独的 `vc1.wasm`。
+播放器 JS 和 WMV 组件需配套更新，旧组件可能不包含 VC-1；四种版本的构建方式见[编译文档](./compile-wasm.md)。
 
 ## rtsp 和 rtmp
 

@@ -30,7 +30,7 @@ The runner executes the checkout's implementation. Prefer direct imports for ord
 - `helpers/packet.mjs` supplies a shared synthetic heap and payload/padding assertions. Allocation, packet attachment and serialization still execute source methods.
 - Each test supplies its own decoder, renderer or I/O boundary mocks. These checks do not replace compilation or real Worker/WASM browser validation.
 
-Synthetic inputs cover framing, buffer padding, timestamp resets, seek cancellation, EOF replay, independent range I/O, partial AVI indexes and paused PCM requests. No application checkout or private media is needed. To compare another checkout, set `LIBMEDIA_TEST_SOURCE` to that checkout; positional arguments to `test:regression` select test filenames only.
+Synthetic inputs cover declared bitrate preservation (including WMA decoding parameters), missing bitrate estimation, framing, buffer padding, timestamp resets, video decoder replacement and asynchronous capability checks, seek cancellation, EOF replay, independent range I/O, partial AVI indexes and paused PCM requests. No application checkout or private media is needed. To compare another checkout, set `LIBMEDIA_TEST_SOURCE` to that checkout; positional arguments to `test:regression` select test filenames only.
 
 `eslint-check` also runs `lint:tests`. The dedicated `lint:tests` command checks regression cases, helpers, fixtures, browser diagnostics, the runner and its lint configuration. It inherits the repository's JavaScript rules with ES2022 syntax enabled and rejects warnings. Use `npm run lint:tests -- --fix` for formatting; do not suppress rules to accommodate a new test.
 
@@ -38,7 +38,7 @@ The single-file command writes an ESM AVPlayer to `dist/avplayer-single/avplayer
 
 ## Real-media validation
 
-See [AVI browser diagnostics](../avi-browser/README.md) for the loopback HTTP Range server and Chromium scenarios. Supply a local sample through `LIBMEDIA_TEST_MEDIA`; put captures under ignored `test/material/` or outside the checkout. Never commit media, source URLs, credentials, or machine-specific media paths.
+See [browser diagnostics](../avi-browser/README.md) for the loopback HTTP Range server and Chromium scenarios for AVI and ASF/WMV/WMA. Supply a local sample through `LIBMEDIA_TEST_MEDIA`; put captures under ignored `test/material/` or outside the checkout. Never commit media, source URLs, credentials, or machine-specific media paths.
 
 Run the shared-memory and ordinary Worker modes separately. Compare cold startup and seek medians with a reference bundle through `LIBMEDIA_TEST_BUNDLE`, under the same aggregate bandwidth and request latency. Run each comparison at least three times; investigate regressions exceeding 15% before accepting a migration.
 
@@ -61,3 +61,22 @@ one-shot build; do not run both concurrently. After a successful rebuild,
 refresh the consumer page so its player and Workers use the new module.
 The root package export is intended for local linking; it does not make the
 source repository an automatically built registry or Git dependency.
+
+
+## ASF / WMV regressions
+
+```sh
+npm run test:regression -- asf.mjs demux-bitrate.mjs video-track-switch.mjs
+```
+
+ASF coverage includes header/GUID validation, WAVEFORMATEX and padding, fragmented
+and compressed media objects, multiple payloads, audio spread interleaving,
+fixed/variable packet sizes, decode versus presentation timestamps, indexed and
+scan-based seeking, index I/O failure, encryption rejection, and truncated input.
+Aspect ratio cases cover per-stream metadata, global fallback and malformed
+values. DVR timing cases preserve unknown PTS across fragments and exclude it
+from seek indexes. Cold unindexed seeks check packet read budgets, timestamp
+gaps, sparse keyframes, fragmented objects and multiple streams.
+For real WMV1/2/3 and VC-1 packet comparisons, use
+`node test/avi-browser/compare-asf.mjs <sample.wmv> [...]` with `ffprobe` on PATH
+(or set `FFPROBE`). Browser playback checks are described in the harness README.

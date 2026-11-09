@@ -24,7 +24,7 @@ features:
   - title: 'Support Multiple Protocols'
     description: 'Support hls, dash, rtmp, rtsp protocols'
   - title: 'Support Multiple Media Formats'
-    description: 'Support mp4, mov, mpegts, flv, matroska, webm, mp3, ogg, flac, aac, wav packaging formats'
+    description: 'Support mp4, mov, mpegts, flv, matroska, webm, avi, asf, wmv, wma, mp3, ogg, flac, aac, wav packaging formats'
   - title: 'Powerful Tools'
     description: 'The player and transcoder are implemented internally for quick use'
 ---

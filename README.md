@@ -66,6 +66,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
+| asf / wmv / wma | ✅ | ❌ |
 | h264 裸流 | ✅       | ✅        |
 | hevc 裸流 | ✅       | ✅        |
 | vvc  裸流 | ✅       | ✅        |
@@ -82,6 +83,10 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | ttml     | ✅       | ❌        |
 | avif     | ✅       | ❌        |
 | heif     | ✅       | ❌        |
+
+ASF 输入包含未加密的 `.asf`、`.wmv`、`.wma`，使用 Wasm 解码 WMV1/2/3、VC-1 和 WMA。
+不包含 ASF 输出、DRM 解密、MMS 协议或 WMV Image。部署时须同时更新播放器和 WMV 解码组件，
+配置见[播放器文档](./site/docs/guide/player.md)。
 
 ### 当前支持的音视频协议
 
@@ -127,7 +132,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | theora      | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | h261        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | h263        | ✅         | ✅          | ✅          | ✅            | ❌                 |
-| wmv         | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| wmv1/2/3 / vc1 | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | mjpeg       | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | rv10        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | rv20        | ✅         | ✅          | ✅          | ✅            | ❌                 |

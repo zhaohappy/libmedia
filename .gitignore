@@ -2,6 +2,7 @@ node_modules
 .DS_store
 .VSCodeCounter
 report.json
+/.playwright-cli/
 test/lib/
 ffmpeg-cache
 /docs/

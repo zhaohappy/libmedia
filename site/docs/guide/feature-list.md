@@ -40,6 +40,7 @@ libmedia 可以完成以下功能:
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
+| asf / wmv / wma | ✅ | ❌ |
 | h264 裸流 | ✅       | ✅        |
 | hevc 裸流 | ✅       | ✅        |
 | vvc  裸流 | ✅       | ✅        |
@@ -56,6 +57,8 @@ libmedia 可以完成以下功能:
 | ttml     | ✅       | ❌        |
 | avif     | ✅       | ❌        |
 | heif     | ✅       | ❌        |
+
+ASF 支持未加密的输入，不包含 DRM、MMS 或 WMV Image。部署与播放说明见[播放器](./player.md)。
 
 ## 音视频协议
 
@@ -82,6 +85,8 @@ libmedia 可以完成以下功能:
 | mpeg2       | ✅         | ✅          | ✅          | ❌                 |
 | mpeg4       | ✅         | ✅          | ✅          | ❌                 |
 | theora      | ✅         | ✅          | ✅          | ❌                 |
+| wmv1/2/3 / vc1 | ✅      | ✅          | ✅          | ❌                 |
+| wma         | ✅         | ✅          | ✅          | ❌                 |
 | aac         | ✅         | ✅          | ✅          | ✅                 |
 | mp3         | ✅         | ✅          | ✅          | ✅                 |
 | opus        | ✅         | ✅          | ✅          | ✅                 |

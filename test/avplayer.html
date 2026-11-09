@@ -97,6 +97,7 @@
 
       #video-change {
         bottom: 70px;
+        width: 210px;
       }
       #audio-change {
         bottom: 140px;
@@ -216,9 +217,9 @@
 <body>
 
     <div style="margin-left: 10px;">
-      支持 mp4、mov、mpegts、flv、matroska、webm、avi、mp3、ogg、flac、aac、wav 封装格式 <br>
+      支持 mp4、mov、mpegts、flv、matroska、webm、avi、asf、wmv、wma、mp3、ogg、flac、aac、wav 封装格式 <br>
       支持 hls、dash 协议 （只支持 url 播放）<br>
-      支持 vvc、av1、hevc、h264、vp9、vp8、mpeg4、aac、mp3、opus、speex、flac、vorbis、g711 编码 <br>
+      支持 vvc、av1、hevc、h264、vp9、vp8、mpeg4、wmv1/2/3、vc-1、wma、aac、mp3、opus、speex、flac、vorbis、g711 编码 <br>
       支持直播（LIVE）和点播（VOD） <br>
       支持本地文件播放和网络 url 地址播放 <br>
 
@@ -710,6 +711,7 @@
                       return `../dist/decode/wma${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? defaultVersion : '')}.wasm`;
                     case 17 /* AVCodecID.AV_CODEC_ID_WMV1 */:
                     case 18 /* AVCodecID.AV_CODEC_ID_WMV2 */:
+                    case 70 /* AVCodecID.AV_CODEC_ID_VC1 */:
                     case 71 /* AVCodecID.AV_CODEC_ID_WMV3 */:
                       return `../dist/decode/wmv${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? defaultVersion : '')}.wasm`;
                     case 7 /* AVCodecID.AV_CODEC_ID_MJPEG */:
@@ -1132,10 +1134,12 @@
                       el: '#video-change',
                       data: function() {
                         return { 
-                          options: videoStreams.map((item) => {
+                          options: videoStreams.map((item, index) => {
+                            const name = item.metadata['title'] || item.metadata['languageString'] || item.metadata['language'] || item.metadata['name'] || `视频轨道 ${index + 1}`
+                            const { width, height } = item.codecparProxy
                             return {
                               value: item.id,
-                              name: item.metadata['title'] || item.metadata['languageString'] || item.metadata['language'] || item.metadata['name'] || 'default'
+                              name: width && height ? `${name} (${width}×${height})` : name
                             }
                           }),
                           value: player.getSelectedVideoStreamId()

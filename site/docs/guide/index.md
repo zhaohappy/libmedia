@@ -25,7 +25,7 @@ libmedia 是设计在多线程上的，只是可以回退到单线程上运行�
 - 隐私安全：用户的数据在本地读取，无需上传到服务器；
 - 性能强大：设计在多线程上并且没有数据拷贝开销，与 Wasm 模块互操作开销可忽略不计；支持 Webcodecs 使用硬件编解码器；
 - 可扩展性：提供低级的 API，可以应对各种使用场景，可以基于这些低级 API 实现更加复杂的业务逻辑；
-- 支持多种媒体格式：支持 mp4、mov、mpegts、flv、matroska、webm、mp3、ogg、flac、aac、wav 封装格式；
+- 支持多种媒体格式：支持 mp4、mov、mpegts、flv、matroska、webm、avi、asf、wmv、wma、mp3、ogg、flac、aac、wav 封装格式；
 - 完善的编解码器支持：支持视频编码格式 H265、H264、H266、VP9、VP8、AV1 和音频编码格式 AAC、MP3、FLAC、SPEEX、G711、OPUS；
 - 丰富的音视频协议支持：支持 hls、dash、rtmp、rtsp 协议；
 - 开箱即用的强大工具：内部实现了播放器和转码器可快速集成使用；

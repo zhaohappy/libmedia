@@ -129,7 +129,14 @@ async function main() {
       return { file: resolve(dirname(bundle.path), basename(path)), type: 'text/javascript' }
     }
     if (/^\/wasm\/(decode|resample|stretchpitch)\/[a-z0-9-]+\.wasm$/.test(path)) {
-      const relative = path.slice('/wasm/'.length)
+      let relative = path.slice('/wasm/'.length)
+      const variant = process.env.LIBMEDIA_TEST_WMV_VARIANT
+      if (variant && /^decode\/wmv(?:-simd|-atomic|-64)?\.wasm$/.test(relative)) {
+        if (!['baseline', 'atomic', 'simd', '64'].includes(variant)) {
+          throw new Error('Invalid LIBMEDIA_TEST_WMV_VARIANT')
+        }
+        relative = `decode/wmv${variant === 'baseline' ? '' : '-' + variant}.wasm`
+      }
       const file = wasmDir ? resolve(wasmDir, basename(relative)) : resolve(root, 'dist', relative)
       return { file, type: 'application/wasm' }
     }
@@ -173,9 +180,12 @@ async function main() {
         file = bundle
         type = 'text/javascript'
         break
+      case '/media.wmv':
+      case '/media.asf':
+      case '/media.wma':
       case '/media.avi':
         file = media
-        type = 'video/x-msvideo'
+        type = path.endsWith('.avi') ? 'video/x-msvideo' : 'video/x-ms-asf'
         break
       case '/control.mp4':
         file = control
@@ -197,6 +207,8 @@ async function main() {
       return
     }
 
+    // Bundles and diagnostic scripts can be rebuilt while the server is running.
+    file.size = (await stat(file.path)).size
     const range = byteRange(request.headers.range, file.size)
     if (!range) {
       response.writeHead(416, { 'Content-Range': `bytes */${file.size}` }).end()

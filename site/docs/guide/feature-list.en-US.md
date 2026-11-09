@@ -41,6 +41,7 @@ libmedia can complete the following functions:
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
+| asf / wmv / wma | ✅ | ❌ |
 | h264 raw | ✅       | ✅        |
 | hevc raw | ✅       | ✅        |
 | vvc  raw | ✅       | ✅        |
@@ -57,6 +58,9 @@ libmedia can complete the following functions:
 | ttml     | ✅       | ❌        |
 | avif     | ✅       | ❌        |
 | heif     | ✅       | ❌        |
+
+ASF supports unencrypted input; DRM, MMS and WMV Image are excluded. See the
+[player guide](./player.en-US.md) for deployment and playback.
 
 ## Protocols
 
@@ -83,6 +87,8 @@ In the browser environment we cannot be used TCP and UDP, RTMP and RTSP need to 
 | mpeg2       | ✅         | ✅          | ✅          | ❌                 |
 | mpeg4       | ✅         | ✅          | ✅          | ❌                 |
 | theora      | ✅         | ✅          | ✅          | ❌                 |
+| wmv1/2/3 / vc1 | ✅      | ✅          | ✅          | ❌                 |
+| wma         | ✅         | ✅          | ✅          | ❌                 |
 | aac         | ✅         | ✅          | ✅          | ✅                 |
 | mp3         | ✅         | ✅          | ✅          | ✅                 |
 | opus        | ✅         | ✅          | ✅          | ✅                 |

@@ -646,7 +646,7 @@ export default class VideoDecodePipeline extends Pipeline {
 
       let softwareDecoder: WasmVideoDecoder | WebVideoDecoder
 
-      if (task.preferWebCodecs && support.videoDecoder && WebVideoDecoder.isSupported(codecpar, false)) {
+      if (task.preferWebCodecs && support.videoDecoder && await WebVideoDecoder.isSupported(codecpar, false)) {
         softwareDecoder = this.createWebCodecDecoder(task, false)
       }
       else {
@@ -666,6 +666,7 @@ export default class VideoDecodePipeline extends Pipeline {
           task.hardwareDecoder.close()
         }
         task.softwareDecoder = softwareDecoder
+        task.softwareDecoderOpened = false
         task.hardwareDecoder = hardwareDecoder
         task.targetDecoder = task.hardwareDecoder || task.softwareDecoder
         task.hardwareRetryCount = 0
@@ -725,7 +726,7 @@ export default class VideoDecodePipeline extends Pipeline {
 
       if (task.preferWebCodecs
         && support.videoDecoder
-        && WebVideoDecoder.isSupported(codecpar, false)
+        && await WebVideoDecoder.isSupported(codecpar, false)
         && task.softwareDecoder instanceof WasmVideoDecoder
       ) {
         task.softwareDecoder.close()
