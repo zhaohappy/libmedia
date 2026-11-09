@@ -148,6 +148,8 @@ type SelfTask = AudioRenderTaskOptions & {
   stopping: boolean
   seekSync: () => void
   receivePCMSync: () => void
+  pendingVideoSeekId?: number
+  videoSeekWait?: Sleep
 
   paddingAVFrame: pointer<AVFrameRef>
 
@@ -468,6 +470,9 @@ export default class AudioRenderPipeline extends Pipeline {
     }
 
     const receiveToPCMBuffer = async (pcmBuffer: pointer<AVPCMBuffer>) => {
+      if (task.stopping) {
+        return IOError.END
+      }
       let receive = 0
 
       if (task.seeking) {
@@ -746,8 +751,8 @@ export default class AudioRenderPipeline extends Pipeline {
 
   public async beforeSeek(taskId: string) {
     const task = this.tasks.get(taskId)
-    if (task) {
-      if (!task.fakePlay && !task.pausing) {
+    if (task && !task.stopping) {
+      if (!task.ended && !task.fakePlay && !task.pausing) {
         logger.debug(`wait current pull front frame before seek, taskId: ${task.taskId}`)
         await new Promise<void>((resolve) => {
           task.seekSync = resolve
@@ -757,6 +762,9 @@ export default class AudioRenderPipeline extends Pipeline {
         this.clearFakePlayTimer(task)
       }
 
+      if (task.stopping) {
+        return
+      }
       task.seeking = true
 
       if (task.stretchpitcher) {
@@ -778,36 +786,46 @@ export default class AudioRenderPipeline extends Pipeline {
     }
   }
 
-  public async syncSeekTime(taskId: string, timestamp: int64, maxQueueLength?: number) {
+  public async syncSeekTime(taskId: string, timestamp: int64, maxQueueLength?: number, videoSeekId?: number) {
     const task = this.tasks.get(taskId)
-    if (task) {
-
-      let videoEnded = false
+    if (task && !task.stopping) {
+      task.pendingVideoSeekId = videoSeekId
 
       while (true) {
-        // 已经调用了 unregisterTask
-        if (!task.leftIPCPort) {
-          task.ended = true
-          logger.warn(`pull audio frame end after unregisterTask, taskId: ${taskId}`)
+        // 视频仍在定位时，限制音频请求把视频包队列推得太远。
+        while (!task.stopping && task.leftIPCPort && videoSeekId !== undefined
+          && task.pendingVideoSeekId === videoSeekId
+          && maxQueueLength && task.stats.videoPacketQueueLength > maxQueueLength
+        ) {
+          const wait = new Sleep(0)
+          task.videoSeekWait = wait
+          await wait
+          if (task.videoSeekWait === wait) {
+            task.videoSeekWait = undefined
+          }
+        }
+
+        if (task.stopping || !task.leftIPCPort) {
           return
         }
 
-        let now = getTimestamp()
-        let videoPacketQueueLength = task.stats.videoPacketQueueLength
-        while (!videoEnded && maxQueueLength && task.stats.videoPacketQueueLength > maxQueueLength) {
-          await new Sleep(0)
-          // 检查 videoPacketQueueLength 200ms 内没有变化说明 video 已经 sync 完成
-          // 否则某些条件下会卡主
-          if (getTimestamp() - now > 200 && videoPacketQueueLength === task.stats.videoPacketQueueLength) {
-            videoEnded = true
+        let audioFrame: pointer<AVFrameRef>
+        try {
+          audioFrame = await task.leftIPCPort.request<pointer<AVFrameRef>>('pull')
+        }
+        catch (error) {
+          if (task.stopping || !task.leftIPCPort) {
+            return
           }
-          if (videoPacketQueueLength !== task.stats.videoPacketQueueLength) {
-            videoPacketQueueLength = task.stats.videoPacketQueueLength
-            now = getTimestamp()
-          }
+          throw error
         }
 
-        let audioFrame = await task.leftIPCPort.request<pointer<AVFrameRef>>('pull')
+        if (task.stopping || !task.leftIPCPort) {
+          if (audioFrame > 0) {
+            task.avframePool.release(audioFrame)
+          }
+          return
+        }
 
         if (audioFrame < 0) {
           logger.warn(`pull audio frame end after seek, taskId: ${taskId}`)
@@ -848,6 +866,14 @@ export default class AudioRenderPipeline extends Pipeline {
     }
   }
 
+  public async finishVideoSeek(taskId: string, seekId: number) {
+    const task = this.tasks.get(taskId)
+    if (task && task.pendingVideoSeekId === seekId) {
+      task.pendingVideoSeekId = undefined
+      task.videoSeekWait?.stop()
+    }
+  }
+
   public async isEnd(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
@@ -874,6 +900,7 @@ export default class AudioRenderPipeline extends Pipeline {
       }
 
       logger.debug(`after seek end, taskId: ${task.taskId}`)
+      return task.ended
     }
   }
 
@@ -1083,6 +1110,11 @@ export default class AudioRenderPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       task.stopping = true
+      task.videoSeekWait?.stop()
+      if (task.seekSync) {
+        task.seekSync()
+        task.seekSync = null
+      }
       if (task.receivePCMSync) {
         task.receivePCMSync()
         task.receivePCMSync = null
@@ -1101,6 +1133,7 @@ export default class AudioRenderPipeline extends Pipeline {
   public async unregisterTask(taskId: string): Promise<void> {
     const task = this.tasks.get(taskId)
     if (task) {
+      task.videoSeekWait?.stop()
       this.clearFakePlayTimer(task)
       if (task.resampler) {
         task.resampler.close()

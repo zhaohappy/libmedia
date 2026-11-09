@@ -323,20 +323,22 @@ export default class VideoRenderPipeline extends Pipeline {
       if (task.afterPullResolver) {
         task.afterPullResolver()
       }
-      if (is.number(frame) && frame < 0) {
+      const ended = is.number(frame) && frame < 0
+      if (ended) {
         task.ended = true
         task.frontFrame = null
-        return
       }
-      assert(!isPointer(frame) || frame.data[0], 'got empty video frame')
-      task.frontFrame = frame
-      task.frontBuffered = true
+      else {
+        assert(!isPointer(frame) || frame.data[0], 'got empty video frame')
+        task.frontFrame = frame
+        task.frontBuffered = true
+      }
       if (task.seekSync) {
         task.seekSync()
         task.seekSync = null
         return
       }
-      if (!task.backFrame) {
+      if (!ended && !task.backFrame && !task.afterPullResolver) {
         this.swap(task)
       }
     })
@@ -1076,7 +1078,7 @@ export default class VideoRenderPipeline extends Pipeline {
           task.afterPullResolver = null
         }
         logger.debug(`after seek end with task ended, taskId: ${task.taskId}`)
-        return
+        return true
       }
 
       task.frontFrame = await this.pullFrame(task)
@@ -1121,7 +1123,7 @@ export default class VideoRenderPipeline extends Pipeline {
         task.afterPullResolver()
         task.afterPullResolver = null
         logger.debug(`after seek end with unregisterTask call, taskId: ${task.taskId}`)
-        return
+        return true
       }
 
       task.adjust = AdjustStatus.None
@@ -1149,6 +1151,7 @@ export default class VideoRenderPipeline extends Pipeline {
       }
 
       logger.debug(`after seek end, taskId: ${task.taskId}`)
+      return false
     }
   }
 
@@ -1194,7 +1197,8 @@ export default class VideoRenderPipeline extends Pipeline {
         task.loop = null
       }
 
-      if (started && !task.ended && !task.frontFrame) {
+      // beforeSeek clears frontFrame after the outstanding playback pull finishes.
+      if (started && !task.seeking && !task.ended && !task.frontBuffered) {
         await new Promise<void>((resolve) => {
           task.afterPullResolver = resolve
         })
