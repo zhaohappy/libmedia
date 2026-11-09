@@ -1,24 +1,7 @@
-import { fileURLToPath } from 'node:url'
+import { classSource, evaluate } from './helpers/source.mjs'
+import { test } from './helpers/test.mjs'
 import assert from 'node:assert/strict'
-import fs from 'node:fs'
-import { createRequire } from 'node:module'
-import { resolve } from 'node:path'
-import process from 'node:process'
-import { compileFunction as compileVmFunction } from 'node:vm'
 
-const compileFunction = (...args) => compileVmFunction(args.pop(), args)
-
-const checkout = resolve(process.argv[2] ?? fileURLToPath(new URL('../../', import.meta.url)))
-const require = createRequire(import.meta.url)
-const ts = require(`${checkout}/node_modules/typescript`)
-const file = `${checkout}/packages/avplayer/src/AVPlayer.ts`
-const source = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest)
-const clazz = source.statements.find(node => ts.isClassDeclaration(node) && node.name.text === 'AVPlayer')
-const methods = new Set(['doSeek', 'seek', 'handleEnded', 'stop', 'syncRenderSeekTime', 'renderSeekId'])
-const program = ts.transpileModule(
-  `class AVPlayer {\n${clazz.members.filter(method => methods.has(method.name?.getText(source))).map(method => method.getText(source)).join('\n')}\n}`,
-  { compilerOptions: { target: ts.ScriptTarget.ES2022 } },
-).outputText
 const prelude = `
   const AVPlayerStatus = { LOADED: 2, LOADING: 1, PLAYED: 6, ENDED: 7, PAUSED: 8, SEEKING: 9, STOPPED: 11 };
   const logger = { info: () => {}, debug: () => {}, warn: () => {}, error: () => {} };
@@ -34,7 +17,8 @@ const prelude = `
   const NOPTS_VALUE_BIGINT = -1n;
   const bigint = { max: (a, b) => a > b ? a : b };
 `
-const { AVPlayer, status } = compileFunction(`${prelude + program}\nreturn { AVPlayer, status: AVPlayerStatus };`)()
+const program = classSource('avplayer/src/AVPlayer.ts', 'AVPlayer', ['doSeek', 'seek', 'handleEnded', 'stop', 'syncRenderSeekTime', 'renderSeekId'])
+const { AVPlayer, status } = evaluate(`${prelude + program}\nreturn { AVPlayer, status: AVPlayerStatus };`)
 const selectedVideo = { index: 0, codecpar: { codecType: 0, framerate: { num: 30, den: 1 } } }
 const selectedAudio = { index: 1, codecpar: { codecType: 1 } }
 const EOF = 10000n
@@ -54,7 +38,7 @@ function fixture() {
   player.videoDecoder2VideoRenderChannel = {}
   player.audioEnded = false
   player.videoEnded = false
-  player.fire = event => events.push({ event, status: player.status })
+  player.fire = (event) => events.push({ event, status: player.status })
   player.isAttachmentPicture = () => false
   player.replayTo = async (target) => {
     replays.push(target)
@@ -65,7 +49,7 @@ function fixture() {
     beforeSeek: async () => {},
     syncSeekTime: async () => {},
     finishVideoSeek: async () => {},
-    afterSeek: async (_, timestamp) => timestamp === end,
+    afterSeek: async (_, timestamp) => timestamp === end
   })
   AVPlayer.AudioRenderThread = makeRenderer()
   player.VideoRenderThread = makeRenderer()
@@ -77,11 +61,13 @@ async function exactEnd() {
   const { player, events, replays } = fixture()
   await player.seek(EOF)
   assert.equal(player.status, status.ENDED)
-  assert.deepEqual(events.map(item => item.event), ['seeking', 'ended', 'seeked'])
+  assert.deepEqual(events.map((item) => item.event), ['seeking', 'ended', 'seeked'])
   assert.equal(events.at(-1).status, status.ENDED)
-  await player.handleEnded() // The actual ended notifications can arrive later.
-  assert.equal(events.filter(item => item.event === 'ended').length, 1)
-  await player.seek(EOF) // Repeating EOF must leave the player ended.
+  // The actual ended notifications can arrive later.
+  await player.handleEnded()
+  assert.equal(events.filter((item) => item.event === 'ended').length, 1)
+  // Repeating EOF must leave the player ended.
+  await player.seek(EOF)
   assert.equal(player.status, status.ENDED)
   assert.deepEqual(replays, [EOF])
   await player.seek(5000n)
@@ -99,11 +85,11 @@ async function staleNotification() {
   player.audioEnded = player.videoEnded = true
   await player.handleEnded()
   assert.equal(player.status, status.SEEKING)
-  assert.deepEqual(events.map(item => item.event), ['seeking'])
+  assert.deepEqual(events.map((item) => item.event), ['seeking'])
   release()
   await seek
   assert.equal(player.status, status.PLAYED)
-  assert.deepEqual(events.map(item => item.event), ['seeking', 'seeked'])
+  assert.deepEqual(events.map((item) => item.event), ['seeking', 'seeked'])
   assert.deepEqual(replays, [])
 }
 
@@ -112,7 +98,7 @@ async function oneStreamEnded() {
   AVPlayer.AudioRenderThread = makeRenderer(5000n)
   await player.seek(5000n)
   assert.equal(player.status, status.PLAYED)
-  assert.deepEqual(events.map(item => item.event), ['seeking', 'seeked'])
+  assert.deepEqual(events.map((item) => item.event), ['seeking', 'seeked'])
 }
 
 async function audioOnly() {
@@ -122,7 +108,7 @@ async function audioOnly() {
   player.selectedVideoStream = undefined
   await player.seek(EOF)
   assert.equal(player.status, status.ENDED)
-  assert.deepEqual(events.map(item => item.event), ['seeking', 'ended', 'seeked'])
+  assert.deepEqual(events.map((item) => item.event), ['seeking', 'ended', 'seeked'])
 }
 async function stopDuringSeek(pendingStage) {
   const { player, events } = fixture()
@@ -158,7 +144,7 @@ async function stopDuringSeek(pendingStage) {
   AVPlayer.DemuxerThread.unregisterTask = async () => operations.push('demux-unregister')
   player.audioSourceNode = {
     request: async () => operations.push('worklet-stop'),
-    disconnect() {},
+    disconnect() {}
   }
   player.isMediaStreamMode = () => true
   player.statsController = { stop() {} }
@@ -169,7 +155,7 @@ async function stopDuringSeek(pendingStage) {
   const stop = player.stop()
   await Promise.all([seek, stop])
   assert.equal(player.status, status.STOPPED)
-  assert.deepEqual(events.map(item => item.event), ['seeking', 'stopped'])
+  assert.deepEqual(events.map((item) => item.event), ['seeking', 'stopped'])
   const expected = ['audio-stop', 'demux-stop', 'worklet-stop', 'video-unregister', 'audio-unregister', 'demux-unregister']
   if (pendingStage === 'demux') {
     expected.unshift('demux-seek')
@@ -177,16 +163,9 @@ async function stopDuringSeek(pendingStage) {
   assert.deepEqual(operations, expected)
 }
 
-(async () => {
-  for (const test of [exactEnd, staleNotification, oneStreamEnded, audioOnly]) {
-    await test()
-    console.log(`${test.name} passed`)
-  }
-  for (const stage of ['renderer', 'demux']) {
-    await stopDuringSeek(stage)
-    console.log(`stop during ${stage} seek passed`)
-  }
-})().catch((error) => {
-  console.error(error)
-  process.exitCode = 1
-})
+for (const scenario of [exactEnd, staleNotification, oneStreamEnded, audioOnly]) {
+  test(scenario.name, scenario)
+}
+for (const stage of ['renderer', 'demux']) {
+  test(`stop during ${stage} seek`, () => stopDuringSeek(stage))
+}

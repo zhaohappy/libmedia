@@ -21,7 +21,15 @@ npm run build:avplayer:single
 npm run build-avplayer
 ```
 
-The regression runner executes the checkout's implementation. The C-like TypeScript and WASM boundaries are adapted in the tests; synthetic inputs exercise framing, buffer padding, timestamp resets, seek cancellation, EOF replay, independent range I/O, and partial AVI indexes. MP3 framing tests use Node's test API. No application checkout or private media is needed.
+All regression files register named cases through `helpers/test.mjs`, which uses Node's test API with a default 10-second case timeout. A case may specify a shorter timeout. The runner executes each file serially in its own process with a 30-second parent deadline; a blocked event loop is forcibly terminated and fails the run. Helpers and deliberately failing fixtures are stored in subdirectories and are not discovered as regression entry points. `runner.mjs` verifies rejection of unresolved promises, async timeouts and blocked event loops.
+
+The runner executes the checkout's implementation. Prefer direct imports for ordinary TypeScript, as in `mp3-frames.mjs`. C-like TypeScript and WASM boundaries use explicit adapters:
+
+- `helpers/source.mjs` reads source, checks requested declarations, transpiles and loads selected methods. Missing declarations or syntax diagnostics fail immediately.
+- `helpers/packet.mjs` supplies a shared synthetic heap and payload/padding assertions. Allocation, packet attachment and serialization still execute source methods.
+- Each test supplies its own decoder, renderer or I/O boundary mocks. These checks do not replace compilation or real Worker/WASM browser validation.
+
+Synthetic inputs cover framing, buffer padding, timestamp resets, seek cancellation, EOF replay, independent range I/O, partial AVI indexes and paused PCM requests. No application checkout or private media is needed. To compare another checkout, set `LIBMEDIA_TEST_SOURCE` to that checkout; positional arguments to `test:regression` select test filenames only.
 
 The single-file command writes an ESM AVPlayer to `dist/avplayer-single/avplayer.js`. The default AVPlayer build remains available separately. Both use the existing decoder WASM files. Keep the upstream release tag reachable: the build uses `git describe --tags` to select the default decoder URL. For this branch, fetch upstream's `v1.3.1` tag if the fork clone did not include it.
 

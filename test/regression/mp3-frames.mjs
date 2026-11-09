@@ -1,10 +1,9 @@
-import { fileURLToPath } from 'node:url'
 import assert from 'node:assert/strict'
-import { it } from 'node:test'
+import { test as it } from './helpers/test.mjs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-const checkout = resolve(process.argv[2] ?? fileURLToPath(new URL('../../', import.meta.url)))
+import { checkout } from './helpers/source.mjs'
 const { default: Reader } = await import(pathToFileURL(resolve(checkout, 'packages/avformat/src/formats/avi/Mp3FrameReader.ts')))
 
 function frame(length, second, third) {
@@ -49,7 +48,8 @@ it('a new reader after seek re-synchronizes in a frame payload and uses the new 
   assert.equal(prior.read(), undefined)
   const reader = makeReader()
   const chunk = new Uint8Array(700 + 627 + 4)
-  chunk.set(fake, 5) // A plausible header at an incorrect position.
+  // A plausible header at an incorrect position.
+  chunk.set(fake, 5)
   chunk.set(real, 700)
   chunk.set(real.subarray(0, 4), 1327)
   reader.append(chunk, 8000n, 1000n)
@@ -59,7 +59,7 @@ it('a new reader after seek re-synchronizes in a frame payload and uses the new 
 
 for (const [name, versionHeader, length, rate] of [
   ['MPEG-2', 0xF3, 208, 22050],
-  ['MPEG-2.5', 0xE3, 417, 11025],
+  ['MPEG-2.5', 0xE3, 417, 11025]
 ]) {
   it(`${name} calculates duration from decoded samples and flushes one complete frame at EOF`, () => {
     const data = frame(length, versionHeader, 0x80)

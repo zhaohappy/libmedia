@@ -1,40 +1,23 @@
-import { fileURLToPath } from 'node:url'
+import { functionSource, readSource, transpile, ts } from './helpers/source.mjs'
+import { test } from './helpers/test.mjs'
 import assert from 'node:assert/strict'
 import { Buffer } from 'node:buffer'
-import { readFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
-import { join, resolve } from 'node:path'
-import process from 'node:process'
 import { setImmediate } from 'node:timers/promises'
 import { runInNewContext } from 'node:vm'
 
-const checkout = resolve(process.argv[2] ?? fileURLToPath(new URL('../../', import.meta.url)))
-const require = createRequire(join(checkout, 'package.json'))
-const ts = require('typescript')
-
-const root = join(checkout, 'packages')
-function source(name) {
-  const file = join(root, name)
-  return ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest)
-}
-const avi = source('avformat/src/formats/IAviFormat.ts')
+const avi = readSource('avformat/src/formats/IAviFormat.ts')
 const helpers = [
   ['avformat/src/formats/riff/iriff.ts', ['readInfo', 'readBmpHeader', 'readWavHeader']],
   ['avutil/src/util/rational.ts', ['avRescaleQ']],
-  ['common/src/util/array.ts', ['binarySearch']],
-].flatMap(([file, names]) => {
-  const ast = source(file)
-  return ast.statements
-    .filter(node => ts.isFunctionDeclaration(node) && names.includes(node.name.text))
-    .map(node => node.getText(ast))
-})
+  ['common/src/util/array.ts', ['binarySearch']]
+].map(([file, names]) => functionSource(readSource(file), names))
 const declarations = avi.statements
-  .filter(node => ts.isVariableStatement(node) || ts.isEnumDeclaration(node) || ts.isClassDeclaration(node))
-  .map(node => node.getText(avi))
+  .filter((node) => ts.isVariableStatement(node) || ts.isEnumDeclaration(node) || ts.isClassDeclaration(node))
+  .map((node) => node.getText(avi))
 /** Run the upstream AVI demuxer with ordinary JavaScript buffers in place of WASM pointers. */
 const program = [...helpers, ...declarations].join('\n')
 const casts = program.replace(/static_cast<u?int64>/g, 'BigInt').replace(/(?:static_cast|reinterpret_cast)<(?:[^<>]|<[^<>]*>)*>/g, 'Number')
-const code = ts.transpileModule(casts.replace(/export /g, ''), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText
+const code = transpile(casts.replace(/export (?:default )?/g, ''))
 const IOFlags = { SEEKABLE: 1, ABORT: 2 }
 const IOError = { END: -2, ABORT: -3 }
 const AVMediaType = { AVMEDIA_TYPE_VIDEO: 1, AVMEDIA_TYPE_AUDIO: 2, AVMEDIA_TYPE_SUBTITLE: 3, AVMEDIA_TYPE_DATA: 4 }
@@ -68,25 +51,29 @@ const IAviFormat = runInNewContext(`
   NOPTS_VALUE_BIGINT: -9223372036854775808n,
   NOPTS_VALUE: -2147483648,
   codecBmpTags: { [mktagle('DIVX')]: AVCodecID.AV_CODEC_ID_MPEG4 },
-  avMalloc: size => new Uint8Array(size),
+  avMalloc: (size) => new Uint8Array(size),
   avFree() {},
-  allocAVPacketData: size => new Uint8Array(size),
-  mapUint8Array: buffer => buffer,
-  mapSafeUint8Array: buffer => buffer,
-  addAVPacketData: (packet, data) => { packet.data = data },
+  allocAVPacketData: (size) => new Uint8Array(size),
+  mapUint8Array: (buffer) => buffer,
+  mapSafeUint8Array: (buffer) => buffer,
+  addAVPacketData: (packet, data) => {
+    packet.data = data
+  },
   mktagle,
   concatTypeArray: (_, list) => Buffer.concat(list),
   avReduce() {},
   errorType,
-  is: { string: value => typeof value === 'string' },
-  text: { decode: data => Buffer.from(data.buffer, data.byteOffset, data.length).toString('ascii') },
-  logger: { debug() {}, warn() {}, error: (message) => { throw new Error(message) } },
+  is: { string: (value) => typeof value === 'string' },
+  text: { decode: (data) => Buffer.from(data.buffer, data.byteOffset, data.length).toString('ascii') },
+  logger: { debug() {}, warn() {}, error: (message) => {
+    throw new Error(message)
+  } },
   object: { extend: Object.assign },
   bigint: { min: (a, b) => a < b ? a : b },
   channel: { unInitChannelLayout() {} },
-  getWavCodecId: tag => tag === 85 ? AVCodecID.AV_CODEC_ID_MP3 : 0,
-  addressof: x => x,
-  Number: value => ArrayBuffer.isView(value) ? value : Number(value),
+  getWavCodecId: (tag) => tag === 85 ? AVCodecID.AV_CODEC_ID_MP3 : 0,
+  addressof: (x) => x,
+  Number: (value) => ArrayBuffer.isView(value) ? value : Number(value)
 })
 /** The fixture stores odd-padded video chunks and variable-sized audio chunks in a classic RIFF. */
 const frameCount = 2500
@@ -110,7 +97,7 @@ function list(type, ...chunks) {
 function streamHeader(type, handler, rate, length, sampleSize) {
   return chunk('strh', Buffer.concat([
     Buffer.from(type + handler),
-    words(0, 0, 0, 1, rate, 0, length, 0, 0, sampleSize, 0, 0),
+    words(0, 0, 0, 1, rate, 0, length, 0, 0, sampleSize, 0, 0)
   ]))
 }
 
@@ -124,7 +111,7 @@ function fixture({
   frames = frameCount,
   grouped = false,
   wrongLengths = false,
-  gateRange,
+  gateRange
 } = {}) {
   const aviHeader = chunk('avih', words(33333, 0, 0, flags, frames, 0, 2, 0, 16, 16, 0, 0, 0, 0))
   const videoFormat = Buffer.alloc(40)
@@ -192,28 +179,42 @@ function fixture({
     setEndian() {},
     isBigEndian: () => false,
     fileSize: async () => BigInt(data.length),
-    async skip(count) { pos += count },
+    async skip(count) {
+      pos += count
+    },
     async seek(offset, force = false, flush = true) {
-      if (force)
+      if (force) {
         forcedSeeks.push([offset, flush])
+      }
       pos = Number(offset)
     },
-    async peekBuffer(count) { return new Uint8Array(data.subarray(pos, pos + count)) },
+    async peekBuffer(count) {
+      return new Uint8Array(data.subarray(pos, pos + count))
+    },
     async readBuffer(count, buffer = new Uint8Array(count)) {
       if (pos + count > data.length) {
         this.error = IOError.END
         throw new Error('EOF')
       }
       buffer.set(data.subarray(pos, pos + count))
-      if (pos >= firstIndexPos)
+      if (pos >= firstIndexPos) {
         primaryIndexBytes += count
+      }
       pos += count
       return buffer
     },
-    async readString(count) { return Buffer.from(await this.readBuffer(count)).toString('ascii') },
-    async readUint8() { return (await this.readBuffer(1))[0] },
-    async readUint16() { return Buffer.from(await this.readBuffer(2)).readUInt16LE() },
-    async readUint32() { return Buffer.from(await this.readBuffer(4)).readUInt32LE() },
+    async readString(count) {
+      return Buffer.from(await this.readBuffer(count)).toString('ascii')
+    },
+    async readUint8() {
+      return (await this.readBuffer(1))[0]
+    },
+    async readUint16() {
+      return Buffer.from(await this.readBuffer(2)).readUInt16LE()
+    },
+    async readUint32() {
+      return Buffer.from(await this.readBuffer(4)).readUInt32LE()
+    }
   }
   const context = {
     streams: [],
@@ -223,17 +224,19 @@ function fixture({
       const stream = { index: this.streams.length, codecpar: { chLayout: {}, extradataSize: 0 }, sideData: {}, timeBase: {} }
       this.streams.push(stream)
       return stream
-    },
+    }
   }
   if (range) {
     context.readAt = async (offset, count) => {
       independentReads.push([offset, count])
       if (offset > BigInt(firstIndexPos)) {
         const error = await (gateRange ? gateRange() : prefetchGate)
-        if (typeof error === 'number')
+        if (typeof error === 'number') {
           return error
-        if (failSuffix)
+        }
+        if (failSuffix) {
           return -12
+        }
       }
       rangedIndexBytes += count
       return data.subarray(Number(offset), Number(offset) + count)
@@ -253,7 +256,7 @@ function fixture({
       const packet = { timeBase: {}, flags: 0 }
       assert.equal(await demuxer.readAVPacket_(context, packet), 0)
       return packet
-    },
+    }
   }
 }
 
@@ -269,7 +272,7 @@ async function start(options) {
 async function testDemandSeek() {
   const gates = []
   const options = { frames: 42000, grouped: true, wrongLengths: true }
-  const partial = await start({ ...options, gateRange: () => new Promise(resolve => gates.push(resolve)) })
+  const partial = await start({ ...options, gateRange: () => new Promise((resolve) => gates.push(resolve)) })
   const eager = await start({ ...options, range: false })
   const [video] = partial.context.streams
   let finished = false
@@ -298,8 +301,9 @@ async function testDemandSeek() {
     assert.deepEqual(packet, await eager.packet(), 'packet positions and DTS match a full parse with incorrect stream lengths')
     const duration = packet.streamIndex === video.index ? 1 : packet.data.length
     const endDts = packet.dts + BigInt(duration)
-    if (endDts * BigInt(packet.timeBase.num * 30) > 4801n * BigInt(packet.timeBase.den))
+    if (endDts * BigInt(packet.timeBase.num * 30) > 4801n * BigInt(packet.timeBase.den)) {
       streamsThroughTarget.add(packet.streamIndex)
+    }
     assert.equal(gates.length, streamsThroughTarget.size === 2 ? 1 : 0, 'prefetch resumes once both streams pass the target')
   }
   assert.equal(gates.length, 1)
@@ -335,7 +339,7 @@ async function testDemandSeek() {
 async function testSequentialExtension() {
   const gates = []
   const options = { frames: 6000, grouped: true }
-  const partial = await start({ ...options, gateRange: () => new Promise(resolve => gates.push(resolve)) })
+  const partial = await start({ ...options, gateRange: () => new Promise((resolve) => gates.push(resolve)) })
   const eager = await start({ ...options, range: false })
   const [video] = partial.context.streams
   assert.ok(await partial.demuxer.seek(partial.context, video, 2041n, 0) > 0n)
@@ -368,7 +372,7 @@ async function testSequentialExtension() {
 async function testRangeFailureAfterPartialSeek() {
   const gates = []
   const options = { frames: 6000, grouped: true }
-  const partial = await start({ ...options, gateRange: () => new Promise(resolve => gates.push(resolve)) })
+  const partial = await start({ ...options, gateRange: () => new Promise((resolve) => gates.push(resolve)) })
   const eager = await start({ ...options, range: false })
   const [video] = partial.context.streams
   const [eagerVideo] = eager.context.streams
@@ -437,7 +441,7 @@ async function main() {
     [{ range: false }, 0, false],
     [{ flags: 0x830 }, 0, true],
     [{ duplicateAt: 1 }, prefixSize, true],
-    [{ openDml: true }, 0, false],
+    [{ openDml: true }, 0, false]
   ]) {
     const eager = await start(options)
     assert.deepEqual(eager.indexBytes(), { primary: indexSize, ranged })
@@ -455,8 +459,9 @@ async function main() {
   for (let i = 1; i < 4099; i++) {
     const packet = await recovered.packet()
     assert.equal(packet.streamIndex, i % 2)
-    if (packet.streamIndex === 0)
+    if (packet.streamIndex === 0) {
       assert.equal(packet.dts, BigInt(i / 2))
+    }
   }
   assert.deepEqual(recovered.indexBytes(), { primary: indexSize, ranged: prefixSize })
   assert.deepEqual(recovered.forcedSeeks, [], 'sequential playback keeps read-ahead')
@@ -466,8 +471,9 @@ async function main() {
   for (let i = 1; i < 4101; i++) {
     const packet = await duplicate.packet()
     assert.equal(packet.streamIndex, i % 2)
-    if (packet.streamIndex === 0)
+    if (packet.streamIndex === 0) {
       assert.equal(packet.dts, BigInt(i / 2))
+    }
   }
   assert.equal(duplicate.demuxer.context.nonInterleaved, true, 'a late duplicate activates indexed playback')
   assert.deepEqual(duplicate.indexBytes(), { primary: 0, ranged: indexSize })
@@ -507,7 +513,4 @@ async function main() {
   console.log('AVI idx1 startup and seek: 15 cases passed.')
 }
 
-main().catch((error) => {
-  console.error(error)
-  process.exitCode = 1
-})
+test('AVI index startup and seek scenarios', main)

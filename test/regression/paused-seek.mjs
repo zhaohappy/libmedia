@@ -1,28 +1,20 @@
+import { classSource, evaluate, getClass, readSource, ts } from './helpers/source.mjs'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
-import { resolve } from 'node:path'
-import { it } from 'node:test'
-import { fileURLToPath } from 'node:url'
-import { compileFunction } from 'node:vm'
+import { test as it } from './helpers/test.mjs'
 
-const checkout = resolve(process.argv[2] ?? fileURLToPath(new URL('../../', import.meta.url)))
-const ts = createRequire(import.meta.url)('typescript')
-const file = resolve(checkout, 'packages/avpipeline/src/AudioRenderPipeline.ts')
-const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest)
-const clazz = source.statements.find((node) => ts.isClassDeclaration(node) && node.name?.text === 'AudioRenderPipeline')
+const source = readSource('avpipeline/src/AudioRenderPipeline.ts')
+const clazz = getClass(source, 'AudioRenderPipeline')
 const create = clazz.members.find((node) => node.name?.getText(source) === 'createTask')
-const methods = clazz.members.filter((node) => ['beforeSeek', 'pause', 'afterSeek', 'syncSeekTime', 'stop'].includes(node.name?.getText(source)))
 // Execute the actual PCM request handler and its closures; adapt only the WASM boundary.
 const closures = create.body.statements.filter((node) =>
   ts.isVariableStatement(node) && node.declarationList.declarations.some((declaration) =>
     ['pullNewAudioFrame', 'receiveSamplesFromStretchpitcher', 'receiveToPCMBuffer', 'handlePCMRequest'].includes(declaration.name.getText(source)))
   || ts.isExpressionStatement(node) && node.expression.getText(source).startsWith('rightIPCPort.on('))
-const program = ts.transpileModule(`
-class Renderer { ${methods.map((node) => node.getText(source)).join('\n')} }
+const program = `
+${classSource('avpipeline/src/AudioRenderPipeline.ts', 'AudioRenderPipeline', ['beforeSeek', 'pause', 'afterSeek', 'syncSeekTime', 'stop'], 'Renderer')}
 function connect(task, options, rightIPCPort) { ${closures.map((node) => node.getText(source)).join('\n')} }
 return { Renderer, connect };
-`, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText
+`
 const env = {
   logger: { debug() {}, info() {}, warn() {}, error() {} },
   IOError: { END: -2 },
@@ -47,7 +39,7 @@ const env = {
   avMallocz: () => 0,
   mapUint8Array: (_, length) => new Uint8Array(length)
 }
-const { Renderer, connect } = compileFunction(program, Object.keys(env))(...Object.values(env))
+const { Renderer, connect } = evaluate(program, env)
 function deferred() {
   let resolve, reject
   const promise = new Promise((yes, no) => {

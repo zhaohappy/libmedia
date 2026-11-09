@@ -1,27 +1,19 @@
-import { fileURLToPath } from 'node:url'
+import { readSource, transpile, ts } from './helpers/source.mjs'
+import { test } from './helpers/test.mjs'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
 import { createServer } from 'node:http'
-import { createRequire } from 'node:module'
-import { dirname, join, resolve } from 'node:path'
-import process from 'node:process'
+import { dirname, join } from 'node:path'
 import { compileFunction } from 'node:vm'
 
-const checkout = resolve(process.argv[2] ?? fileURLToPath(new URL('../../', import.meta.url)))
-const requireUpstream = createRequire(join(checkout, 'package.json'))
-const ts = requireUpstream('typescript')
 const modules = new Map()
 const fetchLoaderPath = 'avnetwork/src/ioLoader/FetchIOLoader.ts'
 const fileLoaderPath = 'avnetwork/src/ioLoader/FileIOLoader.ts'
 function load(relativePath) {
-  if (modules.has(relativePath))
+  if (modules.has(relativePath)) {
     return modules.get(relativePath)
+  }
 
-  const filename = join(checkout, 'packages', relativePath)
-  const source = readFileSync(filename, 'utf8')
-  const { outputText } = ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  })
+  const outputText = transpile(readSource(relativePath).getFullText(), { module: ts.ModuleKind.CommonJS })
   const exports = {}
   const requireModule = (name) => {
     switch (name) {
@@ -30,7 +22,7 @@ function load(relativePath) {
           is: load('common/src/util/is.ts'),
           object: load('common/src/util/object.ts'),
           logger: load('common/src/util/logger.ts'),
-          getTimestamp: load('common/src/function/getTimestamp.ts').default,
+          getTimestamp: load('common/src/function/getTimestamp.ts').default
         }
       case '@libmedia/common/timer':
         return { Sleep: load('common/src/timer/Sleep.ts').default }
@@ -45,13 +37,14 @@ function load(relativePath) {
       case '@libmedia/avnetwork':
         return {
           FetchIOLoader: load(fetchLoaderPath).default,
-          FileIOLoader: load(fileLoaderPath).default,
+          FileIOLoader: load(fileLoaderPath).default
         }
       case '@libmedia/cheap':
         return {}
       default:
-        if (name.startsWith('.'))
+        if (name.startsWith('.')) {
           return load(join(dirname(relativePath), `${name}.ts`))
+        }
         throw new Error(`Unexpected upstream import: ${name}`)
     }
   }
@@ -130,7 +123,7 @@ async function withinDeadline(operation, message) {
   try {
     return await Promise.race([
       operation,
-      new Promise((_, reject) => timer = setTimeout(() => reject(new Error(message)), 1000)),
+      new Promise((_, reject) => timer = setTimeout(() => reject(new Error(message)), 1000))
     ])
   }
   finally {
@@ -139,7 +132,7 @@ async function withinDeadline(operation, message) {
 }
 
 async function main() {
-  await new Promise(resolveListen => server.listen(0, '127.0.0.1', resolveListen))
+  await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen))
   const base = `http://127.0.0.1:${server.address().port}`
   const nativeFetch = globalThis.fetch
   const fetchOptions = []
@@ -158,7 +151,7 @@ async function main() {
     const loader = await openFetch('/exact', {
       headers: { 'X-Fixture': 'synthetic', 'Range': 'bytes=0-1' },
       credentials: 'include',
-      referrerPolicy: 'no-referrer',
+      referrerPolicy: 'no-referrer'
     })
     assert.equal(typeof loader.readAt, 'function', 'Fetch can read an independent byte range')
     assert.deepEqual(await loader.readAt(61n, 7), bytes.slice(61, 68))
@@ -180,8 +173,8 @@ async function main() {
 
     for (const path of ['/held-headers', '/held-head']) {
       const held = new FetchIOLoader({ preload: 16, retryCount: 1, retryInterval: 0 })
-      const started = new Promise(resolve => onHeldRequest = resolve)
-      const closed = new Promise(resolve => onHeldClose = resolve)
+      const started = new Promise((resolve) => onHeldRequest = resolve)
+      const closed = new Promise((resolve) => onHeldClose = resolve)
       const info = { url: `${base}${path}` }
       if (path === '/held-headers') {
         assert.equal(await held.open(info), 0)
@@ -197,14 +190,14 @@ async function main() {
     }
 
     const seekLoader = await openFetch('/held-headers')
-    const seekStarted = new Promise(resolve => onHeldRequest = resolve)
-    const seekClosed = new Promise(resolve => onHeldClose = resolve)
+    const seekStarted = new Promise((resolve) => onHeldRequest = resolve)
+    const seekClosed = new Promise((resolve) => onHeldClose = resolve)
     const oldRead = seekLoader.read(new Uint8Array(4))
     await seekStarted
     assert.equal(await seekLoader.seek(32n), 0)
     const [oldResult, newResult] = await withinDeadline(
       Promise.all([oldRead, seekLoader.read(reads), seekClosed]),
-      'seek did not close the old request and reopen at the requested byte',
+      'seek did not close the old request and reopen at the requested byte'
     )
     assert.equal(oldResult, IOError.END)
     assert.equal(newResult, 4)
@@ -226,7 +219,7 @@ async function main() {
     }
 
     const independent = await openFetch('/held')
-    const sideStarted = new Promise(resolve => onHeldBody = resolve)
+    const sideStarted = new Promise((resolve) => onHeldBody = resolve)
     onHeldClose = () => {}
     const side = independent.readAt(50n, 16)
     await sideStarted
@@ -241,7 +234,7 @@ async function main() {
         onHeldBody = resolve
         onHeldRequest = resolve
       })
-      const closed = new Promise(resolve => onHeldClose = resolve)
+      const closed = new Promise((resolve) => onHeldClose = resolve)
       const pending = held.readAt(50n, 16)
       await started
       assert.ok(await held.readAt(20n, 8) < 0, 'each loader has one side request in flight')
@@ -275,10 +268,10 @@ async function main() {
           info: { url: `${base}/held` },
           options: { preload: 16, retryCount: 0 },
           rightPort: port1,
-          stats,
+          stats
         }), 0)
         assert.equal(await demuxPort.request('open'), 0)
-        const started = new Promise(resolve => onHeldBody = resolve)
+        const started = new Promise((resolve) => onHeldBody = resolve)
         onHeldClose = () => {}
         const pending = demuxPort.request('readAt', { pos: 60n, length: 12 })
         await started
@@ -299,7 +292,7 @@ async function main() {
           type: IOType.File,
           info: { file: new Blob([bytes]) },
           rightPort: channel.port1,
-          stats,
+          stats
         }), 0)
         assert.equal(await filePort.request('open'), 0)
         const result = await filePort.request('readAt', { pos: 40n, length: 5 })
@@ -316,11 +309,8 @@ async function main() {
   finally {
     globalThis.fetch = nativeFetch
     server.closeAllConnections()
-    await new Promise(resolveClose => server.close(resolveClose))
+    await new Promise((resolveClose) => server.close(resolveClose))
   }
 }
 
-main().catch((error) => {
-  console.error(error)
-  process.exitCode = 1
-})
+test('Independent Fetch, Blob and MessagePort reads', main)

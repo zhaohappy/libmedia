@@ -1,34 +1,16 @@
-import { fileURLToPath } from 'node:url'
+import { loadClass } from './helpers/source.mjs'
+import { test } from './helpers/test.mjs'
 import assert from 'node:assert/strict'
 import { Buffer } from 'node:buffer'
-import fs from 'node:fs'
-import { createRequire } from 'node:module'
-import { resolve } from 'node:path'
-import process from 'node:process'
-import { compileFunction as compileVmFunction } from 'node:vm'
 
-const compileFunction = (...args) => compileVmFunction(args.pop(), args)
-
-const checkout = resolve(process.argv[2] ?? fileURLToPath(new URL('../../', import.meta.url)))
-const require = createRequire(import.meta.url)
-const ts = require(`${checkout}/node_modules/typescript`)
-const file = `${checkout}/packages/avformat/src/formats/IAviFormat.ts`
-const source = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest)
-const clazz = source.statements.find(node => ts.isClassDeclaration(node) && node.name.text === 'IAviFormat')
-const methods = new Set(['syncChunk', 'getStreamIndex'])
-const program = ts.transpileModule(
-  `class AviDemuxer {\n${clazz.members.filter(method => methods.has(method.name?.getText(source))).map(method => method.getText(source)).join('\n')}\n}`,
-  { compilerOptions: { target: ts.ScriptTarget.ES2022 } },
-).outputText
 const IOFlags = { SEEKABLE: 1, ABORT: 2 }
 const IOError = { END: -2, ABORT: -3 }
-const AviDemuxer = compileFunction('IOFlags', 'IOError', 'static_cast', 'NOPTS_VALUE_BIGINT', 'logger', `${program}\nreturn AviDemuxer`)(
-  IOFlags,
-  IOError,
-  BigInt,
-  -1n,
-  { error: (message) => { throw new Error(message) } },
-)
+const AviDemuxer = loadClass('avformat/src/formats/IAviFormat.ts', 'IAviFormat', ['syncChunk', 'getStreamIndex'], {
+  IOFlags, IOError, static_cast: BigInt, NOPTS_VALUE_BIGINT: -1n,
+  logger: { error: (message) => {
+    throw new Error(message)
+  } }
+})
 function fixture({ length, seekable = true, trailer = '', buffered = 32, unknownSize = false }) {
   const paddedLength = length + (length & 1)
   const next = 8 + paddedLength
@@ -62,8 +44,9 @@ function fixture({ length, seekable = true, trailer = '', buffered = 32, unknown
     async seek(offset, force = false, flush = true) {
       seeks.push([Number(offset), force, flush])
       pos = Number(offset)
-      if (pos > fetchedTo)
+      if (pos > fetchedTo) {
         fetchedTo = pos
+      }
     },
     async readString(size) {
       this.check(size)
@@ -82,20 +65,20 @@ function fixture({ length, seekable = true, trailer = '', buffered = 32, unknown
         this.error = IOError.END
         throw new Error('EOF')
       }
-    },
+    }
   }
   const demuxer = new AviDemuxer()
   demuxer.context = { fileSize: BigInt(data.length), ioFileSize: unknownSize ? 0n : BigInt(data.length), lastPktPos: 0n }
   const streams = [{ privData: {} }]
   return { demuxer, format: { ioReader, streams }, next, riffHeader, skips, seeks }
 }
-(async () => {
+test('AVI index EOF and following RIFF handling', async () => {
   for (const [name, options, expected] of [
     ['known physical EOF', { length: 65536 }, 'eof'],
     ['odd pad and next RIFF AVIX', { length: 65537, trailer: 'avix' }, 'seek'],
     ['buffered index', { length: 16, trailer: 'packet' }, 'skip'],
     ['sequential reader', { length: 65537, seekable: false, trailer: 'packet' }, 'skip'],
-    ['unknown physical EOF', { length: 65537, unknownSize: true, trailer: 'packet' }, 'skip'],
+    ['unknown physical EOF', { length: 65537, unknownSize: true, trailer: 'packet' }, 'skip']
   ]) {
     const { demuxer, format, next, riffHeader, seeks, skips } = fixture(options)
     const ret = await demuxer.syncChunk(format)
@@ -117,7 +100,4 @@ function fixture({ length, seekable = true, trailer = '', buffered = 32, unknown
     }
     console.log(`${name} passed`)
   }
-})().catch((error) => {
-  console.error(error)
-  process.exitCode = 1
 })
