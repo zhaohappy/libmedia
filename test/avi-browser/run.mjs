@@ -128,11 +128,13 @@ function snapshot() {
 }
 
 function advances(before, after, minimum = 0) {
-  return after.audioTime - before.audioTime > minimum && after.videoTime - before.videoTime > minimum
+  return (!report.streams.some((s) => s.type === 'Audio') || after.audioTime - before.audioTime > minimum)
+    && (!report.streams.some((s) => s.type === 'Video') || after.videoTime - before.videoTime > minimum)
 }
 
 function nearTarget(stats, target) {
-  return Math.abs(stats.audioTime - target) < nearMs && Math.abs(stats.videoTime - target) < nearMs
+  return (!report.streams.some((s) => s.type === 'Audio') || Math.abs(stats.audioTime - target) < nearMs)
+    && (!report.streams.some((s) => s.type === 'Video') || Math.abs(stats.videoTime - target) < nearMs)
 }
 
 function targetAt(fraction) {
@@ -179,7 +181,15 @@ function seek(target) {
 }
 
 async function loadAndPlay(url) {
-  await timed(player.load(url), 'Load')
+  let input = url
+  if (query.get('transport') === 'file' && !(url instanceof File)) {
+    const response = await timed(fetch(url), 'Fetch local file fixture')
+    if (!response.ok) {
+      throw new Error(`Fixture HTTP ${response.status}`)
+    }
+    input = new File([await response.blob()], new URL(url).pathname.split('/').pop())
+  }
+  await timed(player.load(input), 'Load')
   report.loaded = true
   report.loadMs = performance.now() - started
   duration = Number(player.getDuration())
@@ -207,6 +217,44 @@ async function checkPlayback() {
   })
 }
 
+async function checkVideoTracks() {
+  const original = player.getSelectedVideoStreamId()
+  const alternate = player.getStreams().find((stream) => stream.mediaType === 'Video' && stream.id !== original)
+  if (!alternate) {
+    throw new Error('Track switching requires at least two video streams')
+  }
+  await checkSeek(explicitTarget('target', targetAt(0.1)))
+  for (const paused of [false, true]) {
+    for (const id of [alternate.id, original]) {
+      await step(`switch video to ${id} (${paused ? 'paused' : 'playing'})`, async () => {
+        if (paused) {
+          await timed(player.pause(), 'Pause')
+        }
+        const target = Number(player.currentTime)
+        await timed(player.selectVideo(id), 'Select video')
+        const before = snapshot()
+        let stayedPaused = true
+        if (paused) {
+          await wait(300)
+          const held = snapshot()
+          stayedPaused = held.status === pausedStatus
+            && held.audioTime === before.audioTime && held.videoTime === before.videoTime
+          await play()
+        }
+        await wait(settleMs)
+        const after = snapshot()
+        return {
+          id, target, before, after, stayedPaused,
+          ok: player.getSelectedVideoStreamId() === id && stayedPaused
+            && nearTarget(before, target) && advances(before, after)
+            && after.videoRendered > before.videoRendered
+            && after.videoErrors === 0 && after.audioErrors === 0
+        }
+      })
+    }
+  }
+}
+
 async function checkSeek(target) {
   await step('seek and resume playback', async () => {
     const before = snapshot()
@@ -214,10 +262,16 @@ async function checkSeek(target) {
     await seek(target)
     const seekMs = performance.now() - begin
     const atSeek = snapshot()
+    const resumedAt = performance.now()
     report.network.firstSeek ??= await timed(network(), 'Seek metrics')
     await wait(settleMs)
     const after = snapshot()
-    return { target, seekMs, before, atSeek, after, ok: nearTarget(after, target) && advances(atSeek, after) }
+    // Playback during the observation window is progress, not seek error.
+    const elapsed = performance.now() - resumedAt
+    return {
+      target, seekMs, before, atSeek, after,
+      ok: nearTarget(atSeek, target) && nearTarget(after, target + elapsed) && advances(atSeek, after)
+    }
   })
 }
 
@@ -364,9 +418,9 @@ async function run() {
     settleMs = numberParam('settle', 1500, 1)
     nearMs = numberParam('near', 3000, 1)
     const preload = numberParam('preload', 60, 0)
-    const sources = { avi: '/media.avi', rm: '/media.rm', 'rm-file': '/media.rm', control: '/control.mp4' }
+    const sources = { avi: '/media.avi', rm: '/media.rm', 'rm-file': '/media.rm', wmv: '/media.wmv', asf: '/media.asf', wma: '/media.wma', control: '/control.mp4' }
     if (!Object.hasOwn(sources, source)) {
-      throw new Error('source must be avi, rm, rm-file or control')
+      throw new Error('source must be avi, rm, rm-file, wmv, asf, wma or control')
     }
     const url = new URL(sources[source], location.href)
     url.searchParams.set('run', runId)
@@ -389,8 +443,8 @@ async function run() {
     player = new AVPlayer({
       container,
       isLive: false,
-      enableHardware: true,
-      enableWebCodecs: true,
+      enableHardware: query.get('hardware') !== '0',
+      enableWebCodecs: query.get('webcodecs') !== '0',
       enableWebGPU: true,
       enableWorker: true,
       preLoadTime: preload,
@@ -413,6 +467,10 @@ async function run() {
       switch (scenario) {
         case 'startup':
           await checkPlayback()
+          break
+        case 'tracks':
+          await checkPlayback()
+          await checkVideoTracks()
           break
         case 'cold':
         case 'fallback':

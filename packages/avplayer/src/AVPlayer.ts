@@ -439,6 +439,7 @@ export const AVPlayerSupportedCodecs = [
   AVCodecID.AV_CODEC_ID_WMV1,
   AVCodecID.AV_CODEC_ID_WMV2,
   AVCodecID.AV_CODEC_ID_WMV3,
+  AVCodecID.AV_CODEC_ID_VC1,
   AVCodecID.AV_CODEC_ID_MJPEG,
   AVCodecID.AV_CODEC_ID_PNG,
   AVCodecID.AV_CODEC_ID_WEBP,

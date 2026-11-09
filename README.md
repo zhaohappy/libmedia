@@ -67,6 +67,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
 | rm/rmvb  | ✅       | ❌        |
+| asf / wmv / wma | ✅ | ❌ |
 | h264 裸流 | ✅       | ✅        |
 | hevc 裸流 | ✅       | ✅        |
 | vvc  裸流 | ✅       | ✅        |
@@ -85,6 +86,10 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | heif     | ✅       | ❌        |
 
 RM/RMVB 支持输入、播放及转码输入：RV10–RV40 视频，Cook、SIPR、AAC、AC-3 音频。支持本地文件和 HTTP Range 跳转；不支持 RM 输出、独立 `.ra`、Real 专用流媒体协议或其他 RealAudio 编码。
+
+ASF 输入包含未加密的 `.asf`、`.wmv`、`.wma`，使用 Wasm 解码 WMV1/2/3、VC-1 和 WMA。
+不包含 ASF 输出、DRM 解密、MMS 协议或 WMV Image。部署时须同时更新播放器和 WMV 解码组件，
+配置见[播放器文档](./site/docs/guide/player.md)。
 
 ### 当前支持的音视频协议
 
@@ -130,7 +135,7 @@ RM/RMVB 支持输入、播放及转码输入：RV10–RV40 视频，Cook、SIPR�
 | theora      | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | h261        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | h263        | ✅         | ✅          | ✅          | ✅            | ❌                 |
-| wmv         | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| wmv1/2/3 / vc1 | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | mjpeg       | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | rv10        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | rv20        | ✅         | ✅          | ✅          | ✅            | ❌                 |

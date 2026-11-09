@@ -176,6 +176,8 @@ export const codecBmpTags: Record<int32, AVCodecID> = {
 
   [mktagle('WMV1')]: AVCodecID.AV_CODEC_ID_WMV1,
   [mktagle('WMV2')]: AVCodecID.AV_CODEC_ID_WMV2,
+  [mktagle('WMV3')]: AVCodecID.AV_CODEC_ID_WMV3,
+  [mktagle('WVC1')]: AVCodecID.AV_CODEC_ID_VC1,
   [mktagle('GXVE')]: AVCodecID.AV_CODEC_ID_WMV2,
 
   [mktagle('dvsd')]: AVCodecID.AV_CODEC_ID_DVVIDEO,

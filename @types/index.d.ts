@@ -71,6 +71,7 @@ declare const ENABLE_DEMUXER_VVC: boolean
 
 declare const ENABLE_DEMUXER_AVI: boolean
 declare const ENABLE_DEMUXER_RM: boolean
+declare const ENABLE_DEMUXER_ASF: boolean
 
 declare const ENABLE_MUXER_FLV: boolean
 

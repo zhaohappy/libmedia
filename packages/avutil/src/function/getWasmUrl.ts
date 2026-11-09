@@ -104,6 +104,7 @@ export default function getWasmUrl(baseUrl: string, type: 'decoder' | 'encoder' 
           return `${baseUrl}/decode/wma${tag}.wasm`
         case AVCodecID.AV_CODEC_ID_WMV1:
         case AVCodecID.AV_CODEC_ID_WMV2:
+        case AVCodecID.AV_CODEC_ID_VC1:
         case AVCodecID.AV_CODEC_ID_WMV3:
           return `${baseUrl}/decode/wmv${tag}.wasm`
         case AVCodecID.AV_CODEC_ID_MJPEG:

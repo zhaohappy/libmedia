@@ -42,6 +42,7 @@ libmedia can complete the following functions:
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
 | rm/rmvb  | ✅       | ❌        |
+| asf / wmv / wma | ✅ | ❌ |
 | h264 raw | ✅       | ✅        |
 | hevc raw | ✅       | ✅        |
 | vvc  raw | ✅       | ✅        |
@@ -60,6 +61,9 @@ libmedia can complete the following functions:
 | heif     | ✅       | ❌        |
 
 RM/RMVB supports playback and transcoding input with RV10–RV40 video and Cook, SIPR, AAC or AC-3 audio. Local files and HTTP Range seeking are supported. RM output, standalone `.ra`, Real-specific streaming protocols and other RealAudio codecs are not supported.
+
+ASF supports unencrypted input; DRM, MMS and WMV Image are excluded. See the
+[player guide](./player.en-US.md) for deployment and playback.
 
 ## Protocols
 
@@ -89,6 +93,8 @@ In the browser environment we cannot be used TCP and UDP, RTMP and RTSP need to 
 | rv10–rv40   | ✅         | ✅          | ✅          | ❌                 |
 | cook        | ✅         | ✅          | ✅          | ❌                 |
 | sipr        | ✅         | ✅          | ✅          | ❌                 |
+| wmv1/2/3 / vc1 | ✅      | ✅          | ✅          | ❌                 |
+| wma         | ✅         | ✅          | ✅          | ❌                 |
 | aac         | ✅         | ✅          | ✅          | ✅                 |
 | mp3         | ✅         | ✅          | ✅          | ✅                 |
 | opus        | ✅         | ✅          | ✅          | ✅                 |

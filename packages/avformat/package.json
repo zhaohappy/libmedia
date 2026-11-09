@@ -40,6 +40,12 @@
       "default": "./dist/esm/internal.js",
       "types": "./dist/esm/internal.d.ts"
     },
+    "./IAsfFormat": {
+      "import": "./dist/esm/formats/IAsfFormat.js",
+      "require": "./dist/cjs/formats/IAsfFormat.cjs",
+      "default": "./dist/esm/formats/IAsfFormat.js",
+      "types": "./dist/esm/formats/IAsfFormat.d.ts"
+    },
     "./IAacFormat": {
       "import": "./dist/esm/formats/IAacFormat.js",
       "require": "./dist/cjs/formats/IAacFormat.cjs",

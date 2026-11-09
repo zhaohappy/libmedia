@@ -41,6 +41,7 @@ libmedia 可以完成以下功能:
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
 | rm/rmvb  | ✅       | ❌        |
+| asf / wmv / wma | ✅ | ❌ |
 | h264 裸流 | ✅       | ✅        |
 | hevc 裸流 | ✅       | ✅        |
 | vvc  裸流 | ✅       | ✅        |
@@ -59,6 +60,8 @@ libmedia 可以完成以下功能:
 | heif     | ✅       | ❌        |
 
 RM/RMVB 支持播放及转码输入：RV10–RV40 视频，Cook、SIPR、AAC、AC-3 音频。支持本地文件和 HTTP Range 跳转；不支持 RM 输出、独立 `.ra`、Real 专用流媒体协议或其他 RealAudio 编码。
+
+ASF 支持未加密的输入，不包含 DRM、MMS 或 WMV Image。部署与播放说明见[播放器](./player.md)。
 
 ## 音视频协议
 
@@ -88,6 +91,8 @@ RM/RMVB 支持播放及转码输入：RV10–RV40 视频，Cook、SIPR、AAC、A
 | rv10–rv40   | ✅         | ✅          | ✅          | ❌                 |
 | cook        | ✅         | ✅          | ✅          | ❌                 |
 | sipr        | ✅         | ✅          | ✅          | ❌                 |
+| wmv1/2/3 / vc1 | ✅      | ✅          | ✅          | ❌                 |
+| wma         | ✅         | ✅          | ✅          | ❌                 |
 | aac         | ✅         | ✅          | ✅          | ✅                 |
 | mp3         | ✅         | ✅          | ✅          | ✅                 |
 | opus        | ✅         | ✅          | ✅          | ✅                 |

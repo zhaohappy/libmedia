@@ -153,6 +153,32 @@ await player.play()
 
 RM/RMVB 支持 RV10–RV40 视频和 Cook、SIPR、AAC、AC-3 音频，可作为本地文件或 HTTP URL 输入。HTTP 跳转需要服务端支持 Range；不可定位的输入只能顺序播放。没有可用索引或目标超出索引覆盖范围时，首次远距离跳转可能需要从可信位置扫描补齐，不保证固定耗时。
 
+## WMV / ASF 播放
+
+未加密的 `.wmv`、`.asf` 和 `.wma` 使用现有 `load`、`play`、`pause`、`seek` 接口，
+通过 Wasm 解码 WMV1/2/3、VC-1 和 WMA。支持本地 `File` 和 HTTP 输入；HTTP seek
+需要服务器支持 Range，不可寻址输入仅支持顺序播放。不支持 DRM、MMS、WMV Image 或 ASF 输出。
+从源码裁剪构建时，保留默认开启的 `ENABLE_DEMUXER_ASF`。
+
+将更新后的 Wasm 资源部署到站点的 `/dist`，包括 `decode/wmv*.wasm`、`decode/wma*.wasm`
+以及所需的重采样、变速组件。可以使用内置映射自动选择兼容版本：
+
+```javascript
+const player = new AVPlayer({
+  container: document.querySelector('#player'),
+  wasmBaseUrl: '/dist'
+})
+await player.load('/media/example.wmv') // 也可以传入文件选择器返回的 File
+await player.play()
+```
+
+`wasmBaseUrl` 指向 `decode` 的父目录，不是 `/dist/decode`。如果配置了 `getWasm`，
+播放器使用该回调而不使用 `wasmBaseUrl`，返回空值也不会自动回退。自定义回调需要将
+`AV_CODEC_ID_WMV1`、`AV_CODEC_ID_WMV2`、`AV_CODEC_ID_WMV3`、`AV_CODEC_ID_VC1`
+映射到 `wmv*.wasm`，WMA 系列映射到 `wma*.wasm`，并覆盖所需的音频处理组件。
+部署这些文件时按运行环境选择对应版本；VC-1 没有单独的 `vc1.wasm`。
+播放器 JS 和 WMV 组件需配套更新，旧组件可能不包含 VC-1；四种版本的构建方式见[编译文档](./compile-wasm.md)。
+
 ## rtsp 和 rtmp
 
 rtmp 和 rtsp 需要使用 WebSocket 或 WebTransport 代理 tcp 连接，avplayer 使用如下:

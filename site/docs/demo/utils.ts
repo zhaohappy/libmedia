@@ -33,6 +33,7 @@ import IHevcFormat from '@libmedia/avformat/IHevcFormat'
 import IVvcFormat from '@libmedia/avformat/IVvcFormat'
 import IAviFormat from '@libmedia/avformat/IAviFormat'
 import IRmFormat from '@libmedia/avformat/IRmFormat'
+import IAsfFormat from '@libmedia/avformat/IAsfFormat'
 
 
 const BASE_URL = 'https://zhaohappy.github.io/libmedia'
@@ -73,7 +74,10 @@ const Ext2Format: Record<string, AVFormat> = {
   'mpg': AVFormat.MPEGPS,
   'avi': AVFormat.AVI,
   'rm': AVFormat.RM,
-  'rmvb': AVFormat.RM
+  'rmvb': AVFormat.RM,
+  'asf': AVFormat.ASF,
+  'wmv': AVFormat.ASF,
+  'wma': AVFormat.ASF
 }
 
 export function formatUrl(url: string): string {
@@ -184,6 +188,7 @@ export function getWasm(type: 'decoder' | 'encoder' | 'resampler' | 'scaler' | '
           return `${BASE_CDN}/decode/wma${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
         case AVCodecID.AV_CODEC_ID_WMV1:
         case AVCodecID.AV_CODEC_ID_WMV2:
+        case AVCodecID.AV_CODEC_ID_VC1:
         case AVCodecID.AV_CODEC_ID_WMV3:
           return `${BASE_CDN}/decode/wmv${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
         case AVCodecID.AV_CODEC_ID_MJPEG:
@@ -364,6 +369,9 @@ export async function getAVFormat(ioReader: IOReader, source: string | File) {
     case AVFormat.RM:
       iformat = new IRmFormat()
       break
+    case AVFormat.ASF:
+      iformat = new IAsfFormat()
+      break
     case AVFormat.AVI:
       iformat = new IAviFormat()
       break
@@ -373,9 +381,9 @@ export async function getAVFormat(ioReader: IOReader, source: string | File) {
   return iformat
 }
 
-const musicExt: string[] = ['mp3', 'aac', 'flac', 'ogg', 'wav', 'm4a', 'mka', 'opus']
+const musicExt: string[] = ['mp3', 'aac', 'flac', 'ogg', 'wav', 'm4a', 'mka', 'opus', 'wma']
 const movExt: string[] = ['mp4', 'webm', 'mkv', 'flv', 'ts', 'mov', 'm4s', 'h264', '264', 'avc',
-  'h265', '265', 'hevc', 'h266', '266', 'vvc', 'ivf', 'mpeg', 'avi', 'rm', 'rmvb'
+  'h265', '265', 'hevc', 'h266', '266', 'vvc', 'ivf', 'mpeg', 'avi', 'rm', 'rmvb', 'wmv', 'asf'
 ]
 const subtitleExt: string[] = ['ass', 'ssa', 'vvt', 'srt', 'xml', 'ttml']
 

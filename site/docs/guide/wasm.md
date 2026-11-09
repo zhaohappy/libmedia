@@ -43,7 +43,7 @@ order: 7
 | theora      | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | h261        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | h263        | ✅         | ✅          | ✅          | ✅            | ❌                 |
-| wmv         | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| wmv1/2/3 / vc1 | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | mjpeg       | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | rv10        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | rv20        | ✅         | ✅          | ✅          | ✅            | ❌                 |
@@ -98,6 +98,11 @@ order: 7
 > x265 wasm 编码器比较特殊，无法在非多线程环境下运行
 
 ## 使用
+
+WMV1/2/3 和 VC-1 共用 `decode/wmv{后缀}.wasm`，WMA 使用 `decode/wma{后缀}.wasm`。
+后缀分别为 baseline 的空字符串、`-atomic`、`-simd`、`-64`，没有单独的 `vc1.wasm`。
+更新 VC-1 支持时需要同时更新播放器和 WMV 组件；部署及自定义加载示例见[播放器文档](./player.md)，
+重新编译见[编译 Wasm 编解码器](./compile-wasm.md)。
 
 解码器在项目的 ```dist/decode``` 目录下，编码器在项目的 ```dist/encode``` 目录下。wasm 模块并没有发布 npm 包，建议自己将 wasm 文件托管到自己的 cdn 上。你也可以使用一些公共 cdn 来访问 github 上托管的文件。下面以 ```cdn.jsdelivr.net``` 举例。
 

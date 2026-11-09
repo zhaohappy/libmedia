@@ -119,3 +119,25 @@ cd libmedia
 ## 提交到仓库
 
 建议将你添加的编解码器合并到 libmedia 仓库供大家一起使用，将 libmedia/lib 下新的 lib 文件，dist/decode 和 dist/encode 下新的 wasm 文件以及 libmedia/build 下的脚本的更改（除去 FFMPEG_PATH 和 EMSDK_PATH 的更改）提交 PR 到 libmedia 仓库。
+
+## WMV / VC-1
+
+WMV1、WMV2、WMV3 和 VC-1 共用 `wmv.wasm` 系列。自定义 `getWasm` 回调需要将
+`AV_CODEC_ID_VC1` 也路由到对应的 WMV 组件。ASF 解封装不依赖浏览器原生 WMV 支持。
+
+更新播放器时同时部署本次构建的四种 `dist/decode/wmv*.wasm`，并使用 `wasmBaseUrl`
+指向该目录的父目录，例如 `/dist`；未包含 VC-1 的旧版 CDN 或缓存组件不能用于 VC-1 播放。
+如配置了 `getWasm`，需直接更新其返回地址，`wasmBaseUrl` 不会覆盖该回调。
+音频仍使用 `wma*.wasm`，部署示例见[播放器文档](./player.md)。
+构建使用定制 FFmpeg `libmedia7.0`，验证工具链为 Emscripten 3.1.73。
+
+```bash
+for variant in "0 0 0" "0 1 0" "1 1 0" "1 1 1"; do
+  ./build/build-ffmpeg-decoder.sh wmv $variant
+  ./build/build-decoder.sh wmv $variant
+done
+```
+
+上述参数顺序为 SIMD、atomic、wasm64，分别生成 baseline、atomic、SIMD 和 64 位版本。
+两个脚本依次更新 `lib/decode/wmv*/libavcodec.a` 和 `dist/decode/wmv*.wasm`，两类产物需要配套交付。
+64 位版本须同时使用 `WASM_64` 播放器构建；不能将它加载到 32 位播放器中。
