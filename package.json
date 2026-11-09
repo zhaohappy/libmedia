@@ -21,7 +21,10 @@
     "eslint": "./node_modules/.bin/eslint -o=report.json -f=json './packages/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore",
     "eslint-fix": "./node_modules/.bin/eslint './packages/**/*.ts' './site/**/*.ts' './site/**/*.tsx' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore --fix",
     "eslint-check": "./node_modules/.bin/eslint './packages/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore",
-    "postinstall": "tsx scripts/postinstall.ts && simple-git-hooks"
+    "postinstall": "tsx scripts/postinstall.ts && simple-git-hooks",
+    "test:regression": "node scripts/test-regression.mjs",
+    "build:avplayer:single": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --env avplayer=1 release=1 esm=1 single=1 dist=./dist/avplayer-single",
+    "watch:avplayer:single": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --watch --env avplayer=1 release=1 esm=1 single=1 dist=./dist/avplayer-single"
   },
   "simple-git-hooks": {
     "commit-msg": "npx tsx scripts/verify-commit.ts",
@@ -86,5 +89,8 @@
     "assjs": "0.1.4",
     "commander": "^13.1.0",
     "yox": "^1.0.0-alpha.408"
+  },
+  "exports": {
+    "./avplayer": "./dist/avplayer-single/avplayer.js"
   }
 }

@@ -5,7 +5,7 @@ import { execSync } from 'child_process'
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin'
 import ts from 'typescript'
-import { sources, type Compiler, Compilation, RuntimeModule, RuntimeGlobals } from 'webpack'
+import { optimize, sources, type Compiler, Compilation, RuntimeModule, RuntimeGlobals } from 'webpack'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -16,6 +16,7 @@ interface Argv {
 
 interface Env {
   esm: boolean
+  single: boolean
   avplayer: boolean
   ui: boolean
   legacy: boolean
@@ -279,7 +280,7 @@ export default async (env: Env, argv: Argv): Promise<Configuration> => {
     entry: entry,
     output: {
       filename: output,
-      path: env.dist || outputPath,
+      path: env.dist ? path.resolve(__dirname, env.dist) : outputPath,
       module: false,
       library: {
         name: env.esm ? undefined : library,
@@ -408,6 +409,9 @@ export default async (env: Env, argv: Argv): Promise<Configuration> => {
   }
   if (env.esm) {
     config.plugins!.push(new ToESMPlugin())
+    if (env.single) {
+      config.plugins!.push(new optimize.LimitChunkCountPlugin({ maxChunks: 1 }))
+    }
   }
   return config
 }
