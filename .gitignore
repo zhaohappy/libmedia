@@ -22,5 +22,6 @@ media
 
 packages/**/dist/
 
+# Local browser automation captures and diagnostics
 /.playwright-cli/
 /output/playwright/

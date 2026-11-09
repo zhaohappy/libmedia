@@ -338,6 +338,8 @@ export interface AVPlayerOptions {
 }
 
 export interface AVPlayerLoadOptions {
+  /** Optical-disc title ID. Omit to select the longest supported title. */
+  iso?: { titleId?: string }
   /**
    * 源扩展名
    * 强制指定扩展名，对没有扩展名的 url 链接使用
@@ -817,6 +819,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   private async checkUseMSE(options: AVPlayerPlayOptions) {
+    // Disc preroll must be decoded without displaying discarded frames.
+    if (this.formatContext.format === AVFormat.ISO) {
+      return false
+    }
     if (defined(ENABLE_MSE)) {
       if (!support.mse) {
         logger.warn('disable mse because of not support mse')
@@ -1623,6 +1629,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       flags |= IOFlags.NETWORK
       let { info, type, ext } = await analyzeUrlIOLoader(source, options.ext, options.http)
       this.ext = ext
+      if (ext === 'iso') {
+        this.isLive_ = false
+      }
       canReadAt = type === IOType.Fetch
 
       // 注册一个 url io 任务
@@ -1651,7 +1660,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
     else if (source instanceof File) {
       this.isLive_ = false
-      this.ext = source.name.split('.').pop()
+      this.ext = (options.ext || source.name.split('.').pop()).toLowerCase()
       canReadAt = true
       // 注册一个文件 io 任务
       ret = await AVPlayer.IOThread.registerTask
@@ -1784,6 +1793,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     }
 
     const formatOptions: Data = object.extend({}, options.formatOptions || {})
+    if (this.ext === 'iso') {
+      formatOptions.titleId = options.iso?.titleId
+      this.isLive_ = false
+    }
 
     if (defined(ENABLE_PROTOCOL_DASH) && this.isDash()
       || defined(ENABLE_PROTOCOL_HLS) && this.isHls()
@@ -3243,6 +3256,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    * 
    * @returns 
    */
+  /** Information about the loaded optical disc, or null for ordinary media. */
+  public getDiscInfo() {
+    return this.formatContext?.discInfo ?? null
+  }
+
   public getChapters() {
     return this.formatContext.chapters
   }

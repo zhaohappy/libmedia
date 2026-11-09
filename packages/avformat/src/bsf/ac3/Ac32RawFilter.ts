@@ -51,8 +51,6 @@ import {
 } from '@libmedia/avutil'
 
 import {
-  AV_TIME_BASE,
-  AV_TIME_BASE_Q,
   ac3
 } from '@libmedia/avutil/internal'
 
@@ -134,8 +132,8 @@ export default class Ac32RawFilter extends AVBSFilter {
       }
 
       const duration = avRescaleQ(
-        static_cast<int64>(1536 / info.sampleRate * AV_TIME_BASE),
-        AV_TIME_BASE_Q,
+        static_cast<int64>(info.numBlocks * 256),
+        { num: 1, den: static_cast<int32>(info.sampleRate) },
         this.inTimeBase
       )
 

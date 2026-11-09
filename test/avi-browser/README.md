@@ -1,9 +1,10 @@
-# AVI / ASF / RM browser diagnostics
+# AVI / ASF / RM / ISO browser diagnostics
 
 Use this loopback harness to check HTTP Range playback and seeking in AVPlayer
-with local AVI, ASF/WMV/WMA or RM/RMVB files. Checks follow the audio and video streams
+with local AVI, ASF/WMV/WMA, RM/RMVB or ISO files. Checks follow the audio and video streams
 present in the input. For the end and rate checks, use a file long enough to
 leave several seconds of playback after each seek.
+See [Optical-disc fixtures](#optical-disc-fixtures) for ISO setup and scenarios.
 
 ## Setup
 
@@ -23,7 +24,7 @@ The server binds to `127.0.0.1:18774`. It serves the diagnostic page, bundle, We
 
 | Environment variable | Effect |
 | --- | --- |
-| `LIBMEDIA_TEST_MEDIA` | Required local AVI, ASF/WMV/WMA or RM/RMVB path. Use the matching `source` query below. |
+| `LIBMEDIA_TEST_MEDIA` | Required local AVI, ASF/WMV/WMA, RM/RMVB or ISO path. Use the matching `source` query below; for ISO use `ext=iso`. |
 | `LIBMEDIA_TEST_CONTROL` | Optional local H.264/AAC MP4 path for the control check. |
 | `LIBMEDIA_TEST_BUNDLE` | Overrides the ESM bundle at `dist/avplayer-single/avplayer.js`. |
 | `LIBMEDIA_TEST_WASM_DIR` | Overrides the checked-in WebAssembly files with a flat local directory. |
@@ -31,7 +32,7 @@ The server binds to `127.0.0.1:18774`. It serves the diagnostic page, bundle, We
 | `LIBMEDIA_TEST_PORT` | Overrides port 18774. Use 0 to select a free port and read it from the startup message. |
 | `LIBMEDIA_TEST_MODE` | `shared` sends COOP and COEP headers, which allow SharedArrayBuffer in supporting browsers. `ordinary` omits those headers. |
 | `LIBMEDIA_TEST_THROTTLE` | Set to `1` for 80 ms latency per media GET and an aggregate rate of 1 MiB/s across media responses. |
-| `LIBMEDIA_TEST_IGNORE_RANGE` | Set to `1` to ignore media Range headers and return the full body with HTTP 200. Cold and rapid seeks must still reach the requested position; this fallback transfers the prefix again. |
+| `LIBMEDIA_TEST_IGNORE_RANGE` | Set to `1` to ignore media Range headers and return the full body with HTTP 200. For AVI, cold and rapid seeks must still reach the requested position; this fallback transfers the prefix again. ISO must reject the missing Range support. |
 | `LIBMEDIA_TEST_FAIL_IDX1` | Set to `1` for the fallback case. The server walks the RIFF headers to find the top-level `idx1` and responds with HTTP 503 to the first background Range probe after the 64 KiB entry prefix. |
 
 ## Original manual test page
@@ -190,6 +191,23 @@ browser scenarios additionally verify actual decoding, clocks, seeking and clean
 
 - `full` checks natural completion and advancing render counters. It does not compare PCM, verify every rendered frame, or prove continuous audio/video synchronization. Ordinary Worker statistics can lag; use separate output captures when those measurements are required.
 - The background-index fault requires an eligible AVI index larger than the 64 KiB prefix and an actual suffix request. For a smaller index, mark that fault case not applicable. A fault that never fires is not a passing recovery test. Faults on ordinary media requests require separate injection; `LIBMEDIA_TEST_FAIL_IDX1` only targets the index probe.
-- `LIBMEDIA_TEST_IGNORE_RANGE=1` checks the HTTP 200 fallback. Check actual response statuses in the network metrics. Seeking can retransfer the file prefix, so this does not demonstrate efficient random access.
+- `LIBMEDIA_TEST_IGNORE_RANGE=1` checks the HTTP 200 fallback for AVI; ISO should fail instead of downloading the full image. Check actual response statuses in the network metrics. Seeking can retransfer the file prefix, so this does not demonstrate efficient random access.
 - Under throttling, compare media bitrate at the selected playback rate with the 1 MiB/s budget. A 2× rate can exhaust that budget even when 1× playback succeeds. Recheck rate failures without throttling before attributing them to the player.
 - Report the browser, decoder and worker mode, input type, and server configuration. Local server results do not establish behavior on other browsers or CDNs.
+
+## Optical-disc fixtures
+
+The same harness supports ISO playback with `ext=iso`. Generate original test media outside tracked source using FFmpeg, dvdauthor and genisoimage:
+
+```sh
+npx tsx test/avi-browser/create-disc-fixtures.ts /tmp/libmedia-disc-fixtures
+LIBMEDIA_TEST_MEDIA=/tmp/libmedia-disc-fixtures/dvd.iso npm run test:avi:browser
+```
+
+The generator accepts `FFMPEG`, `DVDAUTHOR` and `GENISOIMAGE` executable overrides. It creates a 12-second UDF DVD with three chapters, an ISO9660 variant split across VOB files, and an 8-second two-clip Blu-ray fixture. It also creates `bluray-stc.iso`, placing two clock sequences with reset timestamps in one M2TS and selecting each through its MPLS STC ID. The Blu-ray fixtures wrap real H.264/AC-3 transport streams in minimal synthetic MPLS/CLPI navigation; it is an integration fixture, not a full Blu-ray authoring tool.
+
+Use `?manual=1&ext=iso&preload=0&scenario=matrix&targets=5000,1000,6500` for the DVD and `targets=4500,1000,5500` for Blu-ray. `input=file` exercises `File` loading, `title=00001` selects the shorter title in `bluray.iso` (`bluray-stc.iso` has only `00000`), and `worker=0` disables Worker dispatch. Run shared and ordinary server modes separately; use ordinary mode plus `worker=0` for main-thread coverage. Reports include disc title metadata and chapter positions. The File setup downloads the fixture before constructing a File; exclude that setup request when assessing player range reads. The internal media URL remains `/media.avi` for both formats; `ext=iso` selects ISO probing. The `fallback` scenario and `LIBMEDIA_TEST_FAIL_IDX1` apply only to AVI.
+
+Also run `startup&settle=6500` across a clip boundary, `paused-seek`, `edges`, `cancel-load`, and `cancel-seek`. Validate advancing audio/video clocks, zero decoding errors, stable duration, correct chapter offsets, no premature end at a clip boundary, and quiet network activity after destruction. Parsing-only synthetic coverage is in `iso.test.ts`; packet timeline and preroll coverage is in `iso-packets.mjs`.
+
+For final-GOP coverage, seek to `durationMs - 200` immediately after startup and check that the remaining video frames render before EOF. Also hold an in-flight ISO Range response while seeking: the old connection must close promptly, the new position must load without waiting for the old response timeout, and no premature ended event may occur.

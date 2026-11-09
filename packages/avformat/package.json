@@ -237,6 +237,12 @@
       "require": "./dist/cjs/formats/IRmFormat.cjs",
       "default": "./dist/esm/formats/IRmFormat.js",
       "types": "./dist/esm/formats/IRmFormat.d.ts"
+    },
+    "./IIsoFormat": {
+      "import": "./dist/esm/formats/IIsoFormat.js",
+      "require": "./dist/cjs/formats/IIsoFormat.cjs",
+      "default": "./dist/esm/formats/IIsoFormat.js",
+      "types": "./dist/esm/formats/IIsoFormat.d.ts"
     }
   }
 }

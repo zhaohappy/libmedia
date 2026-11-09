@@ -341,11 +341,18 @@ async function main() {
         }), 0)
         assert.equal(await demuxPort.request('open'), 0)
         const started = new Promise((resolve) => onHeldBody = resolve)
-        onHeldClose = () => {}
+        const closed = new Promise((resolve) => onHeldClose = resolve)
         const pending = demuxPort.request('readAt', { pos: 60n, length: 12 })
         await started
         demuxPort.notify('abortReadAt')
         assert.equal(await pending, IOError.ABORT, Channel.name)
+        await withinDeadline(closed, 'cancelled range connection remains open')
+        const nextStarted = new Promise((resolve) => onHeldBody = resolve)
+        onHeldClose = () => {}
+        const next = demuxPort.request('readAt', { pos: 20n, length: 8 })
+        await nextStarted
+        finishHeldBody()
+        assert.deepEqual(await next, bytes.slice(20, 28), 'readAt remains usable after seek cancellation')
         assert.equal(stats.bufferReceiveBytes, 0n)
       }
       finally {

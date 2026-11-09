@@ -64,7 +64,8 @@ export const enum AVFormat {
   ASS,
   TTML,
   RM,
-  ASF
+  ASF,
+  ISO
 }
 
 export const enum IOType {

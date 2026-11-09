@@ -63,6 +63,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | mp4      | ✅       | ✅        |
 | mpegts   | ✅       | ✅        |
 | mpegps   | ✅       | ❌        |
+| iso (Blu-ray/DVD) | ✅ | ❌ |
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
@@ -90,6 +91,8 @@ RM/RMVB 支持输入、播放及转码输入：RV10–RV40 视频，Cook、SIPR�
 ASF 输入包含未加密的 `.asf`、`.wmv`、`.wma`，使用 Wasm 解码 WMV1/2/3、VC-1 和 WMA。
 不包含 ASF 输出、DRM 解密、MMS 协议或 WMV Image。部署时须同时更新播放器和 WMV 解码组件，
 配置见[播放器文档](./site/docs/guide/player.md)。
+
+ISO 输入支持未加密的蓝光/DVD 标题播放；网络来源必须支持 HTTP Range。不支持光盘菜单、BD-J 或解密。标题选择、章节及文件系统兼容范围见 [AVPlayer ISO 说明](packages/avplayer/README.md#iso-光盘镜像)。
 
 ### 当前支持的音视频协议
 

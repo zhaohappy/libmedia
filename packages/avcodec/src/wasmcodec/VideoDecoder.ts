@@ -36,7 +36,8 @@ import {
   avMallocz,
   errorType,
   type AVRational,
-  AVCodecParameterFlags
+  AVCodecParameterFlags,
+  AVFrameFlags
 } from '@libmedia/avutil'
 
 import {
@@ -121,6 +122,11 @@ export default class WasmVideoDecoder {
         && this.dtsQueue.length
       ) {
         this.frame.pts = this.dtsQueue.shift()!
+      }
+      if (this.frame.flags & AVFrameFlags.AV_FRAME_FLAG_DISCARD) {
+        this.options.avframePool ? this.options.avframePool.release(this.frame as pointer<AVFrameRef>) : destroyAVFrame(this.frame)
+        this.frame = nullptr
+        return
       }
       if (this.options.onReceiveAVFrame) {
         this.frame.timeBase.den = this.timeBase!.den

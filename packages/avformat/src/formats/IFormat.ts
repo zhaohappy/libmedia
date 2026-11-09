@@ -58,5 +58,8 @@ export default abstract class IFormat {
     flags: int32
   ): Promise<int64>
 
+  /** Interrupt pending input without permanently closing the format (used before seek). */
+  public cancelPendingRead(): void {}
+
   public async destroy(formatContext: AVIFormatContext): Promise<void> {}
 }

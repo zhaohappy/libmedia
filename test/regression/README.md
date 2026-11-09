@@ -32,6 +32,20 @@ The runner executes the checkout's implementation. Prefer direct imports for ord
 
 Synthetic inputs cover declared bitrate preservation (including WMA decoding parameters), missing bitrate estimation, video decoder replacement and asynchronous capability checks, in-band AVI H.264 SPS/PPS discovery, malformed NAL lengths, sequential HTTP 200 prefix skipping, strict 206 ranges, single-byte/EOF boundaries, overlapping latest-target seeks, failed-seek events, unequal track EOF, clearing stale PCM in both worklet modes without advancing paused clocks, partial final stereo PCM and stretch drain padding, framing, buffer padding, timestamp resets, seek cancellation, EOF replay, independent range I/O, partial AVI indexes and paused PCM requests. No application checkout or private media is needed. To compare another checkout, set `LIBMEDIA_TEST_SOURCE` to that checkout; positional arguments to `test:regression` select test filenames only.
 
+### ISO regressions
+
+```sh
+npm run test:regression -- iso.test.ts iso-packets.mjs iso-cancel.mjs mpegps-timestamps.mjs read-at.mjs format-probe.test.ts
+```
+
+- `iso.test.ts` covers synthetic ISO9660/UDF filesystems, large offsets, fragmented extents, metadata partitions, invalid references, title selection and chapters. Blu-ray cases select STC sequences with reset clocks; DVD cases reject pre-commands that require navigation execution.
+- `iso-packets.mjs` covers clip trimming, decoder preroll, timestamp normalization and title-relative seeking.
+- `iso-cancel.mjs` checks that seeking cancels a pending read before waiting for demux to stop, drops stale packets, retains pending decoder requests and reports cancellation to the child demuxer as an abort.
+- `mpegps-timestamps.mjs` covers sparse DVD PES timestamps, B-frame ordering and a fresh final GOP without a following PES, including rational frame rates and sequence extensions.
+- `read-at.mjs` checks HTTP Range validation and cancellation/reuse through both message-channel implementations. `format-probe.test.ts` checks signature probing when a filename has the wrong extension.
+
+Generate redistributable DVD/Blu-ray media and validate real decoding with the [optical-disc browser fixtures](../avi-browser/README.md#optical-disc-fixtures). Commit the generators and synthetic tests; keep generated ISO/VOB/M2TS files and browser captures under ignored `test/material/` or outside the checkout. Playwright CLI logs in `.playwright-cli/` and captures in `output/playwright/` are also ignored.
+
 `eslint-check` also runs `lint:tests`. The dedicated `lint:tests` command checks regression cases, helpers, fixtures, browser diagnostics, the runner and its lint configuration. It inherits the repository's JavaScript rules with ES2022 syntax enabled and rejects warnings. Use `npm run lint:tests -- --fix` for formatting; do not suppress rules to accommodate a new test.
 
 The single-file command writes an ESM AVPlayer to `dist/avplayer-single/avplayer.js`. The default AVPlayer build remains available separately. Both use the existing decoder WASM files. Keep the upstream release tag reachable: the build uses `git describe --tags` to select the default decoder URL. For this branch, fetch upstream's `v1.3.1` tag if the fork clone did not include it.

@@ -180,6 +180,10 @@ function seek(target) {
   return timed(player.seek(BigInt(target)), 'Seek')
 }
 
+function loadOptions() {
+  return { ext: query.get('ext') || undefined, iso: { titleId: query.get('title') || undefined } }
+}
+
 async function loadAndPlay(url) {
   const input = query.get('input') ?? query.get('transport') ?? 'http'
   if (!['http', 'file'].includes(input)) {
@@ -192,8 +196,12 @@ async function loadAndPlay(url) {
     }
     url = new File([await timed(response.blob(), 'Read local input')], new URL(url, location.href).pathname.split('/').pop())
   }
-  await timed(player.load(url), 'Load')
+  await timed(player.load(url, loadOptions()), 'Load')
   report.loaded = true
+  if (query.get('ext') === 'iso') {
+    report.disc = JSON.parse(JSON.stringify(player.getDiscInfo(), (key, value) => typeof value === 'bigint' ? String(value) : value))
+    report.chapters = player.getChapters().map((chapter) => Number(chapter.start))
+  }
   report.loadMs = performance.now() - started
   duration = Number(player.getDuration())
   report.durationMs = duration
@@ -453,7 +461,7 @@ async function run() {
       enableHardware: decoder !== 'wasm' && query.get('hardware') !== '0',
       enableWebCodecs: decoder !== 'wasm' && query.get('webcodecs') !== '0',
       enableWebGPU: true,
-      enableWorker: true,
+      enableWorker: query.get('worker') !== '0',
       preLoadTime: preload,
       wasmBaseUrl: `${location.origin}/wasm`
     })
@@ -465,7 +473,7 @@ async function run() {
     const input = source === 'rm-file'
       ? new File([await (await fetch(url)).blob()], 'sample.rmvb') : url.href
     if (scenario === 'cancel-load') {
-      await step('destroy during load', () => cancel(player.load(input), numberParam('cancelAfter', 40, 0)))
+      await step('destroy during load', () => cancel(player.load(input, loadOptions()), numberParam('cancelAfter', 40, 0)))
     }
     else {
       await loadAndPlay(input)
