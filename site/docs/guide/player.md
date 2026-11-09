@@ -179,6 +179,28 @@ await player.play()
 部署这些文件时按运行环境选择对应版本；VC-1 没有单独的 `vc1.wasm`。
 播放器 JS 和 WMV 组件需配套更新，旧组件可能不包含 VC-1；四种版本的构建方式见[编译文档](./compile-wasm.md)。
 
+## 点播跳转
+
+加载媒体后，使用 `seek(timestamp)` 跳转，时间戳为毫秒单位的 `bigint`。应等待返回的 Promise，并处理失败：
+
+```javascript
+try {
+  await player.seek(10_000n)
+} catch (error) {
+  console.error('跳转失败', error)
+}
+```
+
+跳转尚未完成时可以再次调用 `seek()`；正在执行的跳转会继续，尚未执行的目标只保留最新一个。同一批调用的 Promise 在该批跳转结束后完成，不保证逐一到达所有中间目标。暂停时跳转仍保持暂停；播放结束后回跳到有效位置会恢复播放。
+
+实际跳转失败时，Promise 会拒绝并触发 `ERROR`，该次失败不会触发 `SEEKED`。跳转中调用 `stop()` 会取消剩余目标，因此 Promise 完成也可能表示操作已停止，不能仅据此判断已到达目标。直播不支持跳转。
+
+## HTTP 文件与 Range
+
+HTTP 点播文件通过 `FetchIOLoader` 读取。服务器支持 Range 时，应返回有效的 `206 Partial Content` 和与请求范围匹配的 `Content-Range`，其中总长度必须是确定且一致的字节数。加载器会拒绝无效的范围响应，以及带非 `identity` 内容编码的 `206` 响应。跨域服务需允许浏览器读取 `Content-Range` 响应头。
+
+服务器忽略 Range 并返回完整 `200 OK` 响应时，加载器会退回顺序读取，在跳转后重新从文件开头读取并丢弃目标之前的字节。此方式仍受封装格式和索引可用性的限制，而且可能显著增加流量和等待时间；需要高效跳转时，应让源站或 CDN 正确支持 Range。
+
 ## rtsp 和 rtmp
 
 rtmp 和 rtsp 需要使用 WebSocket 或 WebTransport 代理 tcp 连接，avplayer 使用如下:
@@ -208,6 +230,6 @@ player.load('rtsp+webtransport://xxx.xxx.xxx.xxx/xxx')
 
 ## 注意事项
 
-- AVPlayer 的接口绝大多数都是异步的，你需要自己确保接口调用时序，不能某个接口还未执行完成就调另一个接口。唯一的例外是 seeking 状态下可以调用 stop 接口。
+- AVPlayer 的接口绝大多数都是异步的，通常应等待当前操作完成后再调用其他接口。跳转期间支持继续调用 `seek()` 更新目标，或调用 `stop()` 停止；连续跳转的语义见上文。
 
 - wasm 文件建议托管到自己的 cdn 上，也可以使用示例里面的 ```cdn.jsdelivr.net``` cdn 的资源。查看[详情](./wasm.md#使用)

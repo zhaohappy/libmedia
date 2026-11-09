@@ -56,8 +56,9 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
   private pause: boolean
   private firstRendered: boolean
   private stopped: boolean
-  private afterPullResolve: () => void
   private lastStutterTimestamp: number
+  private pullPending: Promise<void>
+  private needsRefill: boolean
 
   constructor() {
     super()
@@ -79,6 +80,7 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
           this.channels = channels
           this.pullIPC = new IPCPort(port)
 
+          this.needsRefill = false
           this.backBufferOffset = 0
           this.ended = false
           this.frontBuffered = true
@@ -119,6 +121,7 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
             return
           }
 
+          this.needsRefill = false
           this.backBufferOffset = 0
           this.ended = false
           this.frontBuffered = true
@@ -153,20 +156,16 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
         }
 
         case 'clear': {
-          this.backBufferOffset = BUFFER_LENGTH
+          await this.clearBuffer()
           this.ipcPort.reply(request)
           break
         }
 
         case 'stop': {
 
-          if (!this.ended && !this.pause && !this.frontBuffered) {
-            await new Promise<void>((resolve) => {
-              this.afterPullResolve = resolve
-            })
-          }
-
           this.stopped = true
+          await this.pullPending
+
           this.pullIPC.destroy()
 
           this.ipcPort.reply(request)
@@ -181,6 +180,7 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
         }
 
         case 'unpause': {
+          await this.refillBuffer()
           this.pause = false
           this.ipcPort.reply(request)
           break
@@ -202,9 +202,33 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
         data[i] = float.subarray(i * BUFFER_LENGTH * 128, (i + 1) * BUFFER_LENGTH * 128)
       }
     }
-    if (this.afterPullResolve) {
-      this.afterPullResolve()
+  }
+
+  private async clearBuffer() {
+    // Pause output before this call; wait for the old prefetch to settle.
+    await this.pullPending
+    if (!this.stopped) {
+      this.needsRefill = true
+      this.ended = true
+      this.frontBuffered = false
+      this.backBufferOffset = BUFFER_LENGTH
     }
+  }
+
+  private async refillBuffer() {
+    if (!this.needsRefill || this.stopped) {
+      return
+    }
+    this.needsRefill = false
+    this.backBuffer = []
+    this.frontBuffer = []
+    this.backBufferOffset = BUFFER_LENGTH
+    this.ended = false
+    this.frontBuffered = false
+    this.pullPending = this.pull(this.frontBuffer).then(() => {
+      this.frontBuffered = true
+    })
+    await this.pullPending
   }
 
   private swapBuffer() {
@@ -218,7 +242,7 @@ export default class AudioSourceWorkletProcessor extends AudioWorkletProcessorBa
     }
 
     this.frontBuffered = false
-    this.pull(this.frontBuffer).then(() => {
+    this.pullPending = this.pull(this.frontBuffer).then(() => {
       this.frontBuffered = true
     })
     return true

@@ -181,15 +181,18 @@ function seek(target) {
 }
 
 async function loadAndPlay(url) {
-  let input = url
-  if (query.get('transport') === 'file' && !(url instanceof File)) {
-    const response = await timed(fetch(url), 'Fetch local file fixture')
-    if (!response.ok) {
-      throw new Error(`Fixture HTTP ${response.status}`)
-    }
-    input = new File([await response.blob()], new URL(url).pathname.split('/').pop())
+  const input = query.get('input') ?? query.get('transport') ?? 'http'
+  if (!['http', 'file'].includes(input)) {
+    throw new Error('input/transport must be http or file')
   }
-  await timed(player.load(input), 'Load')
+  if (input === 'file' && !(url instanceof File)) {
+    const response = await timed(fetch(url), 'Fetch local input')
+    if (!response.ok) {
+      throw new Error(`Unable to fetch local input (HTTP ${response.status})`)
+    }
+    url = new File([await timed(response.blob(), 'Read local input')], new URL(url, location.href).pathname.split('/').pop())
+  }
+  await timed(player.load(url), 'Load')
   report.loaded = true
   report.loadMs = performance.now() - started
   duration = Number(player.getDuration())
@@ -440,11 +443,15 @@ async function run() {
     const { default: AVPlayer, Events } = module
     const container = document.querySelector('#player')
     Object.assign(container.style, { width: '640px', height: '360px' })
+    const decoder = query.get('decoder') ?? 'default'
+    if (!['default', 'wasm'].includes(decoder)) {
+      throw new Error('decoder must be default or wasm')
+    }
     player = new AVPlayer({
       container,
       isLive: false,
-      enableHardware: query.get('hardware') !== '0',
-      enableWebCodecs: query.get('webcodecs') !== '0',
+      enableHardware: decoder !== 'wasm' && query.get('hardware') !== '0',
+      enableWebCodecs: decoder !== 'wasm' && query.get('webcodecs') !== '0',
       enableWebGPU: true,
       enableWorker: true,
       preLoadTime: preload,
@@ -471,6 +478,41 @@ async function run() {
         case 'tracks':
           await checkPlayback()
           await checkVideoTracks()
+          break
+        case 'full':
+          await step('full playback to natural end', async () => {
+            const before = snapshot()
+            const deadline = performance.now() + duration + timeoutMs
+            while (player.status !== endedStatus && performance.now() < deadline) {
+              await wait(100)
+            }
+            const after = snapshot()
+            return { before, after, ok: player.status === endedStatus
+              && after.audioRendered > before.audioRendered && after.videoRendered > before.videoRendered }
+          })
+          break
+        case 'rapid':
+          await step('latest overlapping seek wins', async () => {
+            await timed(player.pause(), 'Pause')
+            const targets = [0.7, 0.1, 0.8, 0.2, 0.5].map(targetAt)
+            const pending = []
+            for (const target of targets) {
+              pending.push(seek(target))
+              await wait(40)
+            }
+            await Promise.all(pending)
+            const after = snapshot()
+            await wait(250)
+            const still = snapshot()
+            await play()
+            await wait(settleMs)
+            const resumed = snapshot()
+            const target = targets.at(-1)
+            return { targets, after, still, resumed, ok: after.status === pausedStatus
+              && Math.abs(after.audioTime - target) <= 500 && Math.abs(after.videoTime - target) <= 500
+              && still.audioTime === after.audioTime && still.videoTime === after.videoTime
+              && advances(still, resumed) }
+          })
           break
         case 'cold':
         case 'fallback':

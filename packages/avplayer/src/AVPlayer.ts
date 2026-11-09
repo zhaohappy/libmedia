@@ -663,6 +663,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private stopPending: Promise<void>
 
   private seekPending: Promise<boolean | void>
+  private seekDrain: Promise<void>
+  private queuedSeek: int64 | undefined
   private renderSeekId = 0
 
   private statsController: StatsController
@@ -1177,6 +1179,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     if (this.stopPending) {
       return
+    }
+    if (seekedTimestamp < 0n) {
+      throw new Error(`demuxer seek failed, code: ${seekedTimestamp}`)
     }
     if (this.subtitleRender) {
       for (let i = 0; i < this.externalSubtitleTasks.length; i++) {
@@ -2931,6 +2936,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       await AVPlayer.MSEThread.beforeSeek(this.taskId)
     }
     else {
+      // Stop consuming output buffers before draining the old PCM request.
+      if (this.audioSourceNode) {
+        await this.audioSourceNode.request('pause')
+      }
+      if (this.stopPending) {
+        return false
+      }
       await Promise.all([
         AVPlayer.AudioRenderThread?.beforeSeek(this.taskId),
         this.VideoRenderThread?.beforeSeek(this.taskId)
@@ -3011,6 +3023,20 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         AVPlayer.AudioRenderThread?.afterSeek(this.taskId, syncTimestamp),
         this.VideoRenderThread?.afterSeek(this.taskId, syncTimestamp)
       ])
+      if (this.stopPending) {
+        return false
+      }
+      if (seekedTimestamp >= 0n) {
+        // afterSeek releases pending PCM requests; clear can now refill from
+        // the new target without retaining the worklet's old front buffer.
+        await this.audioSourceNode?.request('clear')
+      }
+      if (this.stopPending) {
+        return false
+      }
+      if (this.lastStatus === AVPlayerStatus.PLAYED) {
+        await this.audioSourceNode?.request('unpause')
+      }
       reachedEnd = (audioEnded === true || videoEnded === true)
         && (!this.audioDecoder2AudioRenderChannel || audioEnded === true)
         && (!this.videoDecoder2VideoRenderChannel || videoEnded === true)
@@ -3034,16 +3060,58 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.subtitleRender.reset()
       this.subtitleRender.start()
     }
+    // Resume/unblock the renderers before reporting a failed demux seek.
+    if (seekedTimestamp < 0n) {
+      throw new Error(`demuxer seek failed, code: ${seekedTimestamp}`)
+    }
     return reachedEnd
+  }
+
+  private async drainSeeks() {
+    try {
+      while (this.queuedSeek !== undefined && !this.stopPending) {
+        const timestamp = this.queuedSeek
+        this.queuedSeek = undefined
+        await this.seekTo(timestamp)
+      }
+    }
+    catch (error) {
+      this.queuedSeek = undefined
+      throw error
+    }
+    finally {
+      // Clear atomically with finishing the loop: a new caller must not join a
+      // resolved drain whose final promise callback has not run yet.
+      this.seekDrain = null
+    }
   }
 
   /**
    * 跳转到指定时间戳位置播放（只支持点播）
-   * 某些文件可能不会 seek 成功
+   * 连续调用时保留最新目标，所有等待者在该批跳转结束后完成；失败时拒绝并触发 ERROR。
    * 
    * @param timestamp 毫秒
    */
   public async seek(timestamp: int64) {
+    if (this.stopPending) {
+      return
+    }
+    this.queuedSeek = timestamp
+    if (!this.seekDrain) {
+      let resolve: () => void
+      let reject: (error: Error) => void
+      const drain = new Promise<void>((res, rej) => {
+        resolve = res
+        reject = rej
+      })
+      this.seekDrain = drain
+      this.drainSeeks().then(resolve, reject)
+      return drain
+    }
+    return this.seekDrain
+  }
+
+  private async seekTo(timestamp: int64) {
 
     logger.info(`call seek, timestamp: ${timestamp}, taskId: ${this.taskId}`)
 
@@ -3077,6 +3145,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       let reachedEnd: boolean | void
       try {
         reachedEnd = await pending
+      }
+      catch (error) {
+        if (!this.stopPending) {
+          this.status = this.lastStatus
+          this.fire(eventType.ERROR, [error])
+          throw error
+        }
       }
       finally {
         this.seekPending = null
@@ -3224,6 +3299,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.stopPending = new Promise((r) => {
       resolve = r
     })
+    this.queuedSeek = undefined
 
     if (this.status === AVPlayerStatus.SEEKING) {
       await AVPlayer.AudioRenderThread?.stop(this.taskId)

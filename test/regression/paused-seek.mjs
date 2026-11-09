@@ -33,6 +33,7 @@ const env = {
   defined: () => false,
   ENABLE_LOG_TRACE: 0,
   memcpy() {},
+  memset() {},
   avFreep() {},
   make: () => ({}),
   avMalloc: () => [],

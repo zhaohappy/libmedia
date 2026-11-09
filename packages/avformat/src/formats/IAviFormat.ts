@@ -1446,6 +1446,24 @@ export default class IAviFormat extends IFormat {
     await formatContext.ioReader.readBuffer(size, mapSafeUint8Array(data, reinterpret_cast<size>(size as uint32)))
     addAVPacketData(avpacket, data, size)
 
+    // Some AVI writers keep H.264 parameter sets only in the first media packet.
+    // Identify the framing before stream analysis and keyframe detection consume it.
+    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_H264 && !stream.codecpar.extradataSize) {
+      const buffer = getAVPacketData(avpacket)
+      if (naluUtil.isAnnexb(buffer)) {
+        stream.codecpar.flags |= AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB
+        avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
+        const extradata = h264.generateAnnexbExtradata(buffer)
+        if (extradata) {
+          stream.codecpar.extradata = allocAVPacketData(extradata.length)
+          stream.codecpar.extradataSize = extradata.length
+          memcpyFromUint8Array(stream.codecpar.extradata, extradata.length, extradata)
+          stream.sideData[AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA] = extradata.slice()
+          h264.parseAVCodecParameters(stream, extradata)
+        }
+      }
+    }
+
     if (streamContext.hasPal && size < INT32_MAX / 2 && !this.context.dvDemux) {
       const pal: pointer<uint8> = avMalloc(reinterpret_cast<size>(AVPALETTE_SIZE))
       memcpyFromUint8Array(pal, AVPALETTE_SIZE, new Uint8Array(streamContext.pal.buffer))
@@ -1743,6 +1761,15 @@ export default class IAviFormat extends IFormat {
       }
       return 1
     })
+
+    // A target beyond the final packet (including a shorter, selected audio
+    // stream's EOF) still needs to drain through the renderer's seek target.
+    if (index < 0 && timestamp >= streamContext.samples[streamContext.samples.length - 1].dts
+      && formatContext.streams.some((st) => st.duration > 0n
+        && timestamp <= avRescaleQ(st.duration, st.timeBase, stream.timeBase))
+    ) {
+      index = streamContext.samples.length - 1
+    }
 
     if (index > -1 && stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
       let i = index
