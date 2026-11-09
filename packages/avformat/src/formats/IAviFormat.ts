@@ -30,6 +30,7 @@ import mktagle from '../function/mktagle'
 import type { AVIMainHeader, AVISample, AVIStreamContext } from './avi/type'
 import { AVFIndexFlags, AVIFlags } from './avi/type'
 import { codecBmpTags } from './riff/riff'
+import Mp3FrameReader, { type AviMp3Frame } from './avi/Mp3FrameReader'
 
 import {
   memcpyFromUint8Array,
@@ -49,6 +50,8 @@ import {
   avMalloc,
   avFree,
   addAVPacketData,
+  getAVPacketData,
+  unrefAVPacket,
   addAVPacketSideData,
   AVPacketFlags,
   NOPTS_VALUE,
@@ -67,6 +70,7 @@ import {
   INT64_MAX,
   AV_TIME_BASE_Q,
   AVPALETTE_SIZE,
+  allocAVPacketData,
   h264,
   hevc,
   vvc,
@@ -135,6 +139,10 @@ export default class IAviFormat extends IFormat {
   private context: AVIContext
 
   private options: IAviFormatOptions
+
+  private mp3Readers = new Map<AVStream, Mp3FrameReader>()
+  private pendingMp3Stream: AVStream
+  private mp3Eof = false
 
   constructor(options: IAviFormatOptions = {}) {
     super()
@@ -1009,11 +1017,23 @@ export default class IAviFormat extends IFormat {
 
     const streamContext = stream.privData as AVIStreamContext
 
+    avpacket.pos = formatContext.ioReader.getPos() - 8n
+    if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MP3
+      && !this.mp3Readers.has(stream) && !this.context.nonInterleaved && streamContext.samples?.length
+    ) {
+      // An indexed seek can land at an earlier chunk of a different stream.
+      const index = array.binarySearch(streamContext.samples, (sample) => {
+        return sample.pos < avpacket.pos ? 1 : sample.pos > avpacket.pos ? -1 : 0
+      })
+      if (index >= 0 && streamContext.samples[index].pos === avpacket.pos) {
+        streamContext.currentDts = streamContext.samples[index].dts
+      }
+    }
+
     avpacket.timeBase.den = stream.timeBase.den
     avpacket.timeBase.num = stream.timeBase.num
     avpacket.streamIndex = stream.index
     avpacket.dts = streamContext.currentDts
-    avpacket.pos = formatContext.ioReader.getPos() - 8n
     if (stream.codecpar.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_H26X_ANNEXB) {
       avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB
     }
@@ -1062,7 +1082,7 @@ export default class IAviFormat extends IFormat {
       size = this.context.remaining
     }
 
-    const data: pointer<uint8> = avMalloc(reinterpret_cast<size>(size as uint32))
+    const data = allocAVPacketData(reinterpret_cast<size>(size as uint32))
     await formatContext.ioReader.readBuffer(size, mapSafeUint8Array(data, reinterpret_cast<size>(size as uint32)))
     addAVPacketData(avpacket, data, size)
 
@@ -1089,7 +1109,72 @@ export default class IAviFormat extends IFormat {
     return 0
   }
 
+  private writeMp3Frame(avpacket: pointer<AVPacket>, stream: AVStream, frame: AviMp3Frame) {
+    const length = frame.data.length
+    const data = allocAVPacketData(length)
+    memcpyFromUint8Array(data, length, frame.data)
+    addAVPacketData(avpacket, data, length)
+    avpacket.streamIndex = stream.index
+    avpacket.timeBase.num = stream.timeBase.num
+    avpacket.timeBase.den = stream.timeBase.den
+    avpacket.dts = avpacket.pts = frame.dts
+    avpacket.pos = frame.pos
+    avpacket.duration = frame.duration
+    avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
+  }
+
   public async readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
+    while (true) {
+      if (this.pendingMp3Stream) {
+        const stream = this.pendingMp3Stream
+        const frame = this.mp3Readers.get(stream).read()
+        if (frame) {
+          this.writeMp3Frame(avpacket, stream, frame)
+          return 0
+        }
+        this.pendingMp3Stream = undefined
+      }
+
+      if (this.mp3Eof) {
+        for (const [stream, reader] of this.mp3Readers) {
+          const frame = reader.read(true)
+          if (frame) {
+            this.writeMp3Frame(avpacket, stream, frame)
+            return 0
+          }
+          this.mp3Readers.delete(stream)
+        }
+        return IOError.END
+      }
+
+      const ret = await this.readChunk(formatContext, avpacket)
+      if (ret === IOError.END && this.mp3Readers.size) {
+        unrefAVPacket(avpacket)
+        this.mp3Eof = true
+        continue
+      }
+      if (ret !== 0) {
+        return ret
+      }
+
+      const stream = formatContext.streams[avpacket.streamIndex]
+      if (stream.codecpar.codecId !== AVCodecID.AV_CODEC_ID_MP3) {
+        return ret
+      }
+
+      let reader = this.mp3Readers.get(stream)
+      if (!reader) {
+        const context = stream.privData as AVIStreamContext
+        reader = new Mp3FrameReader(stream.timeBase, context.dwSampleSize)
+        this.mp3Readers.set(stream, reader)
+      }
+      reader.append(getAVPacketData(avpacket), avpacket.dts, avpacket.pos)
+      unrefAVPacket(avpacket)
+      this.pendingMp3Stream = stream
+    }
+  }
+
+  private async readChunk(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
     try {
       return await this.readAVPacket_(formatContext, avpacket)
     }
@@ -1200,12 +1285,22 @@ export default class IAviFormat extends IFormat {
     return 0
   }
 
+  private resetMp3Readers() {
+    this.mp3Readers.clear()
+    this.pendingMp3Stream = undefined
+    this.mp3Eof = false
+  }
+
   public async seek(formatContext: AVIFormatContext, stream: AVStream, timestamp: int64, flags: int32): Promise<int64> {
 
     const now = formatContext.ioReader.getPos()
 
     if (flags & AVSeekFlags.BYTE) {
       await formatContext.ioReader.seek(timestamp)
+      if (this.mp3Readers.size || this.mp3Eof) {
+        this.context.currentIndex = -1
+      }
+      this.resetMp3Readers()
       if (!(flags & AVSeekFlags.ANY)) {
         await this.syncChunk(formatContext)
       }
@@ -1287,6 +1382,7 @@ export default class IAviFormat extends IFormat {
 
       if (pos !== NOPTS_VALUE_BIGINT) {
         await formatContext.ioReader.seek(pos)
+        this.resetMp3Readers()
         this.context.currentIndex = -1
       }
       return now
