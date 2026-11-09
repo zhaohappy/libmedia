@@ -113,47 +113,9 @@ export default defineConfig({
 ```javascript
 
 import AVTranscoder from '@libmedia/avtranscoder'
-import { AVCodecID } from '@libmedia/avutil'
 
-const player = new AVTranscoder({
-  getWasm: (type, codecId, mediaType) => {
-    switch (type) {
-      case 'decoder': {
-        switch (codecId) {
-          case AVCodecID.AV_CODEC_ID_AAC:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/aac-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_MP3:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/mp3-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_FLAC:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/flac-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_H264:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/h264-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_HEVC:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/hevc-simd.wasm`
-        }
-      }
-      case 'encoder': {
-        switch (codecId) {
-          case AVCodecID.AV_CODEC_ID_AAC:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/encode/aac-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_MP3:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/encode/mp3-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_FLAC:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/encode/flac-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_H264:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/encode/h264-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_HEVC:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/encode/hevc-simd.wasm`
-        }
-      }
-      case 'resampler':
-        return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/resample/resample-simd.wasm`
-      case 'stretchpitcher':
-        return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/stretchpitch/stretchpitch-simd.wasm`
-       case 'scaler':
-        return 'https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/scale/scale-simd.wasm'
-    }
-  }
+const transcoder = new AVTranscoder({
+  wasmBaseUrl: 'https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist'
 })
 
 await transcoder.ready()
@@ -164,16 +126,16 @@ transcoder.on('task-ended', (taskId) => {
 
 transcoder.addTask({
   input: {
-    'https://xxxxx.flv'
+    file: 'https://example.com/video.rmvb'
   },
   output: {
     file: writeFileHandler,
     format: 'mp4',
     audio: {
-      codec: 'copy'
+      codec: 'aac'
     },
     video: {
-      codec: 'copy'
+      codec: 'h264'
     }
   }
 }).then((taskId) => {
@@ -181,6 +143,12 @@ transcoder.addTask({
 })
 
 ```
+
+`wasmBaseUrl` is the root containing resource directories such as `decode`, `encode` and `resample`. The default resolver selects the WASM variant for the environment. You can omit this option to use the library's default versioned URL; use resources matching the library version in production. RV10–RV40 use `decode/rv*.wasm`, and Cook/SIPR use `decode/ra*.wasm`. A custom `getWasm` must cover these codecs as well as AAC and AC-3, rather than only H.264/AAC.
+
+RM/RMVB accepts local files and HTTP URLs with RV10–RV40 video and Cook, SIPR, AAC or AC-3 audio. HTTP seeking requires server support for Range requests; nonseekable inputs support sequential playback only. If indexes are unavailable or do not cover the target, an initial distant seek may scan forward from a trusted position and has no fixed latency guarantee.
+
+This example transcodes RMVB to H.264/AAC MP4. Supply `writeFileHandler` to write the output file. RM/RMVB is input-only; RM output is not supported. Re-encode RV/Cook/SIPR when converting to MP4 instead of using `copy`.
 
 ## Notes
 

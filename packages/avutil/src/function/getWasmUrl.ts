@@ -91,7 +91,7 @@ export default function getWasmUrl(baseUrl: string, type: 'decoder' | 'encoder' 
         case AVCodecID.AV_CODEC_ID_RV20:
         case AVCodecID.AV_CODEC_ID_RV30:
         case AVCodecID.AV_CODEC_ID_RV40:
-          return `${baseUrl}/decode/msmpeg4${tag}.wasm`
+          return `${baseUrl}/decode/rv${tag}.wasm`
         case AVCodecID.AV_CODEC_ID_COOK:
         case AVCodecID.AV_CODEC_ID_SIPR:
         case AVCodecID.AV_CODEC_ID_RALF:

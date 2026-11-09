@@ -535,6 +535,15 @@ export default class DemuxPipeline extends Pipeline {
             return errorType.FORMAT_NOT_SUPPORT
           }
           break
+        case AVFormat.RM:
+          if (defined(ENABLE_DEMUXER_RM)) {
+            iformat = new (((await import('@libmedia/avformat/IRmFormat')).default))
+          }
+          else {
+            logger.error('rm format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
         case AVFormat.AVI:
           if (defined(ENABLE_DEMUXER_AVI)) {
             iformat = new (((await import('@libmedia/avformat/IAviFormat')).default))(task.formatOptions as IAviFormatOptions)

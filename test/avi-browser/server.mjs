@@ -125,10 +125,13 @@ async function main() {
   const metrics = new Map()
 
   function localAsset(path) {
+    if (/^\/(?:\d+\.)?avtranscoder\.js$/.test(path)) {
+      return { file: resolve(root, 'dist/avtranscoder', basename(path)), type: 'text/javascript' }
+    }
     if (/^\/\d+\.avplayer\.js$/.test(path)) {
       return { file: resolve(dirname(bundle.path), basename(path)), type: 'text/javascript' }
     }
-    if (/^\/wasm\/(decode|resample|stretchpitch)\/[a-z0-9-]+\.wasm$/.test(path)) {
+    if (/^\/wasm\/(decode|encode|resample|stretchpitch|scale)\/[a-z0-9-]+\.wasm$/.test(path)) {
       const relative = path.slice('/wasm/'.length)
       const file = wasmDir ? resolve(wasmDir, basename(relative)) : resolve(root, 'dist', relative)
       return { file, type: 'application/wasm' }
@@ -165,6 +168,14 @@ async function main() {
         file = html
         type = 'text/html; charset=utf-8'
         break
+      case '/transcode.html':
+        file = await localFile(resolve(directory, 'transcode.html'), 'Transcode page')
+        type = 'text/html; charset=utf-8'
+        break
+      case '/transcode.mjs':
+        file = await localFile(resolve(directory, 'transcode.mjs'), 'Transcode runner')
+        type = 'text/javascript'
+        break
       case '/run.mjs':
         file = runner
         type = 'text/javascript'
@@ -173,9 +184,10 @@ async function main() {
         file = bundle
         type = 'text/javascript'
         break
+      case '/media.rm':
       case '/media.avi':
         file = media
-        type = 'video/x-msvideo'
+        type = path === '/media.rm' ? 'application/vnd.rn-realmedia' : 'video/x-msvideo'
         break
       case '/control.mp4':
         file = control
@@ -197,6 +209,10 @@ async function main() {
       return
     }
 
+    // A rebuilt bundle may change size while this diagnostic server stays open.
+    if (file === bundle || file === runner || file === html) {
+      file.size = (await stat(file.path)).size
+    }
     const range = byteRange(request.headers.range, file.size)
     if (!range) {
       response.writeHead(416, { 'Content-Range': `bytes */${file.size}` }).end()
@@ -223,7 +239,7 @@ async function main() {
     response.once('close', () => abort.abort())
     let entry
     if (isGet && isMedia) {
-      entry = { start, end, bytes: 0, atMs: performance.now() }
+      entry = { start, end, bytes: 0, atMs: performance.now(), range: request.headers.range ?? null, contentRange: headers['Content-Range'] ?? null }
       if (startsAtIdx1Header) {
         entry.startsAtIdx1Header = true
       }

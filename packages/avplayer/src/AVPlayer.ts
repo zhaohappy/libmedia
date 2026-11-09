@@ -1951,12 +1951,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     formatContext.streams.forEach((stream) => {
       if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_AUDIO) {
-        this.GlobalData.stats.audiocodec = getAudioCodec(stream.codecpar)
+        const codec = getAudioCodec(stream.codecpar)
+        this.GlobalData.stats.audiocodec = codec === 'unknown'
+          ? dumpUtils.dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)
+          : codec
       }
       else if (stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO
         && !(stream.disposition & AVDisposition.ATTACHED_PIC)
       ) {
-        this.GlobalData.stats.videocodec = getVideoCodec(stream.codecpar)
+        const codec = getVideoCodec(stream.codecpar)
+        this.GlobalData.stats.videocodec = codec === 'unknown'
+          ? dumpUtils.dumpCodecName(stream.codecpar.codecType, stream.codecpar.codecId)
+          : codec
       }
     })
 

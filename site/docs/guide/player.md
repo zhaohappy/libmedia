@@ -139,37 +139,19 @@ AVPlayerUI 配置也同上。
 ```javascript
 
 import AVPlayer from '@libmedia/avplayer'
-import { AVCodecID } from '@libmedia/avutil'
 
 const player = new AVPlayer({
   container: document.querySelector('#player'),
-  getWasm: (type, codecId, mediaType) => {
-    switch (type) {
-      case 'decoder': {
-        switch (codecId) {
-          case AVCodecID.AV_CODEC_ID_AAC:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/aac-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_MP3:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/mp3-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_FLAC:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/flac-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_H264:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/h264-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_HEVC:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/hevc-simd.wasm`
-        }
-      }
-      case 'resampler':
-        return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/resample/resample-simd.wasm`
-      case 'stretchpitcher':
-        return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/stretchpitch/stretchpitch-simd.wasm`
-    }
-  }
+  wasmBaseUrl: 'https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist'
 })
 await player.load('https://xxxxxxx')
 await player.play()
 
 ```
+
+`wasmBaseUrl` 指向包含 `decode`、`encode`、`resample` 等资源子目录的根路径，默认资源解析会选择匹配环境的 WASM 变体。也可以省略此选项，使用库默认的版本地址；生产部署请使用与库版本匹配的资源。RV10–RV40 使用 `decode/rv*.wasm`，Cook/SIPR 使用 `decode/ra*.wasm`。如果自定义 `getWasm`，需要覆盖这些编码以及 AAC、AC-3，不能只提供 H.264/AAC 分支。
+
+RM/RMVB 支持 RV10–RV40 视频和 Cook、SIPR、AAC、AC-3 音频，可作为本地文件或 HTTP URL 输入。HTTP 跳转需要服务端支持 Range；不可定位的输入只能顺序播放。没有可用索引或目标超出索引覆盖范围时，首次远距离跳转可能需要从可信位置扫描补齐，不保证固定耗时。
 
 ## rtsp 和 rtmp
 

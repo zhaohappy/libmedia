@@ -225,6 +225,12 @@
       "require": "./dist/cjs/formats/OH26XFormat.cjs",
       "default": "./dist/esm/formats/OH26XFormat.js",
       "types": "./dist/esm/formats/OH26XFormat.d.ts"
+    },
+    "./IRmFormat": {
+      "import": "./dist/esm/formats/IRmFormat.js",
+      "require": "./dist/cjs/formats/IRmFormat.cjs",
+      "default": "./dist/esm/formats/IRmFormat.js",
+      "types": "./dist/esm/formats/IRmFormat.d.ts"
     }
   }
 }

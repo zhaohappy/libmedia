@@ -5,7 +5,7 @@ import template from './Node.hbs'
 
 export const musicExt: string[] = ['mp3', 'aac', 'flac', 'ogg', 'ogg', 'wav', 'm4a', 'mka', 'opus']
 export const movExt: string[] = ['mp4', 'webm', 'mkv', 'flv', 'ts', 'mov', 'm4s', 'h264', '264', 'avc',
-  'h265', '265', 'hevc', 'h266', '266', 'vvc', 'ivf', 'mpeg', 'avi'
+  'h265', '265', 'hevc', 'h266', '266', 'vvc', 'ivf', 'mpeg', 'avi', 'rm', 'rmvb'
 ]
 export const subtitleExt: string[] = ['ass', 'ssa', 'vvt', 'srt', 'xml', 'ttml']
 

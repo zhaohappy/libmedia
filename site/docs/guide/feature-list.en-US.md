@@ -41,6 +41,7 @@ libmedia can complete the following functions:
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
+| rm/rmvb  | ✅       | ❌        |
 | h264 raw | ✅       | ✅        |
 | hevc raw | ✅       | ✅        |
 | vvc  raw | ✅       | ✅        |
@@ -57,6 +58,8 @@ libmedia can complete the following functions:
 | ttml     | ✅       | ❌        |
 | avif     | ✅       | ❌        |
 | heif     | ✅       | ❌        |
+
+RM/RMVB supports playback and transcoding input with RV10–RV40 video and Cook, SIPR, AAC or AC-3 audio. Local files and HTTP Range seeking are supported. RM output, standalone `.ra`, Real-specific streaming protocols and other RealAudio codecs are not supported.
 
 ## Protocols
 
@@ -83,6 +86,9 @@ In the browser environment we cannot be used TCP and UDP, RTMP and RTSP need to 
 | mpeg2       | ✅         | ✅          | ✅          | ❌                 |
 | mpeg4       | ✅         | ✅          | ✅          | ❌                 |
 | theora      | ✅         | ✅          | ✅          | ❌                 |
+| rv10–rv40   | ✅         | ✅          | ✅          | ❌                 |
+| cook        | ✅         | ✅          | ✅          | ❌                 |
+| sipr        | ✅         | ✅          | ✅          | ❌                 |
 | aac         | ✅         | ✅          | ✅          | ✅                 |
 | mp3         | ✅         | ✅          | ✅          | ✅                 |
 | opus        | ✅         | ✅          | ✅          | ✅                 |

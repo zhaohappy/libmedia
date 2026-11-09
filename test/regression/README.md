@@ -38,7 +38,7 @@ The single-file command writes an ESM AVPlayer to `dist/avplayer-single/avplayer
 
 ## Real-media validation
 
-See [AVI browser diagnostics](../avi-browser/README.md) for the loopback HTTP Range server and Chromium scenarios. Supply a local sample through `LIBMEDIA_TEST_MEDIA`; put captures under ignored `test/material/` or outside the checkout. Never commit media, source URLs, credentials, or machine-specific media paths.
+See [AVI and RM/RMVB browser diagnostics](../avi-browser/README.md) for the loopback HTTP Range server and Chromium scenarios. Supply a local sample through `LIBMEDIA_TEST_MEDIA`; put captures under ignored `test/material/` or outside the checkout. Never commit media, source URLs, credentials, or machine-specific media paths.
 
 Run the shared-memory and ordinary Worker modes separately. Compare cold startup and seek medians with a reference bundle through `LIBMEDIA_TEST_BUNDLE`, under the same aggregate bandwidth and request latency. Run each comparison at least three times; investigate regressions exceeding 15% before accepting a migration.
 
@@ -61,3 +61,30 @@ one-shot build; do not run both concurrently. After a successful rebuild,
 refresh the consumer page so its player and Workers use the new module.
 The root package export is intended for local linking; it does not make the
 source repository an automatically built registry or Git dependency.
+
+## RealMedia regressions
+
+```sh
+npm run test:regression -- rm.mjs rm-range.mjs rm-performance.mjs
+```
+
+`rm.mjs` covers RM/RMVB probing, RV WASM selection, headers, slice tables, RV30/40
+presentation timestamps, Cook/SIPR rearrangement, AAC/AC-3 packets, padded WASM
+packet allocation, index fallback, EOF replay and audio preroll after seek.
+It also checks that forged audio headers inside payloads cannot be used as seek
+anchors, that Cook/SIPR preroll can span multiple video GOPs, and that DATA chains
+with intervening INDX objects work on seekable and sequential inputs. Audio seek
+anchors come from walking actual packets, not from trusting audio INDX offsets.
+`rm-range.mjs` checks real HTTP 206/Content-Range exchanges and both seek directions
+with valid, missing and corrupt indexes, including corrupt audio anchors and
+DATA chains across indexes. See the browser diagnostic README for
+Worker modes, File inputs, throttled cancellation and RM-to-MP4 validation.
+
+`rm-performance.mjs` runs a loopback HTTP Range server with a 64 KiB reader cache.
+It bounds startup reads, requests and bytes through the first video packet after
+forward/backward seeks, including long GOPs and missing audio indexes. It also
+limits stale audio packets emitted before that video packet. Budgets use byte and
+request counts rather than machine-dependent elapsed-time thresholds. Each case
+prints JSON measurements. Set `LIBMEDIA_RM_DEMUXER` to a saved implementation to
+collect a before/after comparison (the old implementation is expected to fail the
+budgets). Save benchmark inputs and reports under ignored `test/material/`.

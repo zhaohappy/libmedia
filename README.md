@@ -66,6 +66,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
+| rm/rmvb  | ✅       | ❌        |
 | h264 裸流 | ✅       | ✅        |
 | hevc 裸流 | ✅       | ✅        |
 | vvc  裸流 | ✅       | ✅        |
@@ -82,6 +83,8 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | ttml     | ✅       | ❌        |
 | avif     | ✅       | ❌        |
 | heif     | ✅       | ❌        |
+
+RM/RMVB 支持输入、播放及转码输入：RV10–RV40 视频，Cook、SIPR、AAC、AC-3 音频。支持本地文件和 HTTP Range 跳转；不支持 RM 输出、独立 `.ra`、Real 专用流媒体协议或其他 RealAudio 编码。
 
 ### 当前支持的音视频协议
 

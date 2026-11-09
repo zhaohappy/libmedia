@@ -257,7 +257,11 @@ async function edges() {
     const target = explicitTarget('replayTarget', targetAt(0.001))
     const initialEnds = report.events.filter(({ event }) => event === 'ENDED').length
     await seek(Math.max(duration - 1000, 0))
-    await wait(2200)
+    // Some containers understate duration; wait for the actual end event with a bound.
+    const deadline = performance.now() + Math.min(timeoutMs, 10000)
+    while (performance.now() < deadline && report.events.filter(({ event }) => event === 'ENDED').length === initialEnds) {
+      await wait(100)
+    }
     const ended = report.events.filter(({ event }) => event === 'ENDED').length > initialEnds
     const end = snapshot()
     await seek(target)
@@ -360,9 +364,9 @@ async function run() {
     settleMs = numberParam('settle', 1500, 1)
     nearMs = numberParam('near', 3000, 1)
     const preload = numberParam('preload', 60, 0)
-    const sources = { avi: '/media.avi', control: '/control.mp4' }
+    const sources = { avi: '/media.avi', rm: '/media.rm', 'rm-file': '/media.rm', control: '/control.mp4' }
     if (!Object.hasOwn(sources, source)) {
-      throw new Error('source must be avi or control')
+      throw new Error('source must be avi, rm, rm-file or control')
     }
     const url = new URL(sources[source], location.href)
     url.searchParams.set('run', runId)
@@ -392,15 +396,18 @@ async function run() {
       preLoadTime: preload,
       wasmBaseUrl: `${location.origin}/wasm`
     })
-    for (const event of ['LOADED', 'PLAYING', 'PLAYED', 'PAUSED', 'SEEKING', 'SEEKED', 'ENDED', 'ERROR']) {
+    for (const event of ['LOADED', 'PLAYING', 'PLAYED', 'FIRST_AUDIO_RENDERED', 'FIRST_VIDEO_RENDERED',
+      'PAUSED', 'SEEKING', 'SEEKED', 'ENDED', 'ERROR']) {
       player.on(Events[event], () => report.events.push({ event, ms: performance.now() - started }))
     }
 
+    const input = source === 'rm-file'
+      ? new File([await (await fetch(url)).blob()], 'sample.rmvb') : url.href
     if (scenario === 'cancel-load') {
-      await step('destroy during load', () => cancel(player.load(url.href), numberParam('cancelAfter', 40, 0)))
+      await step('destroy during load', () => cancel(player.load(input), numberParam('cancelAfter', 40, 0)))
     }
     else {
-      await loadAndPlay(url.href)
+      await loadAndPlay(input)
       report.network.startup = await timed(network(), 'Startup metrics')
 
       switch (scenario) {
@@ -475,6 +482,19 @@ async function run() {
       report.failure ??= 'AVPlayer reported playback errors'
     }
     console.error = originalError
+    if (source === 'rm') {
+      const requests = report.network.final?.requests ?? []
+      report.range = {
+        requests: requests.length,
+        nonzeroStarts: requests.filter((r) => r.start > 0).length,
+        startupBytes: report.network.startup ? networkBytes(report.network.startup) : 0,
+        valid: requests.length > 0 && requests.every((r) => (r.status === 206 || scenario === 'cancel-load' && r.aborted && r.bytes === 0 && r.status === undefined)
+          && r.range && r.contentRange?.startsWith(`bytes ${r.start}-${r.end}/`))
+      }
+      if (!report.range.valid) {
+        report.failure ??= 'HTTP Range response verification failed'
+      }
+    }
     report.ok = !report.failure && !report.cleanupFailure
     report.done = true
     output.textContent = JSON.stringify(report, null, 2)

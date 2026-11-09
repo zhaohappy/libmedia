@@ -34,6 +34,9 @@ export default async function analyzeAVFormat(ioReader: IOReader, defaultFormat:
   if (/^FLV/.test(magic)) {
     return AVFormat.FLV
   }
+  else if (magic.startsWith('.RMF')) {
+    return AVFormat.RM
+  }
   else if (/^DKIF/.test(magic)) {
     return AVFormat.IVF
   }

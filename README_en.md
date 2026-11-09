@@ -65,6 +65,7 @@ Check out the [build configuration examples](https://github.com/zhaohappy/libmed
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
+| rm/rmvb  | ✅       | ❌        |
 | h264     | ✅       | ✅        |
 | hevc     | ✅       | ✅        |
 | vvc      | ✅       | ✅        |
@@ -81,6 +82,8 @@ Check out the [build configuration examples](https://github.com/zhaohappy/libmed
 | ttml     | ✅       | ❌        |
 | avif     | ✅       | ❌        |
 | heif     | ✅       | ❌        |
+
+RM/RMVB input supports playback and transcoding with RV10–RV40 video and Cook, SIPR, AAC or AC-3 audio. Local files and HTTP Range seeking are supported. RM output, standalone `.ra`, Real-specific streaming protocols and other RealAudio codecs are not supported.
 
 ### Protocol
 

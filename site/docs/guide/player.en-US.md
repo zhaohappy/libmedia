@@ -139,37 +139,19 @@ AVPlayerUI configuration is also the same as above.
 ```javascript
 
 import AVPlayer from '@libmedia/avplayer'
-import { AVCodecID } from '@libmedia/avutil'
 
 const player = new AVPlayer({
   container: document.querySelector('#player'),
-  getWasm: (type, codecId, mediaType) => {
-    switch (type) {
-      case 'decoder': {
-        switch (codecId) {
-          case AVCodecID.AV_CODEC_ID_AAC:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/aac-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_MP3:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/mp3-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_FLAC:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/flac-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_H264:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/h264-simd.wasm`
-          case AVCodecID.AV_CODEC_ID_HEVC:
-            return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/decode/hevc-simd.wasm`
-        }
-      }
-      case 'resampler':
-        return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/resample/resample-simd.wasm`
-      case 'stretchpitcher':
-        return `https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist/stretchpitch/stretchpitch-simd.wasm`
-    }
-  }
+  wasmBaseUrl: 'https://cdn.jsdelivr.net/gh/zhaohappy/libmedia@latest/dist'
 })
 await player.load('https://xxxxxxx')
 await player.play()
 
 ```
+
+`wasmBaseUrl` is the root containing resource directories such as `decode`, `encode` and `resample`. The default resolver selects the WASM variant for the environment. You can omit this option to use the library's default versioned URL; use resources matching the library version in production. RV10–RV40 use `decode/rv*.wasm`, and Cook/SIPR use `decode/ra*.wasm`. A custom `getWasm` must cover these codecs as well as AAC and AC-3, rather than only H.264/AAC.
+
+RM/RMVB accepts local files and HTTP URLs with RV10–RV40 video and Cook, SIPR, AAC or AC-3 audio. HTTP seeking requires server support for Range requests; nonseekable inputs support sequential playback only. If indexes are unavailable or do not cover the target, an initial distant seek may scan forward from a trusted position and has no fixed latency guarantee.
 
 ## rtsp and rtmp
 

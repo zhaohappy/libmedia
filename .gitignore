@@ -21,3 +21,6 @@ media/*
 media
 
 packages/**/dist/
+
+/.playwright-cli/
+/output/playwright/

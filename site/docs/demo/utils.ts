@@ -32,6 +32,7 @@ import IH264Format from '@libmedia/avformat/IH264Format'
 import IHevcFormat from '@libmedia/avformat/IHevcFormat'
 import IVvcFormat from '@libmedia/avformat/IVvcFormat'
 import IAviFormat from '@libmedia/avformat/IAviFormat'
+import IRmFormat from '@libmedia/avformat/IRmFormat'
 
 
 const BASE_URL = 'https://zhaohappy.github.io/libmedia'
@@ -70,7 +71,9 @@ const Ext2Format: Record<string, AVFormat> = {
   'vvc': AVFormat.VVC,
   'mpeg': AVFormat.MPEGPS,
   'mpg': AVFormat.MPEGPS,
-  'avi': AVFormat.AVI
+  'avi': AVFormat.AVI,
+  'rm': AVFormat.RM,
+  'rmvb': AVFormat.RM
 }
 
 export function formatUrl(url: string): string {
@@ -168,7 +171,7 @@ export function getWasm(type: 'decoder' | 'encoder' | 'resampler' | 'scaler' | '
         case AVCodecID.AV_CODEC_ID_RV20:
         case AVCodecID.AV_CODEC_ID_RV30:
         case AVCodecID.AV_CODEC_ID_RV40:
-          return `${BASE_CDN}/decode/msmpeg4${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
+          return `${BASE_CDN}/decode/rv${supportSimd ? '-simd' : (supportAtomic ? '-atomic' : '')}.wasm`
         case AVCodecID.AV_CODEC_ID_COOK:
         case AVCodecID.AV_CODEC_ID_SIPR:
         case AVCodecID.AV_CODEC_ID_RALF:
@@ -358,6 +361,9 @@ export async function getAVFormat(ioReader: IOReader, source: string | File) {
     case AVFormat.VVC:
       iformat = new IVvcFormat()
       break
+    case AVFormat.RM:
+      iformat = new IRmFormat()
+      break
     case AVFormat.AVI:
       iformat = new IAviFormat()
       break
@@ -369,7 +375,7 @@ export async function getAVFormat(ioReader: IOReader, source: string | File) {
 
 const musicExt: string[] = ['mp3', 'aac', 'flac', 'ogg', 'wav', 'm4a', 'mka', 'opus']
 const movExt: string[] = ['mp4', 'webm', 'mkv', 'flv', 'ts', 'mov', 'm4s', 'h264', '264', 'avc',
-  'h265', '265', 'hevc', 'h266', '266', 'vvc', 'ivf', 'mpeg', 'avi'
+  'h265', '265', 'hevc', 'h266', '266', 'vvc', 'ivf', 'mpeg', 'avi', 'rm', 'rmvb'
 ]
 const subtitleExt: string[] = ['ass', 'ssa', 'vvt', 'srt', 'xml', 'ttml']
 
