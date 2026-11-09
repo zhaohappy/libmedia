@@ -24,7 +24,7 @@
  */
 
 import { object } from '@libmedia/common'
-import type { Uint8ArrayInterface } from '@libmedia/common/io'
+import { IOError, type Uint8ArrayInterface } from '@libmedia/common/io'
 import type { Data, Timeout, Range } from '@libmedia/common'
 
 export const enum IOLoaderStatus {
@@ -157,6 +157,41 @@ export default abstract class IOLoader {
    * @returns 返回写入的数据长度，失败返回错误码（负值）
    */
   public abstract read(buffer: Uint8ArrayInterface, options?: Data): Promise<int32>
+
+  /**
+   * Read up to 1 MiB at an absolute byte offset without moving the playback cursor.
+   * Returns exactly length bytes or a negative error code.
+   */
+  public readAt?(pos: bigint, length: number): Promise<Uint8Array | number>
+
+  public abortReadAt?(): void
+
+  protected isReadAtRangeValid(pos: bigint, length: number): boolean {
+    return typeof pos === 'bigint' && pos >= 0n
+      && Number.isSafeInteger(length) && length > 0 && length <= 1024 * 1024
+      && pos + BigInt(length) <= BigInt(Number.MAX_SAFE_INTEGER)
+  }
+
+  protected async readRangeBody(reader: ReadableStreamDefaultReader<Uint8Array>, length: number) {
+    const buffer = new Uint8Array(length)
+    let received = 0
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) {
+          return received === length ? buffer : IOError.INVALID_OPERATION
+        }
+        if (value.byteLength > length - received) {
+          return IOError.INVALID_OPERATION
+        }
+        buffer.set(value, received)
+        received += value.byteLength
+      }
+    }
+    finally {
+      reader.releaseLock()
+    }
+  }
 
   /**
    * 写出数据，一些协议如 rtmp、rtsp 需要与服务器交互数据

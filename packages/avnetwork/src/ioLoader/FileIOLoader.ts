@@ -49,8 +49,12 @@ export default class FileIOLoader extends IOLoader {
   private reader: FileReader | FileReaderSync
   private readerResolve: (buffer: ArrayBuffer) => void
 
+  private rangeReader: ReadableStreamDefaultReader<Uint8Array>
+  private rangeAborted: boolean
+
   public async open(info: FileInfo, range: Range = { from: 0, to: -1 }) {
 
+    this.abortReadAt()
     this.info = info
     this.range = range
 
@@ -125,11 +129,50 @@ export default class FileIOLoader extends IOLoader {
     return 0
   }
 
+  public async readAt(pos: bigint, length: number): Promise<Uint8Array | number> {
+    if (this.status === IOLoaderStatus.IDLE) {
+      return IOError.INVALID_OPERATION
+    }
+    if (this.rangeReader) {
+      return IOError.AGAIN
+    }
+    if (!this.isReadAtRangeValid(pos, length)) {
+      return IOError.INVALID_OPERATION
+    }
+
+    const start = Number(pos)
+    const end = start + length
+    if (start < this.range.from || end > Math.min(this.endPos, this.info.file.size)) {
+      return IOError.INVALID_OPERATION
+    }
+
+    this.rangeAborted = false
+    try {
+      this.rangeReader = this.info.file.slice(start, end).stream().getReader()
+      const result = await this.readRangeBody(this.rangeReader, length)
+      return this.rangeAborted ? IOError.ABORT : result
+    }
+    catch (error) {
+      return this.rangeAborted ? IOError.ABORT : IOError.INVALID_OPERATION
+    }
+    finally {
+      this.rangeReader = null
+    }
+  }
+
+  public abortReadAt() {
+    if (this.rangeReader) {
+      this.rangeAborted = true
+      void this.rangeReader.cancel().catch(() => {})
+    }
+  }
+
   public async size() {
     return static_cast<int64>(this.info.file.size)
   }
 
   public async stop() {
     this.status = IOLoaderStatus.IDLE
+    this.abortReadAt()
   }
 }

@@ -1611,11 +1611,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     let flags = 0
     let ret = 0
+    let canReadAt = false
 
     if (is.string(source)) {
       flags |= IOFlags.NETWORK
       let { info, type, ext } = await analyzeUrlIOLoader(source, options.ext, options.http)
       this.ext = ext
+      canReadAt = type === IOType.Fetch
 
       // 注册一个 url io 任务
       ret = await AVPlayer.IOThread.registerTask
@@ -1644,6 +1646,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     else if (source instanceof File) {
       this.isLive_ = false
       this.ext = source.name.split('.').pop()
+      canReadAt = true
       // 注册一个文件 io 任务
       ret = await AVPlayer.IOThread.registerTask
         .transfer(this.ioloader2DemuxerChannel.port1)
@@ -1855,6 +1858,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           stats: addressof(this.GlobalData.stats),
           isLive: this.isLive_,
           flags,
+          canReadAt,
           avpacketList: addressof(this.GlobalData.avpacketList),
           avpacketListMutex: addressof(this.GlobalData.avpacketListMutex)
         })

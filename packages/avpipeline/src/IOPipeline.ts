@@ -34,6 +34,7 @@ import {
 import {
   type RpcMessage,
   IPCPort,
+  NOTIFY,
   REQUEST
 } from '@libmedia/common/network'
 
@@ -183,6 +184,26 @@ export default class IOPipeline extends Pipeline {
           break
         }
 
+        case 'readAt': {
+          const { pos, length } = request.params
+          let result: number | Uint8Array
+          try {
+            result = await ioLoader.readAt?.(pos, length) ?? errorType.OPERATE_NOT_SUPPORT
+          }
+          catch (error) {
+            result = errorType.DATA_INVALID
+          }
+          if (!ipcPort.closed) {
+            if (result instanceof Uint8Array) {
+              ipcPort.reply(request, result, null, [result.buffer])
+            }
+            else {
+              ipcPort.reply(request, result)
+            }
+          }
+          break
+        }
+
         case 'write': {
           const pointer = request.params.pointer
           const length = request.params.length
@@ -231,6 +252,12 @@ export default class IOPipeline extends Pipeline {
           ipcPort.reply(request, await ioLoader.size())
           break
         }
+      }
+    })
+
+    ipcPort.on(NOTIFY, (notification: RpcMessage) => {
+      if (notification.method === 'abortReadAt') {
+        ioLoader.abortReadAt?.()
       }
     })
 

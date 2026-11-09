@@ -99,6 +99,11 @@ export interface AVIFormatContext {
   ioReader: IOReader
   ioWriter: IOWriter
 
+  /**
+   * Independently read an exact byte range of up to 1 MiB, or return a negative error.
+   */
+  readAt?: (pos: bigint, length: number) => Promise<Uint8Array | number>
+
   errorFlag: number
 
   interval: AVFormatContextInterval

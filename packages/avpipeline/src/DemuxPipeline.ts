@@ -123,6 +123,7 @@ export interface DemuxTaskOptions extends TaskOptions {
   format?: AVFormat
   bufferLength?: number
   isLive?: boolean
+  canReadAt?: boolean
   ioloaderOptions?: Data
   formatOptions?: Data
   mainTaskId?: string
@@ -537,6 +538,20 @@ export default class DemuxPipeline extends Pipeline {
         case AVFormat.AVI:
           if (defined(ENABLE_DEMUXER_AVI)) {
             iformat = new (((await import('@libmedia/avformat/IAviFormat')).default))(task.formatOptions as IAviFormatOptions)
+            if (task.canReadAt && !task.isLive) {
+              task.formatContext.readAt = async (pos, length) => {
+                if (!task.formatContext.readAt || task.leftIPCPort.closed) {
+                  return IOError.ABORT
+                }
+                try {
+                  const result = await task.leftIPCPort.request<Uint8Array | number>('readAt', { pos, length })
+                  return task.formatContext.readAt ? result : IOError.ABORT
+                }
+                catch (error) {
+                  return IOError.INVALID_OPERATION
+                }
+              }
+            }
           }
           else {
             logger.error('avi format not support, maybe you can rebuild avmedia')
@@ -1258,6 +1273,14 @@ export default class DemuxPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       task.formatContext.ioReader.flags |= IOFlags.ABORT
+      this.abortReadAt(task)
+    }
+  }
+
+  private abortReadAt(task: SelfTask) {
+    if (task.formatContext.readAt) {
+      task.formatContext.readAt = undefined
+      task.leftIPCPort.notify('abortReadAt')
     }
   }
 
@@ -1271,6 +1294,7 @@ export default class DemuxPipeline extends Pipeline {
   public async unregisterTask(taskId: string): Promise<void> {
     const task = this.tasks.get(taskId)
     if (task) {
+      this.abortReadAt(task)
       if (task.ioReader && (task.ioReader.flags & IOFlags.NETWORK)) {
         task.ioReader.abort()
       }

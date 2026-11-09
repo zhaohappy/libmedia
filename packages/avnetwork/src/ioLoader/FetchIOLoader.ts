@@ -32,6 +32,8 @@ import type { IOLoaderOptions } from './IOLoader'
 import IOLoader, { IOLoaderStatus } from './IOLoader'
 import type { Data, HttpOptions, Range } from '@libmedia/common'
 
+const READ_AT_TIMEOUT_MS = 10_000
+
 export interface FetchInfo {
   url: string
   httpOptions?: HttpOptions
@@ -61,6 +63,8 @@ export default class FetchIOLoader extends IOLoader {
   private eofIndex: number
 
   private abortController: AbortController
+
+  private rangeController: AbortController
 
   private reader: ReadableStreamDefaultReader<Uint8Array>
 
@@ -105,19 +109,18 @@ export default class FetchIOLoader extends IOLoader {
     if (this.info.httpOptions?.referrerPolicy) {
       params.referrerPolicy = this.info.httpOptions.referrerPolicy
     }
-    if (typeof AbortController === 'function') {
-      this.abortController = new AbortController()
-      params.signal = this.abortController.signal
+    const controller = typeof AbortController === 'function' ? new AbortController() : null
+    if (controller) {
+      this.abortController = controller
+      params.signal = controller.signal
     }
 
     try {
       const res = await fetch(this.info.url, params)
+      if (this.aborted || controller?.signal.aborted) {
+        return IOError.ABORT
+      }
       if (res.ok && (res.status >= 200 && res.status <= 299)) {
-        if (this.abortController) {
-          this.abortController.abort()
-          this.abortController = null
-        }
-
         const acceptRanges = res.headers.get('Accept-Ranges')
         if (acceptRanges) {
           if (acceptRanges.indexOf('bytes') === -1) {
@@ -138,12 +141,23 @@ export default class FetchIOLoader extends IOLoader {
         }
       }
     }
-    catch (error) {}
+    catch (error) {
+      if (this.aborted || controller?.signal.aborted) {
+        return IOError.ABORT
+      }
+    }
+    finally {
+      controller?.abort()
+      if (this.abortController === controller) {
+        this.abortController = null
+      }
+    }
     return 0
   }
 
   public async open(info: FetchInfo, range: Range = { from: 0, to: -1 }) {
 
+    this.abortReadAt()
     this.info = info
     this.range = range
 
@@ -156,6 +170,7 @@ export default class FetchIOLoader extends IOLoader {
     this.startBytes = 0
     this.endBytes = -1
     this.eofIndex = -1
+    this.contentLength = undefined
     this.receivedLength = 0
     this.buffers = []
     this.supportRange = true
@@ -174,10 +189,13 @@ export default class FetchIOLoader extends IOLoader {
 
     if (!this.options.isLive && !this.options.disableSegment) {
       let totalSize = await this.getTotalSize('HEAD')
-      if (!totalSize) {
+      if (!totalSize && !this.aborted) {
         totalSize = await this.getTotalSize('Get', {
           range: 'bytes=0-1'
         })
+      }
+      if (this.aborted || totalSize === IOError.ABORT) {
+        return IOError.ABORT
       }
       if (totalSize <= 2) {
         totalSize = 0
@@ -250,7 +268,11 @@ export default class FetchIOLoader extends IOLoader {
     return stream.getReader()
   }
 
-  private async openReader() {
+  private async openReader(): Promise<ReadableStreamDefaultReader<Uint8Array> | undefined> {
+    if (this.aborted) {
+      return
+    }
+
     const params: RequestInit = {
       method: 'GET',
       headers: {},
@@ -275,22 +297,25 @@ export default class FetchIOLoader extends IOLoader {
       params.referrerPolicy = this.info.httpOptions.referrerPolicy
     }
 
-    if (this.abortController) {
-      this.abortController.abort()
-    }
+    this.abortController?.abort()
 
-    if (typeof AbortController === 'function') {
-      this.abortController = new AbortController()
-      params.signal = this.abortController.signal
+    const controller = typeof AbortController === 'function' ? new AbortController() : null
+    if (controller) {
+      this.abortController = controller
+      params.signal = controller.signal
     }
 
     try {
       const start = getTimestamp()
       const res = await fetch(this.info.url, params)
+      if (this.aborted || controller?.signal.aborted) {
+        return
+      }
       const openStart = getTimestamp()
       this.delay = openStart - start
       if (res.ok && (res.status >= 200 && res.status <= 299)) {
         this.reader = this.options.enableBandwidthReader ? this.getBandwidthReader(res.body.getReader(), openStart) : res.body.getReader()
+        return this.reader
       }
       else {
         this.status = IOLoaderStatus.ERROR
@@ -298,12 +323,19 @@ export default class FetchIOLoader extends IOLoader {
       }
     }
     catch (error) {
+      if (this.aborted || controller?.signal.aborted) {
+        return
+      }
       if (this.retryCount < this.options.retryCount && (!this.options.isLive || !this.receivedLength)) {
         this.retryCount++
         this.status = IOLoaderStatus.CONNECTING
 
-        this.abortSleep_ = new Sleep(this.options.retryInterval)
-        await this.abortSleep_
+        const retry = new Sleep(this.options.retryInterval)
+        this.abortSleep_ = retry
+        await retry
+        if (this.abortSleep_ !== retry) {
+          return
+        }
         this.abortSleep_ = null
         if (this.aborted) {
           return
@@ -317,6 +349,9 @@ export default class FetchIOLoader extends IOLoader {
   }
 
   private async readInterval(buffer: Uint8ArrayInterface, preLen: int32 = 0): Promise<number> {
+    if (this.aborted) {
+      return IOError.END
+    }
 
     let pos = 0
 
@@ -341,14 +376,15 @@ export default class FetchIOLoader extends IOLoader {
       return pos > 0 ? (pos + preLen) : (preLen > 0 ? preLen : IOError.END)
     }
 
-    if (!this.reader) {
-      await this.openReader()
-      if (this.aborted) {
-        return IOError.END
-      }
+    const reader = this.reader ?? await this.openReader()
+    if (!reader || this.aborted || reader !== this.reader) {
+      return IOError.END
     }
 
-    const { value, done } = await this.reader.read()
+    const { value, done } = await reader.read()
+    if (this.aborted || reader !== this.reader) {
+      return IOError.END
+    }
 
     if (done) {
       if (this.contentLength !== undefined && (this.receivedLength + this.range.from) < this.endBytes + 1) {
@@ -362,7 +398,10 @@ export default class FetchIOLoader extends IOLoader {
       }
       else {
 
-        await this.reader.cancel()
+        await reader.cancel()
+        if (this.aborted || reader !== this.reader) {
+          return IOError.END
+        }
 
         if (this.abortController) {
           this.abortController.abort()
@@ -398,6 +437,71 @@ export default class FetchIOLoader extends IOLoader {
     return this.readInterval(buffer)
   }
 
+  public async readAt(pos: bigint, length: number): Promise<Uint8Array | number> {
+    if (this.status !== IOLoaderStatus.BUFFERING && this.status !== IOLoaderStatus.COMPLETE
+      || this.options.isLive || this.options.disableSegment || !this.supportRange
+      || typeof AbortController !== 'function'
+    ) {
+      return errorType.OPERATE_NOT_SUPPORT
+    }
+    if (this.rangeController) {
+      return IOError.AGAIN
+    }
+    if (!this.isReadAtRangeValid(pos, length)) {
+      return errorType.INVALID_PARAMETERS
+    }
+
+    const start = Number(pos)
+    const end = start + length - 1
+    const contentLength = this.contentLength
+    if (start < this.range.from || this.eofIndex >= 0 && end > this.eofIndex) {
+      return errorType.INVALID_PARAMETERS
+    }
+
+    const controller = new AbortController()
+    this.rangeController = controller
+    const timeout = setTimeout(() => controller.abort(), READ_AT_TIMEOUT_MS)
+    try {
+      const headers = new Headers(this.info.httpOptions?.headers)
+      headers.set('Range', `bytes=${start}-${end}`)
+      const response = await fetch(this.info.url, {
+        method: 'GET',
+        headers,
+        mode: 'cors',
+        cache: 'default',
+        credentials: this.info.httpOptions?.credentials,
+        referrerPolicy: this.info.httpOptions?.referrerPolicy ?? 'no-referrer-when-downgrade',
+        signal: controller.signal
+      })
+      const range = /^bytes (\d+)-(\d+)\/(\d+)$/i.exec(response.headers.get('Content-Range') || '')
+      const total = range ? Number(range[3]) : 0
+      const encoding = response.headers.get('Content-Encoding')
+      if (response.status !== 206 || !response.body || !range
+        || Number(range[1]) !== start || Number(range[2]) !== end
+        || !Number.isSafeInteger(total) || total <= end
+        || contentLength && total !== contentLength
+        || encoding && encoding.toLowerCase() !== 'identity'
+      ) {
+        return IOError.INVALID_OPERATION
+      }
+
+      const result = await this.readRangeBody(response.body.getReader(), length)
+      return controller.signal.aborted ? IOError.ABORT : result
+    }
+    catch (error) {
+      return controller.signal.aborted ? IOError.ABORT : IOError.NETWORK_ERROR
+    }
+    finally {
+      clearTimeout(timeout)
+      controller.abort()
+      this.rangeController = null
+    }
+  }
+
+  public abortReadAt() {
+    this.rangeController?.abort()
+  }
+
   public async seek(pos: int64) {
 
     if (!this.supportRange) {
@@ -407,7 +511,7 @@ export default class FetchIOLoader extends IOLoader {
       return errorType.INVALID_PARAMETERS
     }
 
-    await this.abort()
+    await this.abortReader()
     this.aborted = false
     this.receivedLength = Number(pos) - this.range.from
     this.startBytes = Number(pos)
@@ -437,17 +541,25 @@ export default class FetchIOLoader extends IOLoader {
     }
   }
 
-  public async abort() {
+  private async abortReader() {
     this.abortSleep()
-    if (!this.reader) {
-      return
-    }
-    await this.reader.cancel()
-    if (this.abortController) {
-      this.abortController.abort()
-      this.abortController = null
-    }
+    const reader = this.reader
+    const controller = this.abortController
     this.reader = null
+    this.abortController = null
+    try {
+      if (reader) {
+        await reader.cancel()
+      }
+    }
+    finally {
+      controller?.abort()
+    }
+  }
+
+  public async abort() {
+    this.abortReadAt()
+    await this.abortReader()
   }
 
   public async stop() {
