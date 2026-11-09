@@ -161,7 +161,7 @@ export default class FetchIOLoader extends IOLoader {
     this.info = info
     this.range = range
 
-    if (!this.range.to) {
+    if (this.range.to == null) {
       this.range.to = -1
     }
 
@@ -177,7 +177,7 @@ export default class FetchIOLoader extends IOLoader {
     this.aborted = false
     this.bandwidth = 0
 
-    if (this.range.to > 0) {
+    if (this.range.to >= 0) {
       this.eofIndex = range.to
     }
 
@@ -285,9 +285,12 @@ export default class FetchIOLoader extends IOLoader {
         params.headers[key] = value
       })
     }
-    if (!this.options.isLive && !this.options.disableSegment) {
-      params.headers['range'] = `bytes=${this.startBytes}-${this.endBytes > 0 ? this.endBytes : ''}`
+    const headers = new Headers(params.headers)
+    headers.delete('Range')
+    if (!this.options.isLive && !this.options.disableSegment && this.supportRange) {
+      headers.set('Range', `bytes=${this.startBytes}-${this.endBytes >= 0 ? this.endBytes : ''}`)
     }
+    params.headers = headers
 
     if (this.info.httpOptions?.credentials) {
       params.credentials = this.info.httpOptions.credentials
@@ -314,7 +317,59 @@ export default class FetchIOLoader extends IOLoader {
       const openStart = getTimestamp()
       this.delay = openStart - start
       if (res.ok && (res.status >= 200 && res.status <= 299)) {
+        if (!res.body) {
+          throw new Error('Empty media response')
+        }
+        if (res.status === 206) {
+          const range = /^bytes (\d+)-(\d+)\/(\d+)$/i.exec(res.headers.get('Content-Range') || '')
+          const start = range ? Number(range[1]) : -1
+          const end = range ? Number(range[2]) : -1
+          const total = range ? Number(range[3]) : 0
+          const encoding = res.headers.get('Content-Encoding')
+          if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || !Number.isSafeInteger(total)
+            || start !== this.startBytes || end < start || end >= total
+            || this.endBytes >= 0 && end !== Math.min(this.endBytes, total - 1)
+            || this.contentLength !== undefined && total !== this.contentLength
+            || encoding && encoding.toLowerCase() !== 'identity'
+          ) {
+            await res.body.cancel()
+            throw new Error('Invalid media Content-Range')
+          }
+          this.contentLength = total
+          this.eofIndex = this.range.to >= 0 ? Math.min(this.range.to, total - 1) : total + this.range.to
+          this.endBytes = end
+        }
+        else if (!this.options.isLive && res.status === 200) {
+          // Range is optional on the server. A 200 body always starts at byte 0,
+          // so restart sequentially and discard the prefix rather than mislabel it.
+          this.supportRange = false
+          this.endBytes = this.eofIndex
+        }
         this.reader = this.options.enableBandwidthReader ? this.getBandwidthReader(res.body.getReader(), openStart) : res.body.getReader()
+        const reader = this.reader
+        let skip = !this.options.isLive && res.status === 200 ? this.startBytes : 0
+        while (skip > 0) {
+          const { value, done } = await reader.read()
+          if (this.aborted || controller?.signal.aborted || reader !== this.reader) {
+            return
+          }
+          if (done) {
+            throw new Error('Media response ended before the requested offset')
+          }
+          const consumed = Math.min(skip, value.length)
+          skip -= consumed
+          if (consumed < value.length) {
+            const length = this.eofIndex >= 0
+              ? Math.min(value.length - consumed, this.eofIndex + 1 - this.range.from - this.receivedLength)
+              : value.length - consumed
+            this.buffers.push(value.subarray(consumed, consumed + length))
+            this.receivedLength += length
+            if (this.eofIndex >= 0 && this.receivedLength + this.range.from >= this.eofIndex + 1) {
+              this.status = IOLoaderStatus.COMPLETE
+              await reader.cancel()
+            }
+          }
+        }
         return this.reader
       }
       else {
@@ -380,8 +435,13 @@ export default class FetchIOLoader extends IOLoader {
     if (!reader || this.aborted || reader !== this.reader) {
       return IOError.END
     }
+    if (this.buffers.length) {
+      return this.readInterval(buffer.subarray(pos, undefined, true), pos + preLen)
+    }
 
-    const { value, done } = await reader.read()
+    const result = await reader.read()
+    let value = result.value
+    const done = result.done
     if (this.aborted || reader !== this.reader) {
       return IOError.END
     }
@@ -391,7 +451,8 @@ export default class FetchIOLoader extends IOLoader {
         this.status = IOLoaderStatus.ERROR
         logger.fatal('Fetch stream meet Early-EOF')
       }
-      else if (this.options.isLive || this.options.disableSegment || (this.receivedLength + this.range.from) >= this.eofIndex) {
+      else if (this.options.isLive || this.options.disableSegment || !this.supportRange
+        || (this.receivedLength + this.range.from) >= this.eofIndex + 1) {
         this.status = IOLoaderStatus.COMPLETE
         this.startBytes = 0
         return pos > 0 ? (pos + preLen) : (preLen > 0 ? preLen : IOError.END)
@@ -413,12 +474,22 @@ export default class FetchIOLoader extends IOLoader {
         this.startBytes = this.endBytes + 1
         this.endBytes = Math.min(this.startBytes + this.options.preload - 1, this.eofIndex)
 
-        return this.readInterval(buffer.subarray(pos, undefined, true), pos)
+        return this.readInterval(buffer.subarray(pos, undefined, true), pos + preLen)
       }
     }
     else {
 
+      if (!this.options.isLive && this.eofIndex >= 0) {
+        value = value.subarray(0, Math.max(0, this.eofIndex + 1 - this.range.from - this.receivedLength))
+      }
       this.receivedLength += value.length
+      if (!this.options.isLive && this.eofIndex >= 0 && this.receivedLength + this.range.from >= this.eofIndex + 1) {
+        this.status = IOLoaderStatus.COMPLETE
+        await reader.cancel()
+        if (this.aborted || reader !== this.reader) {
+          return IOError.END
+        }
+      }
 
       if (value.length > buffer.length - pos) {
         buffer.set(value.subarray(0, buffer.length - pos), pos)
@@ -504,10 +575,10 @@ export default class FetchIOLoader extends IOLoader {
 
   public async seek(pos: int64) {
 
-    if (!this.supportRange) {
+    if (this.options.isLive) {
       return errorType.OPERATE_NOT_SUPPORT
     }
-    if (this.eofIndex > 0 && Number(pos) > this.eofIndex) {
+    if (pos < BigInt(this.range.from) || this.eofIndex >= 0 && pos > BigInt(this.eofIndex) + 1n) {
       return errorType.INVALID_PARAMETERS
     }
 
@@ -516,12 +587,11 @@ export default class FetchIOLoader extends IOLoader {
     this.receivedLength = Number(pos) - this.range.from
     this.startBytes = Number(pos)
     if (!this.options.disableSegment) {
-      this.endBytes = Math.min(this.startBytes + this.options.preload, this.eofIndex)
+      this.endBytes = this.eofIndex >= 0 ? Math.min(this.startBytes + this.options.preload - 1, this.eofIndex) : -1
     }
     this.buffers.length = 0
-    if (this.status === IOLoaderStatus.COMPLETE) {
-      this.status = IOLoaderStatus.BUFFERING
-    }
+    this.status = this.eofIndex >= 0 && this.startBytes === this.eofIndex + 1
+      ? IOLoaderStatus.COMPLETE : IOLoaderStatus.BUFFERING
 
     return 0
   }

@@ -485,13 +485,12 @@ export default class AudioRenderPipeline extends Pipeline {
       }
 
       if (task.ended && task.useStretchpitcher) {
-        let ret = 0
-        ret = receiveSamplesFromStretchpitcher(pcmBuffer, receive)
-        if (receive + ret < pcmBuffer.maxnbSamples) {
+        receive += receiveSamplesFromStretchpitcher(pcmBuffer, receive)
+        if (receive < pcmBuffer.maxnbSamples) {
           task.stretchpitcherEnded = true
           for (let i = 0; i < task.playChannels; i++) {
             // 将不足的置为 0 
-            memset(pcmBuffer.data[i] + receive, 0, (pcmBuffer.maxnbSamples - receive) * reinterpret_cast<int32>(sizeof(float)))
+            memset(pcmBuffer.data[i] + receive * reinterpret_cast<int32>(sizeof(float)), 0, (pcmBuffer.maxnbSamples - receive) * reinterpret_cast<int32>(sizeof(float)))
           }
         }
         pcmBuffer.nbSamples = receive
@@ -542,21 +541,23 @@ export default class AudioRenderPipeline extends Pipeline {
             task.ended = true
             if (task.useStretchpitcher) {
               task.stretchpitcher.flush()
-              ret = receiveSamplesFromStretchpitcher(pcmBuffer, receive)
-              if (receive + ret < pcmBuffer.maxnbSamples) {
+              receive += receiveSamplesFromStretchpitcher(pcmBuffer, receive)
+              if (receive < pcmBuffer.maxnbSamples) {
                 task.stretchpitcherEnded = true
-                for (let i = 0; i < task.playChannels; i++) {
-                  // 将不足的置为 0 
-                  memset(pcmBuffer.data[i] + receive, 0, (pcmBuffer.maxnbSamples - receive) * reinterpret_cast<int32>(sizeof(float)))
-                }
               }
-              receive += ret
             }
             break
           }
           else if (ret < 0) {
             return ret
           }
+        }
+      }
+      // Worklet buffers have a fixed per-channel stride. Preserve valid samples
+      // and silence the unused tail instead of replaying an earlier buffer.
+      if (receive < pcmBuffer.maxnbSamples) {
+        for (let i = 0; i < task.playChannels; i++) {
+          memset(pcmBuffer.data[i] + receive * reinterpret_cast<int32>(sizeof(float)), 0, (pcmBuffer.maxnbSamples - receive) * reinterpret_cast<int32>(sizeof(float)))
         }
       }
       pcmBuffer.nbSamples = receive
@@ -667,7 +668,7 @@ export default class AudioRenderPipeline extends Pipeline {
 
           const pcm = mapUint8Array(
             task.outPCMBuffer.data[0],
-            task.outPCMBuffer.nbSamples * reinterpret_cast<int32>(sizeof(float)) * task.playChannels
+            task.outPCMBuffer.maxnbSamples * reinterpret_cast<int32>(sizeof(float)) * task.playChannels
           ).slice()
 
           rightIPCPort.reply(request, pcm.buffer, null, [pcm.buffer])

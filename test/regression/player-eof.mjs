@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 const prelude = `
   const AVPlayerStatus = { LOADED: 2, LOADING: 1, PLAYED: 6, ENDED: 7, PAUSED: 8, SEEKING: 9, STOPPED: 11 };
   const logger = { info: () => {}, debug: () => {}, warn: () => {}, error: () => {} };
-  const eventType = { ENDED: 'ended', SEEKING: 'seeking', SEEKED: 'seeked', PLAYED: 'played', STOPPED: 'stopped' };
+  const eventType = { ENDED: 'ended', SEEKING: 'seeking', SEEKED: 'seeked', PLAYED: 'played', STOPPED: 'stopped', ERROR: 'error' };
   const defined = () => false;
   const ENABLE_MSE = 0;
   const ENABLE_PROTOCOL_DASH = 0;
@@ -17,7 +17,7 @@ const prelude = `
   const NOPTS_VALUE_BIGINT = -1n;
   const bigint = { max: (a, b) => a > b ? a : b };
 `
-const program = classSource('avplayer/src/AVPlayer.ts', 'AVPlayer', ['doSeek', 'seek', 'handleEnded', 'stop', 'syncRenderSeekTime', 'renderSeekId'])
+const program = classSource('avplayer/src/AVPlayer.ts', 'AVPlayer', ['doSeek', 'seek', 'seekTo', 'drainSeeks', 'handleEnded', 'stop', 'syncRenderSeekTime', 'renderSeekId'])
 const { AVPlayer, status } = evaluate(`${prelude + program}\nreturn { AVPlayer, status: AVPlayerStatus };`)
 const selectedVideo = { index: 0, codecpar: { codecType: 0, framerate: { num: 30, den: 1 } } }
 const selectedAudio = { index: 1, codecpar: { codecType: 1 } }
@@ -143,22 +143,23 @@ async function stopDuringSeek(pendingStage) {
   }
   AVPlayer.DemuxerThread.unregisterTask = async () => operations.push('demux-unregister')
   player.audioSourceNode = {
-    request: async () => operations.push('worklet-stop'),
+    request: async (method) => operations.push(`worklet-${method}`),
     disconnect() {}
   }
   player.isMediaStreamMode = () => true
   player.statsController = { stop() {} }
   const seek = player.seek(5000n)
+  const queued = player.seek(8000n)
   if (pendingStage === 'demux') {
     await demuxReached
   }
   const stop = player.stop()
-  await Promise.all([seek, stop])
+  await Promise.all([seek, queued, stop])
   assert.equal(player.status, status.STOPPED)
   assert.deepEqual(events.map((item) => item.event), ['seeking', 'stopped'])
-  const expected = ['audio-stop', 'demux-stop', 'worklet-stop', 'video-unregister', 'audio-unregister', 'demux-unregister']
+  const expected = ['worklet-pause', 'audio-stop', 'demux-stop', 'worklet-stop', 'video-unregister', 'audio-unregister', 'demux-unregister']
   if (pendingStage === 'demux') {
-    expected.unshift('demux-seek')
+    expected.splice(1, 0, 'demux-seek')
   }
   assert.deepEqual(operations, expected)
 }
@@ -169,3 +170,106 @@ for (const scenario of [exactEnd, staleNotification, oneStreamEnded, audioOnly])
 for (const stage of ['renderer', 'demux']) {
   test(`stop during ${stage} seek`, () => stopDuringSeek(stage))
 }
+
+for (const paused of [false, true]) {
+  test(`overlapping seeks retain latest target (paused=${paused})`, async () => {
+    const { player, events } = fixture()
+    if (paused) {
+      player.status = status.PAUSED
+    }
+    const targets = []
+    let release
+    let started
+    const reached = new Promise((resolve) => started = resolve)
+    AVPlayer.DemuxerThread.seek = async (_, target) => {
+      targets.push(target)
+      if (targets.length === 1) {
+        started()
+        await new Promise((resolve) => release = resolve)
+      }
+      return target
+    }
+    const first = player.seek(2000n)
+    await reached
+    const middle = player.seek(7000n)
+    const latest = player.seek(4000n)
+    let settled = false
+    latest.then(() => settled = true)
+    await Promise.resolve()
+    assert.equal(settled, false, 'queued callers wait for the actual seek')
+    release()
+    await Promise.all([first, middle, latest])
+    assert.deepEqual(targets, [2000n, 4000n])
+    assert.equal(player.status, paused ? status.PAUSED : status.PLAYED)
+    assert.deepEqual(events.map(({ event }) => event), ['seeking', 'seeked', 'seeking', 'seeked'])
+    await player.seek(1000n)
+    assert.deepEqual(targets, [2000n, 4000n, 1000n])
+  })
+}
+
+test('failed seek rejects all queued callers, resumes renderers and permits recovery', async () => {
+  const { player, events } = fixture()
+  const resumed = []
+  AVPlayer.AudioRenderThread.afterSeek = async (_, target) => resumed.push(['audio', target])
+  player.VideoRenderThread.afterSeek = async (_, target) => resumed.push(['video', target])
+  AVPlayer.DemuxerThread.seek = async () => -9n
+  const outcomes = await Promise.allSettled([player.seek(4000n), player.seek(7000n)])
+  for (const outcome of outcomes) {
+    assert.equal(outcome.status, 'rejected')
+    assert.match(outcome.reason.message, /demuxer seek failed, code: -9/)
+  }
+  assert.deepEqual(resumed, [['audio', -1n], ['video', -1n]])
+  assert.equal(player.status, status.PLAYED)
+  assert.deepEqual(events.map(({ event }) => event), ['seeking', 'error'])
+  AVPlayer.DemuxerThread.seek = async (_, target) => target
+  await player.seek(2000n)
+  assert.equal(player.status, status.PLAYED)
+  assert.equal(events.at(-1).event, 'seeked')
+})
+
+test('seek requested by a SEEKED listener belongs to the same drain', async () => {
+  const { player } = fixture()
+  const targets = []
+  let pending
+  AVPlayer.DemuxerThread.seek = async (_, target) => {
+    targets.push(target)
+    return target
+  }
+  player.fire = (event) => {
+    if (event === 'seeked' && targets.length === 1) {
+      pending = player.seek(6000n)
+    }
+  }
+  await player.seek(1000n)
+  await pending
+  assert.deepEqual(targets, [1000n, 6000n])
+})
+
+test('a seek in the drain completion microtask cannot be lost', async () => {
+  const { player } = fixture()
+  const targets = []
+  let late
+  player.seekTo = async (target) => {
+    targets.push(target)
+    if (targets.length === 1) {
+      queueMicrotask(() => queueMicrotask(() => late = player.seek(8000n)))
+    }
+  }
+  await player.seek(1000n)
+  await late
+  assert.deepEqual(targets, [1000n, 8000n])
+})
+
+
+test('seek flushes output after releasing PCM and preserves pause state', async () => {
+  for (const paused of [false, true]) {
+    const { player } = fixture()
+    player.status = paused ? status.PAUSED : status.PLAYED
+    const operations = []
+    player.audioSourceNode = { request: async (method) => operations.push(method) }
+    AVPlayer.AudioRenderThread.beforeSeek = async () => operations.push('before')
+    AVPlayer.AudioRenderThread.afterSeek = async () => operations.push('after')
+    await player.seek(4000n)
+    assert.deepEqual(operations, paused ? ['pause', 'before', 'after', 'clear'] : ['pause', 'before', 'after', 'clear', 'unpause'])
+  }
+})

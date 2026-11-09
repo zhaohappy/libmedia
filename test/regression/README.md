@@ -30,7 +30,7 @@ The runner executes the checkout's implementation. Prefer direct imports for ord
 - `helpers/packet.mjs` supplies a shared synthetic heap and payload/padding assertions. Allocation, packet attachment and serialization still execute source methods.
 - Each test supplies its own decoder, renderer or I/O boundary mocks. These checks do not replace compilation or real Worker/WASM browser validation.
 
-Synthetic inputs cover framing, buffer padding, timestamp resets, seek cancellation, EOF replay, independent range I/O, partial AVI indexes and paused PCM requests. No application checkout or private media is needed. To compare another checkout, set `LIBMEDIA_TEST_SOURCE` to that checkout; positional arguments to `test:regression` select test filenames only.
+Synthetic inputs cover in-band AVI H.264 SPS/PPS discovery, malformed NAL lengths, sequential HTTP 200 prefix skipping, strict 206 ranges, single-byte/EOF boundaries, overlapping latest-target seeks, failed-seek events, unequal track EOF, clearing stale PCM in both worklet modes without advancing paused clocks, partial final stereo PCM and stretch drain padding, framing, buffer padding, timestamp resets, seek cancellation, EOF replay, independent range I/O, partial AVI indexes and paused PCM requests. No application checkout or private media is needed. To compare another checkout, set `LIBMEDIA_TEST_SOURCE` to that checkout; positional arguments to `test:regression` select test filenames only.
 
 `eslint-check` also runs `lint:tests`. The dedicated `lint:tests` command checks regression cases, helpers, fixtures, browser diagnostics, the runner and its lint configuration. It inherits the repository's JavaScript rules with ES2022 syntax enabled and rejects warnings. Use `npm run lint:tests -- --fix` for formatting; do not suppress rules to accommodate a new test.
 
@@ -43,6 +43,19 @@ See [AVI browser diagnostics](../avi-browser/README.md) for the loopback HTTP Ra
 Run the shared-memory and ordinary Worker modes separately. Compare cold startup and seek medians with a reference bundle through `LIBMEDIA_TEST_BUNDLE`, under the same aggregate bandwidth and request latency. Run each comparison at least three times; investigate regressions exceeding 15% before accepting a migration.
 
 The index optimization deliberately preserves cumulative DTS. It only enables partial indexes for eligible classic two-stream AVI layouts and validates contiguous entries; other layouts or range failures retain full-index handling. Passing these targeted checks is not a claim of compatibility with every AVI variant.
+
+## Manual player demo
+
+The interactive demo at `test/avplayer.html` uses the default AVPlayer build, independently of the single-file diagnostic bundle:
+
+```sh
+npm run build-avplayer
+npm run server
+```
+
+Open `http://localhost:8000/test/avplayer.html`. Select a local file, or copy a sample into ignored `test/material/sample.avi`, enter `./material/sample.avi` in the **url** field, and click **Load**. Loading also starts playback. Use **pause**, **play**, and the progress bar to check pause/resume and forward/backward seeks. URL input exercises HTTP loading; selecting a local file does not.
+
+For rebuilds on source changes, run `npm run build-avplayer-watch` in a separate terminal and refresh the page after compilation completes. Do not run the one-shot and watch builds for the same output concurrently. To use a different server port while retaining the demo's response headers, run `npx serve -l tcp://127.0.0.1:8001 --cors --config ./test/serve.json` from the repository root. Keep recordings and screenshots under `test/material/`; `.playwright-cli/` logs and snapshots are also ignored.
 
 ## Linked local consumers
 

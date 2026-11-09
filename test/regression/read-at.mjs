@@ -77,7 +77,20 @@ const server = createServer((request, response) => {
     return
   }
   if (request.method === 'HEAD') {
-    response.writeHead(200, { 'Content-Length': bytes.length, 'Accept-Ranges': 'bytes' }).end()
+    response.writeHead(200, request.url === '/unknown-size' ? {} : { 'Content-Length': bytes.length, 'Accept-Ranges': request.url === '/no-ranges' ? 'none' : 'bytes' }).end()
+    return
+  }
+  if (['/ignored', '/unknown-size', '/no-ranges', '/held-ignored'].includes(request.url)) {
+    response.writeHead(200, request.url === '/unknown-size' ? {} : { 'Content-Length': bytes.length })
+    if (request.url === '/held-ignored') {
+      response.on('close', onHeldClose)
+      response.write(bytes.subarray(0, 2))
+      onHeldBody()
+    }
+    else {
+      response.write(bytes.subarray(0, 23))
+      response.end(bytes.subarray(23))
+    }
     return
   }
   const [start, end] = request.headers.range.match(/^bytes=(\d+)-(\d+)$/).slice(1).map(Number)
@@ -170,6 +183,62 @@ async function main() {
     assert.equal(await sequentialLoader.read(reads), 4)
     assert.deepEqual(reads, bytes.slice(95, 99))
     await sequentialLoader.stop()
+
+    for (const path of ['/ignored', '/unknown-size', '/no-ranges']) {
+      const full = await openFetch(path)
+      const first = new Uint8Array(4)
+      assert.equal(await full.read(first), 4)
+      assert.deepEqual(first, bytes.slice(0, 4))
+      for (const position of [95, 2, 63]) {
+        assert.equal(await full.seek(BigInt(position)), 0)
+        assert.equal(await full.read(first), 4)
+        assert.deepEqual(first, bytes.slice(position, position + 4), `${path} seek ${position}`)
+      }
+      assert.ok(await full.readAt(80n, 8) < 0, 'independent probes do not reinterpret a full 200 body')
+      await full.stop()
+    }
+    for (const path of ['/exact', '/ignored']) {
+      const bounded = new FetchIOLoader({ preload: 4, retryCount: 0 })
+      await bounded.open({ url: `${base}${path}` }, { from: 10, to: 14 })
+      const collected = []
+      while (true) {
+        const buffer = new Uint8Array(3)
+        const length = await bounded.read(buffer)
+        if (length === IOError.END) {
+          break
+        }
+        assert.ok(length > 0)
+        collected.push(...buffer.subarray(0, length))
+      }
+      assert.deepEqual(collected, [...bytes.slice(10, 15)], `${path} honors a bounded logical range`)
+      await bounded.stop()
+      const one = new FetchIOLoader({ preload: 4, retryCount: 0 })
+      await one.open({ url: `${base}${path}` }, { from: 0, to: 0 })
+      assert.equal(await one.read(new Uint8Array(4)), 1)
+      assert.equal(await one.read(new Uint8Array(4)), IOError.END)
+      await one.stop()
+    }
+    const eof = await openFetch('/exact')
+    assert.equal(await eof.seek(BigInt(bytes.length)), 0)
+    const beforeEOF = requests.length
+    assert.equal(await eof.read(new Uint8Array(4)), IOError.END)
+    assert.equal(requests.length, beforeEOF, 'exact EOF does not issue an unsatisfiable Range')
+    assert.ok(await eof.seek(-1n) < 0)
+    await eof.stop()
+    for (const path of ['/wrong-start', '/wrong-end', '/wrong-total', '/missing-range']) {
+      const invalid = await openFetch(path)
+      await assert.rejects(invalid.read(new Uint8Array(4)), /Invalid media Content-Range/, path)
+      await invalid.stop()
+    }
+    const prefix = await openFetch('/held-ignored')
+    await prefix.seek(80n)
+    const prefixStarted = new Promise((resolve) => onHeldBody = resolve)
+    const prefixClosed = new Promise((resolve) => onHeldClose = resolve)
+    const pendingPrefix = prefix.read(new Uint8Array(4))
+    await prefixStarted
+    await prefix.stop()
+    const [prefixResult] = await withinDeadline(Promise.all([pendingPrefix, prefixClosed]), 'stop releases a sequential prefix skip')
+    assert.equal(prefixResult, IOError.END)
 
     for (const path of ['/held-headers', '/held-head']) {
       const held = new FetchIOLoader({ preload: 16, retryCount: 1, retryInterval: 0 })

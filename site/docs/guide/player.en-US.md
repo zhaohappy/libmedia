@@ -171,6 +171,28 @@ await player.play()
 
 ```
 
+## Seeking in on-demand media
+
+After loading media, use `seek(timestamp)` with a `bigint` timestamp in milliseconds. Await the returned Promise and handle failures:
+
+```javascript
+try {
+  await player.seek(10_000n)
+} catch (error) {
+  console.error('Seek failed', error)
+}
+```
+
+You can call `seek()` again while a seek is pending. The active seek continues, and only the latest queued target is retained. Promises for the same batch settle when that batch finishes; intermediate targets are not guaranteed to be visited. Seeking while paused preserves the paused state. Seeking back to a valid position after playback ends resumes playback.
+
+If an actual seek fails, its Promise rejects and `ERROR` fires; the failed seek does not emit `SEEKED`. Calling `stop()` during seeking cancels the remaining targets, so a settled Promise can also mean the operation was stopped. Do not use Promise completion alone as proof that the target was reached. Live streams do not support seeking.
+
+## HTTP files and Range
+
+HTTP on-demand files are read through `FetchIOLoader`. A server supporting Range should return a valid `206 Partial Content` response with a `Content-Range` matching the requested range and a known, consistent total byte length. The loader rejects invalid range responses and `206` responses with a content encoding other than `identity`. Cross-origin servers must expose the `Content-Range` response header to the browser.
+
+If the server ignores Range and returns a complete `200 OK` response, the loader falls back to sequential reading. After a seek, it reads again from the start and discards bytes before the target offset. This still depends on container and index support and can substantially increase traffic and waiting time. Configure the origin or CDN to support Range correctly for efficient seeking.
+
 ## rtsp and rtmp
 
 rtmp and rtsp need to use WebSocket or WebTransport proxy tcp connection, avplayer use as follows:
@@ -200,6 +222,6 @@ player.load('rtsp+webtransport://xxx.xxx.xxx.xxx/xxx')
 
 ## Notes
 
-- Most of AVPlayer's interfaces are asynchronous. You need to ensure the interface call sequence yourself. You cannot call another interface before one interface is executed. The only exception is that the stop interface can be called in the seeking state.
+- Most AVPlayer interfaces are asynchronous. Usually, await the current operation before calling another interface. During a seek, you may call `seek()` again to update the target or `stop()` to stop playback. See the overlapping seek behavior above.
 
 - It is recommended to host the wasm file on your own CDN, or you can use the ```cdn.jsdelivr.net``` CDN resources in the example. See [Details](./wasm.md#Use)

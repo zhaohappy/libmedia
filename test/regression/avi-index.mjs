@@ -514,3 +514,20 @@ async function main() {
 }
 
 test('AVI index startup and seek scenarios', main)
+
+
+test('AVI EOF seek drains a shorter selected stream but rejects targets beyond the file', async () => {
+  const media = await start({ range: false, frames: 30 })
+  const [video, audio] = media.context.streams
+  // Keep packet data intact; declare a slightly longer video duration to model
+  // unequal track ends and the player's global duration seek target.
+  video.duration = 31n
+  const target = 24800n
+  assert.ok(audio.privData.samples.at(-1).dts < target)
+  assert.ok(await media.demuxer.seek(media.context, audio, target, 0) >= 0n)
+  assert.equal(audio.privData.currentSample, audio.privData.samples.length - 1)
+  assert.ok(await media.demuxer.seek(media.context, video, 31n, 0) >= 0n)
+  const position = media.context.ioReader.getPos()
+  assert.ok(await media.demuxer.seek(media.context, audio, 25600n, 0) < 0n)
+  assert.equal(media.context.ioReader.getPos(), position)
+})

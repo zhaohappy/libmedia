@@ -18,6 +18,7 @@ const port = Number(process.env.LIBMEDIA_TEST_PORT ?? 18774)
 const rate = process.env.LIBMEDIA_TEST_THROTTLE === '1' ? MiB : 0
 const latencyMs = rate ? 80 : 0
 const failIdx1 = process.env.LIBMEDIA_TEST_FAIL_IDX1 === '1'
+const ignoreRange = process.env.LIBMEDIA_TEST_IGNORE_RANGE === '1'
 const wasmDir = process.env.LIBMEDIA_TEST_WASM_DIR
 
 async function localFile(path, setting) {
@@ -197,7 +198,9 @@ async function main() {
       return
     }
 
-    const range = byteRange(request.headers.range, file.size)
+    const isMedia = file === media || file === control
+    const isRange = request.headers.range != null && !(isMedia && ignoreRange)
+    const range = byteRange(isRange ? request.headers.range : null, file.size)
     if (!range) {
       response.writeHead(416, { 'Content-Range': `bytes */${file.size}` }).end()
       return
@@ -206,8 +209,6 @@ async function main() {
     const { start, end } = range
     const length = end - start + 1
     const isGet = request.method === 'GET'
-    const isMedia = file === media || file === control
-    const isRange = request.headers.range != null
     // Target the first background read following the validated idx1 prefix.
     const isIdx1Range = idx1 && file === media && isGet && isRange
     const failedProbe = isIdx1Range && start === idx1.start + idx1PrefixBytes
