@@ -24,6 +24,7 @@
     "postinstall": "tsx scripts/postinstall.ts && simple-git-hooks",
     "test:regression": "node scripts/test-regression.mjs",
     "build:avplayer:single": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --env avplayer=1 release=1 esm=1 single=1 dist=./dist/avplayer-single",
+    "test:avi:browser": "node test/avi-browser/server.mjs",
     "watch:avplayer:single": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --watch --env avplayer=1 release=1 esm=1 single=1 dist=./dist/avplayer-single"
   },
   "simple-git-hooks": {
