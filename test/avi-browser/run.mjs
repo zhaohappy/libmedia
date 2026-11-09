@@ -221,9 +221,8 @@ async function checkSeek(target) {
   })
 }
 
-async function edges() {
+async function checkPausedSeek(target) {
   await step('paused seek and resume', async () => {
-    const target = explicitTarget('pausedTarget', targetAt(0.5))
     await timed(player.pause(), 'Pause')
     const pausedEvent = report.events.some(({ event }) => event === 'PAUSED')
     await seek(target)
@@ -237,9 +236,13 @@ async function edges() {
       target, before, paused, after,
       ok: pausedEvent && before.status === pausedStatus && paused.status === pausedStatus
         && paused.audioTime === before.audioTime && paused.videoTime === before.videoTime
-        && nearTarget(after, target) && advances(paused, after)
+        && nearTarget(before, target) && nearTarget(after, target) && advances(paused, after)
     }
   })
+}
+
+async function edges() {
+  await checkPausedSeek(explicitTarget('pausedTarget', targetAt(0.5)))
   await step('seek to EOF then backward', async () => {
     const target = explicitTarget('backTarget', targetAt(0.25))
     await seek(duration)
@@ -423,6 +426,11 @@ async function run() {
             await checkSeek(target)
           }
           await edges()
+          break
+        case 'paused-seek':
+          for (const fraction of [0.01, 0.71, 0.025, 0.49, 0.97, 0.001]) {
+            await checkPausedSeek(targetAt(fraction))
+          }
           break
         case 'edges':
           await edges()

@@ -38,6 +38,7 @@ Open the page in Chromium using a fresh tab or navigation for each run. If autop
 | `?scenario=startup` | Load, play, and observe advancing audio and video clocks. |
 | `?scenario=cold` | Seek immediately after initial playback starts and verify that audio and video advance near the target. |
 | `?scenario=matrix` | Run 20 forward and backward seeks and then the edge checks. |
+| `?scenario=paused-seek` | Repeat six paused forward/backward seeks; check target clocks, no clock movement while paused, and resumed playback. Use `preload=0` and throttling to reduce queued media. |
 | `?scenario=edges` | Seek while paused and resume, seek to EOF and back, replay after the natural end, and verify 2× playback. |
 | `?scenario=destroy` | Destroy after initial playback starts. |
 | `?scenario=cancel-load` | Destroy while loading and verify the pending load settles. |

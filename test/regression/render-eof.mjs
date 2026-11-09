@@ -41,7 +41,7 @@ async function completes(promise) {
 }
 async function audio({ ended, pausing, fakePlay }) {
   const audio = new Audio()
-  const task = { ended, pausing, fakePlay, seeking: false }
+  const task = { ended, pausing, fakePlay, seeking: false, pendingPCMRequests: ended || pausing || fakePlay ? 0 : 1 }
   audio.tasks = new Map([['sample', task]])
   let clearedTimer = false
   audio.clearFakePlayTimer = () => {
@@ -50,7 +50,7 @@ async function audio({ ended, pausing, fakePlay }) {
   const pending = audio.beforeSeek('sample')
   if (!ended && !pausing && !fakePlay) {
     assert.ok(task.seekSync, 'active audio waits for the in-flight pull')
-    assert.equal(task.seeking, false)
+    assert.equal(task.seeking, true)
     task.seekSync()
   }
   else {
@@ -62,14 +62,15 @@ async function audio({ ended, pausing, fakePlay }) {
 }
 async function stopWaitingAudio() {
   const audio = new Audio()
-  const task = { ended: false, pausing: false, fakePlay: false, seeking: false }
+  const task = { ended: false, pausing: false, fakePlay: false, seeking: false, pendingPCMRequests: 1 }
   audio.tasks = new Map([['sample', task]])
+  audio.clearFakePlayTimer = () => {}
   const pending = audio.beforeSeek('sample')
   assert.ok(task.seekSync)
   await audio.stop('sample')
   await completes(pending)
   assert.equal(task.stopping, true)
-  assert.equal(task.seeking, false)
+  assert.equal(task.seeking, true)
   assert.equal(task.seekSync, null)
   await completes(audio.beforeSeek('sample'))
 }

@@ -146,6 +146,7 @@ type SelfTask = AudioRenderTaskOptions & {
   seeking: boolean
   pausing: boolean
   stopping: boolean
+  pendingPCMRequests: number
   seekSync: () => void
   receivePCMSync: () => void
   pendingVideoSeekId?: number
@@ -215,6 +216,7 @@ export default class AudioRenderPipeline extends Pipeline {
       seeking: false,
       pausing: false,
       stopping: false,
+      pendingPCMRequests: 0,
       seekSync: null,
       receivePCMSync: null,
 
@@ -475,15 +477,6 @@ export default class AudioRenderPipeline extends Pipeline {
       }
       let receive = 0
 
-      if (task.seeking) {
-        await new Promise<void>((resolve) => {
-          task.receivePCMSync = resolve
-        })
-        if (task.stopping) {
-          return IOError.END
-        }
-      }
-
       if (task.enableJitterBuffer) {
         let buffer = task.stats.audioPacketQueueLength / task.stats.audioEncodeFramerate * 1000
         if (buffer <= task.stats.jitterBuffer.min) {
@@ -568,15 +561,10 @@ export default class AudioRenderPipeline extends Pipeline {
       }
       pcmBuffer.nbSamples = receive
 
-      if (task.seekSync) {
-        task.seekSync()
-        task.seekSync = null
-      }
-
       return 0
     }
 
-    rightIPCPort.on(REQUEST, async (request: RpcMessage) => {
+    const handlePCMRequest = async (request: RpcMessage) => {
       switch (request.method) {
         case 'pull': {
           if (task.fakePlay) {
@@ -687,6 +675,33 @@ export default class AudioRenderPipeline extends Pipeline {
           break
         }
       }
+    }
+
+    rightIPCPort.on(REQUEST, async (request: RpcMessage) => {
+      if (request.method !== 'pull' && request.method !== 'pullBuffer') {
+        return
+      }
+      // Gate the entire request, including the initial decoder pull before PCM filling.
+      if (task.seeking && !task.stopping) {
+        await new Promise<void>((resolve) => {
+          task.receivePCMSync = resolve
+        })
+      }
+      if (task.stopping) {
+        rightIPCPort.reply(request, IOError.END)
+        return
+      }
+      task.pendingPCMRequests++
+      try {
+        await handlePCMRequest(request)
+      }
+      finally {
+        task.pendingPCMRequests--
+        if (!task.pendingPCMRequests && task.seekSync) {
+          task.seekSync()
+          task.seekSync = null
+        }
+      }
     })
 
     this.tasks.set(options.taskId, task)
@@ -752,20 +767,19 @@ export default class AudioRenderPipeline extends Pipeline {
   public async beforeSeek(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task && !task.stopping) {
-      if (!task.ended && !task.fakePlay && !task.pausing) {
-        logger.debug(`wait current pull front frame before seek, taskId: ${task.taskId}`)
+      // Pause acknowledges immediately; an earlier worklet request may still be reading.
+      task.seeking = true
+      this.clearFakePlayTimer(task)
+      if (task.pendingPCMRequests) {
+        logger.debug(`wait current PCM request before seek, taskId: ${task.taskId}`)
         await new Promise<void>((resolve) => {
           task.seekSync = resolve
         })
-      }
-      else {
-        this.clearFakePlayTimer(task)
       }
 
       if (task.stopping) {
         return
       }
-      task.seeking = true
 
       if (task.stretchpitcher) {
         task.stretchpitcher.clear()
