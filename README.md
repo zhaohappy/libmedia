@@ -63,6 +63,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | mp4      | ✅       | ✅        |
 | mpegts   | ✅       | ✅        |
 | mpegps   | ✅       | ❌        |
+| iso (Blu-ray/DVD) | ✅ | ❌ |
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
@@ -82,6 +83,8 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | ttml     | ✅       | ❌        |
 | avif     | ✅       | ❌        |
 | heif     | ✅       | ❌        |
+
+ISO 输入支持未加密的蓝光/DVD 标题播放；网络来源必须支持 HTTP Range。不支持光盘菜单、BD-J 或解密。标题选择、章节及文件系统兼容范围见 [AVPlayer ISO 说明](packages/avplayer/README.md#iso-光盘镜像)。
 
 ### 当前支持的音视频协议
 

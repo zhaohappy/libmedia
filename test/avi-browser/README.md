@@ -1,6 +1,6 @@
 # AVI browser diagnostics
 
-Use this loopback harness to check HTTP Range playback and seeking in AVPlayer with a local AVI. The seek checks expect an interleaved AVI with audio and video. For the end and rate checks, use a file long enough to leave several seconds of playback after each seek.
+Use this loopback harness to check HTTP Range playback and seeking in AVPlayer with a local AVI or ISO. For AVI, the seek checks expect an interleaved file with audio and video. For the end and rate checks, use a file long enough to leave several seconds of playback after each seek. See [Optical-disc fixtures](#optical-disc-fixtures) for ISO setup and scenarios.
 
 ## Setup
 
@@ -20,7 +20,7 @@ The server binds to `127.0.0.1:18774`. It serves the diagnostic page, bundle, We
 
 | Environment variable | Effect |
 | --- | --- |
-| `LIBMEDIA_TEST_MEDIA` | Required local AVI path. |
+| `LIBMEDIA_TEST_MEDIA` | Required local AVI or ISO path; use the `ext=iso` query for ISO. |
 | `LIBMEDIA_TEST_CONTROL` | Optional local H.264/AAC MP4 path for the control check. |
 | `LIBMEDIA_TEST_BUNDLE` | Overrides the ESM bundle at `dist/avplayer-single/avplayer.js`. |
 | `LIBMEDIA_TEST_WASM_DIR` | Overrides the checked-in WebAssembly files with a flat local directory. |
@@ -59,3 +59,20 @@ if (!report.ok) {
   throw new Error(JSON.stringify(report))
 }
 ```
+
+## Optical-disc fixtures
+
+The same harness supports ISO playback with `ext=iso`. Generate original test media outside tracked source using FFmpeg, dvdauthor and genisoimage:
+
+```sh
+npx tsx test/avi-browser/create-disc-fixtures.ts /tmp/libmedia-disc-fixtures
+LIBMEDIA_TEST_MEDIA=/tmp/libmedia-disc-fixtures/dvd.iso npm run test:avi:browser
+```
+
+The generator accepts `FFMPEG`, `DVDAUTHOR` and `GENISOIMAGE` executable overrides. It creates a 12-second UDF DVD with three chapters, an ISO9660 variant split across VOB files, and an 8-second two-clip Blu-ray fixture. It also creates `bluray-stc.iso`, placing two clock sequences with reset timestamps in one M2TS and selecting each through its MPLS STC ID. The Blu-ray fixtures wrap real H.264/AC-3 transport streams in minimal synthetic MPLS/CLPI navigation; it is an integration fixture, not a full Blu-ray authoring tool.
+
+Use `?manual=1&ext=iso&preload=0&scenario=matrix&targets=5000,1000,6500` for the DVD and `targets=4500,1000,5500` for Blu-ray. `input=file` exercises `File` loading, `title=00001` selects the shorter title in `bluray.iso` (`bluray-stc.iso` has only `00000`), and `worker=0` disables Worker dispatch. Run shared and ordinary server modes separately; use ordinary mode plus `worker=0` for main-thread coverage. Reports include disc title metadata and chapter positions. The File setup downloads the fixture before constructing a File; exclude that setup request when assessing player range reads. The internal media URL remains `/media.avi` for both formats; `ext=iso` selects ISO probing. The `fallback` scenario and `LIBMEDIA_TEST_FAIL_IDX1` apply only to AVI.
+
+Also run `startup&settle=6500` across a clip boundary, `paused-seek`, `edges`, `cancel-load`, and `cancel-seek`. Validate advancing audio/video clocks, zero decoding errors, stable duration, correct chapter offsets, no premature end at a clip boundary, and quiet network activity after destruction. Parsing-only synthetic coverage is in `iso.test.ts`; packet timeline and preroll coverage is in `iso-packets.mjs`.
+
+For final-GOP coverage, seek to `durationMs - 200` immediately after startup and check that the remaining video frames render before EOF. Also hold an in-flight ISO Range response while seeking: the old connection must close promptly, the new position must load without waiting for the old response timeout, and no premature ended event may occur.

@@ -23,6 +23,7 @@
  *
  */
 
+import type { DiscInfo } from './formats/iso/titles'
 import type OFormat from './formats/OFormat'
 import type IFormat from './formats/IFormat'
 
@@ -83,6 +84,7 @@ class AVFormatContextInterval {
 }
 
 export interface AVIFormatContext {
+  discInfo?: DiscInfo
   metadata: Record<string, any>
   streams: AVStream[]
   streamGroups: AVStreamGroup[]
@@ -196,6 +198,7 @@ export interface AVOFormatContext {
 }
 
 export interface AVFormatContextInterface {
+  discInfo?: DiscInfo
   metadata: Record<string, any>
   format: AVFormat
   streams: AVStreamInterface[]

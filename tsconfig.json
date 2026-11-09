@@ -60,6 +60,7 @@
       "@libmedia/avformat/IHevcFormat": ["./packages/avformat/src/formats/IHevcFormat"],
       "@libmedia/avformat/IVvcFormat": ["./packages/avformat/src/formats/IVvcFormat"],
       "@libmedia/avformat/IRtspFormat": ["./packages/avformat/src/formats/IRtspFormat"],
+      "@libmedia/avformat/IIsoFormat": ["./packages/avformat/src/formats/IIsoFormat"],
       "@libmedia/avformat/IAviFormat": ["./packages/avformat/src/formats/IAviFormat"],
 
       "@libmedia/avformat/OFlvFormat": ["./packages/avformat/src/formats/OFlvFormat"],
@@ -174,6 +175,7 @@
       "ENABLE_DEMUXER_VVC": true,
       // 开启支持 avi 解封装格式
       "ENABLE_DEMUXER_AVI": true,
+      "ENABLE_DEMUXER_ISO": true,
 
       // 开启支持 flv 封装格式
       "ENABLE_MUXER_FLV": true,

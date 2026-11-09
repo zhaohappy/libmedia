@@ -141,7 +141,7 @@ export default async function analyzeUrlIOLoader(source: string, defaultExt: str
 
     const protocol = urlUtils.parse(source).protocol
 
-    ext = defaultExt || urlUtils.parse(source).file.split('.').pop()
+    ext = (defaultExt || urlUtils.parse(source).file.split('.').pop()).toLowerCase()
     // 没有文件后缀，我们需要分析是不是 m3u8 和 mpd 文件
     // 这两种格式需要提前知道来创建指定的 ioloader
     if ((!ext || array.has(RestExt, ext)) && /^https?/.test(protocol)) {

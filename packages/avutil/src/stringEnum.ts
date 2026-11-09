@@ -80,6 +80,7 @@ export const Ext2Format: Record<string, AVFormat> = {
   'rtsp': AVFormat.RTSP,
   'rtmp': AVFormat.RTMP,
   'avi': AVFormat.AVI,
+  'iso': AVFormat.ISO,
   'avif': AVFormat.AVIF,
   'heic': AVFormat.HEIF
 }
@@ -240,6 +241,7 @@ export const Format2AVFormat: Record<string, AVFormat> = {
   'rtsp': AVFormat.RTSP,
   'rtmp': AVFormat.RTMP,
   'avi': AVFormat.AVI,
+  'iso': AVFormat.ISO,
   'h264': AVFormat.H264,
   'h265': AVFormat.HEVC,
   'h266': AVFormat.VVC

@@ -112,3 +112,5 @@ declare const API_PALETTE_HAS_CHANGED: boolean
 declare const API_FRAME_PKT: boolean
 
 declare const VERSION: string
+
+declare const ENABLE_DEMUXER_ISO: boolean

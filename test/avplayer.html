@@ -336,6 +336,7 @@
         </el-select>
       </div>
 
+      <div id="playback-error" role="alert" style="color: #c00"></div>
       <div class="loading-mask" id="loading-mask">
         <div class="loading-spinner">
           <svg viewBox="25 25 50 50" class="circular">
@@ -602,6 +603,16 @@
         })
       }
 
+      function showPlaybackError(error) {
+        console.error(error)
+        document.querySelector('#loading-mask').style.display = 'none'
+        document.querySelector('#playback-error').textContent = `播放失败：${error?.message || error || '无法加载或播放此文件'}`
+        if (statsTimer) {
+          clearInterval(statsTimer)
+          statsTimer = null
+        }
+      }
+
       function loadPlayer(id) {
 
         if (!AVPlayer.audioContext) {
@@ -800,9 +811,7 @@
             console.log('changed', mediaType, newStreamId, oldStreamId)
           })
 
-          player.on('error', (error) => {
-            console.log(error)
-          })
+          player.on('error', showPlaybackError)
         }
         else {
           player.options.enableHardware = enableHardwareComponent.enableHardwareAcceleration
@@ -910,6 +919,7 @@
         }
 
         document.querySelector('#loading-mask').style.display = 'block'
+        document.querySelector('#playback-error').textContent = ''
 
         if (slider) {
           slider.currentTime = 0
@@ -923,7 +933,7 @@
             slider.duration = Number(player.getDuration())
           }
 
-          Promise.all([
+          return Promise.all([
             player.getVideoList(),
             player.getAudioList(),
             player.getSubtitleList()
@@ -1060,7 +1070,7 @@
             }
 
             // player.seek(400000n).then(() => {
-              player.play({
+              return player.play({
                 audio: true,
                 video: true,
                 subtitle: true
@@ -1162,7 +1172,7 @@
               })
             // })
           })
-        })
+        }).catch(showPlaybackError)
 
         if (statsTimer) {
           clearTimeout(statsTimer)

@@ -178,9 +178,20 @@ function seek(target) {
   return timed(player.seek(BigInt(target)), 'Seek')
 }
 
+function loadOptions() {
+  return { ext: query.get('ext') || undefined, iso: { titleId: query.get('title') || undefined } }
+}
+
 async function loadAndPlay(url) {
-  await timed(player.load(url), 'Load')
+  const input = query.get('input') === 'file'
+    ? new File([await (await fetch(url)).blob()], `fixture.${query.get('ext') || 'avi'}`)
+    : url
+  await timed(player.load(input, loadOptions()), 'Load')
   report.loaded = true
+  if (query.get('ext') === 'iso') {
+    report.disc = JSON.parse(JSON.stringify(player.getDiscInfo(), (key, value) => typeof value === 'bigint' ? String(value) : value))
+    report.chapters = player.getChapters().map((chapter) => Number(chapter.start))
+  }
   report.loadMs = performance.now() - started
   duration = Number(player.getDuration())
   report.durationMs = duration
@@ -388,7 +399,7 @@ async function run() {
       enableHardware: true,
       enableWebCodecs: true,
       enableWebGPU: true,
-      enableWorker: true,
+      enableWorker: query.get('worker') !== '0',
       preLoadTime: preload,
       wasmBaseUrl: `${location.origin}/wasm`
     })
@@ -397,7 +408,7 @@ async function run() {
     }
 
     if (scenario === 'cancel-load') {
-      await step('destroy during load', () => cancel(player.load(url.href), numberParam('cancelAfter', 40, 0)))
+      await step('destroy during load', () => cancel(player.load(url.href, loadOptions()), numberParam('cancelAfter', 40, 0)))
     }
     else {
       await loadAndPlay(url.href)

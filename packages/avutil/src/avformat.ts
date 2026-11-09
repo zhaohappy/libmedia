@@ -62,7 +62,8 @@ export const enum AVFormat {
   WEBVTT,
   SUBRIP,
   ASS,
-  TTML
+  TTML,
+  ISO
 }
 
 export const enum IOType {

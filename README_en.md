@@ -62,6 +62,7 @@ Check out the [build configuration examples](https://github.com/zhaohappy/libmed
 | mp4      | ✅       | ✅        |
 | mpegts   | ✅       | ✅        |
 | mpegps   | ✅       | ❌        |
+| iso (Blu-ray/DVD) | ✅ | ❌ |
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
@@ -81,6 +82,8 @@ Check out the [build configuration examples](https://github.com/zhaohappy/libmed
 | ttml     | ✅       | ❌        |
 | avif     | ✅       | ❌        |
 | heif     | ✅       | ❌        |
+
+ISO input supports unencrypted Blu-ray/DVD titles from local files or HTTP Range sources. Disc menus, BD-J and decryption are not supported. See the [AVPlayer ISO guide (Chinese)](packages/avplayer/README.md#iso-光盘镜像) for title selection, chapters and filesystem compatibility.
 
 ### Protocol
 

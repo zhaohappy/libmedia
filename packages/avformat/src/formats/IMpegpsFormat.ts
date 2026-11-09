@@ -633,6 +633,120 @@ export default class IMpegpsFormat extends IFormat {
     return 0
   }
 
+  private parseMpeg2Slice(slice: MpegpsSlice, formatContext: AVIFormatContext, avpacket: pointer<AVPacket>, stream: AVStream, nextDts: int64 = NOPTS_VALUE_BIGINT) {
+    let payload = concatTypeArray(Uint8Array, slice.buffers)
+    const list: Uint8Array[] = []
+    while (true) {
+      let offset = 0
+      let pos = 0
+      let hasPic = false
+      while (true) {
+        const next = this.getMpegVideoNextFrame(pos, payload, stream)
+        if (next >= 0) {
+          if (hasPic) {
+            offset = next
+            break
+          }
+          const type = payload[next + 3]
+          if (type === 0x00) {
+            hasPic = true
+          }
+          pos = next + 3
+        }
+        else {
+          break
+        }
+      }
+      if (offset > 0) {
+        list.push(payload.subarray(0, offset))
+        payload = payload.subarray(offset)
+      }
+      else {
+        break
+      }
+    }
+    if (payload.length) {
+      list.push(payload)
+    }
+    if (!list.length) {
+      return errorType.DATA_INVALID
+    }
+    const context = stream.privData as MpegpsStreamContext
+    const baseDts = slice.dts
+    const basePts = slice.pts
+    if (nextDts !== NOPTS_VALUE_BIGINT && baseDts !== NOPTS_VALUE_BIGINT && nextDts > baseDts) {
+      context.mpeg2FrameDuration = { num: nextDts - baseDts, den: BigInt(list.length) }
+    }
+    // A fresh decoder seeking into the final GOP has no next PES timestamp.
+    // Recover the nominal rate from the sequence header (and MPEG-2 extension).
+    let rateNum = 0
+    let rateDen = 1
+    const rates = [[0, 1], [24000, 1001], [24, 1], [25, 1], [30000, 1001], [30, 1], [50, 1], [60000, 1001], [60, 1]]
+    for (const data of list) {
+      for (let at = 0; at + 7 < data.length; at++) {
+        if (data[at] || data[at + 1] || data[at + 2] !== 1) {
+          continue
+        }
+        if (data[at + 3] === 0xb3) {
+          [rateNum, rateDen] = rates[data[at + 7] & 15] ?? [0, 1]
+        }
+        else if (data[at + 3] === 0xb5 && data[at + 4] >> 4 === 1 && at + 9 < data.length && rateNum) {
+          rateNum *= ((data[at + 9] >> 5) & 3) + 1
+          rateDen *= (data[at + 9] & 31) + 1
+        }
+        else if (data[at + 3] === 0) {
+          break
+        }
+      }
+      if (rateNum) {
+        break
+      }
+    }
+    const duration = context.mpeg2FrameDuration
+      ?? (rateNum ? { num: 90000n * BigInt(rateDen), den: BigInt(rateNum) } : undefined)
+    if (!duration && list.length > 1) {
+      return errorType.DATA_INVALID
+    }
+    const ticks = (frames: number) => duration ? BigInt(frames) * duration.num / duration.den : 0n
+    let firstReference = 0
+    let groupOffset = 0
+    let maximumReference = -1
+    for (let i = 0; i < list.length; i++) {
+      const data = list[i]
+      let reference = i
+      for (let at = 0; at + 5 < data.length; at++) {
+        if (data[at] !== 0 || data[at + 1] !== 0 || data[at + 2] !== 1) {
+          continue
+        }
+        if (data[at + 3] === 0xb8 && i > 0) {
+          groupOffset = maximumReference + 1
+        }
+        if (data[at + 3] === 0) {
+          reference = groupOffset + ((data[at + 4] << 2) | (data[at + 5] >> 6))
+          break
+        }
+      }
+      maximumReference = Math.max(maximumReference, reference)
+      if (i === 0) {
+        firstReference = reference
+      }
+      // DTS follows decode order; PTS follows the picture's temporal_reference.
+      // Always derive from the PES anchor, never accumulate i * duration.
+      slice.dts = baseDts === NOPTS_VALUE_BIGINT ? baseDts : baseDts + ticks(i)
+      slice.pts = basePts === NOPTS_VALUE_BIGINT ? basePts : basePts + ticks(reference - firstReference)
+      slice.buffers = [data]
+      const packet = i === 0 ? avpacket : createAVPacket()
+      this.parseSlice(slice, formatContext, packet, stream)
+      if (i > 0) {
+        formatContext.interval.packetBuffer.push(packet)
+      }
+    }
+    if (duration) {
+      context.mpeg2FrameDuration = duration
+    }
+    return 0
+  }
+
   private getMpegVideoNextFrame(offset: number, payload: Uint8Array, stream: AVStream) {
     while (true) {
       const next = nalu.getNextNaluStart(payload, offset)
@@ -871,59 +985,9 @@ export default class IMpegpsFormat extends IFormat {
         }
         // mpeg1/mpeg2 可能有多个帧
         if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG2VIDEO) {
-          let payload = concatTypeArray(Uint8Array, slice.buffers)
-          const list: Uint8Array[] = []
-          while (true) {
-            let offset = 0
-            let pos = 0
-            let hasPic = false
-            while (true) {
-              const next = this.getMpegVideoNextFrame(pos, payload, stream)
-              if (next >= 0) {
-                if (hasPic) {
-                  offset = next
-                  break
-                }
-                const type = payload[next + 3]
-                if (type === 0x00) {
-                  hasPic = true
-                }
-                pos = next + 3
-              }
-              else {
-                break
-              }
-            }
-            if (offset > 0) {
-              list.push(payload.subarray(0, offset))
-              payload = payload.subarray(offset)
-            }
-            else {
-              break
-            }
-          }
-          list.push(payload)
-          if (list.length > 1) {
-            const dtsDelta = (this.context.pes.dts - slice.dts) / static_cast<int64>(list.length)
-            const ptsDelta = (this.context.pes.pts - slice.pts) / static_cast<int64>(list.length)
-            for (let i = 0; i < list.length; i++) {
-              slice.buffers.length = 0
-              slice.buffers.push(list[i])
-              slice.dts += dtsDelta * static_cast<int64>(i)
-              slice.pts += ptsDelta * static_cast<int64>(i)
-              if (i === 0) {
-                this.parseSlice(slice, formatContext, avpacket, stream)
-              }
-              else {
-                const cache = createAVPacket()
-                this.parseSlice(slice, formatContext, cache, stream)
-                formatContext.interval.packetBuffer.push(cache)
-              }
-            }
-          }
-          else {
-            slice.buffers = list
-            this.parseSlice(slice, formatContext, avpacket, stream)
+          ret = this.parseMpeg2Slice(slice, formatContext, avpacket, stream, this.context.pes.dts)
+          if (ret < 0) {
+            return ret
           }
         }
         else {
@@ -1013,7 +1077,11 @@ export default class IMpegpsFormat extends IFormat {
           }
         }
 
-        if (handlePES(context, stream)) {
+        const result = handlePES(context, stream)
+        if (typeof result === 'number') {
+          return result
+        }
+        if (result) {
           continue
         }
         return 0
@@ -1039,7 +1107,15 @@ export default class IMpegpsFormat extends IFormat {
             }
           })
           if (slice) {
-            this.parseSlice(slice, formatContext, avpacket, stream)
+            if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_MPEG2VIDEO) {
+              const ret = this.parseMpeg2Slice(slice, formatContext, avpacket, stream)
+              if (ret < 0) {
+                return ret
+              }
+            }
+            else {
+              this.parseSlice(slice, formatContext, avpacket, stream)
+            }
             slice.buffers.length = 0
             slice.pts = slice.dts = slice.pos = -1n
             return 0

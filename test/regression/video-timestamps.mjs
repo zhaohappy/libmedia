@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 const Decoder = loadClass(
   'avcodec/src/wasmcodec/VideoDecoder.ts', 'WasmVideoDecoder',
   ['flush', 'flushAsync', 'outputAVFrame'], {
-    AVCodecParameterFlags: { AV_CODECPAR_FLAG_NO_PTS: 1 }, nullptr: null
+    AVCodecParameterFlags: { AV_CODECPAR_FLAG_NO_PTS: 1 }, AVFrameFlags: { AV_FRAME_FLAG_DISCARD: 4 }, nullptr: null
   }
 )
 for (const method of ['flush', 'flushAsync']) {
@@ -34,3 +34,23 @@ for (const method of ['flush', 'flushAsync']) {
     })
   }
 }
+
+test('discarded WASM preroll releases its frame and consumes the corresponding DTS', () => {
+  const decoder = new Decoder()
+  const released = []
+  const outputs = []
+  decoder.frame = { flags: 4, timeBase: {} }
+  decoder.timeBase = { den: 1000, num: 1 }
+  decoder.parameters = { flags: 1 }
+  decoder.dtsQueue = [-40n, 0n]
+  decoder.options = {
+    onReceiveAVFrame: (frame) => outputs.push(frame.pts),
+    avframePool: { release: (frame) => released.push(frame) }
+  }
+  decoder.outputAVFrame()
+  assert.equal(released.length, 1)
+  assert.deepEqual(outputs, [])
+  decoder.frame = { flags: 0, timeBase: {} }
+  decoder.outputAVFrame()
+  assert.deepEqual(outputs, [0n])
+})

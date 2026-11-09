@@ -133,6 +133,7 @@ export interface DemuxTaskOptions extends TaskOptions {
 }
 
 type SelfTask = DemuxTaskOptions & {
+  seeking?: boolean
   leftIPCPort: IPCPort
   rightIPCPorts: Map<number, IPCPort & { streamIndex?: number }>
   controlIPCPort: IPCPort
@@ -362,6 +363,21 @@ export default class DemuxPipeline extends Pipeline {
 
       let iformat: IFormat
 
+      if ((format === AVFormat.AVI || format === AVFormat.ISO) && task.canReadAt && !task.isLive) {
+        task.formatContext.readAt = async (pos, length) => {
+          if (!task.formatContext.readAt || task.leftIPCPort.closed) {
+            return IOError.ABORT
+          }
+          try {
+            const result = await task.leftIPCPort.request<Uint8Array | number>('readAt', { pos, length })
+            return task.formatContext.readAt ? result : IOError.ABORT
+          }
+          catch (error) {
+            return IOError.INVALID_OPERATION
+          }
+        }
+      }
+
       switch (format) {
         case AVFormat.FLV:
           if (defined(ENABLE_DEMUXER_FLV)) {
@@ -535,23 +551,21 @@ export default class DemuxPipeline extends Pipeline {
             return errorType.FORMAT_NOT_SUPPORT
           }
           break
+        case AVFormat.ISO:
+          if (defined(ENABLE_DEMUXER_ISO)) {
+            if (!task.formatContext.readAt) {
+              return errorType.OPERATE_NOT_SUPPORT
+            }
+            iformat = new ((await import('@libmedia/avformat/IIsoFormat')).default)(task.formatOptions)
+          }
+          else {
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
         case AVFormat.AVI:
           if (defined(ENABLE_DEMUXER_AVI)) {
             iformat = new (((await import('@libmedia/avformat/IAviFormat')).default))(task.formatOptions as IAviFormatOptions)
-            if (task.canReadAt && !task.isLive) {
-              task.formatContext.readAt = async (pos, length) => {
-                if (!task.formatContext.readAt || task.leftIPCPort.closed) {
-                  return IOError.ABORT
-                }
-                try {
-                  const result = await task.leftIPCPort.request<Uint8Array | number>('readAt', { pos, length })
-                  return task.formatContext.readAt ? result : IOError.ABORT
-                }
-                catch (error) {
-                  return IOError.INVALID_OPERATION
-                }
-              }
-            }
+
           }
           else {
             logger.error('avi format not support, maybe you can rebuild avmedia')
@@ -598,6 +612,14 @@ export default class DemuxPipeline extends Pipeline {
         return ret
       }
 
+      if (task.formatContext.discInfo) {
+        const disc = task.formatContext.discInfo
+        const title = disc.titles.find((item) => item.id === disc.titleId)
+        for (const stream of task.formatContext.streams) {
+          stream.startTime = 0n
+          stream.duration = title.duration * BigInt(stream.timeBase.den) / (1000n * BigInt(stream.timeBase.num))
+        }
+      }
       const streams: AVStreamInterface[] = []
       const streamGroups: AVStreamGroupInterface[] = []
       for (let i = 0; i < task.formatContext.streams.length; i++) {
@@ -636,6 +658,7 @@ export default class DemuxPipeline extends Pipeline {
         metadata: task.formatContext.metadata,
         format: task.realFormat,
         chapters: task.formatContext.chapters,
+        discInfo: task.formatContext.discInfo,
         streams,
         streamGroups
       }
@@ -790,6 +813,12 @@ export default class DemuxPipeline extends Pipeline {
 
     let ret = await demux.readAVPacket(task.formatContext, avpacket)
 
+    // A cancelled ISO read belongs to the old position, not to EOF. Keep pending
+    // decoder requests for the new position and do not publish stale packets.
+    if (task.seeking) {
+      task.avpacketPool.release(avpacket)
+      return 0
+    }
     if (!ret) {
 
       if (defined(ENABLE_LOG_TRACE)) {
@@ -1051,7 +1080,18 @@ export default class DemuxPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       if (task.loop) {
-        await task.loop.stopBeforeNextTick()
+        task.seeking = true
+        const stopped = task.loop.stopBeforeNextTick()
+        if (task.formatContext.iformat.type === AVFormat.ISO) {
+          task.formatContext.iformat.cancelPendingRead()
+          task.leftIPCPort.notify('abortReadAt')
+        }
+        try {
+          await stopped
+        }
+        finally {
+          task.seeking = false
+        }
         let ret: int32 | int64 = await demux.seek(task.formatContext, streamIndex, timestamp, flags)
         if (ret >= 0n) {
           function resetList(list: pointer<AVPacketRef>[]) {
