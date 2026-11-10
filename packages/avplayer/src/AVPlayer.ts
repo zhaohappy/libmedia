@@ -3434,11 +3434,11 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   /*
   * 设置播放速率（只支持点播）
   * 
-  * @param rate 
+  * @param rate 播放速率，范围 0.3～15
   */
   public setPlaybackRate(rate: number) {
     if (!this.isLive_) {
-      this.playRate = restrain(rate, 0.5, 2)
+      this.playRate = restrain(rate, 0.3, 15)
       if (defined(ENABLE_MSE) && this.useMSE) {
         AVPlayer.MSEThread?.setPlayRate(this.taskId, this.playRate)
         if (this.video) {

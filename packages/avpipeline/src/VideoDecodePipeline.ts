@@ -380,6 +380,11 @@ export default class VideoDecodePipeline extends Pipeline {
                 }
               }
               else if (avpacket > 0) {
+                // WebCodecs has no skip_frame control. Match the Wasm fast
+                // playback policy by feeding only independently decodable frames.
+                if (task.targetDecoder instanceof WebVideoDecoder && task.playRate >= 8) {
+                  task.needKeyFrame = true
+                }
                 if (task.needKeyFrame) {
                   if ((avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
                       // h264 强制判断 nalu type 某些码流封装层的关键帧标志是错误的 

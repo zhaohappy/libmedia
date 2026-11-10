@@ -205,6 +205,13 @@ async function loadAndPlay(url) {
   if (!Number.isSafeInteger(duration) || duration <= 0) {
     throw new Error('Expected a finite positive duration')
   }
+  if (scenario === 'rates') {
+    if (duration < 180000 || !report.streams.some((s) => s.type === 'Audio')
+      || !report.streams.some((s) => s.type === 'Video')) {
+      throw new Error('Rate checks require audio and video with at least 180 seconds of media')
+    }
+    player.setPlaybackRate(15)
+  }
   player.setVolume(0)
   await play()
   report.played = true
@@ -343,6 +350,82 @@ async function edges() {
   })
 }
 
+async function checkPlaybackRates() {
+  const initialRate = player.getPlaybackRate()
+  await step('playback rate bounds', async () => {
+    player.setPlaybackRate(99)
+    const upper = player.getPlaybackRate()
+    player.setPlaybackRate(0)
+    const lower = player.getPlaybackRate()
+    player.setPlaybackRate(initialRate)
+    return { initialRate, upper, lower, ok: initialRate === 15 && upper === 15 && lower === 0.3 }
+  })
+  for (const rate of [15, 2, 4, 8, 15, 1, 0.3, 1]) {
+    await step(`${rate}x playback`, async () => {
+      player.setPlaybackRate(rate)
+      // Allow queued audio and the native media element to adopt the new rate.
+      await wait(1000)
+      const media = document.querySelector('#player video')
+      const qualityBefore = player.isMSE() ? media?.getVideoPlaybackQuality() : null
+      const before = snapshot()
+      const start = Number(player.currentTime)
+      const begin = performance.now()
+      await wait(2000)
+      const elapsed = performance.now() - begin
+      const progress = Number(player.currentTime) - start
+      const after = snapshot()
+      const actualRate = progress / elapsed
+      const nativeRate = player.isMSE() ? media?.playbackRate : null
+      const qualityAfter = player.isMSE() ? media?.getVideoPlaybackQuality() : null
+      const renderedFrames = qualityAfter && qualityBefore
+        ? qualityAfter.totalVideoFrames - qualityAfter.droppedVideoFrames
+          - qualityBefore.totalVideoFrames + qualityBefore.droppedVideoFrames
+        : after.videoRendered - before.videoRendered
+      return { rate, actualRate, nativeRate, before, after,
+        renderedFrames,
+        ok: player.getPlaybackRate() === rate && Math.abs(actualRate - rate) < rate * 0.25
+          && renderedFrames > 0 && (player.isMSE() ? nativeRate === rate
+          : advances(before, after) && Math.abs(after.audioTime - after.videoTime) < 1500) }
+    })
+  }
+  player.setPlaybackRate(15)
+  await step('15x paused seek and resume', async () => {
+    const target = explicitTarget('rateTarget', targetAt(0.1))
+    await timed(player.pause(), 'Pause')
+    await seek(target)
+    const landed = Number(player.currentTime)
+    await wait(700)
+    const held = Number(player.currentTime)
+    const paused = player.status === pausedStatus
+    await play()
+    const resumeStart = performance.now()
+    // Native playback can wait for decoded data after a seek even when play()
+    // has resolved. Bound recovery separately from the steady-state rate.
+    while (Number(player.currentTime) - held < 15000 && performance.now() - resumeStart < 5000) {
+      await wait(100)
+    }
+    const recovered = Number(player.currentTime)
+    const recoveryMs = performance.now() - resumeStart
+    const begin = performance.now()
+    await wait(2000)
+    const resumed = Number(player.currentTime)
+    const actualRate = (resumed - recovered) / (performance.now() - begin)
+    return { target, landed, held, resumed, recoveryMs, actualRate,
+      ok: paused && Math.abs(landed - target) < 1000 && Math.abs(held - landed) < 100
+        && recovered - held >= 15000 && Math.abs(actualRate - 15) < 15 * 0.25
+        && player.getPlaybackRate() === 15 }
+  })
+  await step('15x natural end', async () => {
+    await seek(Math.max(0, duration - 15000))
+    const deadline = performance.now() + timeoutMs
+    while (player.status !== endedStatus && performance.now() < deadline) {
+      await wait(100)
+    }
+    return { status: player.status, ok: player.status === endedStatus }
+  })
+  player.setPlaybackRate(1)
+}
+
 async function destroy() {
   if (!player || destroyed) {
     return
@@ -454,6 +537,7 @@ async function run() {
       enableWebCodecs: decoder !== 'wasm' && query.get('webcodecs') !== '0',
       enableWebGPU: true,
       enableWorker: true,
+      ...(query.has('mse') ? { checkUseMSE: () => query.get('mse') === '1' } : {}),
       preLoadTime: preload,
       wasmBaseUrl: `${location.origin}/wasm`
     })
@@ -469,11 +553,19 @@ async function run() {
     }
     else {
       await loadAndPlay(input)
+      report.mse = player.isMSE()
+      if (query.has('mse') && report.mse !== (query.get('mse') === '1')) {
+        throw new Error('Playback did not use the requested MSE mode')
+      }
       report.network.startup = await timed(network(), 'Startup metrics')
 
       switch (scenario) {
         case 'startup':
           await checkPlayback()
+          break
+        case 'rates':
+          await wait(settleMs)
+          await checkPlaybackRates()
           break
         case 'tracks':
           await checkPlayback()
