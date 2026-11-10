@@ -183,6 +183,38 @@ processing modules. Deploy the appropriate variants for the runtime. There is no
 separate `vc1.wasm`. Update the player JS and WMV modules together, as older modules may
 lack VC-1. See the [build guide](./compile-wasm.en-US.md) for all four variants.
 
+## ISO playback
+
+Unencrypted Blu-ray/DVD ISO images use the existing `load()`, `play()`, `pause()`, `seek()` and audio-track selection APIs. Local `File` extensions are case-insensitive; use `ext: 'iso'` for HTTP(S) URLs without a suffix. No title-selection UI is added.
+
+```javascript
+// source is a File or URL; keep authentication settings in options.http.
+const options = { ext: 'iso' }
+await player.load(source, options)
+const disc = player.getDiscInfo()
+const chapters = player.getChapters()
+await player.play()
+
+// Reload the same source with another title, preserving the original options.
+const nextTitle = disc?.titles.find((title) => title.id !== disc.titleId)
+if (nextTitle) {
+  await player.load(source, { ...options, iso: { titleId: nextTitle.id } })
+  await player.play()
+}
+```
+
+`getDiscInfo()` returns `{ type: 'bluray' | 'dvd', titleId, titles }`. Each title has `id`, `name`, `duration` as a millisecond `bigint`, and `chapterCount`. Non-ISO inputs return `null`. Blu-ray IDs are five-digit MPLS numbers such as `00000`; DVD IDs are title-number strings starting at `1`. Chapters use `getChapters()` and seeks use millisecond `bigint` values, for example `await player.seek(60_000n)`.
+
+Without an explicit title, identical playback sequences and in/out points are deduplicated, then the longest valid video title is selected, with numeric ID order breaking ties. Duplicate title IDs remain available for explicit selection. This rule cannot identify the main feature on every disc with multiple editions.
+
+DVD support covers single-PGC titles and deterministic navigation using supported register operations, conditions and title-local jumps. Menu calls follow default button commands back into the title. Button priority is forced activation, forced selection, current highlight, then button 1; menus use the first language unit and are not displayed. A terminal return to a menu or jump to another title ends the current title. Loading compiles a finite segment sequence, duration and chapters; seeking does not replay menu commands. Indeterminate routes, unsupported instructions and out-of-bounds references fail explicitly.
+
+The reader supports ISO9660 and UDF 1.02/2.50/2.60 physical and metadata partitions, including fragmented files. Reads are on demand, at most 1 MiB each, with a 4 MiB data cache and a 16 MiB limit per directory or navigation file. Multiple M2TS files, VOBs/Cells, Blu-ray in/out trimming and indexed seeking are supported. Blu-ray uses the first angle. DVD interleaved angles, random/multi-PGC titles, title still frames, interactive menus, BD-J, decryption, ordinary data ISO browsing, UDF virtual/sparable partitions and sparse files are unsupported. Changes to track layout or codec across segments also fail explicitly.
+
+Network ISO sources **require HTTP Range** with matching `206` and `Content-Range` responses and a known, consistent total length. There is no sequential `200 OK` fallback. Cross-origin servers must expose headers with `Access-Control-Expose-Headers: Content-Range, Content-Length, Accept-Ranges` and allow `Range` and caller headers on preflight requests. Existing `http.headers` and `http.credentials` settings are preserved; credentialed requests require an explicit allowed origin and credentials support. Responses must not use gzip/br content encoding. Invalid titles, corruption, encryption and unsupported structures fail instead of selecting the largest file. Handle rejected `load()`/`play()` promises and player `error` events.
+
+Keep the default `ENABLE_DEMUXER_ISO` enabled in source builds. ISO uses the decode/render pipeline in main-thread, ordinary Worker and shared-memory Worker modes. Existing codec and subtitle support applies; no graphical subtitle renderer is added. Deploy the updated player JS with the existing decoder modules required by the disc's codecs; no additional ISO Wasm module is needed.
+
 ## Seeking in on-demand media
 
 After loading media, use `seek(timestamp)` with a `bigint` timestamp in milliseconds. Await the returned Promise and handle failures:
@@ -203,7 +235,9 @@ If an actual seek fails, its Promise rejects and `ERROR` fires; the failed seek 
 
 HTTP on-demand files are read through `FetchIOLoader`. A server supporting Range should return a valid `206 Partial Content` response with a `Content-Range` matching the requested range and a known, consistent total byte length. The loader rejects invalid range responses and `206` responses with a content encoding other than `identity`. Cross-origin servers must expose the `Content-Range` response header to the browser.
 
-If the server ignores Range and returns a complete `200 OK` response, the loader falls back to sequential reading. After a seek, it reads again from the start and discards bytes before the target offset. This still depends on container and index support and can substantially increase traffic and waiting time. Configure the origin or CDN to support Range correctly for efficient seeking.
+The sequential fallback below does not apply to ISO: missing Range support is an error, and the full image is not downloaded.
+
+For other inputs, if the server ignores Range and returns a complete `200 OK` response, the loader falls back to sequential reading. After a seek, it reads again from the start and discards bytes before the target offset. This still depends on container and index support and can substantially increase traffic and waiting time. Configure the origin or CDN to support Range correctly for efficient seeking.
 
 ## rtsp and rtmp
 

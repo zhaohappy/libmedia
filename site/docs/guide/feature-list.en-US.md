@@ -38,6 +38,7 @@ libmedia can complete the following functions:
 | mp4      | ✅       | ✅        |
 | mpegts   | ✅       | ✅        |
 | mpegps   | ✅       | ❌        |
+| iso (Blu-ray / DVD) | ✅ | ❌ |
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
@@ -64,6 +65,8 @@ RM/RMVB supports playback and transcoding input with RV10–RV40 video and Cook,
 
 ASF supports unencrypted input; DRM, MMS and WMV Image are excluded. See the
 [player guide](./player.en-US.md) for deployment and playback.
+
+ISO supports unencrypted Blu-ray/DVD titles and deterministic DVD navigation through default menu buttons. HTTP sources require Range. Interactive menus, BD-J and decryption are unsupported. See [ISO playback](./player.en-US.md#iso-playback) for title APIs and compatibility.
 
 ## Protocols
 

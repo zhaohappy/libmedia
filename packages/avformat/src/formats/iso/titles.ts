@@ -24,6 +24,7 @@
  */
 
 import type DiscFilesystem from './filesystem'
+import { dvdCellOrder } from './dvdnav'
 import { Bytes, check, DiscError, sliceFile, type DiscFile } from './reader'
 
 export interface DiscTitleInfo {
@@ -249,29 +250,6 @@ export function dvdNavTime(b: Bytes): bigint {
   throw new DiscError('Missing DVD navigation timestamps')
 }
 
-/** Pre-commands that link, jump or alter command flow require a navigation VM. */
-function linearDvdPgc(b: Bytes, pgc: number) {
-  const offset = b.u16(pgc + 228)
-  if (!offset) {
-    return true
-  }
-  const at = pgc + offset
-  const pre = b.u16(at)
-  const count = pre + b.u16(at + 2) + b.u16(at + 4)
-  const size = b.u16(at + 6) + 1
-  check(count <= 255 && size >= 8 + count * 8, 'Invalid DVD command table')
-  b.range(at, size)
-  for (let i = 0; i < pre; i++) {
-    const command = at + 8 + i * 8
-    const type = b.u8(command) >> 5
-    const link = type <= 3 ? b.u8(command + 1) & 15 : b.u8(command + 7) & 31
-    if (type === 7 || link) {
-      return false
-    }
-  }
-  return true
-}
-
 async function dvd(fs: DiscFilesystem) {
   const vmg = await fs.bytes('VIDEO_TS/VIDEO_TS.IFO')
   check(vmg.text(0, 12) === 'DVDVIDEO-VMG', 'Invalid DVD VMG signature')
@@ -280,12 +258,19 @@ async function dvd(fs: DiscFilesystem) {
   check(count > 0 && count <= 99, 'Invalid DVD title count')
   vmg.range(tt, vmg.u32(tt + 4) + 1)
   const titles: DiscTitle[] = []
+  const rejected: string[] = []
   const vtsCache = new Map<number, { b: Bytes, file: DiscFile, vobus: number[] }>()
   for (let title = 0; title < count; title++) {
+    const reject = (reason: string) => {
+      if (rejected.length < 8) {
+        rejected.push(`DVD title ${title + 1}: ${reason}`)
+      }
+    }
     const at = tt + 8 + title * 12
     const flags = vmg.u8(at)
     // Random/multi-PGC titles and cell navigation commands need the DVD VM.
     if (flags & 0x40) {
+      reject('random or multi-PGC playback requires DVD navigation')
       continue
     }
     const set = vmg.u8(at + 6)
@@ -332,7 +317,8 @@ async function dvd(fs: DiscFilesystem) {
     check(pgcn > 0 && pgcn <= b.u16(pgcit), 'Invalid DVD program chain')
     const pgc = pgcit + b.u32(pgcit + 8 + (pgcn - 1) * 8 + 4)
     b.range(pgc, 236)
-    if (b.u8(pgc + 163) || !linearDvdPgc(b, pgc)) {
+    if (b.u8(pgc + 163)) {
+      reject(`PGC ${pgcn} uses random or shuffle playback`)
       continue
     }
     const programs = b.u8(pgc + 2)
@@ -345,6 +331,7 @@ async function dvd(fs: DiscFilesystem) {
     let supported = true
     for (let i = 0; i < chapterCount; i++) {
       if (b.u16(chapter + i * 4) !== pgcn) {
+        reject('chapters reference multiple PGCs')
         supported = false; break
       }
       const program = b.u16(chapter + i * 4 + 2)
@@ -354,19 +341,32 @@ async function dvd(fs: DiscFilesystem) {
     if (!supported) {
       continue
     }
+    let order: number[]
+    try {
+      order = await dvdCellOrder(fs, vmg, b, pgc, title + 1, set, number, pgcn, chapterCells)
+    }
+    catch (error) {
+      if (!(error instanceof DiscError) || error.code !== -9) {
+        throw error
+      }
+      reject(error.message)
+      continue
+    }
     const segments: DiscSegment[] = []
     const chapters: bigint[] = []
     let duration = 0n
     const first = chapterCells[0]
     check(first >= 0 && first < cells, 'Invalid DVD first cell')
-    for (let cell = first; cell < cells; cell++) {
+    for (const cell of order) {
       const at = cellMap + cell * 24
       const flags = b.u8(at)
       // First angle only. Interleaved angle units require navigation beyond linear cell extents.
       if ((flags & 0x30) === 0x10 && (flags >> 6) !== 1) {
         continue
       }
-      if (flags & 4 || b.u8(at + 2) || b.u8(at + 3)) {
+      if (flags & 4 || b.u8(at + 2)) {
+        reject(`PGC ${pgcn} cell ${cell + 1}: ${flags & 4 ? 'interleaved angle units'
+          : 'still playback'}`)
         supported = false; break
       }
       const from = b.u32(at + 8)
@@ -375,7 +375,7 @@ async function dvd(fs: DiscFilesystem) {
       const file = sliceFile(vts.file, BigInt(from) * 2048n, BigInt(to) * 2048n)
       const ticks = dvdTime(b, at + 4)
       check(ticks > 0n, 'Empty DVD cell')
-      if (chapterCells.includes(cell)) {
+      if (!segments.length || chapterCells.includes(cell)) {
         chapters.push(duration / 90n)
       }
       segments.push({ file, path: `${base}:${from}-${to}`, inTime: 0n, outTime: ticks, start: duration, points: [],
@@ -383,9 +383,15 @@ async function dvd(fs: DiscFilesystem) {
       duration += ticks
     }
     if (!supported || !segments.length) {
+      if (supported) {
+        reject('no playable cells')
+      }
       continue
     }
     titles.push({ id: String(title + 1), name: `Title ${title + 1}`, duration: duration / 90n, chapterCount: chapters.length, chapters, segments })
+  }
+  if (!titles.length) {
+    throw new DiscError(`No supported video titles on disc: ${rejected.join('; ')}`, -9)
   }
   return titles
 }

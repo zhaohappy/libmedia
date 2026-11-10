@@ -314,3 +314,61 @@ export function dvdFiles() {
     'VIDEO_TS/VTS_01_2.VOB': vob.subarray(2048)
   }
 }
+
+/** Two title cells separated by a command-only VMGM and a default-button VTS menu. */
+export function dvdNavigationFiles() {
+  const files = dvdFiles()
+  const vmg = new Uint8Array(8192)
+  vmg.set(files['VIDEO_TS/VIDEO_TS.IFO'])
+  const vts = new Uint8Array(12288)
+  vts.set(files['VIDEO_TS/VTS_01_0.IFO'])
+  files['VIDEO_TS/VIDEO_TS.IFO'] = vmg
+  files['VIDEO_TS/VTS_01_0.IFO'] = vts
+  const commandTable = (b: Uint8Array, pgc: number, pre: number[][], post: number[][], cell: number[][]) => {
+    be16(b, pgc + 228, 300)
+    be16(b, pgc + 300, pre.length)
+    be16(b, pgc + 302, post.length)
+    be16(b, pgc + 304, cell.length)
+    be16(b, pgc + 306, 7 + (pre.length + post.length + cell.length) * 8)
+    b.set([...pre, ...post, ...cell].flat(), pgc + 308)
+  }
+  commandTable(vts, 4112, [
+    [0x61, 0, 0, 0, 0, 5, 0, 0],
+    [0x71, 0, 0, 5, 0, 0, 0, 0],
+    [0x20, 0xa6, 0, 0, 0, 2, 0, 2]
+  ], [], [[0x30, 8, 0, 1, 1, 0xc0, 0, 0]])
+  vts[4112 + 238 + 3] = 1
+  const menu = (b: Uint8Array, offset: number, pointer: number, entry: number) => {
+    be32(b, pointer, offset / 2048)
+    be16(b, offset, 1)
+    be32(b, offset + 4, 1023)
+    be32(b, offset + 12, 16)
+    const table = offset + 16
+    be16(b, table, 1)
+    be32(b, table + 4, 1007)
+    b[table + 8] = entry
+    be32(b, table + 12, 16)
+    return table + 16
+  }
+  const manager = menu(vmg, 4096, 200, 0)
+  commandTable(vmg, manager, [
+    [0x71, 0, 0, 5, 0, 2, 0, 0],
+    [0x30, 6, 0, 1, 1, 0x83, 0, 0]
+  ], [], [])
+  const root = menu(vts, 8192, 208, 0x83)
+  vts[root + 2] = 1
+  vts[root + 3] = 1
+  be16(vts, root + 232, 238)
+  commandTable(vts, root, [[0x56, 0, 0, 0, 4, 0, 0, 0]], [[0x30, 2, 0, 0, 0, 1, 0, 0]], [])
+  const nav = new Uint8Array(2048)
+  be32(nav, 0, 0x1ba)
+  be32(nav, 38, 0x1bf)
+  be16(nav, 42, 0x3d4)
+  const pci = 45
+  be16(nav, pci + 96, 1)
+  nav[pci + 110] = 0x10
+  nav[pci + 113] = 1
+  nav.set([0x20, 1, 0, 0, 0, 0, 0, 13], pci + 152)
+  files['VIDEO_TS/VTS_01_0.VOB'] = nav
+  return files
+}

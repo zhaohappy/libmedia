@@ -17,6 +17,18 @@ seek 会清空重组缓存和待输出包。标准 ASF 视频时间戳按 DTS �
 不可寻址输入仅支持顺序读取；不支持 ASF 输出、加密文件、MMS 或 WMV Image。
 播放器及解码组件配置见[播放器文档](../../site/docs/guide/player.md)。
 
+### ISO 输入
+
+`@libmedia/avformat/IIsoFormat` 提供 `AVFormat.ISO` 解封装，构造选项为
+`{ titleId?: string }`，内部复用 MPEG-TS/MPEG-PS 解封装器。直接使用时必须提供
+`AVIFormatContext.readAt(pos: bigint, length: number)` 随机读取回调和正确的
+`ioReader.fileSize()`；仅有顺序读取能力的输入不受支持。播放器已接入 File 和严格校验的 HTTP Range 读取。
+
+支持未加密的蓝光播放列表、DVD 单 PGC 标题及可解析的默认按钮导航，将片段组织为统一时间轴，
+并提供 `discInfo` 和 `chapters`。不支持 ISO 输出、交互式菜单、BD-J 或解密；
+不支持的导航路径会报错。网络源不能回退为整盘下载。文件系统、标题选择、导航限制与缓存边界见
+[AVPlayer ISO 说明](../avplayer/README.md#iso-光盘镜像)，部署示例见[播放器指南](../../site/docs/guide/player.md#iso-播放)。
+
 ### 开源协议
 
 [LGPL-3.0-or-later](https://opensource.org/license/lgpl-3-0)
