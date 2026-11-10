@@ -283,6 +283,7 @@ export function writeMoov(ioWriter: IOWriterSync, formatContext: AVOFormatContex
     size: Number(ioWriter.getPos() - pos)
   })
   updatePositionSize(ioWriter, isobmffContext)
+  isobmffContext.moovWritten = true
 }
 
 export function writeMoof(ioWriter: IOWriterSync, formatContext: AVOFormatContext, isobmffContext: IsobmffContext) {

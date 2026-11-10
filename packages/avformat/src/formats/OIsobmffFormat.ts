@@ -335,6 +335,8 @@ export default class OIsobmffFormat extends OFormat {
         firstWrote: false
       }
 
+      let delayMoov = false
+
       array.each(formatContext.streams, (stream, index) => {
         const streamContext = createIsobmffStreamContext()
         stream.privData = streamContext
@@ -393,13 +395,15 @@ export default class OIsobmffFormat extends OFormat {
             ac3BitrateCode: -1,
             substream: []
           }
+          delayMoov = true
         }
       })
 
       this.enableStreams(formatContext)
-
-      oisobmff.writeMoov(formatContext.ioWriter, formatContext, this.context)
-      formatContext.ioWriter.flush()
+      if (!delayMoov) {
+        oisobmff.writeMoov(formatContext.ioWriter, formatContext, this.context)
+        formatContext.ioWriter.flush()
+      }
     }
     else {
       array.each(formatContext.streams, (stream, index) => {
@@ -480,7 +484,7 @@ export default class OIsobmffFormat extends OFormat {
   }
 
   private updateCurrentFragment(formatContext: AVOFormatContext, currentDts?: int64) {
-    if (this.context.currentFragment.firstWrote) {
+    if (this.context.currentFragment.firstWrote && this.context.moovWritten) {
       array.each(this.context.currentFragment.tracks, (track) => {
 
         const stream = formatContext.streams.find((stream) => {
@@ -824,6 +828,10 @@ export default class OIsobmffFormat extends OFormat {
       && (!streamContext.ac3Info || !streamContext.ac3Info.done)
     ) {
       this.handleEAC3(avpacket, stream)
+      if (!this.context.moovWritten && this.context.fragment) {
+        oisobmff.writeMoov(formatContext.ioWriter, formatContext, this.context)
+        formatContext.ioWriter.flush()
+      }
     }
 
     if (this.context.fragment) {

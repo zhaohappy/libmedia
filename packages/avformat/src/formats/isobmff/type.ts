@@ -221,6 +221,7 @@ export interface IsobmffContext {
     foundIloc?: boolean
     currentItem?: HEIFItem
   }
+  moovWritten?: boolean
 }
 
 export interface IsobmffStreamContext {
