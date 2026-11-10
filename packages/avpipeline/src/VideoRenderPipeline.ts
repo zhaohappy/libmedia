@@ -332,6 +332,11 @@ export default class VideoRenderPipeline extends Pipeline {
         assert(!isPointer(frame) || frame.data[0], 'got empty video frame')
         task.frontFrame = frame
         task.frontBuffered = true
+        if (task.playRate > 100n) {
+          // Waiting for asynchronous decode is not spare rendering capacity.
+          // Do not let that wait throttle high-rate playback to a few hundred fps.
+          task.loop?.resetInterval()
+        }
       }
       if (task.seekSync) {
         task.seekSync()
@@ -565,8 +570,6 @@ export default class VideoRenderPipeline extends Pipeline {
 
       const inWorker = isWorker()
 
-      const interval = (inWorker && support.shareArrayBuffer) ? 0 : 10
-
       task.loop = new LoopTask(() => {
         if (!task.backFrame) {
           if (!task.ended) {
@@ -721,7 +724,7 @@ export default class VideoRenderPipeline extends Pipeline {
           this.fakeSyncPts(task)
           task.loop.emptyTask()
         }
-      }, 0, interval)
+      }, 0, 0)
 
       task.loop.start()
     }

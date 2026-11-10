@@ -368,7 +368,7 @@ async function checkPlaybackRates() {
     player.setPlaybackRate(initialRate)
     return { initialRate, upper, lower, ok: initialRate === 15 && upper === 15 && lower === 0.3 }
   })
-  for (const rate of [15, 2, 4, 8, 15, 1, 0.3, 1]) {
+  for (const rate of [15, 1, 0.3, 1, 2, 4, 8, 15, 1]) {
     await step(`${rate}x playback`, async () => {
       player.setPlaybackRate(rate)
       // Allow queued audio and the native media element to adopt the new rate.
@@ -389,11 +389,21 @@ async function checkPlaybackRates() {
         ? qualityAfter.totalVideoFrames - qualityAfter.droppedVideoFrames
           - qualityBefore.totalVideoFrames + qualityBefore.droppedVideoFrames
         : after.videoRendered - before.videoRendered
-      return { rate, actualRate, nativeRate, before, after,
+      let synchronizedAfter
+      if (!report.isolated && !player.isMSE() && Math.abs(after.audioTime - after.videoTime) >= 1500) {
+        // Ordinary workers publish audio/video stats independently every 500 ms.
+        // Freeze playback and let both reports catch up before calling this drift.
+        await timed(player.pause(), 'Pause for synchronized statistics')
+        await wait(600)
+        synchronizedAfter = snapshot()
+        await play()
+      }
+      const syncAfter = synchronizedAfter ?? after
+      return { rate, actualRate, nativeRate, before, after, synchronizedAfter,
         renderedFrames,
         ok: player.getPlaybackRate() === rate && Math.abs(actualRate - rate) < rate * 0.25
           && renderedFrames > 0 && (player.isMSE() ? nativeRate === rate
-          : advances(before, after) && Math.abs(after.audioTime - after.videoTime) < 1500) }
+          : advances(before, after) && Math.abs(syncAfter.audioTime - syncAfter.videoTime) < 1500) }
     })
   }
   player.setPlaybackRate(15)
@@ -423,6 +433,24 @@ async function checkPlaybackRates() {
         && recovered - held >= 15000 && Math.abs(actualRate - 15) < 15 * 0.25
         && player.getPlaybackRate() === 15 }
   })
+  await step('1x backward seek after fast playback', async () => {
+    player.setPlaybackRate(1)
+    const target = explicitTarget('backTarget', targetAt(0.01))
+    await seek(target)
+    const landed = Number(player.currentTime)
+    await wait(1000)
+    const before = snapshot()
+    const start = Number(player.currentTime)
+    await wait(2000)
+    const after = snapshot()
+    const progress = Number(player.currentTime) - start
+    return { target, landed, before, after, progress,
+      ok: Math.abs(landed - target) < 1000 && progress > 1000
+        && (player.isMSE() || (advances(before, after, 1000)
+          && after.videoRendered > before.videoRendered
+          && Math.abs(after.audioTime - after.videoTime) < 1500)) }
+  })
+  player.setPlaybackRate(15)
   await step('15x natural end', async () => {
     await seek(Math.max(0, duration - 15000))
     const deadline = performance.now() + timeoutMs
