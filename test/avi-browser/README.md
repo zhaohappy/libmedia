@@ -76,18 +76,25 @@ Open the page in Chromium using a fresh tab or navigation for each run. If autop
 | `?scenario=cancel-seek` | Destroy while seeking and verify the pending seek settles. |
 | `?scenario=fallback` | Complete a cold seek after an injected HTTP 503 and confirm that an ordinary read covered the failed index region. Use an AVI large enough to issue an index probe and enable `LIBMEDIA_TEST_FAIL_IDX1`. |
 | `?scenario=startup&source=control` | Run the startup check against the optional MP4. |
-| `?scenario=rates&source=control&mse=1` | Require MSE and verify starting at 15×, the 0.3–15× rate bounds, 15→2→4→8→15→1→0.3→1× playback, rendered video frames, paused seeking at 15×, and natural completion. |
+| `?scenario=rates&source=control&mse=1` | Require MSE and verify starting at 15×, the 0.3–15× rate bounds, 15→1→0.3→1→2→4→8→15→1× playback, rendered video frames, paused seeking at 15×, a backward seek at 1×, and natural completion. |
 | `?scenario=rates&source=control&mse=0&decoder=wasm` | Run the same checks with MSE and WebCodecs disabled, including advancing audio/video clocks and their final difference. Omit `decoder=wasm` to exercise the default non-MSE decoder. |
 
-The `rates` scenario requires an H.264/AAC MP4 of at least 180 seconds in
-`LIBMEDIA_TEST_CONTROL`. Use a modest resolution (for example 640×360 at 30 fps
-with one-second GOPs) to establish functional support before testing heavier
+The `rates` scenario requires audio and video and a duration of at least 180
+seconds. Use `source=avi&mse=0` with `LIBMEDIA_TEST_MEDIA` for AVI, or an
+H.264/AAC MP4 in `LIBMEDIA_TEST_CONTROL` with `source=control` for MSE and
+non-MSE comparisons. Run AVI in both shared and ordinary Worker modes to cover
+DTS-only streams, decoder frame skipping, and recovery when lowering speed.
+Use a modest resolution (for example 640×360 at 30 fps with one-second GOPs) to establish functional support before testing heavier
 inputs. It measures media-time progress against wall time, allows 25% timing
 variation, and verifies actual rendered video frames (native playback-quality
 counters for MSE). It does not establish audio fidelity at 15× or guarantee that
 every device can decode every input at that speed. Avoid running builds during
 measurements. `mse=1`/`mse=0` require the selected route rather than silently
 accepting fallback. Use `manual=1` and the Run button for audio autoplay policy.
+Ordinary workers publish audio and video statistics independently every 500 ms.
+If their sampled difference exceeds the synchronization limit, the rate check
+pauses playback, waits for both reports, and records `synchronizedAfter` before
+resuming; both the original samples and the settled comparison remain in the report.
 The seek check allows up to five seconds to advance 15 seconds of media after
 resuming, then measures the steady playback rate independently.
 

@@ -54,7 +54,8 @@ import {
   avRescaleQ2,
   AVCodecID,
   AVPacketSideDataType,
-  AVPacketFlags
+  AVPacketFlags,
+  AVCodecParameterFlags
 } from '@libmedia/avutil'
 
 import {
@@ -382,7 +383,9 @@ export default class VideoDecodePipeline extends Pipeline {
               else if (avpacket > 0) {
                 // WebCodecs has no skip_frame control. Match the Wasm fast
                 // playback policy by feeding only independently decodable frames.
-                if (task.targetDecoder instanceof WebVideoDecoder && task.playRate >= 8) {
+                if (task.targetDecoder instanceof WebVideoDecoder && task.playRate >= 8
+                  && this.getMaxDiscard(task) === AVDiscard.AVDISCARD_NONKEY
+                ) {
                   task.needKeyFrame = true
                 }
                 if (task.needKeyFrame) {
@@ -770,6 +773,16 @@ export default class VideoDecodePipeline extends Pipeline {
     logger.fatal('task not found')
   }
 
+  private getMaxDiscard(task: SelfTask) {
+    // Without PTS the decoder estimates presentation time from the DTS of the
+    // packet that releases a reordered frame. Keep reference pictures so that
+    // this estimate cannot jump a whole GOP when intra/key-only decoding is used.
+    // It also keeps the reference chain available when playback slows down.
+    return task.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS
+      ? AVDiscard.AVDISCARD_NONREF
+      : AVDiscard.AVDISCARD_NONKEY
+  }
+
   public async setPlayRate(taskId: string, rate: double) {
     const task = this.tasks.get(taskId)
     if (task && task.softwareDecoder) {
@@ -816,13 +829,9 @@ export default class VideoDecodePipeline extends Pipeline {
           discard = AVDiscard.AVDISCARD_DEFAULT
         }
       }
+      discard = Math.min(discard, this.getMaxDiscard(task))
       task.softwareDecoder.setSkipFrameDiscard(discard)
-      if (task.playRate < rate) {
-        task.discard = discard
-      }
-      else {
-        task.discard = Math.max(task.discard, discard)
-      }
+      task.discard = discard
       task.playRate = rate
     }
   }
@@ -830,7 +839,7 @@ export default class VideoDecodePipeline extends Pipeline {
   public async setNextDiscard(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task && task.softwareDecoder) {
-      if (task.discard < AVDiscard.AVDISCARD_NONKEY) {
+      if (task.discard < this.getMaxDiscard(task)) {
         task.discard += 8
         task.softwareDecoder.setSkipFrameDiscard(task.discard)
 
