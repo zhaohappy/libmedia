@@ -76,6 +76,20 @@ Open the page in Chromium using a fresh tab or navigation for each run. If autop
 | `?scenario=cancel-seek` | Destroy while seeking and verify the pending seek settles. |
 | `?scenario=fallback` | Complete a cold seek after an injected HTTP 503 and confirm that an ordinary read covered the failed index region. Use an AVI large enough to issue an index probe and enable `LIBMEDIA_TEST_FAIL_IDX1`. |
 | `?scenario=startup&source=control` | Run the startup check against the optional MP4. |
+| `?scenario=rates&source=control&mse=1` | Require MSE and verify starting at 15×, the 0.3–15× rate bounds, 15→2→4→8→15→1→0.3→1× playback, rendered video frames, paused seeking at 15×, and natural completion. |
+| `?scenario=rates&source=control&mse=0&decoder=wasm` | Run the same checks with MSE and WebCodecs disabled, including advancing audio/video clocks and their final difference. Omit `decoder=wasm` to exercise the default non-MSE decoder. |
+
+The `rates` scenario requires an H.264/AAC MP4 of at least 180 seconds in
+`LIBMEDIA_TEST_CONTROL`. Use a modest resolution (for example 640×360 at 30 fps
+with one-second GOPs) to establish functional support before testing heavier
+inputs. It measures media-time progress against wall time, allows 25% timing
+variation, and verifies actual rendered video frames (native playback-quality
+counters for MSE). It does not establish audio fidelity at 15× or guarantee that
+every device can decode every input at that speed. Avoid running builds during
+measurements. `mse=1`/`mse=0` require the selected route rather than silently
+accepting fallback. Use `manual=1` and the Run button for audio autoplay policy.
+The seek check allows up to five seconds to advance 15 seconds of media after
+resuming, then measures the steady playback rate independently.
 
 The default seek targets are derived from the media duration. Set `target` for cold, fallback, and cancellation seeks. Set comma-separated `targets` for the matrix. For edge cases, override `pausedTarget`, `backTarget`, `replayTarget`, or `rateTarget`. Targets use integer milliseconds. `cancelAfter` is the delay before destroying during load or seek, in milliseconds. Enable throttling when testing cancellation so the operation is still pending.
 

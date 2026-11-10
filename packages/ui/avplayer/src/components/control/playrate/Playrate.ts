@@ -24,10 +24,10 @@ const Playrate: ComponentOptions = {
   },
 
   data: function () {
-    const list = [2.0, 1.5, 1.25, 1.0, 0.75, 0.5]
+    const list = [15, 10, 8, 5, 4, 3, 2.0, 1.5, 1.25, 1.0, 0.75, 0.5, 0.3]
     let index = array.indexOf(list, +storage.get(storage.LOCAL_STORAGE_KEY_PLAY_RATE, 1.0))
     if (index < 0) {
-      index = 3
+      index = array.indexOf(list, 1.0)
     }
     return {
       list,
