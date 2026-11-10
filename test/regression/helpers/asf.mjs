@@ -73,7 +73,7 @@ export const IAsfFormat = evaluate(code, {
   AVFormat: { ASF: 22 }, IOFlags: { SEEKABLE: 1 }, AVPacketFlags: { AV_PKT_FLAG_KEY: 1 },
   NOPTS_VALUE_BIGINT: -9223372036854775808n,
   errorType: { FORMAT_NOT_SUPPORT: -1, DATA_INVALID: -2, OPERATE_NOT_SUPPORT: -9 },
-  logger: { error: (message) => errors.push(message) },
+  logger: { error: (message) => errors.push(message), warn() {} },
   codecBmpTags: Object.fromEntries(['WMV1', 'WMV2', 'WMV3', 'WVC1'].map((name) => [tag(name), `AV_CODEC_ID_${name === 'WVC1' ? 'VC1' : name}`])),
   allocAVPacketData: (size) => new Uint8Array(size + 64), avMallocz: (size) => new Uint8Array(size), avMalloc: (size) => new Uint8Array(size), avFree() {},
   mapSafeUint8Array: (data, size) => data.subarray(0, size),

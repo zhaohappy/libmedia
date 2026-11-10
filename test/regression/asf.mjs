@@ -17,7 +17,7 @@ const guid = (v) => Buffer.from(v, 'hex')
 const object = (id, data) => Buffer.concat([guid(id), u64(data.length + 24), data])
 const fileId = '0123456789abcdef0123456789abcdef'
 
-function fixture({ packets = [], index = false, encrypted = false, audio = false, timing = false, extraObjects = [], ids = [1] } = {}) {
+function fixture({ packets = [], index = false, encrypted = false, audio = false, timing = false, extraObjects = [], ids = [1], dataFileId = fileId, indexFileId = fileId } = {}) {
   const bitmap = Buffer.alloc(51)
   bitmap.writeUInt32LE(40, 11)
   bitmap.writeUInt32LE(16, 15)
@@ -42,9 +42,9 @@ function fixture({ packets = [], index = false, encrypted = false, audio = false
     objects.push(object(GUID.ENCRYPTION, Buffer.alloc(0)))
   }
   const header = object(GUID.HEADER, Buffer.concat([u32(objects.length), Buffer.from([1, 2]), ...objects]))
-  const data = object(GUID.DATA, Buffer.concat([guid(fileId), u64(packets.length), u16(0x101), ...packets]))
+  const data = object(GUID.DATA, Buffer.concat([guid(dataFileId), u64(packets.length), u16(0x101), ...packets]))
   const simple = index ? object(GUID.INDEX, Buffer.concat([
-    guid(fileId), u64(10000000), u32(1), u32(packets.length),
+    guid(indexFileId), u64(10000000), u32(1), u32(packets.length),
     ...packets.map((_, i) => Buffer.concat([u32(i), u16(1)]))
   ])) : Buffer.alloc(0)
   return { data: Buffer.concat([header, data, simple]), start: header.length + 50, header: header.subarray(24) }
@@ -85,6 +85,47 @@ test('ASF reads WAVEFORMATEX and pads decoder extradata', async () => {
   assert.equal(codec.chLayout.nbChannels, 2)
   assert.equal(codec.codecId, 'AV_CODEC_ID_WMAV2')
   assert.equal(codec.extradata.length, 66)
+})
+
+for (const index of [false, true]) {
+  test(`ASF tolerates a mismatched Data Object file ID with index=${index}`, async () => {
+    const input = fixture({
+      packets: [packet(), packet({ pts: 2000 }), packet({ pts: 3000 })], index,
+      dataFileId: 'efc6c02a8e8f144b8b899876b5f735ee'
+    })
+    const { format, context, result } = await open(input.data)
+    assert.equal(result, 0)
+    const output = { timeBase: {} }
+    assert.equal(await format.readAVPacket(context, output), 0)
+    assert.equal(output.dts, 0n)
+    for (const target of [2000n, 0n, 1500n]) {
+      assert.ok(await format.seek(context, context.streams[0], target, 0) >= 0n)
+      assert.equal(await format.readAVPacket(context, output), 0)
+      assert.equal(output.dts, target === 1500n ? 1000n : target)
+    }
+    assert.equal(format.index.length, index ? 3 : 0)
+  })
+}
+
+test('ASF ignores a foreign index even when it matches the mismatched Data Object ID', async () => {
+  const foreignId = 'efc6c02a8e8f144b8b899876b5f735ee'
+  const input = fixture({
+    packets: [packet(), packet({ pts: 2000 }), packet({ pts: 3000 })], index: true,
+    dataFileId: foreignId, indexFileId: foreignId
+  })
+  const { format, context, result } = await open(input.data)
+  assert.equal(result, 0)
+  assert.ok(await format.seek(context, context.streams[0], 1500n, 0) >= 0n)
+  assert.equal(format.index.length, 0)
+  const output = { timeBase: {} }
+  assert.equal(await format.readAVPacket(context, output), 0)
+  assert.equal(output.dts, 1000n)
+})
+
+test('ASF still rejects truncated data with a mismatched Data Object file ID', async () => {
+  const input = fixture({ packets: [packet()], dataFileId: 'efc6c02a8e8f144b8b899876b5f735ee' })
+  input.data.writeBigUInt64LE(2n, input.start - 10)
+  assert.equal((await open(input.data)).result, -2)
 })
 
 test('ASF reassembles fragments and resets after seek', () => {

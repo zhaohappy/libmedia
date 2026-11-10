@@ -141,7 +141,10 @@ export default class IAsfFormat extends IFormat {
           }
           const body = new Cursor(await io.readBuffer(26))
           if (body.guid() !== this.header.fileId) {
-            throw new AsfError('data file ID mismatch')
+            // Some otherwise playable files retain a stale ID after editing.
+            // Packet layout does not depend on it; keep validating data bounds
+            // below and require the header's ID for optional seek indexes.
+            logger.warn('ASF: data file ID mismatch')
           }
           const count = body.u64()
           body.skip(2)
