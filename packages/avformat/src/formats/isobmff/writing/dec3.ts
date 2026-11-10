@@ -23,20 +23,20 @@
  *
  */
 
-import type { IsobmffContext } from '../type'
+import type { IsobmffContext, IsobmffStreamContext } from '../type'
 import { BoxType } from '../boxType'
 import { type IOWriterSync, BitWriter } from '@libmedia/common/io'
 import { type AVStream } from '@libmedia/avutil'
 
 export default function write(ioWriter: IOWriterSync, stream: AVStream, isobmffContext: IsobmffContext) {
 
-  const info = isobmffContext.ac3Info
+  const info = (stream.privData as IsobmffStreamContext).ac3Info
 
-  const bitWriter = new BitWriter(2 + ((34 * (info.numIndSub + 1) + 7) >> 3))
+  const bitWriter = new BitWriter(2 + ((34 * info.substream.length + 7) >> 3))
 
   bitWriter.writeU(13, info.dataRate)
-  bitWriter.writeU(3, info.numIndSub)
-  for (let i = 0; i < info.numIndSub; i++) {
+  bitWriter.writeU(3, Math.max(info.substream.length - 1, 0))
+  for (let i = 0; i < info.substream.length; i++) {
     bitWriter.writeU(2, info.substream[i].fscod)
     bitWriter.writeU(5, info.substream[i].bsid)
     bitWriter.writeU(1, 0)

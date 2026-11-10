@@ -80,6 +80,6 @@ export default async function read(ioReader: IOReader, stream: AVStream, atom: A
     await ioReader.skip(remainingLength)
   }
   else if (remainingLength < 0) {
-    logger.error(`read avcc error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
+    logger.error(`read dec3 error, size: ${atom.size}, read: ${atom.size - remainingLength}`)
   }
 }
