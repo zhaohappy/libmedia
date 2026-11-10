@@ -189,7 +189,14 @@ Put your own sample at `test/material/sample.rmvb`, then open
 **Load**. The relative query value resolves against the page origin, so it follows
 port forwarding instead of retaining a hard-coded `127.0.0.1` media port.
 Use the URL input to test HTTP Range; choosing a local file tests File input.
-For a custom dev-server port, run `npm exec -- serve -l tcp://127.0.0.1:8001 --cors --config ./test/serve.json`.
+For a custom dev-server port, run `npm run server -- --port 8001`.
+Add `--symlinks` when linking an external sample into `test/material/`.
+Use `--host 0.0.0.0` to listen beyond the default loopback interface.
+
+The dev server preserves HTTP Range, CORS, and the headers in `test/serve.json`.
+It disables full-file ETag hashing and returns HEAD metadata without reading the
+file body. Both operations in the original `serve` CLI can delay initial load
+by seconds for multi-gigabyte samples. Responses retain `Last-Modified`.
 
 ## ASF / WMV diagnostics
 

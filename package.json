@@ -17,7 +17,7 @@
     "build-avtranscoder-dev": "cross-env NODE_ENV=development tsx ./node_modules/webpack/bin/webpack.js --progress --env avtranscoder=1 release=0",
     "build-avtranscoder-watch": "cross-env NODE_ENV=development tsx ./node_modules/webpack/bin/webpack.js --watch --progress --env avtranscoder=1 release=0",
     "doc": "typedoc --options ./typedoc.json",
-    "server": "serve -p 8000 --cors --config ./test/serve.json",
+    "server": "node scripts/dev-server.mjs",
     "eslint": "./node_modules/.bin/eslint -o=report.json -f=json './packages/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore",
     "eslint-fix": "./node_modules/.bin/eslint './packages/**/*.ts' './site/**/*.ts' './site/**/*.tsx' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore --fix",
     "eslint-check": "./node_modules/.bin/eslint './packages/**/*.ts' -c=./eslint/typescript.js --rulesdir=./eslint/rules --ignore-path=./.eslintignore && npm run lint:tests",
@@ -26,7 +26,7 @@
     "build:avplayer:single": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --env avplayer=1 release=1 esm=1 single=1 dist=./dist/avplayer-single",
     "test:avi:browser": "node test/avi-browser/server.mjs",
     "watch:avplayer:single": "cross-env NODE_ENV=production tsx ./node_modules/webpack/bin/webpack.js --watch --env avplayer=1 release=1 esm=1 single=1 dist=./dist/avplayer-single",
-    "lint:tests": "eslint \"test/regression/**/*.mjs\" \"test/avi-browser/*.mjs\" scripts/test-regression.mjs \"scripts/lib/*.mjs\" eslint/tests.cjs -c eslint/tests.cjs --no-eslintrc --rulesdir eslint/rules --no-ignore --max-warnings 0 && eslint \"test/regression/**/*.ts\" \"test/avi-browser/*.ts\" -c eslint/typescript.js --rulesdir eslint/rules --no-ignore --max-warnings 0"
+    "lint:tests": "eslint \"test/regression/**/*.mjs\" \"test/avi-browser/*.mjs\" scripts/test-regression.mjs scripts/dev-server.mjs \"scripts/lib/*.mjs\" eslint/tests.cjs -c eslint/tests.cjs --no-eslintrc --rulesdir eslint/rules --no-ignore --max-warnings 0 && eslint \"test/regression/**/*.ts\" \"test/avi-browser/*.ts\" -c eslint/typescript.js --rulesdir eslint/rules --no-ignore --max-warnings 0"
   },
   "simple-git-hooks": {
     "commit-msg": "npx tsx scripts/verify-commit.ts",
@@ -70,6 +70,7 @@
     "rider": "^2.0.0",
     "schema-utils": "^3.1.0",
     "serve": "^14.2.4",
+    "serve-handler": "6.1.6",
     "simple-git-hooks": "^2.11.1",
     "stylus": "^0.54.2",
     "terser": "^5.36.0",
