@@ -179,6 +179,38 @@ await player.play()
 部署这些文件时按运行环境选择对应版本；VC-1 没有单独的 `vc1.wasm`。
 播放器 JS 和 WMV 组件需配套更新，旧组件可能不包含 VC-1；四种版本的构建方式见[编译文档](./compile-wasm.md)。
 
+## ISO 播放
+
+支持未加密的蓝光/DVD ISO，通过现有 `load()`、`play()`、`pause()`、`seek()` 和音轨切换 API 播放。本地 `File` 的 `.iso` 后缀忽略大小写；无后缀 HTTP(S) 链接使用 `ext: 'iso'`。不新增标题选择界面。
+
+```javascript
+// source 为 File 或 URL；鉴权等配置放在同一个 options.http 中。
+const options = { ext: 'iso' }
+await player.load(source, options)
+const disc = player.getDiscInfo()
+const chapters = player.getChapters()
+await player.play()
+
+// 指定另一标题时，保留原加载配置，重新加载同一来源后播放。
+const nextTitle = disc?.titles.find((title) => title.id !== disc.titleId)
+if (nextTitle) {
+  await player.load(source, { ...options, iso: { titleId: nextTitle.id } })
+  await player.play()
+}
+```
+
+`getDiscInfo()` 返回 `{ type: 'bluray' | 'dvd', titleId, titles }`，其中每个标题包含 `id`、`name`、毫秒 `bigint` 时长 `duration` 和 `chapterCount`；非 ISO 返回 `null`。蓝光标题 ID 是五位 MPLS 编号（如 `00000`），DVD 标题 ID 是从 1 开始的编号字符串。章节使用 `getChapters()`，跳转使用毫秒 `bigint`（如 `await player.seek(60_000n)`）。
+
+未指定标题时，对播放顺序和入出点完全相同的标题去重，选择有效视频标题中时长最长者，同长按编号升序。仍可显式选择重复标题的 ID。此规则不保证识别所有多版本光盘的正片。
+
+DVD 支持单 PGC 标题和可解析的确定性导航：执行受支持的寄存器、条件及标题内跳转命令，菜单调用通过默认按钮命令解析回标题。按钮优先级为强制激活、强制选择、当前高亮、按钮 1；菜单语言使用第一个语言单元，不显示菜单画面。标题末尾返回菜单或转入另一标题视为结束。加载时将路径固定为有限片段序列并计算章节、时长，后续跳转不重放菜单命令。无法确定有限路径、不支持的指令或越界引用会明确报错。
+
+读取层支持 ISO9660、UDF 1.02/2.50/2.60 的物理和元数据分区、非连续文件区段；按需读取，单次读取不超过 1 MiB，数据缓存上限 4 MiB，单个目录或导航文件限 16 MiB。支持多 M2TS、多 VOB/Cell、蓝光入出点裁剪及索引跳转。蓝光使用第一角度；不支持 DVD 交错角度单元、随机/多 PGC 标题、标题静止画面、交互式菜单、BD-J、解密、普通数据 ISO 浏览，以及 UDF 虚拟/可重映射分区和稀疏文件。跨片段轨道布局或编码类型变化也会报错。
+
+网络 ISO **必须支持 HTTP Range**，返回匹配请求的 `206`、`Content-Range` 和确定且一致的总长度；不支持退回 `200 OK` 顺序下载。跨域响应需通过 `Access-Control-Expose-Headers: Content-Range, Content-Length, Accept-Ranges` 暴露响应头，预检需允许 `Range` 及调用方请求头。沿用 `http.headers`、`http.credentials`；携带凭据时服务端需允许具体来源及凭据。响应不能使用 gzip/br 等内容编码。无效标题、损坏、加密或不支持的结构会报错，不改播最大文件。调用方应处理 `load()`/`play()` 的拒绝及播放器 `error` 事件。
+
+源码构建保留默认开启的 `ENABLE_DEMUXER_ISO`。ISO 使用解码/渲染管线，支持主线程、普通 Worker 和共享内存 Worker；音视频与字幕沿用已有能力，不新增图形字幕渲染器。部署更新后的播放器 JS 和对应编码所需的现有解码组件即可，无需额外 ISO Wasm 模块。
+
 ## 点播跳转
 
 加载媒体后，使用 `seek(timestamp)` 跳转，时间戳为毫秒单位的 `bigint`。应等待返回的 Promise，并处理失败：
@@ -199,7 +231,9 @@ try {
 
 HTTP 点播文件通过 `FetchIOLoader` 读取。服务器支持 Range 时，应返回有效的 `206 Partial Content` 和与请求范围匹配的 `Content-Range`，其中总长度必须是确定且一致的字节数。加载器会拒绝无效的范围响应，以及带非 `identity` 内容编码的 `206` 响应。跨域服务需允许浏览器读取 `Content-Range` 响应头。
 
-服务器忽略 Range 并返回完整 `200 OK` 响应时，加载器会退回顺序读取，在跳转后重新从文件开头读取并丢弃目标之前的字节。此方式仍受封装格式和索引可用性的限制，而且可能显著增加流量和等待时间；需要高效跳转时，应让源站或 CDN 正确支持 Range。
+以下顺序读取回退不适用于 ISO；ISO 缺少 Range 能力会直接报错，不下载完整镜像。
+
+其他输入中，服务器忽略 Range 并返回完整 `200 OK` 响应时，加载器会退回顺序读取，在跳转后重新从文件开头读取并丢弃目标之前的字节。此方式仍受封装格式和索引可用性的限制，而且可能显著增加流量和等待时间；需要高效跳转时，应让源站或 CDN 正确支持 Range。
 
 ## rtsp 和 rtmp
 

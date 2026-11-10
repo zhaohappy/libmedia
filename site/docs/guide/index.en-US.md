@@ -26,7 +26,7 @@ libmedia is designed with multi-threading in mind but can gracefully fall back t
 - High Performance: Designed on multiple threads with no data copy overhead, the overhead of interoperate with Wasm modules is negligible; and supports Webcodecs to use hardware codecs
 - Comprehensive Codecs Support: Support video codecs H265, H264, H266, VP9, ​​VP8, AV1 and audio codecs AAC, MP3, FLAC, SPEEX, OPUS, G711
 - Extend: Provides low-level APIs that can handle various usage scenarios, and can implement more complex business logic based on these low-level APIs
-- Support Multiple Media Formats: Support mp4, mov, mpegts, flv, matroska, webm, avi, asf, wmv, wma, mp3, ogg, flac, aac, wav packaging formats
+- Support Multiple Media Formats: Support mp4, mov, mpegts, flv, matroska, webm, iso (Blu-ray/DVD), avi, asf, wmv, wma, mp3, ogg, flac, aac, wav packaging formats
 - Support Multiple protocols: Support hls, dash, rtmp, rtsp protocols
 - Powerful Tools: The player and transcoder are implemented internally for quick use
 

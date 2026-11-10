@@ -3,7 +3,7 @@ import { test as it } from './helpers/test.mjs'
 import DiscReader, { Bytes, sliceFile } from '../../packages/avformat/src/formats/iso/reader'
 import DiscFilesystem from '../../packages/avformat/src/formats/iso/filesystem'
 import { parseClpi, parseMpls, openDisc, selectTitle, dvdNavTime } from '../../packages/avformat/src/formats/iso/titles'
-import { iso, udf, mpls, clpi, be16, be32, dvdFiles, le32, tag } from './helpers/iso'
+import { iso, udf, mpls, clpi, be16, be32, dvdFiles, dvdNavigationFiles, le32, tag } from './helpers/iso'
 
 function filesystem(bytes: Uint8Array) {
   const calls: { pos: bigint, size: number }[] = []
@@ -139,10 +139,10 @@ it('DVD IFO follows chapter cells across VOB files with independent timestamp or
   assert.equal(disc.title.segments[1].start, 90000n)
 })
 
-it('DVD cell commands fail explicitly instead of playing a guessed VOB sequence', async () => {
+it('DVD rejects a missing cell command instead of playing a guessed VOB sequence', async () => {
   const files = dvdFiles()
   files['VIDEO_TS/VTS_01_0.IFO'][4112 + 238 + 3] = 1
-  await assert.rejects(openDisc(filesystem(iso(files)).fs), /No supported video titles/)
+  await assert.rejects(openDisc(filesystem(iso(files)).fs), /Invalid DVD cell command reference/)
 })
 
 
@@ -260,10 +260,8 @@ function dvdPreCommand(command: number[]) {
   return files
 }
 
-it('DVD rejects pre-command LinkCN, JumpTT, Goto and combined set/link paths', async () => {
+it('DVD rejects cross-title jumps, command loops and unsupported command classes', async () => {
   for (const command of [
-    // LinkCN 2
-    [0x20, 0x07, 0, 0, 0, 0, 0, 2],
     // JumpTT 2
     [0x30, 0x02, 0, 0, 0, 2, 0, 0],
     // Goto 1
@@ -282,4 +280,93 @@ it('DVD allows register-only pre-commands and rejects truncated command tables',
   assert.equal((await openDisc(filesystem(iso(files)).fs)).title.segments.length, 2)
   be16(files['VIDEO_TS/VTS_01_0.IFO'], 4112 + 306, 7)
   await assert.rejects(openDisc(filesystem(iso(files)).fs), /command table/)
+})
+
+it('DVD executes conditional Break and chapter dispatch after register setup', async () => {
+  const files = dvdPreCommand([0, 0, 0, 0, 0, 0, 0, 0])
+  const b = files['VIDEO_TS/VTS_01_0.IFO']
+  const table = 4112 + 300
+  // Register setup followed by a conditional Break and chapter dispatch.
+  const commands = [
+    ...Array.from({ length: 5 }, () => [0, 0, 0, 0, 0, 0, 0, 0]),
+    [0x71, 0, 0, 6, 0xc0, 0x80, 0, 0],
+    [0x61, 0, 0, 7, 0, 6, 0, 0],
+    [0x61, 0, 0, 0, 0, 5, 0, 0],
+    [0x71, 0, 0, 5, 0, 0, 0, 0],
+    [0x71, 0, 0, 1, 0, 0, 0, 0],
+    [0x71, 0, 0, 2, 0, 0, 0, 0],
+    [0, 0xa2, 0, 0, 0, 1, 0, 0],
+    [0x20, 0xa6, 0, 0, 0, 2, 0, 2]
+  ]
+  be16(b, table, commands.length)
+  be16(b, table + 6, 8 + commands.length * 8 - 1)
+  b.set(commands.flat(), table + 8)
+  assert.equal((await openDisc(filesystem(iso(files)).fs)).title.segments.length, 2)
+})
+
+it('DVD rejects a menu call when the referenced menu table is missing', async () => {
+  const files = dvdPreCommand([0x30, 0x08, 0, 9, 1, 0xc0, 0, 0])
+  const b = files['VIDEO_TS/VTS_01_0.IFO']
+  be16(b, 4112 + 300, 0)
+  be16(b, 4112 + 304, 1)
+  b[4112 + 238 + 3] = 1
+  await assert.rejects(openDisc(filesystem(iso(files)).fs), /Missing DVD menu table/)
+})
+
+it('a rejected DVD title does not prevent loading another supported title', async () => {
+  const files = dvdFiles()
+  const vmg = files['VIDEO_TS/VIDEO_TS.IFO']
+  be16(vmg, 2048, 2)
+  be32(vmg, 2052, 31)
+  vmg.set(vmg.slice(2056, 2068), 2068)
+  vmg[2056] |= 0x40
+  assert.equal((await openDisc(filesystem(iso(files)).fs)).info.titleId, '2')
+})
+
+
+it('DVD resolves a Cell menu call through the default button back to the next title chapter', async () => {
+  const { title, info } = await openDisc(filesystem(iso(dvdNavigationFiles())).fs)
+  assert.equal(info.titleId, '1')
+  assert.equal(title.duration, 2000n)
+  assert.deepEqual(title.chapters, [0n, 1000n])
+  assert.deepEqual(title.segments.map((s) => s.path), ['VIDEO_TS/VTS_01:0-2', 'VIDEO_TS/VTS_01:2-4'])
+})
+
+it('DVD follows an explicit program link instead of flattening every cell', async () => {
+  const files = dvdPreCommand([0x20, 6, 0, 0, 0, 0, 0, 2])
+  const { title } = await openDisc(filesystem(iso(files)).fs)
+  assert.equal(title.duration, 1000n)
+  assert.equal(title.segments.length, 1)
+  assert.equal(title.segments[0].path, 'VIDEO_TS/VTS_01:2-4')
+  assert.deepEqual(title.chapters, [0n])
+})
+
+
+it('DVD title completion does not follow a post-command into another title', async () => {
+  const files = dvdPreCommand([0x30, 2, 0, 0, 0, 2, 0, 0])
+  const b = files['VIDEO_TS/VTS_01_0.IFO']
+  be16(b, 4112 + 300, 0)
+  be16(b, 4112 + 302, 1)
+  assert.equal((await openDisc(filesystem(iso(files)).fs)).title.duration, 2000n)
+})
+
+it('DVD rejects a linked cell just beyond the title and a cyclic menu route', async () => {
+  await assert.rejects(openDisc(filesystem(iso(dvdPreCommand([0x20, 7, 0, 0, 0, 0, 0, 3]))).fs), /linked cell/)
+  const files = dvdNavigationFiles()
+  const b = files['VIDEO_TS/VIDEO_TS.IFO']
+  b.set([0x20, 4, 0, 0, 0, 0, 0, 1], 4096 + 32 + 308)
+  await assert.rejects(openDisc(filesystem(iso(files)).fs), /navigation loop/)
+})
+
+
+it('DVD does not invent a menu exit or a resume location', async () => {
+  const files = dvdNavigationFiles()
+  const nav = files['VIDEO_TS/VTS_01_0.VOB']
+  nav.fill(0, 45 + 152, 45 + 160)
+  await assert.rejects(openDisc(filesystem(iso(files)).fs), /button does not leave/)
+  nav.set([0x20, 1, 0, 0, 0, 0, 0, 16], 45 + 152)
+  // Replace CallSS by JumpSS, which does not establish a resume point.
+  const b = files['VIDEO_TS/VTS_01_0.IFO']
+  b[4112 + 308 + 3 * 8 + 1] = 6
+  await assert.rejects(openDisc(filesystem(iso(files)).fs), /resume without/)
 })

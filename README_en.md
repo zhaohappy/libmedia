@@ -92,7 +92,7 @@ for WMV1/2/3, VC-1 and WMA. ASF output, DRM decryption, MMS and WMV Image are no
 supported. Deploy the updated player together with the WMV decoder modules;
 see the [player guide](./site/docs/guide/player.en-US.md) for configuration.
 
-ISO input supports unencrypted Blu-ray/DVD titles from local files or HTTP Range sources. Disc menus, BD-J and decryption are not supported. See the [AVPlayer ISO guide (Chinese)](packages/avplayer/README.md#iso-光盘镜像) for title selection, chapters and filesystem compatibility.
+ISO input supports unencrypted Blu-ray/DVD titles from local files or HTTP Range sources. Deterministic DVD navigation through default menu buttons is supported; interactive menu rendering, BD-J and decryption are not. See the [AVPlayer ISO guide](site/docs/guide/player.en-US.md#iso-playback) for title selection, chapters and filesystem compatibility.
 
 ### Protocol
 

@@ -1,8 +1,8 @@
 import fs from 'fs'
-import path from 'path'
+import { execFileSync } from 'child_process'
 import pico from 'picocolors'
 
-const msgPath = path.resolve('.git/COMMIT_EDITMSG')
+const msgPath = process.argv[2] || execFileSync('git', ['rev-parse', '--git-path', 'COMMIT_EDITMSG'], { encoding: 'utf8' }).trim()
 const msg = fs.readFileSync(msgPath, 'utf-8').trim()
 
 const commitRE =

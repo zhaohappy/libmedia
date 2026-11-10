@@ -3252,15 +3252,14 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   }
 
   /**
-   * 获取章节信息
-   * 
-   * @returns 
+   * 获取已加载光盘的类型、当前标题和标题列表；非 ISO 返回 null。
+   * 标题 duration 为毫秒 bigint，切换标题需通过 load() 的 iso.titleId 选项重新加载。
    */
-  /** Information about the loaded optical disc, or null for ordinary media. */
   public getDiscInfo() {
     return this.formatContext?.discInfo ?? null
   }
 
+  /** 获取章节信息；章节起止时间使用各自的 timeBase。 */
   public getChapters() {
     return this.formatContext.chapters
   }

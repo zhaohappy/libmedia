@@ -35,10 +35,11 @@ Synthetic inputs cover declared bitrate preservation (including WMA decoding par
 ### ISO regressions
 
 ```sh
-npm run test:regression -- iso.test.ts iso-packets.mjs iso-cancel.mjs mpegps-timestamps.mjs read-at.mjs format-probe.test.ts
+npm run test:regression -- iso.test.ts dvdnav.test.ts iso-packets.mjs iso-cancel.mjs mpegps-timestamps.mjs read-at.mjs format-probe.test.ts
 ```
 
-- `iso.test.ts` covers synthetic ISO9660/UDF filesystems, large offsets, fragmented extents, metadata partitions, invalid references, title selection and chapters. Blu-ray cases select STC sequences with reset clocks; DVD cases reject pre-commands that require navigation execution.
+- `iso.test.ts` covers synthetic ISO9660/UDF filesystems, large offsets, fragmented extents, metadata partitions, invalid references, title selection and chapters. Blu-ray cases select STC sequences with reset clocks; DVD cases compile register-driven chapter selection and menu calls into title cells, and reject unsupported navigation.
+- `dvdnav.test.ts` covers deterministic command execution, register arithmetic, conditions, Goto/Break, instruction limits, default menu buttons and malformed PCI data. `dvdNavigationFiles()` supplies original synthetic VMGM/VTS menu chains and title cells without private media.
 - `iso-packets.mjs` covers clip trimming, decoder preroll, timestamp normalization and title-relative seeking.
 - `iso-cancel.mjs` checks that seeking cancels a pending read before waiting for demux to stop, drops stale packets, retains pending decoder requests and reports cancellation to the child demuxer as an abort.
 - `mpegps-timestamps.mjs` covers sparse DVD PES timestamps, B-frame ordering and a fresh final GOP without a following PES, including rational frame rates and sequence extensions.
@@ -52,7 +53,7 @@ The single-file command writes an ESM AVPlayer to `dist/avplayer-single/avplayer
 
 ## Real-media validation
 
-See [browser diagnostics](../avi-browser/README.md) for the loopback HTTP Range server and Chromium scenarios for AVI, ASF/WMV/WMA and RM/RMVB. Supply a local sample through `LIBMEDIA_TEST_MEDIA`; put captures under ignored `test/material/` or outside the checkout. Never commit media, source URLs, credentials, or machine-specific media paths.
+See [browser diagnostics](../avi-browser/README.md) for the loopback HTTP Range server and Chromium scenarios for AVI, ASF/WMV/WMA, RM/RMVB and ISO. Supply a local sample through `LIBMEDIA_TEST_MEDIA`; put captures under ignored `test/material/` or outside the checkout. Never commit media, source URLs, credentials, or machine-specific media paths.
 
 Run the shared-memory and ordinary Worker modes separately. Compare cold startup and seek medians with a reference bundle through `LIBMEDIA_TEST_BUNDLE`, under the same aggregate bandwidth and request latency. Run each comparison at least three times; investigate regressions exceeding 15% before accepting a migration.
 
