@@ -203,6 +203,7 @@ async function loadAndPlay(url) {
     report.chapters = player.getChapters().map((chapter) => Number(chapter.start))
   }
   report.loadMs = performance.now() - started
+  report.network.loaded = await timed(network(), 'Load metrics')
   duration = Number(player.getDuration())
   report.durationMs = duration
   report.streams = player.getStreams().map(({ mediaType, duration, timeBase }) => ({
@@ -221,6 +222,13 @@ async function loadAndPlay(url) {
     player.setPlaybackRate(15)
   }
   player.setVolume(0)
+  if (query.has('start')) {
+    report.initialTarget = numberParam('start', 0, 0)
+    const begin = performance.now()
+    await seek(report.initialTarget)
+    report.initialSeekMs = performance.now() - begin
+    report.network.initialSeek = await timed(network(), 'Initial seek metrics')
+  }
   await play()
   report.played = true
   report.playMs = performance.now() - started
@@ -231,7 +239,8 @@ async function checkPlayback() {
     const before = snapshot()
     await wait(settleMs)
     const after = snapshot()
-    return { before, after, ok: advances(before, after) }
+    return { before, after, ok: advances(before, after)
+      && (report.initialTarget === undefined || nearTarget(after, report.initialTarget + settleMs)) }
   })
 }
 

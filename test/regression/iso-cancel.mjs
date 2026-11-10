@@ -4,6 +4,55 @@ import { loadClass } from './helpers/source.mjs'
 
 const aborted = -1048572
 
+for (const type of ['dvd', 'bluray']) {
+  test(`${type} clip probing preserves the seek target and reads only the required header location`, async () => {
+    const positions = []
+    class Reader {
+      async seek(pos) {
+        await this.onSeek(pos)
+      }
+    }
+    class ChildFormat {
+      init() {}
+      async readHeader(context) {
+        assert.equal(await context.ioReader.onFlush(new Uint8Array(2048)), 2048)
+        return 0
+      }
+      async seek(context, stream, pos) {
+        await context.ioReader.seek(pos)
+        return 0n
+      }
+    }
+    const segment = { file: { size: 65536n }, inTime: 0n, outTime: 90000n, points: [] }
+    const Iso = loadClass('avformat/src/formats/IIsoFormat.ts', 'IIsoFormat', ['openSegment', 'checkReading'], {
+      IOReader: Reader, IMpegpsFormat: ChildFormat, IMpegtsFormat: ChildFormat,
+      prepareDvdSegment: async () => {
+        if (type === 'dvd') {
+          segment.inTime = 900000n
+          segment.outTime += segment.inTime
+        }
+      },
+      seekPoint: async (fs, prepared, time) => {
+        assert.equal(time, prepared.inTime + 45000n, 'lazy NAV clock keeps the requested offset within the cell')
+        return { pos: 4096n }
+      },
+      createAVIFormatContext: () => ({}), AVSeekFlags: { BYTE: 2 },
+      check: (value, message) => assert.ok(value, message)
+    })
+    const iso = new Iso()
+    iso.info = { type }
+    iso.title = { segments: [segment] }
+    iso.clearAudio = () => {}
+    iso.checkEncryption = () => {}
+    iso.reader = { file: async (file, pos, length) => {
+      positions.push(pos)
+      return new Uint8Array(length)
+    } }
+    await iso.openSegment(0, 45000n)
+    assert.deepEqual(positions, [type === 'dvd' ? 4096n : 0n])
+  })
+}
+
 test('cancelled ISO clip reads report abort to the child without publishing bytes', async () => {
   class DiscAbortError extends Error {}
   class ChildFormat {
@@ -18,7 +67,10 @@ test('cancelled ISO clip reads report abort to the child without publishing byte
   const Iso = loadClass(
     'avformat/src/formats/IIsoFormat.ts', 'IIsoFormat',
     ['openSegment', 'checkReading', 'cancelPendingRead'], {
-      DiscAbortError, IOReader: class {}, IMpegpsFormat: ChildFormat,
+      DiscAbortError, IOReader: class {
+        async seek() {}
+      }, IMpegpsFormat: ChildFormat,
+      prepareDvdSegment: async () => {},
       createAVIFormatContext: () => ({}), seekPoint: async () => ({ pos: 0n }),
       AVSeekFlags: { BYTE: 2 }, IOError: { ABORT: aborted, INVALID_OPERATION: -1, END: -2 },
       check: (value, message) => assert.ok(value, message)
@@ -28,7 +80,7 @@ test('cancelled ISO clip reads report abort to the child without publishing byte
   let rejectRead
   iso.clearAudio = () => {}
   iso.info = { type: 'dvd' }
-  iso.title = { segments: [{ file: { size: 2048n } }] }
+  iso.title = { segments: [{ file: { size: 2048n }, inTime: 0n }] }
   iso.reader = {
     file: () => new Promise((_, reject) => rejectRead = reject),
     cancel: () => rejectRead(new DiscAbortError())

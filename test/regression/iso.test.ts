@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test as it } from './helpers/test.mjs'
 import DiscReader, { Bytes, sliceFile } from '../../packages/avformat/src/formats/iso/reader'
 import DiscFilesystem from '../../packages/avformat/src/formats/iso/filesystem'
-import { parseClpi, parseMpls, openDisc, selectTitle, dvdNavTime } from '../../packages/avformat/src/formats/iso/titles'
+import { parseClpi, parseMpls, openDisc, selectTitle, dvdNavTime, prepareDvdSegment } from '../../packages/avformat/src/formats/iso/titles'
 import { iso, udf, mpls, clpi, be16, be32, dvdFiles, dvdNavigationFiles, le32, tag } from './helpers/iso'
 
 function filesystem(bytes: Uint8Array) {
@@ -85,6 +85,34 @@ it('cancellation rejects in-flight and queued reads without caching stale data',
   await assert.rejects(queued, /cancelled/)
 })
 
+it('seek cancellation retains validated blocks but retries an aborted block', async () => {
+  let calls = 0
+  let release: () => void
+  let started: () => void
+  const ready = new Promise<void>((resolve) => started = resolve)
+  const reader = new DiscReader(131072n, async () => {
+    const value = ++calls
+    if (value === 2) {
+      await new Promise<void>((resolve) => {
+        release = resolve
+        started()
+      })
+    }
+    return new Uint8Array(65536).fill(value)
+  })
+  assert.deepEqual(await reader.read(0n, 1), new Uint8Array([1]))
+  const pending = assert.rejects(reader.read(65536n, 1), /cancelled/)
+  const queued = assert.rejects(reader.read(0n, 1), /cancelled/)
+  await ready
+  reader.cancel()
+  release!()
+  await Promise.all([pending, queued])
+  assert.deepEqual(await reader.read(0n, 1), new Uint8Array([1]))
+  assert.equal(calls, 2, 'completed blocks survive seek')
+  assert.deepEqual(await reader.read(65536n, 1), new Uint8Array([3]))
+  assert.equal(calls, 3, 'cancelled bytes were never cached')
+})
+
 it('slices a virtual file across noncontiguous physical extents', () => {
   const sliced = sliceFile({ size: 20n, directory: false, extents: [{ offset: 100n, length: 10n }, { offset: 500n, length: 10n }] }, 8n, 15n)
   assert.deepEqual(sliced.extents, [{ offset: 108n, length: 2n }, { offset: 500n, length: 5n }])
@@ -129,12 +157,15 @@ it('DVD navigation timestamp is read from PCI and title ties use numeric IDs', (
 
 
 it('DVD IFO follows chapter cells across VOB files with independent timestamp origins', async () => {
-  const disc = await openDisc(filesystem(iso(dvdFiles())).fs)
+  const { fs } = filesystem(iso(dvdFiles()))
+  const disc = await openDisc(fs)
   assert.equal(disc.info.type, 'dvd')
   assert.equal(disc.title.duration, 2000n)
   assert.deepEqual(disc.title.chapters, [0n, 1000n])
   assert.equal(disc.title.segments[0].file.extents.length, 2)
   assert.equal(disc.title.segments[0].inTime, 90000n)
+  assert.equal(disc.title.segments[1].dvdTimePending, true)
+  await prepareDvdSegment(fs, disc.title.segments[1])
   assert.equal(disc.title.segments[1].inTime, 900000n)
   assert.equal(disc.title.segments[1].start, 90000n)
 })

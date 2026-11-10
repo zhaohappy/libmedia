@@ -15,8 +15,9 @@ const MiB = 1024 * 1024
 const idx1PrefixBytes = 64 * 1024
 const mode = process.env.LIBMEDIA_TEST_MODE ?? 'shared'
 const port = Number(process.env.LIBMEDIA_TEST_PORT ?? 18774)
-const rate = process.env.LIBMEDIA_TEST_THROTTLE === '1' ? MiB : 0
-const latencyMs = rate ? 80 : 0
+const throttled = process.env.LIBMEDIA_TEST_THROTTLE === '1'
+const rate = Number(process.env.LIBMEDIA_TEST_RATE_MIB ?? (throttled ? 1 : 0)) * MiB
+const latencyMs = Number(process.env.LIBMEDIA_TEST_LATENCY_MS ?? (throttled ? 80 : 0))
 const failIdx1 = process.env.LIBMEDIA_TEST_FAIL_IDX1 === '1'
 const ignoreRange = process.env.LIBMEDIA_TEST_IGNORE_RANGE === '1'
 const wasmDir = process.env.LIBMEDIA_TEST_WASM_DIR
@@ -110,6 +111,9 @@ async function main() {
   }
   if (!Number.isInteger(port) || port < 0 || port > 65535) {
     throw new Error('LIBMEDIA_TEST_PORT must be a valid port')
+  }
+  if (!Number.isFinite(rate) || rate < 0 || !Number.isFinite(latencyMs) || latencyMs < 0) {
+    throw new Error('LIBMEDIA_TEST_RATE_MIB and LIBMEDIA_TEST_LATENCY_MS must be nonnegative finite numbers')
   }
 
   const media = await localFile(process.env.LIBMEDIA_TEST_MEDIA, 'LIBMEDIA_TEST_MEDIA')

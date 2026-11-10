@@ -50,8 +50,10 @@ export interface DiscSegment {
   endPos?: bigint
   /** DVD VOBU boundaries, relative to this cell's byte stream. */
   vobus?: bigint[]
-  /** Verified NAV timestamps survive cancellation of the reader's byte cache. */
+  /** Verified NAV timestamps survive byte-cache eviction and read cancellation. */
   vobuTimes?: Map<number, bigint>
+  /** DVD bounds remain cell-relative until its first NAV is needed. */
+  dvdTimePending?: boolean
 }
 export interface DiscTitle extends DiscTitleInfo {
   segments: DiscSegment[]
@@ -380,7 +382,7 @@ async function dvd(fs: DiscFilesystem) {
       if (!segments.length || chapterCells.includes(cell)) {
         chapters.push(duration / 90n)
       }
-      segments.push({ file, path: `${base}:${from}-${to}`, inTime: 0n, outTime: ticks, start: duration, points: [],
+      segments.push({ file, path: `${base}:${from}-${to}`, inTime: 0n, outTime: ticks, start: duration, points: [], dvdTimePending: true,
         vobus: vts.vobus.filter((sector) => sector >= from && sector < to).map((sector) => BigInt(sector - from) * 2048n) })
       duration += ticks
     }
@@ -431,11 +433,8 @@ export async function openDisc(fs: DiscFilesystem, id?: string) {
       check(index.startPos < segment.file.size && (index.endPos === undefined || index.endPos <= segment.file.size), 'CLPI sequence outside clip')
       check(segment.points.every((p) => p.pos < segment.file.size), 'CLPI index outside clip')
     }
-    else {
-      const duration = segment.outTime
-      segment.inTime = dvdNavTime(new Bytes(await fs.reader.file(segment.file, 0n, 2048)))
-      segment.outTime = segment.inTime + duration
-      segment.points = [{ time: segment.inTime, pos: 0n }]
+    else if (segment === title.segments[0]) {
+      await prepareDvdSegment(fs, segment)
     }
   }
   const list = [...unique.values()]
@@ -444,6 +443,19 @@ export async function openDisc(fs: DiscFilesystem, id?: string) {
   }
   const info: DiscInfo = { type, titleId: title.id, titles: list.map(({ id, name, duration, chapterCount }) => ({ id, name, duration, chapterCount })) }
   return { info, title }
+}
+
+export async function prepareDvdSegment(fs: DiscFilesystem, segment: DiscSegment) {
+  if (segment.dvdTimePending) {
+    const time = dvdNavTime(new Bytes(await fs.reader.file(segment.file, 0n, 2048)))
+    // Publish only after a successful read; cancellation must leave the relative
+    // bounds intact. The title duration and chapter positions do not change.
+    const duration = segment.outTime - segment.inTime
+    segment.inTime = time
+    segment.outTime = time + duration
+    segment.points = [{ time, pos: 0n }]
+    segment.dvdTimePending = false
+  }
 }
 
 export async function seekPoint(fs: DiscFilesystem, segment: DiscSegment, time: bigint) {

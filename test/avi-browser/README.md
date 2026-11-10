@@ -32,6 +32,8 @@ The server binds to `127.0.0.1:18774`. It serves the diagnostic page, bundle, We
 | `LIBMEDIA_TEST_PORT` | Overrides port 18774. Use 0 to select a free port and read it from the startup message. |
 | `LIBMEDIA_TEST_MODE` | `shared` sends COOP and COEP headers, which allow SharedArrayBuffer in supporting browsers. `ordinary` omits those headers. |
 | `LIBMEDIA_TEST_THROTTLE` | Set to `1` for 80 ms latency per media GET and an aggregate rate of 1 MiB/s across media responses. |
+| `LIBMEDIA_TEST_RATE_MIB` | Override aggregate media bandwidth in MiB/s; `0` means unlimited. |
+| `LIBMEDIA_TEST_LATENCY_MS` | Override added latency per media GET in milliseconds, independently of bandwidth. |
 | `LIBMEDIA_TEST_IGNORE_RANGE` | Set to `1` to ignore media Range headers and return the full body with HTTP 200. For AVI, cold and rapid seeks must still reach the requested position; this fallback transfers the prefix again. ISO must reject the missing Range support. |
 | `LIBMEDIA_TEST_FAIL_IDX1` | Set to `1` for the fallback case. The server walks the RIFF headers to find the top-level `idx1` and responds with HTTP 503 to the first background Range probe after the 64 KiB entry prefix. |
 
@@ -99,6 +101,14 @@ The seek check allows up to five seconds to advance 15 seconds of media after
 resuming, then measures the steady playback rate independently.
 
 The default seek targets are derived from the media duration. Set `target` for cold, fallback, and cancellation seeks. Set comma-separated `targets` for the matrix. For edge cases, override `pausedTarget`, `backTarget`, `replayTarget`, or `rateTarget`. Targets use integer milliseconds. `cancelAfter` is the delay before destroying during load or seek, in milliseconds. Enable throttling when testing cancellation so the operation is still pending.
+
+Use `scenario=startup&start=4875000&preload=4` to measure opening directly at
+01:21:15 through `load → seek → play`. `initialSeekMs` isolates the seek before
+playback; `network.loaded` and `network.initialSeek` capture those stages, while
+`FIRST_VIDEO_RENDERED` measures time from startup to the target's first frame.
+For a 10 MiB/s connection with 80 ms added latency, set
+`LIBMEDIA_TEST_RATE_MIB=10 LIBMEDIA_TEST_LATENCY_MS=80`. The `cold` scenario
+instead starts playback before seeking, so its `seekMs` excludes loading.
 
 Seek checks validate the immediate landing time separately from subsequent clock
 progress, accounting for elapsed playback in the observation window. For inputs

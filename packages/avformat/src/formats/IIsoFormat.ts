@@ -39,7 +39,7 @@ import IMpegtsFormat from './IMpegtsFormat'
 import IMpegpsFormat from './IMpegpsFormat'
 import DiscReader, { Bytes, check, DiscError, DiscAbortError } from './iso/reader'
 import DiscFilesystem from './iso/filesystem'
-import { openDisc, seekPoint, type DiscInfo, type DiscTitle } from './iso/titles'
+import { openDisc, prepareDvdSegment, seekPoint, type DiscInfo, type DiscTitle } from './iso/titles'
 
 export interface IIsoFormatOptions { titleId?: string }
 
@@ -127,7 +127,10 @@ export default class IIsoFormat extends IFormat {
     this.segmentIndex = index
     this.ioError = null
     const segment = this.title.segments[index]
-    const point = await seekPoint(this.fs, segment, time)
+    const relativeTime = time - segment.inTime
+    await prepareDvdSegment(this.fs, segment)
+    this.checkReading()
+    const point = await seekPoint(this.fs, segment, segment.inTime + relativeTime)
     this.checkReading()
     this.clipEnd = segment.endPos ?? segment.file.size
     if (this.info.type === 'bluray') {
@@ -138,7 +141,9 @@ export default class IIsoFormat extends IFormat {
     }
     const child = this.child = createAVIFormatContext()
     child.iformat = this.info.type === 'bluray' ? new IMpegtsFormat() : new IMpegpsFormat()
-    child.ioReader = new IOReader(256 * 1024)
+    // A DVD GOP often straddles a 256 KiB read. Fetch a larger window so the
+    // first decodable group does not need another HTTP round trip after seek.
+    child.ioReader = new IOReader((this.info.type === 'dvd' ? 512 : 256) * 1024)
     let position = 0n
     child.ioReader.onSize = () => this.clipEnd
     child.ioReader.onSeek = (pos) => {
@@ -168,6 +173,11 @@ export default class IIsoFormat extends IFormat {
         this.ioError = error
         return error instanceof DiscAbortError ? IOError.ABORT : IOError.INVALID_OPERATION
       }
+    }
+    if (this.info.type === 'dvd') {
+      // Every DVD entry is a pack header. Probe at the target NAV instead of
+      // fetching the cell's opening bytes only to discard them on the seek below.
+      await child.ioReader.seek(point.pos, false, false)
     }
     child.iformat.init(child)
     const result = await child.iformat.readHeader(child)

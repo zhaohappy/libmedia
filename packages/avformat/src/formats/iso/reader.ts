@@ -81,7 +81,8 @@ export default class DiscReader {
   }
   cancel() {
     this.generation++
-    this.cache.clear()
+    // Validated blocks belong to this immutable image, not to a seek. Keep the
+    // bounded cache; generation checks reject pending reads before publication.
   }
   async read(pos: bigint, length: number): Promise<Uint8Array> {
     check(Number.isSafeInteger(length) && length >= 0 && length <= 16 * 1024 * 1024
