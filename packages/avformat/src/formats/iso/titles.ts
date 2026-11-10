@@ -50,6 +50,8 @@ export interface DiscSegment {
   endPos?: bigint
   /** DVD VOBU boundaries, relative to this cell's byte stream. */
   vobus?: bigint[]
+  /** Verified NAV timestamps survive cancellation of the reader's byte cache. */
+  vobuTimes?: Map<number, bigint>
 }
 export interface DiscTitle extends DiscTitleInfo {
   segments: DiscSegment[]
@@ -446,20 +448,48 @@ export async function openDisc(fs: DiscFilesystem, id?: string) {
 
 export async function seekPoint(fs: DiscFilesystem, segment: DiscSegment, time: bigint) {
   if (segment.vobus?.length) {
+    const times = segment.vobuTimes ??= new Map<number, bigint>()
+    const readTime = async (index: number) => {
+      if (!times.has(index)) {
+        const pts = dvdNavTime(new Bytes(await fs.reader.file(segment.file, segment.vobus[index], 2048)))
+        times.set(index, pts)
+      }
+      return times.get(index)!
+    }
+    if (segment.vobus[0] === 0n) {
+      times.set(0, segment.inTime)
+    }
     let low = 0
     let high = segment.vobus.length
-    while (low + 1 < high) {
-      const mid = Math.floor((low + high) / 2)
-      const pts = dvdNavTime(new Bytes(await fs.reader.file(segment.file, segment.vobus[mid], 2048)))
-      if (pts <= time) {
-        low = mid
+    let lowTime = await readTime(low)
+    let highTime = segment.outTime
+    for (const [index, pts] of times) {
+      if (pts <= time && index > low) {
+        low = index; lowTime = pts
       }
-      else {
-        high = mid
+      else if (pts > time && index < high) {
+        high = index; highTime = pts
       }
     }
-    const pos = segment.vobus[low]
-    return { pos, time: dvdNavTime(new Bytes(await fs.reader.file(segment.file, pos, 2048))) }
+    // VOBUs usually have similar durations even with variable bitrate. Estimate
+    // an index, then verify both sides using NAV timestamps. Limit interpolation
+    // attempts so irregular durations still converge with binary search.
+    let attempts = 0
+    while (low + 1 < high) {
+      let mid = Math.floor((low + high) / 2)
+      if (attempts++ < 4 && highTime > lowTime) {
+        const estimate = BigInt(low) + (time - lowTime) * BigInt(high - low) / (highTime - lowTime)
+        mid = estimate <= BigInt(low) ? low + 1 : estimate >= BigInt(high) ? high - 1 : Number(estimate)
+      }
+      const pts = await readTime(mid)
+      if (pts <= time) {
+        low = mid; lowTime = pts
+      }
+      else {
+        high = mid; highTime = pts
+      }
+    }
+    return { pos: segment.vobus[low], time: lowTime }
   }
   let result = segment.points[0]
   check(result, 'Missing disc seek index')

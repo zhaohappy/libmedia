@@ -35,10 +35,11 @@ Synthetic inputs cover declared bitrate preservation (including WMA decoding par
 ### ISO regressions
 
 ```sh
-npm run test:regression -- iso.test.ts dvdnav.test.ts iso-packets.mjs iso-cancel.mjs mpegps-timestamps.mjs read-at.mjs format-probe.test.ts
+npm run test:regression -- iso.test.ts iso-seek.test.ts dvdnav.test.ts iso-packets.mjs iso-cancel.mjs mpegps-timestamps.mjs read-at.mjs format-probe.test.ts
 ```
 
 - `iso.test.ts` covers synthetic ISO9660/UDF filesystems, large offsets, fragmented extents, metadata partitions, invalid references, title selection and chapters. Blu-ray cases select STC sequences with reset clocks; DVD cases compile register-driven chapter selection and menu calls into title cells, and reject unsupported navigation.
+- `iso-seek.test.ts` bounds HTTP Range requests for long DVD cells beyond 4 GiB, checks NAV-verified interpolation and binary fallback with uneven VOBU durations, and verifies timestamp reuse across seeks without retaining cancelled probes. These budgets cover index lookup; playback also reads and decodes the target GOP.
 - `dvdnav.test.ts` covers deterministic command execution, register arithmetic, conditions, Goto/Break, instruction limits, default menu buttons and malformed PCI data. `dvdNavigationFiles()` supplies original synthetic VMGM/VTS menu chains and title cells without private media.
 - `iso-packets.mjs` covers clip trimming, decoder preroll, timestamp normalization and title-relative seeking.
 - `iso-cancel.mjs` checks that seeking cancels a pending read before waiting for demux to stop, drops stale packets, retains pending decoder requests and reports cancellation to the child demuxer as an abort.
