@@ -143,7 +143,9 @@ export default class IIsoFormat extends IFormat {
     child.iformat = this.info.type === 'bluray' ? new IMpegtsFormat() : new IMpegpsFormat()
     // A DVD GOP often straddles a 256 KiB read. Fetch a larger window so the
     // first decodable group does not need another HTTP round trip after seek.
-    child.ioReader = new IOReader((this.info.type === 'dvd' ? 512 : 256) * 1024)
+    // High-bitrate Blu-ray clips need 1 MiB windows to amortize HTTP range
+    // latency during playback and preroll, within DiscReader's readAt limit.
+    child.ioReader = new IOReader((this.info.type === 'dvd' ? 512 : 1024) * 1024)
     let position = 0n
     child.ioReader.onSize = () => this.clipEnd
     child.ioReader.onSeek = (pos) => {
