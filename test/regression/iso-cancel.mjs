@@ -183,6 +183,7 @@ for (const oldResult of [aborted, 0]) {
       array: { each: (values, callback) => values.forEach(callback) }
     })
     const pipeline = new Pipeline()
+    pipeline.tryBufferedSeek = () => false
     const releases = []
     const task = {
       formatContext: {

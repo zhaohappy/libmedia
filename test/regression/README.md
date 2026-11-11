@@ -47,6 +47,23 @@ npm run test:regression -- iso.test.ts iso-seek.test.ts dvdnav.test.ts iso-packe
 - `mpegps-timestamps.mjs` covers sparse DVD PES timestamps, B-frame ordering and a fresh final GOP without a following PES, including rational frame rates and sequence extensions.
 - `read-at.mjs` checks HTTP Range validation and cancellation/reuse through both message-channel implementations. `format-probe.test.ts` checks signature probing when a filename has the wrong extension.
 
+ISO frame seeks first check the unread compressed-packet queues plus a bounded
+history of delivered/skipped packets (32 MiB accounted buffer/side-data bytes and
+packet overhead, at most 8192 references). Complete active audio/video coverage
+from a preceding video keyframe through 100 ms beyond the target enables an
+atomic queue adjustment, without cancelling I/O or moving the demux cursor.
+H.264/HEVC/VVC use the decoder's bitstream RAP check rather than relying on
+container key flags. Delivering a codec configuration change clears old history.
+Decoders and render synchronization still reset normally. Missing keyframes,
+gaps, configuration changes within preroll, active subtitle queues, unsupported
+seek flags and live inputs use the existing seek path. Real seeks, track changes,
+queue cropping and teardown release history. Source EOF remains at the unchanged
+demux tail when replaying cached packets.
+
+`buffered-seek.test.ts` covers admission and history ownership/budgets;
+`buffered-seek-pipeline.mjs` covers forward/backward hits, in-flight tail appends,
+Worker buffer transfers, EOF and atomic fallback through the actual pipeline.
+
 ISO media reads opt into a separate HTTP streaming channel: 5 MiB requests,
 at most 8 MiB of owned media cache, and prefetch of the next window when the
 consumer is within 1 MiB of the current end. Each caller still receives at most
