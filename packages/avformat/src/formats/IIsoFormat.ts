@@ -164,7 +164,7 @@ export default class IIsoFormat extends IFormat {
       }
       try {
         const length = Number(this.clipEnd - position < BigInt(buffer.length) ? this.clipEnd - position : BigInt(buffer.length))
-        const bytes = await this.reader.file(segment.file, position, length)
+        const bytes = await this.reader.file(segment.file, position, length, this.clipEnd)
         this.checkEncryption(bytes, position)
         this.checkReading()
         buffer.set(bytes)

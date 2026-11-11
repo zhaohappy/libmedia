@@ -46,6 +46,21 @@ npm run test:regression -- iso.test.ts iso-seek.test.ts dvdnav.test.ts iso-packe
 - `mpegps-timestamps.mjs` covers sparse DVD PES timestamps, B-frame ordering and a fresh final GOP without a following PES, including rational frame rates and sequence extensions.
 - `read-at.mjs` checks HTTP Range validation and cancellation/reuse through both message-channel implementations. `format-probe.test.ts` checks signature probing when a filename has the wrong extension.
 
+ISO media reads opt into a separate HTTP streaming channel: 5 MiB requests,
+at most 8 MiB of owned media cache, and prefetch of the next window when the
+consumer is within 1 MiB of the current end. Each caller still receives at most
+1 MiB, as soon as those bytes arrive. Physical extents and clip boundaries limit
+read-ahead; metadata remains on the exact-read path with its separate 4 MiB disc
+cache. Seek cancellation preserves received media bytes while rejecting pending
+reads and late responses; stop/reopen clears the media cache.
+
+`http-prefetch.mjs` checks early delivery before a response completes, request and
+cache budgets, backward cache hits, transferred-buffer ownership, cold seeks,
+cancellation, and malformed/truncated responses against a loopback HTTP server.
+`read-at.mjs` also checks forwarding the read-ahead boundary and cache reuse over
+both real and fallback message channels. `iso.test.ts` checks physical extent and
+clip limits; `bluray-read.test.ts` exercises small parser reads across extents.
+
 Generate redistributable DVD/Blu-ray media and validate real decoding with the [optical-disc browser fixtures](../avi-browser/README.md#optical-disc-fixtures). Commit the generators and synthetic tests; keep generated ISO/VOB/M2TS files and browser captures under ignored `test/material/` or outside the checkout. Playwright CLI logs in `.playwright-cli/` and captures in `output/playwright/` are also ignored.
 
 `eslint-check` also runs `lint:tests`. The dedicated `lint:tests` command checks regression cases, helpers, fixtures, browser diagnostics, the runner and its lint configuration. It inherits the repository's JavaScript rules with ES2022 syntax enabled and rejects warnings. Use `npm run lint:tests -- --fix` for formatting; do not suppress rules to accommodate a new test.

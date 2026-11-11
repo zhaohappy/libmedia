@@ -185,10 +185,10 @@ export default class IOPipeline extends Pipeline {
         }
 
         case 'readAt': {
-          const { pos, length } = request.params
+          const { pos, length, readAheadEnd } = request.params
           let result: number | Uint8Array
           try {
-            result = await ioLoader.readAt?.(pos, length) ?? errorType.OPERATE_NOT_SUPPORT
+            result = await ioLoader.readAt?.(pos, length, readAheadEnd) ?? errorType.OPERATE_NOT_SUPPORT
           }
           catch (error) {
             result = errorType.DATA_INVALID

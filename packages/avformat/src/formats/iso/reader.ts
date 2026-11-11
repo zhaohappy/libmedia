@@ -76,7 +76,7 @@ export default class DiscReader {
   private cache = new Map<bigint, Uint8Array>()
   private queue: Promise<unknown> = Promise.resolve()
   private generation = 0
-  constructor(public size: bigint, private readAt: (pos: bigint, length: number) => Promise<Uint8Array | number>) {
+  constructor(public size: bigint, private readAt: (pos: bigint, length: number, readAheadEnd?: bigint) => Promise<Uint8Array | number>) {
     check(size > 0n && size <= BigInt(Number.MAX_SAFE_INTEGER), 'Invalid disc size')
   }
   cancel() {
@@ -133,21 +133,61 @@ export default class DiscReader {
     this.queue = result.catch(() => {})
     return result
   }
-  async file(file: DiscFile, pos = 0n, length = Number(file.size)): Promise<Uint8Array> {
+  private async media(pos: bigint, length: number, end: bigint): Promise<Uint8Array> {
+    const generation = this.generation
+    const run = async () => {
+      const result = new Uint8Array(length)
+      for (let offset = 0; offset < length; offset += 1024 * 1024) {
+        if (generation !== this.generation) {
+          throw new DiscAbortError()
+        }
+        const count = Math.min(1024 * 1024, length - offset)
+        const bytes = await this.readAt(pos + BigInt(offset), count, end)
+        if (generation !== this.generation) {
+          throw new DiscAbortError()
+        }
+        if (typeof bytes === 'number') {
+          throw new DiscError(`Disc media read failed (${bytes})`, bytes)
+        }
+        check(bytes.length === count, 'Short disc media read')
+        result.set(bytes, offset)
+      }
+      return result
+    }
+    const result = this.queue.then(run)
+    this.queue = result.catch(() => {})
+    return result
+  }
+  async file(file: DiscFile, pos = 0n, length = Number(file.size), readAheadEnd?: bigint): Promise<Uint8Array> {
+    const generation = this.generation
     check(Number.isSafeInteger(length) && length >= 0 && length <= 16 * 1024 * 1024
       && pos >= 0n && pos + BigInt(length) <= file.size, 'Invalid disc file range')
+    check(readAheadEnd === undefined || readAheadEnd >= pos + BigInt(length) && readAheadEnd <= file.size, 'Invalid disc read-ahead boundary')
     if (file.inline) {
       return file.inline.slice(Number(pos), Number(pos) + length)
     }
     const result = new Uint8Array(length)
     let done = 0
+    let logicalOffset = 0n
     for (const extent of file.extents) {
+      if (generation !== this.generation) {
+        throw new DiscAbortError()
+      }
       if (pos >= extent.length) {
-        pos -= extent.length; continue
+        pos -= extent.length
+        logicalOffset += extent.length
+        continue
       }
       const count = Number(extent.length - pos < BigInt(length - done) ? extent.length - pos : BigInt(length - done))
-      result.set(await this.read(extent.offset + pos, count), done)
+      const limit = readAheadEnd === undefined ? undefined : readAheadEnd - logicalOffset
+      result.set(limit === undefined
+        ? await this.read(extent.offset + pos, count)
+        : await this.media(extent.offset + pos, count, extent.offset + (limit < extent.length ? limit : extent.length)), done)
+      if (generation !== this.generation) {
+        throw new DiscAbortError()
+      }
       done += count
+      logicalOffset += extent.length
       pos = 0n
       if (done === length) {
         return result

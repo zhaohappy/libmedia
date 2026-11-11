@@ -118,6 +118,27 @@ it('slices a virtual file across noncontiguous physical extents', () => {
   assert.deepEqual(sliced.extents, [{ offset: 108n, length: 2n }, { offset: 500n, length: 5n }])
 })
 
+it('disc media prefetch is clipped to physical extents and the selected clip end', async () => {
+  const calls: { pos: bigint, size: number, end?: bigint }[] = []
+  const reader = new DiscReader(10n * 1024n ** 3n, async (pos, size, end) => {
+    calls.push({ pos, size, end })
+    return new Uint8Array(size)
+  })
+  const base = 5n * 1024n ** 3n
+  const file = { size: 4096n, directory: false, extents: [
+    { offset: base, length: 2048n }, { offset: base + 65536n, length: 2048n }
+  ] }
+  await reader.file(file, 1024n, 2048, 3500n)
+  assert.deepEqual(calls, [
+    { pos: base + 1024n, size: 1024, end: base + 2048n },
+    { pos: base + 65536n, size: 1024, end: base + 65536n + 1452n }
+  ])
+  calls.length = 0
+  await reader.file(file, 0n, 100)
+  assert.equal(calls[0].end, undefined, 'metadata does not opt into media prefetch')
+  await assert.rejects(reader.file(file, 0n, 100, 99n), /boundary/)
+})
+
 it('Blu-ray playlist maps in/out times and chapter marks to a continuous title', () => {
   const title = parseMpls(new Bytes(mpls([{ name: '00001', start: 45000, end: 135000 }, { name: '00002', start: 90000, end: 225000 }])), '00000')
   assert.equal(title.duration, 5000n)

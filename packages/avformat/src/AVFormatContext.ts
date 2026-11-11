@@ -103,8 +103,9 @@ export interface AVIFormatContext {
 
   /**
    * Independently read an exact byte range of up to 1 MiB, or return a negative error.
+   * An optional exclusive physical boundary enables streaming media read-ahead.
    */
-  readAt?: (pos: bigint, length: number) => Promise<Uint8Array | number>
+  readAt?: (pos: bigint, length: number, readAheadEnd?: bigint) => Promise<Uint8Array | number>
 
   errorFlag: number
 

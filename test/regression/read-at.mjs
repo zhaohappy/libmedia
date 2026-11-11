@@ -1,58 +1,10 @@
-import { readSource, transpile, ts } from './helpers/source.mjs'
+import { load } from './helpers/io-loader.mjs'
 import { test } from './helpers/test.mjs'
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
-import { dirname, join } from 'node:path'
-import { compileFunction } from 'node:vm'
 
-const modules = new Map()
 const fetchLoaderPath = 'avnetwork/src/ioLoader/FetchIOLoader.ts'
 const fileLoaderPath = 'avnetwork/src/ioLoader/FileIOLoader.ts'
-function load(relativePath) {
-  if (modules.has(relativePath)) {
-    return modules.get(relativePath)
-  }
-
-  const outputText = transpile(readSource(relativePath).getFullText(), { module: ts.ModuleKind.CommonJS })
-  const exports = {}
-  const requireModule = (name) => {
-    switch (name) {
-      case '@libmedia/common':
-        return {
-          is: load('common/src/util/is.ts'),
-          object: load('common/src/util/object.ts'),
-          logger: load('common/src/util/logger.ts'),
-          getTimestamp: load('common/src/function/getTimestamp.ts').default
-        }
-      case '@libmedia/common/timer':
-        return { Sleep: load('common/src/timer/Sleep.ts').default }
-      case '@libmedia/common/io':
-        return load('common/src/io/error.ts')
-      case '@libmedia/common/network': {
-        const port = load('common/src/network/IPCPort.ts')
-        return { ...port, IPCPort: port.default }
-      }
-      case '@libmedia/avutil':
-        return { ...load('avutil/src/avformat.ts'), errorType: load('avutil/src/error.ts') }
-      case '@libmedia/avnetwork':
-        return {
-          FetchIOLoader: load(fetchLoaderPath).default,
-          FileIOLoader: load(fileLoaderPath).default
-        }
-      case '@libmedia/cheap':
-        return {}
-      default:
-        if (name.startsWith('.')) {
-          return load(join(dirname(relativePath), `${name}.ts`))
-        }
-        throw new Error(`Unexpected upstream import: ${name}`)
-    }
-  }
-  modules.set(relativePath, exports)
-  compileFunction(outputText, ['require', 'exports', 'static_cast', 'nullptr', 'assert'])(requireModule, exports, BigInt, null, assert.ok)
-  return exports
-}
-
 const { default: FetchIOLoader } = load(fetchLoaderPath)
 const { default: FileIOLoader } = load(fileLoaderPath)
 const { IOError } = load('common/src/io/error.ts')
@@ -353,6 +305,16 @@ async function main() {
         await nextStarted
         finishHeldBody()
         assert.deepEqual(await next, bytes.slice(20, 28), 'readAt remains usable after seek cancellation')
+        const prefetchStarted = new Promise((resolve) => onHeldBody = resolve)
+        const prefetched = demuxPort.request('readAt', { pos: 20n, length: 8, readAheadEnd: 100n })
+        await prefetchStarted
+        assert.equal(requests.at(-1).headers.range, 'bytes=20-99', 'IPC forwards the prefetch boundary')
+        finishHeldBody()
+        assert.deepEqual(await prefetched, bytes.slice(20, 28))
+        const beforeHit = requests.length
+        demuxPort.notify('abortReadAt')
+        assert.deepEqual(await demuxPort.request('readAt', { pos: 20n, length: 8, readAheadEnd: 100n }), bytes.slice(20, 28))
+        assert.equal(requests.length, beforeHit, 'transferred output does not detach the seek cache')
         assert.equal(stats.bufferReceiveBytes, 0n)
       }
       finally {

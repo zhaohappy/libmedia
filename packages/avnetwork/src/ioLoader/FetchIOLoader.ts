@@ -30,6 +30,7 @@ import { IOError, type Uint8ArrayInterface } from '@libmedia/common/io'
 
 import type { IOLoaderOptions } from './IOLoader'
 import IOLoader, { IOLoaderStatus } from './IOLoader'
+import HttpRangeReader from './HttpRangeReader'
 import type { Data, HttpOptions, Range } from '@libmedia/common'
 
 const READ_AT_TIMEOUT_MS = 10_000
@@ -65,6 +66,7 @@ export default class FetchIOLoader extends IOLoader {
   private abortController: AbortController
 
   private rangeController: AbortController
+  private rangeReader: HttpRangeReader | undefined
 
   private reader: ReadableStreamDefaultReader<Uint8Array>
 
@@ -156,6 +158,8 @@ export default class FetchIOLoader extends IOLoader {
   }
 
   public async open(info: FetchInfo, range: Range = { from: 0, to: -1 }) {
+    this.rangeReader?.clear()
+    this.rangeReader = undefined
 
     this.abortReadAt()
     this.info = info
@@ -508,7 +512,7 @@ export default class FetchIOLoader extends IOLoader {
     return this.readInterval(buffer)
   }
 
-  public async readAt(pos: bigint, length: number): Promise<Uint8Array | number> {
+  public async readAt(pos: bigint, length: number, readAheadEnd?: bigint): Promise<Uint8Array | number> {
     if (this.status !== IOLoaderStatus.BUFFERING && this.status !== IOLoaderStatus.COMPLETE
       || this.options.isLive || this.options.disableSegment || !this.supportRange
       || typeof AbortController !== 'function'
@@ -527,6 +531,25 @@ export default class FetchIOLoader extends IOLoader {
     const contentLength = this.contentLength
     if (start < this.range.from || this.eofIndex >= 0 && end > this.eofIndex) {
       return errorType.INVALID_PARAMETERS
+    }
+
+    if (readAheadEnd !== undefined) {
+      if (typeof readAheadEnd !== 'bigint' || readAheadEnd < pos + BigInt(length)
+        || !Number.isSafeInteger(contentLength) || contentLength <= 0
+        || readAheadEnd > BigInt(contentLength) || readAheadEnd > BigInt(this.eofIndex) + 1n
+      ) {
+        return errorType.INVALID_PARAMETERS
+      }
+      this.rangeReader ??= new HttpRangeReader(contentLength, (from, to, signal) => {
+        const headers = new Headers(this.info.httpOptions?.headers)
+        headers.set('Range', `bytes=${from}-${to}`)
+        return fetch(this.info.url, {
+          method: 'GET', headers, mode: 'cors', cache: 'default', signal,
+          credentials: this.info.httpOptions?.credentials,
+          referrerPolicy: this.info.httpOptions?.referrerPolicy ?? 'no-referrer-when-downgrade'
+        })
+      })
+      return this.rangeReader.read(start, length, Number(readAheadEnd))
     }
 
     const controller = new AbortController()
@@ -571,6 +594,7 @@ export default class FetchIOLoader extends IOLoader {
 
   public abortReadAt() {
     this.rangeController?.abort()
+    this.rangeReader?.abort()
   }
 
   public async seek(pos: int64) {
@@ -635,6 +659,8 @@ export default class FetchIOLoader extends IOLoader {
   public async stop() {
     this.status = IOLoaderStatus.IDLE
     await this.abort()
+    this.rangeReader?.clear()
+    this.rangeReader = undefined
   }
 
   public getUrl() {

@@ -364,12 +364,12 @@ export default class DemuxPipeline extends Pipeline {
       let iformat: IFormat
 
       if ((format === AVFormat.AVI || format === AVFormat.ISO) && task.canReadAt && !task.isLive) {
-        task.formatContext.readAt = async (pos, length) => {
+        task.formatContext.readAt = async (pos, length, readAheadEnd) => {
           if (!task.formatContext.readAt || task.leftIPCPort.closed) {
             return IOError.ABORT
           }
           try {
-            const result = await task.leftIPCPort.request<Uint8Array | number>('readAt', { pos, length })
+            const result = await task.leftIPCPort.request<Uint8Array | number>('readAt', { pos, length, readAheadEnd })
             return task.formatContext.readAt ? result : IOError.ABORT
           }
           catch (error) {

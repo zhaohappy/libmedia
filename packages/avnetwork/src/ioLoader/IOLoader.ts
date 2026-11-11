@@ -160,9 +160,10 @@ export default abstract class IOLoader {
 
   /**
    * Read up to 1 MiB at an absolute byte offset without moving the playback cursor.
-   * Returns exactly length bytes or a negative error code.
+   * Returns exactly length bytes or a negative error code. readAheadEnd optionally
+   * enables streaming prefetch up to an exclusive physical file/extent boundary.
    */
-  public readAt?(pos: bigint, length: number): Promise<Uint8Array | number>
+  public readAt?(pos: bigint, length: number, readAheadEnd?: bigint): Promise<Uint8Array | number>
 
   public abortReadAt?(): void
 
