@@ -50,6 +50,7 @@ import {
   BufferWriter,
   type Uint8ArrayInterface
 } from '@libmedia/common/io'
+import { NOPTS_VALUE } from '../constant'
 
 const NALULengthSizeMinusOne = 3
 
@@ -241,10 +242,15 @@ export function extradata2VpsSpsPps(extradata: Uint8ArrayInterface) {
 
   const ptlPresentFlag = bufferReader.readUint8() & 0x01
 
+  let profile = NOPTS_VALUE
+  let level = NOPTS_VALUE
+
   if (ptlPresentFlag) {
     const bitReader = new BitReader()
     bitReader.appendBuffer(extradata.subarray(1))
-    parsePTL(bitReader)
+    const ptl = parsePTL(bitReader)
+    profile = ptl.generalProfileIdc
+    level = ptl.generalLevelIdc
     bufferReader.skip(bitReader.getPointer())
   }
 
@@ -282,7 +288,9 @@ export function extradata2VpsSpsPps(extradata: Uint8ArrayInterface) {
   return {
     vpss,
     spss,
-    ppss
+    ppss,
+    profile,
+    level
   }
 }
 
@@ -796,10 +804,16 @@ export function parseAVCodecParameters(
   }
   else if (extradata && extradata.length >= 6) {
 
-    const { spss } = extradata2VpsSpsPps(extradata)
+    const { spss, profile, level } = extradata2VpsSpsPps(extradata)
 
     if (spss.length) {
       sps = spss[0]
+    }
+    if (profile !== NOPTS_VALUE) {
+      stream.codecpar.profile = profile
+    }
+    if (level !== NOPTS_VALUE) {
+      stream.codecpar.level = level
     }
   }
   if (sps) {
