@@ -306,7 +306,10 @@ export default class VideoDecodePipeline extends Pipeline {
         rightIPCPort.reply(request, frame)
       }
       else if (isAlphaVideoFrame(frame)) {
-        rightIPCPort.reply(request, { ref: frame, alpha: frame.alpha }, null, [frame, frame.alpha])
+        rightIPCPort.reply(request, { ref: frame, alpha: frame.alpha, realColorSpace: frame.realColorSpace }, null, [frame, frame.alpha])
+      }
+      else if (frame.realColorSpace) {
+        rightIPCPort.reply(request, { ref: frame, realColorSpace: frame.realColorSpace }, null, [frame])
       }
       else {
         rightIPCPort.reply(request, frame, null, [frame])

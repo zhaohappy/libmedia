@@ -25,6 +25,7 @@
 
 import type AVFrame from '../struct/avframe'
 import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
+import type { AVColorPrimaries, AVColorSpace, AVColorTransferCharacteristic } from '../pixfmt'
 import { AVColorRange, AVPixelFormat } from '../pixfmt'
 import { avRescaleQ2 } from '../util/rational'
 import { AV_TIME_BASE_Q, NOPTS_VALUE_BIGINT } from '../constant'
@@ -44,17 +45,26 @@ export function avPixelFormat2Format(pixfmt: AVPixelFormat) {
   return pixelFormatMapReverse[pixfmt] ?? null
 }
 
-export function getVideoColorSpaceInit(avframe: pointer<AVFrame>) {
+export function mapVideoColorSpaceInit(
+  colorSpace: AVColorSpace,
+  colorPrimaries: AVColorPrimaries,
+  colorTrc: AVColorTransferCharacteristic,
+  colorRange: AVColorRange
+) {
   const init: VideoColorSpaceInit = {
     fullRange: false,
-    matrix: colorSpaceMapReverse[avframe.colorSpace] ?? null,
-    primaries: colorPrimariesMapReverse[avframe.colorPrimaries] ?? null,
-    transfer: colorTrcMapReverse[avframe.colorTrc] ?? null
+    matrix: colorSpaceMapReverse[colorSpace] ?? null,
+    primaries: colorPrimariesMapReverse[colorPrimaries] ?? null,
+    transfer: colorTrcMapReverse[colorTrc] ?? null
   }
-  if (avframe.colorRange === AVColorRange.AVCOL_RANGE_JPEG) {
+  if (colorRange === AVColorRange.AVCOL_RANGE_JPEG) {
     init.fullRange = true
   }
   return init
+}
+
+function getVideoColorSpaceInit(avframe: pointer<AVFrame>) {
+  return mapVideoColorSpaceInit(avframe.colorSpace, avframe.colorPrimaries, avframe.colorTrc, avframe.colorRange)
 }
 
 export function avframe2VideoFrame(avframe: pointer<AVFrame>, pts?: int64, videoFrameInit: Partial<VideoFrameBufferInit> = {}) {

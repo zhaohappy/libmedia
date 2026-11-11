@@ -23,54 +23,175 @@
  *
  */
 
+import { mapUint8Array } from '@libmedia/cheap'
+import { mapColorPrimaries, mapColorTrc } from '../../../avutil/src/function/videoFrame2AVFrame'
+import ColorSpace from './colorSpace/ColorSpace'
+import generateSteps from './colorTransform/generateSteps'
+import type { ColorTransformOptions } from './colorTransform/options'
+import { DefaultSDRWhiteLevel, GLType } from './colorTransform/options'
+import HdrMetadata from './struct/HdrMetadata'
 import vertexSource from './webgpu/wgsl/vertex.wgsl'
 import type { WebGPURenderOptions } from './WebGPURender'
 import WebGPURender from './WebGPURender'
 
 import {
+  AVColorPrimaries,
+  AVColorRange,
+  AVColorSpace,
+  AVColorTransferCharacteristic,
+  isHdrVideoFrame,
   type AVFrame
 } from '@libmedia/avutil'
+import transferFn from './colorTransform/transferFn/transferFn'
+import { browser, os } from '@libmedia/common'
+import colorTransformMatrix from './colorTransform/colorTransformMatrix'
 
-const HDRPrimaries = ['bt2020', 'bt2100', 'st2048', 'p3-dcl', 'hlg']
 export default class WebGPUExternalRender extends WebGPURender {
 
   private hasAlpha: boolean
+  private primaries: VideoColorPrimaries
+  private transfer: VideoTransferCharacteristics
+
+  private hdrMetadata: HdrMetadata
+  private hdrMetadataBuffer: GPUBuffer
 
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions) {
     super(canvas, options)
     this.vertexSource = vertexSource
+    this.hdrMetadata = make<HdrMetadata>()
+    this.hdrMetadata.multiplier = 1.0
   }
 
-  private generateFragmentSource() {
+  private generateFragmentSource(colorTransformOptions?: ColorTransformOptions) {
+
+    let steps: string[] = []
+
+    if (colorTransformOptions) {
+      colorTransformOptions.outputRGB = true
+      steps = generateSteps(this.srcColorSpace, this.dstColorSpace, colorTransformOptions)
+
+      // ExternalTexture 采样的数据应该是 sRGB，但 Safari 由于 VIdeoFrame 带有错误的 spaceColor 导致采样出来的却不是
+      // 有 bug，这里无法将转换之后的 sRGB 变成 PQ RGB，整体颜色偏绿
+      if (!(browser.safari || os.ios)) {
+        const patchSrcColor = new ColorSpace(
+          AVColorSpace.AVCOL_SPC_RGB,
+          AVColorPrimaries.AVCOL_PRI_BT709,
+          AVColorTransferCharacteristic.AVCOL_TRC_BT709,
+          AVColorRange.AVCOL_RANGE_JPEG
+        )
+        // XYZ 转 pq linear RGB
+        steps.push(colorTransformMatrix(this.srcColorSpace.getPrimaryMatrix().invert(), colorTransformOptions))
+        // srgb linear RGB 空间转 XYZ 空间
+        steps.unshift(colorTransformMatrix(patchSrcColor.getPrimaryMatrix(), colorTransformOptions))
+        // 转成线性 rgb
+        steps.unshift(transferFn(patchSrcColor.getTransferFunction(), patchSrcColor.hasExtendedSkTransferFn(), colorTransformOptions))
+      }
+    }
+
     this.fragmentSource = `
+      struct HdrMetadata {
+        offset: f32,
+        multiplier: f32,
+        pqTonemapA: f32,
+        pqTonemapB: f32,
+        hlgOOTFGammaMinusOne: f32,
+        nitsToSdrRelativeFactor: f32,
+        sdrRelativeToNitsFactor: f32
+      };
       @group(0) @binding(1) var eTexture: texture_external;
       @group(0) @binding(2) var s: sampler;
-      ${this.hasAlpha ? '@group(0) @binding(3) var aTexture: texture_external;' : ''}
+      @group(0) @binding(3) var<uniform> hdrMetadata: HdrMetadata;
+      ${this.hasAlpha ? '@group(0) @binding(4) var aTexture: texture_external;' : ''}
 
       @fragment
       fn main(@location(0) in_texcoord: vec4<f32>) -> @location(0) vec4<f32> {
+
+        ${steps.length ? `let offset = hdrMetadata.offset;
+        let multiplier = hdrMetadata.multiplier;
+        let pq_tonemap_a = hdrMetadata.pqTonemapA;
+        let pq_tonemap_b = hdrMetadata.pqTonemapB;
+        let hlg_ootf_gamma_minus_one = hdrMetadata.hlgOOTFGammaMinusOne;
+        let nits_to_sdr_relative_factor = hdrMetadata.nitsToSdrRelativeFactor;
+        let sdr_relative_to_nits_factor = hdrMetadata.sdrRelativeToNitsFactor;` : ''}
+
         let rgb: vec4<f32> = textureSampleBaseClampToEdge(eTexture, s, in_texcoord.xy);
         let alpha: f32 = ${this.hasAlpha ? 'textureSampleBaseClampToEdge(aTexture, s, in_texcoord.xy).r' : 'rgb.a'};
-        return vec4<f32>(rgb.rgb, alpha);
+        var color = vec4<f32>(rgb.rgb, alpha);
+        ${steps.length ? `if (color.a > 0) {
+          color.r /= color.a;
+          color.g /= color.a;
+          color.b /= color.a;
+        }
+        color.r -= offset;
+        color.g -= offset;
+        color.b -= offset;
+        color.r *= multiplier;
+        color.g *= multiplier;
+        color.b *= multiplier;
+        ${steps.reduce((pre, current) => pre + current, '')}
+        color.r *= color.a;
+        color.g *= color.a;
+        color.b *= color.a;` : ''}
+        return color;
       }
     `
   }
 
+  public async init() {
+    await super.init()
+    this.hdrMetadataBuffer = this.device.createBuffer({
+      size: (reinterpret_cast<int32>(sizeof(HdrMetadata)) + 15) & ~15,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    })
+  }
+
   private checkFrame(frame: VideoFrame, alpha?: VideoFrame) {
     const hasAlpha = !!alpha
+    const primaries = (frame.realColorSpace || frame.colorSpace).primaries
+    const transfer = (frame.realColorSpace || frame.colorSpace).transfer
     if (frame.codedWidth !== this.textureWidth
       || frame.codedHeight !== this.videoHeight
       || frame.codedWidth !== this.videoWidth
       || this.hasAlpha !== hasAlpha
+      || this.primaries !== primaries
+      || this.transfer !== transfer
     ) {
       this.videoWidth = frame.codedWidth
       this.videoHeight = frame.codedHeight
       this.textureWidth = frame.codedWidth
       this.hasAlpha = hasAlpha
+      this.primaries = primaries
+      this.transfer = transfer
       this.layout()
 
-      this.generateFragmentSource()
-
+      if (isHdrVideoFrame(frame)) {
+        this.srcColorSpace = new ColorSpace(
+          AVColorSpace.AVCOL_SPC_RGB,
+          mapColorPrimaries(primaries),
+          mapColorTrc(transfer),
+          (frame.realColorSpace || frame.colorSpace).fullRange ? AVColorRange.AVCOL_RANGE_JPEG : AVColorRange.AVCOL_RANGE_MPEG
+        )
+        const colorTransformOptions: ColorTransformOptions = {
+          type: GLType.kWebGPU,
+          bitDepth: 8,
+          toneMapPQAndHlgToDst: true,
+          metadata: this.hdrMetadata,
+          dstSdrMaxLuminanceNits: DefaultSDRWhiteLevel,
+          dstMaxLuminanceRelative: 1.0
+        }
+        this.generateFragmentSource(colorTransformOptions)
+        const hdrBuffer = mapUint8Array(addressof(this.hdrMetadata), sizeof(HdrMetadata)).slice()
+        this.device.queue.writeBuffer(
+          this.hdrMetadataBuffer,
+          0,
+          hdrBuffer.buffer,
+          hdrBuffer.byteOffset,
+          hdrBuffer.byteLength
+        )
+      }
+      else {
+        this.generateFragmentSource()
+      }
       this.generatePipeline()
     }
   }
@@ -98,12 +219,19 @@ export default class WebGPUExternalRender extends WebGPURender {
           sampler: {
             type: 'filtering'
           }
+        },
+        {
+          binding: 3,
+          visibility: GPUShaderStage.FRAGMENT,
+          buffer: {
+            type: 'uniform'
+          }
         }
       ]
     }
     if (this.hasAlpha) {
       descriptor.entries.push({
-        binding: 3,
+        binding: 4,
         visibility: GPUShaderStage.FRAGMENT,
         externalTexture: {
         }
@@ -139,13 +267,20 @@ export default class WebGPUExternalRender extends WebGPURender {
         {
           binding: 2,
           resource: this.sampler
+        },
+        {
+          binding: 3,
+          resource: {
+            buffer: this.hdrMetadataBuffer,
+            size: this.hdrMetadataBuffer.size
+          }
         }
       ]
     }
 
     if (alpha) {
       descriptor.entries.push({
-        binding: 3,
+        binding: 4,
         resource: this.device.importExternalTexture({
           source: alpha
         })
@@ -181,8 +316,20 @@ export default class WebGPUExternalRender extends WebGPURender {
     this.device.queue.submit([commandEncoder.finish()])
   }
 
+  public destroy(): void {
+    if (this.hdrMetadata) {
+      unmake(this.hdrMetadata)
+      this.hdrMetadata = null
+    }
+    if (this.hdrMetadataBuffer) {
+      this.hdrMetadataBuffer.destroy()
+      this.hdrMetadataBuffer = null
+    }
+    super.destroy()
+  }
+
   static isSupport(frame: pointer<AVFrame> | VideoFrame | ImageBitmap): boolean {
     // VideoFrame
-    return frame instanceof VideoFrame && !(HDRPrimaries.some((p) => p === frame.colorSpace.primaries))
+    return frame instanceof VideoFrame
   }
 }

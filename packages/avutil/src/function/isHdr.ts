@@ -29,7 +29,9 @@ import type AVCodecParameters from '../struct/avcodecparameters'
 import type { AVPixelFormat } from '../pixfmt'
 import { AVColorTransferCharacteristic } from '../pixfmt'
 
-export default function isHdr(parameters: pointer<AVCodecParameters>) {
+const HDRPrimaries = ['bt2020', 'bt2100', 'st2048', 'p3-dcl', 'hlg']
+
+export function isHdr(parameters: pointer<AVCodecParameters>) {
   if (parameters.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO) {
     return false
   }
@@ -41,4 +43,11 @@ export default function isHdr(parameters: pointer<AVCodecParameters>) {
 
   return parameters.colorTrc === AVColorTransferCharacteristic.AVCOL_TRC_ARIB_STD_B67
     || parameters.colorTrc === AVColorTransferCharacteristic.AVCOL_TRC_SMPTE2084
+}
+
+export function isHdrVideoFrame(videoFrame: VideoFrame) {
+  const colorSpace = videoFrame.realColorSpace || videoFrame.colorSpace
+  // @ts-ignore
+  return colorSpace.transfer === 'pq' || colorSpace.transfer === 'hlg'
+    || HDRPrimaries.some((p) => p === colorSpace.primaries)
 }

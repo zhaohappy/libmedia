@@ -38,7 +38,8 @@ import {
   avpacket2EncodedVideoChunk,
   NOPTS_VALUE,
   avRescaleQ2,
-  intread
+  intread,
+  isHdr
 } from '@libmedia/avutil'
 
 import {
@@ -50,7 +51,8 @@ import {
   h264,
   hevc,
   vvc,
-  getHardwarePreference
+  getHardwarePreference,
+  mapVideoColorSpaceInit
 } from '@libmedia/avutil/internal'
 
 import { logger, browser, os, array, withResolvers } from '@libmedia/common'
@@ -84,6 +86,7 @@ export default class WebVideoDecoder {
   private dtsQueue: double[]
 
   private sort: boolean
+  private patchColorSpace: VideoColorSpaceInit | undefined
 
   private keyframeRequire: boolean = false
   private extradataRequire: boolean = false
@@ -118,6 +121,11 @@ export default class WebVideoDecoder {
   }
 
   private async output(frame: VideoFrame) {
+
+    if (this.patchColorSpace) {
+      frame.realColorSpace = this.patchColorSpace
+    }
+
     if (this.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS
       && this.dtsQueue.length
     ) {
@@ -292,6 +300,15 @@ export default class WebVideoDecoder {
     }
     if (this.options.colorSpace) {
       config.colorSpace = this.options.colorSpace
+    }
+    else if (isHdr(parameters) && (browser.safari || os.ios)) {
+      config.colorSpace = mapVideoColorSpaceInit(
+        parameters.colorSpace,
+        parameters.colorPrimaries,
+        parameters.colorTrc,
+        parameters.colorRange
+      )
+      this.patchColorSpace = config.colorSpace
     }
     if (this.options.rotation) {
       // @ts-ignore

@@ -48,6 +48,7 @@ export * as channel from './util/channel'
 export * as expgolomb from './util/expgolomb'
 export { getHardwarePreference } from './function/getHardwarePreference'
 export { mapColorPrimaries, mapColorSpace, mapColorTrc, mapPixelFormat } from './function/videoFrame2AVFrame'
+export { mapVideoColorSpaceInit } from './function/avframe2VideoFrame'
 
 export {
   CodecId2MimeType,

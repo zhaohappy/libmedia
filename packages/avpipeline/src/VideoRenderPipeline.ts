@@ -36,7 +36,8 @@ import {
   type AVFrame,
   NOPTS_VALUE_BIGINT,
   avRescaleQ,
-  avRescaleQ2
+  avRescaleQ2,
+  isHdrVideoFrame
 } from '@libmedia/avutil'
 
 import { AV_MILLI_TIME_BASE_Q, AV_TIME_BASE_Q } from '@libmedia/avutil/internal'
@@ -181,12 +182,6 @@ type SelfTask = VideoRenderTaskOptions & {
   avframePool: AVFramePoolImpl
 }
 
-const HDRPrimaries = ['bt2020', 'bt2100', 'st2048', 'p3-dcl', 'hlg']
-
-function isHDR(primaries: string) {
-  return array.has(HDRPrimaries, primaries)
-}
-
 export default class VideoRenderPipeline extends Pipeline {
 
   declare tasks: Map<string, SelfTask>
@@ -271,11 +266,12 @@ export default class VideoRenderPipeline extends Pipeline {
   }
 
   private async pullFrame(task: SelfTask) {
-    const frame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame | { ref: VideoFrame, alpha: VideoFrame }>('pull')
+    const frame = await task.leftIPCPort.request<pointer<AVFrameRef> | VideoFrame | { ref: VideoFrame, alpha?: VideoFrame, realColorSpace?: VideoColorSpaceInit }>('pull')
     if (is.number(frame) || isPointer(frame) || frame instanceof VideoFrame) {
       return frame as (pointer<AVFrameRef> | VideoFrame)
     }
     (frame.ref as AlphaVideoFrame).alpha = frame.alpha
+    frame.ref.realColorSpace = frame.realColorSpace
     return frame.ref
   }
 
@@ -384,7 +380,10 @@ export default class VideoRenderPipeline extends Pipeline {
             || os.ios && browser.checkVersion(os.version, '17.4', true)
             || browser.firefox && browser.checkVersion(browser.majorVersion, '129', true)
           )
-          && !isHDR(frame.colorSpace.primaries)
+          // safari 中 CanvasImageRender 不支持 hdr 渲染，直接使用 WebGPUExternalRender
+          // 而 Safari 中 hdr VIdeoFrame 的 color space 错误又导致使用 WebGPUExternalRender 可以正常渲染
+          // chrome 中 CanvasImageRender 支持 hdr 视频渲染，如果强行使用 WebGPUExternalRender 渲染 hdr 会导致颜色偏绿
+          && (!isHdrVideoFrame(frame) || browser.safari || os.ios)
         ) {
           // WebGPUExternalRender 性能最优
           task.render = new WebGPUExternalRender(task.canvas as OffscreenCanvas, {
@@ -405,15 +404,7 @@ export default class VideoRenderPipeline extends Pipeline {
           task.render = new CanvasImageRender(task.canvas as OffscreenCanvas, {
             sar: task.sar,
             devicePixelRatio: task.devicePixelRatio,
-            renderMode: task.renderMode,
-            // @ts-ignore
-            colorSpace: frame.colorSpace.transfer === 'pq'
-              ? 'rec2100-pq'
-              // @ts-ignore
-              : (frame.colorSpace.transfer === 'hlg'
-                ? 'rec2100-hlg'
-                : undefined
-              )
+            renderMode: task.renderMode
           })
           task.isSupport = CanvasImageRender.isSupport
         }

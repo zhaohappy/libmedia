@@ -228,6 +228,7 @@ export {
   freeCodecParameters,
   resetCodecParameters,
   isHdr,
+  isHdrVideoFrame,
   hasAlphaChannel
 } from './util/codecparameters'
 
