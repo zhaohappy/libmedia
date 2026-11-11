@@ -49,6 +49,7 @@ export default class IIsoFormat extends IFormat {
   private reader: DiscReader
   private fs: DiscFilesystem
   private child: AVIFormatContext
+  private childReady = false
   private title: DiscTitle
   private info: DiscInfo
   private segmentIndex = 0
@@ -134,7 +135,9 @@ export default class IIsoFormat extends IFormat {
 
   private async openSegment(index: number, time: bigint) {
     this.clearAudio()
-    if (this.child) {
+    const reuse = this.childReady && this.child && this.segmentIndex === index
+    this.childReady = false
+    if (!reuse && this.child) {
       await this.child.destroy(); this.child = null
     }
     this.checkReading()
@@ -146,6 +149,10 @@ export default class IIsoFormat extends IFormat {
     this.checkReading()
     const point = await seekPoint(this.fs, segment, segment.inTime + relativeTime)
     this.checkReading()
+    if (reuse) {
+      await this.seekChild(point.pos)
+      return
+    }
     this.clipEnd = segment.endPos ?? segment.file.size
     if (this.info.type === 'bluray') {
       const after = segment.points.find((p) => p.time >= segment.outTime + 90000n)
@@ -201,12 +208,25 @@ export default class IIsoFormat extends IFormat {
       throw this.ioError
     }
     check(result >= 0, 'Invalid disc clip header')
+    await this.seekChild(point.pos)
+  }
+
+  private async seekChild(pos: bigint) {
+    const child = this.child
+    // Keep transport tables and codec parameters, but never publish packets
+    // or EOF/abort state left over from the old playback position.
+    child.interval.packetBuffer.forEach((packet) => destroyAVPacket(packet))
+    child.interval.packetBuffer.length = 0
+    child.errorFlag = 0
+    child.ioReader.error = 0
     // Seek through the child demuxer so its PES queues are also reset.
-    const ret = await child.iformat.seek(child, null, point.pos, AVSeekFlags.BYTE)
+    const ret = await child.iformat.seek(child, null, pos, AVSeekFlags.BYTE)
+    this.checkReading()
     if (this.ioError) {
       throw this.ioError
     }
     check(ret >= 0n, 'Cannot seek to disc entry point')
+    this.childReady = true
   }
 
   private checkEncryption(data: Uint8Array, position: bigint) {
@@ -381,6 +401,7 @@ export default class IIsoFormat extends IFormat {
 
   public async destroy(context: AVIFormatContext) {
     this.stopped = true
+    this.childReady = false
     this.clearAudio()
     this.reader?.cancel()
     if (this.child) {

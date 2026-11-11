@@ -1164,6 +1164,7 @@ export default class IMpegpsFormat extends IFormat {
     flags: int32
   ): Promise<int64> {
     let now = formatContext.ioReader.getPos()
+    this.context.paddingPES = null
 
     this.context.slices.forEach((slice) => {
       if (slice.buffers.length && slice.pos < now) {
@@ -1175,6 +1176,7 @@ export default class IMpegpsFormat extends IFormat {
 
     formatContext.streams.forEach((stream) => {
       const context = stream.privData as MpegpsStreamContext
+      context.paddingPES = null
       if (context.filter) {
         context.filter.reset()
       }

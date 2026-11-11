@@ -44,11 +44,11 @@ for (const target of [0, 3 * MiB + 768]) {
         return 0n
       }
     }
-    const Iso = loadClass('avformat/src/formats/IIsoFormat.ts', 'IIsoFormat', ['openSegment', 'checkReading'], {
+    const Iso = loadClass('avformat/src/formats/IIsoFormat.ts', 'IIsoFormat', ['openSegment', 'seekChild', 'checkReading'], {
       IOReader, IOError, IMpegtsFormat: ChildFormat, check,
       prepareDvdSegment: async () => {},
       seekPoint: async () => ({ pos: BigInt(target) }),
-      createAVIFormatContext: () => ({}), AVSeekFlags: { BYTE: 2 }
+      createAVIFormatContext: () => ({ interval: { packetBuffer: [] } }), AVSeekFlags: { BYTE: 2 }
     })
     const iso = new Iso()
     iso.info = { type: 'bluray' }
