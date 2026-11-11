@@ -66,21 +66,6 @@ Intermediate boundaries align to DVD sectors / M2TS packets where capacity
 permits. HTTP requests remain 5 MiB streams; smaller parser deliveries neither
 restart the request nor change the 8 MiB cache budget. Each seek restarts the
 ramp; ordinary startup and natural segment transitions keep normal windows.
-On a cross-segment Blu-ray seek, a fresh TS demuxer first probes at the indexed
-192-byte packet boundary. PAT/PMT discovery uses at most 524160 bytes (512 KiB
-rounded down to whole M2TS packets), delivered in at most 64 KiB batches. A
-matching nonempty program map is required. The demuxer then rewinds to the same
-index point so keyframes preceding the tables are retained. Missing/malformed
-tables or probe EOF retry from the clip opening once, with a new child context;
-I/O/encryption failures and cancellation do not start that fallback. DVD and
-ordinary startup retain their existing paths. `target-probe success/fallback`
-debug records distinguish the two paths.
-Probe and decode retain an in-flight HTTP response only when it covers the
-requested range within the same extent limit. Disjoint reads, changed extent
-limits and explicit cancellation still abort it. `http-prefetch.mjs` holds the
-response open across a probe rewind and checks that decoding resumes from the
-same response without another Range request. `iso-reuse.mjs` covers bounded
-discovery, fresh-state fallback, near-EOF, malformed maps and cancellation.
 `iso-reuse.mjs` checks contiguous bytes, repeated seeks, full-window recovery,
 short EOF and cancellation. `http-prefetch.mjs` holds a response after 64 KiB
 to check early delivery and reuse of one HTTP request across the whole ramp.

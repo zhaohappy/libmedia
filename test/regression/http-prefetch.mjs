@@ -136,50 +136,6 @@ test('small progressive reads share one HTTP stream and return before a full MiB
   }
 })
 
-test('probe rewind retains a covering response and decode resumes from its unread tail', async () => {
-  const f = await fixture({ hold: true })
-  try {
-    assert.deepEqual(await deadline(f.loader.readAt(0n, 256 * 1024, 8n * BigInt(MiB))), bytes.slice(0, 256 * 1024))
-    await f.ready
-    const active = f.loader.rangeReader.pending
-    assert.deepEqual(await f.loader.readAt(0n, 64 * 1024, 8n * BigInt(MiB)), bytes.slice(0, 64 * 1024))
-    assert.equal(f.loader.rangeReader.pending, active)
-    assert.equal(active.controller.signal.aborted, false)
-    // Move beyond the held prefix: only the original response can satisfy it.
-    const tail = f.loader.readAt(BigInt(MiB), MiB, 8n * BigInt(MiB))
-    f.held[0].end(bytes.subarray(MiB, 5 * MiB))
-    assert.deepEqual(await deadline(tail), bytes.slice(MiB, 2 * MiB))
-    assert.equal(f.requests.length, 1)
-  }
-  finally {
-    await f.close()
-  }
-})
-
-for (const mode of ['extent-change', 'outside-window', 'abort']) {
-  test(`probe stream reuse still cancels on ${mode}`, async () => {
-    const f = await fixture({ hold: true })
-    try {
-      await deadline(f.loader.readAt(0n, 64 * 1024, 8n * BigInt(MiB)))
-      const active = f.loader.rangeReader.pending
-      if (mode === 'abort') {
-        f.loader.abortReadAt()
-        assert.deepEqual(await f.loader.readAt(0n, 64, 8n * BigInt(MiB)), bytes.slice(0, 64))
-      }
-      else {
-        const start = mode === 'extent-change' ? 0 : 10 * MiB
-        const limit = mode === 'extent-change' ? 128 * 1024 : 11 * MiB
-        assert.deepEqual(await f.loader.readAt(BigInt(start), 64, BigInt(limit)), bytes.slice(start, start + 64))
-      }
-      assert.equal(active.controller.signal.aborted, true)
-      assert.notEqual(f.loader.rangeReader.pending, active)
-    }
-    finally {
-      await f.close()
-    }
-  })
-}
-
 test('a partial response serves playback before the remaining prefetch and cancellation retains received bytes', async () => {
   const f = await fixture({ hold: true })
   try {

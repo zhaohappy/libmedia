@@ -186,12 +186,7 @@ export default class HttpRangeReader {
     this.busy = true
     const generation = this.generation
     try {
-      const active = this.pending
-      // Header probing can rewind to the indexed PES while the same response
-      // is still downloading. Keep it when it covers the new read and extent.
-      const covered = active && !active.error && active.limit === limit
-        && start >= active.start && start < active.end && start + length <= active.end
-      if (active?.limit !== limit || this.next !== start && !covered) {
+      if (this.next !== start || this.pending?.limit !== limit) {
         this.cancelRequest()
       }
       this.next = start + length

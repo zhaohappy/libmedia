@@ -135,13 +135,10 @@ export default class IIsoFormat extends IFormat {
     }
   }
 
-  private async openSegment(index: number, time: bigint, seeking = false, allowTargetProbe = true) {
+  private async openSegment(index: number, time: bigint, seeking = false) {
     this.seekReadSize = 0
     if (!seeking) {
       this.seekTrace = undefined
-    }
-    else if (this.seekTrace) {
-      this.seekTrace.firstRead = true
     }
     this.clearAudio()
     const reuse = this.childReady && this.child && this.segmentIndex === index
@@ -172,13 +169,6 @@ export default class IIsoFormat extends IFormat {
         this.clipEnd = after.pos < this.clipEnd ? after.pos : this.clipEnd
       }
     }
-    const targetProbe = seeking && allowTargetProbe && this.info.type === 'bluray'
-      && point.pos > 0n && point.pos % 192n === 0n
-    // Bound PAT/PMT discovery to 512 KiB rounded down to whole M2TS packets,
-    // but keep the HTTP extent limit unchanged so the
-    // subsequent rewind and decode can share the same download.
-    let probing = targetProbe
-    const probeEnd = point.pos + 524160n < this.clipEnd ? point.pos + 524160n : this.clipEnd
     const child = this.child = createAVIFormatContext()
     child.iformat = this.info.type === 'bluray' ? new IMpegtsFormat() : new IMpegpsFormat()
     // A DVD GOP often straddles a 256 KiB read. Fetch a larger window so the
@@ -199,17 +189,16 @@ export default class IIsoFormat extends IFormat {
       if (this.readCancelled || this.stopped) {
         return IOError.ABORT
       }
-      const readEnd = probing ? probeEnd : this.clipEnd
-      if (position >= readEnd || probing && position < point.pos) {
+      if (position >= this.clipEnd) {
         return IOError.END
       }
       try {
         // Keep the HTTP stream large, but let the parser consume its first bytes
         // after a seek without waiting for a full normal-sized reader window.
-        const capacity = Math.min(buffer.length, probing ? 64 * 1024 : this.seekReadSize || buffer.length)
-        let length = Number(readEnd - position < BigInt(capacity) ? readEnd - position : BigInt(capacity))
+        const capacity = Math.min(buffer.length, this.seekReadSize || buffer.length)
+        let length = Number(this.clipEnd - position < BigInt(capacity) ? this.clipEnd - position : BigInt(capacity))
         const alignment = this.info.type === 'dvd' ? 2048 : 192
-        if ((probing || this.seekReadSize) && length >= alignment && position + BigInt(length) < readEnd) {
+        if (this.seekReadSize && length >= alignment && position + BigInt(length) < this.clipEnd) {
           length -= Number((position + BigInt(length)) % BigInt(alignment))
         }
         const trace = this.seekTrace
@@ -232,38 +221,18 @@ export default class IIsoFormat extends IFormat {
         return error instanceof DiscAbortError ? IOError.ABORT : IOError.INVALID_OPERATION
       }
     }
-    if (this.info.type === 'dvd' || targetProbe) {
+    if (this.info.type === 'dvd') {
       // Every DVD entry is a pack header. Probe at the target NAV instead of
       // fetching the cell's opening bytes only to discard them on the seek below.
       await child.ioReader.seek(point.pos, false, false)
     }
     child.iformat.init(child)
-    try {
-      const result = targetProbe
-        ? await (child.iformat as IMpegtsFormat).readHeader(child, true)
-        : await child.iformat.readHeader(child)
-      this.checkReading()
-      if (this.ioError) {
-        throw this.ioError
-      }
-      check(result >= 0, 'Invalid disc clip header')
-      probing = false
-      await this.seekChild(point.pos, seeking)
-      if (targetProbe) {
-        logger.debug(`seek-stage iso target-probe success target=${this.seekTrace?.target} offset=${point.pos}`)
-      }
+    const result = await child.iformat.readHeader(child)
+    if (this.ioError) {
+      throw this.ioError
     }
-    catch (error) {
-      this.checkReading()
-      // Cancellation and I/O/encryption failures remain failures. Only failed
-      // bounded format discovery retries from the clip header, once, in a new
-      // child context so partial PAT/PMT/PES state cannot leak into playback.
-      if (!targetProbe || this.ioError) {
-        throw error
-      }
-      logger.debug(`seek-stage iso target-probe fallback target=${this.seekTrace?.target} offset=${point.pos}`)
-      await this.openSegment(index, time, seeking, false)
-    }
+    check(result >= 0, 'Invalid disc clip header')
+    await this.seekChild(point.pos, seeking)
   }
 
   private async seekChild(pos: bigint, progressive = false) {

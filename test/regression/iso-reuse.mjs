@@ -3,7 +3,7 @@ import { test } from './helpers/test.mjs'
 import { loadClass } from './helpers/source.mjs'
 
 function fixture(type, readSize = 64) {
-  const state = { headers: 0, destroys: 0, reads: [], released: [], failure: 0, hook: undefined, headerHook: undefined }
+  const state = { headers: 0, destroys: 0, reads: [], released: [], failure: 0, hook: undefined }
   class DiscAbortError extends Error {}
   class Reader {
     async seek(pos) {
@@ -12,11 +12,8 @@ function fixture(type, readSize = 64) {
   }
   class ChildFormat {
     init() {}
-    async readHeader(child, strict) {
+    async readHeader(child) {
       state.headers++
-      if (state.headerHook) {
-        return state.headerHook(child, strict)
-      }
       return child.ioReader.onFlush(new Uint8Array(readSize))
     }
     async seek(child, stream, pos) {
@@ -62,87 +59,6 @@ function fixture(type, readSize = 64) {
   iso.fail = (error) => error instanceof DiscAbortError ? -7 : -9
   const seek = (time) => iso.seek({}, { timeBase: { num: 1, den: 90000 } }, time, 0)
   return { iso, state, seek }
-}
-
-test('new Blu-ray clip probes at the indexed target then rewinds to decode without reading its opening bytes', async () => {
-  const { iso, state, seek } = fixture('bluray', 1024 * 1024)
-  await iso.openSegment(0, 0n)
-  const old = iso.child
-  const begin = state.reads.length
-  state.headerHook = async (child, strict) => {
-    assert.equal(strict, true)
-    // PAT/PMT discovery can span multiple small parser deliveries.
-    for (let i = 0; i < 3; i++) {
-      assert.ok(await child.ioReader.onFlush(new Uint8Array(1024 * 1024)) > 0)
-    }
-    return 0
-  }
-  assert.equal(await seek(906000n), 0n)
-  assert.notEqual(iso.child, old)
-  const reads = state.reads.slice(begin)
-  assert.equal(reads[0].pos, 96000n)
-  assert.equal(reads.at(-1).pos, 96000n, 'decode includes the keyframe preceding the discovered tables')
-  assert.ok(reads.every((read) => read.pos >= 96000n && read.length <= 64 * 1024))
-  assert.equal(state.headers, 2)
-  assert.equal(state.destroys, 1)
-})
-
-for (const failure of ['missing', 'malformed', 'near-eof']) {
-  test(`Blu-ray target probe ${failure} retries the clip header once with a fresh demuxer`, async () => {
-    const { iso, state, seek } = fixture('bluray', 1024 * 1024)
-    await iso.openSegment(0, 0n)
-    if (failure === 'near-eof') {
-      iso.title.segments[1].endPos = 96000n + 192n
-    }
-    const begin = state.reads.length
-    let failedChild
-    let probeReads
-    state.headerHook = async (child, strict) => {
-      if (strict) {
-        failedChild = child
-        if (failure === 'malformed') {
-          throw new Error('invalid section')
-        }
-        while (await child.ioReader.onFlush(new Uint8Array(1024 * 1024)) > 0) {}
-        probeReads = state.reads.slice(begin)
-        return -8
-      }
-      assert.notEqual(child, failedChild)
-      return child.ioReader.onFlush(new Uint8Array(1024 * 1024))
-    }
-    assert.equal(await seek(906000n), 0n)
-    if (probeReads) {
-      assert.ok(probeReads.reduce((sum, read) => sum + read.length, 0) <= 512 * 1024)
-      assert.equal(probeReads[0].pos, 96000n)
-      assert.equal(state.reads[begin + probeReads.length].pos, 0n)
-    }
-    assert.equal(state.headers, 3)
-    assert.equal(state.destroys, 2)
-    assert.equal(state.reads.at(-1).pos, 96000n)
-    assert.equal(iso.childReady, true)
-  })
-}
-
-for (const failure of ['cancel', 'io', 'fallback-failed']) {
-  test(`Blu-ray target probe does not retry indefinitely or mask ${failure}`, async () => {
-    const { iso, state, seek } = fixture('bluray', 1024 * 1024)
-    await iso.openSegment(0, 0n)
-    state.headerHook = async (child, strict) => {
-      if (failure === 'cancel') {
-        iso.cancelPendingRead()
-      }
-      else if (failure === 'io') {
-        iso.reader.file = async () => {
-          throw new Error('network failure')
-        }
-        return child.ioReader.onFlush(new Uint8Array(1024 * 1024))
-      }
-      return -8
-    }
-    assert.ok(await seek(906000n) < 0n)
-    assert.equal(state.headers, failure === 'fallback-failed' ? 3 : 2)
-    assert.equal(iso.childReady, false)
-  })
 }
 
 for (const type of ['bluray', 'dvd']) {
@@ -234,30 +150,6 @@ for (const type of ['bluray', 'dvd']) {
       assert.equal(state.headers, headers + 1)
       assert.equal(iso.childReady, true)
     }
-  })
-}
-
-for (const mode of ['valid', 'wrong-program', 'empty-map', 'wrong-pid', 'parse-error']) {
-  test(`target TS header validation handles ${mode}`, async () => {
-    const Format = loadClass('avformat/src/formats/IMpegtsFormat.ts', 'IMpegtsFormat', ['readHeader'], {
-      impegts: { getPacketSize: async () => 192 },
-      mpegts: { TS_DVHS_PACKET_SIZE: 192 },
-      errorType: { DATA_INVALID: -9 }, logger: { error() {} }
-    })
-    const format = new Format()
-    format.context = {
-      hasPAT: true, hasPMT: true, currentProgram: 1, currentPmtPid: 256,
-      pat: { program2PmtPid: new Map([[1, mode === 'wrong-pid' ? 257 : 256]]) },
-      pmt: { programNumber: mode === 'wrong-program' ? 2 : 1,
-        pid2StreamType: new Map(mode === 'empty-map' ? [] : [[4096, 27]]) }
-    }
-    if (mode === 'parse-error') {
-      Object.defineProperty(format.context, 'hasPAT', { get() {
-        throw new Error('malformed table')
-      } })
-    }
-    const result = await format.readHeader({ ioReader: { error: 0, getPos: () => 0n } }, true)
-    assert.equal(result, mode === 'valid' ? 0 : -9)
   })
 }
 
