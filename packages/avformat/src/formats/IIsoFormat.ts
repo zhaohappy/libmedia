@@ -181,6 +181,10 @@ export default class IIsoFormat extends IFormat {
     // latency during playback and preroll, within DiscReader's readAt limit.
     child.ioReader = new IOReader((this.info.type === 'dvd' ? 512 : 1024) * 1024)
     let position = 0n
+    // Cross-clip PAT/PMT discovery needs only small prefix reads. Use the
+    // bounded metadata cache so revisiting a clip does not reopen its media
+    // download at byte zero and evict the target's streaming window.
+    let cacheHeader = seeking && this.info.type === 'bluray'
     child.ioReader.onSize = () => this.clipEnd
     child.ioReader.onSeek = (pos) => {
       if (pos < 0n || pos > this.clipEnd) {
@@ -199,14 +203,14 @@ export default class IIsoFormat extends IFormat {
       try {
         // Keep the HTTP stream large, but let the parser consume its first bytes
         // after a seek without waiting for a full normal-sized reader window.
-        const capacity = Math.min(buffer.length, this.seekReadSize || buffer.length)
+        const capacity = Math.min(buffer.length, cacheHeader ? 64 * 1024 : this.seekReadSize || buffer.length)
         let length = Number(this.clipEnd - position < BigInt(capacity) ? this.clipEnd - position : BigInt(capacity))
         const alignment = this.info.type === 'dvd' ? 2048 : 192
         if (this.seekReadSize && length >= alignment && position + BigInt(length) < this.clipEnd) {
           length -= Number((position + BigInt(length)) % BigInt(alignment))
         }
         const trace = this.seekTrace
-        const bytes = await this.reader.file(segment.file, position, length, this.clipEnd)
+        const bytes = await this.reader.file(segment.file, position, length, cacheHeader ? undefined : this.clipEnd)
         this.checkEncryption(bytes, position)
         this.checkReading()
         buffer.set(bytes)
@@ -236,6 +240,7 @@ export default class IIsoFormat extends IFormat {
       throw this.ioError
     }
     check(result >= 0, 'Invalid disc clip header')
+    cacheHeader = false
     await this.seekChild(point.pos, seeking)
   }
 
@@ -252,7 +257,10 @@ export default class IIsoFormat extends IFormat {
     child.errorFlag = 0
     child.ioReader.error = 0
     // Seek through the child demuxer so its PES queues are also reset.
-    const ret = await child.iformat.seek(child, null, pos, AVSeekFlags.BYTE)
+    // CLPI positions are verified 192-byte M2TS packet boundaries. Scanning
+    // again can mistake repeated 0x47 bytes in ATS timestamps for TS sync.
+    const flags = AVSeekFlags.BYTE | (this.info.type === 'bluray' ? AVSeekFlags.ANY : 0)
+    const ret = await child.iformat.seek(child, null, pos, flags)
     this.checkReading()
     if (this.ioError) {
       throw this.ioError

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from './helpers/test.mjs'
 import { loadClass } from './helpers/source.mjs'
+import { load } from './helpers/io-loader.mjs'
 
 function fixture(type, readSize = 64) {
   const state = { headers: 0, destroys: 0, reads: [], released: [], failure: 0, hook: undefined }
@@ -14,7 +15,13 @@ function fixture(type, readSize = 64) {
     init() {}
     async readHeader(child) {
       state.headers++
-      return child.ioReader.onFlush(new Uint8Array(readSize))
+      for (let i = 0; i < (state.headerReads ?? 1); i++) {
+        const ret = await child.ioReader.onFlush(new Uint8Array(readSize))
+        if (ret < 0) {
+          return ret
+        }
+      }
+      return 0
     }
     async seek(child, stream, pos) {
       assert.equal(child.interval.packetBuffer.length, 0)
@@ -40,7 +47,7 @@ function fixture(type, readSize = 64) {
       destroy: async () => state.destroys++
     }),
     destroyAVPacket: (packet) => state.released.push(packet),
-    AVSeekFlags: { BYTE: 2 }, IOError: { ABORT: -7, END: -8, INVALID_OPERATION: -9 },
+    AVSeekFlags: { BYTE: 2, ANY: 4 }, IOError: { ABORT: -7, END: -8, INVALID_OPERATION: -9 },
     errorType: { OPERATE_NOT_SUPPORT: -10 }, check: assert.ok, logger: { debug() {} }
   })
   const iso = new Iso()
@@ -94,7 +101,7 @@ for (const type of ['bluray', 'dvd']) {
     assert.equal(await iso.child.ioReader.onFlush(new Uint8Array(capacity)), -7)
     assert.equal(state.reads.length, reads)
     assert.equal(await seek(905000n), 0n)
-    assert.equal(state.reads[reads].length, capacity, 'a new clip header does not inherit the old seek ramp')
+    assert.equal(state.reads[reads].length, type === 'bluray' ? 64 * 1024 : capacity, 'Blu-ray clip headers use small cached reads')
     assert.ok(state.reads[reads + 1].length <= 64 * 1024, 'the new target starts a fresh ramp')
   })
 
@@ -152,6 +159,98 @@ for (const type of ['bluray', 'dvd']) {
     }
   })
 }
+
+test('cross-clip Blu-ray headers use the bounded metadata cache and preserve target streaming reads', async () => {
+  const { default: DiscReader } = load('avformat/src/formats/iso/reader.ts')
+  const { iso, seek } = fixture('bluray', 1024 * 1024)
+  const calls = []
+  iso.reader = new DiscReader(64n * 1024n ** 2n, async (pos, length, end) => {
+    calls.push({ pos, length, end })
+    return new Uint8Array(length)
+  })
+  iso.title.segments.forEach((segment, index) => {
+    segment.file = { size: segment.file.size, extents: [{ offset: BigInt(index) * 32n * 1024n ** 2n, length: segment.file.size }] }
+  })
+  await iso.openSegment(0, 0n)
+  let before = calls.length
+  assert.equal(await seek(905000n), 0n)
+  assert.equal(calls[before].length, 65536)
+  assert.equal(calls[before].end, undefined, 'header uses the metadata channel')
+  assert.equal(calls[before + 1].end, 48n * 1024n ** 2n, 'target keeps the clip-wide streaming channel')
+  assert.ok(calls[before + 1].pos > calls[before].pos)
+  assert.equal(await seek(1000n), 0n)
+  before = calls.length
+  assert.equal(await seek(906000n), 0n)
+  assert.equal(calls.length, before + 1, 'revisited clip needs only its target request')
+  assert.equal(calls[before].pos, 32n * 1024n ** 2n + 6000n * 16n)
+  assert.notEqual(calls[before].end, undefined)
+})
+
+test('Blu-ray CLPI seeks preserve packet alignment when ATS bytes mimic transport sync', async () => {
+  const { iso } = fixture('bluray')
+  const bytes = new Uint8Array(192 * 32)
+  for (let i = 0; i < 32; i++) {
+    // Real M2TS can contain runs of 0x47 in the timestamp as well as TS sync.
+    bytes[i * 192 + 1] = bytes[i * 192 + 4] = 0x47
+  }
+  let pos = 192n
+  const reader = {
+    error: 0, getPos: () => pos, fileSize: async () => BigInt(bytes.length),
+    seek: async (target) => {
+      pos = target
+    },
+    skip: async (length) => {
+      pos += BigInt(length)
+    },
+    readUint8: async () => bytes[Number(pos++)]
+  }
+  const Ts = loadClass('avformat/src/formats/IMpegtsFormat.ts', 'IMpegtsFormat', ['seek', 'syncTSPacket'], {
+    AVSeekFlags: { BYTE: 2, ANY: 4 }, NOPTS_VALUE_BIGINT: -1n,
+    mpegts: { TS_DVHS_PACKET_SIZE: 192 }, clearTSSliceQueue() {},
+    impegts: { parseTSPacket: async () => {
+      assert.equal(pos % 192n, 0n, 'resynchronization must not select the timestamp byte')
+      return { payloadUnitStartIndicator: true }
+    } }
+  })
+  const ts = new Ts()
+  ts.context = { tsPacketSize: 192, tsSliceQueueMap: new Map(), pmt: { pid2StreamType: new Map() } }
+  iso.child = { ioReader: reader, iformat: ts, streams: [], interval: { packetBuffer: [] } }
+  await iso.seekChild(192n, true)
+  assert.equal(pos, 192n)
+  assert.equal(iso.childReady, true)
+})
+
+test('Blu-ray header discovery continues past one small block and does not cap valid metadata', async () => {
+  const { iso, state, seek } = fixture('bluray', 1024 * 1024)
+  await iso.openSegment(0, 0n)
+  state.headerReads = 3
+  const begin = state.reads.length
+  assert.equal(await seek(950000n), 0n)
+  assert.deepEqual(
+    state.reads.slice(begin, begin + 3).map(({ pos, length }) => ({ pos, length })),
+    [0n, 65536n, 131072n].map((pos) => ({ pos, length: 65536 }))
+  )
+  assert.equal(state.reads[begin + 3].pos, 800000n)
+})
+
+test('cancelling a cached Blu-ray header invalidates the child and retry rebuilds it', async () => {
+  const { iso, seek } = fixture('bluray', 1024 * 1024)
+  await iso.openSegment(0, 0n)
+  const file = iso.reader.file
+  iso.reader.file = async (...args) => {
+    if (args[3] === undefined) {
+      iso.cancelPendingRead()
+    }
+    return file(...args)
+  }
+  assert.equal(await seek(950000n), -7n)
+  assert.equal(iso.childReady, false)
+  const child = iso.child
+  iso.reader.file = file
+  assert.equal(await seek(950000n), 0n)
+  assert.notEqual(iso.child, child)
+  assert.equal(iso.childReady, true)
+})
 
 for (const type of ['ts', 'ps']) {
   test(`MPEG-${type.toUpperCase()} byte seek resets pending packets/filters/EOF while retaining stream maps`, async () => {
