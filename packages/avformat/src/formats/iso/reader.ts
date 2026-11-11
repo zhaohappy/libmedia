@@ -73,11 +73,27 @@ export interface Extent { offset: bigint, length: bigint }
 export interface DiscFile { size: bigint, extents: Extent[], directory: boolean, inline?: Uint8Array }
 
 export default class DiscReader {
+  /** Coalesce nearby metadata while discovering a title; keep random seek reads small. */
+  public metadataReadAhead = false
   private cache = new Map<bigint, Uint8Array>()
   private queue: Promise<unknown> = Promise.resolve()
   private generation = 0
-  constructor(public size: bigint, private readAt: (pos: bigint, length: number, readAheadEnd?: bigint) => Promise<Uint8Array | number>) {
+  constructor(
+    public size: bigint,
+    private readAt: (pos: bigint, length: number, readAheadEnd?: bigint) => Promise<Uint8Array | number>,
+    prefix?: Uint8Array
+  ) {
     check(size > 0n && size <= BigInt(Number.MAX_SAFE_INTEGER), 'Invalid disc size')
+    if (prefix) {
+      check(prefix.length <= 1024 * 1024 && BigInt(prefix.length) <= size, 'Invalid disc probe prefix')
+      for (let offset = 0; offset < prefix.length; offset += 65536) {
+        const end = Math.min(offset + 65536, prefix.length)
+        // Cache only complete blocks, except for the physical EOF block.
+        if (end - offset === 65536 || BigInt(end) === size) {
+          this.cache.set(BigInt(offset), prefix.slice(offset, end))
+        }
+      }
+    }
   }
   cancel() {
     this.generation++
@@ -100,7 +116,8 @@ export default class DiscReader {
         let data = this.cache.get(block)
         if (!data) {
           const remaining = this.size - block
-          const wanted = BigInt(Math.min(1024 * 1024, Math.ceil((Number(at - block) + length - done) / 65536) * 65536))
+          const requested = Math.ceil((Number(at - block) + length - done) / 65536) * 65536
+          const wanted = BigInt(Math.min(1024 * 1024, Math.max(this.metadataReadAhead ? 256 * 1024 : 65536, requested)))
           const count = Number(remaining < wanted ? remaining : wanted)
           const bytes = await this.readAt(block, count)
           if (generation !== this.generation) {

@@ -85,6 +85,94 @@ it('cancellation rejects in-flight and queued reads without caching stale data',
   await assert.rejects(queued, /cancelled/)
 })
 
+it('startup metadata coalesces nearby reads, preserves offsets and returns to small seek reads', async () => {
+  const calls: { pos: bigint, size: number }[] = []
+  const base = 5n * 1024n ** 3n
+  const reader = new DiscReader(base + 8n * 1024n ** 2n + 19n, async (pos, size) => {
+    calls.push({ pos, size })
+    return Uint8Array.from({ length: size }, (_, i) => Number((pos + BigInt(i)) / 65536n % 251n))
+  })
+  reader.metadataReadAhead = true
+  for (const offset of [32768, 65536, 524288, 589824, 655360, 720896, 786432, 5111808]) {
+    const pos = base + BigInt(offset)
+    const data = await reader.read(pos, 2048)
+    assert.ok(data.every((value, i) => value === Number((pos + BigInt(i)) / 65536n % 251n)))
+  }
+  assert.equal(calls.length, 4, 'eight dependent metadata reads need only four HTTP round trips')
+  assert.ok(calls.every(({ size }) => size === 256 * 1024))
+  reader.cancel()
+  reader.metadataReadAhead = false
+  const beforeHit = calls.length
+  await reader.read(base + 5111808n, 2048)
+  assert.equal(calls.length, beforeHit, 'startup cache remains usable after a seek')
+  await reader.read(base + 6n * 1024n ** 2n, 2048)
+  assert.equal(calls.at(-1)!.size, 65536, 'cold seek metadata does not keep the larger startup window')
+  reader.metadataReadAhead = true
+  await reader.read(reader.size - 19n, 19)
+  assert.equal(calls.at(-1)!.size, 19, 'read-ahead is clipped at EOF')
+})
+
+it('disc probe bytes seed owned metadata blocks without repeated range requests', async () => {
+  const prefix = Uint8Array.from({ length: 1024 * 1024 }, (_, i) => i % 251)
+  const expected = prefix.slice(32760, 32760 + 65536)
+  const calls: bigint[] = []
+  const reader = new DiscReader(8n * 1024n ** 2n, async (pos, size) => {
+    calls.push(pos)
+    return new Uint8Array(size).fill(42)
+  }, prefix)
+  prefix.fill(0)
+  assert.deepEqual(await reader.read(32760n, 65536), expected, 'probe storage may be reused by IOReader')
+  reader.cancel()
+  assert.deepEqual(await reader.read(32760n, 65536), expected)
+  assert.equal(calls.length, 0)
+  await reader.read(1024n * 1024n - 1n, 2)
+  assert.deepEqual(calls, [1024n * 1024n], 'only the uncached suffix needs a request')
+})
+
+it('partial probe blocks are only cached at physical EOF', async () => {
+  let calls = 0
+  const readAt = async (_: bigint, size: number) => {
+    calls++
+    return new Uint8Array(size).fill(9)
+  }
+  const reader = new DiscReader(131072n, readAt, new Uint8Array(65537).fill(3))
+  assert.deepEqual(await reader.read(65535n, 3), new Uint8Array([3, 9, 9]))
+  assert.equal(calls, 1, 'a partial non-EOF block cannot masquerade as complete')
+  const tiny = new DiscReader(19n, readAt, new Uint8Array(19).fill(5))
+  assert.deepEqual(await tiny.read(18n, 1), new Uint8Array([5]))
+  assert.equal(calls, 1)
+  assert.throws(() => new DiscReader(1n, readAt, new Uint8Array(2)), /prefix/)
+})
+
+it('cancelled startup read-ahead cannot populate the metadata cache', async () => {
+  let release: () => void
+  let started: () => void
+  const ready = new Promise<void>((resolve) => started = resolve)
+  const gate = new Promise<void>((resolve) => release = resolve)
+  let calls = 0
+  const reader = new DiscReader(8n * 1024n ** 2n, async (_, size) => {
+    calls++
+    if (calls === 1) {
+      started(); await gate
+    }
+    return new Uint8Array(size).fill(calls)
+  })
+  reader.metadataReadAhead = true
+  const pending = assert.rejects(reader.read(0n, 2048), /cancelled/)
+  await ready
+  reader.cancel()
+  release!()
+  await pending
+  assert.deepEqual(await reader.read(65536n, 1), new Uint8Array([2]))
+  // Repeated discovery reads retain the existing 4 MiB metadata cache budget.
+  for (let offset = 4; offset < 80; offset += 4) {
+    await reader.read(BigInt(offset) * 65536n, 1)
+  }
+  const beforeMiss = calls
+  await reader.read(65536n, 1)
+  assert.equal(calls, beforeMiss + 1, 'old discovery blocks are evicted')
+})
+
 it('seek cancellation retains validated blocks but retries an aborted block', async () => {
   let calls = 0
   let release: () => void

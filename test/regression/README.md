@@ -54,6 +54,16 @@ read-ahead; metadata remains on the exact-read path with its separate 4 MiB disc
 cache. Seek cancellation preserves received media bytes while rejecting pending
 reads and late responses; stop/reopen clears the media cache.
 
+During title discovery only, metadata cache misses read ahead at least 256 KiB
+(clipped at image EOF) to combine nearby directory/index requests. The metadata
+cache stays within 4 MiB, and discovery completion restores the usual 64 KiB
+minimum before opening media or performing seeks. `iso.test.ts` covers request
+reduction, large offsets, EOF, cache reuse/eviction and cancellation in this mode.
+The initial sequential probe also supplies up to 1 MiB of prefix data (bounded
+by IOReader capacity and file size), avoiding duplicate requests for volume and
+directory blocks. Cached prefix blocks own their bytes; incomplete blocks are
+only retained at physical EOF.
+
 `http-prefetch.mjs` checks early delivery before a response completes, request and
 cache budgets, backward cache hits, transferred-buffer ownership, cold seeks,
 cancellation, and malformed/truncated responses against a loopback HTTP server.

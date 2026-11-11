@@ -82,9 +82,18 @@ export default class IIsoFormat extends IFormat {
       if (!context.readAt) {
         throw new DiscError('ISO requires random access', errorType.OPERATE_NOT_SUPPORT)
       }
-      this.reader = new DiscReader(await context.ioReader.fileSize(), context.readAt)
+      const size = await context.ioReader.fileSize()
+      // Signature probing already opened the sequential download. Reuse its
+      // prefix for volume descriptors/directories instead of fetching it again.
+      const prefix = context.ioReader.getPos() === 0n
+        ? await context.ioReader.peekBuffer(Math.min(1024 * 1024, context.ioReader.getBufferSize(), Number(size)))
+        : undefined
+      this.checkReading()
+      this.reader = new DiscReader(size, context.readAt, prefix)
+      this.reader.metadataReadAhead = true
       this.fs = new DiscFilesystem(this.reader)
       const disc = await openDisc(this.fs, this.options.titleId)
+      this.reader.metadataReadAhead = false
       this.title = disc.title
       this.info = disc.info
       context.discInfo = disc.info
@@ -97,6 +106,11 @@ export default class IIsoFormat extends IFormat {
     }
     catch (error) {
       return this.fail(error)
+    }
+    finally {
+      if (this.reader) {
+        this.reader.metadataReadAhead = false
+      }
     }
   }
 

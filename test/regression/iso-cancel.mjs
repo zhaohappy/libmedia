@@ -4,6 +4,65 @@ import { loadClass } from './helpers/source.mjs'
 
 const aborted = -1048572
 
+for (const [position, size, capacity, expected] of [
+  [0n, 8n * 1024n ** 2n, 256 * 1024, 256 * 1024],
+  [0n, 19n, 1024 * 1024, 19],
+  [4096n, 8n * 1024n ** 2n, 1024 * 1024, 0]
+]) {
+  test(`ISO startup reuses probe data within position/size/capacity limits (${position}/${size}/${capacity})`, async () => {
+    let peeks = 0
+    class DiscReader {
+      constructor(size, readAt, prefix) {
+        assert.equal(prefix?.length ?? 0, expected)
+      }
+    }
+    const Iso = loadClass('avformat/src/formats/IIsoFormat.ts', 'IIsoFormat', ['readHeader', 'checkReading'], {
+      DiscReader, DiscFilesystem: class {},
+      openDisc: async () => ({ title: { chapters: [], segments: [{ inTime: 0n }] }, info: {} })
+    })
+    const iso = new Iso()
+    iso.options = {}
+    iso.fail = (error) => {
+      throw error
+    }
+    iso.openSegment = async () => assert.equal(iso.reader.metadataReadAhead, false)
+    assert.equal(await iso.readHeader({ readAt() {}, ioReader: {
+      fileSize: async () => size, getPos: () => position, getBufferSize: () => capacity,
+      peekBuffer: async (length) => {
+        peeks++
+        assert.equal(length, expected)
+        return new Uint8Array(length)
+      }
+    } }), 0)
+    assert.equal(peeks, expected ? 1 : 0)
+    assert.equal(iso.reader.metadataReadAhead, false)
+  })
+}
+
+test('cancelling the initial sequential probe prevents subsequent metadata requests', async () => {
+  class DiscAbortError extends Error {}
+  const Iso = loadClass('avformat/src/formats/IIsoFormat.ts', 'IIsoFormat', ['readHeader', 'checkReading', 'cancelPendingRead'], {
+    DiscAbortError,
+    DiscReader: class {
+      constructor() {
+        assert.fail('cancelled probe must not start metadata discovery')
+      }
+    }
+  })
+  const iso = new Iso()
+  iso.fail = (error) => {
+    assert.ok(error instanceof DiscAbortError)
+    return aborted
+  }
+  assert.equal(await iso.readHeader({ readAt() {}, ioReader: {
+    fileSize: async () => 1048576n, getPos: () => 0n, getBufferSize: () => 1048576,
+    peekBuffer: async () => {
+      iso.cancelPendingRead()
+      return new Uint8Array(1048576)
+    }
+  } }), aborted)
+})
+
 for (const type of ['dvd', 'bluray']) {
   test(`${type} clip probing preserves the seek target and reads only the required header location`, async () => {
     const positions = []
