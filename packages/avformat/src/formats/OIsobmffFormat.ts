@@ -828,7 +828,7 @@ export default class OIsobmffFormat extends OFormat {
       && (!streamContext.ac3Info || !streamContext.ac3Info.done)
     ) {
       this.handleEAC3(avpacket, stream)
-      if (!this.context.moovWritten && this.context.fragment) {
+      if ((stream.privData as IsobmffStreamContext).ac3Info.done && !this.context.moovWritten && this.context.fragment) {
         oisobmff.writeMoov(formatContext.ioWriter, formatContext, this.context)
         formatContext.ioWriter.flush()
       }
