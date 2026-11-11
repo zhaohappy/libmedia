@@ -38,7 +38,7 @@ import {
 } from '@libmedia/avutil'
 
 import {
-  type WebAssemblyResource
+  type WebAssemblyResourceInput
 } from '@libmedia/cheap'
 
 export interface ControllerObserver {
@@ -49,7 +49,7 @@ export interface ControllerObserver {
   onFirstVideoRenderedAfterUpdateCanvas: () => void
   onTimeUpdate: (pts: int64) => void
   onMSESeek: (time: number) => void
-  onGetDecoderResource: (mediaType: AVMediaType, codecId: AVCodecID) => Promise<WebAssemblyResource | string | ArrayBuffer>
+  onGetDecoderResource: (mediaType: AVMediaType, codecId: AVCodecID) => Promise<WebAssemblyResourceInput>
   isPictureInPicture: () => boolean
   isMediaStreamMode: () => boolean
   onError: (error: Error) => void

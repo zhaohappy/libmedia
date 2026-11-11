@@ -42,6 +42,7 @@ import {
 
 import {
   type WebAssemblyResource,
+  type WebAssemblyRuntimeInfo,
   WebAssemblyRunner
 } from '@libmedia/cheap'
 
@@ -240,6 +241,10 @@ export default class WasmAudioDecoder {
       this.outputAVFrame()
     }
     return 0
+  }
+
+  public getRuntimeInfo(): WebAssemblyRuntimeInfo {
+    return this.decoder.getRuntimeInfo()
   }
 
   public close() {

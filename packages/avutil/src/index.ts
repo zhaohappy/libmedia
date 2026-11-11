@@ -256,6 +256,7 @@ export { default as getAudioMimeType } from './function/getAudioMimeType'
 export { default as getVideoMimeType } from './function/getVideoMimeType'
 export { default as getWasmUrl } from './function/getWasmUrl'
 export { default as compileResource } from './function/compileResource'
+export { default as getWasmResourceMetadata } from './function/getWasmResourceMetadata'
 export { default as analyzeAVFormat } from './function/analyzeAVFormat'
 export { default as analyzeUrlIOLoader } from './function/analyzeUrlIOLoader'
 

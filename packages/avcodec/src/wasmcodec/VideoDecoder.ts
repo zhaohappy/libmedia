@@ -43,6 +43,7 @@ import {
 
 import {
   type WebAssemblyResource,
+  type WebAssemblyRuntimeInfo,
   WebAssemblyRunner
 } from '@libmedia/cheap'
 
@@ -373,6 +374,10 @@ export default class WasmVideoDecoder {
    */
   public setSkipFrameDiscard(discard: AVDiscard) {
     this.decoder.invoke('decoder_discard', discard)
+  }
+
+  public getRuntimeInfo(): WebAssemblyRuntimeInfo {
+    return this.decoder.getRuntimeInfo()
   }
 
   /**

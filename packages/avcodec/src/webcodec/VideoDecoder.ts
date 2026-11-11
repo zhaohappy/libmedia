@@ -79,6 +79,8 @@ export default class WebVideoDecoder {
 
   private currentError: Error | null = null
 
+  private hardwareAcceleration: VideoDecoderConfig['hardwareAcceleration']
+
   private inputQueue: number[]
   private outputQueue: VideoFrame[]
   private discardedTimestamps = new Map<number, number>()
@@ -244,6 +246,7 @@ export default class WebVideoDecoder {
     }
 
     this.decoder!.reset()
+    this.hardwareAcceleration = undefined
 
     const config: VideoDecoderConfig = {
       codec: this.options.codec ?? getVideoCodec(this.parameters, buffer),
@@ -274,6 +277,7 @@ export default class WebVideoDecoder {
     }
 
     this.decoder!.configure(config)
+    this.hardwareAcceleration = config.hardwareAcceleration
 
     if (this.alphaDecoder) {
       this.alphaDecoder.configure(config)
@@ -355,7 +359,9 @@ export default class WebVideoDecoder {
     })
 
     this.decoder.reset()
+    this.hardwareAcceleration = undefined
     this.decoder.configure(config)
+    this.hardwareAcceleration = config.hardwareAcceleration
 
     if ((parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_ALPHA)
       && (parameters.codecId === AVCodecID.AV_CODEC_ID_VP8
@@ -563,7 +569,26 @@ export default class WebVideoDecoder {
     return 0
   }
 
+  /** Returns the hint passed to the currently configured decoder, not actual hardware usage. */
+  public getHardwareAcceleration(): 'prefer-hardware' | 'prefer-software' | 'no-preference' | undefined {
+    if (this.decoder?.state !== 'configured') {
+      return
+    }
+    // Legacy WebCodecs implementations used allow/deny for the same preference hints.
+    switch (this.hardwareAcceleration as string) {
+      case 'prefer-hardware':
+      case 'allow':
+        return 'prefer-hardware'
+      case 'prefer-software':
+      case 'deny':
+        return 'prefer-software'
+      case 'no-preference':
+        return 'no-preference'
+    }
+  }
+
   public close() {
+    this.hardwareAcceleration = undefined
     if (this.decoder && this.decoder.state !== 'closed') {
       this.decoder.close()
     }

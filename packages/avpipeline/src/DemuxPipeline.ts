@@ -62,7 +62,7 @@ import {
 
 import {
   isPointer,
-  type WebAssemblyResource,
+  type WebAssemblyResourceInput,
   type Mutex,
   type List,
   SafeUint8Array,
@@ -299,7 +299,7 @@ export default class DemuxPipeline extends Pipeline {
         if (!controlIPCPort) {
           return
         }
-        const wasm: ArrayBuffer | WebAssemblyResource = await controlIPCPort.request('getDecoderResource', {
+        const wasm: WebAssemblyResourceInput = await controlIPCPort.request('getDecoderResource', {
           codecId,
           mediaType
         })

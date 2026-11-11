@@ -24,6 +24,7 @@
  */
 
 import VideoPipeline from './VideoPipeline'
+import queryRuntimeThread from '../function/queryRuntimeThread'
 
 import { type Stats } from '@libmedia/avpipeline'
 
@@ -104,6 +105,17 @@ export default class VideoPipelineProxy {
 
   public setLogLevel(level: number) {
     this.thread.setLogLevel(level)
+  }
+
+  /** The actual Worker hosting both pipelines, or null when running locally. */
+  public get worker(): Worker | null {
+    return this.thread?.$worker ?? null
+  }
+
+  public getTaskRuntimeInfo<T>(type: 'decoder' | 'render', taskId: string, timeoutMs: number): Promise<T> {
+    return queryRuntimeThread<T>(this.thread, 'invoke', [type, 'getTaskRuntimeInfo', [taskId]], timeoutMs, () => {
+      return this.thread.invoke(type, 'getTaskRuntimeInfo', [taskId])
+    })
   }
 
   public async destroy() {

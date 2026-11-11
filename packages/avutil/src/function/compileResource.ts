@@ -23,24 +23,26 @@
  */
 
 import { is } from '@libmedia/common'
+import getWasmResourceMetadata from './getWasmResourceMetadata'
 
 import {
   config as cheapConfig,
   type WebAssemblyResource,
+  type WebAssemblyResourceInput,
   compileResource as compile
 } from '@libmedia/cheap'
 
-export default async function compileResource(wasmUrl: string | ArrayBuffer | WebAssemblyResource, thread: boolean = false) {
+export default async function compileResource(wasmUrl: WebAssemblyResourceInput, thread: boolean = false) {
   let resource: WebAssemblyResource
 
-  if (is.string(wasmUrl) || is.arrayBuffer(wasmUrl)) {
-    resource = await compile({
-      source: wasmUrl
-    })
+  if (is.string(wasmUrl) || is.arrayBuffer(wasmUrl) || 'source' in wasmUrl) {
+    const source = is.string(wasmUrl) || is.arrayBuffer(wasmUrl) ? { source: wasmUrl } : wasmUrl
+    resource = await compile({ ...source, metadata: getWasmResourceMetadata(source) })
     if (cheapConfig.USE_THREADS && defined(ENABLE_THREADS) && thread) {
       resource.threadModule = await compile(
         {
-          source: resource.buffer
+          source: resource.buffer,
+          metadata: resource.metadata
         },
         {
           child: true

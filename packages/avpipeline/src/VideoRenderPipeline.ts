@@ -71,7 +71,7 @@ import {
   type WebGPURenderOptions,
   WebGPURender,
   type WebGLRenderOptions,
-  type WebGLRender,
+  WebGLRender,
   CanvasImageRender,
   WebGPUExternalRender,
   WebGLDefault8Render,
@@ -85,6 +85,7 @@ import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
 
 import type { AlphaVideoFrame } from './struct/type'
+import type { VideoRendererBackend } from './struct/runtimeInfo'
 import { isAlphaVideoFrame } from './util'
 
 type WebGPURenderFactory = {
@@ -1060,6 +1061,24 @@ export default class VideoRenderPipeline extends Pipeline {
       }
       logger.debug(`sync seek time end, taskId: ${task.taskId}`)
     }
+  }
+
+  public async getTaskRuntimeInfo(taskId: string): Promise<VideoRendererBackend> {
+    const task = this.tasks.get(taskId)
+    const render = task?.renderRedyed ? task.render : undefined
+    if (defined(ENABLE_WEBGPU) && render instanceof WebGPURender) {
+      return 'webgpu'
+    }
+    if (render instanceof WebGLRender) {
+      return 'webgl'
+    }
+    if (render instanceof CanvasImageRender) {
+      return 'canvas2d'
+    }
+    if (render instanceof WritableStreamRender) {
+      return 'writable-stream'
+    }
+    return 'unknown'
   }
 
   public async isEnd(taskId: string) {

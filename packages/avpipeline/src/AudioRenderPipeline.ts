@@ -52,6 +52,7 @@ import {
 
 import {
   type WebAssemblyResource,
+  type WebAssemblyResourceInput,
   type Mutex,
   type List,
   memcpy,
@@ -104,8 +105,8 @@ export interface AudioRenderTaskOptions extends TaskOptions {
   playSampleRate: int32
   playFormat: AVSampleFormat
   playChannels: int32
-  resamplerResource: ArrayBuffer | WebAssemblyResource
-  stretchpitcherResource: ArrayBuffer | WebAssemblyResource
+  resamplerResource: WebAssemblyResourceInput
+  stretchpitcherResource: WebAssemblyResourceInput
   startPTS: int64
   avframeList: pointer<List<pointer<AVFrameRef>>>
   avframeListMutex: pointer<Mutex>

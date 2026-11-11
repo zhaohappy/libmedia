@@ -4,6 +4,47 @@
 libmedia 播放器实现
 
 
+### 播放运行信息
+
+在 `await player.play()` 完成后，通过公开接口读取当前播放管线。无需访问播放器的私有线程或根据初始化配置推测实际后端。
+
+```ts
+import type { AVPlayerRuntimeInfo } from '@libmedia/avplayer'
+
+await player.play()
+const info: AVPlayerRuntimeInfo = await player.getRuntimeInfo({ timeoutMs: 1000 })
+
+if (info.videoDecoder?.backend === 'wasm') {
+  const { variant, variantSource, threadCount } = info.videoDecoder.wasm
+  // variant: baseline | atomic | simd | 64 | unknown
+  // variantSource: metadata | filename | unknown
+  // threadCount: 当前执行线程 + 存活的解码 pthread，不含空闲预热线程
+}
+if (info.videoDecoder?.backend === 'webcodecs') {
+  // 仅为成功配置的硬件加速偏好，不能确认浏览器实际使用了硬件。
+  const preference = info.videoDecoder.hardwareAcceleration
+}
+```
+
+| 字段 | 含义 |
+| --- | --- |
+| `mode` | `mse`、`custom` 或 `unknown`。未就绪、切流或销毁期间，以及查询跨越这些生命周期变化时，返回 `{ mode: 'unknown' }`。 |
+| `videoDecoder` / `audioDecoder` | 已知模式下，缺省表示没有所选的对应流；`backend: 'unknown'` 表示该流的后端暂时无法确认。后端为 `wasm` 时必带 `wasm` 信息。 |
+| `videoDecoder.hardwareAcceleration` | 仅 WebCodecs 视频分支提供：`prefer-hardware`、`prefer-software` 或 `no-preference`。MSE 的解码由浏览器管理。 |
+| `videoRenderer` | 已初始化的实际渲染后端，包括 WebGPU、WebGL、Canvas 2D、WritableStream 或浏览器；无法确认时为 `unknown`。 |
+| `workers` | 对应管线的执行位置。`true` 表示由 Worker 承载，`false` 表示不由管线 Worker 承载，缺省表示不适用或无法确认。管线可能共用 Worker，不可将布尔值相加作为总线程数。 |
+
+`wasm.variant` 表示资源的构建变体，不表示当前环境启用了哪些 CPU 特性，也不代表多线程已启用。`variantSource: 'metadata'` 表示来自资源声明，`filename` 表示仅按文件命名推断，`unknown` 表示无法识别；均不代表对二进制内容进行了验证。自定义或重命名资源应通过 `getWasm()` 返回显式元数据：
+
+```ts
+// decoderBytes 为调用方持有的 ArrayBuffer；必须声明该资源真实的构建变体。
+const getWasm = () => ({ source: decoderBytes, metadata: { variant: 'simd' as const } })
+```
+
+WebCodecs 和 MSE 不提供浏览器内部线程数；不要将缺少 `wasm.threadCount` 解释为单线程。线程计数表示存活的执行线程，并非瞬时 CPU 活跃度，暂停期间仍可能大于 1。
+
+`timeoutMs` 默认 1000 毫秒，接受 1 到 2147483647 的整数；非法值使 Promise 以 `RangeError` 拒绝。各管线独立计时；超时或查询失败只将对应字段置为 `unknown`，已返回的其他字段保留。调用是各管线的采样汇总，并非所有线程同一时刻的原子快照。可以定时重新查询，以跟随解码和渲染回退。
+
 ### 开源协议
 
 [LGPL-3.0-or-later](https://opensource.org/license/lgpl-3-0)

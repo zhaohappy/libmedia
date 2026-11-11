@@ -68,6 +68,7 @@ import {
 import {
   isPointer,
   type WebAssemblyResource,
+  type WebAssemblyResourceInput,
   type Mutex,
   type List,
   memcpy
@@ -100,12 +101,13 @@ import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
 
 import type { AlphaVideoFrame } from './struct/type'
+import type { AVVideoDecoderRuntimeInfo } from './struct/runtimeInfo'
 import { isAlphaVideoFrame } from './util'
 
 import type { Data } from '@libmedia/common'
 
 export interface VideoDecodeTaskOptions extends TaskOptions {
-  resource: ArrayBuffer | WebAssemblyResource
+  resource: WebAssemblyResourceInput
   enableHardware: boolean
   avpacketList: pointer<List<pointer<AVPacketRef>>>
   avpacketListMutex: pointer<Mutex>
@@ -632,7 +634,7 @@ export default class VideoDecodePipeline extends Pipeline {
   public async reopenDecoder(
     taskId: string,
     parameters: AVCodecParametersSerialize | pointer<AVCodecParameters>,
-    resource?: string | ArrayBuffer | WebAssemblyResource,
+    resource?: WebAssemblyResourceInput,
     wasmDecoderOptions?: Data
   ) {
     const task = this.tasks.get(taskId)
@@ -937,6 +939,24 @@ export default class VideoDecodePipeline extends Pipeline {
       this.tasks.delete(taskId)
       logger.debug(`unregisterTask task, taskId: ${taskId}`)
     }
+  }
+
+  public async getTaskRuntimeInfo(taskId: string): Promise<AVVideoDecoderRuntimeInfo> {
+    const task = this.tasks.get(taskId)
+    if (!task || task.decoderFallbackReady
+      || task.targetDecoder === task.softwareDecoder && !task.softwareDecoderOpened
+    ) {
+      return { backend: 'unknown' }
+    }
+    const decoder = task.targetDecoder
+    if (decoder instanceof WebVideoDecoder) {
+      const hardwareAcceleration = decoder.getHardwareAcceleration()
+      return hardwareAcceleration ? { backend: 'webcodecs', hardwareAcceleration } : { backend: 'unknown' }
+    }
+    if (decoder instanceof WasmVideoDecoder) {
+      return { backend: 'wasm', wasm: decoder.getRuntimeInfo() }
+    }
+    return { backend: 'unknown' }
   }
 
   public async getTasksInfo() {
