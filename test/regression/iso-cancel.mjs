@@ -177,6 +177,7 @@ for (const oldResult of [aborted, 0]) {
       }
     }
     const Pipeline = loadClass('avpipeline/src/DemuxPipeline.ts', 'DemuxPipeline', ['seek', 'doDemux'], {
+      logger: { debug() {} },
       demux, AVFormat: { ISO: 25 }, nullptr: null, IOFlags: { SLICE: 1 },
       bigint: { max: (a, b) => a > b ? a : b }, addressof: (value) => value,
       avRescaleQ2: (value) => value, AV_MILLI_TIME_BASE_Q: {},

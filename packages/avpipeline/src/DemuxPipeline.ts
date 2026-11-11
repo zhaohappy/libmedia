@@ -1235,6 +1235,7 @@ export default class DemuxPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       if (task.loop) {
+        const seekStarted = performance.now()
         if (this.tryBufferedSeek(task, timestamp, flags, streamIndex)) {
           return timestamp
         }
@@ -1247,11 +1248,13 @@ export default class DemuxPipeline extends Pipeline {
         }
         try {
           await stopped
+          logger.debug(`seek-stage demux cancelled task=${taskId} target=${timestamp} elapsedMs=${(performance.now() - seekStarted).toFixed(1)}`)
         }
         finally {
           task.seeking = false
         }
         let ret: int32 | int64 = await demux.seek(task.formatContext, streamIndex, timestamp, flags)
+        logger.debug(`seek-stage demux positioned task=${taskId} target=${timestamp} result=${ret} elapsedMs=${(performance.now() - seekStarted).toFixed(1)}`)
         if (ret >= 0n) {
           function resetList(list: pointer<AVPacketRef>[]) {
             array.each(list, (avpacket) => {
@@ -1295,6 +1298,7 @@ export default class DemuxPipeline extends Pipeline {
           }
 
           if (ret >= 0) {
+            logger.debug(`seek-stage demux first-packet task=${taskId} target=${timestamp} stream=${avpacket.streamIndex} elapsedMs=${(performance.now() - seekStarted).toFixed(1)}`)
             task.demuxEnded = false
             const streamIndex = avpacket.streamIndex
             task.cacheAVPackets.get(streamIndex).push(avpacket)

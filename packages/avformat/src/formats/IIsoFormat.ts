@@ -61,6 +61,8 @@ export default class IIsoFormat extends IFormat {
   private stopped = false
   private readCancelled = false
   private seekTime = 0n
+  private seekReadSize = 0
+  private seekTrace?: { started: number, target: string, firstRead: boolean }
 
   constructor(private options: IIsoFormatOptions = {}) {
     super()
@@ -133,7 +135,11 @@ export default class IIsoFormat extends IFormat {
     }
   }
 
-  private async openSegment(index: number, time: bigint) {
+  private async openSegment(index: number, time: bigint, seeking = false) {
+    this.seekReadSize = 0
+    if (!seeking) {
+      this.seekTrace = undefined
+    }
     this.clearAudio()
     const reuse = this.childReady && this.child && this.segmentIndex === index
     this.childReady = false
@@ -149,8 +155,11 @@ export default class IIsoFormat extends IFormat {
     this.checkReading()
     const point = await seekPoint(this.fs, segment, segment.inTime + relativeTime)
     this.checkReading()
+    if (this.seekTrace) {
+      logger.debug(`seek-stage iso index target=${this.seekTrace.target} segment=${index} elapsedMs=${(performance.now() - this.seekTrace.started).toFixed(1)}`)
+    }
     if (reuse) {
-      await this.seekChild(point.pos)
+      await this.seekChild(point.pos, seeking)
       return
     }
     this.clipEnd = segment.endPos ?? segment.file.size
@@ -184,12 +193,27 @@ export default class IIsoFormat extends IFormat {
         return IOError.END
       }
       try {
-        const length = Number(this.clipEnd - position < BigInt(buffer.length) ? this.clipEnd - position : BigInt(buffer.length))
+        // Keep the HTTP stream large, but let the parser consume its first bytes
+        // after a seek without waiting for a full normal-sized reader window.
+        const capacity = Math.min(buffer.length, this.seekReadSize || buffer.length)
+        let length = Number(this.clipEnd - position < BigInt(capacity) ? this.clipEnd - position : BigInt(capacity))
+        const alignment = this.info.type === 'dvd' ? 2048 : 192
+        if (this.seekReadSize && length >= alignment && position + BigInt(length) < this.clipEnd) {
+          length -= Number((position + BigInt(length)) % BigInt(alignment))
+        }
+        const trace = this.seekTrace
         const bytes = await this.reader.file(segment.file, position, length, this.clipEnd)
         this.checkEncryption(bytes, position)
         this.checkReading()
         buffer.set(bytes)
         position += BigInt(length)
+        if (this.seekReadSize) {
+          this.seekReadSize = this.seekReadSize >= (this.info.type === 'dvd' ? 256 : 512) * 1024 ? 0 : this.seekReadSize * 2
+        }
+        if (trace && trace === this.seekTrace && !trace.firstRead) {
+          trace.firstRead = true
+          logger.debug(`seek-stage iso first-read target=${trace.target} bytes=${length} elapsedMs=${(performance.now() - trace.started).toFixed(1)}`)
+        }
         return length
       }
       catch (error) {
@@ -208,11 +232,15 @@ export default class IIsoFormat extends IFormat {
       throw this.ioError
     }
     check(result >= 0, 'Invalid disc clip header')
-    await this.seekChild(point.pos)
+    await this.seekChild(point.pos, seeking)
   }
 
-  private async seekChild(pos: bigint) {
+  private async seekChild(pos: bigint, progressive = false) {
     const child = this.child
+    this.seekReadSize = progressive ? 64 * 1024 : 0
+    if (progressive && this.seekTrace) {
+      this.seekTrace.firstRead = false
+    }
     // Keep transport tables and codec parameters, but never publish packets
     // or EOF/abort state left over from the old playback position.
     child.interval.packetBuffer.forEach((packet) => destroyAVPacket(packet))
@@ -384,6 +412,7 @@ export default class IIsoFormat extends IFormat {
     }
     try {
       const time = timestamp * BigInt(stream.timeBase.num) * 90000n / BigInt(stream.timeBase.den)
+      this.seekTrace = { started: performance.now(), target: String(time / 90n), firstRead: true }
       const duration = this.title.segments.reduce((end, s) => end + s.outTime - s.inTime, 0n)
       const target = time < 0n ? 0n : time >= duration ? duration - 1n : time
       const index = this.title.segments.findIndex((s) => s.start + s.outTime - s.inTime > target)
@@ -391,7 +420,8 @@ export default class IIsoFormat extends IFormat {
       this.readCancelled = false
       this.seekTime = target
       const segment = this.title.segments[index]
-      await this.openSegment(index, segment.inTime + target - segment.start)
+      await this.openSegment(index, segment.inTime + target - segment.start, true)
+      logger.debug(`seek-stage iso positioned target=${this.seekTrace.target} elapsedMs=${(performance.now() - this.seekTrace.started).toFixed(1)}`)
       return 0n
     }
     catch (error) {

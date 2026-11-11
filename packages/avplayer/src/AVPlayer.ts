@@ -2944,6 +2944,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private async doSeek(timestamp: int64, streamIndex: int32, options: {
     onBeforeSeek?: Function
   } = {}) {
+    const seekStarted = performance.now()
+    const stage = (name: string) => logger.debug(`seek-stage player ${name} task=${this.taskId} target=${timestamp} elapsedMs=${(performance.now() - seekStarted).toFixed(1)}`)
+    stage('start')
 
     if (defined(ENABLE_MSE) && this.useMSE) {
       await AVPlayer.MSEThread.beforeSeek(this.taskId)
@@ -2962,6 +2965,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       ])
     }
 
+    stage('render-drained')
     if (!this.stopPending && options.onBeforeSeek) {
       await options.onBeforeSeek()
     }
@@ -2992,6 +2996,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     if (this.stopPending) {
       return false
     }
+    stage('demux-ready')
     if ((defined(ENABLE_PROTOCOL_DASH) || defined(ENABLE_PROTOCOL_HLS)) && this.subtitleTaskId && this.selectedSubtitleStream) {
       await AVPlayer.DemuxerThread.seek(this.subtitleTaskId, timestamp, AVSeekFlags.TIMESTAMP)
     }
@@ -3028,7 +3033,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         return false
       }
       const syncTimestamp = seekedTimestamp >= 0n ? bigint.max(seekedTimestamp, timestamp) : NOPTS_VALUE_BIGINT
+      stage('decoders-reset')
       await Promise.all(this.syncRenderSeekTime(syncTimestamp))
+      stage('frames-synced')
       if (this.stopPending) {
         return false
       }
@@ -3036,6 +3043,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         AVPlayer.AudioRenderThread?.afterSeek(this.taskId, syncTimestamp),
         this.VideoRenderThread?.afterSeek(this.taskId, syncTimestamp)
       ])
+      stage('render-ready')
       if (this.stopPending) {
         return false
       }
@@ -3050,6 +3058,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (this.lastStatus === AVPlayerStatus.PLAYED) {
         await this.audioSourceNode?.request('unpause')
       }
+      stage('output-ready')
       reachedEnd = (audioEnded === true || videoEnded === true)
         && (!this.audioDecoder2AudioRenderChannel || audioEnded === true)
         && (!this.videoDecoder2VideoRenderChannel || videoEnded === true)

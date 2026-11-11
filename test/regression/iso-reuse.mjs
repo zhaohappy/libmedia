@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from './helpers/test.mjs'
 import { loadClass } from './helpers/source.mjs'
 
-function fixture(type) {
+function fixture(type, readSize = 64) {
   const state = { headers: 0, destroys: 0, reads: [], released: [], failure: 0, hook: undefined }
   class DiscAbortError extends Error {}
   class Reader {
@@ -14,7 +14,7 @@ function fixture(type) {
     init() {}
     async readHeader(child) {
       state.headers++
-      return child.ioReader.onFlush(new Uint8Array(64))
+      return child.ioReader.onFlush(new Uint8Array(readSize))
     }
     async seek(child, stream, pos) {
       assert.equal(child.interval.packetBuffer.length, 0)
@@ -25,7 +25,7 @@ function fixture(type) {
       if (state.failure) {
         return BigInt(state.failure)
       }
-      const read = await child.ioReader.onFlush(new Uint8Array(64))
+      const read = await child.ioReader.onFlush(new Uint8Array(readSize))
       return read < 0 ? BigInt(read) : 0n
     }
   }
@@ -41,7 +41,7 @@ function fixture(type) {
     }),
     destroyAVPacket: (packet) => state.released.push(packet),
     AVSeekFlags: { BYTE: 2 }, IOError: { ABORT: -7, END: -8, INVALID_OPERATION: -9 },
-    errorType: { OPERATE_NOT_SUPPORT: -10 }, check: assert.ok
+    errorType: { OPERATE_NOT_SUPPORT: -10 }, check: assert.ok, logger: { debug() {} }
   })
   const iso = new Iso()
   iso.info = { type }
@@ -52,8 +52,8 @@ function fixture(type) {
     start: index * 900000n, inTime: index * 1800000n, outTime: index * 1800000n + 900000n
   })) }
   iso.reader = { cancel() {}, file: async (file, pos, length) => {
-    state.reads.push({ clip: file.index, pos })
-    return new Uint8Array(length)
+    state.reads.push({ clip: file.index, pos, length })
+    return Uint8Array.from({ length }, (_, i) => (Number(pos) + i) % 251)
   } }
   iso.checkEncryption = () => {}
   iso.fail = (error) => error instanceof DiscAbortError ? -7 : -9
@@ -62,6 +62,42 @@ function fixture(type) {
 }
 
 for (const type of ['bluray', 'dvd']) {
+  test(`${type} seek returns contiguous progressive batches, restores throughput and respects EOF/cancel`, async () => {
+    const capacity = (type === 'dvd' ? 512 : 1024) * 1024
+    const alignment = type === 'dvd' ? 2048 : 192
+    const { iso, state, seek } = fixture(type, capacity)
+    await iso.openSegment(0, 0n)
+    assert.equal(state.reads[0].length, capacity, 'normal startup keeps its full window')
+    for (const target of [12000n, 6000n]) {
+      const begin = state.reads.length
+      assert.equal(await seek(target), 0n)
+      let position = target * 16n
+      for (let i = 0; i < 5; i++) {
+        const read = state.reads[begin + i]
+        assert.equal(read.pos, position)
+        const ceiling = Math.min(64 * 1024 * 2 ** i, capacity)
+        assert.ok(read.length <= ceiling && read.length > ceiling - alignment)
+        position += BigInt(read.length)
+        const buffer = new Uint8Array(capacity).fill(255)
+        const count = await iso.child.ioReader.onFlush(buffer)
+        assert.deepEqual(buffer.subarray(0, count), Uint8Array.from({ length: count }, (_, j) => (Number(position) + j) % 251))
+        assert.ok(buffer.subarray(count).every((byte) => byte === 255), 'short flush leaves the unused capacity untouched')
+      }
+      assert.equal(state.reads.at(-1).length, capacity)
+    }
+    assert.equal(await seek(1000n), 0n)
+    await iso.child.ioReader.onSeek(iso.clipEnd - 7n)
+    assert.equal(await iso.child.ioReader.onFlush(new Uint8Array(capacity)), 7)
+    assert.equal(await iso.child.ioReader.onFlush(new Uint8Array(capacity)), -8)
+    iso.cancelPendingRead()
+    const reads = state.reads.length
+    assert.equal(await iso.child.ioReader.onFlush(new Uint8Array(capacity)), -7)
+    assert.equal(state.reads.length, reads)
+    assert.equal(await seek(905000n), 0n)
+    assert.equal(state.reads[reads].length, capacity, 'a new clip header does not inherit the old seek ramp')
+    assert.ok(state.reads[reads + 1].length <= 64 * 1024, 'the new target starts a fresh ramp')
+  })
+
   test(`${type} reuses a ready clip for forward/backward/EOF seeks and rebuilds across clips`, async () => {
     const { iso, state, seek } = fixture(type)
     await iso.openSegment(0, 0n)
@@ -80,7 +116,7 @@ for (const type of ['bluray', 'dvd']) {
       assert.equal(iso.child, child)
       assert.equal(child.streams[0].codecpar, codec)
       assert.equal(iso.seekTime, target)
-      assert.deepEqual(state.reads.slice(before), [{ clip: 0n, pos: target * 16n }], 'no redundant clip-header read')
+      assert.deepEqual(state.reads.slice(before), [{ clip: 0n, pos: target * 16n, length: 64 }], 'no redundant clip-header read')
       assert.equal(iso.childReady, true)
     }
     assert.equal(state.headers, 1)

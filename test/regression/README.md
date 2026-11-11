@@ -60,6 +60,28 @@ seek flags and live inputs use the existing seek path. Real seeks, track changes
 queue cropping and teardown release history. Source EOF remains at the unchanged
 demux tail when replaying cached packets.
 
+Cold ISO seeks progressively deliver 64, 128, 256 and (Blu-ray) 512 KiB
+before returning to the normal 512 KiB DVD / 1 MiB Blu-ray reader windows.
+Intermediate boundaries align to DVD sectors / M2TS packets where capacity
+permits. HTTP requests remain 5 MiB streams; smaller parser deliveries neither
+restart the request nor change the 8 MiB cache budget. Each seek restarts the
+ramp; ordinary startup and natural segment transitions keep normal windows.
+`iso-reuse.mjs` checks contiguous bytes, repeated seeks, full-window recovery,
+short EOF and cancellation. `http-prefetch.mjs` holds a response after 64 KiB
+to check early delivery and reuse of one HTTP request across the whole ramp.
+
+Enable debug logs with `AVPlayer.setLogLevel(1)` to collect `seek-stage` records.
+Player records use cumulative milliseconds from `doSeek`: `render-drained`,
+`demux-ready`, `decoders-reset`, `frames-synced`, `render-ready`, `output-ready`.
+They describe readiness, not a measured screen-presentation timestamp. Demux
+records time cancellation, positioning and the first selected packet. ISO logs
+index selection, the first target read and positioning, with targets in ms.
+HTTP header/first-body-byte timings are relative to each Range request (including
+ordinary prefetch); correlate their offsets with network diagnostics. Decoder
+`first-rap` measures time since decoder reset to admission of a random-access
+packet, not completion of decoding. Elapsed times in different scopes overlap
+and must not be added together. No signed media URLs are logged.
+
 `buffered-seek.test.ts` covers admission and history ownership/budgets;
 `buffered-seek-pipeline.mjs` covers forward/backward hits, in-flight tail appends,
 Worker buffer transfers, EOF and atomic fallback through the actual pipeline.

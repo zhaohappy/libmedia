@@ -43,7 +43,7 @@ async function fixture(options = {}) {
     }
     response.writeHead(options.fault === 'ignored' ? 200 : 206, headers)
     if (options.hold && start === 0 && end > MiB) {
-      response.write(bytes.subarray(0, MiB))
+      response.write(bytes.subarray(0, options.holdBytes ?? MiB))
       held.push(response)
       started()
       return
@@ -107,6 +107,29 @@ test('ISO sequential media uses 5 MiB requests, bounded cache and transfer-safe 
       assert.ok(await loader.readAt(0n, 1000, end) < 0)
     }
     assert.equal(requests.length, beforeInvalid)
+  }
+  finally {
+    await f.close()
+  }
+})
+
+test('small progressive reads share one HTTP stream and return before a full MiB arrives', async () => {
+  const firstSize = 64 * 1024
+  const f = await fixture({ hold: true, holdBytes: firstSize })
+  try {
+    const first = f.loader.readAt(0n, firstSize, 8n * BigInt(MiB))
+    await f.ready
+    assert.deepEqual(await deadline(first), bytes.slice(0, firstSize))
+    const second = f.loader.readAt(BigInt(firstSize), 128 * 1024, 8n * BigInt(MiB))
+    f.held[0].end(bytes.subarray(firstSize, 5 * MiB))
+    assert.deepEqual(await deadline(second), bytes.slice(firstSize, firstSize + 128 * 1024))
+    let pos = firstSize + 128 * 1024
+    for (const length of [256 * 1024, 512 * 1024, MiB]) {
+      assert.deepEqual(await f.loader.readAt(BigInt(pos), length, 8n * BigInt(MiB)), bytes.slice(pos, pos + length))
+      pos += length
+    }
+    assert.equal(f.requests.length, 1, 'small deliveries must not become extra Range requests')
+    assert.equal(f.requests[0].end, 5 * MiB - 1)
   }
   finally {
     await f.close()

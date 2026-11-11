@@ -1,4 +1,5 @@
 import { IOError } from '@libmedia/common/io'
+import { logger } from '@libmedia/common'
 
 const WINDOW_SIZE = 5 * 1024 * 1024
 const CACHE_SIZE = 8 * 1024 * 1024
@@ -94,6 +95,7 @@ export default class HttpRangeReader {
   }
 
   private async pump(pending: PendingRange) {
+    const started = performance.now()
     let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
     let timeout: ReturnType<typeof setTimeout>
     const armTimeout = () => {
@@ -115,6 +117,7 @@ export default class HttpRangeReader {
         pending.error = IOError.INVALID_OPERATION
         return
       }
+      logger.debug(`seek-stage http headers offset=${pending.start} elapsedMs=${(performance.now() - started).toFixed(1)}`)
       reader = response.body.getReader()
       while (this.pending === pending) {
         armTimeout()
@@ -131,6 +134,9 @@ export default class HttpRangeReader {
         if (value.length > pending.end - pending.start - pending.received) {
           pending.error = IOError.INVALID_OPERATION
           break
+        }
+        if (!pending.received && value.length) {
+          logger.debug(`seek-stage http first-byte offset=${pending.start} elapsedMs=${(performance.now() - started).toFixed(1)}`)
         }
         // Coalesce even tiny network chunks into bounded owned blocks.
         for (let offset = 0; offset < value.length;) {

@@ -5,6 +5,7 @@ import { loadClass } from './helpers/source.mjs'
 const missing = -9223372036854775808n
 const flags = { AV_PKT_FLAG_DISCARD: 4 }
 const Iso = loadClass('avformat/src/formats/IIsoFormat.ts', 'IIsoFormat', ['readAVPacket', 'seek'], {
+  logger: { debug() {} },
   AVMediaType: { AVMEDIA_TYPE_VIDEO: 0, AVMEDIA_TYPE_AUDIO: 1, AVMEDIA_TYPE_DATA: 2 },
   AVPacketFlags: flags,
   AVSeekFlags: { BYTE: 2 },

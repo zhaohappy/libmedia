@@ -130,6 +130,7 @@ type SelfTask = Omit<VideoDecodeTaskOptions, 'resource'> & {
   inputEnd: boolean
 
   needKeyFrame: boolean
+  seekResetStarted?: number
 
   parameters: pointer<AVCodecParameters>
 
@@ -415,6 +416,10 @@ export default class VideoDecodePipeline extends Pipeline {
                       )
                   ) {
                     task.needKeyFrame = false
+                    if (task.seekResetStarted !== undefined) {
+                      logger.debug(`seek-stage decoder first-rap task=${task.taskId} pts=${avpacket.pts} elapsedMs=${(performance.now() - task.seekResetStarted).toFixed(1)}`)
+                      task.seekResetStarted = undefined
+                    }
                     avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
                   }
                   else {
@@ -863,6 +868,7 @@ export default class VideoDecodePipeline extends Pipeline {
   public async resetTask(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
+      task.seekResetStarted = performance.now()
       if (task.targetDecoder === task.softwareDecoder) {
         await task.targetDecoder.flush()
       }
