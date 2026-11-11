@@ -335,6 +335,8 @@ export default class OIsobmffFormat extends OFormat {
         firstWrote: false
       }
 
+      let delayMoov = false
+
       array.each(formatContext.streams, (stream, index) => {
         const streamContext = createIsobmffStreamContext()
         stream.privData = streamContext
@@ -382,12 +384,26 @@ export default class OIsobmffFormat extends OFormat {
           }
           this.context.currentFragment.tracks.push(track)
         }
+
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_EAC3
+        ) {
+          streamContext.ac3Info = {
+            done: false,
+            numBlocks: 0,
+            dataRate: 0,
+            ac3BitrateCode: -1,
+            substream: []
+          }
+          delayMoov = true
+        }
       })
 
       this.enableStreams(formatContext)
-
-      oisobmff.writeMoov(formatContext.ioWriter, formatContext, this.context)
-      formatContext.ioWriter.flush()
+      if (!delayMoov) {
+        oisobmff.writeMoov(formatContext.ioWriter, formatContext, this.context)
+        formatContext.ioWriter.flush()
+      }
     }
     else {
       array.each(formatContext.streams, (stream, index) => {
@@ -407,6 +423,18 @@ export default class OIsobmffFormat extends OFormat {
         streamContext.sttsSampleCounts = []
         streamContext.sttsSampleDeltas = []
         streamContext.alternateGroup = index
+
+        if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3
+          || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_EAC3
+        ) {
+          streamContext.ac3Info = {
+            done: false,
+            numBlocks: 0,
+            dataRate: 0,
+            ac3BitrateCode: -1,
+            substream: []
+          }
+        }
       })
 
       this.enableStreams(formatContext)
@@ -456,7 +484,7 @@ export default class OIsobmffFormat extends OFormat {
   }
 
   private updateCurrentFragment(formatContext: AVOFormatContext, currentDts?: int64) {
-    if (this.context.currentFragment.firstWrote) {
+    if (this.context.currentFragment.firstWrote && this.context.moovWritten) {
       array.each(this.context.currentFragment.tracks, (track) => {
 
         const stream = formatContext.streams.find((stream) => {
@@ -629,18 +657,9 @@ export default class OIsobmffFormat extends OFormat {
   }
 
   private handleEAC3(avpacket: pointer<AVPacket>, stream: AVStream) {
-    if (!this.context.ac3Info) {
-      this.context.ac3Info = {
-        done: false,
-        numBlocks: 0,
-        dataRate: 0,
-        ac3BitrateCode: -1,
-        numIndSub: 0,
-        substream: []
-      }
-    }
+    const streamContext = stream.privData as IsobmffStreamContext
 
-    const ac3Info = this.context.ac3Info
+    const ac3Info = streamContext.ac3Info
 
     const info = ac3.parseHeader(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)))
 
@@ -659,13 +678,10 @@ export default class OIsobmffFormat extends OFormat {
       if (info.frameType === ac3.EAC3FrameType.EAC3_FRAME_TYPE_INDEPENDENT
         || info.frameType == ac3.EAC3FrameType.EAC3_FRAME_TYPE_AC3_CONVERT) {
         /* substream ids must be incremental */
-        if (info.substreamId > ac3Info.numIndSub + 1) {
+        if (info.substreamId > ac3Info.substream.length) {
           return
         }
-        if (info.substreamId == ac3Info.numIndSub + 1) {
-          return
-        }
-        else if (info.substreamId < ac3Info.numIndSub ||
+        else if (info.substreamId < (ac3Info.substream.length - 1) ||
           info.substreamId == 0 && ac3Info.substream[0]?.bsid) {
           ac3Info.done = true
           return
@@ -673,6 +689,7 @@ export default class OIsobmffFormat extends OFormat {
       }
       else {
         if (info.substreamId != 0) {
+          logger.error('Multiple non EAC3 independent substreams')
           return
         }
       }
@@ -808,9 +825,13 @@ export default class OIsobmffFormat extends OFormat {
     else if ((stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AC3
         || stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_EAC3
     )
-      && (!this.context.ac3Info || !this.context.ac3Info.done)
+      && (!streamContext.ac3Info || !streamContext.ac3Info.done)
     ) {
       this.handleEAC3(avpacket, stream)
+      if ((stream.privData as IsobmffStreamContext).ac3Info.done && !this.context.moovWritten && this.context.fragment) {
+        oisobmff.writeMoov(formatContext.ioWriter, formatContext, this.context)
+        formatContext.ioWriter.flush()
+      }
     }
 
     if (this.context.fragment) {

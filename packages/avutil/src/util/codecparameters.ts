@@ -35,7 +35,7 @@ import { AVChromaLocation, AVColorPrimaries, AVColorRange,
 import { NOPTS_VALUE } from '../constant'
 import { AVPacketSideData } from '../struct/avpacket'
 
-export { default as isHdr } from '../function/isHdr'
+export { isHdr, isHdrVideoFrame } from '../function/isHdr'
 export { default as hasAlphaChannel } from '../function/hasAlphaChannel'
 
 import { memset, memcpy } from '@libmedia/cheap'

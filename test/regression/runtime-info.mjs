@@ -108,6 +108,7 @@ test('WebCodecs reports the successfully configured hint instead of mutable opti
   ], {
     VideoDecoder: NativeDecoder,
     getHardwarePreference: () => preference,
+    isHdr: () => false,
     AVCodecParameterFlags: { AV_CODECPAR_FLAG_H26X_ANNEXB: 1, AV_CODECPAR_FLAG_ALPHA: 2, AV_CODECPAR_FLAG_NO_PTS: 4 },
     nullptr: null, logger: { error() {} }
   })

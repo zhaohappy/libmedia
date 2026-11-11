@@ -69,7 +69,7 @@ export default class CanvasImageRender extends ImageRender {
   public async init() {
     if (this.options.colorSpace === 'rec2100-hlg' || this.options.colorSpace === 'rec2100-pq') {
       try {
-        this.context = this.canvas.getContext('2d', { colorSpace: this.options.colorSpace, pixelFormat: 'float16' }) as OffscreenCanvasRenderingContext2D
+        this.context = this.canvas.getContext('2d', { colorSpace: this.options.colorSpace, pixelFormat: 'float16', colorType: 'float16' }) as OffscreenCanvasRenderingContext2D
       }
       catch (error) {
         logger.warn('cannot got hdr context, video rendering colors may not be correct, please use the latest version of chrome then in chrome://flags, set: Experimental Web Platform features: Enabled')

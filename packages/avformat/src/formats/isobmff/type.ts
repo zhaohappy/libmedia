@@ -98,7 +98,6 @@ export interface EC3Info {
   numBlocks: uint8
   dataRate: uint16
   ac3BitrateCode: int8
-  numIndSub: uint8
   substream: {
     fscod: uint8
     bsid: uint8
@@ -181,7 +180,6 @@ export interface IsobmffContext {
     streamIndex: number
     pos: bigint
   }
-  ac3Info?: EC3Info
   firstMoof?: int64
   ignoreEditlist?: boolean
   use64Mdat?: boolean
@@ -223,6 +221,7 @@ export interface IsobmffContext {
     foundIloc?: boolean
     currentItem?: HEIFItem
   }
+  moovWritten?: boolean
 }
 
 export interface IsobmffStreamContext {
@@ -271,6 +270,7 @@ export interface IsobmffStreamContext {
   flags: number
   isPcm?: boolean
   format?: number
+  ac3Info?: EC3Info
 }
 
 export interface ElstEntry {

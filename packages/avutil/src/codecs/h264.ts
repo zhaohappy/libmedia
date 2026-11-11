@@ -660,6 +660,10 @@ export function parseAVCodecParameters(
         break
     }
   }
+  else if (extradata.length > 3) {
+    stream.codecpar.profile = extradata[1]
+    stream.codecpar.level = extradata[3]
+  }
 }
 
 /**
