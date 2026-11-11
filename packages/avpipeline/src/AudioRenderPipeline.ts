@@ -112,6 +112,12 @@ export interface AudioRenderTaskOptions extends TaskOptions {
   enableJitterBuffer: boolean
   isLive: boolean
   audioMasterForce: boolean
+  /**
+   * 下混到更少声道时中置声道的电平，不设置使用 swresample 的默认值 0.707（-3dB）
+   *
+   * Level of the center channel when downmixing to fewer channels, swresample's default 0.707 (-3dB) when unset
+   */
+  centerMixLevel?: double
 }
 
 type SelfTask = AudioRenderTaskOptions & {
@@ -335,7 +341,8 @@ export default class AudioRenderPipeline extends Pipeline {
           }
           if (!task.resampler) {
             task.resampler = new Resampler({
-              resource: task.resamplerResource
+              resource: task.resamplerResource,
+              centerMixLevel: task.centerMixLevel
             })
             await task.resampler.open(
               {
@@ -741,6 +748,14 @@ export default class AudioRenderPipeline extends Pipeline {
       task.playPitch = pitch
       task.stretchpitcher?.setPitch(pitch)
       this.checkUseStretchpitcher(task)
+    }
+  }
+
+  public setCenterMixLevel(taskId: string, level: double) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      task.centerMixLevel = level
+      task.resampler?.setCenterMixLevel(level)
     }
   }
 

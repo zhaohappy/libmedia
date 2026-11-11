@@ -41,6 +41,12 @@ enum AVSampleFormat dst_sample_fmt;
 
 int first_input = 1;
 
+/**
+ * 下混时中置声道的电平（swresample 的 center_mix_level），小于 0 表示未设置，使用 swresample 的默认值（-3dB）
+ * level of the center channel when downmixing (swresample's center_mix_level), below 0 means unset and keeps swresample's default (-3dB)
+ */
+double center_mix_level = -1.0;
+
 struct PCMBuffer {
   uint8_t **data;
   int linesize;
@@ -85,6 +91,10 @@ EM_PORT_API(int) resample_init() {
     av_opt_set_chlayout(swr_ctx, "out_chlayout",    dst_ch_layout, 0);
   }
 
+  if (center_mix_level >= 0) {
+    av_opt_set_double(swr_ctx, "center_mix_level", center_mix_level, 0);
+  }
+
   if (swr_init(swr_ctx) < 0) {
     return -2;
   }
@@ -92,6 +102,22 @@ EM_PORT_API(int) resample_init() {
   first_input = 1;
 
   return  0;
+}
+
+EM_PORT_API(int) resample_set_center_mix_level(double level) {
+  center_mix_level = level;
+
+  if (swr_ctx && swr_is_initialized(swr_ctx)) {
+    av_opt_set_double(swr_ctx, "center_mix_level", center_mix_level, 0);
+    // 重新初始化以重建混音矩阵，缓冲的采样会被丢弃
+    // reinitialize to rebuild the mixing matrix, buffered samples are dropped
+    if (swr_init(swr_ctx) < 0) {
+      return -2;
+    }
+    first_input = 1;
+  }
+
+  return 0;
 }
 
 EM_PORT_API(int) resample_set_input_parameters(int samplerate, int nb_channels, enum AVSampleFormat format, AVChannelLayout* ch_layout) {

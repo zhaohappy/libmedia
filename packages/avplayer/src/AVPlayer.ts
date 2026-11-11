@@ -332,6 +332,16 @@ export interface AVPlayerOptions {
    */
   audioWorkletBufferLength?: int32
   /**
+   * 音频下混到更少声道（如 5.1 到立体声）时中置声道的电平，影片的对白通常在中置声道
+   *
+   * 0.707 为 -3dB（默认，与 FFmpeg 相同），1 为 0dB，1.414 为 +3dB；MSE 模式下不生效
+   *
+   * Level of the center channel when the sound is downmixed to fewer channels (5.1 to stereo for example), where the dialogue of a film usually is
+   *
+   * 0.707 is -3dB (default, the same as FFmpeg), 1 is 0dB, 1.414 is +3dB; no effect in MSE mode
+   */
+  centerMixLevel?: double
+  /**
    * DRM 配置
    */
   drmSystemOptions?: DRMSystemOptions
@@ -655,6 +665,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
   private status: AVPlayerStatus
   private lastStatus: AVPlayerStatus
   private playChannels: number
+  private centerMixLevel: double
   private seekedTimestamp: int64
   private isLive_: boolean
   private drmSystemKey: DRMType
@@ -688,6 +699,7 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
 
     this.volume = 1
     this.playRate = 1
+    this.centerMixLevel = this.options.centerMixLevel
     this.renderMode = RenderMode.FIT
     this.renderRotate = 0
     this.flipHorizontal = false
@@ -2522,7 +2534,8 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           avframeList: addressof(this.GlobalData.avframeList),
           avframeListMutex: addressof(this.GlobalData.avframeListMutex),
           enableJitterBuffer: !!this.jitterBufferController,
-          audioMasterForce: options.audioMasterForce
+          audioMasterForce: options.audioMasterForce,
+          centerMixLevel: this.centerMixLevel
         })
 
       // 创建一个音频源节点
@@ -3346,6 +3359,32 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   public getPlaybackRate() {
     return this.playRate
+  }
+
+  /**
+   * 设置音频下混到更少声道时中置声道的电平，播放中立即生效（MSE 模式下不生效）
+   *
+   * Set the level of the center channel when the sound is downmixed to fewer channels, applied at once while playing (no effect in MSE mode)
+   *
+   * @param level [0, 4] 0.707 为 -3dB（默认），1 为 0dB，1.414 为 +3dB / 0.707 is -3dB (default), 1 is 0dB, 1.414 is +3dB
+   */
+  public setCenterMixLevel(level: number) {
+    this.centerMixLevel = restrain(level, 0, 4)
+    if (!this.useMSE) {
+      AVPlayer.AudioRenderThread?.setCenterMixLevel(this.taskId, this.centerMixLevel)
+    }
+    logger.info(`player call setCenterMixLevel, set ${this.centerMixLevel}, taskId: ${this.taskId}`)
+  }
+
+  /**
+   * 获取音频下混时中置声道的电平
+   *
+   * Get the level of the center channel when the sound is downmixed
+   *
+   * @returns
+   */
+  public getCenterMixLevel() {
+    return this.centerMixLevel ?? Math.SQRT1_2
   }
 
   /**

@@ -37,6 +37,12 @@ export interface PCMParameters {
 
 export type ResamplerOptions = {
   resource: WebAssemblyResource
+  /**
+   * 下混到更少声道时中置声道的电平，不设置使用 swresample 的默认值 0.707（-3dB）
+   *
+   * Level of the center channel when downmixing to fewer channels, swresample's default 0.707 (-3dB) when unset
+   */
+  centerMixLevel?: double
 }
 
 export default class Resampler {
@@ -47,6 +53,8 @@ export default class Resampler {
 
   private inputParameters: PCMParameters | undefined
   private outputParameters: PCMParameters | undefined
+
+  private opened: boolean
 
   constructor(options: ResamplerOptions) {
     this.options = options
@@ -77,11 +85,16 @@ export default class Resampler {
       output.layout || nullptr
     )
 
+    if (this.options.centerMixLevel != null) {
+      this.resampler.invoke('resample_set_center_mix_level', this.options.centerMixLevel)
+    }
+
     let ret = this.resampler.invoke<int32>('resample_init')
     if (ret < 0) {
       logger.error(`open resampler failed, ret: ${ret}`)
       return errorType.INVALID_PARAMETERS
     }
+    this.opened = true
     return 0
   }
 
@@ -89,11 +102,32 @@ export default class Resampler {
     return this.resampler.invoke<int32>('resample_process', input, output, numberOfFrames)
   }
 
+  /**
+   * 设置下混到更少声道时中置声道的电平，已打开时立即生效
+   *
+   * Set the level of the center channel when downmixing to fewer channels, applied at once if already opened
+   *
+   * @param level 0.707 为 -3dB（默认），1 为 0dB，1.414 为 +3dB / 0.707 is -3dB (default), 1 is 0dB, 1.414 is +3dB
+   */
+  public setCenterMixLevel(level: double) {
+    this.options.centerMixLevel = level
+    if (!this.opened) {
+      return 0
+    }
+    const ret = this.resampler.invoke<int32>('resample_set_center_mix_level', level)
+    if (ret < 0) {
+      logger.error(`set center mix level failed, ret: ${ret}`)
+      return errorType.INVALID_PARAMETERS
+    }
+    return 0
+  }
+
   public getOutputSampleCount(numberOfFrames: int32) {
     return this.resampler.invoke<int32>('resample_nb_sample', numberOfFrames)
   }
 
   public close() {
+    this.opened = false
     this.resampler.invoke('resample_destroy')
     this.resampler.destroy()
   }
