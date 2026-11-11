@@ -123,7 +123,7 @@ export default class IMpegtsFormat extends IFormat {
     })
   }
 
-  public async readHeader(formatContext: AVIFormatContext): Promise<number> {
+  public async readHeader(formatContext: AVIFormatContext, validateProgram = false): Promise<number> {
     try {
 
       let ret = 0
@@ -158,7 +158,11 @@ export default class IMpegtsFormat extends IFormat {
         }
       }
 
-      if (!this.context.hasPAT || !this.context.hasPMT) {
+      if (!this.context.hasPAT || !this.context.hasPMT
+        || validateProgram && (!this.context.pmt?.pid2StreamType.size
+          || this.context.pmt.programNumber !== this.context.currentProgram
+          || this.context.pat?.program2PmtPid.get(this.context.currentProgram) !== this.context.currentPmtPid)
+      ) {
         return errorType.DATA_INVALID
       }
       else {
@@ -169,7 +173,7 @@ export default class IMpegtsFormat extends IFormat {
     }
     catch (error) {
       logger.error(error.message)
-      return formatContext.ioReader.error
+      return formatContext.ioReader.error || (validateProgram ? errorType.DATA_INVALID : 0)
     }
 
   }
