@@ -72,8 +72,12 @@ export default class IIsoFormat extends IFormat {
     return this.child?.iformat.getAnalyzeStreamsCount() ?? 0
   }
 
-  private fail(error: unknown) {
-    if (error instanceof DiscAbortError) {
+  private fail(error: unknown, context: AVIFormatContext) {
+    // IOReader throws a plain Error on abort; retain its cancellation status.
+    if (error instanceof DiscAbortError
+      || context.ioReader.error === IOError.ABORT
+      || this.child?.ioReader.error === IOError.ABORT
+    ) {
       return IOError.ABORT
     }
     logger.error(`ISO: ${error instanceof Error ? error.message : error}`)
@@ -108,7 +112,7 @@ export default class IIsoFormat extends IFormat {
       return 0
     }
     catch (error) {
-      return this.fail(error)
+      return this.fail(error, context)
     }
     finally {
       if (this.reader) {
@@ -402,7 +406,7 @@ export default class IIsoFormat extends IFormat {
       return IOError.ABORT
     }
     catch (error) {
-      return this.fail(error)
+      return this.fail(error, context)
     }
   }
 
@@ -425,7 +429,7 @@ export default class IIsoFormat extends IFormat {
       return 0n
     }
     catch (error) {
-      return BigInt(this.fail(error))
+      return BigInt(this.fail(error, context))
     }
   }
 

@@ -1,8 +1,57 @@
 import assert from 'node:assert/strict'
 import { test } from './helpers/test.mjs'
 import { loadClass } from './helpers/source.mjs'
+import { load } from './helpers/io-loader.mjs'
 
 const aborted = -1048572
+
+for (const operation of ['probe', 'packet']) {
+  for (const cancelled of [true, false]) {
+    test(`ISO ${operation} ${cancelled ? 'cancellation is silent and retains ABORT' : 'read failure remains an error'}`, async () => {
+      const { default: IOReader } = load('common/src/io/IOReader.ts')
+      const { IOError } = load('common/src/io/error.ts')
+      const { DiscError, DiscAbortError } = load('avformat/src/formats/iso/reader.ts')
+      const errorType = load('avutil/src/error.ts')
+      const errors = []
+      const Iso = loadClass('avformat/src/formats/IIsoFormat.ts', 'IIsoFormat', ['readHeader', 'readAVPacket', 'fail'], {
+        IOError, DiscError, DiscAbortError, errorType,
+        logger: { error: (message) => errors.push(message) }
+      })
+      const iso = new Iso()
+      const reader = new IOReader()
+      let started
+      const ready = new Promise((resolve) => started = resolve)
+      reader.onSize = () => 1048576n
+      reader.onFlush = () => {
+        started()
+        return cancelled ? new Promise(() => {}) : IOError.NETWORK_ERROR
+      }
+      const context = { readAt() {}, ioReader: reader }
+      let pending
+      if (operation === 'probe') {
+        pending = iso.readHeader(context)
+      }
+      else {
+        context.ioReader = new IOReader()
+        iso.audioPackets = []
+        iso.child = {
+          ioReader: reader, interval: { packetBuffer: [] },
+          iformat: { readAVPacket: () => reader.readUint8() }
+        }
+        pending = iso.readAVPacket(context, {})
+      }
+      await ready
+      if (cancelled) {
+        reader.abort()
+      }
+      assert.equal(await pending, cancelled ? IOError.ABORT : errorType.DATA_INVALID)
+      assert.equal(errors.length, cancelled ? 0 : 1)
+      if (!cancelled) {
+        assert.match(errors[0], /ISO: IOReader error, flush failed/)
+      }
+    })
+  }
+}
 
 for (const [position, size, capacity, expected] of [
   [0n, 8n * 1024n ** 2n, 256 * 1024, 256 * 1024],
