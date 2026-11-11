@@ -33,6 +33,11 @@ import {
 } from '@libmedia/cheap'
 
 export default async function compileResource(wasmUrl: WebAssemblyResourceInput, thread: boolean = false) {
+  // Stream analysis also probes tracks without a WASM decoder resource.
+  if (!wasmUrl) {
+    return
+  }
+
   let resource: WebAssemblyResource
 
   if (is.string(wasmUrl) || is.arrayBuffer(wasmUrl) || 'source' in wasmUrl) {

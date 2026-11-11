@@ -57,6 +57,14 @@ const wrap = evaluate(`
   })
 })
 
+test('absent optional decoder resources survive worker transfer without failing compilation', async () => {
+  for (const resource of [undefined, null]) {
+    for (const threaded of [false, true]) {
+      assert.equal(await wrap(structuredClone(resource), threaded), undefined)
+    }
+  }
+})
+
 test('resource compilation preserves source metadata for both parent and child modules', async () => {
   const resource = await wrap({ source: bytes(), metadata: { variant: 'atomic' } }, true)
   assert.deepEqual(resource.metadata, { variant: 'atomic', variantSource: 'metadata' })
