@@ -111,6 +111,7 @@ export const codecBmpTags: Record<int32, AVCodecID> = {
   [mktagle('DIVX')]: AVCodecID.AV_CODEC_ID_MPEG4,
   [mktagle('DX50')]: AVCodecID.AV_CODEC_ID_MPEG4,
   [mktagle('XVID')]: AVCodecID.AV_CODEC_ID_MPEG4,
+  [mktagle('xvid')]: AVCodecID.AV_CODEC_ID_MPEG4,
   [mktagle('MP4S')]: AVCodecID.AV_CODEC_ID_MPEG4,
   [mktagle('M4S2')]: AVCodecID.AV_CODEC_ID_MPEG4,
   [mktagle('DIVX')]: AVCodecID.AV_CODEC_ID_MPEG4,

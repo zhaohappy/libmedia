@@ -23,6 +23,18 @@ function loadFunction(path, name, env) {
 }
 
 const AVCodecID = loadEnum('avutil/src/codec.ts', 'AVCodecID')
+const mktagle = loadFunction('avformat/src/function/mktagle.ts', 'mktagle', { logger: { warn() {} } })
+const codecBmpTags = loadValue(readSource('avformat/src/formats/riff/riff.ts'), 'codecBmpTags', { mktagle, AVCodecID })
+
+test('AVI recognizes both uppercase and lowercase Xvid FourCC as MPEG-4 Part 2', () => {
+  for (const tag of ['XVID', 'xvid']) {
+    const header = Buffer.from(tag, 'ascii')
+    assert.equal(codecBmpTags[header.readUInt32LE()], AVCodecID.AV_CODEC_ID_MPEG4, tag)
+  }
+  assert.equal(codecBmpTags[Buffer.from('H264').readUInt32LE()], AVCodecID.AV_CODEC_ID_H264)
+  assert.equal(codecBmpTags[Buffer.from('zzzz').readUInt32LE()], undefined)
+})
+
 const AVMediaType = loadEnum('avutil/src/codec.ts', 'AVMediaType')
 const AVDisposition = loadEnum('avutil/src/AVStream.ts', 'AVDisposition')
 const namesSource = readSource('avutil/src/stringEnum.ts')
