@@ -18,13 +18,13 @@ PROJECT_OUTPUT_PATH=$PROJECT_ROOT_PATH/dist/decode
 FFMPEG_PATH=$PROJECT_ROOT_PATH/lib/ffmpeg
 FFMPEG_AVUTIL_PATH=$FFMPEG_PATH/lib
 FFMPEG_DECODE_PATH=$PROJECT_ROOT_PATH/lib/decode
-EMSDK_PATH=${LIBMEDIA_EMSDK_PATH:-$PROJECT_ROOT_PATH/../emsdk}
+EMSDK_PATH=$PROJECT_ROOT_PATH/../emsdk
 
 CLIB_PATH=$PROJECT_SRC_PATH/avcodec/src/clib
 
 INCLUDE_PATH=$PROJECT_ROOT_PATH/dist/include
 
-source "$EMSDK_PATH/emsdk_env.sh" || exit 1
+source $EMSDK_PATH/emsdk_env.sh
 
 if ! [ -n "$2" ]; then
   ENABLE_SIMD=`sed '/^enable_simd=/!d;s/.*=//' $NOW_PATH/config`

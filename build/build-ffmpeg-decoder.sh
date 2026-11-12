@@ -11,14 +11,10 @@ NOW_PATH=$(cd $(dirname $0); pwd)
 
 PROJECT_ROOT_PATH=$(cd $NOW_PATH/../; pwd)
 
-FFMPEG_PATH=$(cd "${LIBMEDIA_FFMPEG_PATH:-$PROJECT_ROOT_PATH/../FFmpeg}" && pwd) || exit 1
-EMSDK_PATH=$(cd "${LIBMEDIA_EMSDK_PATH:-$PROJECT_ROOT_PATH/../emsdk}" && pwd) || exit 1
+FFMPEG_PATH=$(cd $PROJECT_ROOT_PATH/../FFmpeg; pwd)
+EMSDK_PATH=$(cd $PROJECT_ROOT_PATH/../emsdk; pwd)
 
-source "$EMSDK_PATH/emsdk_env.sh" || exit 1
-
-if [[ $decode == "h264" && ( $simd == "1" || $wasm64 == "1" ) ]]; then
-  bash "$NOW_PATH/apply-ffmpeg-patches.sh" "$FFMPEG_PATH" || exit 1
-fi
+source $EMSDK_PATH/emsdk_env.sh
 
 DIRNAME=$PROJECT_ROOT_PATH/lib/decode/$decode
 
