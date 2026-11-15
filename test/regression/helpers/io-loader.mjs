@@ -50,4 +50,3 @@ export function load(relativePath) {
   compileFunction(outputText, ['require', 'exports', 'static_cast', 'nullptr', 'assert'])(requireModule, exports, BigInt, null, assert.ok)
   return exports
 }
-
