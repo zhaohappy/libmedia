@@ -124,6 +124,89 @@ export const MPEG4Channels = [
 ]
 
 /**
+ * channelConfiguration 为 0 时，声道布局由 AudioSpecificConfig 中的 program_config_element (PCE) 描述，
+ * 需要解析 PCE 计算声道数
+ *
+ * channelConfiguration 0 means the channel layout is described by a program_config_element (PCE)
+ * inside the AudioSpecificConfig, so the channel count has to be read from the PCE.
+ * Blu-ray remuxes commonly carry 7.1 AAC this way.
+ *
+ * ISO/IEC 14496-3 1.6.2.1 AudioSpecificConfig, 4.4.1.1 GASpecificConfig, 4.4.1.2 program_config_element
+ */
+function getPCEChannels(extradata: Uint8ArrayInterface) {
+  const bitReader = new BitReader(extradata.length)
+  bitReader.appendBuffer(extradata)
+
+  function readObjectType() {
+    let objectType = bitReader.readU(5)
+    if (objectType === 31) {
+      objectType = 32 + bitReader.readU(6)
+    }
+    return objectType
+  }
+  function skipSamplingFrequency() {
+    if (bitReader.readU(4) === 0x0f) {
+      bitReader.readU(24)
+    }
+  }
+
+  let objectType = readObjectType()
+  skipSamplingFrequency()
+  // channelConfiguration, 0
+  bitReader.readU(4)
+  // explicit SBR / PS signalling wraps the core object type
+  if (objectType === MPEG4AudioObjectTypes.AAC_SBR || objectType === MPEG4AudioObjectTypes.AAC_PS) {
+    skipSamplingFrequency()
+    objectType = readObjectType()
+  }
+
+  // GASpecificConfig
+  // frameLengthFlag
+  bitReader.readU1()
+  // dependsOnCoreCoder
+  if (bitReader.readU1()) {
+    // coreCoderDelay
+    bitReader.readU(14)
+  }
+  // extensionFlag
+  bitReader.readU1()
+
+  // program_config_element
+  // element_instance_tag, object_type, sampling_frequency_index
+  bitReader.readU(4)
+  bitReader.readU(2)
+  bitReader.readU(4)
+  const numFront = bitReader.readU(4)
+  const numSide = bitReader.readU(4)
+  const numBack = bitReader.readU(4)
+  const numLfe = bitReader.readU(2)
+  // num_assoc_data_elements, num_valid_cc_elements
+  bitReader.readU(3)
+  bitReader.readU(4)
+  // mono_mixdown, stereo_mixdown, matrix_mixdown
+  if (bitReader.readU1()) {
+    bitReader.readU(4)
+  }
+  if (bitReader.readU1()) {
+    bitReader.readU(4)
+  }
+  if (bitReader.readU1()) {
+    bitReader.readU(3)
+  }
+
+  // each front / side / back element is a single channel (SCE) or a pair (CPE)
+  let channels = numLfe
+  for (let i = 0; i < numFront + numSide + numBack; i++) {
+    // is_cpe
+    channels += bitReader.readU1() ? 2 : 1
+    // element_tag_select
+    bitReader.readU(4)
+  }
+
+  return channels > 0 ? channels : NOPTS_VALUE
+}
+
+/**
  * 解析 AAC AudioSpecificConfig
  *    
  *             frequency
@@ -149,7 +232,19 @@ export function getAVCodecParameters(extradata: Uint8ArrayInterface) {
     sampleRate = MPEG4SamplingFrequencies[((extradata[0] & 0x07) << 1)
       | (extradata[1] >> 7)]
 
-    channels = MPEG4Channels[(extradata[1] >> 3) & 0x0f]
+    const channelConfig = (extradata[1] >> 3) & 0x0f
+    if (channelConfig === 0) {
+      try {
+        channels = getPCEChannels(extradata)
+      }
+      catch (error) {
+        // truncated or malformed PCE: BitReader throws when reading past the end
+        channels = NOPTS_VALUE
+      }
+    }
+    else {
+      channels = MPEG4Channels[channelConfig]
+    }
   }
 
   return {
