@@ -70,8 +70,9 @@ export default class WebGPUExternalRender extends WebGPURender {
       colorTransformOptions.outputRGB = true
       steps = generateSteps(this.srcColorSpace, this.dstColorSpace, colorTransformOptions)
 
-      // ExternalTexture 采样的数据应该是 sRGB，但 Safari 由于 VIdeoFrame 带有错误的 spaceColor 导致采样出来的却不是
-      // 有 bug，这里无法将转换之后的 sRGB 变成 PQ RGB，整体颜色偏绿
+      // ExternalTexture 采样的数据被浏览器处理为 sRGB，但 Safari 由于 VideoFrame 带有错误的 SpaceColor 导致采样出来的却不是
+      // 这里对非 Safari 需要将 ExternalTexture 采样出的 sRGB 转换为 pq rgb
+      // TODO 将来 Safari 如果修复了 VideoFrame 的 bug，这里将条件去掉
       if (!(browser.safari || os.ios)) {
         const patchSrcColor = new ColorSpace(
           AVColorSpace.AVCOL_SPC_RGB,
@@ -79,9 +80,9 @@ export default class WebGPUExternalRender extends WebGPURender {
           AVColorTransferCharacteristic.AVCOL_TRC_BT709,
           AVColorRange.AVCOL_RANGE_JPEG
         )
-        // XYZ 转 pq linear RGB
-        steps.push(colorTransformMatrix(this.srcColorSpace.getPrimaryMatrix().invert(), colorTransformOptions))
-        // srgb linear RGB 空间转 XYZ 空间
+        // XYZ 转 pq RGB
+        steps.unshift(colorTransformMatrix(this.srcColorSpace.getPrimaryMatrix().invert(), colorTransformOptions))
+        // srgb RGB 空间转 XYZ 空间
         steps.unshift(colorTransformMatrix(patchSrcColor.getPrimaryMatrix(), colorTransformOptions))
         // 转成线性 rgb
         steps.unshift(transferFn(patchSrcColor.getTransferFunction(), patchSrcColor.hasExtendedSkTransferFn(), colorTransformOptions))
