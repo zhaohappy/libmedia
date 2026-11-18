@@ -25,3 +25,6 @@ packages/**/dist/
 # Local browser automation captures and diagnostics
 /.playwright-cli/
 /output/playwright/
+
+# Generated npm release packages
+/.npm-release/
