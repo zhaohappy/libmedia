@@ -99,6 +99,14 @@ export default class Resampler {
   }
 
   public resample(input: pointer<pointer<uint8>>, output: pointer<AVPCMBuffer>, numberOfFrames: int32) {
+    if (output && (output.format !== this.outputParameters!.format
+      || output.channels !== this.outputParameters!.channels)
+    ) {
+      // Pooled PCM may still have a packed allocation from time stretching.
+      // Its sample capacity alone does not make it safe for planar output (or
+      // a different channel count). Force resample_process to reallocate it.
+      output.maxnbSamples = 0
+    }
     return this.resampler.invoke<int32>('resample_process', input, output, numberOfFrames)
   }
 

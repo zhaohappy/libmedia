@@ -51,6 +51,7 @@ import {
 import {
   isPointer,
   type WebAssemblyResource,
+  type WebAssemblyResourceInput,
   type Mutex,
   type List
 } from '@libmedia/cheap'
@@ -74,9 +75,10 @@ import {
 import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
 import type { Data } from '@libmedia/common'
+import type { AVDecoderRuntimeInfo } from './struct/runtimeInfo'
 
 export interface AudioDecodeTaskOptions extends TaskOptions {
-  resource: ArrayBuffer | WebAssemblyResource
+  resource: WebAssemblyResourceInput
   avpacketList: pointer<List<pointer<AVPacketRef>>>
   avpacketListMutex: pointer<Mutex>
   avframeList: pointer<List<pointer<AVFrameRef>>>
@@ -296,7 +298,7 @@ export default class AudioDecodePipeline extends Pipeline {
   public async reopenDecoder(
     taskId: string,
     parameters: AVCodecParametersSerialize | pointer<AVCodecParameters>,
-    resource?: string | ArrayBuffer | WebAssemblyResource,
+    resource?: WebAssemblyResourceInput,
     wasmDecoderOptions?: Data
   ) {
     const task = this.tasks.get(taskId)
@@ -369,6 +371,17 @@ export default class AudioDecodePipeline extends Pipeline {
       return errorType.INVALID_OPERATE
     }
     return this.createTask(options)
+  }
+
+  public async getTaskRuntimeInfo(taskId: string): Promise<AVDecoderRuntimeInfo> {
+    const decoder = this.tasks.get(taskId)?.decoder
+    if (decoder instanceof WebAudioDecoder) {
+      return { backend: 'webcodecs' }
+    }
+    if (decoder instanceof WasmAudioDecoder) {
+      return { backend: 'wasm', wasm: decoder.getRuntimeInfo() }
+    }
+    return { backend: 'unknown' }
   }
 
   public async unregisterTask(taskId: string): Promise<void> {

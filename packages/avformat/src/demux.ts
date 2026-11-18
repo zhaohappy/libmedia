@@ -228,6 +228,7 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
   const streamDtsMap: Record<int32, int64[]> = {}
   const streamPtsMap: Record<int32, int64[]> = {}
   const streamBitMap: Record<int32, number> = {}
+  const estimatedBitrates = new Set<int32>()
   const streamContextMap: Record<int32, StreamDemuxPrivateData> = {}
   const decoderMap: Record<int32, WasmVideoDecoder | WasmAudioDecoder> = {}
   const pictureGot: Record<int32, boolean> = {}
@@ -314,8 +315,11 @@ export async function analyzeStreams(formatContext: AVIFormatContext): Promise<i
         roundStandardFramerate(stream.codecpar.framerate)
       }
       const duration = static_cast<double>(dtsList[dtsList.length - 1] - stream.startTime) * stream.timeBase.num / stream.timeBase.den
-      if (duration) {
+      // WMA uses the declared bitrate to choose its bitstream decoding tables.
+      // Only estimate missing rates, while allowing our own estimates to improve.
+      if (duration > 0 && (stream.codecpar.bitrate <= 0n || estimatedBitrates.has(stream.index))) {
         stream.codecpar.bitrate = static_cast<int64>(streamBitMap[stream.index] * 8 / duration)
+        estimatedBitrates.add(stream.index)
       }
     }
   }

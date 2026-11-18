@@ -97,6 +97,7 @@
 
       #video-change {
         bottom: 70px;
+        width: 210px;
       }
       #audio-change {
         bottom: 140px;
@@ -216,13 +217,17 @@
 <body>
 
     <div style="margin-left: 10px;">
-      支持 mp4、mov、mpegts、flv、matroska、webm、avi、mp3、ogg、flac、aac、wav 封装格式 <br>
+      支持 mp4、mov、mpegts、flv、matroska、webm、avi、rm、rmvb、asf、wmv、wma、mp3、ogg、flac、aac、wav 封装格式 <br>
       支持 hls、dash 协议 （只支持 url 播放）<br>
-      支持 vvc、av1、hevc、h264、vp9、vp8、mpeg4、aac、mp3、opus、speex、flac、vorbis、g711 编码 <br>
+      支持 vvc、av1、hevc、h264、vp9、vp8、mpeg4、RV10–RV40、Cook、SIPR、AC-3、wmv1/2/3、vc-1、wma、aac、mp3、opus、speex、flac、vorbis、g711 编码 <br>
       支持直播（LIVE）和点播（VOD） <br>
       支持本地文件播放和网络 url 地址播放 <br>
 
-      demo 的解码器在 github 仓库中，加载可能比较慢。
+      RM/RMVB 仅支持播放和转码输入，不支持 RM 输出、独立 .ra 文件或 Real 专用流媒体协议。<br>
+      测试 HTTP Range 跳转请使用 URL 输入，并确保服务端支持 Range；选择文件用于测试本地播放。<br>
+      缺少有效索引时，首次远距离跳转可能需要扫描，耗时取决于文件大小和网络速度。<br>
+      端口转发时，可通过页面参数传入相对样本路径，例如 <code>?url=%2Ftest%2Fmaterial%2Fsample.rmvb</code>，地址会跟随当前页面端口。<br>
+      本测试页从本地 dist 目录加载播放器和 WASM 解码器，请先构建播放器，并准备好测试样本。
     </div>
 
     <div id="url">
@@ -336,6 +341,7 @@
         </el-select>
       </div>
 
+      <div id="playback-error" role="alert" style="color: #c00"></div>
       <div class="loading-mask" id="loading-mask">
         <div class="loading-spinner">
           <svg viewBox="25 25 50 50" class="circular">
@@ -584,7 +590,10 @@
 
       let statsTimer;
 
-      let url = ''
+      let url = new URLSearchParams(location.search).get('url') || ''
+      if (url) {
+        url = new URL(url, location.href).href
+      }
       let defaultVersion = '-atomic'
 
       function onFileOpen(target) {
@@ -600,6 +609,16 @@
             console.log('test log ready')
           })
         })
+      }
+
+      function showPlaybackError(error) {
+        console.error(error)
+        document.querySelector('#loading-mask').style.display = 'none'
+        document.querySelector('#playback-error').textContent = `播放失败：${error?.message || error || '无法加载或播放此文件'}`
+        if (statsTimer) {
+          clearInterval(statsTimer)
+          statsTimer = null
+        }
       }
 
       function loadPlayer(id) {
@@ -697,7 +716,7 @@
                     case 6 /* AVCodecID.AV_CODEC_ID_RV20 */:
                     case 68 /* AVCodecID.AV_CODEC_ID_RV30 */:
                     case 69 /* AVCodecID.AV_CODEC_ID_RV40 */:
-                      return `../dist/decode/msmpeg4${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? defaultVersion : '')}.wasm`;
+                      return `../dist/decode/rv${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? defaultVersion : '')}.wasm`;
                     case 86036 /* AVCodecID.AV_CODEC_ID_COOK */:
                     case 86057 /* AVCodecID.AV_CODEC_ID_SIPR */:
                     case 86073 /* AVCodecID.AV_CODEC_ID_RALF */:
@@ -710,6 +729,7 @@
                       return `../dist/decode/wma${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? defaultVersion : '')}.wasm`;
                     case 17 /* AVCodecID.AV_CODEC_ID_WMV1 */:
                     case 18 /* AVCodecID.AV_CODEC_ID_WMV2 */:
+                    case 70 /* AVCodecID.AV_CODEC_ID_VC1 */:
                     case 71 /* AVCodecID.AV_CODEC_ID_WMV3 */:
                       return `../dist/decode/wmv${(enableSimdComponent.enableSimd) ? '-simd' : (supportAtomic ? defaultVersion : '')}.wasm`;
                     case 7 /* AVCodecID.AV_CODEC_ID_MJPEG */:
@@ -800,9 +820,7 @@
             console.log('changed', mediaType, newStreamId, oldStreamId)
           })
 
-          player.on('error', (error) => {
-            console.log(error)
-          })
+          player.on('error', showPlaybackError)
         }
         else {
           player.options.enableHardware = enableHardwareComponent.enableHardwareAcceleration
@@ -870,26 +888,7 @@
             el: '#play-rate',
             data: function() {
               return { 
-                options: [
-                  {
-                    value: 0.5
-                  },
-                  {
-                    value: 0.75
-                  },
-                  {
-                    value: 1.0
-                  },
-                  {
-                    value: 1.2
-                  },
-                  {
-                    value: 1.5
-                  },
-                  {
-                    value: 2.0
-                  }
-                ],
+                options: [0.3, 0.5, 0.75, 1.0, 1.2, 1.5, 2.0, 3, 4, 5, 8, 10, 15].map(value => ({ value })),
                 value: 1.0
               }
             },
@@ -910,6 +909,7 @@
         }
 
         document.querySelector('#loading-mask').style.display = 'block'
+        document.querySelector('#playback-error').textContent = ''
 
         if (slider) {
           slider.currentTime = 0
@@ -923,7 +923,7 @@
             slider.duration = Number(player.getDuration())
           }
 
-          Promise.all([
+          return Promise.all([
             player.getVideoList(),
             player.getAudioList(),
             player.getSubtitleList()
@@ -1060,7 +1060,7 @@
             }
 
             // player.seek(400000n).then(() => {
-              player.play({
+              return player.play({
                 audio: true,
                 video: true,
                 subtitle: true
@@ -1132,10 +1132,12 @@
                       el: '#video-change',
                       data: function() {
                         return { 
-                          options: videoStreams.map((item) => {
+                          options: videoStreams.map((item, index) => {
+                            const name = item.metadata['title'] || item.metadata['languageString'] || item.metadata['language'] || item.metadata['name'] || `视频轨道 ${index + 1}`
+                            const { width, height } = item.codecparProxy
                             return {
                               value: item.id,
-                              name: item.metadata['title'] || item.metadata['languageString'] || item.metadata['language'] || item.metadata['name'] || 'default'
+                              name: width && height ? `${name} (${width}×${height})` : name
                             }
                           }),
                           value: player.getSelectedVideoStreamId()
@@ -1162,7 +1164,7 @@
               })
             // })
           })
-        })
+        }).catch(showPlaybackError)
 
         if (statsTimer) {
           clearTimeout(statsTimer)

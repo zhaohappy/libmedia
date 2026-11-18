@@ -38,9 +38,12 @@ libmedia can complete the following functions:
 | mp4      | ✅       | ✅        |
 | mpegts   | ✅       | ✅        |
 | mpegps   | ✅       | ❌        |
+| iso (Blu-ray / DVD) | ✅ | ❌ |
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
+| rm/rmvb  | ✅       | ❌        |
+| asf / wmv / wma | ✅ | ❌ |
 | h264 raw | ✅       | ✅        |
 | hevc raw | ✅       | ✅        |
 | vvc  raw | ✅       | ✅        |
@@ -57,6 +60,13 @@ libmedia can complete the following functions:
 | ttml     | ✅       | ❌        |
 | avif     | ✅       | ❌        |
 | heif     | ✅       | ❌        |
+
+RM/RMVB supports playback and transcoding input with RV10–RV40 video and Cook, SIPR, AAC or AC-3 audio. Local files and HTTP Range seeking are supported. RM output, standalone `.ra`, Real-specific streaming protocols and other RealAudio codecs are not supported.
+
+ASF supports unencrypted input; DRM, MMS and WMV Image are excluded. See the
+[player guide](./player.en-US.md) for deployment and playback.
+
+ISO supports unencrypted Blu-ray/DVD titles and deterministic DVD navigation through default menu buttons. HTTP sources require Range. Interactive menus, BD-J and decryption are unsupported. See [ISO playback](./player.en-US.md#iso-playback) for title APIs and compatibility.
 
 ## Protocols
 
@@ -83,6 +93,11 @@ In the browser environment we cannot be used TCP and UDP, RTMP and RTSP need to 
 | mpeg2       | ✅         | ✅          | ✅          | ❌                 |
 | mpeg4       | ✅         | ✅          | ✅          | ❌                 |
 | theora      | ✅         | ✅          | ✅          | ❌                 |
+| rv10–rv40   | ✅         | ✅          | ✅          | ❌                 |
+| cook        | ✅         | ✅          | ✅          | ❌                 |
+| sipr        | ✅         | ✅          | ✅          | ❌                 |
+| wmv1/2/3 / vc1 | ✅      | ✅          | ✅          | ❌                 |
+| wma         | ✅         | ✅          | ✅          | ❌                 |
 | aac         | ✅         | ✅          | ✅          | ✅                 |
 | mp3         | ✅         | ✅          | ✅          | ✅                 |
 | opus        | ✅         | ✅          | ✅          | ✅                 |

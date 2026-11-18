@@ -78,6 +78,7 @@ export interface MpegpsContext {
 }
 
 export interface MpegpsStreamContext {
+  mpeg2FrameDuration?: { num: bigint, den: bigint }
   streamId: number
   streamType: number
   filter: AVBSFilter

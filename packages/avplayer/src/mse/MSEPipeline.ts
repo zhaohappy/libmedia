@@ -308,8 +308,12 @@ export default class MSEPipeline extends Pipeline {
 
   private getSourceOpenHandler(task: SelfTask, startTimestamp: int64 = 0n) {
     return async () => {
+      // Appending after endOfStream reopens the same MediaSource. Its existing
+      // SourceBuffers must be reused instead of initializing the tracks again.
+      task.mediaSource.onsourceopen = null
 
       await this.syncToKeyframe(task)
+      task.playRate = task.targetRate
 
       let audioStartTimestamp = startTimestamp
       let videoStartTimestamp = startTimestamp
@@ -789,6 +793,13 @@ export default class MSEPipeline extends Pipeline {
       resource.frontPacket = packet
       resource.frontBuffered = true
 
+      // Waiting for the asynchronous packet pull is not playback backpressure.
+      // Wake the mux loop promptly so its adaptive idle delay cannot throttle
+      // high-rate playback to a few hundred packets per second.
+      if (!task.isLive && task.targetRate > 100n) {
+        resource.loop?.resetInterval()
+      }
+
       if (resource.seekSync) {
         resource.seekSync()
         resource.seekSync = null
@@ -921,7 +932,8 @@ export default class MSEPipeline extends Pipeline {
     let startPTS: int64 = NOPTS_VALUE_BIGINT
     let lastDTS: int64 = 0n
     let avpacket: pointer<AVPacketRef>
-    let cacheDuration = task.cacheDuration
+    // Keep the same wall-clock headroom when starting at a high playback rate.
+    let cacheDuration = task.cacheDuration * bigint.max(task.targetRate, 100n) / 100n
 
     const timeBase = resource.oformatContext.streams[0].timeBase
 
@@ -1365,6 +1377,7 @@ export default class MSEPipeline extends Pipeline {
 
         task.audio.track.reset()
         task.audio.packetEnded = false
+        task.audio.ended = false
         task.audio.timestampOffsetUpdated = false
 
         if (task.audio.backPacket) {
@@ -1405,6 +1418,7 @@ export default class MSEPipeline extends Pipeline {
 
         task.video.track.reset()
         task.video.packetEnded = false
+        task.video.ended = false
         task.video.timestampOffsetUpdated = false
 
         if (task.video.backPacket) {
@@ -1436,6 +1450,9 @@ export default class MSEPipeline extends Pipeline {
   public async afterSeek(taskId: string, timestamp: int64) {
     const task = this.tasks.get(taskId)
     if (task) {
+      // Both tracks rebuild their clock anchors below. Apply a pending rate
+      // before rebuilding either one, including a rate changed while paused.
+      task.playRate = task.targetRate
 
       let audioRealTimestamp = timestamp
       let videoRealTimestamp = timestamp
@@ -1461,6 +1478,7 @@ export default class MSEPipeline extends Pipeline {
       }
 
       const realTimestamp = bigint.max(audioRealTimestamp, videoRealTimestamp)
+      const cacheDuration = task.cacheDuration * bigint.max(task.targetRate, 100n) / 100n
 
       // 缓存一定的 buffer
       while (true) {
@@ -1479,7 +1497,7 @@ export default class MSEPipeline extends Pipeline {
           }
 
           if (avRescaleQ2((task.audio.backPacket.pts), addressof(task.audio.backPacket.timeBase), AV_MILLI_TIME_BASE_Q)
-            < realTimestamp + task.cacheDuration
+            < realTimestamp + cacheDuration
           ) {
             task.audio.backPacket.streamIndex = task.audio.oformatContext.streams[0].index
 
@@ -1507,7 +1525,7 @@ export default class MSEPipeline extends Pipeline {
             }
           }
           if (avRescaleQ2(task.video.backPacket.pts, addressof(task.video.backPacket.timeBase), AV_MILLI_TIME_BASE_Q)
-            < realTimestamp + task.cacheDuration
+            < realTimestamp + cacheDuration
           ) {
             task.video.backPacket.streamIndex = task.video.oformatContext.streams[0].index
             this.writeAVPacket(task.video.backPacket, task.video)
@@ -1569,7 +1587,7 @@ export default class MSEPipeline extends Pipeline {
             task.audio.packetEnded = false
             task.audio.frontBuffered = true
           }
-          task.audio.startTimestamp = static_cast<int64>(getTimestamp()) - (audioRealTimestamp + task.cacheDuration + avRescaleQ(
+          task.audio.startTimestamp = static_cast<int64>(getTimestamp()) - (audioRealTimestamp + cacheDuration + avRescaleQ(
             task.audio.startPTS,
             task.audio.oformatContext.streams[0].timeBase,
             AV_MILLI_TIME_BASE_Q
@@ -1604,7 +1622,7 @@ export default class MSEPipeline extends Pipeline {
             task.video.packetEnded = false
             task.video.frontBuffered = true
           }
-          task.video.startTimestamp = static_cast<int64>(getTimestamp()) - (videoRealTimestamp + task.cacheDuration + avRescaleQ(
+          task.video.startTimestamp = static_cast<int64>(getTimestamp()) - (videoRealTimestamp + cacheDuration + avRescaleQ(
             task.video.startPTS,
             task.video.oformatContext.streams[0].timeBase,
             AV_MILLI_TIME_BASE_Q

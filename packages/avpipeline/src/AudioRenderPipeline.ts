@@ -52,6 +52,7 @@ import {
 
 import {
   type WebAssemblyResource,
+  type WebAssemblyResourceInput,
   type Mutex,
   type List,
   memcpy,
@@ -104,8 +105,8 @@ export interface AudioRenderTaskOptions extends TaskOptions {
   playSampleRate: int32
   playFormat: AVSampleFormat
   playChannels: int32
-  resamplerResource: ArrayBuffer | WebAssemblyResource
-  stretchpitcherResource: ArrayBuffer | WebAssemblyResource
+  resamplerResource: WebAssemblyResourceInput
+  stretchpitcherResource: WebAssemblyResourceInput
   startPTS: int64
   avframeList: pointer<List<pointer<AVFrameRef>>>
   avframeListMutex: pointer<Mutex>
@@ -152,8 +153,11 @@ type SelfTask = AudioRenderTaskOptions & {
   seeking: boolean
   pausing: boolean
   stopping: boolean
+  pendingPCMRequests: number
   seekSync: () => void
   receivePCMSync: () => void
+  pendingVideoSeekId?: number
+  videoSeekWait?: Sleep
 
   paddingAVFrame: pointer<AVFrameRef>
 
@@ -219,6 +223,7 @@ export default class AudioRenderPipeline extends Pipeline {
       seeking: false,
       pausing: false,
       stopping: false,
+      pendingPCMRequests: 0,
       seekSync: null,
       receivePCMSync: null,
 
@@ -475,16 +480,10 @@ export default class AudioRenderPipeline extends Pipeline {
     }
 
     const receiveToPCMBuffer = async (pcmBuffer: pointer<AVPCMBuffer>) => {
-      let receive = 0
-
-      if (task.seeking) {
-        await new Promise<void>((resolve) => {
-          task.receivePCMSync = resolve
-        })
-        if (task.stopping) {
-          return IOError.END
-        }
+      if (task.stopping) {
+        return IOError.END
       }
+      let receive = 0
 
       if (task.enableJitterBuffer) {
         let buffer = task.stats.audioPacketQueueLength / task.stats.audioEncodeFramerate * 1000
@@ -494,13 +493,12 @@ export default class AudioRenderPipeline extends Pipeline {
       }
 
       if (task.ended && task.useStretchpitcher) {
-        let ret = 0
-        ret = receiveSamplesFromStretchpitcher(pcmBuffer, receive)
-        if (receive + ret < pcmBuffer.maxnbSamples) {
+        receive += receiveSamplesFromStretchpitcher(pcmBuffer, receive)
+        if (receive < pcmBuffer.maxnbSamples) {
           task.stretchpitcherEnded = true
           for (let i = 0; i < task.playChannels; i++) {
             // 将不足的置为 0 
-            memset(pcmBuffer.data[i] + receive, 0, (pcmBuffer.maxnbSamples - receive) * reinterpret_cast<int32>(sizeof(float)))
+            memset(pcmBuffer.data[i] + receive * reinterpret_cast<int32>(sizeof(float)), 0, (pcmBuffer.maxnbSamples - receive) * reinterpret_cast<int32>(sizeof(float)))
           }
         }
         pcmBuffer.nbSamples = receive
@@ -551,15 +549,10 @@ export default class AudioRenderPipeline extends Pipeline {
             task.ended = true
             if (task.useStretchpitcher) {
               task.stretchpitcher.flush()
-              ret = receiveSamplesFromStretchpitcher(pcmBuffer, receive)
-              if (receive + ret < pcmBuffer.maxnbSamples) {
+              receive += receiveSamplesFromStretchpitcher(pcmBuffer, receive)
+              if (receive < pcmBuffer.maxnbSamples) {
                 task.stretchpitcherEnded = true
-                for (let i = 0; i < task.playChannels; i++) {
-                  // 将不足的置为 0 
-                  memset(pcmBuffer.data[i] + receive, 0, (pcmBuffer.maxnbSamples - receive) * reinterpret_cast<int32>(sizeof(float)))
-                }
               }
-              receive += ret
             }
             break
           }
@@ -568,17 +561,19 @@ export default class AudioRenderPipeline extends Pipeline {
           }
         }
       }
-      pcmBuffer.nbSamples = receive
-
-      if (task.seekSync) {
-        task.seekSync()
-        task.seekSync = null
+      // Worklet buffers have a fixed per-channel stride. Preserve valid samples
+      // and silence the unused tail instead of replaying an earlier buffer.
+      if (receive < pcmBuffer.maxnbSamples) {
+        for (let i = 0; i < task.playChannels; i++) {
+          memset(pcmBuffer.data[i] + receive * reinterpret_cast<int32>(sizeof(float)), 0, (pcmBuffer.maxnbSamples - receive) * reinterpret_cast<int32>(sizeof(float)))
+        }
       }
+      pcmBuffer.nbSamples = receive
 
       return 0
     }
 
-    rightIPCPort.on(REQUEST, async (request: RpcMessage) => {
+    const handlePCMRequest = async (request: RpcMessage) => {
       switch (request.method) {
         case 'pull': {
           if (task.fakePlay) {
@@ -681,12 +676,39 @@ export default class AudioRenderPipeline extends Pipeline {
 
           const pcm = mapUint8Array(
             task.outPCMBuffer.data[0],
-            task.outPCMBuffer.nbSamples * reinterpret_cast<int32>(sizeof(float)) * task.playChannels
+            task.outPCMBuffer.maxnbSamples * reinterpret_cast<int32>(sizeof(float)) * task.playChannels
           ).slice()
 
           rightIPCPort.reply(request, pcm.buffer, null, [pcm.buffer])
 
           break
+        }
+      }
+    }
+
+    rightIPCPort.on(REQUEST, async (request: RpcMessage) => {
+      if (request.method !== 'pull' && request.method !== 'pullBuffer') {
+        return
+      }
+      // Gate the entire request, including the initial decoder pull before PCM filling.
+      if (task.seeking && !task.stopping) {
+        await new Promise<void>((resolve) => {
+          task.receivePCMSync = resolve
+        })
+      }
+      if (task.stopping) {
+        rightIPCPort.reply(request, IOError.END)
+        return
+      }
+      task.pendingPCMRequests++
+      try {
+        await handlePCMRequest(request)
+      }
+      finally {
+        task.pendingPCMRequests--
+        if (!task.pendingPCMRequests && task.seekSync) {
+          task.seekSync()
+          task.seekSync = null
         }
       }
     })
@@ -761,18 +783,20 @@ export default class AudioRenderPipeline extends Pipeline {
 
   public async beforeSeek(taskId: string) {
     const task = this.tasks.get(taskId)
-    if (task) {
-      if (!task.fakePlay && !task.pausing) {
-        logger.debug(`wait current pull front frame before seek, taskId: ${task.taskId}`)
+    if (task && !task.stopping) {
+      // Pause acknowledges immediately; an earlier worklet request may still be reading.
+      task.seeking = true
+      this.clearFakePlayTimer(task)
+      if (task.pendingPCMRequests) {
+        logger.debug(`wait current PCM request before seek, taskId: ${task.taskId}`)
         await new Promise<void>((resolve) => {
           task.seekSync = resolve
         })
       }
-      else {
-        this.clearFakePlayTimer(task)
-      }
 
-      task.seeking = true
+      if (task.stopping) {
+        return
+      }
 
       if (task.stretchpitcher) {
         task.stretchpitcher.clear()
@@ -793,36 +817,46 @@ export default class AudioRenderPipeline extends Pipeline {
     }
   }
 
-  public async syncSeekTime(taskId: string, timestamp: int64, maxQueueLength?: number) {
+  public async syncSeekTime(taskId: string, timestamp: int64, maxQueueLength?: number, videoSeekId?: number) {
     const task = this.tasks.get(taskId)
-    if (task) {
-
-      let videoEnded = false
+    if (task && !task.stopping) {
+      task.pendingVideoSeekId = videoSeekId
 
       while (true) {
-        // 已经调用了 unregisterTask
-        if (!task.leftIPCPort) {
-          task.ended = true
-          logger.warn(`pull audio frame end after unregisterTask, taskId: ${taskId}`)
+        // 视频仍在定位时，限制音频请求把视频包队列推得太远。
+        while (!task.stopping && task.leftIPCPort && videoSeekId !== undefined
+          && task.pendingVideoSeekId === videoSeekId
+          && maxQueueLength && task.stats.videoPacketQueueLength > maxQueueLength
+        ) {
+          const wait = new Sleep(0)
+          task.videoSeekWait = wait
+          await wait
+          if (task.videoSeekWait === wait) {
+            task.videoSeekWait = undefined
+          }
+        }
+
+        if (task.stopping || !task.leftIPCPort) {
           return
         }
 
-        let now = getTimestamp()
-        let videoPacketQueueLength = task.stats.videoPacketQueueLength
-        while (!videoEnded && maxQueueLength && task.stats.videoPacketQueueLength > maxQueueLength) {
-          await new Sleep(0)
-          // 检查 videoPacketQueueLength 200ms 内没有变化说明 video 已经 sync 完成
-          // 否则某些条件下会卡主
-          if (getTimestamp() - now > 200 && videoPacketQueueLength === task.stats.videoPacketQueueLength) {
-            videoEnded = true
+        let audioFrame: pointer<AVFrameRef>
+        try {
+          audioFrame = await task.leftIPCPort.request<pointer<AVFrameRef>>('pull')
+        }
+        catch (error) {
+          if (task.stopping || !task.leftIPCPort) {
+            return
           }
-          if (videoPacketQueueLength !== task.stats.videoPacketQueueLength) {
-            videoPacketQueueLength = task.stats.videoPacketQueueLength
-            now = getTimestamp()
-          }
+          throw error
         }
 
-        let audioFrame = await task.leftIPCPort.request<pointer<AVFrameRef>>('pull')
+        if (task.stopping || !task.leftIPCPort) {
+          if (audioFrame > 0) {
+            task.avframePool.release(audioFrame)
+          }
+          return
+        }
 
         if (audioFrame < 0) {
           logger.warn(`pull audio frame end after seek, taskId: ${taskId}`)
@@ -863,6 +897,14 @@ export default class AudioRenderPipeline extends Pipeline {
     }
   }
 
+  public async finishVideoSeek(taskId: string, seekId: number) {
+    const task = this.tasks.get(taskId)
+    if (task && task.pendingVideoSeekId === seekId) {
+      task.pendingVideoSeekId = undefined
+      task.videoSeekWait?.stop()
+    }
+  }
+
   public async isEnd(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
@@ -889,6 +931,7 @@ export default class AudioRenderPipeline extends Pipeline {
       }
 
       logger.debug(`after seek end, taskId: ${task.taskId}`)
+      return task.ended
     }
   }
 
@@ -1098,6 +1141,11 @@ export default class AudioRenderPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       task.stopping = true
+      task.videoSeekWait?.stop()
+      if (task.seekSync) {
+        task.seekSync()
+        task.seekSync = null
+      }
       if (task.receivePCMSync) {
         task.receivePCMSync()
         task.receivePCMSync = null
@@ -1116,6 +1164,7 @@ export default class AudioRenderPipeline extends Pipeline {
   public async unregisterTask(taskId: string): Promise<void> {
     const task = this.tasks.get(taskId)
     if (task) {
+      task.videoSeekWait?.stop()
       this.clearFakePlayTimer(task)
       if (task.resampler) {
         task.resampler.close()

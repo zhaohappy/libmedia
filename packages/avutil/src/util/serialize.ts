@@ -27,7 +27,7 @@ import type { AVCodecID, AVMediaType, AVPacketSideDataType } from '../codec'
 import type AVPacket from '../struct/avpacket'
 import type { AVRational } from '../struct/rational'
 import { mapUint8Array, memcpyFromUint8Array, memset } from '@libmedia/cheap'
-import { addAVPacketData, addAVPacketSideData, addSideData, createAVPacket, freeAVPacketSideData, getAVPacketData } from './avpacket'
+import { addAVPacketData, addAVPacketSideData, addSideData, allocAVPacketData, createAVPacket, freeAVPacketSideData, getAVPacketData } from './avpacket'
 import { avFree, avMalloc } from './mem'
 import type { AVChromaLocation, AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic, AVFieldOrder, AVPixelFormat } from '../pixfmt'
 import type { AVChannelOrder, AVSampleFormat } from '../audiosamplefmt'
@@ -122,7 +122,7 @@ export function unserializeAVPacket(serialize: AVPacketSerialize, avpacket: poin
   avpacket.pts = serialize.pts
   avpacket.dts = serialize.dts
 
-  const data: pointer<uint8> = avMalloc(serialize.data.length)
+  const data = allocAVPacketData(serialize.data.length)
   memcpyFromUint8Array(data, serialize.data.length, serialize.data)
   addAVPacketData(avpacket, data, serialize.data.length)
 

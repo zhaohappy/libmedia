@@ -40,6 +40,12 @@
       "default": "./dist/esm/internal.js",
       "types": "./dist/esm/internal.d.ts"
     },
+    "./IAsfFormat": {
+      "import": "./dist/esm/formats/IAsfFormat.js",
+      "require": "./dist/cjs/formats/IAsfFormat.cjs",
+      "default": "./dist/esm/formats/IAsfFormat.js",
+      "types": "./dist/esm/formats/IAsfFormat.d.ts"
+    },
     "./IAacFormat": {
       "import": "./dist/esm/formats/IAacFormat.js",
       "require": "./dist/cjs/formats/IAacFormat.cjs",
@@ -225,6 +231,18 @@
       "require": "./dist/cjs/formats/OH26XFormat.cjs",
       "default": "./dist/esm/formats/OH26XFormat.js",
       "types": "./dist/esm/formats/OH26XFormat.d.ts"
+    },
+    "./IRmFormat": {
+      "import": "./dist/esm/formats/IRmFormat.js",
+      "require": "./dist/cjs/formats/IRmFormat.cjs",
+      "default": "./dist/esm/formats/IRmFormat.js",
+      "types": "./dist/esm/formats/IRmFormat.d.ts"
+    },
+    "./IIsoFormat": {
+      "import": "./dist/esm/formats/IIsoFormat.js",
+      "require": "./dist/cjs/formats/IIsoFormat.cjs",
+      "default": "./dist/esm/formats/IIsoFormat.js",
+      "types": "./dist/esm/formats/IIsoFormat.d.ts"
     }
   }
 }

@@ -63,9 +63,12 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | mp4      | ✅       | ✅        |
 | mpegts   | ✅       | ✅        |
 | mpegps   | ✅       | ❌        |
+| iso (Blu-ray/DVD) | ✅ | ❌ |
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
+| rm/rmvb  | ✅       | ❌        |
+| asf / wmv / wma | ✅ | ❌ |
 | h264 裸流 | ✅       | ✅        |
 | hevc 裸流 | ✅       | ✅        |
 | vvc  裸流 | ✅       | ✅        |
@@ -82,6 +85,14 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | ttml     | ✅       | ❌        |
 | avif     | ✅       | ❌        |
 | heif     | ✅       | ❌        |
+
+RM/RMVB 支持输入、播放及转码输入：RV10–RV40 视频，Cook、SIPR、AAC、AC-3 音频。支持本地文件和 HTTP Range 跳转；不支持 RM 输出、独立 `.ra`、Real 专用流媒体协议或其他 RealAudio 编码。
+
+ASF 输入包含未加密的 `.asf`、`.wmv`、`.wma`，使用 Wasm 解码 WMV1/2/3、VC-1 和 WMA。
+不包含 ASF 输出、DRM 解密、MMS 协议或 WMV Image。部署时须同时更新播放器和 WMV 解码组件，
+配置见[播放器文档](./site/docs/guide/player.md)。
+
+ISO 输入支持未加密的蓝光/DVD 标题播放；网络来源必须支持 HTTP Range。支持可确定播放路径的 DVD 默认按钮导航，不显示交互式菜单，不支持 BD-J 或解密。标题选择、章节及文件系统兼容范围见 [AVPlayer ISO 说明](packages/avplayer/README.md#iso-光盘镜像)。
 
 ### 当前支持的音视频协议
 
@@ -127,7 +138,7 @@ libmedia 支持多线程，但需要页面可以使用 SharedArrayBuffer，你�
 | theora      | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | h261        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | h263        | ✅         | ✅          | ✅          | ✅            | ❌                 |
-| wmv         | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| wmv1/2/3 / vc1 | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | mjpeg       | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | rv10        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | rv20        | ✅         | ✅          | ✅          | ✅            | ❌                 |

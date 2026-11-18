@@ -674,8 +674,12 @@ export function parseAVCodecParameters(
  * @returns 
  */
 export function isRAP(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
+  if (avpacket.size <= 0) {
+    return false
+  }
+  const buffer = mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size))
   if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB) {
-    let nalus = naluUtil.splitNaluByStartCode(mapUint8Array(avpacket.data, reinterpret_cast<size>(avpacket.size)))
+    let nalus = naluUtil.splitNaluByStartCode(buffer)
     return nalus.some((nalu) => {
       const type = nalu[0] & 0x1f
       return type === H264NaluType.kSliceIDR
@@ -685,32 +689,33 @@ export function isRAP(avpacket: pointer<AVPacket>, naluLengthSize: int32 = 4) {
     })
   }
   else {
+    if (naluLengthSize < 1 || naluLengthSize > 4) {
+      return false
+    }
     const size = avpacket.size
     let i = 0
     while (i < (size - naluLengthSize)) {
-      const type = intread.r8(avpacket.data + (i + naluLengthSize)) & 0x1f
+      // Accumulate unsigned lengths and validate them before inspecting a NAL.
+      // A signed rb32 can otherwise turn malformed input into a negative pointer.
+      let length = 0
+      for (let j = 0; j < naluLengthSize; j++) {
+        length = length * 256 + buffer[i + j]
+      }
+      i += naluLengthSize
+      if (!length || length > size - i) {
+        return false
+      }
+      const type = buffer[i] & 0x1f
       if (type === H264NaluType.kSliceIDR) {
         return true
       }
       // H.264 Recovery Point SEI
       if (type === H264NaluType.kSliceSEI
-        && intread.r8(avpacket.data + (i + naluLengthSize) + 1) === 6
+        && length > 1 && buffer[i + 1] === 6
       ) {
         return true
       }
-      if (naluLengthSize === 4) {
-        i += intread.rb32(avpacket.data + i)
-      }
-      else if (naluLengthSize === 3) {
-        i += intread.rb24(avpacket.data + i)
-      }
-      else if (naluLengthSize === 2) {
-        i += intread.rb16(avpacket.data + i)
-      }
-      else {
-        i += intread.r8(avpacket.data + i)
-      }
-      i += naluLengthSize
+      i += length
     }
     return false
   }

@@ -34,11 +34,13 @@ import {
   avFree,
   avMalloc,
   AVPacketFlags,
+  AVSeekFlags,
   AVCodecID,
   AVMediaType,
   AVPacketSideDataType,
   avRescaleQ2,
   NOPTS_VALUE,
+  NOPTS_VALUE_BIGINT,
   type AVStreamGroup,
   type AVStreamGroupInterface,
   AVDisposition,
@@ -60,7 +62,7 @@ import {
 
 import {
   isPointer,
-  type WebAssemblyResource,
+  type WebAssemblyResourceInput,
   type Mutex,
   type List,
   SafeUint8Array,
@@ -113,6 +115,7 @@ import type { IAviFormatOptions } from '@libmedia/avformat/IAviFormat'
 
 import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
+import { PacketHistory, planBufferedSeek } from './BufferedSeek'
 
 import type { Data } from '@libmedia/common'
 
@@ -123,6 +126,7 @@ export interface DemuxTaskOptions extends TaskOptions {
   format?: AVFormat
   bufferLength?: number
   isLive?: boolean
+  canReadAt?: boolean
   ioloaderOptions?: Data
   formatOptions?: Data
   mainTaskId?: string
@@ -132,6 +136,8 @@ export interface DemuxTaskOptions extends TaskOptions {
 }
 
 type SelfTask = DemuxTaskOptions & {
+  seekHistory?: PacketHistory<pointer<AVPacketRef>>
+  seeking?: boolean
   leftIPCPort: IPCPort
   rightIPCPorts: Map<number, IPCPort & { streamIndex?: number }>
   controlIPCPort: IPCPort
@@ -293,7 +299,7 @@ export default class DemuxPipeline extends Pipeline {
         if (!controlIPCPort) {
           return
         }
-        const wasm: ArrayBuffer | WebAssemblyResource = await controlIPCPort.request('getDecoderResource', {
+        const wasm: WebAssemblyResourceInput = await controlIPCPort.request('getDecoderResource', {
           codecId,
           mediaType
         })
@@ -360,6 +366,21 @@ export default class DemuxPipeline extends Pipeline {
       }
 
       let iformat: IFormat
+
+      if ((format === AVFormat.AVI || format === AVFormat.ISO) && task.canReadAt && !task.isLive) {
+        task.formatContext.readAt = async (pos, length, readAheadEnd) => {
+          if (!task.formatContext.readAt || task.leftIPCPort.closed) {
+            return IOError.ABORT
+          }
+          try {
+            const result = await task.leftIPCPort.request<Uint8Array | number>('readAt', { pos, length, readAheadEnd })
+            return task.formatContext.readAt ? result : IOError.ABORT
+          }
+          catch (error) {
+            return IOError.INVALID_OPERATION
+          }
+        }
+      }
 
       switch (format) {
         case AVFormat.FLV:
@@ -534,9 +555,38 @@ export default class DemuxPipeline extends Pipeline {
             return errorType.FORMAT_NOT_SUPPORT
           }
           break
+        case AVFormat.RM:
+          if (defined(ENABLE_DEMUXER_RM)) {
+            iformat = new (((await import('@libmedia/avformat/IRmFormat')).default))
+          }
+          else {
+            logger.error('rm format not support, maybe you can rebuild avmedia')
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
+        case AVFormat.ASF:
+          if (defined(ENABLE_DEMUXER_ASF)) {
+            iformat = new ((await import('@libmedia/avformat/IAsfFormat')).default)()
+            break
+          }
+          else {
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+        case AVFormat.ISO:
+          if (defined(ENABLE_DEMUXER_ISO)) {
+            if (!task.formatContext.readAt) {
+              return errorType.OPERATE_NOT_SUPPORT
+            }
+            iformat = new ((await import('@libmedia/avformat/IIsoFormat')).default)(task.formatOptions)
+          }
+          else {
+            return errorType.FORMAT_NOT_SUPPORT
+          }
+          break
         case AVFormat.AVI:
           if (defined(ENABLE_DEMUXER_AVI)) {
             iformat = new (((await import('@libmedia/avformat/IAviFormat')).default))(task.formatOptions as IAviFormatOptions)
+
           }
           else {
             logger.error('avi format not support, maybe you can rebuild avmedia')
@@ -583,6 +633,14 @@ export default class DemuxPipeline extends Pipeline {
         return ret
       }
 
+      if (task.formatContext.discInfo) {
+        const disc = task.formatContext.discInfo
+        const title = disc.titles.find((item) => item.id === disc.titleId)
+        for (const stream of task.formatContext.streams) {
+          stream.startTime = 0n
+          stream.duration = title.duration * BigInt(stream.timeBase.den) / (1000n * BigInt(stream.timeBase.num))
+        }
+      }
       const streams: AVStreamInterface[] = []
       const streamGroups: AVStreamGroupInterface[] = []
       for (let i = 0; i < task.formatContext.streams.length; i++) {
@@ -621,6 +679,7 @@ export default class DemuxPipeline extends Pipeline {
         metadata: task.formatContext.metadata,
         format: task.realFormat,
         chapters: task.formatContext.chapters,
+        discInfo: task.formatContext.discInfo,
         streams,
         streamGroups
       }
@@ -631,6 +690,7 @@ export default class DemuxPipeline extends Pipeline {
   }
 
   private replyAVPacket(task: SelfTask, ipcPort: IPCPort, request: RpcMessage, avpacket: pointer<AVPacketRef>) {
+    this.rememberSeekPacket(task, avpacket)
     if (isWorker() && !cheapConfig.USE_THREADS && isPointer(avpacket)) {
       const data = serializeAVPacket(avpacket)
       const transfer = [data.data.buffer]
@@ -649,6 +709,7 @@ export default class DemuxPipeline extends Pipeline {
   public async connectStreamTask(taskId: string, streamIndex: number, port: MessagePort) {
     const task = this.tasks.get(taskId)
     if (task) {
+      task.seekHistory?.clear()
       const ipcPort: IPCPort & { streamIndex?: number } = new IPCPort(port)
 
       task.cacheAVPackets.set(streamIndex, [])
@@ -721,6 +782,7 @@ export default class DemuxPipeline extends Pipeline {
       }
 
       await task.loop.stopBeforeNextTick()
+      task.seekHistory?.clear()
 
       if (force) {
         if (!task.pendingAVPackets.has(newStreamIndex)) {
@@ -775,6 +837,12 @@ export default class DemuxPipeline extends Pipeline {
 
     let ret = await demux.readAVPacket(task.formatContext, avpacket)
 
+    // A cancelled ISO read belongs to the old position, not to EOF. Keep pending
+    // decoder requests for the new position and do not publish stale packets.
+    if (task.seeking) {
+      task.avpacketPool.release(avpacket)
+      return 0
+    }
     if (!ret) {
 
       if (defined(ENABLE_LOG_TRACE)) {
@@ -1032,12 +1100,161 @@ export default class DemuxPipeline extends Pipeline {
     }
   }
 
+  private rememberSeekPacket(task: SelfTask, packet: pointer<AVPacketRef>, transfer = false) {
+    if (packet <= 0) {
+      return
+    }
+    const stream = task.formatContext.streams[packet.streamIndex]
+    if (task.isLive || task.seeking || task.formatContext.iformat.type !== AVFormat.ISO
+      || !stream || !task.cacheAVPackets.has(stream.index)
+      || stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_AUDIO && stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO
+    ) {
+      if (transfer) {
+        task.avpacketPool.release(packet)
+      }
+      return
+    }
+    let bytes = Math.max(packet.size, packet.buf ? static_cast<double>(packet.buf.buffer.size) : 0) + 256
+    for (let i = 0; i < packet.sideDataElems; i++) {
+      bytes += static_cast<double>(packet.sideData[i].size)
+    }
+    if (packet.opaqueRef) {
+      bytes += static_cast<double>(packet.opaqueRef.buffer.size)
+    }
+    if (!Number.isSafeInteger(bytes) || bytes < 256 || bytes > 32 * 1024 * 1024) {
+      task.seekHistory?.clear()
+      if (transfer) {
+        task.avpacketPool.release(packet)
+      }
+      return
+    }
+    if (getAVPacketSideData(packet, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA) !== nullptr) {
+      task.seekHistory?.clear()
+    }
+    const owned = transfer ? packet : task.avpacketPool.alloc()
+    if (!transfer) {
+      refAVPacket(owned, packet)
+    }
+    task.seekHistory ??= new PacketHistory((packet) => task.avpacketPool.release(packet))
+    task.seekHistory.push(stream.index, owned, bytes)
+  }
+
+  private tryBufferedSeek(task: SelfTask, timestamp: int64, flags: int32, streamIndex: int32) {
+    if (task.isLive || task.seeking || flags !== AVSeekFlags.FRAME || task.cacheRequests.size
+      || task.formatContext.iformat.type !== AVFormat.ISO
+      || task.formatContext.ioReader.flags & (IOFlags.SLICE | IOFlags.ABORT)
+      || !task.cacheAVPackets.has(streamIndex)
+    ) {
+      return false
+    }
+    const queues = []
+    for (const [index, list] of task.cacheAVPackets) {
+      const stream = task.formatContext.streams[index]
+      if (!stream || stream.disposition & AVDisposition.ATTACHED_PIC
+        || stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_AUDIO && stream.codecpar.codecType !== AVMediaType.AVMEDIA_TYPE_VIDEO
+      ) {
+        return false
+      }
+      const history = task.seekHistory?.packets(index) ?? []
+      const all = history.concat(list)
+      const codec = stream.codecpar.codecId
+      const nalCodec = codec === AVCodecID.AV_CODEC_ID_H264 || codec === AVCodecID.AV_CODEC_ID_HEVC || codec === AVCodecID.AV_CODEC_ID_VVC
+      const packets = all.map((packet) => {
+        const usable = packet > 0 && packet.pts !== NOPTS_VALUE_BIGINT && packet.dts !== NOPTS_VALUE_BIGINT
+          && packet.timeBase.num > 0 && packet.timeBase.den > 0
+          && !(packet.flags & (AVPacketFlags.AV_PKT_FLAG_CORRUPT | AVPacketFlags.AV_PKT_FLAG_DISCARD | AVPacketFlags.AV_PKT_FLAG_END))
+        return {
+          pts: usable ? avRescaleQ2(packet.pts, addressof(packet.timeBase), AV_MILLI_TIME_BASE_Q) : -1n,
+          dts: usable ? avRescaleQ2(packet.dts, addressof(packet.timeBase), AV_MILLI_TIME_BASE_Q) : -1n,
+          key: usable && !nalCodec && !!(packet.flags & AVPacketFlags.AV_PKT_FLAG_KEY), usable,
+          configuration: usable && getAVPacketSideData(packet, AVPacketSideDataType.AV_PKT_DATA_NEW_EXTRADATA) !== nullptr
+        }
+      })
+      if (nalCodec) {
+        // Match decoder admission: TS key flags may omit H.264 recovery points
+        // or label non-RAP packets. Inspect only the nearest eligible prefix.
+        for (let i = packets.length - 1; i >= 0; i--) {
+          const packet = packets[i]
+          if (!packet.usable || packet.pts > timestamp || packet.pts < timestamp - 10000n) {
+            continue
+          }
+          if (!(all[i].flags & AVPacketFlags.AV_PKT_FLAG_H26X_ANNEXB)) {
+            return false
+          }
+          const rap = codec === AVCodecID.AV_CODEC_ID_H264 ? h264.isRAP(all[i])
+            : codec === AVCodecID.AV_CODEC_ID_HEVC ? hevc.isRAP(all[i]) : vvc.isRAP(all[i])
+          if (rap) {
+            packet.key = true
+            break
+          }
+        }
+      }
+      queues.push({ index, list, history, packets, video: stream.codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO })
+    }
+    const starts = planBufferedSeek(queues, timestamp)
+    if (!starts) {
+      return false
+    }
+    // Take every required history suffix before trimming can evict other streams.
+    const restored = new Map<number, pointer<AVPacketRef>[]>()
+    for (const queue of queues) {
+      const start = starts.get(queue.index)!
+      if (start < queue.history.length) {
+        restored.set(queue.index, task.seekHistory.take(queue.index, start))
+      }
+    }
+    for (const queue of queues) {
+      const start = starts.get(queue.index)!
+      if (restored.has(queue.index)) {
+        queue.list.unshift(...restored.get(queue.index))
+      }
+      else {
+        const removed = queue.list.splice(0, start - queue.history.length)
+        removed.forEach((packet) => this.rememberSeekPacket(task, packet, true))
+      }
+    }
+    if (task.stats !== nullptr) {
+      task.stats.videoPacketQueueLength = queues.filter((queue) => queue.video).reduce((sum, queue) => sum + queue.list.length, 0)
+      task.stats.audioPacketQueueLength = queues.filter((queue) => !queue.video).reduce((sum, queue) => sum + queue.list.length, 0)
+    }
+    // No await: an in-flight demux read can safely append at the unchanged tail.
+    // Keep the demux cursor, parser queues and EOF state at that tail.
+    if (!task.demuxEnded) {
+      if (task.loop.isStarted()) {
+        task.loop.resetInterval()
+      }
+      else {
+        task.loop.start()
+      }
+    }
+    logger.debug(`buffered seek to ${timestamp}, taskId: ${task.taskId}`)
+    return true
+  }
+
   public async seek(taskId: string, timestamp: int64, flags: int32, streamIndex: int32 = -1): Promise<int64> {
     const task = this.tasks.get(taskId)
     if (task) {
       if (task.loop) {
-        await task.loop.stopBeforeNextTick()
+        const seekStarted = performance.now()
+        if (this.tryBufferedSeek(task, timestamp, flags, streamIndex)) {
+          return timestamp
+        }
+        task.seeking = true
+        task.seekHistory?.clear()
+        const stopped = task.loop.stopBeforeNextTick()
+        if (task.formatContext.iformat.type === AVFormat.ISO) {
+          task.formatContext.iformat.cancelPendingRead()
+          task.leftIPCPort.notify('abortReadAt')
+        }
+        try {
+          await stopped
+          logger.debug(`seek-stage demux cancelled task=${taskId} target=${timestamp} elapsedMs=${(performance.now() - seekStarted).toFixed(1)}`)
+        }
+        finally {
+          task.seeking = false
+        }
         let ret: int32 | int64 = await demux.seek(task.formatContext, streamIndex, timestamp, flags)
+        logger.debug(`seek-stage demux positioned task=${taskId} target=${timestamp} result=${ret} elapsedMs=${(performance.now() - seekStarted).toFixed(1)}`)
         if (ret >= 0n) {
           function resetList(list: pointer<AVPacketRef>[]) {
             array.each(list, (avpacket) => {
@@ -1081,6 +1298,7 @@ export default class DemuxPipeline extends Pipeline {
           }
 
           if (ret >= 0) {
+            logger.debug(`seek-stage demux first-packet task=${taskId} target=${timestamp} stream=${avpacket.streamIndex} elapsedMs=${(performance.now() - seekStarted).toFixed(1)}`)
             task.demuxEnded = false
             const streamIndex = avpacket.streamIndex
             task.cacheAVPackets.get(streamIndex).push(avpacket)
@@ -1133,6 +1351,7 @@ export default class DemuxPipeline extends Pipeline {
   public async croppingAVPacketQueue(taskId: string, max: int64) {
     const task = this.tasks.get(taskId)
     if (task) {
+      task.seekHistory?.clear()
 
       let croppingMax = max
 
@@ -1258,6 +1477,14 @@ export default class DemuxPipeline extends Pipeline {
     const task = this.tasks.get(taskId)
     if (task) {
       task.formatContext.ioReader.flags |= IOFlags.ABORT
+      this.abortReadAt(task)
+    }
+  }
+
+  private abortReadAt(task: SelfTask) {
+    if (task.formatContext.readAt) {
+      task.formatContext.readAt = undefined
+      task.leftIPCPort.notify('abortReadAt')
     }
   }
 
@@ -1271,6 +1498,7 @@ export default class DemuxPipeline extends Pipeline {
   public async unregisterTask(taskId: string): Promise<void> {
     const task = this.tasks.get(taskId)
     if (task) {
+      this.abortReadAt(task)
       if (task.ioReader && (task.ioReader.flags & IOFlags.NETWORK)) {
         task.ioReader.abort()
       }
@@ -1278,6 +1506,7 @@ export default class DemuxPipeline extends Pipeline {
         await task.loop.stopBeforeNextTick()
         task.loop.destroy()
       }
+      task.seekHistory?.clear()
 
       task.cacheAVPackets.forEach((list) => {
         list.forEach((avpacket) => {

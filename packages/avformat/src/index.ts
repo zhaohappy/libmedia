@@ -15,3 +15,5 @@ export {
 
 export { default as IFormat } from './formats/IFormat'
 export { default as OFormat } from './formats/OFormat'
+
+export type { DiscInfo, DiscTitleInfo } from './formats/iso/titles'

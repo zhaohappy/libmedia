@@ -81,8 +81,11 @@ export default class WebVideoDecoder {
 
   private currentError: Error | null = null
 
+  private hardwareAcceleration: VideoDecoderConfig['hardwareAcceleration']
+
   private inputQueue: number[]
   private outputQueue: VideoFrame[]
+  private discardedTimestamps = new Map<number, number>()
   private dtsQueue: double[]
 
   private sort: boolean
@@ -118,6 +121,22 @@ export default class WebVideoDecoder {
         }
       }
     }
+  }
+
+  private emitFrame(frame: VideoFrame, alpha?: VideoFrame) {
+    const count = this.discardedTimestamps.get(frame.timestamp) || 0
+    if (count) {
+      if (count === 1) {
+        this.discardedTimestamps.delete(frame.timestamp)
+      }
+      else {
+        this.discardedTimestamps.set(frame.timestamp, count - 1)
+      }
+      frame.close()
+      alpha?.close()
+      return
+    }
+    this.options.onReceiveVideoFrame(frame, alpha)
   }
 
   private async output(frame: VideoFrame) {
@@ -161,7 +180,7 @@ export default class WebVideoDecoder {
         const output = this.outputQueue.shift()!
         const alphaVideoFrame = this.getAlphaFrame(output)
         if (this.options.onReceiveVideoFrame) {
-          this.options.onReceiveVideoFrame(output, alphaVideoFrame)
+          this.emitFrame(output, alphaVideoFrame)
         }
         else {
           output.close()
@@ -175,7 +194,7 @@ export default class WebVideoDecoder {
     else {
       const alphaVideoFrame = this.getAlphaFrame(frame)
       if (this.options.onReceiveVideoFrame) {
-        this.options.onReceiveVideoFrame(frame, alphaVideoFrame)
+        this.emitFrame(frame, alphaVideoFrame)
       }
       else {
         frame.close()
@@ -235,6 +254,7 @@ export default class WebVideoDecoder {
     }
 
     this.decoder!.reset()
+    this.hardwareAcceleration = undefined
 
     const config: VideoDecoderConfig = {
       codec: this.options.codec ?? getVideoCodec(this.parameters, buffer),
@@ -265,6 +285,7 @@ export default class WebVideoDecoder {
     }
 
     this.decoder!.configure(config)
+    this.hardwareAcceleration = config.hardwareAcceleration
 
     if (this.alphaDecoder) {
       this.alphaDecoder.configure(config)
@@ -355,7 +376,9 @@ export default class WebVideoDecoder {
     })
 
     this.decoder.reset()
+    this.hardwareAcceleration = undefined
     this.decoder.configure(config)
+    this.hardwareAcceleration = config.hardwareAcceleration
 
     if ((parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_ALPHA)
       && (parameters.codecId === AVCodecID.AV_CODEC_ID_VP8
@@ -403,6 +426,7 @@ export default class WebVideoDecoder {
 
     this.inputQueue.length = 0
     this.outputQueue.length = 0
+    this.discardedTimestamps.clear()
     this.dtsQueue.length = 0
     this.alphaQueue.length = 0
 
@@ -466,6 +490,9 @@ export default class WebVideoDecoder {
     const videoChunk = avpacket2EncodedVideoChunk(avpacket)
 
     const timestamp = videoChunk.timestamp
+    if (avpacket.flags & AVPacketFlags.AV_PKT_FLAG_DISCARD) {
+      this.discardedTimestamps.set(timestamp, (this.discardedTimestamps.get(timestamp) || 0) + 1)
+    }
 
     if (this.sort) {
       let i = 0
@@ -545,7 +572,7 @@ export default class WebVideoDecoder {
         const frame = this.outputQueue.shift()!
         const alphaVideoFrame = this.getAlphaFrame(frame)
         if (this.options.onReceiveVideoFrame) {
-          this.options.onReceiveVideoFrame(frame, alphaVideoFrame)
+          this.emitFrame(frame, alphaVideoFrame)
         }
         else {
           frame.close()
@@ -559,7 +586,26 @@ export default class WebVideoDecoder {
     return 0
   }
 
+  /** Returns the hint passed to the currently configured decoder, not actual hardware usage. */
+  public getHardwareAcceleration(): 'prefer-hardware' | 'prefer-software' | 'no-preference' | undefined {
+    if (this.decoder?.state !== 'configured') {
+      return
+    }
+    // Legacy WebCodecs implementations used allow/deny for the same preference hints.
+    switch (this.hardwareAcceleration as string) {
+      case 'prefer-hardware':
+      case 'allow':
+        return 'prefer-hardware'
+      case 'prefer-software':
+      case 'deny':
+        return 'prefer-software'
+      case 'no-preference':
+        return 'no-preference'
+    }
+  }
+
   public close() {
+    this.hardwareAcceleration = undefined
     if (this.decoder && this.decoder.state !== 'closed') {
       this.decoder.close()
     }
@@ -588,6 +634,7 @@ export default class WebVideoDecoder {
 
     this.inputQueue.length = 0
     this.outputQueue.length = 0
+    this.discardedTimestamps.clear()
     this.alphaQueue.length = 0
   }
 

@@ -22,7 +22,7 @@ features:
   - title: '可扩展性'
     description: '提供低级的 API，可以应对各种使用场景，可以基于这些低级 API 实现更加复杂的业务逻辑'
   - title: '支持多种媒体格式'
-    description: '支持 mp4、mov、mpegts、flv、matroska、webm、mp3、ogg、flac、aac、wav 封装格式'
+    description: '支持 mp4、mov、mpegts、flv、matroska、webm、iso（蓝光/DVD）、avi、asf、wmv、wma、mp3、ogg、flac、aac、wav 封装格式'
   - title: '丰富的音视频协议支持'
     description: '支持 hls、dash、rtmp、rtsp 协议'
   - title: '开箱即用的强大工具'

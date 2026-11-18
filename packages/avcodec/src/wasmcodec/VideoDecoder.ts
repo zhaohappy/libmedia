@@ -36,11 +36,14 @@ import {
   avMallocz,
   errorType,
   type AVRational,
-  AVCodecParameterFlags
+  AVCodecParameterFlags,
+  AVFrameFlags,
+  NOPTS_VALUE_BIGINT
 } from '@libmedia/avutil'
 
 import {
   type WebAssemblyResource,
+  type WebAssemblyRuntimeInfo,
   WebAssemblyRunner
 } from '@libmedia/cheap'
 
@@ -103,6 +106,8 @@ export default class WasmVideoDecoder {
 
   private dtsQueue: int64[] = []
 
+  private lastOutputPTS: int64 = NOPTS_VALUE_BIGINT
+
   constructor(options: WasmVideoDecoderOptions) {
     this.options = options
     this.decoder = new WebAssemblyRunner(this.options.resource)
@@ -117,10 +122,31 @@ export default class WasmVideoDecoder {
 
   private outputAVFrame() {
     if (this.frame) {
-      if ((this.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS)
-        && this.dtsQueue.length
-      ) {
-        this.frame.pts = this.dtsQueue.shift()!
+      if (this.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS) {
+        // The decoder can consume packets without producing frames (skip_frame).
+        // Its reordered timestamp accounts for those gaps; pairing each output
+        // with the next input DTS would accumulate an ever-growing video delay.
+        if (this.frame.bestEffortTimestamp !== NOPTS_VALUE_BIGINT) {
+          this.frame.pts = this.frame.bestEffortTimestamp
+          while (this.dtsQueue.length && this.dtsQueue[0] <= this.frame.pts) {
+            this.dtsQueue.shift()
+          }
+        }
+        else if (this.dtsQueue.length) {
+          // Delayed frames drained at EOF may have neither PTS nor packet DTS.
+          this.frame.pts = this.dtsQueue.shift()!
+        }
+        else if (this.frame.pts === NOPTS_VALUE_BIGINT && this.lastOutputPTS !== NOPTS_VALUE_BIGINT) {
+          // The last timestamped output can already have consumed the final
+          // packet DTS. Do not send an unknown timestamp for a delayed tail.
+          this.frame.pts = this.lastOutputPTS + this.frame.duration
+        }
+        this.lastOutputPTS = this.frame.pts
+      }
+      if (this.frame.flags & AVFrameFlags.AV_FRAME_FLAG_DISCARD) {
+        this.options.avframePool ? this.options.avframePool.release(this.frame as pointer<AVFrameRef>) : destroyAVFrame(this.frame)
+        this.frame = nullptr
+        return
       }
       if (this.options.onReceiveAVFrame) {
         this.frame.timeBase.den = this.timeBase!.den
@@ -192,6 +218,7 @@ export default class WasmVideoDecoder {
     this.parameters = parameters
     this.timeBase = undefined
     this.dtsQueue.length = 0
+    this.lastOutputPTS = NOPTS_VALUE_BIGINT
     return 0
   }
 
@@ -288,6 +315,9 @@ export default class WasmVideoDecoder {
     while (1) {
       const ret = this.receiveAVFrame()
       if (ret < 1) {
+        // Packets that produce no frame can leave DTS entries after draining.
+        this.dtsQueue.length = 0
+        this.lastOutputPTS = NOPTS_VALUE_BIGINT
         return ret
       }
       this.outputAVFrame()
@@ -307,6 +337,8 @@ export default class WasmVideoDecoder {
     while (1) {
       const ret = await this.receiveAVFrameAsync()
       if (ret < 1) {
+        this.dtsQueue.length = 0
+        this.lastOutputPTS = NOPTS_VALUE_BIGINT
         return ret
       }
       this.outputAVFrame()
@@ -342,6 +374,10 @@ export default class WasmVideoDecoder {
    */
   public setSkipFrameDiscard(discard: AVDiscard) {
     this.decoder.invoke('decoder_discard', discard)
+  }
+
+  public getRuntimeInfo(): WebAssemblyRuntimeInfo {
+    return this.decoder.getRuntimeInfo()
   }
 
   /**

@@ -34,12 +34,15 @@ import {
   AVDictionary,
   avdict,
   avMallocz,
+  avRescaleQ,
+  NOPTS_VALUE_BIGINT,
   errorType,
   type AVRational
 } from '@libmedia/avutil'
 
 import {
   type WebAssemblyResource,
+  type WebAssemblyRuntimeInfo,
   WebAssemblyRunner
 } from '@libmedia/cheap'
 
@@ -63,6 +66,12 @@ export default class WasmAudioDecoder {
 
   private timeBase: AVRational | undefined
 
+  private nextPts: int64 = NOPTS_VALUE_BIGINT
+
+  private nextSampleRate: int32 = 0
+
+  private startPts: int64 = NOPTS_VALUE_BIGINT
+
   constructor(options: WasmAudioDecoderOptions) {
     this.options = options
     this.decoder = new WebAssemblyRunner(options.resource)
@@ -77,6 +86,41 @@ export default class WasmAudioDecoder {
 
   private outputAVFrame() {
     if (this.frame) {
+      // Bundled decoders can return FFmpeg's INT64_MIN sentinel instead of
+      // libmedia's -1. Normalize it before treating any value as a clock anchor.
+      if (this.frame.pts === -9223372036854775808n) {
+        this.frame.pts = NOPTS_VALUE_BIGINT
+      }
+      // A packet can produce several audio frames with only the first timestamped
+      // (for example WMA Pro). Count samples between known timestamps, retaining
+      // fractional packet-timebase ticks instead of rounding every frame duration.
+      if (this.frame.sampleRate > 0) {
+        const sampleTimeBase = { num: 1, den: this.frame.sampleRate }
+        if (this.frame.pts !== NOPTS_VALUE_BIGINT) {
+          this.nextPts = avRescaleQ(this.frame.pts, this.timeBase!, sampleTimeBase)
+        }
+        else {
+          if (this.nextPts !== NOPTS_VALUE_BIGINT) {
+            this.nextPts = avRescaleQ(this.nextPts, { num: 1, den: this.nextSampleRate }, sampleTimeBase)
+          }
+          else if (this.startPts !== NOPTS_VALUE_BIGINT) {
+            this.nextPts = avRescaleQ(this.startPts, this.timeBase!, sampleTimeBase)
+          }
+          if (this.nextPts !== NOPTS_VALUE_BIGINT) {
+            this.frame.pts = avRescaleQ(this.nextPts, sampleTimeBase, this.timeBase!)
+          }
+        }
+        if (this.nextPts !== NOPTS_VALUE_BIGINT) {
+          this.nextPts += static_cast<int64>(this.frame.nbSamples)
+          this.nextSampleRate = this.frame.sampleRate
+          this.startPts = NOPTS_VALUE_BIGINT
+        }
+      }
+      else {
+        this.nextPts = NOPTS_VALUE_BIGINT
+        this.nextSampleRate = 0
+        this.startPts = NOPTS_VALUE_BIGINT
+      }
       if (this.options.onReceiveAVFrame) {
         this.frame.timeBase.den = this.timeBase!.den
         this.frame.timeBase.num = this.timeBase!.num
@@ -135,6 +179,9 @@ export default class WasmAudioDecoder {
     }
 
     this.timeBase = undefined
+    this.nextPts = NOPTS_VALUE_BIGINT
+    this.nextSampleRate = 0
+    this.startPts = NOPTS_VALUE_BIGINT
 
     return 0
   }
@@ -152,6 +199,16 @@ export default class WasmAudioDecoder {
 
     if (ret) {
       return ret
+    }
+
+    // Keep the first accepted packet's timestamp across decoder delay. Initial
+    // output can also lack PTS; using the latest packet would shift it forward.
+    if (this.nextPts === NOPTS_VALUE_BIGINT && this.startPts === NOPTS_VALUE_BIGINT) {
+      const pts = avpacket.pts === NOPTS_VALUE_BIGINT || avpacket.pts === -9223372036854775808n
+        ? avpacket.dts : avpacket.pts
+      if (pts !== NOPTS_VALUE_BIGINT && pts !== -9223372036854775808n) {
+        this.startPts = pts
+      }
     }
 
     while (true) {
@@ -175,6 +232,10 @@ export default class WasmAudioDecoder {
     while (1) {
       const ret = this.receiveAVFrame()
       if (ret < 1) {
+        // Drain with the old timeline, then discard it before a seek/replay.
+        this.nextPts = NOPTS_VALUE_BIGINT
+        this.nextSampleRate = 0
+        this.startPts = NOPTS_VALUE_BIGINT
         return ret
       }
       this.outputAVFrame()
@@ -182,9 +243,16 @@ export default class WasmAudioDecoder {
     return 0
   }
 
+  public getRuntimeInfo(): WebAssemblyRuntimeInfo {
+    return this.decoder.getRuntimeInfo()
+  }
+
   public close() {
     this.decoder.invoke('decoder_close')
     this.decoder.destroy()
+    this.nextPts = NOPTS_VALUE_BIGINT
+    this.nextSampleRate = 0
+    this.startPts = NOPTS_VALUE_BIGINT
 
     if (this.frame) {
       this.options.avframePool ? this.options.avframePool.release(this.frame as pointer<AVFrameRef>) : destroyAVFrame(this.frame)

@@ -54,7 +54,8 @@ import {
   avRescaleQ2,
   AVCodecID,
   AVPacketSideDataType,
-  AVPacketFlags
+  AVPacketFlags,
+  AVCodecParameterFlags
 } from '@libmedia/avutil'
 
 import {
@@ -67,6 +68,7 @@ import {
 import {
   isPointer,
   type WebAssemblyResource,
+  type WebAssemblyResourceInput,
   type Mutex,
   type List,
   memcpy
@@ -99,12 +101,13 @@ import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
 
 import type { AlphaVideoFrame } from './struct/type'
+import type { AVVideoDecoderRuntimeInfo } from './struct/runtimeInfo'
 import { isAlphaVideoFrame } from './util'
 
 import type { Data } from '@libmedia/common'
 
 export interface VideoDecodeTaskOptions extends TaskOptions {
-  resource: ArrayBuffer | WebAssemblyResource
+  resource: WebAssemblyResourceInput
   enableHardware: boolean
   avpacketList: pointer<List<pointer<AVPacketRef>>>
   avpacketListMutex: pointer<Mutex>
@@ -129,6 +132,7 @@ type SelfTask = Omit<VideoDecodeTaskOptions, 'resource'> & {
   inputEnd: boolean
 
   needKeyFrame: boolean
+  seekResetStarted?: number
 
   parameters: pointer<AVCodecParameters>
 
@@ -383,6 +387,13 @@ export default class VideoDecodePipeline extends Pipeline {
                 }
               }
               else if (avpacket > 0) {
+                // WebCodecs has no skip_frame control. Match the Wasm fast
+                // playback policy by feeding only independently decodable frames.
+                if (task.targetDecoder instanceof WebVideoDecoder && task.playRate >= 8
+                  && this.getMaxDiscard(task) === AVDiscard.AVDISCARD_NONKEY
+                ) {
+                  task.needKeyFrame = true
+                }
                 if (task.needKeyFrame) {
                   if ((avpacket.flags & AVPacketFlags.AV_PKT_FLAG_KEY)
                       // h264 强制判断 nalu type 某些码流封装层的关键帧标志是错误的 
@@ -410,6 +421,10 @@ export default class VideoDecodePipeline extends Pipeline {
                       )
                   ) {
                     task.needKeyFrame = false
+                    if (task.seekResetStarted !== undefined) {
+                      logger.debug(`seek-stage decoder first-rap task=${task.taskId} pts=${avpacket.pts} elapsedMs=${(performance.now() - task.seekResetStarted).toFixed(1)}`)
+                      task.seekResetStarted = undefined
+                    }
                     avpacket.flags |= AVPacketFlags.AV_PKT_FLAG_KEY
                   }
                   else {
@@ -622,7 +637,7 @@ export default class VideoDecodePipeline extends Pipeline {
   public async reopenDecoder(
     taskId: string,
     parameters: AVCodecParametersSerialize | pointer<AVCodecParameters>,
-    resource?: string | ArrayBuffer | WebAssemblyResource,
+    resource?: WebAssemblyResourceInput,
     wasmDecoderOptions?: Data
   ) {
     const task = this.tasks.get(taskId)
@@ -649,7 +664,7 @@ export default class VideoDecodePipeline extends Pipeline {
 
       let softwareDecoder: WasmVideoDecoder | WebVideoDecoder
 
-      if (task.preferWebCodecs && support.videoDecoder && WebVideoDecoder.isSupported(codecpar, false)) {
+      if (task.preferWebCodecs && support.videoDecoder && await WebVideoDecoder.isSupported(codecpar, false)) {
         softwareDecoder = this.createWebCodecDecoder(task, false)
       }
       else {
@@ -669,6 +684,7 @@ export default class VideoDecodePipeline extends Pipeline {
           task.hardwareDecoder.close()
         }
         task.softwareDecoder = softwareDecoder
+        task.softwareDecoderOpened = false
         task.hardwareDecoder = hardwareDecoder
         task.targetDecoder = task.hardwareDecoder || task.softwareDecoder
         task.hardwareRetryCount = 0
@@ -728,7 +744,7 @@ export default class VideoDecodePipeline extends Pipeline {
 
       if (task.preferWebCodecs
         && support.videoDecoder
-        && WebVideoDecoder.isSupported(codecpar, false)
+        && await WebVideoDecoder.isSupported(codecpar, false)
         && task.softwareDecoder instanceof WasmVideoDecoder
       ) {
         task.softwareDecoder.close()
@@ -765,6 +781,16 @@ export default class VideoDecodePipeline extends Pipeline {
       })
     }
     logger.fatal('task not found')
+  }
+
+  private getMaxDiscard(task: SelfTask) {
+    // Without PTS the decoder estimates presentation time from the DTS of the
+    // packet that releases a reordered frame. Keep reference pictures so that
+    // this estimate cannot jump a whole GOP when intra/key-only decoding is used.
+    // It also keeps the reference chain available when playback slows down.
+    return task.parameters.flags & AVCodecParameterFlags.AV_CODECPAR_FLAG_NO_PTS
+      ? AVDiscard.AVDISCARD_NONREF
+      : AVDiscard.AVDISCARD_NONKEY
   }
 
   public async setPlayRate(taskId: string, rate: double) {
@@ -813,13 +839,9 @@ export default class VideoDecodePipeline extends Pipeline {
           discard = AVDiscard.AVDISCARD_DEFAULT
         }
       }
+      discard = Math.min(discard, this.getMaxDiscard(task))
       task.softwareDecoder.setSkipFrameDiscard(discard)
-      if (task.playRate < rate) {
-        task.discard = discard
-      }
-      else {
-        task.discard = Math.max(task.discard, discard)
-      }
+      task.discard = discard
       task.playRate = rate
     }
   }
@@ -827,7 +849,7 @@ export default class VideoDecodePipeline extends Pipeline {
   public async setNextDiscard(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task && task.softwareDecoder) {
-      if (task.discard < AVDiscard.AVDISCARD_NONKEY) {
+      if (task.discard < this.getMaxDiscard(task)) {
         task.discard += 8
         task.softwareDecoder.setSkipFrameDiscard(task.discard)
 
@@ -851,6 +873,7 @@ export default class VideoDecodePipeline extends Pipeline {
   public async resetTask(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
+      task.seekResetStarted = performance.now()
       if (task.targetDecoder === task.softwareDecoder) {
         await task.targetDecoder.flush()
       }
@@ -919,6 +942,24 @@ export default class VideoDecodePipeline extends Pipeline {
       this.tasks.delete(taskId)
       logger.debug(`unregisterTask task, taskId: ${taskId}`)
     }
+  }
+
+  public async getTaskRuntimeInfo(taskId: string): Promise<AVVideoDecoderRuntimeInfo> {
+    const task = this.tasks.get(taskId)
+    if (!task || task.decoderFallbackReady
+      || task.targetDecoder === task.softwareDecoder && !task.softwareDecoderOpened
+    ) {
+      return { backend: 'unknown' }
+    }
+    const decoder = task.targetDecoder
+    if (decoder instanceof WebVideoDecoder) {
+      const hardwareAcceleration = decoder.getHardwareAcceleration()
+      return hardwareAcceleration ? { backend: 'webcodecs', hardwareAcceleration } : { backend: 'unknown' }
+    }
+    if (decoder instanceof WasmVideoDecoder) {
+      return { backend: 'wasm', wasm: decoder.getRuntimeInfo() }
+    }
+    return { backend: 'unknown' }
   }
 
   public async getTasksInfo() {

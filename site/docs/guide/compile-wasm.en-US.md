@@ -132,3 +132,31 @@ It is recommended to merge the codec you added into the libmedia repository for 
   - The new .lib files under libmedia/lib
   - The new .wasm files under dist/decode and dist/encode
   - Any modified scripts under libmedia/build (excluding changes to FFMPEG_PATH and EMSDK_PATH)
+
+## WMV / VC-1
+
+WMV1, WMV2, WMV3 and VC-1 share the `wmv*.wasm` modules. Custom `getWasm` callbacks
+must route `AV_CODEC_ID_VC1` to the matching WMV module. Deploy all four rebuilt
+modules with the updated player and set `wasmBaseUrl` to the parent of `decode`,
+for example `/dist`. CDN or cached modules built without VC-1 cannot decode it.
+If `getWasm` is configured, update its returned URLs directly: `wasmBaseUrl` does
+not override that callback. Audio still uses `wma*.wasm`; see the
+[player guide](./player.en-US.md) for deployment examples.
+
+Builds use the customized FFmpeg `libmedia7.0` branch; the verified toolchain is
+Emscripten 3.1.73. Run these commands from the repository root:
+
+```bash
+for variant in "0 0 0" "0 1 0" "1 1 0" "1 1 1"; do
+  ./build/build-ffmpeg-decoder.sh wmv $variant
+  ./build/build-decoder.sh wmv $variant
+done
+```
+
+The flags are SIMD, atomic and wasm64, producing baseline, atomic, SIMD and
+64-bit variants respectively. The scripts update `lib/decode/wmv*/libavcodec.a`
+and `dist/decode/wmv*.wasm`; deliver both sets of artifacts together. The 64-bit
+module requires a `WASM_64` player build and cannot be loaded by a 32-bit player.
+
+ASF input supports local files and HTTP, with indexed seeking and a scan fallback.
+Encrypted ASF, MMS, WMV Image and ASF output are not supported.

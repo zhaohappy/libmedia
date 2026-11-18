@@ -23,7 +23,7 @@ The simd version introduces SIMD vector instruction support, offering the highes
 The 64 version uses the 64-bit WebAssembly instruction set (wasm64) and includes support for both atomic operations and SIMD. This version requires a runtime environment with wasm64 support, and libmedia must also be compiled in 64-bit mode. The other three versions are based on the standard 32-bit WebAssembly (wasm32) architecture.
 
 
-## Compatibility support status of three versions and Webcodecs
+## Compatibility support status of four versions and Webcodecs
 
 | environment    | baseline     | atomic     | simd         | 64          | webcodecs            |
 | -----------    | -----------  |----------- | -----------  | ----------- | -----------          |
@@ -53,7 +53,7 @@ The 64 version uses the 64-bit WebAssembly instruction set (wasm64) and includes
 | theora      | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | h261        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | h263        | ✅         | ✅          | ✅          | ✅            | ❌                 |
-| wmv         | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| wmv1/2/3 / vc1 | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | mjpeg       | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | rv10        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | rv20        | ✅         | ✅          | ✅          | ✅            | ❌                 |
@@ -108,6 +108,12 @@ The 64 version uses the 64-bit WebAssembly instruction set (wasm64) and includes
 > X265 wasm encoder is special and cannot run in a non-multi-threaded environment
 
 ## Usage
+
+WMV1/2/3 and VC-1 share `decode/wmv{suffix}.wasm`; WMA uses `decode/wma{suffix}.wasm`.
+The suffix is empty for baseline, or `-atomic`, `-simd`, or `-64`. There is no
+separate `vc1.wasm`. Deploy the updated player and WMV modules together for VC-1
+support. See the [player guide](./player.en-US.md) for deployment and custom
+loading, and the [build guide](./compile-wasm.en-US.md) to rebuild the modules.
 
 The decoder modules are located in the project's dist/decode directory, and the encoder modules can be found in dist/encode. Since the WebAssembly modules are not published as an npm package, it is recommended to host the .wasm files on your own CDN for production use. Alternatively, you can use a public CDN to access the files directly from GitHub. For example, the following demonstrates how to do so using cdn.jsdelivr.net:
 

@@ -30,9 +30,22 @@ import {
 } from '@libmedia/common/io'
 
 export default async function analyzeAVFormat(ioReader: IOReader, defaultFormat: AVFormat = AVFormat.UNKNOWN): Promise<AVFormat> {
+  // Recognized signatures take precedence over filename extensions, including ISO.
+  // Disc images fall back to the ISO demuxer, which validates volume descriptors.
   let magic = await ioReader.peekString(8)
   if (/^FLV/.test(magic)) {
     return AVFormat.FLV
+  }
+  else if (magic.startsWith('.RMF')) {
+    return AVFormat.RM
+  }
+  else if ((await ioReader.peekBuffer(4)).every((value, index) => value === [0x30, 0x26, 0xb2, 0x75][index])
+    && (await ioReader.peekBuffer(16)).every((value, index) => value === [
+      0x30, 0x26, 0xb2, 0x75, 0x8e, 0x66, 0xcf, 0x11,
+      0xa6, 0xd9, 0x00, 0xaa, 0x00, 0x62, 0xce, 0x6c
+    ][index])
+  ) {
+    return AVFormat.ASF
   }
   else if (/^DKIF/.test(magic)) {
     return AVFormat.IVF

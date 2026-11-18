@@ -126,6 +126,9 @@ importers:
       serve:
         specifier: ^14.2.4
         version: 14.2.4
+      serve-handler:
+        specifier: 6.1.6
+        version: 6.1.6
       simple-git-hooks:
         specifier: ^2.11.1
         version: 2.11.1

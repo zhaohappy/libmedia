@@ -23,6 +23,7 @@
  *
  */
 
+import type { DiscInfo } from './formats/iso/titles'
 import type OFormat from './formats/OFormat'
 import type IFormat from './formats/IFormat'
 
@@ -83,6 +84,7 @@ class AVFormatContextInterval {
 }
 
 export interface AVIFormatContext {
+  discInfo?: DiscInfo
   metadata: Record<string, any>
   streams: AVStream[]
   streamGroups: AVStreamGroup[]
@@ -98,6 +100,12 @@ export interface AVIFormatContext {
 
   ioReader: IOReader
   ioWriter: IOWriter
+
+  /**
+   * Independently read an exact byte range of up to 1 MiB, or return a negative error.
+   * An optional exclusive physical boundary enables streaming media read-ahead.
+   */
+  readAt?: (pos: bigint, length: number, readAheadEnd?: bigint) => Promise<Uint8Array | number>
 
   errorFlag: number
 
@@ -191,6 +199,7 @@ export interface AVOFormatContext {
 }
 
 export interface AVFormatContextInterface {
+  discInfo?: DiscInfo
   metadata: Record<string, any>
   format: AVFormat
   streams: AVStreamInterface[]

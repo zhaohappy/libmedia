@@ -72,7 +72,7 @@ import {
   type WebGPURenderOptions,
   WebGPURender,
   type WebGLRenderOptions,
-  type WebGLRender,
+  WebGLRender,
   CanvasImageRender,
   WebGPUExternalRender,
   WebGLDefault8Render,
@@ -86,6 +86,7 @@ import type { TaskOptions } from './Pipeline'
 import Pipeline from './Pipeline'
 
 import type { AlphaVideoFrame } from './struct/type'
+import type { VideoRendererBackend } from './struct/runtimeInfo'
 import { isAlphaVideoFrame } from './util'
 
 type WebGPURenderFactory = {
@@ -319,20 +320,27 @@ export default class VideoRenderPipeline extends Pipeline {
       if (task.afterPullResolver) {
         task.afterPullResolver()
       }
-      if (is.number(frame) && frame < 0) {
+      const ended = is.number(frame) && frame < 0
+      if (ended) {
         task.ended = true
         task.frontFrame = null
-        return
       }
-      assert(!isPointer(frame) || frame.data[0], 'got empty video frame')
-      task.frontFrame = frame
-      task.frontBuffered = true
+      else {
+        assert(!isPointer(frame) || frame.data[0], 'got empty video frame')
+        task.frontFrame = frame
+        task.frontBuffered = true
+        if (task.playRate > 100n) {
+          // Waiting for asynchronous decode is not spare rendering capacity.
+          // Do not let that wait throttle high-rate playback to a few hundred fps.
+          task.loop?.resetInterval()
+        }
+      }
       if (task.seekSync) {
         task.seekSync()
         task.seekSync = null
         return
       }
-      if (!task.backFrame) {
+      if (!ended && !task.backFrame && !task.afterPullResolver) {
         this.swap(task)
       }
     })
@@ -554,8 +562,6 @@ export default class VideoRenderPipeline extends Pipeline {
 
       const inWorker = isWorker()
 
-      const interval = (inWorker && support.shareArrayBuffer) ? 0 : 10
-
       task.loop = new LoopTask(() => {
         if (!task.backFrame) {
           if (!task.ended) {
@@ -710,7 +716,7 @@ export default class VideoRenderPipeline extends Pipeline {
           this.fakeSyncPts(task)
           task.loop.emptyTask()
         }
-      }, 0, interval)
+      }, 0, 0)
 
       task.loop.start()
     }
@@ -1048,6 +1054,24 @@ export default class VideoRenderPipeline extends Pipeline {
     }
   }
 
+  public async getTaskRuntimeInfo(taskId: string): Promise<VideoRendererBackend> {
+    const task = this.tasks.get(taskId)
+    const render = task?.renderRedyed ? task.render : undefined
+    if (defined(ENABLE_WEBGPU) && render instanceof WebGPURender) {
+      return 'webgpu'
+    }
+    if (render instanceof WebGLRender) {
+      return 'webgl'
+    }
+    if (render instanceof CanvasImageRender) {
+      return 'canvas2d'
+    }
+    if (render instanceof WritableStreamRender) {
+      return 'writable-stream'
+    }
+    return 'unknown'
+  }
+
   public async isEnd(taskId: string) {
     const task = this.tasks.get(taskId)
     if (task) {
@@ -1067,7 +1091,7 @@ export default class VideoRenderPipeline extends Pipeline {
           task.afterPullResolver = null
         }
         logger.debug(`after seek end with task ended, taskId: ${task.taskId}`)
-        return
+        return true
       }
 
       task.frontFrame = await this.pullFrame(task)
@@ -1112,7 +1136,7 @@ export default class VideoRenderPipeline extends Pipeline {
         task.afterPullResolver()
         task.afterPullResolver = null
         logger.debug(`after seek end with unregisterTask call, taskId: ${task.taskId}`)
-        return
+        return true
       }
 
       task.adjust = AdjustStatus.None
@@ -1140,6 +1164,7 @@ export default class VideoRenderPipeline extends Pipeline {
       }
 
       logger.debug(`after seek end, taskId: ${task.taskId}`)
+      return false
     }
   }
 
@@ -1185,7 +1210,8 @@ export default class VideoRenderPipeline extends Pipeline {
         task.loop = null
       }
 
-      if (started && !task.ended && !task.frontFrame) {
+      // beforeSeek clears frontFrame after the outstanding playback pull finishes.
+      if (started && !task.seeking && !task.ended && !task.frontBuffered) {
         await new Promise<void>((resolve) => {
           task.afterPullResolver = resolve
         })

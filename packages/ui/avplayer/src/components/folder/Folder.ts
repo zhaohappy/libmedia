@@ -85,7 +85,7 @@ const Folder: ComponentOptions = {
 
       async function addFile(handle: FileSystemFileHandle) {
         const file = await handle.getFile()
-        const ext = file.name.split('.').pop()
+        const ext = file.name.split('.').pop().toLowerCase()
         if (array.has(movExt, ext) || array.has(musicExt, ext)) {
           const node: FileNode = {
             id: generateUUID(),
@@ -277,7 +277,7 @@ const Folder: ComponentOptions = {
         for await (const h of parent.handle.values()) {
           if (h.kind === 'file') {
             const target: File = await h.getFile()
-            const ext = target.name.split('.').pop()
+            const ext = target.name.split('.').pop().toLowerCase()
 
             let targetNameList = target.name.split('.')
             targetNameList.pop()

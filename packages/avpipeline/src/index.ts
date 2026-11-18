@@ -52,6 +52,7 @@ export {
 } from './VideoRenderPipeline'
 
 export { type AlphaVideoFrame } from './struct/type'
+export type { AVDecoderRuntimeInfo, AVVideoDecoderRuntimeInfo, VideoRendererBackend } from './struct/runtimeInfo'
 export {
   JitterBuffer,
   default as Stats

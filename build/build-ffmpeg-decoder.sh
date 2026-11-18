@@ -49,8 +49,9 @@ EXTRA_LDFLAGS=""
 COMPONENTS=""
 
 if [[ $wasm64 == "1" ]]; then
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -sMEMORY64=1"
   COMPONENTS="$COMPONENTS --enable-websimd128 --disable-wasmatomic"
-  EXTRA_CFLAGS="$EXTRA_CFLAGS -msimd128 -fvectorize -fslp-vectorize -pthread -mbulk-memory"
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -sMEMORY64=1 -msimd128 -fvectorize -fslp-vectorize -pthread -mbulk-memory"
 else
   if [[ $simd == "1" ]]; then
     COMPONENTS="$COMPONENTS --enable-websimd128 --disable-wasmatomic"
@@ -160,7 +161,7 @@ fi
 
 if [[ $decode == "wmv" ]]; then
   realDecoder="wmv1"
-  EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-decoder=wmv2 --enable-decoder=wmv3"
+  EXTRACOMPONENTS="$EXTRACOMPONENTS --enable-decoder=wmv2 --enable-decoder=wmv3 --enable-decoder=vc1"
 fi
 
 if [[ $decode == "wma" ]]; then

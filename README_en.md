@@ -62,9 +62,12 @@ Check out the [build configuration examples](https://github.com/zhaohappy/libmed
 | mp4      | ✅       | ✅        |
 | mpegts   | ✅       | ✅        |
 | mpegps   | ✅       | ❌        |
+| iso (Blu-ray/DVD) | ✅ | ❌ |
 | matroska | ✅       | ✅        |
 | webm     | ✅       | ✅        |
 | avi      | ✅       | ❌        |
+| rm/rmvb  | ✅       | ❌        |
+| asf / wmv / wma | ✅ | ❌ |
 | h264     | ✅       | ✅        |
 | hevc     | ✅       | ✅        |
 | vvc      | ✅       | ✅        |
@@ -81,6 +84,15 @@ Check out the [build configuration examples](https://github.com/zhaohappy/libmed
 | ttml     | ✅       | ❌        |
 | avif     | ✅       | ❌        |
 | heif     | ✅       | ❌        |
+
+RM/RMVB input supports playback and transcoding with RV10–RV40 video and Cook, SIPR, AAC or AC-3 audio. Local files and HTTP Range seeking are supported. RM output, standalone `.ra`, Real-specific streaming protocols and other RealAudio codecs are not supported.
+
+ASF input includes unencrypted `.asf`, `.wmv` and `.wma` files, with Wasm decoding
+for WMV1/2/3, VC-1 and WMA. ASF output, DRM decryption, MMS and WMV Image are not
+supported. Deploy the updated player together with the WMV decoder modules;
+see the [player guide](./site/docs/guide/player.en-US.md) for configuration.
+
+ISO input supports unencrypted Blu-ray/DVD titles from local files or HTTP Range sources. Deterministic DVD navigation through default menu buttons is supported; interactive menu rendering, BD-J and decryption are not. See the [AVPlayer ISO guide](site/docs/guide/player.en-US.md#iso-playback) for title selection, chapters and filesystem compatibility.
 
 ### Protocol
 
@@ -134,7 +146,7 @@ The 64 version uses the 64-bit WebAssembly instruction set (wasm64) and includes
 | theora      | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | h261        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | h263        | ✅         | ✅          | ✅          | ✅            | ❌                 |
-| wmv         | ✅         | ✅          | ✅          | ✅            | ❌                 |
+| wmv1/2/3 / vc1 | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | mjpeg       | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | rv10        | ✅         | ✅          | ✅          | ✅            | ❌                 |
 | rv20        | ✅         | ✅          | ✅          | ✅            | ❌                 |

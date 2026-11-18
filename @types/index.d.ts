@@ -70,6 +70,8 @@ declare const ENABLE_DEMUXER_HEVC: boolean
 declare const ENABLE_DEMUXER_VVC: boolean
 
 declare const ENABLE_DEMUXER_AVI: boolean
+declare const ENABLE_DEMUXER_RM: boolean
+declare const ENABLE_DEMUXER_ASF: boolean
 
 declare const ENABLE_MUXER_FLV: boolean
 
@@ -112,3 +114,5 @@ declare const API_PALETTE_HAS_CHANGED: boolean
 declare const API_FRAME_PKT: boolean
 
 declare const VERSION: string
+
+declare const ENABLE_DEMUXER_ISO: boolean
