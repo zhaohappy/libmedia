@@ -44,7 +44,6 @@ import {
 
 import {
   array,
-  logger,
   text,
   time
 } from '@libmedia/common'
@@ -63,7 +62,6 @@ export default class IWebVttFormat extends IFormat {
     startTs: int64
     endTs: int64
     context: string
-    pos: int64
   }[]
   private index: int32
 
@@ -75,17 +73,26 @@ export default class IWebVttFormat extends IFormat {
     this.queue = []
   }
 
-  private async readChunk(formatContext: AVIFormatContext) {
-    let chunk = ''
-    const pos = formatContext.ioReader.getPos()
-    while (true) {
-      const line = await formatContext.ioReader.readLine()
-      if (line === '') {
-        break
+  private async readText(formatContext: AVIFormatContext) {
+    const reader = formatContext.ioReader
+    const buffer = new Uint8Array(reader.getBufferSize())
+    const decoder = new TextDecoder()
+    let content = ''
+    try {
+      while (true) {
+        const length = await reader.readToBuffer(buffer.length, buffer)
+        content += decoder.decode(buffer.subarray(0, length), { stream: true })
+        if (length < buffer.length) {
+          break
+        }
       }
-      chunk += line + '\n'
     }
-    return { chunk: chunk.trim(), pos }
+    catch (error) {
+      if (reader.error !== IOError.END) {
+        throw error
+      }
+    }
+    return content + decoder.decode()
   }
 
   public async readHeader(formatContext: AVIFormatContext): Promise<number> {
@@ -99,14 +106,14 @@ export default class IWebVttFormat extends IFormat {
     let lastStartTs = 0n
 
     try {
-      while (true) {
-        const { chunk, pos } = await this.readChunk(formatContext)
-
+      const content = await this.readText(formatContext)
+      for (const block of content.split(/(?:\r\n|\n|\r(?!\n)){2,}/)) {
+        const chunk = block.trim()
         if (chunk === '') {
           continue
         }
 
-        const lines = chunk.split('\n')
+        const lines = chunk.split(/\r\n|\n|\r/)
 
         let identifier: string = lines.shift().trim()
 
@@ -131,8 +138,7 @@ export default class IWebVttFormat extends IFormat {
           identifier,
           context,
           startTs,
-          endTs,
-          pos
+          endTs
         }
 
         if (startTs >= lastStartTs) {
@@ -159,6 +165,7 @@ export default class IWebVttFormat extends IFormat {
       return 0
     }
 
+    return 0
   }
 
   public async readAVPacket(formatContext: AVIFormatContext, avpacket: pointer<AVPacket>): Promise<number> {
@@ -205,28 +212,11 @@ export default class IWebVttFormat extends IFormat {
       this.index = 0
       return 0n
     }
-    const index = array.binarySearch(this.queue, (item) => {
-      if (item.startTs > timestamp) {
-        return -1
-      }
-      return 1
-    })
-    if (index >= 0) {
-      logger.debug(`seek in cues, found index: ${index}, pts: ${this.queue[index].startTs}, pos: ${this.queue[index].pos}`)
-      this.index = Math.max(index - 1, 0)
-      while (this.index > 0) {
-        if (this.queue[this.index - 1].startTs === this.queue[this.index].startTs
-          || this.queue[this.index - 1].endTs > timestamp
-        ) {
-          this.index--
-        }
-        else {
-          break
-        }
-      }
-      return 0n
-    }
-    return static_cast<int64>(errorType.DATA_INVALID)
+    // Cues are ordered by start time and can overlap. Resume at the first cue
+    // that has not expired, or at EOF when every cue has ended.
+    const index = this.queue.findIndex((cue) => cue.endTs > timestamp)
+    this.index = index < 0 ? this.queue.length : index
+    return 0n
   }
 
   public getAnalyzeStreamsCount(): number {
