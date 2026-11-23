@@ -1221,18 +1221,19 @@ export default class IMatroskaFormat extends IFormat {
 
     if (this.context.cues?.entry.length) {
       const track = stream.privData as TrackEntry
-      for (let i = 0; i < this.context.cues.entry.length; i++) {
-        const cue = this.context.cues.entry[i]
-        const time = (cue.time || 0n) * static_cast<int64>(this.context.info.timestampScale) / 1000n
+      const timestampScale = static_cast<int64>(this.context.info.timestampScale)
+      for (const cue of this.context.cues.entry) {
+        const time = (cue.time || 0n) * timestampScale / 1000n
+        if (time > pts && pos !== NOPTS_VALUE_BIGINT) {
+          break
+        }
+        const matchPos = cue.pos?.find((p) => p.track === track.number)
+        if (matchPos?.pos === undefined) {
+          continue
+        }
+        pos = matchPos.pos + this.context.segmentStart
         if (time > pts) {
-          const poses = this.context.cues.entry[Math.max(i - 1, 0)].pos
-          if (poses.length) {
-            const matchPos = poses.find((p) => p.track === track.number)
-            if (matchPos) {
-              pos = matchPos.pos + this.context.segmentStart
-              break
-            }
-          }
+          break
         }
       }
     }
