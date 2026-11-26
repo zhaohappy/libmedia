@@ -64,7 +64,7 @@ export default class WebGPUExternalRender extends WebGPURender {
     this.hdrMetadata.multiplier = 1.0
   }
 
-  private generateFragmentSource(colorTransformOptions?: ColorTransformOptions, videoFrameColorSpace?: ColorSpace) {
+  private generateFragmentSource(colorTransformOptions?: ColorTransformOptions, videoFrameColorSpace?: ColorSpace, videoFrame?: VideoFrame) {
 
     let steps: string[] = []
 
@@ -105,8 +105,10 @@ export default class WebGPUExternalRender extends WebGPURender {
         steps.push(colorTransformMatrix(srgbColorSpace.getPrimaryMatrix(), colorTransformOptions))
         // 线性 XYZ 转线性 PQ RGB（其实是非线性 PQ RGB）
         steps.push(colorTransformMatrix(this.srcColorSpace.getPrimaryMatrix().invert(), colorTransformOptions))
-        // 参考白已经被浏览器处理过了，这里使用 Diffuse White
-        colorTransformOptions.sdrWhiteLevel = DefaultSDRDiffuseWhiteLevel
+        // 参考白已经被浏览器处理过了，这里使用 Diffuse White，但是奇怪的是只有硬解的（没有 format 值）好像处理了
+        if (videoFrame?.format == null) {
+          colorTransformOptions.sdrWhiteLevel = DefaultSDRDiffuseWhiteLevel
+        }
       }
 
       steps = [...steps, ...generateSteps(this.srcColorSpace, this.dstColorSpace, colorTransformOptions)]
@@ -218,12 +220,16 @@ export default class WebGPUExternalRender extends WebGPURender {
           sdrWhiteLevel: DefaultSDRReferenceWhiteLevel
         }
         this.currentColorTransformOptions = colorTransformOptions
-        this.generateFragmentSource(colorTransformOptions, new ColorSpace(
-          mapColorSpace((frame.realColorSpace || frame.colorSpace).matrix),
-          mapColorPrimaries(primaries),
-          mapColorTrc(transfer),
-          (frame.realColorSpace || frame.colorSpace).fullRange ? AVColorRange.AVCOL_RANGE_JPEG : AVColorRange.AVCOL_RANGE_MPEG
-        ))
+        this.generateFragmentSource(
+          colorTransformOptions,
+          new ColorSpace(
+            mapColorSpace((frame.realColorSpace || frame.colorSpace).matrix),
+            mapColorPrimaries(primaries),
+            mapColorTrc(transfer),
+            (frame.realColorSpace || frame.colorSpace).fullRange ? AVColorRange.AVCOL_RANGE_JPEG : AVColorRange.AVCOL_RANGE_MPEG
+          ),
+          frame
+        )
         const hdrBuffer = mapUint8Array(addressof(this.hdrMetadata), sizeof(HdrMetadata)).slice()
         this.device.queue.writeBuffer(
           this.hdrMetadataBuffer,
