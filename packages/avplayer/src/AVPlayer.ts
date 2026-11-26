@@ -538,6 +538,23 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
    */
   static Instances: AVPlayer[] = []
 
+  /**
+   * @hidden
+   */
+  static canUseHDRRender: boolean = false
+  /**
+   * @hidden
+   */
+  static hdrRenderDetect: boolean = false
+  /**
+   * @hidden
+   */
+  static outputHDRCanvasColorSpace: 'srgb' | 'display-p3' = 'srgb'
+  /**
+   * @hidden
+   */
+  static hdrMedia: MediaQueryList
+
   static Util = {
     compile,
     browser,
@@ -2479,7 +2496,9 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
           avframeList: addressof(this.GlobalData.avframeList),
           avframeListMutex: addressof(this.GlobalData.avframeListMutex),
           enableJitterBuffer: !!this.jitterBufferController && !this.audioDecoder2AudioRenderChannel,
-          sar: avQ2D(videoStream.codecpar.sampleAspectRatio)
+          sar: avQ2D(videoStream.codecpar.sampleAspectRatio),
+          enableHDR: AVPlayer.canUseHDRRender,
+          outputHDRCanvasColorSpace: AVPlayer.outputHDRCanvasColorSpace
         })
 
       this.videoEnded = false
@@ -4451,6 +4470,59 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
     this.fire(eventType.ERROR, [error])
   }
 
+  static async detectHDR() {
+    const adapter = await navigator.gpu.requestAdapter()
+    const device = await adapter.requestDevice()
+
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('webgpu')
+    if (!context) {
+      device.destroy()
+      return
+    }
+    const colorSpace = matchMedia('(color-gamut: p3)').matches
+      ? 'display-p3'
+      : 'srgb'
+
+    try {
+      context.configure({
+        device,
+        format: 'rgba16float',
+        colorSpace,
+        // @ts-ignore
+        toneMapping: {
+          mode: 'extended'
+        },
+        alphaMode: 'opaque'
+      })
+
+      // @ts-ignore
+      const actualConfig = context.getConfiguration()
+
+      // @ts-ignore
+      const extendedToneMapping = actualConfig?.toneMapping?.mode === 'extended'
+        && actualConfig.format === 'rgba16float'
+
+      AVPlayer.canUseHDRRender = extendedToneMapping
+      AVPlayer.outputHDRCanvasColorSpace = actualConfig?.colorSpace ?? 'srgb'
+    }
+    catch (e) {}
+    device.destroy()
+    AVPlayer.hdrRenderDetect = true
+  }
+
+  static async onHDRMediaChange(event: MediaQueryListEvent) {
+    if (event.matches && !AVPlayer.hdrRenderDetect) {
+      await AVPlayer.detectHDR()
+    }
+    AVPlayer.canUseHDRRender = event.matches
+    AVPlayer.Instances.forEach((player) => {
+      if (player.VideoRenderThread) {
+        player.VideoRenderThread.enableHDRRender(player.taskId, AVPlayer.canUseHDRRender)
+      }
+    })
+  }
+
   private async createVideoDecoderThread(enableWorker: boolean = true) {
 
     if (this.VideoDecoderThread) {
@@ -4475,6 +4547,18 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       this.VideoPipelineProxy.setLogLevel(AVPlayer.level)
       this.VideoDecoderThread = this.VideoPipelineProxy.VideoDecodePipeline as Thread<VideoDecodePipeline>
       this.VideoRenderThread = this.VideoPipelineProxy.VideoRenderPipeline as Thread<VideoRenderPipeline>
+    }
+
+    if (support.webgpu && !AVPlayer.hdrMedia) {
+      const media = matchMedia('(dynamic-range: high)')
+      if (media.matches) {
+        await AVPlayer.detectHDR()
+      }
+      media.addEventListener('change', AVPlayer.onHDRMediaChange)
+      if (AVPlayer.hdrMedia) {
+        AVPlayer.hdrMedia.removeEventListener('change', AVPlayer.onHDRMediaChange)
+      }
+      AVPlayer.hdrMedia = media
     }
   }
 
@@ -4688,6 +4772,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
         await AVPlayer.MSEThread.clear()
         closeThread(AVPlayer.MSEThread)
       }
+    }
+    if (AVPlayer.hdrMedia) {
+      AVPlayer.hdrMedia.removeEventListener('change', AVPlayer.onHDRMediaChange)
+      AVPlayer.hdrMedia = null
     }
 
     AVPlayer.AudioPipelineProxy = null

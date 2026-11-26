@@ -28,7 +28,7 @@ import WebGPUDefaultRender from './WebGPUDefaultRender'
 import ColorSpace from './colorSpace/ColorSpace'
 
 import type { ColorTransformOptions } from './colorTransform/options'
-import { DefaultSDRWhiteLevel, GLType } from './colorTransform/options'
+import { DefaultSDRDiffuseWhiteLevel, DefaultSDRReferenceWhiteLevel, GLType } from './colorTransform/options'
 import generateSteps from './colorTransform/generateSteps'
 import HdrMetadata from './struct/HdrMetadata'
 
@@ -40,7 +40,11 @@ import {
   AVPixelFormatFlags,
   type AVContentLightMetadata,
   AVFrameSideDataType,
-  getAVFrameSideData
+  getAVFrameSideData,
+  AVColorSpace,
+  AVColorPrimaries,
+  AVColorTransferCharacteristic,
+  AVColorRange
 } from '@libmedia/avutil'
 
 import {
@@ -57,6 +61,9 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
   private hdrMetadata: HdrMetadata
   private hdrMetadataBuffer: GPUBuffer
 
+  private currentColorTransformOptions: ColorTransformOptions
+  private currentDescriptor: AVPixelFormatDescriptor
+
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions) {
     super(canvas, options)
 
@@ -65,8 +72,6 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
   }
 
   private generateFragmentSource(descriptor: AVPixelFormatDescriptor, colorTransformOptions: ColorTransformOptions) {
-
-    colorTransformOptions.outputRGB = true
 
     const steps = generateSteps(this.srcColorSpace, this.dstColorSpace, colorTransformOptions)
 
@@ -375,6 +380,14 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
         frame.colorTrc,
         frame.colorRange
       )
+      if (this.options.outputHDRCanvasColorSpace === 'display-p3' && this.enableHDR) {
+        this.dstColorSpace = new ColorSpace(
+          AVColorSpace.AVCOL_SPC_RGB,
+          AVColorPrimaries.AVCOL_PRI_SMPTE432,
+          AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_1,
+          AVColorRange.AVCOL_RANGE_JPEG
+        )
+      }
 
       this.videoWidth = frame.width
       this.videoHeight = frame.height
@@ -383,9 +396,10 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
       const colorTransformOptions: ColorTransformOptions = {
         type: GLType.kWebGPU,
         bitDepth: descriptor.comp[0].depth,
-        toneMapPQAndHlgToDst: true,
+        toneMapPQAndHlgToDst: !(this.enableHDR && this.srcColorSpace.isHDR()),
         metadata: this.hdrMetadata,
-        dstSdrMaxLuminanceNits: DefaultSDRWhiteLevel,
+        dstSdrMaxLuminanceNits: DefaultSDRDiffuseWhiteLevel,
+        sdrWhiteLevel: DefaultSDRReferenceWhiteLevel,
         dstMaxLuminanceRelative: 1.0
       }
 
@@ -396,6 +410,8 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
           colorTransformOptions.maxContentLightLevel = static_cast<float>(lightMetadata.maxCLL)
         }
       }
+      this.currentDescriptor = descriptor
+      this.currentColorTransformOptions = colorTransformOptions
 
       this.generateFragmentSource(descriptor, colorTransformOptions)
 
@@ -412,6 +428,39 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
         hdrBuffer.byteOffset,
         hdrBuffer.byteLength
       )
+    }
+  }
+
+  protected onEnableHDRChange(): void {
+    if (this.srcColorSpace.isHDR()) {
+      this.currentColorTransformOptions.toneMapPQAndHlgToDst = !this.enableHDR
+      if (this.enableHDR && this.options.outputHDRCanvasColorSpace === 'display-p3') {
+        this.dstColorSpace = new ColorSpace(
+          AVColorSpace.AVCOL_SPC_RGB,
+          AVColorPrimaries.AVCOL_PRI_SMPTE432,
+          AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_1,
+          AVColorRange.AVCOL_RANGE_JPEG
+        )
+      }
+      else {
+        this.dstColorSpace = new ColorSpace(
+          AVColorSpace.AVCOL_SPC_RGB,
+          AVColorPrimaries.AVCOL_PRI_BT709,
+          AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_1,
+          AVColorRange.AVCOL_RANGE_JPEG
+        )
+      }
+      this.generateFragmentSource(this.currentDescriptor, this.currentColorTransformOptions)
+      const hdrBuffer = mapUint8Array(addressof(this.hdrMetadata), sizeof(HdrMetadata)).slice()
+      this.device.queue.writeBuffer(
+        this.hdrMetadataBuffer,
+        0,
+        hdrBuffer.buffer,
+        hdrBuffer.byteOffset,
+        hdrBuffer.byteLength
+      )
+      this.generatePipeline()
+      this.generateRenderBundleEncoder()
     }
   }
 

@@ -26,7 +26,7 @@
 import { AVColorTransferCharacteristic } from '@libmedia/avutil'
 import type ColorSpace from '../colorSpace/ColorSpace'
 import type { ColorTransformOptions } from './options'
-import { DefaultSDRWhiteLevel, GLType, HLGRefMaxLumNits } from './options'
+import { DefaultSDRDiffuseWhiteLevel, GLType, HLGRefMaxLumNits } from './options'
 
 function computeSrcMaxLumRelative(src: ColorSpace, options: ColorTransformOptions) {
   let srcMaxLumNits = HLGRefMaxLumNits
@@ -35,7 +35,7 @@ function computeSrcMaxLumRelative(src: ColorSpace, options: ColorTransformOption
       srcMaxLumNits = options.maxContentLightLevel
     }
   }
-  let sdrWhiteNits = DefaultSDRWhiteLevel
+  let sdrWhiteNits = DefaultSDRDiffuseWhiteLevel
   if (options.sdrWhiteLevel) {
     sdrWhiteNits = options.sdrWhiteLevel
   }

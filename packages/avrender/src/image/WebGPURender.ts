@@ -34,7 +34,11 @@ import {
 } from '@libmedia/common'
 
 export interface WebGPURenderOptions extends ImageRenderOptions {
-  powerPreference?: GPUPowerPreference
+  powerPreference?: GPUPowerPreference,
+  /**
+   * hdr canvas 输出的颜色空间
+   */
+  outputHDRCanvasColorSpace?: 'srgb' | 'display-p3'
 }
 
 export default abstract class WebGPURender extends ImageRender {
@@ -184,13 +188,41 @@ export default abstract class WebGPURender extends ImageRender {
         module: this.fsModule,
         entryPoint: 'main',
         targets: [{
-          format: navigator.gpu.getPreferredCanvasFormat()
+          format: this.srcColorSpace.isHDR() && this.enableHDR
+            ? 'rgba16float'
+            : navigator.gpu.getPreferredCanvasFormat()
         }]
       },
       primitive: {
         topology: 'triangle-strip'
       }
     })
+
+    if (this.srcColorSpace.isHDR() && this.enableHDR) {
+      this.context.configure({
+        device: this.device,
+        format: 'rgba16float',
+        alphaMode: 'premultiplied',
+        colorSpace: this.options.outputHDRCanvasColorSpace ?? 'srgb',
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        // @ts-ignore
+        toneMapping: {
+          mode: 'extended'
+        }
+      })
+    }
+    else {
+      this.context.configure({
+        device: this.device,
+        format: navigator.gpu.getPreferredCanvasFormat(),
+        alphaMode: 'premultiplied',
+        colorSpace: 'srgb',
+        // @ts-ignore
+        toneMapping: {
+          mode: 'standard'
+        }
+      })
+    }
   }
 
   protected generateRenderBundleEncoder() {
@@ -200,7 +232,9 @@ export default abstract class WebGPURender extends ImageRender {
     }
 
     this.renderBundleEncoder = this.device.createRenderBundleEncoder({
-      colorFormats: [navigator.gpu.getPreferredCanvasFormat()]
+      colorFormats: [this.srcColorSpace.isHDR() && this.enableHDR
+        ? 'rgba16float'
+        : navigator.gpu.getPreferredCanvasFormat()]
     })
     this.renderBundleEncoder.setPipeline(this.renderPipeline)
     this.renderBundleEncoder.setBindGroup(0, this.bindGroup)

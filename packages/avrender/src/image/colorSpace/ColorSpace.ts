@@ -256,6 +256,7 @@ export default class ColorSpace {
       case AVColorTransferCharacteristic.AVCOL_TRC_SMPTE170M:
       case AVColorTransferCharacteristic.AVCOL_TRC_BT2020_10:
       case AVColorTransferCharacteristic.AVCOL_TRC_BT2020_12:
+      case AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_1:
         return transferFns.TransferFnSRGB
       case AVColorTransferCharacteristic.AVCOL_TRC_SMPTEST428_1:
         return transferFns.TransferFnSMPETST428_1

@@ -59,8 +59,7 @@ export default class WebGLDefault8Render extends WebGLDefaultRender {
 
     const steps = generateSteps(this.srcColorSpace, this.dstColorSpace, {
       bitDepth: 8,
-      type: GLType.kWebGL,
-      outputRGB: true
+      type: GLType.kWebGL
     })
 
     const isUVPlane = (descriptor.flags & AVPixelFormatFlags.PLANER)

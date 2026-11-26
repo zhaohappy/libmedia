@@ -24,11 +24,11 @@
  */
 
 import { mapUint8Array } from '@libmedia/cheap'
-import { mapColorPrimaries, mapColorTrc } from '../../../avutil/src/function/videoFrame2AVFrame'
+import { mapColorPrimaries, mapColorSpace, mapColorTrc } from '../../../avutil/src/function/videoFrame2AVFrame'
 import ColorSpace from './colorSpace/ColorSpace'
 import generateSteps from './colorTransform/generateSteps'
 import type { ColorTransformOptions } from './colorTransform/options'
-import { DefaultSDRWhiteLevel, GLType } from './colorTransform/options'
+import { DefaultSDRDiffuseWhiteLevel, DefaultSDRReferenceWhiteLevel, GLType } from './colorTransform/options'
 import HdrMetadata from './struct/HdrMetadata'
 import vertexSource from './webgpu/wgsl/vertex.wgsl'
 import type { WebGPURenderOptions } from './WebGPURender'
@@ -55,6 +55,8 @@ export default class WebGPUExternalRender extends WebGPURender {
   private hdrMetadata: HdrMetadata
   private hdrMetadataBuffer: GPUBuffer
 
+  private currentColorTransformOptions: ColorTransformOptions
+
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: WebGPURenderOptions) {
     super(canvas, options)
     this.vertexSource = vertexSource
@@ -62,31 +64,52 @@ export default class WebGPUExternalRender extends WebGPURender {
     this.hdrMetadata.multiplier = 1.0
   }
 
-  private generateFragmentSource(colorTransformOptions?: ColorTransformOptions) {
+  private generateFragmentSource(colorTransformOptions?: ColorTransformOptions, videoFrameColorSpace?: ColorSpace) {
 
     let steps: string[] = []
 
     if (colorTransformOptions) {
-      colorTransformOptions.outputRGB = true
-      steps = generateSteps(this.srcColorSpace, this.dstColorSpace, colorTransformOptions)
+      const srgbColorSpace = new ColorSpace(
+        AVColorSpace.AVCOL_SPC_BT709,
+        AVColorPrimaries.AVCOL_PRI_BT709,
+        AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_1,
+        AVColorRange.AVCOL_RANGE_JPEG
+      )
 
       // ExternalTexture 采样的数据被浏览器处理为 sRGB，但 Safari 由于 VideoFrame 带有错误的 SpaceColor 导致采样出来的却不是
       // 这里对非 Safari 需要将 ExternalTexture 采样出的 sRGB 转换为 pq rgb
       // TODO 将来 Safari 如果修复了 VideoFrame 的 bug，这里将条件去掉
-      if (!(browser.safari || os.ios)) {
-        const patchSrcColor = new ColorSpace(
-          AVColorSpace.AVCOL_SPC_RGB,
-          AVColorPrimaries.AVCOL_PRI_BT709,
-          AVColorTransferCharacteristic.AVCOL_TRC_BT709,
-          AVColorRange.AVCOL_RANGE_JPEG
-        )
-        // XYZ 转 pq RGB
-        steps.unshift(colorTransformMatrix(this.srcColorSpace.getPrimaryMatrix().invert(), colorTransformOptions))
-        // srgb RGB 空间转 XYZ 空间
-        steps.unshift(colorTransformMatrix(patchSrcColor.getPrimaryMatrix(), colorTransformOptions))
-        // 转成线性 rgb
-        steps.unshift(transferFn(patchSrcColor.getTransferFunction(), patchSrcColor.hasExtendedSkTransferFn(), colorTransformOptions))
+      if (browser.safari || os.ios) {
+        /**
+         * Safari 由于 VideoFrame 的 color space 都是 srgb（Safari 的 bug）
+         * 所所以只需要将 srgb 转到 PQ rgb
+         */
+
+        // 线性 RGB 空间转线性 YUV 空间（其实是非线性 PQ YUV）
+        steps.push(colorTransformMatrix(srgbColorSpace.getTransformMatrix(colorTransformOptions.bitDepth), colorTransformOptions))
+        // 非线性 PQ YUV 空间转非线性 PQ RGB 空间
+        steps.push(colorTransformMatrix(videoFrameColorSpace.getTransformMatrix(colorTransformOptions.bitDepth).invert(), colorTransformOptions))
       }
+      else {
+        /**
+         * 经过实验猜测 chrome 对 importExternalTexture 的采样处理是
+         * 
+         * limited range yuv -> full range yuv -> rgb（当成线性 rgb） -> xyz -> sdr relative to nits -> srgb rgb -> 非线性 srgb rgb
+         * 
+         * 这里我们将原非线性 PQ RGB 还原出来
+         */
+
+        // SRGB 转成线性 RGB
+        steps.push(transferFn(srgbColorSpace.getTransferFunction(), srgbColorSpace.hasExtendedSkTransferFn(), colorTransformOptions))
+        // 线性 RGB 空间转线性 XYZ 空间
+        steps.push(colorTransformMatrix(srgbColorSpace.getPrimaryMatrix(), colorTransformOptions))
+        // 线性 XYZ 转线性 PQ RGB（其实是非线性 PQ RGB）
+        steps.push(colorTransformMatrix(this.srcColorSpace.getPrimaryMatrix().invert(), colorTransformOptions))
+        // 参考白已经被浏览器处理过了，这里使用 Diffuse White
+        colorTransformOptions.sdrWhiteLevel = DefaultSDRDiffuseWhiteLevel
+      }
+
+      steps = [...steps, ...generateSteps(this.srcColorSpace, this.dstColorSpace, colorTransformOptions)]
     }
 
     this.fragmentSource = `
@@ -165,22 +188,42 @@ export default class WebGPUExternalRender extends WebGPURender {
       this.transfer = transfer
       this.layout()
 
+      /**
+       * VideoFrame 被浏览器处理成了 SRGB
+       */
+      this.srcColorSpace = new ColorSpace(
+        AVColorSpace.AVCOL_SPC_RGB,
+        mapColorPrimaries(primaries),
+        mapColorTrc(transfer),
+        AVColorRange.AVCOL_RANGE_JPEG
+      )
+
       if (isHdrVideoFrame(frame)) {
-        this.srcColorSpace = new ColorSpace(
-          AVColorSpace.AVCOL_SPC_RGB,
-          mapColorPrimaries(primaries),
-          mapColorTrc(transfer),
-          (frame.realColorSpace || frame.colorSpace).fullRange ? AVColorRange.AVCOL_RANGE_JPEG : AVColorRange.AVCOL_RANGE_MPEG
-        )
+        if (this.options.outputHDRCanvasColorSpace === 'display-p3' && this.enableHDR) {
+          this.dstColorSpace = new ColorSpace(
+            AVColorSpace.AVCOL_SPC_RGB,
+            AVColorPrimaries.AVCOL_PRI_SMPTE432,
+            AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_1,
+            AVColorRange.AVCOL_RANGE_JPEG
+          )
+        }
+
         const colorTransformOptions: ColorTransformOptions = {
           type: GLType.kWebGPU,
           bitDepth: 8,
-          toneMapPQAndHlgToDst: true,
+          toneMapPQAndHlgToDst: !(this.enableHDR && this.srcColorSpace.isHDR()),
           metadata: this.hdrMetadata,
-          dstSdrMaxLuminanceNits: DefaultSDRWhiteLevel,
-          dstMaxLuminanceRelative: 1.0
+          dstSdrMaxLuminanceNits: DefaultSDRDiffuseWhiteLevel,
+          dstMaxLuminanceRelative: 1.0,
+          sdrWhiteLevel: DefaultSDRReferenceWhiteLevel
         }
-        this.generateFragmentSource(colorTransformOptions)
+        this.currentColorTransformOptions = colorTransformOptions
+        this.generateFragmentSource(colorTransformOptions, new ColorSpace(
+          mapColorSpace((frame.realColorSpace || frame.colorSpace).matrix),
+          mapColorPrimaries(primaries),
+          mapColorTrc(transfer),
+          (frame.realColorSpace || frame.colorSpace).fullRange ? AVColorRange.AVCOL_RANGE_JPEG : AVColorRange.AVCOL_RANGE_MPEG
+        ))
         const hdrBuffer = mapUint8Array(addressof(this.hdrMetadata), sizeof(HdrMetadata)).slice()
         this.device.queue.writeBuffer(
           this.hdrMetadataBuffer,
@@ -239,6 +282,38 @@ export default class WebGPUExternalRender extends WebGPURender {
       })
     }
     this.bindGroupLayout = this.device.createBindGroupLayout(descriptor)
+  }
+
+  protected onEnableHDRChange(): void {
+    if (this.srcColorSpace.isHDR()) {
+      this.currentColorTransformOptions.toneMapPQAndHlgToDst = !this.enableHDR
+      if (this.options.outputHDRCanvasColorSpace === 'display-p3') {
+        this.dstColorSpace = new ColorSpace(
+          AVColorSpace.AVCOL_SPC_RGB,
+          AVColorPrimaries.AVCOL_PRI_SMPTE432,
+          AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_1,
+          AVColorRange.AVCOL_RANGE_JPEG
+        )
+      }
+      else {
+        this.dstColorSpace = new ColorSpace(
+          AVColorSpace.AVCOL_SPC_RGB,
+          AVColorPrimaries.AVCOL_PRI_BT709,
+          AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_1,
+          AVColorRange.AVCOL_RANGE_JPEG
+        )
+      }
+      this.generateFragmentSource(this.currentColorTransformOptions)
+      const hdrBuffer = mapUint8Array(addressof(this.hdrMetadata), sizeof(HdrMetadata)).slice()
+      this.device.queue.writeBuffer(
+        this.hdrMetadataBuffer,
+        0,
+        hdrBuffer.buffer,
+        hdrBuffer.byteOffset,
+        hdrBuffer.byteLength
+      )
+      this.generatePipeline()
+    }
   }
 
   public render(frame: VideoFrame, alpha?: VideoFrame): void {

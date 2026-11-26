@@ -30,7 +30,14 @@ export const enum GLType {
   kWebGPU
 }
 
-export const DefaultSDRWhiteLevel = 203.0
+/**
+ * 漫反射白
+ */
+export const DefaultSDRDiffuseWhiteLevel = 203.0
+/**
+ * SDR 参考白
+ */
+export const DefaultSDRReferenceWhiteLevel = 100.0
 // The maximum brightness of the reference display for HLG computations.
 export const HLGRefMaxLumNits = 1000.0
 
@@ -57,8 +64,6 @@ export interface ColorTransformOptions {
   // Max frame-average light level (FALL), i.e. maximum average brightness of
   // the brightest frame in the stream), in nits.
   maxFrameAverageLightLevel?: float
-
-  outputRGB?: boolean
 }
 
 export interface TransferFunction {

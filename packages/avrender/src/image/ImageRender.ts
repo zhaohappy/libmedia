@@ -41,6 +41,10 @@ export type ImageRenderOptions = {
   onRenderContextLost?: () => void
   dstColorSpace?: ColorSpace
   sar?: number
+  /**
+   * 是否开启 HDR 输出
+   */
+  enableHDR?: boolean,
 }
 
 export const enum RenderMode {
@@ -88,6 +92,8 @@ export default abstract class ImageRender {
 
   protected flipVertical: boolean
 
+  protected enableHDR: boolean
+
   constructor(canvas: HTMLCanvasElement | OffscreenCanvas, options: ImageRenderOptions) {
     this.canvas = canvas
     this.options = options
@@ -100,6 +106,7 @@ export default abstract class ImageRender {
     this.renderMode = options.renderMode
     this.flipHorizontal = false
     this.flipVertical = false
+    this.enableHDR = options.enableHDR ?? false
 
     this.lost = false
     this.destroyed = false
@@ -109,10 +116,10 @@ export default abstract class ImageRender {
     }
     else {
       this.dstColorSpace = new ColorSpace(
-        AVColorSpace.AVCOL_SPC_BT709,
+        AVColorSpace.AVCOL_SPC_RGB,
         AVColorPrimaries.AVCOL_PRI_BT709,
-        AVColorTransferCharacteristic.AVCOL_TRC_BT709,
-        AVColorRange.AVCOL_RANGE_MPEG
+        AVColorTransferCharacteristic.AVCOL_TRC_IEC61966_2_1,
+        AVColorRange.AVCOL_RANGE_JPEG
       )
     }
   }
@@ -160,6 +167,13 @@ export default abstract class ImageRender {
     }
   }
 
+  public enableHDROutput(enable: boolean) {
+    if (this.enableHDR !== enable) {
+      this.enableHDR = enable
+      this.onEnableHDRChange()
+    }
+  }
+
   public viewport(width: number, height: number): void {
     if (this.canvasWidth !== width || this.canvasHeight !== height) {
       const devicePixelRatio = this.options.devicePixelRatio
@@ -190,6 +204,8 @@ export default abstract class ImageRender {
   public setDstColorSpace(space: ColorSpace) {
     this.dstColorSpace = space
   }
+
+  protected onEnableHDRChange() {}
 
   static isSupport(frame: pointer<AVFrame> | VideoFrame | ImageBitmap): boolean {
     return false

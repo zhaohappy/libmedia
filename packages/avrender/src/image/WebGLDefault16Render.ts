@@ -27,7 +27,7 @@ import type { WebGLRenderOptions } from './WebGLRender'
 import WebGLDefaultRender from './WebGLDefaultRender'
 import generateSteps from './colorTransform/generateSteps'
 import type { ColorTransformOptions } from './colorTransform/options'
-import { DefaultSDRWhiteLevel, GLType } from './colorTransform/options'
+import { DefaultSDRDiffuseWhiteLevel, DefaultSDRReferenceWhiteLevel, GLType } from './colorTransform/options'
 import ColorSpace from './colorSpace/ColorSpace'
 import type HdrMetadata from './struct/HdrMetadata'
 import VideoProgram16 from './webgl/program/VideoProgram16'
@@ -87,8 +87,6 @@ export default class WebGLDefault16Render extends WebGLDefaultRender {
   }
 
   private generateFragmentSource(descriptor: AVPixelFormatDescriptor, colorTransformOptions: ColorTransformOptions) {
-
-    colorTransformOptions.outputRGB = true
 
     const steps = generateSteps(this.srcColorSpace, this.dstColorSpace, colorTransformOptions)
 
@@ -201,8 +199,9 @@ export default class WebGLDefault16Render extends WebGLDefaultRender {
         bitDepth: descriptor.comp[0].depth,
         toneMapPQAndHlgToDst: true,
         metadata: this.hdrMetadata,
-        dstSdrMaxLuminanceNits: DefaultSDRWhiteLevel,
-        dstMaxLuminanceRelative: 1.0
+        dstSdrMaxLuminanceNits: DefaultSDRDiffuseWhiteLevel,
+        dstMaxLuminanceRelative: 1.0,
+        sdrWhiteLevel: DefaultSDRReferenceWhiteLevel
       }
 
       const sideData = getAVFrameSideData(frame, AVFrameSideDataType.AV_FRAME_DATA_CONTENT_LIGHT_LEVEL)

@@ -24,12 +24,12 @@
  */
 
 import type { ColorTransformOptions } from './options'
-import { DefaultSDRWhiteLevel } from './options'
+import { DefaultSDRDiffuseWhiteLevel } from './options'
 
 export function computeNitsToSdrRelativeFactor(unityNits: float, useSrcSdrWhite: boolean, options: ColorTransformOptions) {
   let sdrWhiteNits = options.dstSdrMaxLuminanceNits
   if (useSrcSdrWhite) {
-    sdrWhiteNits = DefaultSDRWhiteLevel
+    sdrWhiteNits = DefaultSDRDiffuseWhiteLevel
     if (options.sdrWhiteLevel) {
       sdrWhiteNits = options.sdrWhiteLevel
     }

@@ -56,8 +56,7 @@ export default class WebGPUDefault8Render extends WebGPUDefaultRender {
 
     const steps = generateSteps(this.srcColorSpace, this.dstColorSpace, {
       bitDepth: 8,
-      type: GLType.kWebGPU,
-      outputRGB: true
+      type: GLType.kWebGPU
     })
 
     const textureMap = ['y', 'u', 'v', 'a']

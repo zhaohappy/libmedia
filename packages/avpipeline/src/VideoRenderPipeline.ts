@@ -135,6 +135,8 @@ export interface VideoRenderTaskOptions extends TaskOptions {
   enableJitterBuffer: boolean
   isLive: boolean
   sar: number
+  enableHDR?: boolean,
+  outputHDRCanvasColorSpace?: 'srgb' | 'display-p3'
 }
 
 type SelfTask = VideoRenderTaskOptions & {
@@ -383,7 +385,6 @@ export default class VideoRenderPipeline extends Pipeline {
           // safari 中 CanvasImageRender 不支持 hdr 渲染，直接使用 WebGPUExternalRender
           // 而 Safari 中 hdr VIdeoFrame 的 color space 错误又导致使用 WebGPUExternalRender 可以正常渲染
           // chrome 中 CanvasImageRender 支持 hdr 视频渲染，如果强行使用 WebGPUExternalRender 渲染 hdr 会导致颜色偏绿
-          && (!isHdrVideoFrame(frame) || browser.safari || os.ios)
         ) {
           // WebGPUExternalRender 性能最优
           task.render = new WebGPUExternalRender(task.canvas as OffscreenCanvas, {
@@ -395,7 +396,9 @@ export default class VideoRenderPipeline extends Pipeline {
               task.renderRedyed = false
               logger.warn('render context lost')
               task.controlIPCPort.notify('updateCanvas')
-            }
+            },
+            enableHDR: task.enableHDR,
+            outputHDRCanvasColorSpace: task.outputHDRCanvasColorSpace
           })
           task.isSupport = WebGPUExternalRender.isSupport
         }
@@ -427,7 +430,9 @@ export default class VideoRenderPipeline extends Pipeline {
                   task.renderRedyed = false
                   logger.warn('render context lost')
                   task.controlIPCPort.notify('updateCanvas')
-                }
+                },
+                enableHDR: task.enableHDR,
+                outputHDRCanvasColorSpace: task.outputHDRCanvasColorSpace
               })
               task.isSupport = RenderFactory.isSupport
               return false
@@ -821,6 +826,21 @@ export default class VideoRenderPipeline extends Pipeline {
       task.canvasUpdated = true
       task.firstRendered = false
       task.renderRedyed = false
+    }
+    else {
+      logger.fatal('task not found')
+    }
+  }
+
+  public async enableHDRRender(taskId: string, enable: boolean) {
+    const task = this.tasks.get(taskId)
+    if (task) {
+      if (task.render) {
+        task.render.enableHDROutput(enable)
+      }
+      else {
+        task.enableHDR = enable
+      }
     }
     else {
       logger.fatal('task not found')

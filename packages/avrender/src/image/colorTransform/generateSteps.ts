@@ -33,7 +33,7 @@
 import { AVColorPrimaries, AVColorRange, AVColorSpace, AVColorTransferCharacteristic } from '@libmedia/avutil'
 import ColorSpace from '../colorSpace/ColorSpace'
 import type { ColorTransformOptions } from './options'
-import { DefaultSDRWhiteLevel, HLGRefMaxLumNits, PQRefMaxLumNits } from './options'
+import { HLGRefMaxLumNits, PQRefMaxLumNits } from './options'
 import colorTransformMatrix from './colorTransformMatrix'
 import hlgInvOETF from './transferFn/hlgInvOETF'
 import pq2Linear from './transferFn/pq2Linear'
@@ -154,7 +154,7 @@ export default function generateSteps(src: ColorSpace, dst: ColorSpace, options:
       switch (dst.getTransferId()) {
         // 9. 如果是 HLG 视频，应用 HLG 转 OETF
         case AVColorTransferCharacteristic.AVCOL_TRC_ARIB_STD_B67:
-          computeSdrRelativeToNitsFactor(DefaultSDRWhiteLevel, options)
+          computeSdrRelativeToNitsFactor(HLGRefMaxLumNits, options)
           steps.push(colorTransformSdrToDstNitsRelative(options))
           steps.push(hlgOETF(options))
           break
@@ -176,25 +176,22 @@ export default function generateSteps(src: ColorSpace, dst: ColorSpace, options:
     }
 
     /**
-     * 下面的步骤是把 RGB 转到目标颜色空间，判断是否需要
-     * 片段着色器输出的颜色应该是 RGB 非线性空间？（此处存疑，未找到相关资料，但找到的其他类似项目均未转换为线性空间，显示器会根据输出做相应的电光转换？） 全色域颜色
+     * 下面的步骤是把 RGB 转到目标颜色空间，一般是 srgb 
      * 但如果后续需要处理颜色（如混合、插值），需要将非线性空间转换为线性空间，在线性空间中处理
      */
-    if (!options.outputRGB) {
-      const dstMatrixIsIdentityOrYcgco = dst.getMatrixId() === AVColorSpace.AVCOL_SPC_YCOCG
+    const dstMatrixIsIdentityOrYcgco = dst.getMatrixId() === AVColorSpace.AVCOL_SPC_YCOCG
 
-      // 10. Range 反变换
-      const dstRangeAdjustStep = colorTransformMatrix(dst.getRangeAdjustMatrix(options.bitDepth).invert(), options)
+    // 10. Range 反变换
+    const dstRangeAdjustStep = colorTransformMatrix(dst.getRangeAdjustMatrix(options.bitDepth).invert(), options)
 
-      if (dstMatrixIsIdentityOrYcgco) {
-        steps.push(dstRangeAdjustStep)
-      }
+    if (dstMatrixIsIdentityOrYcgco) {
+      steps.push(dstRangeAdjustStep)
+    }
 
-      steps.push(colorTransformMatrix(dst.getTransformMatrix(options.bitDepth), options))
+    steps.push(colorTransformMatrix(dst.getTransformMatrix(options.bitDepth), options))
 
-      if (!dstMatrixIsIdentityOrYcgco) {
-        steps.push(dstRangeAdjustStep)
-      }
+    if (!dstMatrixIsIdentityOrYcgco) {
+      steps.push(dstRangeAdjustStep)
     }
   }
   return steps
