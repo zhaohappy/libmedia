@@ -78,7 +78,8 @@ import {
   logger,
   support,
   getTimestamp,
-  isWorker
+  isWorker,
+  browser
 } from '@libmedia/common'
 
 import {
@@ -579,7 +580,7 @@ export default class VideoDecodePipeline extends Pipeline {
             || parameters.codecId === AVCodecID.AV_CODEC_ID_VVC
             || parameters.codecId === AVCodecID.AV_CODEC_ID_AV1
           ) {
-            threadCount = 6
+            threadCount = browser.chrome ? 6 : 8
           }
         }
         else if (pixels > 3840 * 2160) {
