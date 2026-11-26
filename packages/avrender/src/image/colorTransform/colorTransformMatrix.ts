@@ -41,7 +41,7 @@ export default function colorTransformMatrix(matrix: Matrix4, options: ColorTran
     vec4String = 'vec4'
   }
 
-  if (!mat4String || !vec4String) {
+  if (!mat4String || !vec4String || matrix.isIdentity()) {
     return ''
   }
 
@@ -53,6 +53,19 @@ export default function colorTransformMatrix(matrix: Matrix4, options: ColorTran
         0, 0, 0, 1
       ) * color;
     `
+
+  if (matrix.rc(0, 0) === 1
+    && matrix.rc(1, 0) === 0
+    && matrix.rc(2, 0) === 0
+    && matrix.rc(0, 1) === 0
+    && matrix.rc(1, 1) === 1
+    && matrix.rc(2, 1) === 0
+    && matrix.rc(0, 2) === 0
+    && matrix.rc(1, 2) === 0
+    && matrix.rc(2, 2) === 1
+  ) {
+    source = ''
+  }
 
   if (matrix.rc(0, 3) !== 0 || matrix.rc(1, 3) !== 0 || matrix.rc(2, 3) !== 0) {
     source += `
