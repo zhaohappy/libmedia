@@ -32,6 +32,9 @@ import Annexb2AvccFilter from '../bsf/h2645/Annexb2AvccFilter'
 
 import { mapUint8Array, getRandomValues } from '@libmedia/cheap'
 
+import type {
+  AVDOVIDecoderConfigurationRecord
+} from '@libmedia/avutil'
 import {
   AVFormat,
   type AVCodecParameters,
@@ -430,6 +433,29 @@ export default class OMatroskaFormat extends OFormat {
             track.ass.popIndex.sort((a, b) => b - a)
           }
         }
+
+        if (stream.codecpar.nbCodedSideData) {
+          const blockAdditionMappings = track.blockAdditionMappings ?? []
+          for (let i = 0; i < stream.codecpar.nbCodedSideData; i++) {
+            const sideData = stream.codecpar.codedSideData[i]
+            if (sideData.type === AVPacketSideDataType.AV_PKT_DATA_DOVI_CONF) {
+              const dovi = accessof(reinterpret_cast<pointer<AVDOVIDecoderConfigurationRecord>>(sideData.data))
+              blockAdditionMappings.push({
+                type: dovi.dvProfile > 7 ? MATROSKABlockAddIdType.DVVC : MATROSKABlockAddIdType.DVCC,
+                extradata: {
+                  data: mapUint8Array(sideData.data, sideData.size).slice(),
+                  size: reinterpret_cast<int64>(sideData.size),
+                  pos: NOPTS_VALUE_BIGINT
+                },
+                name: 'Dolby Vision configuration'
+              })
+            }
+          }
+          if (blockAdditionMappings.length) {
+            track.blockAdditionMappings = blockAdditionMappings
+          }
+        }
+
         context.tracks.entry.push(track)
       }
     })

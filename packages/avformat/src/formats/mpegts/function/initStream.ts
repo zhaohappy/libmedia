@@ -27,12 +27,26 @@ import type { MpegtsContext, MpegtsStreamContext, PID } from '../type'
 import createMpegtsStreamContext from './createMpegtsStreamContext'
 import * as mpegts from '../mpegts'
 import { opus } from '@libmedia/avutil/internal'
-import { AVCodecID, AVMediaType, type AVStream, avMalloc, AVCodecParameterFlags } from '@libmedia/avutil'
+
+import {
+  AVCodecID,
+  AVMediaType,
+  type AVStream,
+  avMalloc,
+  AVCodecParameterFlags,
+  addSideData,
+  AVPacketSideDataType,
+  AVDOVIDecoderConfigurationRecord
+} from '@libmedia/avutil'
+
+import { memcpyFromUint8Array } from '@libmedia/cheap'
+
+import { BufferReader } from '@libmedia/common/io'
+
 import type AVBSFilter from '../../../bsf/AVBSFilter'
 import AACADTS2RawFilter from '../../../bsf/aac/ADTS2RawFilter'
 import AACLATM2RawFilter from '../../../bsf/aac/LATM2RawFilter'
 import OpusMpegts2RawFilter from '../../../bsf/opus/Mpegts2RawFilter'
-import { memcpyFromUint8Array } from '@libmedia/cheap'
 import { TSDescriptor } from '../mpegts'
 
 export default function initStream(pid: PID, stream: AVStream, mpegtsContext: MpegtsContext) {
@@ -123,7 +137,7 @@ export default function initStream(pid: PID, stream: AVStream, mpegtsContext: Mp
           }
           break
         }
-        // extradata
+        // av1 extradata
         case 0x80: {
           if (stream.codecpar.codecId === AVCodecID.AV_CODEC_ID_AV1) {
             stream.codecpar.extradata = avMalloc(descriptor.buffer.length)
@@ -131,6 +145,39 @@ export default function initStream(pid: PID, stream: AVStream, mpegtsContext: Mp
             stream.codecpar.extradataSize = descriptor.buffer.length
           }
           break
+        }
+        // DOVI video stream descriptor
+        case 0xb0: {
+          if (descriptor.buffer.length >= 4) {
+            const byteReader = new BufferReader(descriptor.buffer)
+            const dovi = make<AVDOVIDecoderConfigurationRecord>()
+            dovi.dvVersionMajor = byteReader.readUint8()
+            dovi.dvVersionMinor = byteReader.readUint8()
+            let buf = byteReader.readUint16()
+            dovi.dvProfile = (buf >>> 9) & 0x7f
+            dovi.dvLevel = (buf >>> 3) & 0x3f
+            dovi.rpuPresentFlag = (buf >>> 2) & 0x01
+            dovi.elPresentFlag = (buf >>> 1) & 0x01
+            dovi.blPresentFlag = buf & 0x01
+
+            if (!dovi.blPresentFlag && byteReader.remainingSize() >= 2) {
+              byteReader.readUint16()
+            }
+            if (byteReader.remainingSize() >= 1) {
+              buf = byteReader.readUint8()
+              dovi.dvBlSignalCompatibilityId = (buf >> 4) & 0x0f
+            }
+            else {
+              dovi.dvBlSignalCompatibilityId = 0
+            }
+            addSideData(
+              addressof(stream.codecpar.codedSideData),
+              addressof(stream.codecpar.nbCodedSideData),
+              AVPacketSideDataType.AV_PKT_DATA_DOVI_CONF,
+              addressof(dovi),
+              sizeof(AVDOVIDecoderConfigurationRecord)
+            )
+          }
         }
       }
     })

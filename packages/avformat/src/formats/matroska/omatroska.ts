@@ -26,7 +26,7 @@
 import { EBMLId } from './matroska'
 import type { Attachment, Attachments, AudioTrack, Chapter, ChapterAtom, ChapterDisplay,
   Chapters, CuePoint, CuePointPos, Cues, ElePositionInfo, Header, Info, OMatroskaContext,
-  SeekHead, SeekHeadEntry, SimpleTag, Tag, TagTargets, Tags, TrackEntry, Tracks, VideoColor, VideoTrack
+  SeekHead, SeekHeadEntry, SimpleTag, Tag, TagTargets, Tags, TrackBlockAdditionMappings, TrackEntry, Tracks, VideoColor, VideoTrack
 } from './type'
 
 import { object, is, array, concatTypeArray, text } from '@libmedia/common'
@@ -310,6 +310,19 @@ export function writeAudioTrack(writer: IOWriterSync, context: OMatroskaContext,
   })
 }
 
+export function writeBlockAdditionMappings(writer: IOWriterSync, context: OMatroskaContext, blockAdditionMappings: TrackBlockAdditionMappings) {
+  writeEleData(writer, context, EBMLId.TRACK_BLK_ADD_MAPPING, (eleWriter) => {
+    writeEbmlUint(eleWriter, EBMLId.BLK_ADD_ID_TYPE, blockAdditionMappings.type)
+    writeEbmlBuffer(eleWriter, EBMLId.BLK_ADD_ID_EXTRA_DATA, blockAdditionMappings.extradata.data)
+    if (blockAdditionMappings.name) {
+      writeEbmlString(eleWriter, EBMLId.BLK_ADD_ID_NAME, blockAdditionMappings.name)
+    }
+    if (blockAdditionMappings.value) {
+      writeEbmlUint(eleWriter, EBMLId.BLK_ADD_ID_VALUE, blockAdditionMappings.value)
+    }
+  })
+}
+
 export function writeTrack(writer: IOWriterSync, context: OMatroskaContext, track: TrackEntry) {
   writeEleData(writer, context, EBMLId.TRACK_ENTRY, (eleWriter) => {
     writeEbmlUint(eleWriter, EBMLId.TRACK_NUMBER, track.number)
@@ -332,6 +345,11 @@ export function writeTrack(writer: IOWriterSync, context: OMatroskaContext, trac
     }
     else if (track.video) {
       writeVideoTrack(eleWriter, context, track.video)
+    }
+    if (track.blockAdditionMappings?.length) {
+      array.each(track.blockAdditionMappings, (item) => {
+        writeBlockAdditionMappings(eleWriter, context, item)
+      })
     }
   })
 }

@@ -24,12 +24,23 @@
  */
 
 import getVideoCodec from './getVideoCodec'
-import { AVCodecID } from '../codec'
+import { AVCodecID, AVPacketSideDataType } from '../codec'
 import type AVCodecParameters from '../struct/avcodecparameters'
+import { getSideData } from '../util/avpacket'
+import { string } from '@libmedia/common'
 
 export default function getVideoMimeType(codecpar: pointer<AVCodecParameters>) {
   if (codecpar.codecId === AVCodecID.AV_CODEC_ID_VP8) {
     return `video/webm; codecs="${getVideoCodec(codecpar)}"`
   }
   return `video/mp4; codecs="${getVideoCodec(codecpar)}"`
+}
+
+export function getDolbyVisionMimeType(codecpar: pointer<AVCodecParameters>) {
+  const sideData = getSideData(
+    addressof(codecpar.codedSideData),
+    addressof(codecpar.nbCodedSideData),
+    AVPacketSideDataType.AV_PKT_DATA_DOVI_CONF
+  )
+  return `video/mp4; codecs="${string.format('%s.%02d.%02d', 'dvh1', sideData.data[2], sideData.data[3])}"`
 }

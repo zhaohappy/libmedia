@@ -62,7 +62,9 @@ import {
   avRescaleQ,
   errorType,
   nalu as naluUtil,
-  intwrite
+  intwrite,
+  addSideData,
+  AVDOVIDecoderConfigurationRecord
 } from '@libmedia/avutil'
 
 import {
@@ -96,6 +98,7 @@ import {
   IOError,
   BufferReader
 } from '@libmedia/common/io'
+import { parseDVDecoderConfigurationRecord } from './isom/dovi'
 
 /**
  * 毫秒时间戳转 hh:mm:ss.mill
@@ -467,6 +470,23 @@ export default class IMatroskaFormat extends IFormat {
             }
             if (entry.encryption && isDef(entry.encryption.algo)) {
               track.needDecryption = true
+            }
+          })
+        }
+        if (track.blockAdditionMappings) {
+          array.each(track.blockAdditionMappings, (addition) => {
+            switch (addition.type) {
+              case MATROSKABlockAddIdType.DVCC:
+              case MATROSKABlockAddIdType.DVVC: {
+                const dovi = parseDVDecoderConfigurationRecord(addition.extradata.data)
+                addSideData(
+                  addressof(stream.codecpar.codedSideData),
+                  addressof(stream.codecpar.nbCodedSideData),
+                  AVPacketSideDataType.AV_PKT_DATA_DOVI_CONF,
+                  addressof(dovi),
+                  sizeof(AVDOVIDecoderConfigurationRecord)
+                )
+              }
             }
           })
         }

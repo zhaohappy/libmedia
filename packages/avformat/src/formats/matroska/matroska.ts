@@ -107,6 +107,13 @@ export const enum EBMLId {
   TRACK_CONTENT_ENCODING = 0x6240,
   TRACK_TIME_CODE_SCALE = 0x23314F,
   TRACK_MAX_BLK_ADD_ID = 0x55EE,
+  TRACK_BLK_ADD_MAPPING = 0x41E4,
+
+  /* IDs in the block addition mapping master */
+  BLK_ADD_ID_VALUE = 0x41F0,
+  BLK_ADD_ID_NAME = 0x41A4,
+  BLK_ADD_ID_TYPE = 0x41E7,
+  BLK_ADD_ID_EXTRA_DATA = 0x41ED,
 
   /* IDs in the track video master */
   VIDEO_FRAMERATE = 0x2383E3,

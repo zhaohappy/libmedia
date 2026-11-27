@@ -148,7 +148,12 @@ export const enum BoxType {
   ISPE = 'ispe',
   PITM = 'pitm',
   IMIR = 'imir',
-  IROT = 'irot'
+  IROT = 'irot',
+
+  DVCC = 'dvcC',
+  DVVC = 'dvvC',
+  DVWC = 'dvwC',
+  DVH1 = 'dvh1'
 }
 
 export const BasicBoxs = [

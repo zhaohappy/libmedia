@@ -63,7 +63,8 @@ export {
   AVPacketRef,
   AVPacketSideData,
   AVPacketType,
-  AVProducerReferenceTime
+  AVProducerReferenceTime,
+  AVDOVIDecoderConfigurationRecord
 } from './struct/avpacket'
 
 export {
@@ -229,7 +230,8 @@ export {
   resetCodecParameters,
   isHdr,
   isHdrVideoFrame,
-  hasAlphaChannel
+  hasAlphaChannel,
+  isDolbyVision
 } from './util/codecparameters'
 
 export * as avbuffer from './util/avbuffer'
@@ -254,7 +256,7 @@ export { default as encodedVideoChunk2AVPacket } from './function/encodedVideoCh
 export { default as getAudioCodec } from './function/getAudioCodec'
 export { default as getVideoCodec } from './function/getVideoCodec'
 export { default as getAudioMimeType } from './function/getAudioMimeType'
-export { default as getVideoMimeType } from './function/getVideoMimeType'
+export { default as getVideoMimeType, getDolbyVisionMimeType } from './function/getVideoMimeType'
 export { default as getWasmUrl } from './function/getWasmUrl'
 export { default as compileResource } from './function/compileResource'
 export { default as analyzeAVFormat } from './function/analyzeAVFormat'

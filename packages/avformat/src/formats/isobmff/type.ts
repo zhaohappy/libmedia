@@ -222,6 +222,7 @@ export interface IsobmffContext {
     currentItem?: HEIFItem
   }
   moovWritten?: boolean
+  disableDolbyVision?: boolean
 }
 
 export interface IsobmffStreamContext {

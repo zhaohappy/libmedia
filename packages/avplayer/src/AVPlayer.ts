@@ -114,7 +114,9 @@ import {
   avMalloc,
   AVCodecParameterFlags,
   getVideoMimeType,
-  getAudioMimeType
+  getAudioMimeType,
+  isDolbyVision,
+  getDolbyVisionMimeType
 } from '@libmedia/avutil'
 
 import {
@@ -882,6 +884,13 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       }
 
       if (videoStream && options.video) {
+        // 在支持 Dolby Vision 的设备上强制使用 mse
+        if (isDolbyVision(videoStream.codecpar)
+          && getMediaSource().isTypeSupported(getDolbyVisionMimeType(videoStream.codecpar))
+        ) {
+          return true
+        }
+
         // 目前 canvas 还不能渲染 hdr 视频，hdr 先使用 mse 播放
         // TODO 未来 canvas 支持 hdr 渲染之后去掉
         if (isHdr(videoStream.codecpar)) {

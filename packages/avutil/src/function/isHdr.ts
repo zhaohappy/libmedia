@@ -24,10 +24,11 @@
  */
 
 import { getAVPixelFormatDescriptor } from '../pixelFormatDescriptor'
-import { AVMediaType } from '../codec'
+import { AVMediaType, AVPacketSideDataType } from '../codec'
 import type AVCodecParameters from '../struct/avcodecparameters'
 import type { AVPixelFormat } from '../pixfmt'
 import { AVColorTransferCharacteristic } from '../pixfmt'
+import { getSideData } from '../util/avpacket'
 
 const HDRPrimaries = ['bt2020', 'bt2100', 'st2048', 'p3-dcl', 'hlg']
 
@@ -50,4 +51,13 @@ export function isHdrVideoFrame(videoFrame: VideoFrame) {
   // @ts-ignore
   return colorSpace.transfer === 'pq' || colorSpace.transfer === 'hlg'
     || HDRPrimaries.some((p) => p === colorSpace.primaries)
+}
+
+export function isDolbyVision(parameters: pointer<AVCodecParameters>) {
+  const sideData = getSideData(
+    addressof(parameters.codedSideData),
+    addressof(parameters.nbCodedSideData),
+    AVPacketSideDataType.AV_PKT_DATA_DOVI_CONF
+  )
+  return sideData !== nullptr
 }

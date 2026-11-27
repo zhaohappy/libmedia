@@ -147,6 +147,10 @@ export interface OIsobmffFormatOptions {
    */
   useMetadataTags?: boolean
   /**
+   * 不进行 Dolby Vision 封装
+   */
+  disableDolbyVision?: boolean
+  /**
    * 新的 fragment 开始
    * 
    * @returns 
@@ -279,6 +283,7 @@ export default class OIsobmffFormat extends OFormat {
     this.context.timescale = 1000
     this.context.ignoreEncryption = this.options.ignoreEncryption
     this.context.useMetadataTags = this.options.useMetadataTags
+    this.context.disableDolbyVision = this.options.disableDolbyVision
 
     const cover = formatContext.streams.find((stream) => {
       return (stream.disposition & AVDisposition.ATTACHED_PIC)

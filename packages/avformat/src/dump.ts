@@ -28,6 +28,9 @@ import { AVFormatContext } from './AVFormatContext'
 
 import * as stringEnum from '@libmedia/avutil/internal'
 
+import type {
+  AVDOVIDecoderConfigurationRecord
+} from '@libmedia/avutil'
 import {
   type AVFormat,
   AVMediaType,
@@ -44,7 +47,8 @@ import {
   avReduce,
   avRescaleQ,
   AVChannelOrder,
-  isHdr
+  isHdr,
+  AVPacketSideDataType
 } from '@libmedia/avutil'
 
 import {
@@ -305,6 +309,16 @@ export function dumpAVStreamInterface(stream: AVStreamInterface, index: number, 
         dump += `${prefix}    ${key}: [${value.toString()}]\n`
       }
     })
+  }
+  if (stream.codecpar.nbCodedSideData) {
+    dump += `${prefix}  Side data:\n`
+    for (let i = 0; i < stream.codecpar.nbCodedSideData; i++) {
+      const sideData = stream.codecpar.codedSideData[i]
+      if (sideData.type === AVPacketSideDataType.AV_PKT_DATA_DOVI_CONF) {
+        const dovi = accessof(reinterpret_cast<pointer<AVDOVIDecoderConfigurationRecord>>(sideData.data))
+        dump += `${prefix}    DOVI configuration record: version: ${dovi.dvVersionMajor}.${dovi.dvVersionMinor}, profile: ${dovi.dvProfile}, level: ${dovi.dvLevel}, rpu flag: ${dovi.rpuPresentFlag}, el flag: ${dovi.elPresentFlag}, bl flag: ${dovi.blPresentFlag}, compatibility id: ${dovi.dvBlSignalCompatibilityId}\n`
+      }
+    }
   }
 
   return dump

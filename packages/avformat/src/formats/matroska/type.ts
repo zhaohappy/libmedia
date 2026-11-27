@@ -156,6 +156,13 @@ export interface TrackEncodings {
   entry: TrackEncoding[]
 }
 
+export interface TrackBlockAdditionMappings {
+  value?: uint64
+  name?: string
+  type: uint32
+  extradata: EbmlBin
+}
+
 export interface TrackEntry {
   number?: uint32
   uid?: uint64
@@ -181,6 +188,7 @@ export interface TrackEntry {
   needDecompression?: boolean
   needDecryption?: boolean
   duration?: int64
+  blockAdditionMappings?: TrackBlockAdditionMappings[]
 
   maxPts?: int64
   lastPts?: int64

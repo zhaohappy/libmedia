@@ -87,6 +87,18 @@ export class AVProducerReferenceTime {
   flags: int32
 }
 
+@struct
+export class AVDOVIDecoderConfigurationRecord {
+  dvVersionMajor: uint8
+  dvVersionMinor: uint8
+  dvProfile: uint8
+  dvLevel: uint8
+  rpuPresentFlag: uint8
+  elPresentFlag: uint8
+  blPresentFlag: uint8
+  dvBlSignalCompatibilityId: uint8
+}
+
 
 /**
  * FFmpeg AVPacket 定义

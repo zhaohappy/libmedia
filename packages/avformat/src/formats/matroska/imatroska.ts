@@ -28,7 +28,7 @@ import { EBMLId, EbmlType } from './matroska'
 import type { Addition, Additions, Attachment, Attachments, AudioTrack,
   BlockGroup, Chapter, ChapterAtom, ChapterDisplay, Chapters, Cluster,
   CuePoint, CuePointPos, Cues, Header, Info, MasteringMeta, MatroskaContext, SeekHead, SeekHeadEntry,
-  SimpleTag, Tag, TagTargets, Tags, TrackCombinePlanes, TrackEncoding,
+  SimpleTag, Tag, TagTargets, Tags, TrackBlockAdditionMappings, TrackCombinePlanes, TrackEncoding,
   TrackEncodingCompression, TrackEncodingEncryption, TrackEncodings, TrackEntry,
   TrackOperation, TrackPlane, Tracks, VideoColor, VideoProjection, VideoTrack
 } from './type'
@@ -385,6 +385,25 @@ export const EbmlSyntaxTrackEncodings: Partial<Record<EBMLId, EbmlSyntax<TrackEn
   }
 }
 
+export const EbmlSyntaxTrackBlockAdditionMappings: Partial<Record<EBMLId, EbmlSyntax<TrackBlockAdditionMappings>>> = {
+  [EBMLId.BLK_ADD_ID_VALUE]: {
+    type: EbmlType.UINT,
+    filedName: 'value'
+  },
+  [EBMLId.BLK_ADD_ID_NAME]: {
+    type: EbmlType.STRING,
+    filedName: 'name'
+  },
+  [EBMLId.BLK_ADD_ID_TYPE]: {
+    type: EbmlType.UINT,
+    filedName: 'type'
+  },
+  [EBMLId.BLK_ADD_ID_EXTRA_DATA]: {
+    type: EbmlType.BUFFER,
+    filedName: 'extradata'
+  }
+}
+
 export const EbmlSyntaxTrackEntry: Partial<Record<EBMLId, EbmlSyntax<TrackEntry>>> = {
   [EBMLId.TRACK_NUMBER]: {
     type: EbmlType.UINT,
@@ -449,6 +468,12 @@ export const EbmlSyntaxTrackEntry: Partial<Record<EBMLId, EbmlSyntax<TrackEntry>
     type: EbmlType.OBJECT,
     filedName: 'encodings',
     child: EbmlSyntaxTrackEncodings
+  },
+  [EBMLId.TRACK_BLK_ADD_MAPPING]: {
+    type: EbmlType.OBJECT,
+    filedName: 'blockAdditionMappings',
+    child: EbmlSyntaxTrackBlockAdditionMappings,
+    isArray: true
   }
 }
 

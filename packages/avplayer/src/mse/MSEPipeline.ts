@@ -56,7 +56,9 @@ import {
   avMalloc,
   avMallocz,
   getAudioMimeType,
-  getVideoMimeType
+  getVideoMimeType,
+  isDolbyVision,
+  getDolbyVisionMimeType
 } from '@libmedia/avutil'
 
 import {
@@ -509,6 +511,9 @@ export default class MSEPipeline extends Pipeline {
     }
     else if (codecpar.codecType === AVMediaType.AVMEDIA_TYPE_VIDEO) {
       mimeType = getVideoMimeType(codecpar)
+      if (isDolbyVision(codecpar) && getMediaSource().isTypeSupported(getDolbyVisionMimeType(codecpar))) {
+        mimeType = getDolbyVisionMimeType(codecpar)
+      }
     }
 
     if (!mimeType) {
@@ -1045,6 +1050,11 @@ export default class MSEPipeline extends Pipeline {
         unserializeAVCodecParameters(parameters, codecpar)
       }
 
+      let disableDolbyVision = true
+      if (isDolbyVision(codecpar) && getMediaSource().isTypeSupported(getDolbyVisionMimeType(codecpar))) {
+        disableDolbyVision = false
+      }
+
       const ioWriter = new IOWriter(1024 * 1024)
       const oformatContext = createAVOFormatContext()
       const oformat = new OIsobmffFormat({
@@ -1054,7 +1064,8 @@ export default class MSEPipeline extends Pipeline {
         mp4Mode: Mp4Mode.MP4,
         defaultBaseIsMoof: true,
         reverseSpsInAvcc: true,
-        hasTfra: false
+        hasTfra: false,
+        disableDolbyVision
       })
 
       const bufferQueue = new SeekableWriteBuffer()
@@ -1199,6 +1210,11 @@ export default class MSEPipeline extends Pipeline {
 
         resource.track.reset()
 
+        let disableDolbyVision = true
+        if (isDolbyVision(codecpar) && getMediaSource().isTypeSupported(getDolbyVisionMimeType(codecpar))) {
+          disableDolbyVision = false
+        }
+
         const oformat = new OIsobmffFormat({
           fragmentMode: Mp4FragmentMode.FRAME,
           fragment: true,
@@ -1206,7 +1222,8 @@ export default class MSEPipeline extends Pipeline {
           mp4Mode: Mp4Mode.MP4,
           defaultBaseIsMoof: true,
           reverseSpsInAvcc: true,
-          hasTfra: false
+          hasTfra: false,
+          disableDolbyVision
         })
         resource.oformatContext.oformat = oformat
 

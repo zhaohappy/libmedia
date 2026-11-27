@@ -73,6 +73,7 @@ import pasp from './pasp'
 
 import hvcc from './hvcc'
 import av1c from './av1c'
+import dvcc from './dvcc'
 
 import mktag from '../../../function/mktag'
 
@@ -125,7 +126,11 @@ number,
   [mktag(BoxType.IROT)]: irot,
 
   [mktag(BoxType.HVCC)]: hvcc,
-  [mktag(BoxType.AV1C)]: av1c
+  [mktag(BoxType.AV1C)]: av1c,
+
+  [mktag(BoxType.DVCC)]: dvcc,
+  [mktag(BoxType.DVVC)]: dvcc,
+  [mktag(BoxType.DVWC)]: dvcc
 }
 
 export default parsers
