@@ -22,16 +22,16 @@ if [[ $wasm64 == "1" ]]; then
   LIB_BUILD_PATH="$LIB_BUILD_PATH-64"
 else
   if [[ $simd == "1" ]]; then
-    EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory -msimd128 -fvectorize -fslp-vectorize"
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -fPIC -pthread -mbulk-memory -msimd128 -fvectorize -fslp-vectorize"
     LIB_OUTPUT_PATH="$LIB_OUTPUT_PATH-simd"
     LIB_BUILD_PATH="$LIB_BUILD_PATH-simd"
   else
     if [[ $atomic == "1" ]]; then
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -pthread -mbulk-memory"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -fPIC -pthread -mbulk-memory"
       LIB_OUTPUT_PATH="$LIB_OUTPUT_PATH-atomic"
       LIB_BUILD_PATH="$LIB_BUILD_PATH-atomic"
     else
-      EXTRA_CFLAGS="$EXTRA_CFLAGS -mno-bulk-memory -no-pthread -mno-sign-ext"
+      EXTRA_CFLAGS="$EXTRA_CFLAGS -fPIC -mno-bulk-memory -no-pthread -mno-sign-ext"
     fi
   fi
 fi
@@ -56,6 +56,7 @@ emconfigure ./configure \
   --enable-pic \
   --enable-vp8 \
   --enable-vp9 \
+  --enable-vp9-highbitdepth \
   --disable-tools \
   --disable-docs \
   --disable-examples \

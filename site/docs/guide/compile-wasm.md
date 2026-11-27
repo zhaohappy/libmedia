@@ -15,7 +15,7 @@ order: 4
 
 编译系统推荐使用 MacOS 或者 Linux，Windows 使用 WSL 编译
 
-1. 安装 emscripten 编译工具 emsdk，具体安装步骤按照[官网](https://emscripten.org/docs/getting_started/downloads.html#platform-notes-installation-instructions-sdk)
+1. 安装 emscripten 编译工具 emsdk，具体安装步骤按照[官网](https://emscripten.org/docs/getting_started/downloads.html#platform-notes-installation-instructions-sdk) 当前 libmedia 使用的 emsdk 版本是 v3.1.67
 
 2. 根据你的编译系统安装 make 工具链，自行搜索如何安装和验证（如果你的系统上已经有了跳过此步骤）
 

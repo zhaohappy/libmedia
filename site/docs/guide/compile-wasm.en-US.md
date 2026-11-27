@@ -15,7 +15,7 @@ At present, libmedia has compiled some common audio and video codecs. If you nee
 
 The compilation system is recommended to use MacOS or Linux. Windows uses WSL to compile
 
-1. Install the emscripten compilation tool emsdk. The specific installation steps follow the [official website](https://emscripten.org/docs/getting_started/downloads.html#platform-notes-installation-instructions-sdk)
+1. Install the emscripten compilation tool emsdk. The specific installation steps follow the [official website](https://emscripten.org/docs/getting_started/downloads.html#platform-notes-installation-instructions-sdk) The current version of emsdk used by libmedia is v3.1.67.
 
 2. Install the make toolchain according to your system, search for how to install and verify it yourself(If you already have it on your system, skip this step)
 
