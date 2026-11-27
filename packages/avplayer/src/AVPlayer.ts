@@ -2971,6 +2971,10 @@ export default class AVPlayer extends Emitter implements ControllerObserver {
       if (seekedTimestamp >= 0n) {
         const time = await AVPlayer.MSEThread.afterSeek(this.taskId, seekedTimestamp > timestamp ? seekedTimestamp : timestamp)
         if (this.video) {
+          // Safari 上播放 HDR 时 seek 之后设置 currentTime 会偶现 SourceBuffer 报错，延时一段时间
+          if ((browser.safari || os.ios) && isHdr(this.selectedVideoStream.codecpar)) {
+            await new Sleep(0.1)
+          }
           this.video.currentTime = time
         }
         else if (this.audio) {
