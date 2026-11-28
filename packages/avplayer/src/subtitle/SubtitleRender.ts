@@ -260,17 +260,16 @@ export default class SubtitleRender {
 
     this.loop = new LoopTask(() => {
 
-      if (!this.queue.length && this.ended) {
+      const currentTime = this.options.getCurrentTime() - this.delay
+      const hasActiveDialogues = this.render.clear(currentTime)
+      if (!this.queue.length && this.ended && !hasActiveDialogues) {
         this.loop.stop()
+        return
       }
 
       if (this.queue.length < 6 && !this.ended) {
         this.pull()
       }
-
-      const currentTime = this.options.getCurrentTime() - this.delay
-
-      this.render.clear(currentTime)
 
       while (this.queue.length) {
         const event = this.queue[0]

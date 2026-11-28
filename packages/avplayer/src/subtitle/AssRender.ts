@@ -315,11 +315,12 @@ export default class AssRender {
     for (let i = this.store.actives.length - 1; i >= 0; i -= 1) {
       const dia = this.store.actives[i]
       const { end } = dia
-      if (end < now) {
+      if (end <= now) {
         dia.$div.remove()
         this.store.actives.splice(i, 1)
       }
     }
+    return this.store.actives.length > 0
   }
 
   public clearAll() {
