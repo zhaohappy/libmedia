@@ -73,6 +73,47 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
 
   private generateFragmentSource(descriptor: AVPixelFormatDescriptor, colorTransformOptions: ColorTransformOptions) {
 
+    function generateSampleFnCode(name: string, channel: string, shift: number, max: number) {
+      let p00 = `textureLoad(tex, clamp(base, vec2<i32>(0), maxCoord), 0).${channel}`
+      let p10 = `textureLoad(tex, clamp(base + vec2<i32>(1, 0), vec2<i32>(0), maxCoord), 0).${channel}`
+      let p01 = `textureLoad(tex, clamp(base + vec2<i32>(0, 1), vec2<i32>(0), maxCoord), 0).${channel}`
+      let p11 = `textureLoad(tex, clamp(base + vec2<i32>(1, 1), vec2<i32>(0), maxCoord), 0).${channel}`
+
+      if (descriptor.flags & AVPixelFormatFlags.BIG_ENDIAN) {
+        p00 = `swap(${p00})`
+        p10 = `swap(${p10})`
+        p01 = `swap(${p01})`
+        p11 = `swap(${p11})`
+      }
+
+      p00 = `f32(${p00} >> ${shift}) / f32(${max})`
+      p10 = `f32(${p10} >> ${shift}) / f32(${max})`
+      p01 = `f32(${p01} >> ${shift}) / f32(${max})`
+      p11 = `f32(${p11} >> ${shift}) / f32(${max})`
+
+      return `
+        fn sampleR16${name.toLocaleUpperCase()}(tex: texture_2d<u32>, uv: vec2<f32>) -> f32 {
+          let size = vec2<f32>(textureDimensions(tex));
+          let coord = uv * size - 0.5;
+
+          let base = vec2<i32>(floor(coord));
+          let f = fract(coord);
+
+          let maxCoord = vec2<i32>(textureDimensions(tex)) - 1;
+
+          let p00 = ${p00};
+          let p10 = ${p10};
+          let p01 = ${p01};
+          let p11 = ${p11};
+
+          let a = mix(p00, p10, f.x);
+          let b = mix(p01, p11, f.x);
+
+          return mix(a, b, f.y);
+        }
+      `
+    }
+
     const steps = generateSteps(this.srcColorSpace, this.dstColorSpace, colorTransformOptions)
 
     const textureMap = ['y', 'u', 'v', 'a']
@@ -87,27 +128,36 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
       maxes[i] = (1 << com.depth) - 1
     })
 
-    let y = `textureLoad(${textureMap[descriptor.comp[0].plane]}Texture,
-      vec2<i32>(coord.xy * vec2<f32>(
-        ${this[`${textureMap[descriptor.comp[0].plane]}Texture`].width}.0,
-        ${this[`${textureMap[descriptor.comp[0].plane]}Texture`].height}.0
-      )), 0).${channelMap[descriptor.comp[0].offset / bytes[0]]}`
+    let ySampleFn = generateSampleFnCode('y', channelMap[descriptor.comp[0].offset / bytes[0]], shifts[0], maxes[0])
+    let uSampleFn = descriptor.comp[1]
+      ? generateSampleFnCode('u', channelMap[descriptor.comp[1].offset / bytes[1]], shifts[1], maxes[1])
+      : ''
+    let vSampleFn = descriptor.comp[2]
+      ? generateSampleFnCode('v', channelMap[descriptor.comp[2].offset / bytes[2]], shifts[2], maxes[2])
+      : ''
+    let aSampleFn = (descriptor.flags & AVPixelFormatFlags.ALPHA)
+      ? generateSampleFnCode('a', channelMap[descriptor.comp[descriptor.comp.length - 1].offset / bytes[descriptor.comp.length - 1]], shifts[descriptor.comp.length - 1], maxes[descriptor.comp.length - 1])
+      : ''
+
+    let swapFn = descriptor.flags & AVPixelFormatFlags.BIG_ENDIAN
+      ? `
+        fn swap(x: u32) -> u32 {
+          var low = x & 0xff;
+          var high = (x >> 8) & 0xff;
+          return (low << 8) | high;
+        }
+      `
+      : ''
+
+    let y = `sampleR16Y(${textureMap[descriptor.comp[0].plane]}Texture, coord.xy)`
     let u = descriptor.comp[1]
-      ? `textureLoad(${textureMap[descriptor.comp[1].plane]}Texture,
-          vec2<i32>(coord.xy * vec2<f32>(
-            ${this[`${textureMap[descriptor.comp[1].plane]}Texture`].width}.0,
-            ${this[`${textureMap[descriptor.comp[1].plane]}Texture`].height}.0
-          )), 0).${channelMap[descriptor.comp[1].offset / bytes[1]]}`
+      ? `sampleR16U(${textureMap[descriptor.comp[1].plane]}Texture, coord.xy)`
       : ((descriptor.flags & AVPixelFormatFlags.RGB)
         ? '0.0'
         : '0.5'
       )
     let v = descriptor.comp[2]
-      ? `textureLoad(${textureMap[descriptor.comp[2].plane]}Texture,
-          vec2<i32>(coord.xy * vec2<f32>(
-            ${this[`${textureMap[descriptor.comp[2].plane]}Texture`].width}.0,
-            ${this[`${textureMap[descriptor.comp[2].plane]}Texture`].height}.0
-          )), 0).${channelMap[descriptor.comp[2].offset / bytes[2]]}`
+      ? `sampleR16V(${textureMap[descriptor.comp[2].plane]}Texture, coord.xy)`
       : ((descriptor.flags & AVPixelFormatFlags.RGB)
         ? '0.0'
         : '0.5'
@@ -115,21 +165,13 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
 
     let a = '1.0'
     if (descriptor.flags & AVPixelFormatFlags.ALPHA) {
-      a = `textureLoad(${textureMap[descriptor.comp[descriptor.comp.length - 1].plane]}Texture,
-        vec2<i32>(coord.xy * vec2<f32>(
-          ${this[`${textureMap[descriptor.comp[descriptor.comp.length - 1].plane]}Texture`].width}.0,
-          ${this[`${textureMap[descriptor.comp[descriptor.comp.length - 1].plane]}Texture`].height}.0
-        )), 0).${channelMap[descriptor.comp[descriptor.comp.length - 1].offset / bytes[descriptor.comp.length - 1]]}`
+      a = `sampleR16A(${textureMap[descriptor.comp[descriptor.comp.length - 1].plane]}Texture, coord.xy)`
       if (descriptor.comp.length === 2) {
         u = ((descriptor.flags & AVPixelFormatFlags.RGB)
           ? '0.0'
           : '0.5'
         )
       }
-    }
-
-    function isTexture(s: string) {
-      return /^textureLoad/.test(s)
     }
 
     this.fragmentSource = `
@@ -147,13 +189,13 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
       ${this.uTexture ? '@group(0) @binding(3) var uTexture: texture_2d<u32>;' : ''}
       ${this.vTexture ? '@group(0) @binding(4) var vTexture: texture_2d<u32>;' : ''}
       ${this.aTexture ? '@group(0) @binding(5) var aTexture: texture_2d<u32>;' : ''}
-      ${(descriptor.flags & AVPixelFormatFlags.BIG_ENDIAN) ? `
-        fn swap(x: u32) -> u32 {
-          var low = x & 0xff;
-          var high = (x >> 8) & 0xff;
-          return (low << 8) | high;
-        }
-      ` : ''}
+
+      ${swapFn}
+      ${ySampleFn}
+      ${uSampleFn}
+      ${vSampleFn}
+      ${aSampleFn}
+
       @fragment
       fn main(@location(0) coord: vec4<f32>) -> @location(0) vec4<f32> {
         let offset = hdrMetadata.offset;
@@ -163,10 +205,10 @@ export default class WebGPUDefault16Render extends WebGPUDefaultRender {
         let hlg_ootf_gamma_minus_one = hdrMetadata.hlgOOTFGammaMinusOne;
         let nits_to_sdr_relative_factor = hdrMetadata.nitsToSdrRelativeFactor;
         let sdr_relative_to_nits_factor = hdrMetadata.sdrRelativeToNitsFactor;
-        let y = ${isTexture(y) ? `f32(${(descriptor.flags & AVPixelFormatFlags.BIG_ENDIAN) ? `swap(${y})` : y} >> ${shifts[0]}) / f32(${maxes[0]})` : y};
-        let u = ${isTexture(u) ? `f32(${(descriptor.flags & AVPixelFormatFlags.BIG_ENDIAN) ? `swap(${u})` : u} >> ${shifts[1]}) / f32(${maxes[1]})` : u};
-        let v = ${isTexture(v) ? `f32(${(descriptor.flags & AVPixelFormatFlags.BIG_ENDIAN) ? `swap(${v})` : v} >> ${shifts[2]}) / f32(${maxes[2]})` : v};
-        let a = ${isTexture(a) ? `f32(${(descriptor.flags & AVPixelFormatFlags.BIG_ENDIAN) ? `swap(${a})` : a} >> ${shifts[descriptor.comp.length - 1]}) / f32(${maxes[descriptor.comp.length - 1]})` : a};
+        let y = ${y};
+        let u = ${u};
+        let v = ${v};
+        let a = ${a};
         var color = vec4(y, u, v, a);
         if (color.a > 0) {
           color.r /= color.a;
